@@ -18,7 +18,7 @@ object CustomizedCodeGenerator{
     println( "Running Customized Generator" )
     codegenFuture.onSuccess { case codegen =>
       val writefileFuture = codegen.writeToFile(
-        "demo.SlickPostgresDriver",
+        "autodal.SlickPostgresDriver",
         args(0),
         args(1),
         "Tables",
