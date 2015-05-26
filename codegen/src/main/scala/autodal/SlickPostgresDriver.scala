@@ -1,4 +1,4 @@
-package demo
+package autodal
 
 import com.github.tminglei.slickpg._
 

@@ -1,4 +1,4 @@
-package demo
+package autodal
 
 object Config{
   // connection info for a pre-populated throw-away, in-memory db for this demo, which is freshly initialized on every run

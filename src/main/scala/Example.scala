@@ -1,4 +1,4 @@
-import demo.Config
+import autodal.Config
 import dal.Tables
 import Tables._
 import Tables.profile.simple._

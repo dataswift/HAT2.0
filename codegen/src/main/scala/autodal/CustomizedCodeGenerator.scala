@@ -1,6 +1,6 @@
-package demo
+package autodal
 
-import demo.Config._
+import autodal.Config._
 import slick.codegen.SourceCodeGenerator
 import slick.driver.H2Driver
 
