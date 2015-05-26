@@ -61,7 +61,7 @@ object myBuild extends Build {
 //    val url = "jdbc:h2:mem:hat21;MODE=PostgreSQL;INIT="+initScripts.map("runscript from 'src/sql/"+_+"'").mkString("\\;")
 //    val jdbcDriver =  "org.h2.Driver"
 //    val slickProfile = "slick.driver.H2Driver"
-    toError(r.run("demo.CustomizedCodeGenerator", cp.files, Array(outputDir, pkg), s.log))
+    toError(r.run("autodal.CustomizedCodeGenerator", cp.files, Array(outputDir, pkg), s.log))
     val fname = outputDir + "/" + pkg + "/Tables.scala"
     Seq(file(fname))
   }
