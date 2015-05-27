@@ -1,12 +1,15 @@
 package autodal
 
-import autodal.Config._
+//import autodal.Config._
 import slick.codegen.SourceCodeGenerator
 import slick.driver.H2Driver
+import slick.driver.PostgresDriver
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+
+import SlickPostgresDriver.simple._
 
 /**
  *  This customizes the Slick code generator.
@@ -33,9 +36,9 @@ object CustomizedCodeGenerator{
     Await.result(codegenFuture, 5 minutes)
   }
 
-  val db = H2Driver.simple.Database.forURL(url,driver=jdbcDriver)
+  val db = Database.forConfig("devdb")
 
-  val modelAction = H2Driver.createModel( Some(H2Driver.defaultTables) )
+  val modelAction = PostgresDriver.createModel( Some(PostgresDriver.defaultTables) )
   val modelFuture = db.run(modelAction)
 
   val codegenFuture = modelFuture.map(model => new SourceCodeGenerator(model){

@@ -19,6 +19,10 @@ object myBuild extends Build {
     id="main",
     base=file("."),
     settings = sharedSettings ++ Seq(
+      libraryDependencies ++= List(
+        "org.specs2" % "specs2-core_2.11" % "3.3",
+        "org.specs2" % "specs2_2.11" % "3.3"
+      ),
       slick <<= slickCodeGenTask, // register manual sbt command
       sourceGenerators in Compile <+= slickCodeGenTask // register automatic code generation on every compile, remove for only manual use
     )
@@ -46,8 +50,10 @@ object myBuild extends Build {
       "org.joda" % "joda-convert" % "1.7",
       "com.vividsolutions" % "jts" % "1.13",
       "org.slf4j" % "slf4j-nop" % "1.6.4",
-      "com.h2database" % "h2" % "1.4.187"
-    )
+      "com.typesafe" % "config" % "1.3.0",
+      "com.zaxxer" % "HikariCP" % "2.3.8"
+    ),
+    resolvers ++= List("Scalaz Bintray Repo" at "https://dl.bintray.com/scalaz/releases")
   )
 
   // code generation task
@@ -56,21 +62,9 @@ object myBuild extends Build {
   lazy val slickCodeGenTask = (sourceManaged, dependencyClasspath in Compile, runner in Compile, streams) map { (dir, cp, r, s) =>
     val outputDir = (dir / "slick").getPath // place generated files in sbt's managed sources folder
     val pkg = "dal"
-//    toError(r.run("demo.CustomizedCodeGenerator", cp.files, Array(outputDir, pkg), s.log))
-//    val initScripts = Seq("drop-tables.sql", "create-tables.sql","populate-tables.sql")
-//    val url = "jdbc:h2:mem:hat21;MODE=PostgreSQL;INIT="+initScripts.map("runscript from 'src/sql/"+_+"'").mkString("\\;")
-//    val jdbcDriver =  "org.h2.Driver"
-//    val slickProfile = "slick.driver.H2Driver"
     toError(r.run("autodal.CustomizedCodeGenerator", cp.files, Array(outputDir, pkg), s.log))
     val fname = outputDir + "/" + pkg + "/Tables.scala"
     Seq(file(fname))
   }
 
-
-//  lazy val slickCodeGenTask = (sourceManaged, dependencyClasspath in Compile, runner in Compile, streams) map { (dir, cp, r, s) =>
-//    val outputDir = (dir / "slick").getPath // place generated files in sbt's managed sources folder
-//    toError(r.run("demo.CustomizedCodeGenerator", cp.files, Array(outputDir), s.log))
-//    val fname = outputDir + "/dal/Tables.scala"
-//    Seq(file(fname))
-//  }
 }
