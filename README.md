@@ -5,11 +5,22 @@ Starting afresh with the new schema...
 
 Starting with a fairly auto-generated data access layer for the HAT
 
+You will need to set up a PostgreSQL database with the HAT2.2 schema, files for which can be found in `src/sql`.
+
+Configuration in *both* `codegen/src/main/resources/application.conf` and `src/main/resources/application.conf` must reflect your database configuration (can be different ones for model generation and for operation), and look similar to:
+
+    devdb = {
+      dataSourceClass = "org.postgresql.ds.PGSimpleDataSource"
+      properties = {
+        databaseName = "database"
+        user = "dbuser"
+        password = "dbpass"
+      }
+    }
+
 To run this code, setup activator and simply type
 
-	activator run
+	activator test
 
-at the moment there is no data in the schema, and you won't see much, but it should end with something like
-
-	[success] Total time: X s, completed dd-MMMM-YYYY HH:MM:SS
+Which will run tests checking the db. All tests should finish successfully.
 	
