@@ -1,7 +1,8 @@
 import dal.Tables
-import dal.Tables._
-import dal.Tables.profile.simple._
+import Tables._
+import Tables.profile.simple._
 import org.joda.time.LocalDate
+import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
 import autodal.SlickPostgresDriver.simple._
 import slick.jdbc.meta.MTable
@@ -32,6 +33,32 @@ class ModelSpec extends Specification {
 
       val tables = db.run(getTables)
       tables must containAllOf[String](requiredTables).await
+    }
+  }
+
+  sequential
+
+  "Data tables" should {
+    "be empty" in {
+      val result = DataValue.run
+      result must have size(0)
+    }
+    "accept data" in {
+      val dataRecordRow = new DataRecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test")
+      DataRecord += dataRecordRow
+
+      // The ID value is actually ignored and auto-incremented
+      val dataRow = new DataValueRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test", 1)
+      DataValue += dataRow
+
+      val result = DataValue.run
+      result must have size(1)
+    }
+    "allow data to be removed" in {
+      DataValue.delete
+      DataRecord.delete
+      val result = DataValue.run
+      result must have size(0)
     }
   }
 }
