@@ -116,7 +116,7 @@ CREATE TABLE public.data_table (
 CREATE TABLE public.data_field (
                 id INTEGER NOT NULL,
                 date_created TIMESTAMP NOT NULL,
-                last_updated VARCHAR NOT NULL,
+                last_updated TIMESTAMP NOT NULL,
                 data_table_fk INTEGER NOT NULL,
                 has_parent BOOLEAN NOT NULL,
                 has_child BOOLEAN NOT NULL,
@@ -129,8 +129,8 @@ CREATE SEQUENCE public.data_fieldtofieldcrossref_id_seq;
 
 CREATE TABLE public.data_fieldtofieldcrossref (
                 id INTEGER NOT NULL DEFAULT nextval('public.data_fieldtofieldcrossref_id_seq'),
+                date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
-                last_updated_1 TIMESTAMP NOT NULL,
                 field1 INTEGER NOT NULL,
                 field2 INTEGER NOT NULL,
                 relationship_type VARCHAR NOT NULL,

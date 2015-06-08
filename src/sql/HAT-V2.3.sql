@@ -1,3 +1,6 @@
+drop schema public cascade;
+
+create schema public;
 
 CREATE SEQUENCE public.events_event_id_seq;
 
