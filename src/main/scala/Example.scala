@@ -13,10 +13,10 @@ object Example extends App {
   runQueries
 
   def runQueries = {
-    val q = DataFieldtofieldcrossref
-    val q2 = DataFieldtofieldcrossref.join(DataField).on(_.field1 === _.id)
-    println( q.run.mkString("\n") )
-    println( q2.run.mkString("\n") )
+//    val q = DataFieldtofieldcrossref
+//    val q2 = DataFieldtofieldcrossref.join(DataField).on(_.field1 === _.id)
+//    println( q.run.mkString("\n") )
+//    println( q2.run.mkString("\n") )
   }
 
 }
