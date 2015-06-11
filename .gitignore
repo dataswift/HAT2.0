@@ -9,4 +9,4 @@ target/
 /\.classpath
 /.settings/org.scala-ide.sdt.core.prefs
 .DS_Store
-*.conf
+include “application.conf"`
