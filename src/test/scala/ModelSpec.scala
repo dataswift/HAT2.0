@@ -44,7 +44,7 @@ class ModelSpec extends Specification {
       result must have size(0)
     }
     "accept data" in {
-      val dataTableRow = new DataTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "test", "test")
+      val dataTableRow = new DataTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "test", false, "test")
       val tableId = (DataTable returning DataTable.map(_.id)) += dataTableRow
 
       val dataFieldRow = new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), tableId, "Test")
@@ -78,12 +78,12 @@ class ModelSpec extends Specification {
   "Facebook data structures" should {
     "have virtual tables created" in {
       val dataTableRows = Seq(
-        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "events", "facebook"),
-        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "me", "facebook"),
-        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", "facebook"),
-        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "owner", "facebook"),
-        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "place", "facebook"),
-        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "location", "facebook")
+        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "events", false, "facebook"),
+        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "me", false, "facebook"),
+        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", false, "facebook"),
+        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "owner", false, "facebook"),
+        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "place", false, "facebook"),
+        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "location", false, "facebook")
       )
 
       DataTable ++= dataTableRows

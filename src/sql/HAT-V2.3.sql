@@ -109,8 +109,10 @@ CREATE INDEX system_typetotypecrossref_type_two_id
  ON public.system_typetotypecrossref USING BTREE
  ( type_two_id );
 
+CREATE SEQUENCE public.data_table_id_seq;
+
 CREATE TABLE public.data_table (
-                id INTEGER NOT NULL,
+                id INTEGER NOT NULL DEFAULT nextval('public.data_table_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -120,8 +122,12 @@ CREATE TABLE public.data_table (
 );
 
 
+ALTER SEQUENCE public.data_table_id_seq OWNED BY public.data_table.id;
+
+CREATE SEQUENCE public.data_debit_id_seq;
+
 CREATE TABLE public.data_debit (
-                id INTEGER NOT NULL,
+                id INTEGER NOT NULL DEFAULT nextval('public.data_debit_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -138,8 +144,12 @@ CREATE TABLE public.data_debit (
 );
 
 
+ALTER SEQUENCE public.data_debit_id_seq OWNED BY public.data_debit.id;
+
+CREATE SEQUENCE public.data_tabletotablecrossref_id_seq;
+
 CREATE TABLE public.data_tabletotablecrossref (
-                id INTEGER NOT NULL,
+                id INTEGER NOT NULL DEFAULT nextval('public.data_tabletotablecrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated_1 TIMESTAMP NOT NULL,
                 relationship_type VARCHAR NOT NULL,
@@ -148,6 +158,8 @@ CREATE TABLE public.data_tabletotablecrossref (
                 CONSTRAINT data_tabletotablecrossref_pk PRIMARY KEY (id)
 );
 
+
+ALTER SEQUENCE public.data_tabletotablecrossref_id_seq OWNED BY public.data_tabletotablecrossref.id;
 
 CREATE SEQUENCE public.data_field_id_seq;
 
@@ -163,8 +175,10 @@ CREATE TABLE public.data_field (
 
 ALTER SEQUENCE public.data_field_id_seq OWNED BY public.data_field.id;
 
+CREATE SEQUENCE public.data_value_id_seq;
+
 CREATE TABLE public.data_value (
-                id INTEGER NOT NULL,
+                id INTEGER NOT NULL DEFAULT nextval('public.data_value_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 value TEXT NOT NULL,
@@ -173,6 +187,8 @@ CREATE TABLE public.data_value (
                 CONSTRAINT data_value_pk PRIMARY KEY (id)
 );
 
+
+ALTER SEQUENCE public.data_value_id_seq OWNED BY public.data_value.id;
 
 CREATE SEQUENCE public.data_valuefieldcrossreference_id_seq;
 
