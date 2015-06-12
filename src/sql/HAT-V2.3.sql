@@ -1,4 +1,7 @@
+drop schema public cascade;
 
+create schema public;
+        
 CREATE SEQUENCE public.events_event_id_seq;
 
 CREATE TABLE public.events_event (
@@ -302,130 +305,6 @@ CREATE INDEX users_persontopersoncrossref_relationship_type_id
  ON public.people_persontopersoncrossref USING BTREE
  ( relationship_type_id );
 
-CREATE SEQUENCE public.things_thing_id_seq;
-
-CREATE TABLE public.things_thing (
-                id INTEGER NOT NULL DEFAULT nextval('public.things_thing_id_seq'),
-                date_created TIMESTAMP NOT NULL,
-                last_updated TIMESTAMP NOT NULL,
-                name VARCHAR(100) NOT NULL,
-                CONSTRAINT things_thing_pkey PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.things_thing_id_seq OWNED BY public.things_thing.id;
-
-CREATE SEQUENCE public.events_eventthingcrossref_id_seq;
-
-CREATE TABLE public.events_eventthingcrossref (
-                id INTEGER NOT NULL DEFAULT nextval('public.events_eventthingcrossref_id_seq'),
-                date_created TIMESTAMP NOT NULL,
-                last_updated TIMESTAMP NOT NULL,
-                thing_id INTEGER NOT NULL,
-                event_id INTEGER NOT NULL,
-                relationship_description TEXT NOT NULL,
-                is_current BOOLEAN NOT NULL,
-                CONSTRAINT events_eventthingcrossref_pkey PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.events_eventthingcrossref_id_seq OWNED BY public.events_eventthingcrossref.id;
-
-CREATE INDEX events_eventthing_thingid_crossref_owner_id
- ON public.events_eventthingcrossref USING BTREE
- ( thing_id );
-
-CREATE INDEX events_eventthing_eventid_crossref_owner_id
- ON public.events_eventthingcrossref USING BTREE
- ( event_id );
-
-CREATE SEQUENCE public.things_systemtypecrossref_id_seq;
-
-CREATE TABLE public.things_systemtypecrossref (
-                id INTEGER NOT NULL DEFAULT nextval('public.things_systemtypecrossref_id_seq'),
-                date_created TIMESTAMP NOT NULL,
-                last_updated TIMESTAMP NOT NULL,
-                thing_id INTEGER NOT NULL,
-                system_type_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
-                is_current BOOLEAN NOT NULL,
-                CONSTRAINT things_systemtypecrossref_pkey PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.things_systemtypecrossref_id_seq OWNED BY public.things_systemtypecrossref.id;
-
-CREATE INDEX things_thingpropertycrossref_thing_id
- ON public.things_systemtypecrossref USING BTREE
- ( thing_id );
-
-CREATE INDEX things_thingpropertycrossref_thing_property_id
- ON public.things_systemtypecrossref USING BTREE
- ( system_type_id );
-
-CREATE SEQUENCE public.things_thingtothingcrossref_id_seq;
-
-CREATE TABLE public.things_thingtothingcrossref (
-                id INTEGER NOT NULL DEFAULT nextval('public.things_thingtothingcrossref_id_seq'),
-                date_created TIMESTAMP NOT NULL,
-                last_updated TIMESTAMP NOT NULL,
-                thing_one_id INTEGER NOT NULL,
-                thing_two_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
-                CONSTRAINT things_thingtothingcrossref_pkey PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.things_thingtothingcrossref_id_seq OWNED BY public.things_thingtothingcrossref.id;
-
-CREATE INDEX things_thingtothingcrossref_thing_one_id
- ON public.things_thingtothingcrossref USING BTREE
- ( thing_one_id );
-
-CREATE INDEX things_thingtothingcrossref_thing_two_id
- ON public.things_thingtothingcrossref USING BTREE
- ( thing_two_id );
-
-CREATE SEQUENCE public.things_thingpersoncrossref_id_seq;
-
-CREATE TABLE public.things_thingpersoncrossref (
-                id INTEGER NOT NULL DEFAULT nextval('public.things_thingpersoncrossref_id_seq'),
-                date_created TIMESTAMP NOT NULL,
-                last_updated TIMESTAMP NOT NULL,
-                description TEXT,
-                person_id INTEGER NOT NULL,
-                thing_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
-                is_current BOOLEAN NOT NULL,
-                CONSTRAINT things_thingpersoncrossref_pkey PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.things_thingpersoncrossref_id_seq OWNED BY public.things_thingpersoncrossref.id;
-
-CREATE INDEX things_thingpersoncrossref_owner_id
- ON public.things_thingpersoncrossref USING BTREE
- ( person_id );
-
-CREATE INDEX things_thingpersoncrossref_thing_id
- ON public.things_thingpersoncrossref USING BTREE
- ( thing_id );
-
-CREATE SEQUENCE public.system_unitofmeasurement_id_seq;
-
-CREATE TABLE public.system_unitofmeasurement (
-                id INTEGER NOT NULL DEFAULT nextval('public.system_unitofmeasurement_id_seq'),
-                date_created TIMESTAMP,
-                last_updated TIMESTAMP NOT NULL,
-                name VARCHAR(100) NOT NULL,
-                description TEXT,
-                symbol VARCHAR(16),
-                CONSTRAINT system_unitofmeasurement_pkey PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.system_unitofmeasurement_id_seq OWNED BY public.system_unitofmeasurement.id;
-
 CREATE SEQUENCE public.system_property_id_seq;
 
 CREATE TABLE public.system_property (
@@ -434,7 +313,6 @@ CREATE TABLE public.system_property (
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
                 description TEXT NOT NULL,
-                uom_id INTEGER NOT NULL,
                 CONSTRAINT system_property_pkey PRIMARY KEY (id)
 );
 
@@ -531,6 +409,43 @@ CREATE INDEX events_systempropertydynamiccrossref_property_id
  ON public.events_systempropertydynamiccrossref USING BTREE
  ( system_property_id );
 
+CREATE SEQUENCE public.system_propertytypecrossref_id_seq;
+
+CREATE TABLE public.system_propertytypecrossref (
+                id INTEGER NOT NULL DEFAULT nextval('public.system_propertytypecrossref_id_seq'),
+                date_created TIMESTAMP NOT NULL,
+                last_updated TIMESTAMP NOT NULL,
+                type_id INTEGER NOT NULL,
+                property_id INTEGER NOT NULL,
+                relationship_type VARCHAR(100),
+                is_current BOOLEAN NOT NULL,
+                CONSTRAINT system_propertytypecrossref_pkey PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.system_propertytypecrossref_id_seq OWNED BY public.system_propertytypecrossref.id;
+
+CREATE INDEX system_propertytypecrossref_type_id
+ ON public.system_propertytypecrossref USING BTREE
+ ( type_id );
+
+CREATE INDEX system_propertytypecrossref_property_id
+ ON public.system_propertytypecrossref USING BTREE
+ ( property_id );
+
+CREATE SEQUENCE public.things_thing_id_seq;
+
+CREATE TABLE public.things_thing (
+                id INTEGER NOT NULL DEFAULT nextval('public.things_thing_id_seq'),
+                date_created TIMESTAMP NOT NULL,
+                last_updated TIMESTAMP NOT NULL,
+                name VARCHAR(100) NOT NULL,
+                CONSTRAINT things_thing_pkey PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.things_thing_id_seq OWNED BY public.things_thing.id;
+
 CREATE SEQUENCE public.things_systempropertydynamiccrossref_id_seq;
 
 CREATE TABLE public.things_systempropertydynamiccrossref (
@@ -556,29 +471,76 @@ CREATE INDEX things_thingdyanmicpropertycrossref_thing_property_id
  ON public.things_systempropertydynamiccrossref USING BTREE
  ( system_property_id );
 
-CREATE SEQUENCE public.system_propertytypecrossref_id_seq;
+CREATE SEQUENCE public.events_eventthingcrossref_id_seq;
 
-CREATE TABLE public.system_propertytypecrossref (
-                id INTEGER NOT NULL DEFAULT nextval('public.system_propertytypecrossref_id_seq'),
+CREATE TABLE public.events_eventthingcrossref (
+                id INTEGER NOT NULL DEFAULT nextval('public.events_eventthingcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
-                type_id INTEGER NOT NULL,
-                property_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                thing_id INTEGER NOT NULL,
+                event_id INTEGER NOT NULL,
+                relationship_description TEXT NOT NULL,
                 is_current BOOLEAN NOT NULL,
-                CONSTRAINT system_propertytypecrossref_pkey PRIMARY KEY (id)
+                CONSTRAINT events_eventthingcrossref_pkey PRIMARY KEY (id)
 );
 
 
-ALTER SEQUENCE public.system_propertytypecrossref_id_seq OWNED BY public.system_propertytypecrossref.id;
+ALTER SEQUENCE public.events_eventthingcrossref_id_seq OWNED BY public.events_eventthingcrossref.id;
 
-CREATE INDEX system_propertytypecrossref_type_id
- ON public.system_propertytypecrossref USING BTREE
- ( type_id );
+CREATE INDEX events_eventthing_thingid_crossref_owner_id
+ ON public.events_eventthingcrossref USING BTREE
+ ( thing_id );
 
-CREATE INDEX system_propertytypecrossref_property_id
- ON public.system_propertytypecrossref USING BTREE
- ( property_id );
+CREATE INDEX events_eventthing_eventid_crossref_owner_id
+ ON public.events_eventthingcrossref USING BTREE
+ ( event_id );
+
+CREATE SEQUENCE public.things_systemtypecrossref_id_seq;
+
+CREATE TABLE public.things_systemtypecrossref (
+                id INTEGER NOT NULL DEFAULT nextval('public.things_systemtypecrossref_id_seq'),
+                date_created TIMESTAMP NOT NULL,
+                last_updated TIMESTAMP NOT NULL,
+                thing_id INTEGER NOT NULL,
+                system_type_id INTEGER NOT NULL,
+                relationship_type VARCHAR(100),
+                is_current BOOLEAN NOT NULL,
+                CONSTRAINT things_systemtypecrossref_pkey PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.things_systemtypecrossref_id_seq OWNED BY public.things_systemtypecrossref.id;
+
+CREATE INDEX things_thingpropertycrossref_thing_id
+ ON public.things_systemtypecrossref USING BTREE
+ ( thing_id );
+
+CREATE INDEX things_thingpropertycrossref_thing_property_id
+ ON public.things_systemtypecrossref USING BTREE
+ ( system_type_id );
+
+CREATE SEQUENCE public.things_thingtothingcrossref_id_seq;
+
+CREATE TABLE public.things_thingtothingcrossref (
+                id INTEGER NOT NULL DEFAULT nextval('public.things_thingtothingcrossref_id_seq'),
+                date_created TIMESTAMP NOT NULL,
+                last_updated TIMESTAMP NOT NULL,
+                thing_one_id INTEGER NOT NULL,
+                thing_two_id INTEGER NOT NULL,
+                relationship_type VARCHAR(100),
+                CONSTRAINT things_thingtothingcrossref_pkey PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.things_thingtothingcrossref_id_seq OWNED BY public.things_thingtothingcrossref.id;
+
+CREATE INDEX things_thingtothingcrossref_thing_one_id
+ ON public.things_thingtothingcrossref USING BTREE
+ ( thing_one_id );
+
+CREATE INDEX things_thingtothingcrossref_thing_two_id
+ ON public.things_thingtothingcrossref USING BTREE
+ ( thing_two_id );
 
 CREATE TABLE public.things_systempropertystaticcrossref (
                 id INTEGER NOT NULL,
@@ -601,6 +563,54 @@ CREATE INDEX things_thingstaticpropertycrossref_thing_id
 CREATE INDEX things_thingstaticpropertycrossref_thing_property_id
  ON public.things_systempropertystaticcrossref USING BTREE
  ( system_property_id );
+
+CREATE SEQUENCE public.things_thingpersoncrossref_id_seq;
+
+CREATE TABLE public.things_thingpersoncrossref (
+                id INTEGER NOT NULL DEFAULT nextval('public.things_thingpersoncrossref_id_seq'),
+                date_created TIMESTAMP NOT NULL,
+                last_updated TIMESTAMP NOT NULL,
+                description TEXT,
+                person_id INTEGER NOT NULL,
+                thing_id INTEGER NOT NULL,
+                relationship_type VARCHAR(100),
+                is_current BOOLEAN NOT NULL,
+                CONSTRAINT things_thingpersoncrossref_pkey PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.things_thingpersoncrossref_id_seq OWNED BY public.things_thingpersoncrossref.id;
+
+CREATE INDEX things_thingpersoncrossref_owner_id
+ ON public.things_thingpersoncrossref USING BTREE
+ ( person_id );
+
+CREATE INDEX things_thingpersoncrossref_thing_id
+ ON public.things_thingpersoncrossref USING BTREE
+ ( thing_id );
+
+CREATE TABLE public.system_unitofmeasurement (
+                id INTEGER NOT NULL,
+                date_created TIMESTAMP,
+                last_updated TIMESTAMP NOT NULL,
+                name VARCHAR(100) NOT NULL,
+                description TEXT,
+                symbol VARCHAR(16),
+                CONSTRAINT system_unitofmeasurement_pkey PRIMARY KEY (id)
+);
+
+
+CREATE TABLE public.system_propertyuomcrossref (
+                id INTEGER NOT NULL,
+                date_created TIMESTAMP NOT NULL,
+                last_updated TIMESTAMP NOT NULL,
+                unitofmeasurement_id INTEGER NOT NULL,
+                property_id INTEGER NOT NULL,
+                relationship_type VARCHAR NOT NULL,
+                is_current BOOLEAN NOT NULL,
+                CONSTRAINT system_propertyuomcrossref_pk PRIMARY KEY (id)
+);
+
 
 CREATE SEQUENCE public.system_eventlog_id_seq;
 
@@ -1323,69 +1333,6 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
-ALTER TABLE public.locations_locationthingcrossref ADD CONSTRAINT thing_id_refs_id_fk
-FOREIGN KEY (thing_id)
-REFERENCES public.things_thing (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-DEFERRABLE INITIALLY DEFERRED;
-
-ALTER TABLE public.things_thingpersoncrossref ADD CONSTRAINT things_thingpersoncrossref_thing_id_fkey
-FOREIGN KEY (thing_id)
-REFERENCES public.things_thing (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-DEFERRABLE INITIALLY DEFERRED;
-
-ALTER TABLE public.things_systempropertystaticcrossref ADD CONSTRAINT things_thingstaticpropertycrossref_thing_id_fkey
-FOREIGN KEY (thing_id)
-REFERENCES public.things_thing (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-DEFERRABLE INITIALLY DEFERRED;
-
-ALTER TABLE public.things_thingtothingcrossref ADD CONSTRAINT thing_two_id_refs_id_fk
-FOREIGN KEY (thing_two_id)
-REFERENCES public.things_thing (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-DEFERRABLE INITIALLY DEFERRED;
-
-ALTER TABLE public.things_thingtothingcrossref ADD CONSTRAINT thing_one_id_refs_id_fk
-FOREIGN KEY (thing_one_id)
-REFERENCES public.things_thing (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-DEFERRABLE INITIALLY DEFERRED;
-
-ALTER TABLE public.things_systemtypecrossref ADD CONSTRAINT things_systemtypecrossref_fk
-FOREIGN KEY (thing_id)
-REFERENCES public.things_thing (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.events_eventthingcrossref ADD CONSTRAINT events_thingeventcrossref_fk
-FOREIGN KEY (thing_id)
-REFERENCES public.things_thing (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.things_systempropertydynamiccrossref ADD CONSTRAINT things_systempropertydynamiccrossref_fk
-FOREIGN KEY (thing_id)
-REFERENCES public.things_thing (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.system_property ADD CONSTRAINT system_unitofmeasurement_system_property_fk
-FOREIGN KEY (uom_id)
-REFERENCES public.system_unitofmeasurement (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
 ALTER TABLE public.things_systempropertystaticcrossref ADD CONSTRAINT thing_property_id_refs_id_fk
 FOREIGN KEY (system_property_id)
 REFERENCES public.system_property (id)
@@ -1459,6 +1406,76 @@ NOT DEFERRABLE;
 ALTER TABLE public.people_systempropertydynamiccrossref ADD CONSTRAINT system_property_people_systempropertydynamiccrossref_fk
 FOREIGN KEY (system_property_id)
 REFERENCES public.system_property (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.system_propertyuomcrossref ADD CONSTRAINT system_property_system_propertyuomcrossref_fk
+FOREIGN KEY (property_id)
+REFERENCES public.system_property (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.locations_locationthingcrossref ADD CONSTRAINT thing_id_refs_id_fk
+FOREIGN KEY (thing_id)
+REFERENCES public.things_thing (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+DEFERRABLE INITIALLY DEFERRED;
+
+ALTER TABLE public.things_thingpersoncrossref ADD CONSTRAINT things_thingpersoncrossref_thing_id_fkey
+FOREIGN KEY (thing_id)
+REFERENCES public.things_thing (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+DEFERRABLE INITIALLY DEFERRED;
+
+ALTER TABLE public.things_systempropertystaticcrossref ADD CONSTRAINT things_thingstaticpropertycrossref_thing_id_fkey
+FOREIGN KEY (thing_id)
+REFERENCES public.things_thing (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+DEFERRABLE INITIALLY DEFERRED;
+
+ALTER TABLE public.things_thingtothingcrossref ADD CONSTRAINT thing_two_id_refs_id_fk
+FOREIGN KEY (thing_two_id)
+REFERENCES public.things_thing (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+DEFERRABLE INITIALLY DEFERRED;
+
+ALTER TABLE public.things_thingtothingcrossref ADD CONSTRAINT thing_one_id_refs_id_fk
+FOREIGN KEY (thing_one_id)
+REFERENCES public.things_thing (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+DEFERRABLE INITIALLY DEFERRED;
+
+ALTER TABLE public.things_systemtypecrossref ADD CONSTRAINT things_systemtypecrossref_fk
+FOREIGN KEY (thing_id)
+REFERENCES public.things_thing (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.events_eventthingcrossref ADD CONSTRAINT events_thingeventcrossref_fk
+FOREIGN KEY (thing_id)
+REFERENCES public.things_thing (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.things_systempropertydynamiccrossref ADD CONSTRAINT things_systempropertydynamiccrossref_fk
+FOREIGN KEY (thing_id)
+REFERENCES public.things_thing (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.system_propertyuomcrossref ADD CONSTRAINT system_unitofmeasurement_system_propertyuomcrossref_fk
+FOREIGN KEY (unitofmeasurement_id)
+REFERENCES public.system_unitofmeasurement (id)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
