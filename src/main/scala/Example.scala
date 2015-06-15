@@ -1,10 +1,9 @@
 import dal.Tables
-import Tables._
-import Tables.profile.simple._
+import dal.Tables._
+import dal.Tables.profile.simple._
 import slick.jdbc.meta.MTable
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
-import autodal.SlickPostgresDriver.simple._
 
 object Example extends App {
   val db = Database.forConfig("devdb")

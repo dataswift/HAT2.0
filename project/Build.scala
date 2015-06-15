@@ -1,6 +1,5 @@
+import sbt.Keys._
 import sbt._
-import Keys._
-import Tests._
 //import demo.CustomizedCodeGenerator
 
 
@@ -24,7 +23,8 @@ object myBuild extends Build {
         "org.specs2" % "specs2_2.11" % "3.3"
       ),
       slick <<= slickCodeGenTask, // register manual sbt command
-      sourceGenerators in Compile <+= slickCodeGenTask // register automatic code generation on every compile, remove for only manual use
+      // sourceGenerators in Compile <+= slickCodeGenTask, // register automatic code generation on every compile, remove for only manual use
+      cleanFiles <+= baseDirectory { base => base / "src/main/scala/dal/" }
     )
   ).dependsOn( codegenProject )
 
@@ -60,7 +60,9 @@ object myBuild extends Build {
   lazy val slick = TaskKey[Seq[File]]("gen-tables")
 
   lazy val slickCodeGenTask = (sourceManaged, dependencyClasspath in Compile, runner in Compile, streams) map { (dir, cp, r, s) =>
-    val outputDir = (dir / "slick").getPath // place generated files in sbt's managed sources folder
+    val main = Project("main", file("."))
+    val outputDir = (main.base.getAbsoluteFile / "src/main/scala").getPath
+    s.log.info("Output directory for codegen: " + outputDir.toString)
     val pkg = "dal"
     toError(r.run("autodal.CustomizedCodeGenerator", cp.files, Array(outputDir, pkg), s.log))
     val fname = outputDir + "/" + pkg + "/Tables.scala"

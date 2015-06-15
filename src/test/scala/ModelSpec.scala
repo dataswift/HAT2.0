@@ -1,14 +1,12 @@
-import dal.Tables
-import Tables._
-import Tables.profile.simple._
-import org.joda.time.LocalDate
+import dal.Tables._
+//import Tables._
+//import Tables.profile.simple._
+import autodal.SlickPostgresDriver.simple._
 import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
-import autodal.SlickPostgresDriver.simple._
 import slick.jdbc.meta.MTable
-import scala.concurrent.Await
+
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
 
 class ModelSpec extends Specification {
   val db = Database.forConfig("devdb")
@@ -157,18 +155,6 @@ class ModelSpec extends Specification {
       recordId2 must beEqualTo(recordId + 1)
     }
 
-    "be cleaned up on completion" in {
-      //DataValue.delete
-      //DataValue.run must have size(0)
-
-      DataRecord.delete
-      DataRecord.run must have size(0)
-
-      DataField.delete
-      DataField.run must have size(0)
-
-      DataTable.filter(_.sourceName.startsWith("facebook")).delete
-      DataTable.filter(_.sourceName.startsWith("facebook")).run must have size(0)
-    }
+    t
   }
 }
