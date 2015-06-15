@@ -14,11 +14,20 @@ import sbt._
 object myBuild extends Build {
   /** main project containing main source code depending on slick and codegen project */
 
+  val akkaV = "2.3.9"
+  val sprayV = "1.3.3"
+  val specs2V = "3.3"
+
   lazy val mainProject = Project(
     id="main",
     base=file("."),
     settings = sharedSettings ++ Seq(
       libraryDependencies ++= List(
+        "io.spray"            %%  "spray-can"     % sprayV,
+        "io.spray"            %%  "spray-routing-shapeless2" % sprayV,
+        "com.typesafe.akka"   %%  "akka-actor"    % akkaV,
+        "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
+        "io.spray"      %%  "spray-testkit" % sprayV  % "test",
         "org.specs2" % "specs2-core_2.11" % "3.3",
         "org.specs2" % "specs2_2.11" % "3.3"
       ),
