@@ -29,7 +29,8 @@ object myBuild extends Build {
         "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
         "io.spray"      %%  "spray-testkit" % sprayV  % "test",
         "org.specs2" % "specs2-core_2.11" % "3.3",
-        "org.specs2" % "specs2_2.11" % "3.3"
+        "org.specs2" % "specs2_2.11" % "3.3",
+        "com.gettyimages" %% "spray-swagger" % "0.5.1"
       ),
       slick <<= slickCodeGenTask, // register manual sbt command
       // sourceGenerators in Compile <+= slickCodeGenTask, // register automatic code generation on every compile, remove for only manual use
