@@ -96,6 +96,8 @@ class ModelSpec extends Specification {
       result must have size(6)
     }
 
+  
+
     "have virtual tables created" in {
       val dataTableToTableCrossRefRows = Seq(
         new DataTableToTableCrossRef(0, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "Parent_Child"),
@@ -132,7 +134,6 @@ class ModelSpec extends Specification {
       val locationId = findTableId.filter(_.name === "location").map(_.id).run.head
 
       val dataFieldRows = Seq(
-        new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "attending_count"),
         new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "attending_count"),
         new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), coverId, "cover"),
         new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "declined_count"),
@@ -175,9 +176,45 @@ class ModelSpec extends Specification {
       DataField ++= dataFieldRows
 
       val result = DataField.run
-      result must have size(39)
+      result must have size(38)
     }
 
+     /* "have fields created and linked to the right tables" in {
+
+      val findFacebookTableId = DataTable.filter(_.sourceName === "facebook")
+      val findCoverTableId = DataTable.filter(_.sourceName === "cover")
+      
+      val facebook_recordId = DataRecord.filter(_.name === "FacebookEvent_1").map(_.id).run.head
+      
+      val findfieldId = findFacebookTableId.filter(_.name === "attending_count").map(_.id).run.head
+      val findfieldId = findCoverTableId.filter(_.name === "cover").map(_.id).run.head
+      val findfieldId = findCoverTableId.filter(_.name === "cover_id").map(_.id).run.head
+      val findfieldId = findCoverTableId.filter(_.name === "offset_x").map(_.id).run.head
+      val findfieldId = findCoverTableId.filter(_.name === "offset_y").map(_.id).run.head
+      val findfieldId = findCoverTableId.filter(_.name === "source").map(_.id).run.head
+      val findfieldId = findFacebookTableId.filter(_.name === "id").map(_.id).run.head
+      val findfieldId = findFacebookTableId.filter(_.name === "declined_count").map(_.id).run.head
+      val findfieldId = findFacebookTableId.filter(_.name === "description").map(_.id).run.head
+      
+
+
+      val dataValueRows = Seq(
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "2", facebook_recordId, fieldId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "", facebook_recordId, fieldId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "812728954390780", facebook_recordId, fieldId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "0", facebook_recordId, fieldId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "84", facebook_recordId, fieldId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "http://link.com", facebook_recordId, fieldId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "812728954390780", facebook_recordId, fieldId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "1", facebook_recordId, fieldId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "Test event for HAT", facebook_recordId, fieldId),
+      )
+      DataValue ++= dataValueRows
+
+      val result = DataValue.run
+      result must have size(9)
+    }
+    */
     "auto-increment record rows" in {
       val dataRecordRow = new DataRecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "FacebookEvent1")
       val recordId = (DataRecord returning DataRecord.map(_.id)) += dataRecordRow
@@ -186,7 +223,5 @@ class ModelSpec extends Specification {
       val recordId2 = (DataRecord returning DataRecord.map(_.id)) += dataRecordRow2
       recordId2 must beEqualTo(recordId + 1)
     }
-
-    t
   }
 }
