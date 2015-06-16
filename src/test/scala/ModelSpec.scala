@@ -96,6 +96,8 @@ class ModelSpec extends Specification {
       result must have size(6)
     }
 
+  
+
     "have virtual tables created" in {
       val dataTableToTableCrossRefRows = Seq(
         new DataTableToTableCrossRef(0, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "Parent_Child"),
@@ -211,8 +213,8 @@ class ModelSpec extends Specification {
 
       val result = DataValue.run
       result must have size(9)
-    */}
-
+    }
+    */
     "auto-increment record rows" in {
       val dataRecordRow = new DataRecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "FacebookEvent1")
       val recordId = (DataRecord returning DataRecord.map(_.id)) += dataRecordRow
@@ -221,6 +223,5 @@ class ModelSpec extends Specification {
       val recordId2 = (DataRecord returning DataRecord.map(_.id)) += dataRecordRow2
       recordId2 must beEqualTo(recordId + 1)
     }
-
   }
 }
