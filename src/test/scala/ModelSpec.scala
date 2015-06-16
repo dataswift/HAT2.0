@@ -71,32 +71,37 @@ class ModelSpec extends Specification {
       DataField.delete
       DataField.run must have size(0)
 
-      DataTable.delete
-      DataTable.run must have size(0)
-
       DataTabletotablecrossref.delete
       DataTabletotablecrossref.run must have size(0)
+
+      DataTable.delete
+      DataTable.run must have size(0)
     }
   }
 
   "Facebook data structures" should {
     "have virtual tables created" in {
-      val dataTableRows = Seq(
-        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "events", false, "facebook"),
-        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "me", false, "facebook"),
-        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", false, "facebook"),
-        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "owner", false, "facebook"),
-        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "place", false, "facebook"),
-        new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "location", false, "facebook")
-      )
 
-      DataTable ++= dataTableRows
+      val eventsTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "events", false, "facebook")
+      val meTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "me", false, "facebook")
+      val coverTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", false, "facebook")
+      val ownerTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "owner", false, "facebook")
+      val placeTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "place", false, "facebook")
+      val locationTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "location", false, "facebook")
+
+
+      val eventsId = (DataTable returning DataTable.map(_.id)) += eventsTable
+      val meId = (DataTable returning DataTable.map(_.id)) += meTable
+      val coverId = (DataTable returning DataTable.map(_.id)) += coverTable
+      val ownerId = (DataTable returning DataTable.map(_.id)) += ownerTable
+      val placeId = (DataTable returning DataTable.map(_.id)) += placeTable
+      val locationId = (DataTable returning DataTable.map(_.id)) += locationTable
 
       val dataTableToTableCrossRefRows = Seq(
-        new DataTabletotablecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", 1, 3),
-        new DataTabletotablecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", 1, 4),
-        new DataTabletotablecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", 1, 5),
-        new DataTabletotablecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", 5, 7)
+        new DataTabletotablecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", eventsId, coverId),
+        new DataTabletotablecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", eventsId, ownerId),
+        new DataTabletotablecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", eventsId, placeId),
+        new DataTabletotablecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", placeId, locationId)
       )
 
       DataTabletotablecrossref ++= dataTableToTableCrossRefRows
