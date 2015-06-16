@@ -51,8 +51,8 @@ class ModelSpec extends Specification {
       val dataRecordRow = new DataRecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test")
       val recordId = (DataRecord returning DataRecord.map(_.id)) += dataRecordRow
 
-      val dataTableToTableCrossRefRow = new DataTableToTableCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), tableID, tableID, "Parent_Child")
-      val TableToTableCrossRefId = (DataTableToTableCrossRef returning DataTableToTableCrossRef.map(_.id)) += dataTableToTableCrossRefRow
+      val dataTableToTableCrossRefRow = new DataTabletotablecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", tableId, tableId)
+      val tableToTablecrossrefId = (DataTabletotablecrossref returning DataTabletotablecrossref.map(_.id)) += dataTableToTableCrossRefRow
 
       // The ID value is actually ignored and auto-incremented
       val dataRow = new DataValueRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test", fieldId, recordId)
@@ -74,8 +74,8 @@ class ModelSpec extends Specification {
       DataTable.delete
       DataTable.run must have size(0)
 
-      DataTableToTableCrossRef.delete
-      DataTableToTableCrossRef.run must have size(0)
+      DataTabletotablecrossref.delete
+      DataTabletotablecrossref.run must have size(0)
     }
   }
 
@@ -92,36 +92,17 @@ class ModelSpec extends Specification {
 
       DataTable ++= dataTableRows
 
+      val dataTableToTableCrossRefRows = Seq(
+        new DataTabletotablecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", 1, 3),
+        new DataTabletotablecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", 1, 4),
+        new DataTabletotablecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", 1, 5),
+        new DataTabletotablecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", 5, 7)
+      )
+
+      DataTabletotablecrossref ++= dataTableToTableCrossRefRows
+
       val result = DataTable.filter(_.sourceName.startsWith("facebook")).run
       result must have size(6)
-    }
-
-  
-
-    "have virtual tables created" in {
-      val dataTableToTableCrossRefRows = Seq(
-        new DataTableToTableCrossRef(0, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "Parent_Child"),
-        new DataTableToTableCrossRef(0, LocalDateTime.now(), LocalDateTime.now(), 1, 4, "Parent_Child"),
-        new DataTableToTableCrossRef(0, LocalDateTime.now(), LocalDateTime.now(), 1, 5, "Parent_Child"),
-        new DataTableToTableCrossRef(0, LocalDateTime.now(), LocalDateTime.now(), 5, 7, "Parent_Child"),
-      )
-
-      DataTableToTableCrossRef++= dataTableToTableCrossRefRows
-
-      val result = DataTableToTableCrossRef.filter(_.sourceName.startsWith("facebook")).run
-      result must have size(4)
-    }
-
-    "have virtual tables created" in {
-      val dataRecordRows = Seq(
-        new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "FacebookEvent_1"),
-        new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "FacebookEvent_2"),
-      )
-
-      DataRecordRow++= dataRecordRows
-
-      val result = DataRecordRow.filter(_.sourceName.startsWith("facebook")).run
-      result must have size(2)
     }
 
     "have fields created and linked to the right tables" in {
