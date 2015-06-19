@@ -165,42 +165,50 @@ class ModelSpec extends Specification {
       result must have size(38)
     }
 
-     /* "have fields created and linked to the right tables" in {
 
+    "have fields created and linked to the right tables" in {
+      val dataRecordRows = Seq(
+        new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "FacebookEvent1"),
+        new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "FacebookEvent2")
+        )
+      DataRecord ++= dataRecordRows
+      
+      val result = DataRecord.run
+      result must have size(2)
+      }
+
+      "have fields created and linked to the right tables" in {
       val findFacebookTableId = DataTable.filter(_.sourceName === "facebook")
       val findCoverTableId = DataTable.filter(_.sourceName === "cover")
-      
-      val facebook_recordId = DataRecord.filter(_.name === "FacebookEvent_1").map(_.id).run.head
-      
-      val findfieldId = findFacebookTableId.filter(_.name === "attending_count").map(_.id).run.head
-      val findfieldId = findCoverTableId.filter(_.name === "cover").map(_.id).run.head
-      val findfieldId = findCoverTableId.filter(_.name === "cover_id").map(_.id).run.head
-      val findfieldId = findCoverTableId.filter(_.name === "offset_x").map(_.id).run.head
-      val findfieldId = findCoverTableId.filter(_.name === "offset_y").map(_.id).run.head
-      val findfieldId = findCoverTableId.filter(_.name === "source").map(_.id).run.head
-      val findfieldId = findFacebookTableId.filter(_.name === "id").map(_.id).run.head
-      val findfieldId = findFacebookTableId.filter(_.name === "declined_count").map(_.id).run.head
-      val findfieldId = findFacebookTableId.filter(_.name === "description").map(_.id).run.head
-      
 
-
-      val dataValueRows = Seq(
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "2", facebook_recordId, fieldId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "", facebook_recordId, fieldId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "812728954390780", facebook_recordId, fieldId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "0", facebook_recordId, fieldId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "84", facebook_recordId, fieldId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "http://link.com", facebook_recordId, fieldId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "812728954390780", facebook_recordId, fieldId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "1", facebook_recordId, fieldId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "Test event for HAT", facebook_recordId, fieldId),
+      val recordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
+      val attending_countId = DataField.filter(_.name === "attending_count").map(_.id).run.head
+      val coverId = DataField.filter(_.name === "cover").map(_.id).run.head
+      val coveridId = DataField.filter(_.name === "cover_id").map(_.id).run.head
+      val offsetxId = DataField.filter(_.name === "offset_x").map(_.id).run.head
+      val offsetyId = DataField.filter(_.name === "offset_y").map(_.id).run.head
+      val sourceId = DataField.filter(_.name === "source").map(_.id).run.head
+      val idId = DataField.filter(_.name === "id").map(_.id).run.head
+      val declinedcountId = DataField.filter(_.name === "declined_count").map(_.id).run.head
+      val descriptionId = DataField.filter(_.name === "description").map(_.id).run.head
+      
+    val dataRows = Seq(
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "2", attending_countId, recordId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "", coverId, recordId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "812728954390780", coveridId, recordId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "0", offsetxId, recordId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "84", offsetyId, recordId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "http://link.com", sourceId, recordId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "812728954390780", idId, recordId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "1", declinedcountId, recordId),
+        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "Test event for HAT", descriptionId, recordId)
       )
-      DataValue ++= dataValueRows
+      DataValue ++= dataRows
 
       val result = DataValue.run
       result must have size(9)
     }
-    */
+    
     "auto-increment record rows" in {
       val dataRecordRow = new DataRecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "FacebookEvent1")
       val recordId = (DataRecord returning DataRecord.map(_.id)) += dataRecordRow
