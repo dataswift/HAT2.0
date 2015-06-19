@@ -15,7 +15,7 @@ object Boot extends App {
   implicit val system = ActorSystem("on-spray-can")
 
   // create and start our service actor
-  val service = system.actorOf(Props[InboundDataServiceActor], "dalapi-inbound-service")
+  val service = system.actorOf(Props[ApiServiceActor], "dalapi-service")
 
   implicit val timeout = Timeout(5.seconds)
 

@@ -1,90 +1,141 @@
 package dalapi
 
-import akka.actor.Actor
-import com.gettyimages.spray.swagger.SwaggerHttpService
-import com.wordnik.swagger.annotations.{Api, ApiOperation}
-import com.wordnik.swagger.model.ApiInfo
+import javax.ws.rs.Path
+
+import com.wordnik.swagger.annotations._
+import dal.Tables._
+import autodal.SlickPostgresDriver.simple._
+import org.joda.time.LocalDateTime
 import spray.http.MediaTypes._
+import spray.json._
 import spray.routing._
+import spray.httpx.SprayJsonSupport._
 
-import scala.reflect.runtime.universe._
-
-// we don't implement our route structure directly in the service actor because
-// we want to be able to test it independently, without having to spin up an actor
-class InboundDataServiceActor extends HttpServiceActor with Actor {
-
-  // the HttpService trait defines only one abstract member, which
-  // connects the services environment to the enclosing actor or test
-  override def actorRefFactory = context
-
-  val swaggerService = new SwaggerHttpService {
-    override def apiTypes = Seq(typeOf[InboundDataService])
-    override def apiVersion = "2.0"
-    override def baseUrl = "/" // let swagger-ui determine the host and port
-    override def docsPath = "api-docs"
-    override def actorRefFactory = context
-    override def apiInfo = Some(new ApiInfo("HAT 2.0 API", "The HAT API.", "TOC Url", "Andrius Aucinas @AndriusA", "Apache V2", "http://www.apache.org/licenses/LICENSE-2.0"))
-
-    //authorizations, not used
-  }
-
-  val inboundDataService = new InboundDataService {
-    def actorRefFactory = context
-  }
-
-  val swaggerSite = new SwaggerSite {
-    def actorRefFactory = context
-  }
-
-  val routes = inboundDataService.routes ~ swaggerService.routes ~ swaggerSite.site
-
-  def receive = runRoute(routes)
-}
+import scala.annotation.meta.field
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
 // this trait defines our service behavior independently from the service actor
-@Api(value = "/", description = "Low level inbound data operations", position = 0)
+@Api(value = "/inbound", description = "Inbound Data Service", position = 0)
 trait InboundDataService extends HttpService {
 
-  val routes = home ~ data
-
-  @ApiOperation(value = "Get the system greeting",
-    notes = "Returns a hello message only",
-    httpMethod = "GET",
-    response = classOf[String],
-    produces = "text/html")
-  def home = get {
-    path("") {
-        respondWithMediaType(`text/html`) { // XML is marshalled to `text/xml` by default, so we simply override here
-          complete {
-            <html>
-              <body>
-                <h1>Hello HAT 2.0!</h1>
-              </body>
-            </html>
-          }
-        }
+  val routes = { pathPrefix("inbound") {
+      createTable ~ createField ~ createRecord ~ createValue
     }
   }
 
-  def data = get {
-    path("data") {
-        respondWithMediaType(`text/html`) {
+  val db = Database.forConfig("devdb")
+  implicit val session: Session = db.createSession()
+
+  import InboundJsonProtocol._
+
+  @Path("/table")
+  @ApiOperation(value = "table",
+    notes = "Creates a virtual table, returns table ID",
+    httpMethod = "POST",
+    response = classOf[ApiDataTable])
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(
+      name = "table",
+      value = "The new Virtual Data Table to be added",
+      required = true,
+      dataType = "ApiDataTable",
+      paramType = "body")
+  ))
+  def createTable = path("table") {
+    post {
+      respondWithMediaType(`application/json`) {
+        entity(as[ApiDataTable]) { table =>
+          val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, false, table.source)
+          val tableId = (DataTable returning DataTable.map(_.id)) += newTable
           complete {
-            <html>
-              <body>
-                <h1>Here be dragons</h1>
-              </body>
-            </html>
+            table.copy(id = Some(tableId))
           }
         }
-
+      }
     }
   }
-}
 
-trait SwaggerSite extends HttpService {
-  val site =
-    pathPrefix("api-docs-ui") { getFromResource("swagger-ui/index.html") } ~
-      getFromResourceDirectory("swagger-ui")
+  @Path("/field")
+  @ApiOperation(value = "field",
+    notes = "Creates a field in a virtual data table",
+    httpMethod = "POST",
+    response = classOf[ApiDataField])
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(
+      name = "field",
+      value = "The new Data Field to be added",
+      required = true,
+      dataType = "ApiDataField",
+      paramType = "body")
+  ))
+  def createField = path("field") {
+    post {
+      respondWithMediaType(`application/json`) {
+        entity(as[ApiDataField]) { field =>
+          val newField = new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.tableId, field.name)
+          val fieldId = (DataField returning DataField.map(_.id)) += newField
+          complete {
+            field.copy(id = Some(fieldId))
+          }
+        }
+      }
+    }
+  }
+
+  @Path("/record")
+  @ApiOperation(value = "data record",
+    notes = "Creates a new data record",
+    httpMethod = "POST",
+    response = classOf[ApiDataRecord])
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(
+      name = "field",
+      value = "The new Data Field to be added",
+      required = true,
+      dataType = "ApiDataRecord",
+      paramType = "body")
+  ))
+  def createRecord = path("record") {
+    post {
+      respondWithMediaType(`application/json`) {
+        entity(as[ApiDataRecord]) { record =>
+          val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), record.name)
+          val recordId = (DataRecord returning DataRecord.map(_.id)) += newRecord
+          complete{
+            record.copy(id = Some(recordId))
+          }
+        }
+      }
+    }
+  }
+
+  @Path("/value")
+  @ApiOperation(value = "value",
+    notes = "Stores a single new value",
+    httpMethod = "POST",
+    response = classOf[ApiDataValue])
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(
+      name = "value",
+      value = "The single value to be stored",
+      required = true,
+      dataType = "ApiDataValue",
+      paramType = "body")
+  ))
+  def createValue = path("value") {
+    post {
+      respondWithMediaType(`application/json`) {
+        entity(as[ApiDataValue]) { value =>
+          val newValue = new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.fieldId, value.recordId)
+          DataValue += newValue
+          complete{
+            value
+          }
+        }
+      }
+    }
+  }
+
+
 }
