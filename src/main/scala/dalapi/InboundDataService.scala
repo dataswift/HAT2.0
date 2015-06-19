@@ -2,6 +2,7 @@ package dalapi
 
 import javax.ws.rs.Path
 
+import akka.actor.ActorLogging
 import com.wordnik.swagger.annotations._
 import dal.Tables._
 import autodal.SlickPostgresDriver.simple._
@@ -10,6 +11,7 @@ import spray.http.MediaTypes._
 import spray.json._
 import spray.routing._
 import spray.httpx.SprayJsonSupport._
+import spray.util.LoggingContext
 
 import scala.annotation.meta.field
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,7 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 trait InboundDataService extends HttpService {
 
   val routes = { pathPrefix("inbound") {
-      createTable ~ createField ~ createRecord ~ createValue
+      createTable ~ createField ~ createRecord ~ createValue ~ storeValueList
     }
   }
 
@@ -131,6 +133,36 @@ trait InboundDataService extends HttpService {
           DataValue += newValue
           complete{
             value
+          }
+        }
+      }
+    }
+  }
+
+  @Path("/valueList")
+  @ApiOperation(value = "Add a list of values at once",
+    notes = "Stores a list of new values",
+    httpMethod = "POST",
+    response = classOf[ApiDataValue])
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(
+      name = "values",
+      value = "The list of values to be inserted",
+      required = true,
+      dataType = "Seq[ApiDataValue]",   // FIXME: SwaggerUI does not recognise Sequence of types... Array and List are not parsed correctly...
+      paramType = "body")
+  ))
+  def storeValueList = path("valueList") {
+    post {
+      respondWithMediaType(`application/json`) {
+        entity(as[Seq[ApiDataValue]]) { values =>
+          val dataValues = values.map { value =>
+            DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.fieldId, value.recordId)
+          }
+
+          DataValue ++= dataValues
+          complete{
+            values.head
           }
         }
       }

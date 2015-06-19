@@ -42,7 +42,6 @@ case class ApiDataValue(
                          @(ApiModelProperty @field)(value = "record id the value is part of")
                          recordId: Int)
 
-
 object InboundJsonProtocol extends DefaultJsonProtocol with NullOptions {
   implicit val virtualTableFormat = jsonFormat3(ApiDataTable)
   implicit val dataFieldformat = jsonFormat3(ApiDataField)
