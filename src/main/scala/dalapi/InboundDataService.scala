@@ -24,7 +24,7 @@ import dalapi.models._
 trait InboundDataService extends HttpService {
 
   val routes = { pathPrefix("inbound") {
-      createTable ~ createField ~ createRecord ~ createValue ~ storeValueList
+      createTable ~ createField ~ createRecord //~ createValue ~ storeValueList
     }
   }
 
@@ -141,35 +141,35 @@ trait InboundDataService extends HttpService {
     }
   }
 
-  @Path("/valueList")
-  @ApiOperation(value = "Add a list of values at once",
-    notes = "Stores a list of new values",
-    httpMethod = "POST",
-    response = classOf[ApiDataValue])
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(
-      name = "values",
-      value = "The list of values to be inserted",
-      required = true,
-      dataType = "Seq[ApiDataValue]",   // FIXME: SwaggerUI does not recognise Sequence of types... Array and List are not parsed correctly...
-      paramType = "body")
-  ))
-  def storeValueList = path("valueList") {
-    post {
-      respondWithMediaType(`application/json`) {
-        entity(as[Seq[ApiDataValue]]) { values =>
-          val dataValues = values.map { value =>
-            DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.fieldId, value.recordId)
-          }
-
-          DataValue ++= dataValues
-          complete{
-            values.head
-          }
-        }
-      }
-    }
-  }
+//  @Path("/valueList")
+//  @ApiOperation(value = "Add a list of values at once",
+//    notes = "Stores a list of new values",
+//    httpMethod = "POST",
+//    response = classOf[ApiDataValue])
+//  @ApiImplicitParams(Array(
+//    new ApiImplicitParam(
+//      name = "values",
+//      value = "The list of values to be inserted",
+//      required = true,
+//      dataType = "Seq[ApiDataValue]",   // FIXME: SwaggerUI does not recognise Sequence of types... Array and List are not parsed correctly...
+//      paramType = "body")
+//  ))
+//  def storeValueList = path("valueList") {
+//    post {
+//      respondWithMediaType(`application/json`) {
+//        entity(as[Seq[ApiDataValue]]) { values =>
+//          val dataValues = values.map { value =>
+//            DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.fieldId, value.recordId)
+//          }
+//
+//          DataValue ++= dataValues
+//          complete{
+//            values.head
+//          }
+//        }
+//      }
+//    }
+//  }
 
 
 }

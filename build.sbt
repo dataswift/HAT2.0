@@ -9,4 +9,4 @@ version := "2.2-SNAPSHOT"
 
 scalaVersion := "2.11.6"
 
-logLevel := Level.Debug
+//logLevel := Level.Debug
