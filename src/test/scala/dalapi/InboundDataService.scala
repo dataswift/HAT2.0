@@ -4,9 +4,24 @@ import org.specs2.mutable.Specification
 import spray.testkit.Specs2RouteTest
 import spray.http._
 import StatusCodes._
+import spray.http.MediaTypes._
 
 class InboundDataServiceSpec extends Specification with Specs2RouteTest with InboundDataService {
   def actorRefFactory = system
+
+  val home = get {
+    path("") {
+      respondWithMediaType(`text/html`) { // XML is marshalled to `text/xml` by default, so we simply override here
+        complete {
+          <html>
+            <body>
+              <h1>Hello HAT 2.0!</h1>
+            </body>
+          </html>
+        }
+      }
+    }
+  }
 
   "InboundDataService" should {
 

@@ -33,9 +33,9 @@ object myBuild extends Build {
         "com.gettyimages" %% "spray-swagger" % "0.5.1",
         "io.spray" %%  "spray-json" % "1.3.2"
       ),
-      slick <<= slickCodeGenTask, // register manual sbt command
+      slick <<= slickCodeGenTask // register manual sbt command
       // sourceGenerators in Compile <+= slickCodeGenTask, // register automatic code generation on every compile, remove for only manual use
-      cleanFiles <+= baseDirectory { base => base / "src/main/scala/dal/" }
+//      cleanFiles <+= baseDirectory { base => base / "src/main/scala/dal/" }
 //      watchSources <++= baseDirectory map { path => ((path / "src/main/scala/dalapi/") ** "*.scala").get }
     )
   ).dependsOn( codegenProject )

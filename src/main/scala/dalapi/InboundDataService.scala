@@ -6,6 +6,7 @@ import akka.actor.ActorLogging
 import com.wordnik.swagger.annotations._
 import dal.Tables._
 import autodal.SlickPostgresDriver.simple._
+import dalapi.models.{ApiDataTable, ApiDataRecord, ApiDataField, ApiDataValue}
 import org.joda.time.LocalDateTime
 import spray.http.MediaTypes._
 import spray.json._
@@ -15,6 +16,7 @@ import spray.util.LoggingContext
 
 import scala.annotation.meta.field
 import scala.concurrent.ExecutionContext.Implicits.global
+import dalapi.models._
 
 
 // this trait defines our service behavior independently from the service actor
