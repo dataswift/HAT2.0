@@ -1,4 +1,6 @@
 import dal.Tables._
+import org.specs2.specification.BeforeAfterAll
+
 //import Tables._
 //import Tables.profile.simple._
 import autodal.SlickPostgresDriver.simple._
@@ -8,9 +10,21 @@ import slick.jdbc.meta.MTable
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ModelSpecPeople extends Specification {
+class ModelSpecPeople extends Specification with BeforeAfterAll {
   val db = Database.forConfig("devdb")
-  implicit val session: Session = db.createSession()
+  implicit var session: Session = _
+
+  def beforeAll = {
+    session = db.createSession()
+    print("Session created")
+  }
+
+  def afterAll = {
+    session.close()
+    print("Session closed")
+  }
+
+  sequential
 
   "Core Tables" should {
     "be created" in {
@@ -35,8 +49,6 @@ class ModelSpecPeople extends Specification {
       tables must containAllOf[String](requiredTables).await
     }
   }
-
-  sequential
 
   "People tables" should {
     "be empty" in {

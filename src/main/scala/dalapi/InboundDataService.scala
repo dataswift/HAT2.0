@@ -13,6 +13,7 @@ import spray.json._
 import spray.routing._
 import spray.httpx.SprayJsonSupport._
 import spray.util.LoggingContext
+import spray.http.StatusCodes._
 
 import scala.annotation.meta.field
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,10 +21,10 @@ import dalapi.models._
 
 
 // this trait defines our service behavior independently from the service actor
-@Api(value = "/inbound", description = "Inbound Data Service", position = 0)
+@Api(value = "/inbound/data", description = "Inbound Data Service", position = 0)
 trait InboundDataService extends HttpService {
 
-  val routes = { pathPrefix("inbound") {
+  val routes = { pathPrefix("inbound" / "data") {
       createTable ~ createField ~ createRecord //~ createValue ~ storeValueList
     }
   }
@@ -34,10 +35,9 @@ trait InboundDataService extends HttpService {
   import InboundJsonProtocol._
 
   @Path("/table")
-  @ApiOperation(value = "table",
+  @ApiOperation(value = "Create new table",
     notes = "Creates a virtual table, returns table ID",
-    httpMethod = "POST",
-    response = classOf[ApiDataTable])
+    httpMethod = "POST")
   @ApiImplicitParams(Array(
     new ApiImplicitParam(
       name = "table",
@@ -46,22 +46,52 @@ trait InboundDataService extends HttpService {
       dataType = "ApiDataTable",
       paramType = "body")
   ))
+//  @ApiResponses(Array(
+//    new ApiResponse(code = 201, message = "Table has been created", response = classOf[ApiDataTable])
+//  ))
   def createTable = path("table") {
     post {
       respondWithMediaType(`application/json`) {
         entity(as[ApiDataTable]) { table =>
           val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, false, table.source)
           val tableId = (DataTable returning DataTable.map(_.id)) += newTable
-          complete {
+          complete(Created, {
             table.copy(id = Some(tableId))
-          }
+          })
         }
       }
     }
   }
 
+//  @Path("/table/:id/addTable")
+//  @ApiOperation(value = "Add a sub-table within a table",
+//    notes = "Crossreferences two virtual tables in a parent-child relationship",
+//    httpMethod = "POST",
+//    response = classOf[ApiDataTable])
+//  @ApiImplicitParams(Array(
+//    new ApiImplicitParam(
+//      name = "table",
+//      value = "The new Virtual Data Table to be added",
+//      required = true,
+//      dataType = "ApiDataTable",
+//      paramType = "body")
+//  ))
+//  def addTableToTable = path("table") {
+//    post {
+//      respondWithMediaType(`application/json`) {
+//        entity(as[ApiDataTable]) { table =>
+//          val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, false, table.source)
+//          val tableId = (DataTable returning DataTable.map(_.id)) += newTable
+//          complete {
+//            table.copy(id = Some(tableId))
+//          }
+//        }
+//      }
+//    }
+//  }
+
   @Path("/field")
-  @ApiOperation(value = "field",
+  @ApiOperation(value = "Create new field in a table",
     notes = "Creates a field in a virtual data table",
     httpMethod = "POST",
     response = classOf[ApiDataField])
@@ -88,14 +118,14 @@ trait InboundDataService extends HttpService {
   }
 
   @Path("/record")
-  @ApiOperation(value = "data record",
+  @ApiOperation(value = "Add new data record",
     notes = "Creates a new data record",
     httpMethod = "POST",
     response = classOf[ApiDataRecord])
   @ApiImplicitParams(Array(
     new ApiImplicitParam(
       name = "field",
-      value = "The new Data Field to be added",
+      value = "The new Data record to be created",
       required = true,
       dataType = "ApiDataRecord",
       paramType = "body")
@@ -115,8 +145,8 @@ trait InboundDataService extends HttpService {
   }
 
   @Path("/value")
-  @ApiOperation(value = "value",
-    notes = "Stores a single new value",
+  @ApiOperation(value = "Store a data value",
+    notes = "Stores a single new value, within one field in a single (virtual) table",
     httpMethod = "POST",
     response = classOf[ApiDataValue])
   @ApiImplicitParams(Array(
@@ -141,6 +171,8 @@ trait InboundDataService extends HttpService {
     }
   }
 
+
+
 //  @Path("/valueList")
 //  @ApiOperation(value = "Add a list of values at once",
 //    notes = "Stores a list of new values",
@@ -151,7 +183,8 @@ trait InboundDataService extends HttpService {
 //      name = "values",
 //      value = "The list of values to be inserted",
 //      required = true,
-//      dataType = "Seq[ApiDataValue]",   // FIXME: SwaggerUI does not recognise Sequence of types... Array and List are not parsed correctly...
+//      dataType = "Array",   // FIXME: SwaggerUI does not recognise Sequence of types... Array and List are not parsed correctly...
+////      items = "ApiDataValue",
 //      paramType = "body")
 //  ))
 //  def storeValueList = path("valueList") {

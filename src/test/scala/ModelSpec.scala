@@ -1,4 +1,6 @@
 import dal.Tables._
+import org.specs2.specification.BeforeAfterAll
+
 //import Tables._
 //import Tables.profile.simple._
 import autodal.SlickPostgresDriver.simple._
@@ -8,9 +10,21 @@ import slick.jdbc.meta.MTable
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ModelSpec extends Specification {
+class ModelSpec extends Specification with BeforeAfterAll {
   val db = Database.forConfig("devdb")
-  implicit val session: Session = db.createSession()
+  implicit var session: Session = _
+
+  def beforeAll = {
+    session = db.createSession()
+    print("Session created")
+  }
+
+  def afterAll = {
+    session.close()
+    print("Session closed")
+  }
+
+  sequential
 
   "Core Tables" should {
     "be created" in {
@@ -33,8 +47,6 @@ class ModelSpec extends Specification {
       tables must containAllOf[String](requiredTables).await
     }
   }
-
-  sequential
 
   "Data tables" should {
     "be empty" in {
@@ -172,7 +184,7 @@ class ModelSpec extends Specification {
         new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "FacebookEvent2")
         )
       DataRecord ++= dataRecordRows
-      
+
       val result = DataRecord.run
       result must have size(2)
       }
@@ -191,7 +203,7 @@ class ModelSpec extends Specification {
       val idId = DataField.filter(_.name === "id").map(_.id).run.head
       val declinedcountId = DataField.filter(_.name === "declined_count").map(_.id).run.head
       val descriptionId = DataField.filter(_.name === "description").map(_.id).run.head
-      
+
     val dataRows = Seq(
         new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "2", attending_countId, recordId),
         new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "", coverId, recordId),
@@ -208,7 +220,7 @@ class ModelSpec extends Specification {
       val result = DataValue.run
       result must have size(9)
     }
-    
+
     "auto-increment record rows" in {
       val dataRecordRow = new DataRecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "FacebookEvent1")
       val recordId = (DataRecord returning DataRecord.map(_.id)) += dataRecordRow

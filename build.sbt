@@ -9,4 +9,6 @@ version := "2.2-SNAPSHOT"
 
 scalaVersion := "2.11.6"
 
+parallelExecution in Test := false
+
 //logLevel := Level.Debug
