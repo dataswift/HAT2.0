@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{GetResult => GR}
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema = Array(DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataValue.schema, DataValuefieldcrossreference.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationSystemtypecrossref.schema, OrganisationOrganisationtoorganisationcrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertytypecrossref.schema, SystemPropertyuomcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema).reduceLeft(_ ++ _)
+  lazy val schema = Array(DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataValue.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationSystemtypecrossref.schema, OrganisationOrganisationtoorganisationcrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertytypecrossref.schema, SystemPropertyuomcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -254,43 +254,6 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table DataValue */
   lazy val DataValue = new TableQuery(tag => new DataValue(tag))
-
-  /** Entity class storing rows of table DataValuefieldcrossreference
-   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
-   *  @param dateCreated Database column date_created SqlType(timestamp)
-   *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param valueId Database column value_id SqlType(int4)
-   *  @param fieldId Database column field_id SqlType(int4) */
-  case class DataValuefieldcrossreferenceRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, valueId: Int, fieldId: Int)
-  /** GetResult implicit for fetching DataValuefieldcrossreferenceRow objects using plain SQL queries */
-  implicit def GetResultDataValuefieldcrossreferenceRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[DataValuefieldcrossreferenceRow] = GR{
-    prs => import prs._
-    DataValuefieldcrossreferenceRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int]))
-  }
-  /** Table description of table data_valuefieldcrossreference. Objects of this class serve as prototypes for rows in queries. */
-  class DataValuefieldcrossreference(_tableTag: Tag) extends Table[DataValuefieldcrossreferenceRow](_tableTag, "data_valuefieldcrossreference") {
-    def * = (id, dateCreated, lastUpdated, valueId, fieldId) <> (DataValuefieldcrossreferenceRow.tupled, DataValuefieldcrossreferenceRow.unapply)
-    /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(valueId), Rep.Some(fieldId)).shaped.<>({r=>import r._; _1.map(_=> DataValuefieldcrossreferenceRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
-
-    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
-    /** Database column date_created SqlType(timestamp) */
-    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
-    /** Database column last_updated SqlType(timestamp) */
-    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column value_id SqlType(int4) */
-    val valueId: Rep[Int] = column[Int]("value_id")
-    /** Database column field_id SqlType(int4) */
-    val fieldId: Rep[Int] = column[Int]("field_id")
-
-    /** Foreign key referencing DataField (database name data_value_field_datacrossreference_fk) */
-    lazy val dataFieldFk = foreignKey("data_value_field_datacrossreference_fk", fieldId, DataField)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing DataValue (database name data_datacrossreference_fk) */
-    lazy val dataValueFk = foreignKey("data_datacrossreference_fk", valueId, DataValue)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-  }
-  /** Collection-like TableQuery object for table DataValuefieldcrossreference */
-  lazy val DataValuefieldcrossreference = new TableQuery(tag => new DataValuefieldcrossreference(tag))
 
   /** Entity class storing rows of table EventsEvent
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
@@ -1194,23 +1157,26 @@ trait Tables {
 
   /** Entity class storing rows of table PeoplePerson
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
+   *  @param name Database column name SqlType(varchar)
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param personId Database column person_id SqlType(varchar), Length(36,true) */
-  case class PeoplePersonRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, personId: String)
+  case class PeoplePersonRow(id: Int, name: String, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, personId: String)
   /** GetResult implicit for fetching PeoplePersonRow objects using plain SQL queries */
-  implicit def GetResultPeoplePersonRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[PeoplePersonRow] = GR{
+  implicit def GetResultPeoplePersonRow(implicit e0: GR[Int], e1: GR[String], e2: GR[org.joda.time.LocalDateTime]): GR[PeoplePersonRow] = GR{
     prs => import prs._
-    PeoplePersonRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String]))
+    PeoplePersonRow.tupled((<<[Int], <<[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String]))
   }
   /** Table description of table people_person. Objects of this class serve as prototypes for rows in queries. */
   class PeoplePerson(_tableTag: Tag) extends Table[PeoplePersonRow](_tableTag, "people_person") {
-    def * = (id, dateCreated, lastUpdated, personId) <> (PeoplePersonRow.tupled, PeoplePersonRow.unapply)
+    def * = (id, name, dateCreated, lastUpdated, personId) <> (PeoplePersonRow.tupled, PeoplePersonRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(personId)).shaped.<>({r=>import r._; _1.map(_=> PeoplePersonRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(name), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(personId)).shaped.<>({r=>import r._; _1.map(_=> PeoplePersonRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
+    /** Database column name SqlType(varchar) */
+    val name: Rep[String] = column[String]("name")
     /** Database column date_created SqlType(timestamp) */
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
@@ -1755,27 +1721,27 @@ trait Tables {
 
   /** Entity class storing rows of table SystemUnitofmeasurement
    *  @param id Database column id SqlType(int4), PrimaryKey
-   *  @param dateCreated Database column date_created SqlType(timestamp), Default(None)
+   *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param name Database column name SqlType(varchar), Length(100,true)
    *  @param description Database column description SqlType(text), Default(None)
    *  @param symbol Database column symbol SqlType(varchar), Length(16,true), Default(None) */
-  case class SystemUnitofmeasurementRow(id: Int, dateCreated: Option[org.joda.time.LocalDateTime] = None, lastUpdated: org.joda.time.LocalDateTime, name: String, description: Option[String] = None, symbol: Option[String] = None)
+  case class SystemUnitofmeasurementRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, description: Option[String] = None, symbol: Option[String] = None)
   /** GetResult implicit for fetching SystemUnitofmeasurementRow objects using plain SQL queries */
-  implicit def GetResultSystemUnitofmeasurementRow(implicit e0: GR[Int], e1: GR[Option[org.joda.time.LocalDateTime]], e2: GR[org.joda.time.LocalDateTime], e3: GR[String], e4: GR[Option[String]]): GR[SystemUnitofmeasurementRow] = GR{
+  implicit def GetResultSystemUnitofmeasurementRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Option[String]]): GR[SystemUnitofmeasurementRow] = GR{
     prs => import prs._
-    SystemUnitofmeasurementRow.tupled((<<[Int], <<?[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<?[String], <<?[String]))
+    SystemUnitofmeasurementRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<?[String], <<?[String]))
   }
   /** Table description of table system_unitofmeasurement. Objects of this class serve as prototypes for rows in queries. */
   class SystemUnitofmeasurement(_tableTag: Tag) extends Table[SystemUnitofmeasurementRow](_tableTag, "system_unitofmeasurement") {
     def * = (id, dateCreated, lastUpdated, name, description, symbol) <> (SystemUnitofmeasurementRow.tupled, SystemUnitofmeasurementRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), dateCreated, Rep.Some(lastUpdated), Rep.Some(name), description, symbol).shaped.<>({r=>import r._; _1.map(_=> SystemUnitofmeasurementRow.tupled((_1.get, _2, _3.get, _4.get, _5, _6)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), description, symbol).shaped.<>({r=>import r._; _1.map(_=> SystemUnitofmeasurementRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(int4), PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.PrimaryKey)
-    /** Database column date_created SqlType(timestamp), Default(None) */
-    val dateCreated: Rep[Option[org.joda.time.LocalDateTime]] = column[Option[org.joda.time.LocalDateTime]]("date_created", O.Default(None))
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
     /** Database column name SqlType(varchar), Length(100,true) */
