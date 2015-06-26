@@ -73,6 +73,9 @@ class ModelSpecPeople extends Specification with BeforeAfterAll {
       val PeoplesystempropertydynamiccrossrefRow = new PeopleSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 1, relationshiptype, true)
       val PeoplesystempropertydynamiccrossrefId = (PeopleSystempropertydynamiccrossref returning PeopleSystempropertydynamiccrossref.map(_.id)) +=  PeoplesystempropertydynamiccrossrefRow
 
+      val PeoplePersontopersonrelationshiptypeRow = new PeopleSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 1, relationshiptype, true)
+      val PeoplePersontopersonrelationshiptypeID = 
+
       PeoplePerson += PeoplePersonRow
 
       val result = PeoplePerson.run
@@ -124,7 +127,7 @@ class ModelSpecPeople extends Specification with BeforeAfterAll {
       PeopleSystempropertystaticcrossref ++= PeoplesystempropertystaticcrossrefRows
 
       val result = PeopleSystempropertystaticcrossref.run
-      result must have size(1)
+      result must have size(1)      
     }
   }
 }
