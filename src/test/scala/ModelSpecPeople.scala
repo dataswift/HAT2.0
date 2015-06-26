@@ -45,7 +45,7 @@ class ModelSpecPeople extends Specification {
     }
     "accept data" in {
       
-      val PeoplePersonRow = new PeoplePersonRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test")
+      val PeoplePersonRow = new PeoplePersonRow(1, "Martin", LocalDateTime.now(), LocalDateTime.now(), "Abc-123-def-456")
       val PersonId = (PeoplePerson returning PeoplePerson.map(_.id)) += PeoplePersonRow
 
       val relationshiptype = Some("Relationship description")
@@ -88,7 +88,7 @@ class ModelSpecPeople extends Specification {
       val localdatetime = Some(LocalDateTime.now())
       
       val PeoplePersonRows = Seq(
-        new PeoplePersonRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin")
+        new PeoplePersonRow(1, "Martin", LocalDateTime.now(), LocalDateTime.now(), "Abc-123-def-456-ghj-789")
         )
 
       PeoplePerson ++= PeoplePersonRows
