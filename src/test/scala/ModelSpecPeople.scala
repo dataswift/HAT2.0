@@ -50,7 +50,7 @@ class ModelSpecPeople extends Specification {
 
       val relationshiptype = Some("Relationship description")
 
-      val PeoplePersontopersoncrossrefRow = new PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 1, relationshiptype)
+      val PeoplePersontopersoncrossrefRow = new PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 1, 1)
       val PeoplePersontopersoncrossrefId = (PeoplePersontopersoncrossref returning PeoplePersontopersoncrossref.map(_.id)) += PeoplePersontopersoncrossrefRow
 
       val description = Some("An example SystemUnitofmeasurement")
@@ -88,7 +88,7 @@ class ModelSpecPeople extends Specification {
       val localdatetime = Some(LocalDateTime.now())
       
       val PeoplePersonRows = Seq(
-        new PeoplePersonRow(1, LocalDateTime.now(), LocalDateTime.now(), "WMG, University of Warwick")
+        new PeoplePersonRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin")
         )
 
       PeoplePerson ++= PeoplePersonRows
@@ -100,7 +100,7 @@ class ModelSpecPeople extends Specification {
     "have Peoplesystempropertystaticcrossref created" in {
       val relationshipdescription = Some("Property Cross Reference for a Facebook Cover")
 
-      val findPersonId = PeoplePerson.filter(_.name === "Cover").map(_.id).run.head
+      val findPersonId = PeoplePerson.filter(_.name === "Martin").map(_.id).run.head
       val findpropertyId = SystemProperty.filter(_.name === "cover").map(_.id).run.head
       val findfieldId = DataField.filter(_.name === "cover").map(_.id).run.head
       val findrecordId = DataRecord.filter(_.name === "cover").map(_.id).run.head

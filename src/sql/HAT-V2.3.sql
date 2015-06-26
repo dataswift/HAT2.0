@@ -193,20 +193,6 @@ CREATE TABLE public.data_value (
 
 ALTER SEQUENCE public.data_value_id_seq OWNED BY public.data_value.id;
 
-CREATE SEQUENCE public.data_valuefieldcrossreference_id_seq;
-
-CREATE TABLE public.data_valuefieldcrossreference (
-                id INTEGER NOT NULL DEFAULT nextval('public.data_valuefieldcrossreference_id_seq'),
-                date_created TIMESTAMP NOT NULL,
-                last_updated TIMESTAMP NOT NULL,
-                value_id INTEGER NOT NULL,
-                field_id INTEGER NOT NULL,
-                CONSTRAINT data_valuefieldcrossreference_pk PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.data_valuefieldcrossreference_id_seq OWNED BY public.data_valuefieldcrossreference.id;
-
 CREATE SEQUENCE public.people_persontopersonrelationshiptype_id_seq;
 
 CREATE TABLE public.people_persontopersonrelationshiptype (
@@ -225,6 +211,7 @@ CREATE SEQUENCE public.people_person_id_seq;
 
 CREATE TABLE public.people_person (
                 id INTEGER NOT NULL DEFAULT nextval('public.people_person_id_seq'),
+                name VARCHAR NOT NULL,
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 person_id VARCHAR(36) NOT NULL,
@@ -591,7 +578,7 @@ CREATE INDEX things_thingpersoncrossref_thing_id
 
 CREATE TABLE public.system_unitofmeasurement (
                 id INTEGER NOT NULL,
-                date_created TIMESTAMP,
+                date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR(100) NOT NULL,
                 description TEXT,
@@ -1172,13 +1159,6 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
-ALTER TABLE public.data_valuefieldcrossreference ADD CONSTRAINT data_value_field_datacrossreference_fk
-FOREIGN KEY (field_id)
-REFERENCES public.data_field (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
 ALTER TABLE public.things_systempropertydynamiccrossref ADD CONSTRAINT data_field_things_systempropertydynamiccrossref_fk
 FOREIGN KEY (field_id)
 REFERENCES public.data_field (id)
@@ -1252,13 +1232,6 @@ NOT DEFERRABLE;
 ALTER TABLE public.events_systempropertystaticcrossref ADD CONSTRAINT data_field_events_systempropertystaticcrossref_fk
 FOREIGN KEY (field_id)
 REFERENCES public.data_field (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.data_valuefieldcrossreference ADD CONSTRAINT data_datacrossreference_fk
-FOREIGN KEY (value_id)
-REFERENCES public.data_value (id)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
