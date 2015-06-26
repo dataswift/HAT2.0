@@ -53,9 +53,8 @@ class ModelSpecProperties extends Specification {
 
       val symbol = Some("Example")
       val description = Some("An example SystemUnitofmeasurement")
-      val localdatetime = Some(LocalDateTime.now())
 
-      val systemUnitofmeasurementRow = new SystemUnitofmeasurementRow(1, localdatetime, LocalDateTime.now(), "Example", description, symbol)
+      val systemUnitofmeasurementRow = new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "Example", description, symbol)
       val unitofmeasurementId = (SystemUnitofmeasurement returning SystemUnitofmeasurement.map(_.id)) += systemUnitofmeasurementRow
 
       val systemPropertyRow = new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "test", "test")
@@ -87,9 +86,9 @@ class ModelSpecProperties extends Specification {
     "have fields created and linked to the right tables" in {
       val symbol = Some("Example")
       val description = Some("An example SystemUnitofmeasurement")
-      val localdatetime = Some(LocalDateTime.now())
+
       val systemUnitofmeasurementRows = Seq(
-        new SystemUnitofmeasurementRow(1, localdatetime, LocalDateTime.now(), "Example", description, symbol)
+        new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "Example", description, symbol)
         )
 
       SystemUnitofmeasurement ++= systemUnitofmeasurementRows
