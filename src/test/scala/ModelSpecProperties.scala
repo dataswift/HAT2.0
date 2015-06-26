@@ -58,7 +58,7 @@ class ModelSpecProperties extends Specification {
       val systemUnitofmeasurementRow = new SystemUnitofmeasurementRow(1, localdatetime, LocalDateTime.now(), "Example", description, symbol)
       val unitofmeasurementId = (SystemUnitofmeasurement returning SystemUnitofmeasurement.map(_.id)) += systemUnitofmeasurementRow
 
-      val systemPropertyRow = new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "test", "test", unitofmeasurementId)
+      val systemPropertyRow = new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "test", "test")
       val propertyId = (SystemProperty returning SystemProperty.map(_.id)) += systemPropertyRow
 
       SystemProperty += systemPropertyRow
@@ -102,10 +102,10 @@ class ModelSpecProperties extends Specification {
 
       val unitofmeasurementId = SystemUnitofmeasurement.filter(_.name === "Example")
 
-      val attendingcount = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "AttendingCount", "Number of people attending an event", 1)
-      val cover = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Cover", "A facebook cover image", 1)
-      val timezone = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Timezone", "A timezone", 1)
-      val placename = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Place Name", "A facebook Place Name", 1)
+      val attendingcount = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "AttendingCount", "Number of people attending an event")
+      val cover = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Cover", "A facebook cover image")
+      val timezone = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Timezone", "A timezone")
+      val placename = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Place Name", "A facebook Place Name")
 
       val AttendingCountId = (SystemProperty returning SystemProperty.map(_.id)) += attendingcount
       val CoverId = (SystemProperty returning SystemProperty.map(_.id)) += cover
@@ -113,10 +113,10 @@ class ModelSpecProperties extends Specification {
       val PlaceNameId = (SystemProperty returning SystemProperty.map(_.id)) += placename
 
       val systemPropertyRows = Seq(
-        new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "attendingcount", "test", 1),
-        new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", "test", 1),
-        new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "timezone", "test", 1),
-        new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "placename", "test", 1)
+        new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "attendingcount", "test"),
+        new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", "test"),
+        new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "timezone", "test"),
+        new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "placename", "test")
       )
       
       SystemProperty ++= systemPropertyRows
