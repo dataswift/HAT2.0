@@ -5,7 +5,7 @@ import javax.ws.rs.Path
 import akka.actor.ActorLogging
 import com.wordnik.swagger.annotations._
 import dal.Tables._
-import autodal.SlickPostgresDriver.simple._
+import dal.SlickPostgresDriver.simple._
 import dalapi.models.{ApiDataTable, ApiDataRecord, ApiDataField, ApiDataValue}
 import org.joda.time.LocalDateTime
 import spray.http.MediaTypes._

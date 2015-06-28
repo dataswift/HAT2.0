@@ -2,11 +2,11 @@ package dal
 // AUTO-GENERATED Slick data model
 /** Stand-alone Slick data model for immediate use */
 object Tables extends {
-  val profile = autodal.SlickPostgresDriver
+  val profile = dal.SlickPostgresDriver
 } with Tables
 /** Slick data model trait for extension, choice of backend or usage in the cake pattern. (Make sure to initialize this late.) */
 trait Tables {
-  val profile: autodal.SlickPostgresDriver
+  val profile: dal.SlickPostgresDriver
   import profile.simple._
   import slick.model.ForeignKeyAction
   // NOTE: GetResult mappers for plain SQL are only generated for tables where Slick knows how to map the types of all columns.

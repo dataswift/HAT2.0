@@ -1,15 +1,15 @@
-package autodal
+package dal
 
 //import autodal.Config._
 import slick.codegen.SourceCodeGenerator
-import slick.driver.H2Driver
 import slick.driver.PostgresDriver
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import slick.driver.JdbcDriver.api._
 
-import SlickPostgresDriver.simple._
+//import SlickPostgresDriver.simple._
 
 /**
  *  This customizes the Slick code generator.
@@ -21,7 +21,7 @@ object CustomizedCodeGenerator{
     println( "Running Customized Generator" )
     codegenFuture.onSuccess { case codegen =>
       val writefileFuture = codegen.writeToFile(
-        "autodal.SlickPostgresDriver",
+        "dal.SlickPostgresDriver",
         args(0),
         args(1),
         "Tables",

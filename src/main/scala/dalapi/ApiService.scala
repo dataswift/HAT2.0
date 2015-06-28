@@ -5,7 +5,7 @@ import com.gettyimages.spray.swagger.SwaggerHttpService
 import com.wordnik.swagger.model.ApiInfo
 import spray.routing.{HttpService, HttpServiceActor}
 import scala.reflect.runtime.universe._
-import autodal.SlickPostgresDriver.simple._
+import dal.SlickPostgresDriver.simple._
 
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor

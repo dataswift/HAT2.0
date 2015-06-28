@@ -75,7 +75,7 @@ object myBuild extends Build {
     val outputDir = (main.base.getAbsoluteFile / "src/main/scala").getPath
     s.log.info("Output directory for codegen: " + outputDir.toString)
     val pkg = "dal"
-    toError(r.run("autodal.CustomizedCodeGenerator", cp.files, Array(outputDir, pkg), s.log))
+    toError(r.run("dal.CustomizedCodeGenerator", cp.files, Array(outputDir, pkg), s.log))
     val fname = outputDir + "/" + pkg + "/Tables.scala"
     Seq(file(fname))
   }
