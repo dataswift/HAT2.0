@@ -31,10 +31,8 @@ class ModelSpecPeople extends Specification with AfterAll {
 
         val requiredTables: Seq[String] = Seq(
           "data_table",
-          "People_Person",
           "events_event",
           "people_person",
-          "People_Person",
           "data_field",
           "system_properties"
         )
