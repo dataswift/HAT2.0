@@ -64,7 +64,7 @@ class ModelSpecProperties extends Specification with AfterAll {
 
         val systemPropertyRow = new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "test1", "test2")
         SystemProperty += systemPropertyRow
-        val propertyId = (SystemProperty returning SystemProperty.map(_.id)) += systemPropertyRow
+        val propertyId = (SystemProperty returning SystemProperty.map(_.id))
 
 
         val result = SystemProperty.run
@@ -116,10 +116,7 @@ class ModelSpecProperties extends Specification with AfterAll {
         val timezone = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Timezone", "A timezone")
         val placename = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Place Name", "A facebook Place Name")
 
-        val AttendingCountId = (SystemProperty returning SystemProperty.map(_.id)) += attendingcount
-        val CoverId = (SystemProperty returning SystemProperty.map(_.id)) += cover
-        val TimezoneId = (SystemProperty returning SystemProperty.map(_.id)) += timezone
-        val PlaceNameId = (SystemProperty returning SystemProperty.map(_.id)) += placename
+       
 
         val systemPropertyRows = Seq(
           new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "attendingcount", "test"),
@@ -131,7 +128,7 @@ class ModelSpecProperties extends Specification with AfterAll {
         SystemProperty ++= systemPropertyRows
 
         val result = SystemProperty.run
-        result must have size (8)
+        result must have size (4)
       }
 
     "allow for tables to be cleaned up" in {
