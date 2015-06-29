@@ -15,12 +15,8 @@ class ModelSpecProperties extends Specification with AfterAll {
 
   sequential
 
-  def afterAll = {
-    db.close()
-  }
 
   "Core Tables" should {
-    db.withSession { implicit session =>
       "be created" in {
 
         val getTables = MTable.getTables(None, Some("public"), None, None).map { ts =>
@@ -39,7 +35,7 @@ class ModelSpecProperties extends Specification with AfterAll {
 
         val tables = db.run(getTables)
         tables must containAllOf[String](requiredTables).await
-      }
+      
     }
   }
 
@@ -49,8 +45,9 @@ class ModelSpecProperties extends Specification with AfterAll {
         val result = SystemProperty.run
         result must have size (0)
       }
+    }
       "accept data" in {
-
+        db.withSession { implicit session =>
         val systemTypeRow = new SystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test1", "Test2")
         val typeId = (SystemType returning SystemType.map(_.id)) += systemTypeRow
 
@@ -65,23 +62,26 @@ class ModelSpecProperties extends Specification with AfterAll {
         val systemUnitofmeasurementRow = new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "Example", description, symbol)
         val unitofmeasurementId = (SystemUnitofmeasurement returning SystemUnitofmeasurement.map(_.id)) += systemUnitofmeasurementRow
 
-        val systemPropertyRow = new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "test", "test")
+        val systemPropertyRow = new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "test1", "test2")
+        SystemProperty += systemPropertyRow
         val propertyId = (SystemProperty returning SystemProperty.map(_.id)) += systemPropertyRow
 
-        SystemProperty += systemPropertyRow
 
         val result = SystemProperty.run
         result must have size (1)
       }
+    }
       "allow data to be removed" in {
+        db.withSession { implicit session =>
+
+        SystemTypetotypecrossref.delete
+        SystemTypetotypecrossref.run must have size (0)
+
         SystemProperty.delete
         SystemProperty.run must have size (0)
 
         SystemType.delete
         SystemType.run must have size (0)
-
-        SystemTypetotypecrossref.delete
-        SystemTypetotypecrossref.run must have size (0)
 
         SystemUnitofmeasurement.delete
         SystemUnitofmeasurement.run must have size (0)
@@ -92,7 +92,8 @@ class ModelSpecProperties extends Specification with AfterAll {
 
   "Facebook system structures" should {
     db.withSession { implicit session =>
-      "have fields created and linked to the right tables" in {
+      "have unitofmeasurement created" in {
+        
         val symbol = Some("Example")
         val description = Some("An example SystemUnitofmeasurement")
 
@@ -106,7 +107,7 @@ class ModelSpecProperties extends Specification with AfterAll {
         result must have size (1)
       }
 
-      "have virtual tables created" in {
+      "have properties created" in {
 
         val unitofmeasurementId = SystemUnitofmeasurement.filter(_.name === "Example")
 
@@ -130,42 +131,29 @@ class ModelSpecProperties extends Specification with AfterAll {
         SystemProperty ++= systemPropertyRows
 
         val result = SystemProperty.run
-        result must have size (4)
+        result must have size (8)
       }
 
-      /* "have fields created and linked to the right tables" in {
-      val findFacebookTableId = DataTable.filter(_.sourceName === "facebook")
-      val findCoverTableId = DataTable.filter(_.sourceName === "cover")
-      val recordId = DataRecord.filter(_.name === "FacebookEvent_1").map(_.id).run.head
+    "allow for tables to be cleaned up" in {
 
-      val fieldId = DataField.filter(_.name === "attending_count").map(_.id).run.head
-      val fieldId = DataField.filter(_.name === "cover").map(_.id).run.head
-      val fieldId = DataField.filter(_.name === "cover_id").map(_.id).run.head
-      val fieldId = DataField.filter(_.name === "offset_x").map(_.id).run.head
-      val fieldId = DataField.filter(_.name === "offset_y").map(_.id).run.head
-      val fieldId = DataField.filter(_.name === "source").map(_.id).run.head
-      val fieldId = DataField.filter(_.name === "id").map(_.id).run.head
-      val fieldId = DataField.filter(_.name === "declined_count").map(_.id).run.head
-      val fieldId = DataField.filter(_.name === "description").map(_.id).run.head
+        SystemTypetotypecrossref.delete
+        SystemTypetotypecrossref.run must have size (0)
 
-    val dataRows = Seq(
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "2", fieldId, recordId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "", fieldId, recordId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "812728954390780", fieldId, recordId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "0", fieldId, recordId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "84", fieldId, recordId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "http://link.com", fieldId, recordId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "812728954390780", fieldId, recordId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "1", fieldId, recordId),
-        new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "Test event for HAT", fieldId, recordId)
-      )
-      DataValue ++= dataRows
+        SystemProperty.delete
+        SystemProperty.run must have size (0)
 
-      val result = DataValue.run
-      result must have size(9)
-    }
-  */
+        SystemType.delete
+        SystemType.run must have size (0)
 
+
+        SystemUnitofmeasurement.delete
+        SystemUnitofmeasurement.run must have size (0)
+
+      } 
     }
   }
+  def afterAll() = {
+    db.close
+  }
+
 }
