@@ -30,12 +30,13 @@ class ModelSpecLocations extends Specification with AfterAll {
 
         val requiredTables: Seq[String] = Seq(
           "data_table",
-          "Locations_Location",
+          "organisations_organisation",
           "events_event",
           "people_person",
           "locations_location",
           "data_field",
-          "system_properties"
+          "system_properties",
+          "things_thing"
         )
 
         val tables = db.run(getTables)
@@ -52,23 +53,28 @@ class ModelSpecLocations extends Specification with AfterAll {
       }
       "accept data" in {
 
-        val LocationsLocationRow = new LocationsLocationRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test")
-        val LocationId = (LocationsLocation returning LocationsLocation.map(_.id)) += LocationsLocationRow
+        val locationsLocationRow = new LocationsLocationRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test")
+        val locationId = (LocationsLocation returning LocationsLocation.map(_.id)) += locationsLocationRow
 
         val relationshiptype = Some("Relationship description")
+        val findlocationId = LocationsLocation.filter(_.name === "WMG, University of Warwick").map(_.id).run.head
+        val findpropertyId = SystemProperty.filter(_.name === "cover").map(_.id).run.head
+        val findfieldId = DataField.filter(_.name === "cover").map(_.id).run.head
+        val findrecordId = DataRecord.filter(_.name === "cover").map(_.id).run.head
+  
 
-        val LocationsLocationtolocationcrossrefRow = new LocationsLocationtolocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 1, relationshiptype)
-        val LocationsLocationtolocationcrossrefId = (LocationsLocationtolocationcrossref returning LocationsLocationtolocationcrossref.map(_.id)) += LocationsLocationtolocationcrossrefRow
+        val locationsLocationtolocationcrossrefRow = new LocationsLocationtolocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findlocationId, findlocationId, relationshiptype)
+        val locationsLocationtolocationcrossrefId = (LocationsLocationtolocationcrossref returning LocationsLocationtolocationcrossref.map(_.id)) += locationsLocationtolocationcrossrefRow
 
         val description = Some("An example SystemUnitofmeasurement")
 
-        val LocationssystempropertystaticcrossrefRow = new LocationsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 1, 1, relationshiptype, true)
-        val LocationssystempropertystaticcrossrefId = (LocationsSystempropertystaticcrossref returning LocationsSystempropertystaticcrossref.map(_.id)) += LocationssystempropertystaticcrossrefRow
+        val locationssystempropertystaticcrossrefRow = new LocationsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findlocationId, findpropertyId, findfieldId, findrecordId, relationshiptype, true)
+        val locationssystempropertystaticcrossrefId = (LocationsSystempropertystaticcrossref returning LocationsSystempropertystaticcrossref.map(_.id)) += locationssystempropertystaticcrossrefRow
 
-        val LocationssystempropertydynamiccrossrefRow = new LocationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 1, relationshiptype, true)
-        val LocationssystempropertydynamiccrossrefId = (LocationsSystempropertydynamiccrossref returning LocationsSystempropertydynamiccrossref.map(_.id)) += LocationssystempropertydynamiccrossrefRow
+        val locationssystempropertydynamiccrossrefRow = new LocationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findlocationId, findpropertyId, findfieldId, relationshiptype, true)
+        val locationssystempropertydynamiccrossrefId = (LocationsSystempropertydynamiccrossref returning LocationsSystempropertydynamiccrossref.map(_.id)) += locationssystempropertydynamiccrossrefRow
 
-        LocationsLocation += LocationsLocationRow
+        LocationsLocation += locationsLocationRow
 
         val result = LocationsLocation.run
         result must have size (1)
@@ -95,11 +101,11 @@ class ModelSpecLocations extends Specification with AfterAll {
       "have Locations created" in {
         val localdatetime = Some(LocalDateTime.now())
 
-        val LocationsLocationRows = Seq(
+        val locationsLocationRows = Seq(
           new LocationsLocationRow(1, LocalDateTime.now(), LocalDateTime.now(), "WMG, University of Warwick")
         )
 
-        LocationsLocation ++= LocationsLocationRows
+        LocationsLocation ++= locationsLocationRows
 
         val result = LocationsLocation.run
         result must have size (1)
@@ -121,6 +127,21 @@ class ModelSpecLocations extends Specification with AfterAll {
 
         val result = LocationsSystempropertystaticcrossref.run
         result must have size (1)
+
+        "allow data to be removed" in {
+        LocationsLocation.delete
+        LocationsLocation.run must have size (0)
+
+        LocationsLocationtolocationcrossref.delete
+        LocationsLocationtolocationcrossref.run must have size (0)
+
+        LocationsSystempropertydynamiccrossref.delete
+        LocationsSystempropertydynamiccrossref.run must have size (0)
+
+        LocationsSystempropertystaticcrossref.delete
+        LocationsSystempropertystaticcrossref.run must have size (0)
+
+        }
       }
     }
   }

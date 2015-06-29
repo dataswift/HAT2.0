@@ -48,6 +48,7 @@ class ModelSpecProperties extends Specification with AfterAll {
     }
       "accept data" in {
         db.withSession { implicit session =>
+
         val systemTypeRow = new SystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test1", "Test2")
         val typeId = (SystemType returning SystemType.map(_.id)) += systemTypeRow
 
@@ -55,6 +56,7 @@ class ModelSpecProperties extends Specification with AfterAll {
 
         val systemtypetotypecrossrefRow = new SystemTypetotypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), typeId, typeId, relationshipdescription)
         val typetotypecrossrefId = (SystemTypetotypecrossref returning SystemTypetotypecrossref.map(_.id)) += systemtypetotypecrossrefRow
+      
 
         val symbol = Some("Example")
         val description = Some("An example SystemUnitofmeasurement")
@@ -141,7 +143,6 @@ class ModelSpecProperties extends Specification with AfterAll {
 
         SystemType.delete
         SystemType.run must have size (0)
-
 
         SystemUnitofmeasurement.delete
         SystemUnitofmeasurement.run must have size (0)

@@ -52,20 +52,28 @@ class ModelSpecPeople extends Specification with AfterAll {
       "accept data" in {
 
         val PeoplePersonRow = new PeoplePersonRow(1, "Martin", LocalDateTime.now(), LocalDateTime.now(), "Abc-123-def-456")
-        val PersonId = (PeoplePerson returning PeoplePerson.map(_.id)) += PeoplePersonRow
+        val PersonId = (PeoplePerson returning PeoplePerson.map(_.id))
 
         val relationshiptype = Some("Relationship description")
+        val findpeopleId = PeoplePerson.filter(_.name === "Martin").map(_.id).run.head
+        val findpropertyId = SystemProperty.filter(_.name === "cover").map(_.id).run.head
+        val findfieldId = DataField.filter(_.name === "cover").map(_.id).run.head
+        val findrecordId = DataRecord.filter(_.name === "cover").map(_.id).run.head
 
-        val PeoplePersontopersoncrossrefRow = new PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 1, 1)
-        val PeoplePersontopersoncrossrefId = (PeoplePersontopersoncrossref returning PeoplePersontopersoncrossref.map(_.id)) += PeoplePersontopersoncrossrefRow
+
+        val peoplePersontopersonrelationshiptypeRow = new PeoplePersontopersonrelationshiptypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin's Martin", relationshiptype)
+        val peoplePersontopersonrelationshiptypeId = (PeoplePersontopersonrelationshiptype returning PeoplePersontopersonrelationshiptype.map(_.id)) += peoplePersontopersonrelationshiptypeRow
+
+        val peoplePersontopersoncrossrefRow = new PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findpeopleId, findpeopleId, peoplePersontopersonrelationshiptypeId)
+        val peoplePersontopersoncrossrefId = (PeoplePersontopersoncrossref returning PeoplePersontopersoncrossref.map(_.id)) += peoplePersontopersoncrossrefRow
 
         val description = Some("An example SystemUnitofmeasurement")
 
-        val PeoplesystempropertystaticcrossrefRow = new PeopleSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 1, 1, relationshiptype, true)
-        val PeoplesystempropertystaticcrossrefId = (PeopleSystempropertystaticcrossref returning PeopleSystempropertystaticcrossref.map(_.id)) += PeoplesystempropertystaticcrossrefRow
+        val peoplesystempropertystaticcrossrefRow = new PeopleSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findpeopleId, findpropertyId, findfieldId, findrecordId, relationshiptype, true)
+        val peoplesystempropertystaticcrossrefId = (PeopleSystempropertystaticcrossref returning PeopleSystempropertystaticcrossref.map(_.id)) += peoplesystempropertystaticcrossrefRow
 
-        val PeoplesystempropertydynamiccrossrefRow = new PeopleSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 1, relationshiptype, true)
-        val PeoplesystempropertydynamiccrossrefId = (PeopleSystempropertydynamiccrossref returning PeopleSystempropertydynamiccrossref.map(_.id)) += PeoplesystempropertydynamiccrossrefRow
+        val peoplesystempropertydynamiccrossrefRow = new PeopleSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findpeopleId, findpropertyId, findfieldId, relationshiptype, true)
+        val peoplesystempropertydynamiccrossrefId = (PeopleSystempropertydynamiccrossref returning PeopleSystempropertydynamiccrossref.map(_.id)) += peoplesystempropertydynamiccrossrefRow
 
         PeoplePerson += PeoplePersonRow
 
@@ -75,6 +83,9 @@ class ModelSpecPeople extends Specification with AfterAll {
       "allow data to be removed" in {
         PeoplePerson.delete
         PeoplePerson.run must have size (0)
+
+        PeoplePersontopersonrelationshiptype.delete
+        PeoplePersontopersonrelationshiptype.run must have size (0)
 
         PeoplePersontopersoncrossref.delete
         PeoplePersontopersoncrossref.run must have size (0)
@@ -120,6 +131,23 @@ class ModelSpecPeople extends Specification with AfterAll {
 
         val result = PeopleSystempropertystaticcrossref.run
         result must have size (1)
+
+        "allow for tables to be cleaned up" in {
+        PeoplePerson.delete
+        PeoplePerson.run must have size (0)
+
+        PeoplePersontopersonrelationshiptype.delete
+        PeoplePersontopersonrelationshiptype.run must have size (0)
+
+        PeoplePersontopersoncrossref.delete
+        PeoplePersontopersoncrossref.run must have size (0)
+
+        PeopleSystempropertydynamiccrossref.delete
+        PeopleSystempropertydynamiccrossref.run must have size (0)
+
+        PeopleSystempropertystaticcrossref.delete
+        PeopleSystempropertystaticcrossref.run must have size (0)
+        }
       }
     }
   }
