@@ -56,10 +56,10 @@ class ModelSpecOrganisations extends Specification with AfterAll {
         val organisationId = (OrganisationsOrganisation returning OrganisationsOrganisation.map(_.id)) += organisationsorganisationRow
 
         val relationshiptype = Some("Relationship description")
-        val findorganisationId = OrganisationsOrganisation.filter(_.name === "WMG, University of Warwick").map(_.id).run.head
-        val findpropertyId = SystemProperty.filter(_.name === "cover").map(_.id).run.head
-        val findfieldId = DataField.filter(_.name === "cover").map(_.id).run.head
-        val findrecordId = DataRecord.filter(_.name === "cover").map(_.id).run.head
+        val findorganisationId = OrganisationsOrganisation.filter(_.name === "WMG").map(_.id).run.head
+        val findpropertyId = SystemProperty.filter(_.name === "Organisation Name").map(_.id).run.head
+        val findfieldId = DataField.filter(_.name === "name").map(_.id).run.head
+        val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
   
         val organisationorganisationtoorganisationcrossrefRow = new OrganisationOrganisationtoorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findorganisationId, "relationshiptype", true)
         val organisationorganisationtoorganisationcrossrefId = (OrganisationOrganisationtoorganisationcrossref returning OrganisationOrganisationtoorganisationcrossref.map(_.id)) += organisationorganisationtoorganisationcrossrefRow

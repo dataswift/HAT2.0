@@ -124,13 +124,19 @@ class ModelSpecProperties extends Specification with AfterAll {
           new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "attendingcount", "test"),
           new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", "test"),
           new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "timezone", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "placename", "test")
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "placename", "test"),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "longitude", "test"),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "latitude", "test"),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "postcode", "test"),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Country", "test"),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Organisation Name", "test"),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Owner", "test")
         )
 
         SystemProperty ++= systemPropertyRows
 
         val result = SystemProperty.run
-        result must have size (4)
+        result must have size (10)
       }
 
     "allow for tables to be cleaned up" in {

@@ -52,14 +52,14 @@ class ModelSpecEvents extends Specification with AfterAll {
       }
       "accept data" in {
 
-        val eventseventRow = new EventsEventRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test")
+        val eventseventRow = new EventsEventRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test Event for HAT")
         val eventId = (EventsEvent returning EventsEvent.map(_.id)) += eventseventRow
 
         val relationshiptype = Some("Relationship description")
-        val findeventId = EventsEvent.filter(_.name === "WMG, University of Warwick").map(_.id).run.head
-        val findpropertyId = SystemProperty.filter(_.name === "cover").map(_.id).run.head
-        val findfieldId = DataField.filter(_.name === "cover").map(_.id).run.head
-        val findrecordId = DataRecord.filter(_.name === "cover").map(_.id).run.head
+        val findeventId = EventsEvent.filter(_.name === "Test Event for HAT").map(_.id).run.head
+        val findpropertyId = SystemProperty.filter(_.name === "timezone").map(_.id).run.head
+        val findfieldId = DataField.filter(_.name === "timezone").map(_.id).run.head
+        val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
   
 
         val eventseventtoeventcrossrefRow = new EventsEventtoeventcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findeventId, findeventId, relationshiptype)

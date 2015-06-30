@@ -102,7 +102,7 @@ class ModelSpecLocations extends Specification with AfterAll {
         val localdatetime = Some(LocalDateTime.now())
 
         val locationsLocationRows = Seq(
-          new LocationsLocationRow(1, LocalDateTime.now(), LocalDateTime.now(), "WMG, University of Warwick")
+          new LocationsLocationRow(1, LocalDateTime.now(), LocalDateTime.now(), "WMG Warwick University")
         )
 
         LocationsLocation ++= locationsLocationRows
@@ -112,12 +112,12 @@ class ModelSpecLocations extends Specification with AfterAll {
       }
 
       "have Locationssystempropertystaticcrossref created" in {
-        val relationshipdescription = Some("Property Cross Reference for a Facebook Cover")
+        val relationshipdescription = Some("Property Cross Reference for a Facebook Location")
 
-        val findLocationId = LocationsLocation.filter(_.name === "Cover").map(_.id).run.head
-        val findpropertyId = SystemProperty.filter(_.name === "cover").map(_.id).run.head
-        val findfieldId = DataField.filter(_.name === "cover").map(_.id).run.head
-        val findrecordId = DataRecord.filter(_.name === "cover").map(_.id).run.head
+        val findLocationId = LocationsLocation.filter(_.name === "WMG Warwick University").map(_.id).run.head
+        val findpropertyId = SystemProperty.filter(_.name === "latitude").map(_.id).run.head
+        val findfieldId = DataField.filter(_.name === "WMG, University of Warwick").map(_.id).run.head
+        val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
         val LocationssystempropertystaticcrossrefRows = Seq(
           new LocationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findLocationId, findpropertyId, findfieldId, findrecordId, relationshipdescription, true)

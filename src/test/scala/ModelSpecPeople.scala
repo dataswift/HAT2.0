@@ -56,9 +56,9 @@ class ModelSpecPeople extends Specification with AfterAll {
 
         val relationshiptype = Some("Relationship description")
         val findpeopleId = PeoplePerson.filter(_.name === "Martin").map(_.id).run.head
-        val findpropertyId = SystemProperty.filter(_.name === "cover").map(_.id).run.head
-        val findfieldId = DataField.filter(_.name === "cover").map(_.id).run.head
-        val findrecordId = DataRecord.filter(_.name === "cover").map(_.id).run.head
+        val findpropertyId = SystemProperty.filter(_.name === "Owner").map(_.id).run.head
+        val findfieldId = DataField.filter(_.name === "owner").map(_.id).run.head
+        val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
 
         val peoplePersontopersonrelationshiptypeRow = new PeoplePersontopersonrelationshiptypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin's Martin", relationshiptype)
