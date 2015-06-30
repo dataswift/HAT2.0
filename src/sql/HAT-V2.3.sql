@@ -1,7 +1,5 @@
 drop schema public cascade;
 create schema public;
-
-create schema public;
        
 CREATE SEQUENCE public.events_event_id_seq;
 
@@ -171,8 +169,8 @@ CREATE TABLE public.data_field (
                 id INTEGER NOT NULL DEFAULT nextval('public.data_field_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
-                data_table_fk INTEGER NOT NULL,
                 name VARCHAR NOT NULL,
+                data_table_fk INTEGER NOT NULL,
                 CONSTRAINT data_field_pk PRIMARY KEY (id)
 );
 
@@ -212,9 +210,9 @@ CREATE SEQUENCE public.people_person_id_seq;
 
 CREATE TABLE public.people_person (
                 id INTEGER NOT NULL DEFAULT nextval('public.people_person_id_seq'),
-                name VARCHAR NOT NULL,
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
+                name VARCHAR NOT NULL,
                 person_id VARCHAR(36) NOT NULL,
                 CONSTRAINT people_person_pkey PRIMARY KEY (id)
 );
@@ -538,8 +536,10 @@ CREATE INDEX things_thingtothingcrossref_thing_two_id
  ON public.things_thingtothingcrossref USING BTREE
  ( thing_two_id );
 
+CREATE SEQUENCE public.things_systempropertystaticcrossref_id_seq;
+
 CREATE TABLE public.things_systempropertystaticcrossref (
-                id INTEGER NOT NULL,
+                id INTEGER NOT NULL DEFAULT nextval('public.things_systempropertystaticcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 thing_id INTEGER NOT NULL,
@@ -551,6 +551,8 @@ CREATE TABLE public.things_systempropertystaticcrossref (
                 CONSTRAINT things_systempropertystaticcrossref_pkey PRIMARY KEY (id)
 );
 
+
+ALTER SEQUENCE public.things_systempropertystaticcrossref_id_seq OWNED BY public.things_systempropertystaticcrossref.id;
 
 CREATE INDEX things_thingstaticpropertycrossref_thing_id
  ON public.things_systempropertystaticcrossref USING BTREE
