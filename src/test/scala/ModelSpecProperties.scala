@@ -92,70 +92,7 @@ class ModelSpecProperties extends Specification with AfterAll {
     }
   }
 
-  "Facebook system structures" should {
-    db.withSession { implicit session =>
-      "have unitofmeasurement created" in {
-        
-        val symbol = Some("Example")
-        val description = Some("An example SystemUnitofmeasurement")
 
-        val systemUnitofmeasurementRows = Seq(
-          new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "Example", description, symbol)
-        )
-
-        SystemUnitofmeasurement ++= systemUnitofmeasurementRows
-
-        val result = SystemUnitofmeasurement.run
-        result must have size (1)
-      }
-
-      "have properties created" in {
-
-        val unitofmeasurementId = SystemUnitofmeasurement.filter(_.name === "Example")
-
-        val attendingcount = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "AttendingCount", "Number of people attending an event")
-        val cover = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Cover", "A facebook cover image")
-        val timezone = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Timezone", "A timezone")
-        val placename = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Place Name", "A facebook Place Name")
-
-       
-
-        val systemPropertyRows = Seq(
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "attendingcount", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "timezone", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "placename", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "longitude", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "latitude", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "postcode", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Country", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Organisation Name", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Owner", "test")
-        )
-
-        SystemProperty ++= systemPropertyRows
-
-        val result = SystemProperty.run
-        result must have size (10)
-      }
-
-    "allow for tables to be cleaned up" in {
-
-        SystemTypetotypecrossref.delete
-        SystemTypetotypecrossref.run must have size (0)
-
-        SystemProperty.delete
-        SystemProperty.run must have size (0)
-
-        SystemType.delete
-        SystemType.run must have size (0)
-
-        SystemUnitofmeasurement.delete
-        SystemUnitofmeasurement.run must have size (0)
-
-      } 
-    }
-  }
   def afterAll() = {
     db.close
   }

@@ -18,33 +18,6 @@ class ModelSpecLocations extends Specification with AfterAll {
     db.close()
   }
 
-  "Core Tables" should {
-    db.withSession { implicit session =>
-      "be created" in {
-
-        val getTables = MTable.getTables(None, Some("public"), None, None).map { ts =>
-          ts.map { t =>
-            t.name.name
-          }
-        }
-
-        val requiredTables: Seq[String] = Seq(
-          "data_table",
-          "organisations_organisation",
-          "events_event",
-          "people_person",
-          "locations_location",
-          "data_field",
-          "system_properties",
-          "things_thing"
-        )
-
-        val tables = db.run(getTables)
-        tables must containAllOf[String](requiredTables).await
-      }
-    }
-  }
-
   "Locations tables" should {
     db.withSession { implicit session =>
       "be empty" in {
@@ -53,7 +26,7 @@ class ModelSpecLocations extends Specification with AfterAll {
       }
       "accept data" in {
 
-        val locationsLocationRow = new LocationsLocationRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test")
+        val locationsLocationRow = new LocationsLocationRow(1, LocalDateTime.now(), LocalDateTime.now(), "WMG, University of Warwick")
         val locationId = (LocationsLocation returning LocationsLocation.map(_.id)) += locationsLocationRow
 
         val relationshiptype = Some("Relationship description")
@@ -92,56 +65,6 @@ class ModelSpecLocations extends Specification with AfterAll {
         LocationsSystempropertystaticcrossref.delete
         LocationsSystempropertystaticcrossref.run must have size (0)
 
-      }
-    }
-  }
-
-  "Facebook Locations structures" should {
-    db.withSession { implicit session =>
-      "have Locations created" in {
-        val localdatetime = Some(LocalDateTime.now())
-
-        val locationsLocationRows = Seq(
-          new LocationsLocationRow(1, LocalDateTime.now(), LocalDateTime.now(), "WMG Warwick University")
-        )
-
-        LocationsLocation ++= locationsLocationRows
-
-        val result = LocationsLocation.run
-        result must have size (1)
-      }
-
-      "have Locationssystempropertystaticcrossref created" in {
-        val relationshipdescription = Some("Property Cross Reference for a Facebook Location")
-
-        val findLocationId = LocationsLocation.filter(_.name === "WMG Warwick University").map(_.id).run.head
-        val findpropertyId = SystemProperty.filter(_.name === "latitude").map(_.id).run.head
-        val findfieldId = DataField.filter(_.name === "WMG, University of Warwick").map(_.id).run.head
-        val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
-
-        val LocationssystempropertystaticcrossrefRows = Seq(
-          new LocationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findLocationId, findpropertyId, findfieldId, findrecordId, relationshipdescription, true)
-        )
-
-        LocationsSystempropertystaticcrossref ++= LocationssystempropertystaticcrossrefRows
-
-        val result = LocationsSystempropertystaticcrossref.run
-        result must have size (1)
-
-        "allow data to be removed" in {
-        LocationsLocation.delete
-        LocationsLocation.run must have size (0)
-
-        LocationsLocationtolocationcrossref.delete
-        LocationsLocationtolocationcrossref.run must have size (0)
-
-        LocationsSystempropertydynamiccrossref.delete
-        LocationsSystempropertydynamiccrossref.run must have size (0)
-
-        LocationsSystempropertystaticcrossref.delete
-        LocationsSystempropertystaticcrossref.run must have size (0)
-
-        }
       }
     }
   }

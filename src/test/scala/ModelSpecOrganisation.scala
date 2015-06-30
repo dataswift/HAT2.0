@@ -18,32 +18,6 @@ class ModelSpecOrganisations extends Specification with AfterAll {
     db.close()
   }
 
-  "Core Tables" should {
-    db.withSession { implicit session =>
-      "be created" in {
-
-        val getTables = MTable.getTables(None, Some("public"), None, None).map { ts =>
-          ts.map { t =>
-            t.name.name
-          }
-        }
-
-        val requiredTables: Seq[String] = Seq(
-          "data_table",
-          "organisations_organisation",
-          "events_event",
-          "people_person",
-          "organisations_organisation",
-          "data_field",
-          "system_properties"
-        )
-
-        val tables = db.run(getTables)
-        tables must containAllOf[String](requiredTables).await
-      }
-    }
-  }
-
   "organisations tables" should {
     db.withSession { implicit session =>
       "be empty" in {
@@ -94,53 +68,5 @@ class ModelSpecOrganisations extends Specification with AfterAll {
     }
   }
 
-  "Facebook organisations structures" should {
-    db.withSession { implicit session =>
-      "have organisations created" in {
-        val localdatetime = Some(LocalDateTime.now())
 
-        val organisationsorganisationRows = Seq(
-          new OrganisationsOrganisationRow(1, LocalDateTime.now(), LocalDateTime.now(), "WMG, University of Warwick")
-        )
-
-        OrganisationsOrganisation ++= organisationsorganisationRows
-
-        val result = OrganisationsOrganisation.run
-        result must have size (1)
-      }
-
-      "have organisationssystempropertystaticcrossref created" in {
-        val relationshipdescription = Some("Property Cross Reference for a Facebook Cover")
-
-        val findorganisationId = OrganisationsOrganisation.filter(_.name === "Cover").map(_.id).run.head
-        val findpropertyId = SystemProperty.filter(_.name === "cover").map(_.id).run.head
-        val findfieldId = DataField.filter(_.name === "cover").map(_.id).run.head
-        val findrecordId = DataRecord.filter(_.name === "cover").map(_.id).run.head
-
-        val organisationssystempropertystaticcrossrefRows = Seq(
-          new OrganisationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findpropertyId, findfieldId, findrecordId, relationshipdescription, true)
-        )
-
-        OrganisationsSystempropertystaticcrossref ++= organisationssystempropertystaticcrossrefRows
-
-        val result = OrganisationsSystempropertystaticcrossref.run
-        result must have size (1)
-
-        "allow data to be removed" in {
-        OrganisationsOrganisation.delete
-        OrganisationsOrganisation.run must have size (0)
-
-        OrganisationOrganisationtoorganisationcrossref.delete
-        OrganisationOrganisationtoorganisationcrossref.run must have size (0)
-
-        OrganisationsSystempropertydynamiccrossref.delete
-        OrganisationsSystempropertydynamiccrossref.run must have size (0)
-
-        OrganisationsSystempropertystaticcrossref.delete
-        OrganisationsSystempropertystaticcrossref.run must have size (0)
-
-        }
-      }
-    }
-  }
 }
