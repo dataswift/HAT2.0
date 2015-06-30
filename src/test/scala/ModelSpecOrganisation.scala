@@ -52,7 +52,7 @@ class ModelSpecOrganisations extends Specification with AfterAll {
       }
       "accept data" in {
 
-        val organisationsorganisationRow = new OrganisationsOrganisationRow(1, "WMG", LocalDateTime.now(), LocalDateTime.now())
+        val organisationsorganisationRow = new OrganisationsOrganisationRow(1, LocalDateTime.now(), LocalDateTime.now(), "WMG")
         val organisationId = (OrganisationsOrganisation returning OrganisationsOrganisation.map(_.id)) += organisationsorganisationRow
 
         val relationshiptype = Some("Relationship description")
@@ -100,7 +100,7 @@ class ModelSpecOrganisations extends Specification with AfterAll {
         val localdatetime = Some(LocalDateTime.now())
 
         val organisationsorganisationRows = Seq(
-          new OrganisationsOrganisationRow(1, "WMG, University of Warwick", LocalDateTime.now(), LocalDateTime.now())
+          new OrganisationsOrganisationRow(1, LocalDateTime.now(), LocalDateTime.now(), "WMG, University of Warwick")
         )
 
         OrganisationsOrganisation ++= organisationsorganisationRows

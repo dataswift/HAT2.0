@@ -545,7 +545,7 @@ trait Tables {
   lazy val EventsSystempropertydynamiccrossref = new TableQuery(tag => new EventsSystempropertydynamiccrossref(tag))
 
   /** Entity class storing rows of table EventsSystempropertystaticcrossref
-   *  @param id Database column id SqlType(int4), PrimaryKey
+   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param eventId Database column event_id SqlType(int4)
@@ -566,8 +566,8 @@ trait Tables {
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(eventId), Rep.Some(systemPropertyId), Rep.Some(recordId), Rep.Some(fieldId), relationshipType, Rep.Some(isCurrent)).shaped.<>({r=>import r._; _1.map(_=> EventsSystempropertystaticcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8, _9.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column id SqlType(int4), PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.PrimaryKey)
+    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
+    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
     /** Database column date_created SqlType(timestamp) */
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
@@ -801,7 +801,7 @@ trait Tables {
   lazy val LocationsSystempropertydynamiccrossref = new TableQuery(tag => new LocationsSystempropertydynamiccrossref(tag))
 
   /** Entity class storing rows of table LocationsSystempropertystaticcrossref
-   *  @param id Database column id SqlType(int4), PrimaryKey
+   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param locationId Database column location_id SqlType(int4)
@@ -822,8 +822,8 @@ trait Tables {
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(locationId), Rep.Some(systemPropertyId), Rep.Some(recordId), Rep.Some(fieldId), relationshipType, Rep.Some(isCurrent)).shaped.<>({r=>import r._; _1.map(_=> LocationsSystempropertystaticcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8, _9.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column id SqlType(int4), PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.PrimaryKey)
+    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
+    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
     /** Database column date_created SqlType(timestamp) */
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
@@ -897,7 +897,7 @@ trait Tables {
   lazy val LocationSystemtypecrossref = new TableQuery(tag => new LocationSystemtypecrossref(tag))
 
   /** Entity class storing rows of table OrganisationOrganisationtoorganisationcrossref
-   *  @param id Database column id SqlType(int4), PrimaryKey
+   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param organisationOneId Database column organisation_one_id SqlType(int4)
@@ -916,8 +916,8 @@ trait Tables {
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(organisationOneId), Rep.Some(organisationTwoId), Rep.Some(relationshipType), Rep.Some(isCurrent)).shaped.<>({r=>import r._; _1.map(_=> OrganisationOrganisationtoorganisationcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column id SqlType(int4), PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.PrimaryKey)
+    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
+    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
     /** Database column date_created SqlType(timestamp) */
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
@@ -941,29 +941,29 @@ trait Tables {
 
   /** Entity class storing rows of table OrganisationsOrganisation
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
-   *  @param name Database column name SqlType(varchar), Length(100,true)
    *  @param dateCreated Database column date_created SqlType(timestamp)
-   *  @param lastyUpdated Database column lasty_updated SqlType(timestamp) */
-  case class OrganisationsOrganisationRow(id: Int, name: String, dateCreated: org.joda.time.LocalDateTime, lastyUpdated: org.joda.time.LocalDateTime)
+   *  @param lastyUpdated Database column lasty_updated SqlType(timestamp)
+   *  @param name Database column name SqlType(varchar), Length(100,true) */
+  case class OrganisationsOrganisationRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastyUpdated: org.joda.time.LocalDateTime, name: String)
   /** GetResult implicit for fetching OrganisationsOrganisationRow objects using plain SQL queries */
-  implicit def GetResultOrganisationsOrganisationRow(implicit e0: GR[Int], e1: GR[String], e2: GR[org.joda.time.LocalDateTime]): GR[OrganisationsOrganisationRow] = GR{
+  implicit def GetResultOrganisationsOrganisationRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[OrganisationsOrganisationRow] = GR{
     prs => import prs._
-    OrganisationsOrganisationRow.tupled((<<[Int], <<[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime]))
+    OrganisationsOrganisationRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String]))
   }
   /** Table description of table organisations_organisation. Objects of this class serve as prototypes for rows in queries. */
   class OrganisationsOrganisation(_tableTag: Tag) extends Table[OrganisationsOrganisationRow](_tableTag, "organisations_organisation") {
-    def * = (id, name, dateCreated, lastyUpdated) <> (OrganisationsOrganisationRow.tupled, OrganisationsOrganisationRow.unapply)
+    def * = (id, dateCreated, lastyUpdated, name) <> (OrganisationsOrganisationRow.tupled, OrganisationsOrganisationRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(name), Rep.Some(dateCreated), Rep.Some(lastyUpdated)).shaped.<>({r=>import r._; _1.map(_=> OrganisationsOrganisationRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastyUpdated), Rep.Some(name)).shaped.<>({r=>import r._; _1.map(_=> OrganisationsOrganisationRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
-    /** Database column name SqlType(varchar), Length(100,true) */
-    val name: Rep[String] = column[String]("name", O.Length(100,varying=true))
     /** Database column date_created SqlType(timestamp) */
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column lasty_updated SqlType(timestamp) */
     val lastyUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("lasty_updated")
+    /** Database column name SqlType(varchar), Length(100,true) */
+    val name: Rep[String] = column[String]("name", O.Length(100,varying=true))
   }
   /** Collection-like TableQuery object for table OrganisationsOrganisation */
   lazy val OrganisationsOrganisation = new TableQuery(tag => new OrganisationsOrganisation(tag))
@@ -1060,7 +1060,7 @@ trait Tables {
   lazy val OrganisationsSystempropertydynamiccrossref = new TableQuery(tag => new OrganisationsSystempropertydynamiccrossref(tag))
 
   /** Entity class storing rows of table OrganisationsSystempropertystaticcrossref
-   *  @param id Database column id SqlType(int4), PrimaryKey
+   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param organisationId Database column organisation_id SqlType(int4)
@@ -1081,8 +1081,8 @@ trait Tables {
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(organisationId), Rep.Some(systemPropertyId), Rep.Some(recordId), Rep.Some(fieldId), relationshipType, Rep.Some(isCurrent)).shaped.<>({r=>import r._; _1.map(_=> OrganisationsSystempropertystaticcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8, _9.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column id SqlType(int4), PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.PrimaryKey)
+    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
+    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
     /** Database column date_created SqlType(timestamp) */
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
@@ -1396,7 +1396,7 @@ trait Tables {
   lazy val PeopleSystempropertydynamiccrossref = new TableQuery(tag => new PeopleSystempropertydynamiccrossref(tag))
 
   /** Entity class storing rows of table PeopleSystempropertystaticcrossref
-   *  @param id Database column id SqlType(int4), PrimaryKey
+   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param personId Database column person_id SqlType(int4)
@@ -1417,8 +1417,8 @@ trait Tables {
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(personId), Rep.Some(systemPropertyId), Rep.Some(recordId), Rep.Some(fieldId), relationshipType, Rep.Some(isCurrent)).shaped.<>({r=>import r._; _1.map(_=> PeopleSystempropertystaticcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8, _9.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column id SqlType(int4), PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.PrimaryKey)
+    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
+    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
     /** Database column date_created SqlType(timestamp) */
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
@@ -1605,7 +1605,7 @@ trait Tables {
   lazy val SystemPropertytypecrossref = new TableQuery(tag => new SystemPropertytypecrossref(tag))
 
   /** Entity class storing rows of table SystemPropertyuomcrossref
-   *  @param id Database column id SqlType(int4), PrimaryKey
+   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param unitofmeasurementId Database column unitofmeasurement_id SqlType(int4)
@@ -1624,8 +1624,8 @@ trait Tables {
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(unitofmeasurementId), Rep.Some(propertyId), Rep.Some(relationshipType), Rep.Some(isCurrent)).shaped.<>({r=>import r._; _1.map(_=> SystemPropertyuomcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column id SqlType(int4), PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.PrimaryKey)
+    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
+    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
     /** Database column date_created SqlType(timestamp) */
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
@@ -1720,7 +1720,7 @@ trait Tables {
   lazy val SystemTypetotypecrossref = new TableQuery(tag => new SystemTypetotypecrossref(tag))
 
   /** Entity class storing rows of table SystemUnitofmeasurement
-   *  @param id Database column id SqlType(int4), PrimaryKey
+   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param name Database column name SqlType(varchar), Length(100,true)
@@ -1738,8 +1738,8 @@ trait Tables {
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), description, symbol).shaped.<>({r=>import r._; _1.map(_=> SystemUnitofmeasurementRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column id SqlType(int4), PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.PrimaryKey)
+    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
+    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
     /** Database column date_created SqlType(timestamp) */
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
