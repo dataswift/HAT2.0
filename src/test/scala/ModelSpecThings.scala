@@ -19,32 +19,6 @@ class ModelSpecThings extends Specification with AfterAll {
     db.close()
   }
 
-  "Core Tables" should {
-    db.withSession { implicit session =>
-      "be created" in {
-
-        val getTables = MTable.getTables(None, Some("public"), None, None).map { ts =>
-          ts.map { t =>
-            t.name.name
-          }
-        }
-
-        val requiredTables: Seq[String] = Seq(
-          "data_table",
-          "things_thing",
-          "events_event",
-          "people_person",
-          "locations_location",
-          "data_field",
-          "system_properties"
-        )
-
-        val tables = db.run(getTables)
-        tables must containAllOf[String](requiredTables).await
-      }
-    }
-  }
-
   "Things tables" should {
     db.withSession { implicit session =>
       "be empty" in {

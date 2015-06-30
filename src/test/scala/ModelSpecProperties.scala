@@ -15,30 +15,6 @@ class ModelSpecProperties extends Specification with AfterAll {
 
   sequential
 
-
-  "Core Tables" should {
-      "be created" in {
-
-        val getTables = MTable.getTables(None, Some("public"), None, None).map { ts =>
-          ts.map { t =>
-            t.name.name
-          }
-        }
-
-        val requiredTables: Seq[String] = Seq(
-          "data_table",
-          "things_thing",
-          "events_event",
-          "people_person",
-          "locations_location"
-        )
-
-        val tables = db.run(getTables)
-        tables must containAllOf[String](requiredTables).await
-      
-    }
-  }
-
   "System tables" should {
     db.withSession { implicit session =>
       "be empty" in {

@@ -10,7 +10,7 @@ import slick.jdbc.meta.MTable
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ModelSpecOrganisations extends Specification with AfterAll {
+class ModelSpecOrganisation extends Specification with AfterAll {
   val db = Database.forConfig("devdb")
   sequential
 
