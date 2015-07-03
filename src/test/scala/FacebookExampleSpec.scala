@@ -408,7 +408,7 @@ class FacebookExampleSpec extends Specification with AfterAll {
     }
   }
 
-  "Facebook structures" should {
+  "Facebook structure cleanup" should {
     db.withSession { implicit session =>
 
       "allow proeprty crossrefs to be removed" in {
