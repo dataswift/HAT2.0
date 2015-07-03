@@ -29,6 +29,7 @@ trait InboundDataService extends HttpService {
     }
   }
 
+  val conf = ConfigFactory.load()
   val dbconfig = conf.getString("applicationDb")
 //  val db = Database.forConfig("devdb")
   val db = Database.forConfig(dbconfig)

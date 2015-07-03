@@ -27,7 +27,7 @@ object Boot extends App {
     }
   })
 
-  Config conf = ConfigFactory.load();
+  val conf = ConfigFactory.load()
   val port = conf.getInt("applicationPort")
 
   IO(Http).tell(Http.Bind(service, "localhost", port), ioListener)
