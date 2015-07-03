@@ -290,7 +290,7 @@ class FacebookExampleSpec extends Specification with AfterAll {
         val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
         val organisationssystempropertystaticcrossrefRows = Seq(
-          new OrganisationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findpropertyId, findfieldId, findrecordId, relationshipdescription, true)
+          new OrganisationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findlocationpropertyId, findlocationfieldId, findrecordId, relationshipdescription, true)
         )
 
         OrganisationsSystempropertystaticcrossref ++= organisationssystempropertystaticcrossrefRows
