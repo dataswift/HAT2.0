@@ -183,7 +183,9 @@ class FacebookExampleSpec extends Specification with AfterAll {
         val description = Some("An example SystemUnitofmeasurement")
 
         val systemUnitofmeasurementRows = Seq(
-          new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "Example", description, symbol)
+          new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "Example", description, symbol),
+          new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "Timezone", description, symbol),
+          new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "GPS Co-ordinate", description, symbol)
         )
 
         SystemUnitofmeasurement ++= systemUnitofmeasurementRows
@@ -241,21 +243,25 @@ class FacebookExampleSpec extends Specification with AfterAll {
       }
 
       "have Locationssystempropertystaticcrossref created" in {
-        val relationshipdescription = Some("Property Cross Reference for a Facebook Location")
+        val relationshipdescription = Some("Property Cross Reference for a Facebook location")
 
         val findLocationId = LocationsLocation.filter(_.name === "WMG Warwick University").map(_.id).run.head
-        val findpropertyId = SystemProperty.filter(_.name === "latitude").map(_.id).run.head
-        val findfieldId = DataField.filter(_.name === "description").map(_.id).run.head
+        val findlatpropertyId = SystemProperty.filter(_.name === "latitude").map(_.id).run.head
+        val findlongpropertyId = SystemProperty.filter(_.name === "longitude").map(_.id).run.head
+        val findlatfieldId = DataField.filter(_.name === "latitude").map(_.id).run.head
+        val findlongfieldId = DataField.filter(_.name === "longitude").map(_.id).run.head
         val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
         val LocationssystempropertystaticcrossrefRows = Seq(
-          new LocationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findLocationId, findpropertyId, findfieldId, findrecordId, relationshipdescription, true)
+          new LocationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findLocationId, findlatpropertyId, findlatfieldId, findrecordId, relationshipdescription, true),
+          new LocationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findLocationId, findlongpropertyId, findlongfieldId, findrecordId, relationshipdescription, true)
+  
         )
 
         LocationsSystempropertystaticcrossref ++= LocationssystempropertystaticcrossrefRows
 
         val result = LocationsSystempropertystaticcrossref.run
-        result must have size (1)
+        result must have size (2)
       }
     }
   }
@@ -279,8 +285,8 @@ class FacebookExampleSpec extends Specification with AfterAll {
         val relationshipdescription = Some("Property Cross Reference for a Facebook Cover")
 
         val findorganisationId = OrganisationsOrganisation.filter(_.name === "WMG, University of Warwick").map(_.id).run.head
-        val findpropertyId = SystemProperty.filter(_.name === "cover").map(_.id).run.head
-        val findfieldId = DataField.filter(_.name === "cover").map(_.id).run.head
+        val findlocationpropertyId = SystemProperty.filter(_.name === "Organisation Name").map(_.id).run.head
+        val findlocationfieldId = DataField.filter(_.name === "location").map(_.id).run.head
         val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
         val organisationssystempropertystaticcrossrefRows = Seq(
@@ -315,8 +321,8 @@ class FacebookExampleSpec extends Specification with AfterAll {
         val relationshipdescription = Some("Property Cross Reference for a Facebook Cover")
 
         val findeventId = EventsEvent.filter(_.name === "WMG Event").map(_.id).run.head
-        val findpropertyId = SystemProperty.filter(_.name === "cover").map(_.id).run.head
-        val findfieldId = DataField.filter(_.name === "cover").map(_.id).run.head
+        val findpropertyId = SystemProperty.filter(_.name === "timezone").map(_.id).run.head
+        val findfieldId = DataField.filter(_.name === "timezone").map(_.id).run.head
         val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
         val eventssystempropertystaticcrossrefRows = Seq(
@@ -350,8 +356,8 @@ class FacebookExampleSpec extends Specification with AfterAll {
         val relationshipdescription = Some("Property Cross Reference for a Facebook Cover")
 
         val findPersonId = PeoplePerson.filter(_.name === "Martin").map(_.id).run.head
-        val findpropertyId = SystemProperty.filter(_.name === "cover").map(_.id).run.head
-        val findfieldId = DataField.filter(_.name === "cover").map(_.id).run.head
+        val findpropertyId = SystemProperty.filter(_.name === "Owner").map(_.id).run.head
+        val findfieldId = DataField.filter(_.name === "owner").map(_.id).run.head
         val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
         val PeoplesystempropertystaticcrossrefRows = Seq(
