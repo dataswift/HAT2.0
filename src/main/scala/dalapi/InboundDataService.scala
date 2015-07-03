@@ -29,7 +29,8 @@ trait InboundDataService extends HttpService {
     }
   }
 
-  val db = Database.forConfig("devdb")
+//  val db = Database.forConfig("devdb")
+  val db = Database.forConfig("herokudb")
   implicit val session: Session = db.createSession()
 
   import InboundJsonProtocol._
