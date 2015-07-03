@@ -7,6 +7,8 @@ import akka.io.Tcp.Bound
 import akka.util.Timeout
 import spray.can.Http
 
+import com.typesafe.config.{Config, ConfigFactory}
+
 import scala.concurrent.duration._
 
 object Boot extends App {
@@ -25,5 +27,8 @@ object Boot extends App {
     }
   })
 
-  IO(Http).tell(Http.Bind(service, "localhost", 8080), ioListener)
+  Config conf = ConfigFactory.load();
+  val port = conf.getInt("applicationPort")
+
+  IO(Http).tell(Http.Bind(service, "localhost", port), ioListener)
 }

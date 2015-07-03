@@ -14,7 +14,7 @@ import spray.routing._
 import spray.httpx.SprayJsonSupport._
 import spray.util.LoggingContext
 import spray.http.StatusCodes._
-
+import com.typesafe.config.{Config, ConfigFactory}
 import scala.annotation.meta.field
 import scala.concurrent.ExecutionContext.Implicits.global
 import dalapi.models._
@@ -29,8 +29,9 @@ trait InboundDataService extends HttpService {
     }
   }
 
+  val dbconfig = conf.getString("applicationDb")
 //  val db = Database.forConfig("devdb")
-  val db = Database.forConfig("herokudb")
+  val db = Database.forConfig(dbconfig)
   implicit val session: Session = db.createSession()
 
   import InboundJsonProtocol._
