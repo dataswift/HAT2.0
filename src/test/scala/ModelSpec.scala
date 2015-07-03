@@ -56,7 +56,7 @@ class ModelSpec extends Specification with AfterAll {
         val dataTableRow = new DataTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "test", false, "test")
         val tableId = (DataTable returning DataTable.map(_.id)) += dataTableRow
 
-        val dataFieldRow = new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), tableId, "Test")
+        val dataFieldRow = new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test", tableId)
         val fieldId = (DataField returning DataField.map(_.id)) += dataFieldRow
 
         val dataRecordRow = new DataRecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test")

@@ -3,6 +3,7 @@ import org.specs2.specification.{AfterAll, BeforeAfterAll}
 
 //import Tables._
 //import Tables.profile.simple._
+
 import dal.SlickPostgresDriver.simple._
 import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
@@ -61,44 +62,44 @@ class FacebookExampleSpec extends Specification with AfterAll {
         val locationId = findTableId.filter(_.name === "location").map(_.id).run.head
 
         val dataFieldRows = Seq(
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "attending_count"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), coverId, "cover"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "declined_count"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "description"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "end_time"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "feed_targeting"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "id"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "invited_count"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "is_date_only"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "maybe_count"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "name"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "noreply_count"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), ownerId, "owner"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "parent_group"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), placeId, "place"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "privacy"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "rvsp_status"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "start_time"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "end_time"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "ticket_url"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "timezone"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), eventsId, "updated_time"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), coverId, "cover_id"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), coverId, "offset_x"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), coverId, "offset_y"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), coverId, "source"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), coverId, "id"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), ownerId, "id"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), ownerId, "name"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), placeId, "name"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), locationId, "location"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), locationId, "city"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), locationId, "country"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), locationId, "longitude"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), locationId, "latitude"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), locationId, "street"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), locationId, "zip"),
-          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), placeId, "id")
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "attending_count", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", coverId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "declined_count", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "description", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "end_time", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "feed_targeting", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "id", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "invited_count", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "is_date_only", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "maybe_count", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "name", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "noreply_count", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "owner", ownerId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "parent_group", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "place", placeId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "privacy", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "rvsp_status", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "start_time", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "end_time", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "ticket_url", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "timezone", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "updated_time", eventsId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover_id", coverId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "offset_x", coverId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "offset_y", coverId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "source", coverId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "id", coverId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "id", ownerId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "name", ownerId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "name", placeId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "location", locationId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "city", locationId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "country", locationId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "longitude", locationId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "latitude", locationId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "street", locationId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "zip", locationId),
+          new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "id", placeId)
         )
         DataField ++= dataFieldRows
 
@@ -191,7 +192,7 @@ class FacebookExampleSpec extends Specification with AfterAll {
         SystemUnitofmeasurement ++= systemUnitofmeasurementRows
 
         val result = SystemUnitofmeasurement.run
-        result must have size (1)
+        result must have size (3)
       }
 
       "have properties created" in {
@@ -202,7 +203,6 @@ class FacebookExampleSpec extends Specification with AfterAll {
         //        val cover = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Cover", "A facebook cover image")
         //        val timezone = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Timezone", "A timezone")
         //        val placename = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Place Name", "A facebook Place Name")
-
 
 
         val systemPropertyRows = Seq(
@@ -253,9 +253,9 @@ class FacebookExampleSpec extends Specification with AfterAll {
         val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
         val LocationssystempropertystaticcrossrefRows = Seq(
-          new LocationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findLocationId, findlatpropertyId, findlatfieldId, findrecordId, relationshipdescription, true),
-          new LocationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findLocationId, findlongpropertyId, findlongfieldId, findrecordId, relationshipdescription, true)
-  
+          new LocationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findLocationId, findlatpropertyId, findrecordId, findlatfieldId, relationshipdescription, true),
+          new LocationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findLocationId, findlongpropertyId, findrecordId, findlongfieldId, relationshipdescription, true)
+
         )
 
         LocationsSystempropertystaticcrossref ++= LocationssystempropertystaticcrossrefRows
@@ -290,7 +290,7 @@ class FacebookExampleSpec extends Specification with AfterAll {
         val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
         val organisationssystempropertystaticcrossrefRows = Seq(
-          new OrganisationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findlocationpropertyId, findlocationfieldId, findrecordId, relationshipdescription, true)
+          new OrganisationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findlocationpropertyId, findrecordId, findlocationfieldId, relationshipdescription, true)
         )
 
         OrganisationsSystempropertystaticcrossref ++= organisationssystempropertystaticcrossrefRows
@@ -326,7 +326,7 @@ class FacebookExampleSpec extends Specification with AfterAll {
         val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
         val eventssystempropertystaticcrossrefRows = Seq(
-          new EventsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findeventId, findpropertyId, findfieldId, findrecordId, relationshipdescription, true)
+          new EventsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findeventId, findpropertyId, findrecordId, findfieldId, relationshipdescription, true)
         )
 
         EventsSystempropertystaticcrossref ++= eventssystempropertystaticcrossrefRows
@@ -343,7 +343,7 @@ class FacebookExampleSpec extends Specification with AfterAll {
         val localdatetime = Some(LocalDateTime.now())
 
         val PeoplePersonRows = Seq(
-          new PeoplePersonRow(1, "Martin", LocalDateTime.now(), LocalDateTime.now(), "Abc-123-def-456-ghj-789")
+          new PeoplePersonRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin", "Abc-123-def-456-ghj-789")
         )
 
         PeoplePerson ++= PeoplePersonRows
@@ -361,7 +361,7 @@ class FacebookExampleSpec extends Specification with AfterAll {
         val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
         val PeoplesystempropertystaticcrossrefRows = Seq(
-          new PeopleSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findPersonId, findpropertyId, findfieldId, findrecordId, relationshipdescription, true)
+          new PeopleSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findPersonId, findpropertyId, findrecordId, findfieldId, relationshipdescription, true)
         )
 
         PeopleSystempropertystaticcrossref ++= PeoplesystempropertystaticcrossrefRows
@@ -410,26 +410,13 @@ class FacebookExampleSpec extends Specification with AfterAll {
 
   "Facebook structures" should {
     db.withSession { implicit session =>
-      "allow location data to be cleaned up" in {
-          LocationsLocation.delete
-          LocationsLocation.run must have size (0)
 
-          LocationsLocationtolocationcrossref.delete
-          LocationsLocationtolocationcrossref.run must have size (0)
+      "allow proeprty crossrefs to be removed" in {
+        LocationsSystempropertydynamiccrossref.delete
+        LocationsSystempropertydynamiccrossref.run must have size (0)
 
-          LocationsSystempropertydynamiccrossref.delete
-          LocationsSystempropertydynamiccrossref.run must have size (0)
-
-          LocationsSystempropertystaticcrossref.delete
-          LocationsSystempropertystaticcrossref.run must have size (0)
-      }
-
-      "allow organisation data to be removed" in {
-        OrganisationsOrganisation.delete
-        OrganisationsOrganisation.run must have size (0)
-
-        OrganisationOrganisationtoorganisationcrossref.delete
-        OrganisationOrganisationtoorganisationcrossref.run must have size (0)
+        LocationsSystempropertystaticcrossref.delete
+        LocationsSystempropertystaticcrossref.run must have size (0)
 
         OrganisationsSystempropertydynamiccrossref.delete
         OrganisationsSystempropertydynamiccrossref.run must have size (0)
@@ -437,51 +424,23 @@ class FacebookExampleSpec extends Specification with AfterAll {
         OrganisationsSystempropertystaticcrossref.delete
         OrganisationsSystempropertystaticcrossref.run must have size (0)
 
-      }
-
-      "allow event data to be removed" in {
-        EventsEvent.delete
-        EventsEvent.run must have size (0)
-
-        EventsEventtoeventcrossref.delete
-        EventsEventtoeventcrossref.run must have size (0)
-
         EventsSystempropertydynamiccrossref.delete
         EventsSystempropertydynamiccrossref.run must have size (0)
 
         EventsSystempropertystaticcrossref.delete
         EventsSystempropertystaticcrossref.run must have size (0)
-      }
-
-      "allow person data to be removed" in {
-        PeoplePerson.delete
-        PeoplePerson.run must have size (0)
-
-        PeoplePersontopersonrelationshiptype.delete
-        PeoplePersontopersonrelationshiptype.run must have size (0)
-
-        PeoplePersontopersoncrossref.delete
-        PeoplePersontopersoncrossref.run must have size (0)
 
         PeopleSystempropertydynamiccrossref.delete
         PeopleSystempropertydynamiccrossref.run must have size (0)
 
         PeopleSystempropertystaticcrossref.delete
         PeopleSystempropertystaticcrossref.run must have size (0)
-      }
 
-      "allow things tables to be cleaned up" in {
         ThingsSystempropertydynamiccrossref.delete
         ThingsSystempropertydynamiccrossref.run must have size (0)
 
         ThingsSystempropertystaticcrossref.delete
         ThingsSystempropertystaticcrossref.run must have size (0)
-
-        ThingsThingtothingcrossref.delete
-        ThingsThingtothingcrossref.run must have size (0)
-
-        ThingsThing.delete
-        ThingsThing.run must have size (0)
       }
 
       "allow Property tables to be cleaned up" in {
@@ -498,6 +457,61 @@ class FacebookExampleSpec extends Specification with AfterAll {
         SystemUnitofmeasurement.delete
         SystemUnitofmeasurement.run must have size (0)
 
+      }
+
+      "allow location data to be cleaned up" in {
+
+        LocationsLocationtolocationcrossref.delete
+        LocationsLocationtolocationcrossref.run must have size (0)
+
+        LocationsLocation.delete
+        LocationsLocation.run must have size (0)
+
+      }
+
+      "allow organisation data to be removed" in {
+
+
+        OrganisationOrganisationtoorganisationcrossref.delete
+        OrganisationOrganisationtoorganisationcrossref.run must have size (0)
+
+        OrganisationsOrganisation.delete
+        OrganisationsOrganisation.run must have size (0)
+
+      }
+
+      "allow event data to be removed" in {
+        EventsEventtoeventcrossref.delete
+        EventsEventtoeventcrossref.run must have size (0)
+
+        EventsEvent.delete
+        EventsEvent.run must have size (0)
+
+
+      }
+
+      "allow person data to be removed" in {
+
+
+        PeoplePersontopersonrelationshiptype.delete
+        PeoplePersontopersonrelationshiptype.run must have size (0)
+
+        PeoplePersontopersoncrossref.delete
+        PeoplePersontopersoncrossref.run must have size (0)
+
+        PeoplePerson.delete
+        PeoplePerson.run must have size (0)
+
+      }
+
+      "allow things tables to be cleaned up" in {
+
+
+        ThingsThingtothingcrossref.delete
+        ThingsThingtothingcrossref.run must have size (0)
+
+        ThingsThing.delete
+        ThingsThing.run must have size (0)
       }
 
       "be cleaned up after testing" in {

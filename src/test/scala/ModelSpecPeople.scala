@@ -27,7 +27,7 @@ class ModelSpecPeople extends Specification with AfterAll {
       }
       "accept data" in {
 
-        val PeoplePersonRow = new PeoplePersonRow(1, "Martin", LocalDateTime.now(), LocalDateTime.now(), "Abc-123-def-456")
+        val PeoplePersonRow = new PeoplePersonRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin", "Abc-123-def-456")
         val PersonId = (PeoplePerson returning PeoplePerson.map(_.id))
 
         val relationshiptype = Some("Relationship description")

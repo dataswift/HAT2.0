@@ -110,7 +110,7 @@ trait InboundDataService extends HttpService {
     post {
       respondWithMediaType(`application/json`) {
         entity(as[ApiDataField]) { field =>
-          val newField = new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.tableId, field.name)
+          val newField = new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.name, field.tableId)
           val fieldId = (DataField returning DataField.map(_.id)) += newField
           complete {
             field.copy(id = Some(fieldId))
