@@ -1,7 +1,7 @@
 import NativePackagerKeys._
 import com.typesafe.sbt.SbtNativePackager._
 
-//lazy val root = (project in file(".")).enablePlugins(JavaAppPackaging)
+enablePlugins(JavaAppPackaging)
 
 name := """hat-dal"""
 

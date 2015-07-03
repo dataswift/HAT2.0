@@ -12,5 +12,3 @@ target/
 include “application.conf"`
 
 *.conf
-
-src/main/scala/dal/Tables.scala
