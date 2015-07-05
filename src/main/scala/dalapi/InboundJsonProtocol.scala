@@ -12,4 +12,26 @@ object InboundJsonProtocol extends DefaultJsonProtocol with NullOptions {
   implicit val dataFieldformat = jsonFormat3(ApiDataField)
   implicit val apiDataRecord = jsonFormat2(ApiDataRecord)
   implicit val apiDataValueFormat = jsonFormat4(ApiDataValue)
+  implicit val apiGenericId = jsonFormat1(ApiGenericId)
+
+  // Events
+  implicit val apiEvent = jsonFormat2(ApiEvent)
+
+  // Locations
+  implicit val apiLocation = jsonFormat2(ApiLocation)
+
+  // Organistaions
+  implicit val apiOrganisation = jsonFormat2(ApiOrganisation)
+
+  // People
+  implicit val apiPerson = jsonFormat3(ApiPerson)
+
+  // Things
+  implicit val apiThings = jsonFormat2(ApiThing)
+
+  // Properties
+  implicit val apiProperty = jsonFormat3(ApiProperty)
+
+  // Crossrefs
+  implicit val apiRelationship = jsonFormat2(ApiRelationship)
 }

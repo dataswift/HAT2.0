@@ -21,37 +21,20 @@ import dalapi.models._
 
 
 // this trait defines our service behavior independently from the service actor
-@Api(value = "/inbound/data", description = "Inbound Data Service", position = 0)
 trait InboundDataService extends HttpService {
 
   val routes = { pathPrefix("inbound" / "data") {
-      createTable ~ createField ~ createRecord //~ createValue ~ storeValueList
+      createTable ~ createField ~ createRecord ~ createValue ~ storeValueList
     }
   }
 
   val conf = ConfigFactory.load()
   val dbconfig = conf.getString("applicationDb")
-//  val db = Database.forConfig("devdb")
   val db = Database.forConfig(dbconfig)
   implicit val session: Session = db.createSession()
 
   import InboundJsonProtocol._
 
-  @Path("/table")
-  @ApiOperation(value = "Create new table",
-    notes = "Creates a virtual table, returns table ID",
-    httpMethod = "POST")
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(
-      name = "table",
-      value = "The new Virtual Data Table to be added",
-      required = true,
-      dataType = "ApiDataTable",
-      paramType = "body")
-  ))
-//  @ApiResponses(Array(
-//    new ApiResponse(code = 201, message = "Table has been created", response = classOf[ApiDataTable])
-//  ))
   def createTable = path("table") {
     post {
       respondWithMediaType(`application/json`) {
@@ -66,46 +49,20 @@ trait InboundDataService extends HttpService {
     }
   }
 
-//  @Path("/table/:id/addTable")
-//  @ApiOperation(value = "Add a sub-table within a table",
-//    notes = "Crossreferences two virtual tables in a parent-child relationship",
-//    httpMethod = "POST",
-//    response = classOf[ApiDataTable])
-//  @ApiImplicitParams(Array(
-//    new ApiImplicitParam(
-//      name = "table",
-//      value = "The new Virtual Data Table to be added",
-//      required = true,
-//      dataType = "ApiDataTable",
-//      paramType = "body")
-//  ))
-//  def addTableToTable = path("table") {
-//    post {
-//      respondWithMediaType(`application/json`) {
-//        entity(as[ApiDataTable]) { table =>
-//          val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, false, table.source)
-//          val tableId = (DataTable returning DataTable.map(_.id)) += newTable
-//          complete {
-//            table.copy(id = Some(tableId))
-//          }
-//        }
-//      }
-//    }
-//  }
+  def addTableToTable = path("table" / IntNumber / "addTable" / IntNumber) { (parentId: Int, childId: Int) =>
+    post {
+      respondWithMediaType(`application/json`) {
+        val dataTableToTableCrossRefRow = new DataTabletotablecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", parentId, childId)
+        val tableToTablecrossrefId = (DataTabletotablecrossref returning DataTabletotablecrossref.map(_.id)) += dataTableToTableCrossRefRow
 
-  @Path("/field")
-  @ApiOperation(value = "Create new field in a table",
-    notes = "Creates a field in a virtual data table",
-    httpMethod = "POST",
-    response = classOf[ApiDataField])
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(
-      name = "field",
-      value = "The new Data Field to be added",
-      required = true,
-      dataType = "ApiDataField",
-      paramType = "body")
-  ))
+        complete {
+          ApiGenericId(tableToTablecrossrefId)
+        }
+      }
+    }
+  }
+
+
   def createField = path("field") {
     post {
       respondWithMediaType(`application/json`) {
@@ -120,19 +77,6 @@ trait InboundDataService extends HttpService {
     }
   }
 
-  @Path("/record")
-  @ApiOperation(value = "Add new data record",
-    notes = "Creates a new data record",
-    httpMethod = "POST",
-    response = classOf[ApiDataRecord])
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(
-      name = "field",
-      value = "The new Data record to be created",
-      required = true,
-      dataType = "ApiDataRecord",
-      paramType = "body")
-  ))
   def createRecord = path("record") {
     post {
       respondWithMediaType(`application/json`) {
@@ -147,19 +91,6 @@ trait InboundDataService extends HttpService {
     }
   }
 
-  @Path("/value")
-  @ApiOperation(value = "Store a data value",
-    notes = "Stores a single new value, within one field in a single (virtual) table",
-    httpMethod = "POST",
-    response = classOf[ApiDataValue])
-  @ApiImplicitParams(Array(
-    new ApiImplicitParam(
-      name = "value",
-      value = "The single value to be stored",
-      required = true,
-      dataType = "ApiDataValue",
-      paramType = "body")
-  ))
   def createValue = path("value") {
     post {
       respondWithMediaType(`application/json`) {
@@ -174,38 +105,22 @@ trait InboundDataService extends HttpService {
     }
   }
 
+  def storeValueList = path("value" / "list") {
+    post {
+      respondWithMediaType(`application/json`) {
+        entity(as[Seq[ApiDataValue]]) { values =>
+          val dataValues = values.map { value =>
+            DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.fieldId, value.recordId)
+          }
 
-
-//  @Path("/valueList")
-//  @ApiOperation(value = "Add a list of values at once",
-//    notes = "Stores a list of new values",
-//    httpMethod = "POST",
-//    response = classOf[ApiDataValue])
-//  @ApiImplicitParams(Array(
-//    new ApiImplicitParam(
-//      name = "values",
-//      value = "The list of values to be inserted",
-//      required = true,
-//      dataType = "Array",   // FIXME: SwaggerUI does not recognise Sequence of types... Array and List are not parsed correctly...
-////      items = "ApiDataValue",
-//      paramType = "body")
-//  ))
-//  def storeValueList = path("valueList") {
-//    post {
-//      respondWithMediaType(`application/json`) {
-//        entity(as[Seq[ApiDataValue]]) { values =>
-//          val dataValues = values.map { value =>
-//            DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.fieldId, value.recordId)
-//          }
-//
-//          DataValue ++= dataValues
-//          complete{
-//            values.head
-//          }
-//        }
-//      }
-//    }
-//  }
+          DataValue ++= dataValues
+          complete{
+            values.head
+          }
+        }
+      }
+    }
+  }
 
 
 }

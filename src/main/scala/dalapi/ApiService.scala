@@ -15,17 +15,6 @@ class ApiServiceActor extends HttpServiceActor with ActorLogging {
   // connects the services environment to the enclosing actor or test
   override def actorRefFactory = context
 
-  val swaggerService = new SwaggerHttpService {
-    override def apiTypes = Seq(typeOf[InboundDataService], typeOf[HelloService])
-    override def apiVersion = "2.0"
-    override def baseUrl = "/" // let swagger-ui determine the host and port
-    override def docsPath = "api-docs"
-    override def actorRefFactory = context
-    override def apiInfo = Some(new ApiInfo("HAT 2.0 API", "The HAT API.", "TOC Url", "Andrius Aucinas @AndriusA", "Apache V2", "http://www.apache.org/licenses/LICENSE-2.0"))
-
-    //authorizations, not used
-  }
-
   // Initialise all the service the actor handles
   val helloService = new HelloService {
     def actorRefFactory = context
@@ -39,8 +28,12 @@ class ApiServiceActor extends HttpServiceActor with ActorLogging {
     def actorRefFactory = context
   }
 
+  val inboundEventsService = new InboundEventsService {
+    def actorRefFactory = context
+  }
+
   // Concatenate all their handled routes
-  val routes = helloService.routes ~ swaggerService.routes ~ swaggerSite.site ~ inboundDataService.routes
+  val routes = helloService.routes ~ swaggerSite.site ~ inboundDataService.routes
 
   def receive = runRoute(routes)
 }
