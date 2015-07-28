@@ -1,6 +1,8 @@
 
+CREATE SEQUENCE public.system_relationshiprecord_id_seq;
+
 CREATE TABLE public.system_relationshiprecord (
-                id INTEGER NOT NULL,
+                id INTEGER NOT NULL DEFAULT nextval('public.system_relationshiprecord_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -8,8 +10,12 @@ CREATE TABLE public.system_relationshiprecord (
 );
 
 
+ALTER SEQUENCE public.system_relationshiprecord_id_seq OWNED BY public.system_relationshiprecord.id;
+
+CREATE SEQUENCE public.system_relationshiprecordtorecordcrossref_id_seq;
+
 CREATE TABLE public.system_relationshiprecordtorecordcrossref (
-                id INTEGER NOT NULL,
+                id INTEGER NOT NULL DEFAULT nextval('public.system_relationshiprecordtorecordcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 relationshiprecord_id1 INTEGER NOT NULL,
@@ -17,6 +23,8 @@ CREATE TABLE public.system_relationshiprecordtorecordcrossref (
                 CONSTRAINT system_relationshiprecordtorecordcrossref_pk PRIMARY KEY (id)
 );
 
+
+ALTER SEQUENCE public.system_relationshiprecordtorecordcrossref_id_seq OWNED BY public.system_relationshiprecordtorecordcrossref.id;
 
 CREATE SEQUENCE public.system_propertyrecord_id_seq;
 
@@ -31,8 +39,10 @@ CREATE TABLE public.system_propertyrecord (
 
 ALTER SEQUENCE public.system_propertyrecord_id_seq OWNED BY public.system_propertyrecord.id;
 
+CREATE SEQUENCE public.data_bundle_id_seq;
+
 CREATE TABLE public.data_bundle (
-                id INTEGER NOT NULL,
+                id INTEGER NOT NULL DEFAULT nextval('public.data_bundle_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -42,8 +52,12 @@ CREATE TABLE public.data_bundle (
 );
 
 
+ALTER SEQUENCE public.data_bundle_id_seq OWNED BY public.data_bundle.id;
+
+CREATE SEQUENCE public.system_relationshiprecordtobundlecrossref_id_seq;
+
 CREATE TABLE public.system_relationshiprecordtobundlecrossref (
-                id INTEGER NOT NULL,
+                id INTEGER NOT NULL DEFAULT nextval('public.system_relationshiprecordtobundlecrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
@@ -52,10 +66,12 @@ CREATE TABLE public.system_relationshiprecordtobundlecrossref (
 );
 
 
+ALTER SEQUENCE public.system_relationshiprecordtobundlecrossref_id_seq OWNED BY public.system_relationshiprecordtobundlecrossref.id;
+
 CREATE SEQUENCE public.system_propertyrecordtobundlecrrossref_id_seq;
 
 CREATE TABLE public.system_propertyrecordtobundlecrrossref (
-                id VARCHAR NOT NULL DEFAULT nextval('public.system_propertyrecordtobundlecrrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.system_propertyrecordtobundlecrrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 propertyrecord_id INTEGER NOT NULL,
