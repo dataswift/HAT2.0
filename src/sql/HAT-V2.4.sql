@@ -1,16 +1,22 @@
 
-CREATE SEQUENCE public.system_relationshiprecord_id_seq;
-
 CREATE TABLE public.system_relationshiprecord (
-                id INTEGER NOT NULL DEFAULT nextval('public.system_relationshiprecord_id_seq'),
-                date_created INTEGER NOT NULL,
-                last_updated INTEGER NOT NULL,
+                id INTEGER NOT NULL,
+                date_created TIMESTAMP NOT NULL,
+                last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
                 CONSTRAINT system_relationshiprecord_pk PRIMARY KEY (id)
 );
 
 
-ALTER SEQUENCE public.system_relationshiprecord_id_seq OWNED BY public.system_relationshiprecord.id;
+CREATE TABLE public.system_relationshiprecordtorecordcrossref (
+                id INTEGER NOT NULL,
+                date_created TIMESTAMP NOT NULL,
+                last_updated TIMESTAMP NOT NULL,
+                relationshiprecord_id1 INTEGER NOT NULL,
+                relationshiprecord_id2 INTEGER NOT NULL,
+                CONSTRAINT system_relationshiprecordtorecordcrossref_pk PRIMARY KEY (id)
+);
+
 
 CREATE SEQUENCE public.system_propertyrecord_id_seq;
 
@@ -35,6 +41,30 @@ CREATE TABLE public.data_bundle (
                 CONSTRAINT data_bundle_pk PRIMARY KEY (id)
 );
 
+
+CREATE TABLE public.system_relationshiprecordtobundlecrossref (
+                id INTEGER NOT NULL,
+                date_created TIMESTAMP NOT NULL,
+                last_updated TIMESTAMP NOT NULL,
+                relationshiprecord_id INTEGER NOT NULL,
+                bundle_id INTEGER NOT NULL,
+                CONSTRAINT system_relationshiprecordtobundlecrossref_pk PRIMARY KEY (id)
+);
+
+
+CREATE SEQUENCE public.system_propertyrecordtobundlecrrossref_id_seq;
+
+CREATE TABLE public.system_propertyrecordtobundlecrrossref (
+                id VARCHAR NOT NULL DEFAULT nextval('public.system_propertyrecordtobundlecrrossref_id_seq'),
+                date_created TIMESTAMP NOT NULL,
+                last_updated TIMESTAMP NOT NULL,
+                propertyrecord_id INTEGER NOT NULL,
+                bundle_id INTEGER NOT NULL,
+                CONSTRAINT system_propertyrecordtobundlecrrossref_pk PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.system_propertyrecordtobundlecrrossref_id_seq OWNED BY public.system_propertyrecordtobundlecrrossref.id;
 
 CREATE TABLE public.data_debit (
                 id INTEGER NOT NULL,
@@ -171,7 +201,6 @@ CREATE TABLE public.data_table (
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
-                is_bundle BOOLEAN NOT NULL,
                 source_name VARCHAR NOT NULL,
                 CONSTRAINT data_table_pk PRIMARY KEY (id)
 );
@@ -1027,6 +1056,27 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
+ALTER TABLE public.system_relationshiprecordtorecordcrossref ADD CONSTRAINT system_relationshiprecord_system_relationshiprecordtorecordc18
+FOREIGN KEY (relationshiprecord_id2)
+REFERENCES public.system_relationshiprecord (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.system_relationshiprecordtorecordcrossref ADD CONSTRAINT system_relationshiprecord_system_relationshiprecordtorecordc567
+FOREIGN KEY (relationshiprecord_id1)
+REFERENCES public.system_relationshiprecord (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.system_relationshiprecordtobundlecrossref ADD CONSTRAINT system_relationshiprecord_system_relationshiprecordtobundlec161
+FOREIGN KEY (relationshiprecord_id)
+REFERENCES public.system_relationshiprecord (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
 ALTER TABLE public.events_systempropertystaticcrossref ADD CONSTRAINT property_record_events_systempropertystaticcrossref_fk
 FOREIGN KEY (propertyrecord_id)
 REFERENCES public.system_propertyrecord (id)
@@ -1111,7 +1161,28 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
+ALTER TABLE public.system_propertyrecordtobundlecrrossref ADD CONSTRAINT system_propertyrecord_system_propertytobundlecrossref_fk
+FOREIGN KEY (propertyrecord_id)
+REFERENCES public.system_propertyrecord (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
 ALTER TABLE public.data_debit ADD CONSTRAINT data_bundle_data_debit_fk1
+FOREIGN KEY (bundle_id)
+REFERENCES public.data_bundle (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.system_propertyrecordtobundlecrrossref ADD CONSTRAINT data_bundle_system_propertytobundlecrossref_fk
+FOREIGN KEY (bundle_id)
+REFERENCES public.data_bundle (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.system_relationshiprecordtobundlecrossref ADD CONSTRAINT data_bundle_system_relationshiprecordtobundlecrossref_fk
 FOREIGN KEY (bundle_id)
 REFERENCES public.data_bundle (id)
 ON DELETE NO ACTION
