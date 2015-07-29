@@ -20,6 +20,7 @@ CREATE TABLE public.system_relationshiprecordtorecordcrossref (
                 last_updated TIMESTAMP NOT NULL,
                 relationshiprecord_id1 INTEGER NOT NULL,
                 relationshiprecord_id2 INTEGER NOT NULL,
+                relationship_type VARCHAR(100) NOT NULL,
                 CONSTRAINT system_relationshiprecordtorecordcrossref_pk PRIMARY KEY (id)
 );
 
@@ -422,7 +423,7 @@ CREATE TABLE public.things_systemtypecrossref (
                 last_updated TIMESTAMP NOT NULL,
                 thing_id INTEGER NOT NULL,
                 system_type_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100) NOT NULL, 
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 CONSTRAINT things_systemtypecrossref_pkey PRIMARY KEY (id)
 );
@@ -503,8 +504,10 @@ CREATE TABLE public.system_unitofmeasurement (
 
 ALTER SEQUENCE public.system_unitofmeasurement_id_seq OWNED BY public.system_unitofmeasurement.id;
 
+CREATE SEQUENCE public.system_property_id_seq;
+
 CREATE TABLE public.system_property (
-                id INTEGER NOT NULL DEFAULT nextval('system_property_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.system_property_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -514,6 +517,8 @@ CREATE TABLE public.system_property (
                 CONSTRAINT system_property_pkey PRIMARY KEY (id)
 );
 
+
+ALTER SEQUENCE public.system_property_id_seq OWNED BY public.system_property.id;
 
 CREATE SEQUENCE public.people_systempropertydynamiccrossref_id_seq;
 
@@ -851,7 +856,7 @@ CREATE TABLE public.people_personorganisationcrossref (
                 last_updated TIMESTAMP NOT NULL,
                 person_id INTEGER NOT NULL,
                 organisation_id INTEGER NOT NULL,
-                relationship_type VARCHAR NOT NULL,
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT people_personorganisationcrossref_pkey PRIMARY KEY (id)
