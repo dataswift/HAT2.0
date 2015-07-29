@@ -25,7 +25,15 @@ trait InboundEventsService extends HttpService with InboundService {
 
   val routes = {
     pathPrefix("inbound") {
-      createEvent
+      createEvent ~
+        linkEventToLocation ~
+        linkEventToOrganisation ~
+        linkEventToPerson ~
+        linkEventToThing ~
+        linkEventToEvent ~
+        linkEventToPropertyStatic ~
+        linkEventToPropertyDynamic ~
+        addEventType
     }
   }
 
@@ -51,7 +59,7 @@ trait InboundEventsService extends HttpService with InboundService {
     }
   }
 
-  def linkEventLocation = path("event" / IntNumber / "location" / IntNumber) { (eventId: Int, locationId: Int) =>
+  def linkEventToLocation = path("event" / IntNumber / "location" / IntNumber) { (eventId: Int, locationId: Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
@@ -68,10 +76,6 @@ trait InboundEventsService extends HttpService with InboundService {
       }
     }
   }
-
-//  def linkEventOrganisation = path("event") {
-//
-//  }
 
   def linkEventToOrganisation = path("event" / IntNumber / "organisation" / IntNumber) { (eventId : Int, organisationId : Int) =>
     post {
@@ -208,7 +212,7 @@ trait InboundEventsService extends HttpService with InboundService {
   /*
    * Tag event with a type
    */
-  def addThingType = path("event" / IntNumber / "type" / IntNumber) { (eventId: Int, typeId: Int) =>
+  def addEventType = path("event" / IntNumber / "type" / IntNumber) { (eventId: Int, typeId: Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
