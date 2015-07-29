@@ -1,3 +1,5 @@
+drop schema public cascade;
+create schema public;
 
 CREATE SEQUENCE public.system_relationshiprecord_id_seq;
 
@@ -125,7 +127,7 @@ CREATE TABLE public.events_eventtoeventcrossref (
                 last_updated TIMESTAMP NOT NULL,
                 event_one_id INTEGER NOT NULL,
                 event_two_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT events_eventtoeventcrossref_pkey PRIMARY KEY (id)
@@ -177,7 +179,7 @@ CREATE TABLE public.events_systemtypecrossref (
                 last_updated TIMESTAMP NOT NULL,
                 event_id INTEGER NOT NULL,
                 system_type_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 CONSTRAINT events_systemtypecrossref_pkey PRIMARY KEY (id)
 );
@@ -236,7 +238,7 @@ CREATE TABLE public.data_tabletotablecrossref (
                 id INTEGER NOT NULL DEFAULT nextval('public.data_tabletotablecrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
-                relationship_type VARCHAR NOT NULL,
+                relationship_type VARCHAR(100) NOT NULL,
                 table1 INTEGER NOT NULL,
                 table2 INTEGER NOT NULL,
                 CONSTRAINT data_tabletotablecrossref_pk PRIMARY KEY (id)
@@ -310,7 +312,7 @@ CREATE TABLE public.events_eventpersoncrossref (
                 last_updated TIMESTAMP NOT NULL,
                 person_id INTEGER NOT NULL,
                 event_od INTEGER NOT NULL,
-                relationship_type TEXT,
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT events_eventpersoncrossref_pkey PRIMARY KEY (id)
@@ -335,7 +337,7 @@ CREATE TABLE public.people_systemtypecrossref (
                 last_updated TIMESTAMP NOT NULL,
                 users_id INTEGER NOT NULL,
                 system_type_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 CONSTRAINT people_systemtypecrossref_pkey PRIMARY KEY (id)
 );
@@ -397,7 +399,7 @@ CREATE TABLE public.events_eventthingcrossref (
                 last_updated TIMESTAMP NOT NULL,
                 thing_id INTEGER NOT NULL,
                 event_id INTEGER NOT NULL,
-                relationship_type TEXT NOT NULL,
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT events_eventthingcrossref_pkey PRIMARY KEY (id)
@@ -422,7 +424,7 @@ CREATE TABLE public.things_systemtypecrossref (
                 last_updated TIMESTAMP NOT NULL,
                 thing_id INTEGER NOT NULL,
                 system_type_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 CONSTRAINT things_systemtypecrossref_pkey PRIMARY KEY (id)
 );
@@ -446,7 +448,7 @@ CREATE TABLE public.things_thingtothingcrossref (
                 last_updated TIMESTAMP NOT NULL,
                 thing_one_id INTEGER NOT NULL,
                 thing_two_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT things_thingtothingcrossref_pkey PRIMARY KEY (id)
@@ -469,10 +471,9 @@ CREATE TABLE public.things_thingpersoncrossref (
                 id INTEGER NOT NULL DEFAULT nextval('public.things_thingpersoncrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
-                description TEXT,
                 person_id INTEGER NOT NULL,
                 thing_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT things_thingpersoncrossref_pkey PRIMARY KEY (id)
@@ -525,7 +526,7 @@ CREATE TABLE public.people_systempropertydynamiccrossref (
                 person_id INTEGER NOT NULL,
                 system_property_id INTEGER NOT NULL,
                 field_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 propertyrecord_id INTEGER NOT NULL,
                 CONSTRAINT people_systempropertydynamiccrossref_pkey PRIMARY KEY (id)
@@ -552,7 +553,7 @@ CREATE TABLE public.people_systempropertystaticcrossref (
                 system_property_id INTEGER NOT NULL,
                 record_id INTEGER NOT NULL,
                 field_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 propertyrecord_id INTEGER NOT NULL,
                 CONSTRAINT people_systempropertystaticcrossref_pkey PRIMARY KEY (id)
@@ -579,7 +580,7 @@ CREATE TABLE public.events_systempropertystaticcrossref (
                 system_property_id INTEGER NOT NULL,
                 record_id INTEGER NOT NULL,
                 field_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 propertyrecord_id INTEGER NOT NULL,
                 CONSTRAINT events_systempropertystaticcrossref_pkey PRIMARY KEY (id)
@@ -601,7 +602,7 @@ CREATE TABLE public.events_systempropertydynamiccrossref (
                 event_id INTEGER NOT NULL,
                 system_property_id INTEGER NOT NULL,
                 field_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 propertyrecord_id INTEGER NOT NULL,
                 CONSTRAINT events_systempropertydynamiccrossref_pkey PRIMARY KEY (id)
@@ -627,7 +628,7 @@ CREATE TABLE public.things_systempropertydynamiccrossref (
                 thing_id INTEGER NOT NULL,
                 system_property_id INTEGER NOT NULL,
                 field_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 propertyrecord_id INTEGER NOT NULL,
                 CONSTRAINT things_systempropertydynamiccrossref_pkey PRIMARY KEY (id)
@@ -654,7 +655,7 @@ CREATE TABLE public.things_systempropertystaticcrossref (
                 system_property_id INTEGER NOT NULL,
                 field_id INTEGER NOT NULL,
                 record_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 propertyrecord_id INTEGER NOT NULL,
                 CONSTRAINT things_systempropertystaticcrossref_pkey PRIMARY KEY (id)
@@ -752,7 +753,7 @@ CREATE TABLE public.organisations_systempropertystaticcrossref (
                 system_property_id INTEGER NOT NULL,
                 record_id INTEGER NOT NULL,
                 field_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 propertyrecord_id INTEGER NOT NULL,
                 CONSTRAINT organisations_systempropertystaticcrossref_pkey PRIMARY KEY (id)
@@ -778,7 +779,7 @@ CREATE TABLE public.organisations_systempropertydynamiccrossref (
                 organisation_id INTEGER NOT NULL,
                 system_property_id INTEGER NOT NULL,
                 field_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 propertyrecord_id INTEGER NOT NULL,
                 CONSTRAINT organisations_systempropertydynamiccrossref_pkey PRIMARY KEY (id)
@@ -803,7 +804,7 @@ CREATE TABLE public.events_eventorganisationcrossref (
                 last_updated TIMESTAMP NOT NULL,
                 organisation_id INTEGER NOT NULL,
                 event_od INTEGER NOT NULL,
-                relationship_type TEXT,
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT events_eventorganisationcrossref_pkey PRIMARY KEY (id)
@@ -828,7 +829,7 @@ CREATE TABLE public.organisation_systemtypecrossref (
                 last_updated TIMESTAMP NOT NULL,
                 organisation_id INTEGER NOT NULL,
                 system_type_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 CONSTRAINT organisation_systemtypecrossref_pkey PRIMARY KEY (id)
 );
@@ -852,7 +853,7 @@ CREATE TABLE public.people_personorganisationcrossref (
                 last_updated TIMESTAMP NOT NULL,
                 person_id INTEGER NOT NULL,
                 organisation_id INTEGER NOT NULL,
-                relationship_type VARCHAR NOT NULL,
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT people_personorganisationcrossref_pkey PRIMARY KEY (id)
@@ -892,7 +893,7 @@ CREATE TABLE public.locations_systempropertystaticcrossref (
                 system_property_id INTEGER NOT NULL,
                 record_id INTEGER NOT NULL,
                 field_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 propertyrecord_id INTEGER NOT NULL,
                 CONSTRAINT locations_systempropertystaticcrossref_pkey PRIMARY KEY (id)
@@ -918,7 +919,7 @@ CREATE TABLE public.locations_systempropertydynamiccrossref (
                 location_id INTEGER NOT NULL,
                 system_property_id INTEGER NOT NULL,
                 field_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 propertyrecord_id INTEGER NOT NULL,
                 CONSTRAINT locations_systempropertydynamiccrossref_pkey PRIMARY KEY (id)
@@ -943,7 +944,7 @@ CREATE TABLE public.events_eventlocationcrossref (
                 last_updated TIMESTAMP NOT NULL,
                 location_id INTEGER NOT NULL,
                 event_id INTEGER NOT NULL,
-                relationship_type TEXT NOT NULL,
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT events_eventlocationcrossref_pkey PRIMARY KEY (id)
@@ -968,7 +969,7 @@ CREATE TABLE public.locations_systemtypecrossref (
                 last_updated TIMESTAMP NOT NULL,
                 location_id INTEGER NOT NULL,
                 system_type_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 CONSTRAINT locations_systemtypecrossref_pkey PRIMARY KEY (id)
 );
@@ -992,7 +993,7 @@ CREATE TABLE public.organisations_organisationlocationcrossref (
                 last_updated TIMESTAMP NOT NULL,
                 location_id INTEGER NOT NULL,
                 organisation_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT organisations_organisationlocationcrossref_pkey PRIMARY KEY (id)
@@ -1017,7 +1018,7 @@ CREATE TABLE public.locations_locationtolocationcrossref (
                 last_updated TIMESTAMP NOT NULL,
                 loc_one_id INTEGER NOT NULL,
                 loc_two_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT locations_locationtolocationcrossref_pkey PRIMARY KEY (id)
@@ -1042,7 +1043,7 @@ CREATE TABLE public.locations_locationthingcrossref (
                 last_updated TIMESTAMP NOT NULL,
                 location_id INTEGER NOT NULL,
                 thing_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT locations_locationthingcrossref_pkey PRIMARY KEY (id)
@@ -1067,7 +1068,7 @@ CREATE TABLE public.people_personlocationcrossref (
                 last_updated TIMESTAMP NOT NULL,
                 location_id INTEGER NOT NULL,
                 person_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT people_personlocationcrossref_pkey PRIMARY KEY (id)

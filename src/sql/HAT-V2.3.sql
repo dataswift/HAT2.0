@@ -1,5 +1,6 @@
 drop schema public cascade;
 create schema public;
+create schema private;
        
 CREATE SEQUENCE public.events_event_id_seq;
 
@@ -121,6 +122,16 @@ CREATE TABLE public.data_table (
                 is_bundle BOOLEAN NOT NULL,
                 source_name VARCHAR NOT NULL,
                 CONSTRAINT data_table_pk PRIMARY KEY (id)
+);
+
+CREATE TABLE private.data_table (
+  id INTEGER NOT NULL DEFAULT nextval('public.data_table_id_seq'),
+  date_created TIMESTAMP NOT NULL,
+  last_updated TIMESTAMP NOT NULL,
+  name VARCHAR NOT NULL,
+  is_bundle BOOLEAN NOT NULL,
+  source_name VARCHAR NOT NULL,
+  CONSTRAINT data_table_pk PRIMARY KEY (id)
 );
 
 
