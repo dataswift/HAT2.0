@@ -53,7 +53,7 @@ class ModelSpec extends Specification with AfterAll {
     }
     "accept data" in {
       db.withSession { implicit session =>
-        val dataTableRow = new DataTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "testTable", false, "test")
+        val dataTableRow = new DataTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "testTable", "test")
         val tableId = (DataTable returning DataTable.map(_.id)) += dataTableRow
 
         val dataFieldRow = new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), "testField", tableId)
@@ -111,7 +111,7 @@ class ModelSpec extends Specification with AfterAll {
         val systemUnitofmeasurementRow = new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "Example", description, symbol)
         val unitofmeasurementId = (SystemUnitofmeasurement returning SystemUnitofmeasurement.map(_.id)) += systemUnitofmeasurementRow
 
-        val systemPropertyRow = new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "testProperty", "property description")
+        val systemPropertyRow = new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "testProperty", "property description", typeId, unitofmeasurementId)
         SystemProperty += systemPropertyRow
         val propertyId = (SystemProperty returning SystemProperty.map(_.id))
 
@@ -134,22 +134,30 @@ class ModelSpec extends Specification with AfterAll {
         val eventseventRow = new EventsEventRow(1, LocalDateTime.now(), LocalDateTime.now(), "Test Event for HAT")
         val eventId = (EventsEvent returning EventsEvent.map(_.id)) += eventseventRow
 
-        val relationshiptype = Some("Relationship description")
+        val relationshiptype = "Relationship type"
         val findeventId = EventsEvent.filter(_.name === "Test Event for HAT").map(_.id).run.head
         val findpropertyId = SystemProperty.filter(_.name === "testProperty").map(_.id).run.head
         val findfieldId = DataField.filter(_.name === "testField").map(_.id).run.head
         val findrecordId = DataRecord.filter(_.name === "record 1").map(_.id).run.head
 
 
-        val eventseventtoeventcrossrefRow = new EventsEventtoeventcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findeventId, findeventId, relationshiptype)
+        val eventRelationshipRecord = new SystemRelationshiprecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "eventToeventCrossref")
+        val eventRelationshipRecordId = (SystemRelationshiprecord returning SystemRelationshiprecord.map(_.id)) += eventRelationshipRecord
+        val eventseventtoeventcrossrefRow = new EventsEventtoeventcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findeventId, findeventId, relationshiptype, true, eventRelationshipRecordId)
         val eventseventtoeventcrossrefId = (EventsEventtoeventcrossref returning EventsEventtoeventcrossref.map(_.id)) += eventseventtoeventcrossrefRow
 
         val description = Some("An example SystemUnitofmeasurement")
 
-        val eventssystempropertystaticcrossrefRow = new EventsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findeventId, findpropertyId, findrecordId, findfieldId, relationshiptype, true)
+        // Link event to a property statically
+        val systemPropertyStaticRecord = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "eventssystempropertystaticcrossref")
+        val systemPropertyStaticRecordId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += systemPropertyStaticRecord
+        val eventssystempropertystaticcrossrefRow = new EventsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findeventId, findpropertyId, findrecordId, findfieldId, relationshiptype, true, systemPropertyStaticRecordId)
         val eventssystempropertystaticcrossrefId = (EventsSystempropertystaticcrossref returning EventsSystempropertystaticcrossref.map(_.id)) += eventssystempropertystaticcrossrefRow
 
-        val eventssystempropertydynamiccrossrefRow = new EventsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findeventId, findpropertyId, findfieldId, relationshiptype, true)
+        // Link event to a property dynamically
+        val systemPropertyStaticRecordDyn = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "eventssystempropertydynamiccrossref")
+        val systemPropertyStaticRecordDynId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += systemPropertyStaticRecordDyn
+        val eventssystempropertydynamiccrossrefRow = new EventsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findeventId, findpropertyId, findfieldId, relationshiptype, true, systemPropertyStaticRecordDynId)
         val eventssystempropertydynamiccrossrefId = (EventsSystempropertydynamiccrossref returning EventsSystempropertydynamiccrossref.map(_.id)) += eventssystempropertydynamiccrossrefRow
 
         val result = EventsEvent.run
@@ -169,22 +177,28 @@ class ModelSpec extends Specification with AfterAll {
         val locationsLocationRow = new LocationsLocationRow(1, LocalDateTime.now(), LocalDateTime.now(), "WMG, University of Warwick")
         val locationId = (LocationsLocation returning LocationsLocation.map(_.id)) += locationsLocationRow
 
-        val relationshiptype = Some("Relationship description")
+        val relationshiptype = "Relationship type"
         val findlocationId = LocationsLocation.filter(_.name === "WMG, University of Warwick").map(_.id).run.head
         val findpropertyId = SystemProperty.filter(_.name === "testProperty").map(_.id).run.head
         val findfieldId = DataField.filter(_.name === "testField").map(_.id).run.head
         val findrecordId = DataRecord.filter(_.name === "record 1").map(_.id).run.head
 
 
-        val locationsLocationtolocationcrossrefRow = new LocationsLocationtolocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findlocationId, findlocationId, relationshiptype)
+        val locationRelationshipRecord = new SystemRelationshiprecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "locationToLocationCrossref")
+        val locationRelationshipRecordId = (SystemRelationshiprecord returning SystemRelationshiprecord.map(_.id)) += locationRelationshipRecord
+        val locationsLocationtolocationcrossrefRow = new LocationsLocationtolocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findlocationId, findlocationId, relationshiptype, true, locationRelationshipRecordId)
         val locationsLocationtolocationcrossrefId = (LocationsLocationtolocationcrossref returning LocationsLocationtolocationcrossref.map(_.id)) += locationsLocationtolocationcrossrefRow
 
         val description = Some("An example SystemUnitofmeasurement")
 
-        val locationssystempropertystaticcrossrefRow = new LocationsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findlocationId, findpropertyId, findrecordId, findfieldId, relationshiptype, true)
+        val lsps = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "locationssystempropertystaticcrossref")
+        val lspsId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += lsps
+        val locationssystempropertystaticcrossrefRow = new LocationsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findlocationId, findpropertyId, findrecordId, findfieldId, relationshiptype, true, lspsId)
         val locationssystempropertystaticcrossrefId = (LocationsSystempropertystaticcrossref returning LocationsSystempropertystaticcrossref.map(_.id)) += locationssystempropertystaticcrossrefRow
 
-        val locationssystempropertydynamiccrossrefRow = new LocationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findlocationId, findpropertyId, findfieldId, relationshiptype, true)
+        val lspd = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "locationssystempropertydynamiccrossref")
+        val lspdId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += lspd
+        val locationssystempropertydynamiccrossrefRow = new LocationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findlocationId, findpropertyId, findfieldId, relationshiptype, true, lspdId)
         val locationssystempropertydynamiccrossrefId = (LocationsSystempropertydynamiccrossref returning LocationsSystempropertydynamiccrossref.map(_.id)) += locationssystempropertydynamiccrossrefRow
 
         val result = LocationsLocation.run
@@ -205,23 +219,33 @@ class ModelSpec extends Specification with AfterAll {
         val organisationsorganisationRow = new OrganisationsOrganisationRow(1, LocalDateTime.now(), LocalDateTime.now(), "WMG")
         val organisationId = (OrganisationsOrganisation returning OrganisationsOrganisation.map(_.id)) += organisationsorganisationRow
 
-        val relationshiptype = Some("Relationship description")
+        val relationshiptype = "Relationship type"
         val findorganisationId = OrganisationsOrganisation.filter(_.name === "WMG").map(_.id).run.head
         val findpropertyId = SystemProperty.filter(_.name === "testProperty").map(_.id).run.head
         val findfieldId = DataField.filter(_.name === "testField").map(_.id).run.head
         val findrecordId = DataRecord.filter(_.name === "record 1").map(_.id).run.head
 
-        val organisationorganisationtoorganisationcrossrefRow = new OrganisationOrganisationtoorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findorganisationId, "relationshiptype", true)
-        val organisationorganisationtoorganisationcrossrefId = (OrganisationOrganisationtoorganisationcrossref returning OrganisationOrganisationtoorganisationcrossref.map(_.id)) += organisationorganisationtoorganisationcrossrefRow
+        // Organisation to Organisation link
+        val ooRelRecord = new SystemRelationshiprecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "organisationorganisationtoorganisationcrossref")
+        val ooRelRecordId = (SystemRelationshiprecord returning SystemRelationshiprecord.map(_.id)) += ooRelRecord
+        val organisationorganisationtoorganisationcrossrefRow = new OrganisationsOrganisationtoorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findorganisationId, "relationshiptype", true, ooRelRecordId)
+        val organisationorganisationtoorganisationcrossrefId = (OrganisationsOrganisationtoorganisationcrossref returning OrganisationsOrganisationtoorganisationcrossref.map(_.id)) += organisationorganisationtoorganisationcrossrefRow
 
         val description = Some("An example SystemUnitofmeasurement")
 
-        val organisationssystempropertystaticcrossrefRow = new OrganisationsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findpropertyId, findrecordId, findfieldId, relationshiptype, true)
+        // Organisation Property Static crossref
+        val osps = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "organisationssystempropertystaticcrossref")
+        val ospsId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += osps
+        val organisationssystempropertystaticcrossrefRow = new OrganisationsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findpropertyId, findrecordId, findfieldId, relationshiptype, true, ospsId)
         val organisationssystempropertystaticcrossrefId = (OrganisationsSystempropertystaticcrossref returning OrganisationsSystempropertystaticcrossref.map(_.id)) += organisationssystempropertystaticcrossrefRow
 
-        val organisationssystempropertydynamiccrossrefRow = new OrganisationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findpropertyId, findfieldId, relationshiptype, true)
+        // Organisation Property Dynamic crossref
+        val ospd = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "organisationssystempropertydynamiccrossref")
+        val ospdId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += ospd
+        val organisationssystempropertydynamiccrossrefRow = new OrganisationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findpropertyId, findfieldId, relationshiptype, true, ospdId)
         val organisationssystempropertydynamiccrossrefId = (OrganisationsSystempropertydynamiccrossref returning OrganisationsSystempropertydynamiccrossref.map(_.id)) += organisationssystempropertydynamiccrossrefRow
 
+        // Check the organisation has been added
         val result = OrganisationsOrganisation.run
         result must have size (1)
       }
@@ -240,27 +264,37 @@ class ModelSpec extends Specification with AfterAll {
         val PeoplePersonRow = new PeoplePersonRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin", "Abc-123-def-456")
         val PersonId = (PeoplePerson returning PeoplePerson.map(_.id)) += PeoplePersonRow
 
-        val relationshiptype = Some("Relationship description")
+        val relationshiptype = "Relationship type"
         val findpeopleId = PeoplePerson.filter(_.name === "Martin").map(_.id).run.head
         val findpropertyId = SystemProperty.filter(_.name === "testProperty").map(_.id).run.head
         val findfieldId = DataField.filter(_.name === "testField").map(_.id).run.head
         val findrecordId = DataRecord.filter(_.name === "record 1").map(_.id).run.head
 
 
-        val peoplePersontopersonrelationshiptypeRow = new PeoplePersontopersonrelationshiptypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin's Martin", relationshiptype)
+        // Person to Person link
+        val ppRelRecord = new SystemRelationshiprecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "peoplePersontopersonrelationshiptype")
+        val ppRelRecordId = (SystemRelationshiprecord returning SystemRelationshiprecord.map(_.id)) += ppRelRecord
+
+        val peoplePersontopersonrelationshiptypeRow = new PeoplePersontopersonrelationshiptypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin's Martin", Some(relationshiptype))
         val peoplePersontopersonrelationshiptypeId = (PeoplePersontopersonrelationshiptype returning PeoplePersontopersonrelationshiptype.map(_.id)) += peoplePersontopersonrelationshiptypeRow
 
-        val peoplePersontopersoncrossrefRow = new PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findpeopleId, findpeopleId, peoplePersontopersonrelationshiptypeId)
+        val peoplePersontopersoncrossrefRow = new PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findpeopleId, findpeopleId, true, ppRelRecordId, peoplePersontopersonrelationshiptypeId)
         val peoplePersontopersoncrossrefId = (PeoplePersontopersoncrossref returning PeoplePersontopersoncrossref.map(_.id)) += peoplePersontopersoncrossrefRow
 
-        val description = Some("An example SystemUnitofmeasurement")
 
-        val peoplesystempropertystaticcrossrefRow = new PeopleSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findpeopleId, findpropertyId, findrecordId, findfieldId, relationshiptype, true)
+        // Person Property Static crossref
+        val psps = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "peoplesystempropertyStaticCrossref")
+        val pspsId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += psps
+        val peoplesystempropertystaticcrossrefRow = new PeopleSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findpeopleId, findpropertyId, findrecordId, findfieldId, relationshiptype, true, pspsId)
         val peoplesystempropertystaticcrossrefId = (PeopleSystempropertystaticcrossref returning PeopleSystempropertystaticcrossref.map(_.id)) += peoplesystempropertystaticcrossrefRow
 
-        val peoplesystempropertydynamiccrossrefRow = new PeopleSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findpeopleId, findpropertyId, findfieldId, relationshiptype, true)
+        // Person Property Dynamic crossref
+        val pspd = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "peoplesystempropertyDynamicCrossref")
+        val pspdId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += pspd
+        val peoplesystempropertydynamiccrossrefRow = new PeopleSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findpeopleId, findpropertyId, findfieldId, relationshiptype, true, pspdId)
         val peoplesystempropertydynamiccrossrefId = (PeopleSystempropertydynamiccrossref returning PeopleSystempropertydynamiccrossref.map(_.id)) += peoplesystempropertydynamiccrossrefRow
 
+        // Check the person has been added
         val result = PeoplePerson.run
         result must have size (1)
       }
@@ -283,19 +317,27 @@ class ModelSpec extends Specification with AfterAll {
         val findpropertyId = SystemProperty.filter(_.name === "testProperty").map(_.id).run.head
         val findfieldId = DataField.filter(_.name === "testField").map(_.id).run.head
         val findrecordId = DataRecord.filter(_.name === "record 1").map(_.id).run.head
+        val relationshiptype = "Relationship type"
 
-        val relationshiptype = Some("Relationship description")
 
-        val thingsthingtothingcrossrefRow = new ThingsThingtothingcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findthingId, findthingId, relationshiptype)
+        // Thing to Thing link
+        val ttRelRecord = new SystemRelationshiprecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "ThingToThing")
+        val ttRelRecordId = (SystemRelationshiprecord returning SystemRelationshiprecord.map(_.id)) += ttRelRecord
+        val thingsthingtothingcrossrefRow = new ThingsThingtothingcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findthingId, findthingId, relationshiptype, true, ttRelRecordId)
         val thingsthingtothingcrossrefId = (ThingsThingtothingcrossref returning ThingsThingtothingcrossref.map(_.id)) += thingsthingtothingcrossrefRow
 
-        val description = Some("An example SystemUnitofmeasurement")
 
-        val thingssystempropertystaticcrossrefRow = new ThingsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findthingId, findpropertyId, findfieldId, findrecordId, relationshiptype, true)
+        // Thing Property Static crossref
+        val tsps = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "ThingPropertyStatic")
+        val tspsId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += tsps
+        val thingssystempropertystaticcrossrefRow = new ThingsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findthingId, findpropertyId, findfieldId, findrecordId, relationshiptype, true, tspsId)
         val thingssystempropertystaticcrossrefId = (ThingsSystempropertystaticcrossref returning ThingsSystempropertystaticcrossref.map(_.id)) += thingssystempropertystaticcrossrefRow
 
-        val thingssystempropertydynamiccrossrefRow = new ThingsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findthingId, findpropertyId, findfieldId, relationshiptype, true)
-        val thingssystempropertydynamiccrossrefId = (ThingsSystempropertydynamiccrossref returning ThingsSystempropertydynamiccrossref.map(_.id))
+        // Thing Property Dynamic crossref
+        val tspd = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "ThingPropertyStatic")
+        val tspdId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += tspd
+        val thingssystempropertydynamiccrossrefRow = new ThingsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findthingId, findpropertyId, findfieldId, relationshiptype, true, tspdId)
+        val thingssystempropertydynamiccrossrefId = (ThingsSystempropertydynamiccrossref returning ThingsSystempropertydynamiccrossref.map(_.id)) += thingssystempropertydynamiccrossrefRow
 
         val result = ThingsThing.run
         result must have size (1)
@@ -376,8 +418,8 @@ class ModelSpec extends Specification with AfterAll {
       }
 
       "allow organisation data to be removed" in {
-        OrganisationOrganisationtoorganisationcrossref.delete
-        OrganisationOrganisationtoorganisationcrossref.run must have size (0)
+        OrganisationsOrganisationtoorganisationcrossref.delete
+        OrganisationsOrganisationtoorganisationcrossref.run must have size (0)
 
         OrganisationsOrganisation.delete
         OrganisationsOrganisation.run must have size (0)
