@@ -30,8 +30,12 @@ object InboundJsonProtocol extends DefaultJsonProtocol with NullOptions {
   implicit val apiThings = jsonFormat2(ApiThing)
 
   // Properties
-  implicit val apiProperty = jsonFormat3(ApiProperty)
+  implicit val apiProperty = jsonFormat5(ApiProperty)
 
   // Crossrefs
-  implicit val apiRelationship = jsonFormat2(ApiRelationship)
+  implicit val apiRelationship = jsonFormat1(ApiRelationship)
+
+  // Property relationships
+  implicit val apiPropertyRelationshipStatic = jsonFormat3(ApiPropertyRelationshipStatic)
+  implicit val apiPropertyRelationshipDynamic = jsonFormat2(ApiPropertyRelationshipDynamic)
 }

@@ -12,19 +12,15 @@ import spray.routing._
 
 
 // this trait defines our service behavior independently from the service actor
-trait InboundThingsService extends HttpService {
+trait InboundThingsService extends HttpService with InboundService {
 
   val routes = {
     pathPrefix("inbound") {
       respondWithMediaType(`application/json`) {
-        createThing ~ linkThingToPerson ~ linkThingToThing
+        createThing ~ linkThingToPerson ~ linkThingToThing ~ linkThingToPropertyStatic ~ linkThingToPropertyDynamic
       }
     }
   }
-
-  val conf = ConfigFactory.load()
-  val dbconfig = conf.getString("applicationDb")
-  val db = Database.forConfig(dbconfig)
 
   import InboundJsonProtocol._
 
@@ -44,12 +40,13 @@ trait InboundThingsService extends HttpService {
     }
   }
 
-  def linkThingToPerson = path("thing" / IntNumber / "linkToPerson" / IntNumber) { (thingId : Int, personId : Int) =>
+  def linkThingToPerson = path("thing" / IntNumber / "person" / IntNumber) { (thingId : Int, personId : Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
-          // Create the crossreference record and insert into db
-          val crossref = new ThingsThingpersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), relationship.description, personId, thingId, relationship.relationshipType, true)
+          val recordId = createRelationshipRecord(s"thing/$thingId/person/$personId:${relationship.relationshipType}")
+
+          val crossref = new ThingsThingpersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), personId, thingId, relationship.relationshipType, true, recordId)
           val crossrefId = (ThingsThingpersoncrossref returning ThingsThingpersoncrossref.map(_.id)) += crossref
 
           // Return the created crossref
@@ -62,13 +59,17 @@ trait InboundThingsService extends HttpService {
     }
   }
 
-  def linkThingToThing = path("thing" / IntNumber / "linkToThing" / IntNumber) { (thingId : Int, toThingId : Int) =>
+  /*
+   * Link two things together, e.g. as one thing part of another thing with a parentChild relationship type
+   */
+  def linkThingToThing = path("thing" / IntNumber / "thing" / IntNumber) { (thingId : Int, toThingId : Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
+          val recordId = createRelationshipRecord(s"thing/$thingId/thing/$toThingId:${relationship.relationshipType}")
+
           // Create the crossreference record and insert into db
-          // FIXME: inconsistent crossref - doesn't take description
-          val crossref = new ThingsThingtothingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), /*relationship.description,*/ thingId, toThingId, relationship.relationshipType/*, true*/)
+          val crossref = new ThingsThingtothingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), thingId, toThingId, relationship.relationshipType, true, recordId)
           val crossrefId = (ThingsThingtothingcrossref returning ThingsThingtothingcrossref.map(_.id)) += crossref
 
           // Return the created crossref
@@ -80,5 +81,62 @@ trait InboundThingsService extends HttpService {
       }
     }
   }
+
+  /*
+   * Link thing to a property statically (tying it in with a specific record ID)
+   */
+  def linkThingToPropertyStatic = path("thing" / IntNumber / "property" / IntNumber) { (thingId: Int, propertyId: Int) =>
+    post {
+      entity(as[ApiPropertyRelationshipStatic]) { relationship =>
+
+        val recordId = createPropertyRecord(s"thing/$thingId/property/$propertyId:${relationship.relationshipType}(${relationship.fieldId},${relationship.recordId},${relationship.relationshipType})")
+
+        // Create the crossreference record and insert into db
+        val crossref = new ThingsSystempropertystaticcrossrefRow(
+          0, LocalDateTime.now(), LocalDateTime.now(),
+          thingId, propertyId,
+          relationship.fieldId, relationship.recordId, relationship.relationshipType,
+          true, recordId
+        )
+
+        db.withSession { implicit session =>
+          val crossrefId = (ThingsSystempropertystaticcrossref returning ThingsSystempropertystaticcrossref.map(_.id)) += crossref
+          // Return the created crossref
+          complete {
+            ApiGenericId(crossrefId)
+          }
+        }
+      }
+    }
+  }
+
+  /*
+   * Link thing to a property dynamically
+   */
+  def linkThingToPropertyDynamic = path("thing" / IntNumber / "property" / IntNumber) { (thingId: Int, propertyId: Int) =>
+    post {
+      entity(as[ApiPropertyRelationshipDynamic]) { relationship =>
+
+        val recordId = createPropertyRecord(s"thing/$thingId/property/$propertyId:${relationship.relationshipType}(${relationship.fieldId},${relationship.relationshipType})")
+
+        // Create the crossreference record and insert into db
+        val crossref = new ThingsSystempropertydynamiccrossrefRow(
+          0, LocalDateTime.now(), LocalDateTime.now(),
+          thingId, propertyId,
+          relationship.fieldId, relationship.relationshipType,
+          true, recordId
+        )
+
+        db.withSession { implicit session =>
+          val crossrefId = (ThingsSystempropertydynamiccrossref returning ThingsSystempropertydynamiccrossref.map(_.id)) += crossref
+          // Return the created crossref
+          complete {
+            ApiGenericId(crossrefId)
+          }
+        }
+      }
+    }
+  }
+
 }
 
