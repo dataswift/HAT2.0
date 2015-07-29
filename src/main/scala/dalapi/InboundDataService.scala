@@ -39,7 +39,7 @@ trait InboundDataService extends HttpService {
     post {
       respondWithMediaType(`application/json`) {
         entity(as[ApiDataTable]) { table =>
-          val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, false, table.source)
+          val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, table.source)
           val tableId = (DataTable returning DataTable.map(_.id)) += newTable
           complete(Created, {
             table.copy(id = Some(tableId))
@@ -49,7 +49,7 @@ trait InboundDataService extends HttpService {
     }
   }
 
-  def addTableToTable = path("table" / IntNumber / "addTable" / IntNumber) { (parentId: Int, childId: Int) =>
+  def addTableToTable = path("table" / IntNumber / "table" / IntNumber) { (parentId: Int, childId: Int) =>
     post {
       respondWithMediaType(`application/json`) {
         val dataTableToTableCrossRefRow = new DataTabletotablecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", parentId, childId)
