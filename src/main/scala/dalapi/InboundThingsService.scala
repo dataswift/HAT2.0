@@ -138,5 +138,23 @@ trait InboundThingsService extends HttpService with InboundService {
     }
   }
 
+  /*
+   * Tag thing with a type
+   */
+  def addThingType = path("thing" / IntNumber / "type" / IntNumber) { (thingId: Int, typeId: Int) =>
+    post {
+      entity(as[ApiRelationship]) { relationship =>
+        db.withSession { implicit session =>
+          val thingType = new ThingsSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), thingId, typeId, relationship.relationshipType, true)
+          val thingTypeId = (ThingsSystemtypecrossref returning ThingsSystemtypecrossref.map(_.id)) += thingType
+          complete {
+            ApiGenericId(thingTypeId)
+          }
+        }
+      }
+
+    }
+  }
+
 }
 

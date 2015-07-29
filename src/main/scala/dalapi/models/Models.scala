@@ -19,3 +19,5 @@ case class ApiRelationship(relationshipType: String)
 case class ApiPropertyRelationshipStatic(relationshipType: String, fieldId: Int, recordId: Int)
 
 case class ApiPropertyRelationshipDynamic(relationshipType: String, fieldId: Int)
+
+case class ApiSystemType(id: Option[Int], name: String, description: Option[String])
