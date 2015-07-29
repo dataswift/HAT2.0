@@ -42,4 +42,5 @@ object InboundJsonProtocol extends DefaultJsonProtocol with NullOptions {
 
   // Types
   implicit val apiType = jsonFormat3(ApiSystemType)
+  implicit val apiUom = jsonFormat4(ApiSystemUnitofmeasurement)
 }

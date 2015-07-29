@@ -23,3 +23,5 @@ case class ApiPropertyRelationshipStatic(relationshipType: String, fieldId: Int,
 case class ApiPropertyRelationshipDynamic(relationshipType: String, fieldId: Int)
 
 case class ApiSystemType(id: Option[Int], name: String, description: Option[String])
+
+case class ApiSystemUnitofmeasurement(id: Option[Int], name: String, description: Option[String], symbol: Option[String])
