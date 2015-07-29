@@ -25,6 +25,7 @@ object InboundJsonProtocol extends DefaultJsonProtocol with NullOptions {
 
   // People
   implicit val apiPerson = jsonFormat3(ApiPerson)
+  implicit val apiPersonRelationship = jsonFormat3(ApiPersonRelationshipType)
 
   // Things
   implicit val apiThings = jsonFormat2(ApiThing)

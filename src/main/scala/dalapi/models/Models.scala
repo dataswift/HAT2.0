@@ -12,6 +12,8 @@ case class ApiOrganisation(id: Option[Int], name: String)
 
 case class ApiPerson(id: Option[Int], name: String, personId: String)
 
+case class ApiPersonRelationshipType(id: Option[Int], name: String, description: Option[String])
+
 case class ApiProperty(id: Option[Int], name: String, description: Option[String], typeId: Int, unitOfMeasurementId: Int)
 
 case class ApiRelationship(relationshipType: String)

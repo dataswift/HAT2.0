@@ -12,7 +12,7 @@ import spray.routing._
 
 
 // this trait defines our service behavior independently from the service actor
-trait InboundOrganisationsService extends HttpService {
+trait InboundOrganisationsService extends HttpService with InboundService {
 
   val routes = {
     pathPrefix("inbound") {
@@ -20,14 +20,10 @@ trait InboundOrganisationsService extends HttpService {
       linkOrganisationToLocation ~
       linkOrganisationToOrganisation ~
       linkOrganisationToPropertyStatic ~
-      linkOrganisationToPropertyDynamic ~
-      addOrganisationType
+      linkOrganisationToPropertyDynamic// ~
+//      addOrganisationType
     }
   }
-
-  val conf = ConfigFactory.load()
-  val dbconfig = conf.getString("applicationDb")
-  val db = Database.forConfig(dbconfig)
 
   import InboundJsonProtocol._
 
@@ -149,19 +145,19 @@ trait InboundOrganisationsService extends HttpService {
   /*
    * Tag organisation with a type
    */
-  def addOrganisationType = path("organisation" / IntNumber / "type" / IntNumber) { (organisationId: Int, typeId: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val organisationType = new OrganisationsSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), organisationId, typeId, relationship.relationshipType, true)
-          val organisationTypeId = (OrganisationsSystemtypecrossref returning OrganisationsSystemtypecrossref.map(_.id)) += organisationType
-          complete {
-            ApiGenericId(organisationTypeId)
-          }
-        }
-      }
-
-    }
-  }
+//  def addOrganisationType = path("organisation" / IntNumber / "type" / IntNumber) { (organisationId: Int, typeId: Int) =>
+//    post {
+//      entity(as[ApiRelationship]) { relationship =>
+//        db.withSession { implicit session =>
+//          val organisationType = new OrganisationsSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), organisationId, typeId, relationship.relationshipType, true)
+//          val organisationTypeId = (OrganisationsSystemtypecrossref returning OrganisationsSystemtypecrossref.map(_.id)) += organisationType
+//          complete {
+//            ApiGenericId(organisationTypeId)
+//          }
+//        }
+//      }
+//
+//    }
+//  }
 }
 
