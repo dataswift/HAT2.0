@@ -112,9 +112,7 @@ class ModelSpec extends Specification with AfterAll {
         val unitofmeasurementId = (SystemUnitofmeasurement returning SystemUnitofmeasurement.map(_.id)) += systemUnitofmeasurementRow
 
         val systemPropertyRow = new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "testProperty", Some("property description"), typeId, unitofmeasurementId)
-        SystemProperty += systemPropertyRow
-        val propertyId = (SystemProperty returning SystemProperty.map(_.id))
-
+        val propertyId = (SystemProperty returning SystemProperty.map(_.id)) += systemPropertyRow
 
         val result = SystemProperty.run
         result must have size (1)
