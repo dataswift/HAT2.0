@@ -38,4 +38,7 @@ object InboundJsonProtocol extends DefaultJsonProtocol with NullOptions {
   // Property relationships
   implicit val apiPropertyRelationshipStatic = jsonFormat3(ApiPropertyRelationshipStatic)
   implicit val apiPropertyRelationshipDynamic = jsonFormat2(ApiPropertyRelationshipDynamic)
+
+  // Types
+  implicit val apiType = jsonFormat3(ApiSystemType)
 }
