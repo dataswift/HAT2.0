@@ -24,12 +24,12 @@ class FacebookExampleSpec extends Specification with AfterAll {
     db.withSession { implicit session =>
       "have virtual tables created" in {
 
-        val eventsTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "events", false, "facebook")
-        val meTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "me", false, "facebook")
-        val coverTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", false, "facebook")
-        val ownerTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "owner", false, "facebook")
-        val placeTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "place", false, "facebook")
-        val locationTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "location", false, "facebook")
+        val eventsTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "events", "facebook")
+        val meTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "me", "facebook")
+        val coverTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", "facebook")
+        val ownerTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "owner", "facebook")
+        val placeTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "place", "facebook")
+        val locationTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "location", "facebook")
 
 
         val eventsId = (DataTable returning DataTable.map(_.id)) += eventsTable
@@ -185,37 +185,58 @@ class FacebookExampleSpec extends Specification with AfterAll {
 
         val systemUnitofmeasurementRows = Seq(
           new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "Example", description, symbol),
-          new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "Timezone", description, symbol),
-          new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "GPS Co-ordinate", description, symbol)
+          new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "Hour", description, symbol),
+          new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "Longitude", description, symbol),
+          new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "Latitude", description, symbol)
         )
 
         SystemUnitofmeasurement ++= systemUnitofmeasurementRows
 
         val result = SystemUnitofmeasurement.run
+        result must have size (4)
+      }
+
+      "have system types created" in {
+        val symbol = Some("Example")
+        val description = Some("An example System Type")
+
+        val systemTypeRows = Seq(
+          new SystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "Example", description),
+          new SystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "Timezone", description),
+          new SystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "GPS Coordinate", description)
+        )
+
+        SystemType ++= systemTypeRows
+
+        val result = SystemType.run
         result must have size (3)
       }
 
       "have properties created" in {
+        // Get the Units of Measurement to be used
+        val unitofmeasurementExampleId = SystemUnitofmeasurement.filter(_.name === "Example").map(_.id).run.head
+        val unitofmeasurementHourId = SystemUnitofmeasurement.filter(_.name === "Hour").map(_.id).run.head
+        val unitofmeasurementLongitudeId = SystemUnitofmeasurement.filter(_.name === "Longitude").map(_.id).run.head
+        val unitofmeasurementLatitudeId = SystemUnitofmeasurement.filter(_.name === "Latitude").map(_.id).run.head
 
-        //        val unitofmeasurementId = SystemUnitofmeasurement.filter(_.name === "Example").map(_.id).run.head
-        //
-        //        val attendingcount = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "AttendingCount", "Number of people attending an event")
-        //        val cover = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Cover", "A facebook cover image")
-        //        val timezone = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Timezone", "A timezone")
-        //        val placename = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Place Name", "A facebook Place Name")
+        // Get the types to be used
+        val typeExampleId = SystemType.filter(_.name === "Example").map(_.id).run.head
+        val typeTimezoneId = SystemType.filter(_.name === "Timezone").map(_.id).run.head
+        val typeGpsId = SystemType.filter(_.name === "GPS Coordinate").map(_.id).run.head
 
+        val systemPropertyDescription = Some("test")
 
         val systemPropertyRows = Seq(
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "attendingcount", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "timezone", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "placename", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "longitude", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "latitude", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "postcode", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Country", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Organisation Name", "test"),
-          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Owner", "test")
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "attendingcount", systemPropertyDescription, typeExampleId, unitofmeasurementExampleId),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", systemPropertyDescription, typeExampleId, unitofmeasurementExampleId),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "timezone", systemPropertyDescription, typeTimezoneId, unitofmeasurementHourId),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "placename", systemPropertyDescription, typeExampleId, unitofmeasurementExampleId),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "longitude", systemPropertyDescription, typeGpsId, unitofmeasurementLongitudeId),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "latitude", systemPropertyDescription, typeGpsId, unitofmeasurementLatitudeId),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "postcode", systemPropertyDescription, typeExampleId, unitofmeasurementExampleId),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Country", systemPropertyDescription, typeExampleId, unitofmeasurementExampleId),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Organisation Name", systemPropertyDescription, typeExampleId, unitofmeasurementExampleId),
+          new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), "Owner", systemPropertyDescription, typeExampleId, unitofmeasurementExampleId)
         )
 
         SystemProperty ++= systemPropertyRows
@@ -243,7 +264,7 @@ class FacebookExampleSpec extends Specification with AfterAll {
       }
 
       "have Locationssystempropertystaticcrossref created" in {
-        val relationshipdescription = Some("Property Cross Reference for a Facebook location")
+        val relationshiptype = "Property Cross Reference for a Facebook location"
 
         val findLocationId = LocationsLocation.filter(_.name === "WMG Warwick University").map(_.id).run.head
         val findlatpropertyId = SystemProperty.filter(_.name === "latitude").map(_.id).run.head
@@ -252,10 +273,15 @@ class FacebookExampleSpec extends Specification with AfterAll {
         val findlongfieldId = DataField.filter(_.name === "longitude").map(_.id).run.head
         val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
-        val LocationssystempropertystaticcrossrefRows = Seq(
-          new LocationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findLocationId, findlatpropertyId, findrecordId, findlatfieldId, relationshipdescription, true),
-          new LocationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findLocationId, findlongpropertyId, findrecordId, findlongfieldId, relationshipdescription, true)
+        val locationLatStaticPR = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "Facebook latitude property record")
+        val locationLatStaticPRId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += locationLatStaticPR
 
+        val locationLonStaticPR = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "Facebook longitude property record")
+        val locationLonStaticPRId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += locationLonStaticPR
+
+        val LocationssystempropertystaticcrossrefRows = Seq(
+          new LocationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findLocationId, findlatpropertyId, findrecordId, findlatfieldId, relationshiptype, true, locationLonStaticPRId),
+          new LocationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findLocationId, findlongpropertyId, findrecordId, findlongfieldId, relationshiptype, true, locationLatStaticPRId)
         )
 
         LocationsSystempropertystaticcrossref ++= LocationssystempropertystaticcrossrefRows
@@ -282,18 +308,19 @@ class FacebookExampleSpec extends Specification with AfterAll {
       }
 
       "have organisationssystempropertystaticcrossref created" in {
-        val relationshipdescription = Some("Property Cross Reference for a Facebook Cover")
+        val relationshiptype = "Property Cross Reference for a Facebook Cover"
 
         val findorganisationId = OrganisationsOrganisation.filter(_.name === "WMG, University of Warwick").map(_.id).run.head
         val findlocationpropertyId = SystemProperty.filter(_.name === "Organisation Name").map(_.id).run.head
         val findlocationfieldId = DataField.filter(_.name === "location").map(_.id).run.head
         val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
-        val organisationssystempropertystaticcrossrefRows = Seq(
-          new OrganisationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findlocationpropertyId, findrecordId, findlocationfieldId, relationshipdescription, true)
-        )
+        val osps = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "Facebook organisation property record")
+        val ospsId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += osps
 
-        OrganisationsSystempropertystaticcrossref ++= organisationssystempropertystaticcrossrefRows
+        val organisationssystempropertystaticcrossref = new OrganisationsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findlocationpropertyId, findrecordId, findlocationfieldId, relationshiptype, true, ospsId)
+
+        OrganisationsSystempropertystaticcrossref += organisationssystempropertystaticcrossref
 
         val result = OrganisationsSystempropertystaticcrossref.run
         result must have size (1)
@@ -318,18 +345,19 @@ class FacebookExampleSpec extends Specification with AfterAll {
       }
 
       "have eventssystempropertystaticcrossref created" in {
-        val relationshipdescription = Some("Property Cross Reference for a Facebook Cover")
+        val relationshiptype = "Property Cross Reference for a Facebook Cover"
 
         val findeventId = EventsEvent.filter(_.name === "WMG Event").map(_.id).run.head
         val findpropertyId = SystemProperty.filter(_.name === "timezone").map(_.id).run.head
         val findfieldId = DataField.filter(_.name === "timezone").map(_.id).run.head
         val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
-        val eventssystempropertystaticcrossrefRows = Seq(
-          new EventsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findeventId, findpropertyId, findrecordId, findfieldId, relationshipdescription, true)
-        )
+        val systemPropertyStaticRecord = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "Facebook event property record")
+        val systemPropertyStaticRecordId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += systemPropertyStaticRecord
+        val eventssystempropertystaticcrossref = new EventsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findeventId, findpropertyId, findrecordId, findfieldId, relationshiptype, true, systemPropertyStaticRecordId)
 
-        EventsSystempropertystaticcrossref ++= eventssystempropertystaticcrossrefRows
+
+        EventsSystempropertystaticcrossref += eventssystempropertystaticcrossref
 
         val result = EventsSystempropertystaticcrossref.run
         result must have size (1)
@@ -353,18 +381,19 @@ class FacebookExampleSpec extends Specification with AfterAll {
       }
 
       "have Peoplesystempropertystaticcrossref created" in {
-        val relationshipdescription = Some("Property Cross Reference for a Facebook Cover")
+        val relationshiptype = "Property Cross Reference for a Facebook Cover"
 
         val findPersonId = PeoplePerson.filter(_.name === "Martin").map(_.id).run.head
         val findpropertyId = SystemProperty.filter(_.name === "Owner").map(_.id).run.head
         val findfieldId = DataField.filter(_.name === "owner").map(_.id).run.head
         val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
-        val PeoplesystempropertystaticcrossrefRows = Seq(
-          new PeopleSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findPersonId, findpropertyId, findrecordId, findfieldId, relationshipdescription, true)
-        )
+        val psps = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "peoplesystempropertyStaticCrossref")
+        val pspsId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += psps
 
-        PeopleSystempropertystaticcrossref ++= PeoplesystempropertystaticcrossrefRows
+        val Peoplesystempropertystaticcrossref = new PeopleSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findPersonId, findpropertyId, findrecordId, findfieldId, relationshiptype, true, pspsId)
+
+        PeopleSystempropertystaticcrossref += Peoplesystempropertystaticcrossref
 
         val result = PeopleSystempropertystaticcrossref.run
         result must have size (1)
@@ -389,18 +418,19 @@ class FacebookExampleSpec extends Specification with AfterAll {
       }
 
       "have thingssystempropertystaticcrossref created" in {
-        val relationshipdescription = Some("Property Cross Reference for a Facebook Cover")
+        val relationshiptype = "Property Cross Reference for a Facebook Cover"
 
         val findthingId = ThingsThing.filter(_.name === "Cover").map(_.id).run.head
         val findpropertyId = SystemProperty.filter(_.name === "cover").map(_.id).run.head
         val findfieldId = DataField.filter(_.name === "cover").map(_.id).run.head
         val findrecordId = DataRecord.filter(_.name === "FacebookEvent1").map(_.id).run.head
 
-        val thingssystempropertystaticcrossrefRows = Seq(
-          new ThingsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findthingId, findpropertyId, findfieldId, findrecordId, relationshipdescription, true)
-        )
+        val tsps = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "Facebook Thing Property Static")
+        val tspsId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += tsps
 
-        ThingsSystempropertystaticcrossref ++= thingssystempropertystaticcrossrefRows
+        val thingssystempropertystaticcrossref = new ThingsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findthingId, findpropertyId, findfieldId, findrecordId, relationshiptype, true, tspsId)
+
+        ThingsSystempropertystaticcrossref += thingssystempropertystaticcrossref
 
         val result = ThingsSystempropertystaticcrossref.run
         result must have size (1)
@@ -472,8 +502,8 @@ class FacebookExampleSpec extends Specification with AfterAll {
       "allow organisation data to be removed" in {
 
 
-        OrganisationOrganisationtoorganisationcrossref.delete
-        OrganisationOrganisationtoorganisationcrossref.run must have size (0)
+        OrganisationsOrganisationtoorganisationcrossref.delete
+        OrganisationsOrganisationtoorganisationcrossref.run must have size (0)
 
         OrganisationsOrganisation.delete
         OrganisationsOrganisation.run must have size (0)

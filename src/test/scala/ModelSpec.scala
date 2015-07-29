@@ -96,12 +96,12 @@ class ModelSpec extends Specification with AfterAll {
     "accept data" in {
       db.withSession { implicit session =>
 
-        val systemTypeRow = new SystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "testTypeName", "Type Description")
+        val systemTypeRow = new SystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "testTypeName", Some("Type Description"))
         val typeId = (SystemType returning SystemType.map(_.id)) += systemTypeRow
 
-        val relationshipdescription = Some("Relationship description")
+        val relationshiptype = "Relationship description"
 
-        val systemtypetotypecrossrefRow = new SystemTypetotypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), typeId, typeId, relationshipdescription)
+        val systemtypetotypecrossrefRow = new SystemTypetotypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), typeId, typeId, relationshiptype)
         val typetotypecrossrefId = (SystemTypetotypecrossref returning SystemTypetotypecrossref.map(_.id)) += systemtypetotypecrossrefRow
 
 
@@ -111,7 +111,7 @@ class ModelSpec extends Specification with AfterAll {
         val systemUnitofmeasurementRow = new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "Example", description, symbol)
         val unitofmeasurementId = (SystemUnitofmeasurement returning SystemUnitofmeasurement.map(_.id)) += systemUnitofmeasurementRow
 
-        val systemPropertyRow = new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "testProperty", "property description", typeId, unitofmeasurementId)
+        val systemPropertyRow = new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "testProperty", Some("property description"), typeId, unitofmeasurementId)
         SystemProperty += systemPropertyRow
         val propertyId = (SystemProperty returning SystemProperty.map(_.id))
 
