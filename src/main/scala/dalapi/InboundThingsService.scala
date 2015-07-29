@@ -85,7 +85,7 @@ trait InboundThingsService extends HttpService with InboundService {
   /*
    * Link thing to a property statically (tying it in with a specific record ID)
    */
-  def linkThingToPropertyStatic = path("thing" / IntNumber / "property" / IntNumber) { (thingId: Int, propertyId: Int) =>
+  def linkThingToPropertyStatic = path("thing" / IntNumber / "property" / IntNumber / "static") { (thingId: Int, propertyId: Int) =>
     post {
       entity(as[ApiPropertyRelationshipStatic]) { relationship =>
 
@@ -113,7 +113,7 @@ trait InboundThingsService extends HttpService with InboundService {
   /*
    * Link thing to a property dynamically
    */
-  def linkThingToPropertyDynamic = path("thing" / IntNumber / "property" / IntNumber) { (thingId: Int, propertyId: Int) =>
+  def linkThingToPropertyDynamic = path("thing" / IntNumber / "property" / IntNumber / "dynamic") { (thingId: Int, propertyId: Int) =>
     post {
       entity(as[ApiPropertyRelationshipDynamic]) { relationship =>
 
