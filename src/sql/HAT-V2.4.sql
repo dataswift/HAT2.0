@@ -1,5 +1,3 @@
-drop schema public cascade;
-create schema public;
 
 CREATE SEQUENCE public.system_relationshiprecord_id_seq;
 
@@ -164,7 +162,7 @@ CREATE TABLE public.system_type (
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
-                description TEXT NOT NULL,
+                description TEXT,
                 CONSTRAINT system_type_pk PRIMARY KEY (id)
 );
 
@@ -203,7 +201,7 @@ CREATE TABLE public.system_typetotypecrossref (
                 last_updated TIMESTAMP NOT NULL,
                 type_one_id INTEGER NOT NULL,
                 type_two_id INTEGER NOT NULL,
-                relationship_description VARCHAR(100),
+                relationship_type VARCHAR(100) NOT NULL,
                 CONSTRAINT system_typetotypecrossref_pkey PRIMARY KEY (id)
 );
 
@@ -238,7 +236,7 @@ CREATE TABLE public.data_tabletotablecrossref (
                 id INTEGER NOT NULL DEFAULT nextval('public.data_tabletotablecrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
-                relationship_type VARCHAR(100) NOT NULL,
+                relationship_type VARCHAR NOT NULL,
                 table1 INTEGER NOT NULL,
                 table2 INTEGER NOT NULL,
                 CONSTRAINT data_tabletotablecrossref_pk PRIMARY KEY (id)
@@ -424,7 +422,7 @@ CREATE TABLE public.things_systemtypecrossref (
                 last_updated TIMESTAMP NOT NULL,
                 thing_id INTEGER NOT NULL,
                 system_type_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100) NOT NULL,
+                relationship_type VARCHAR(100) NOT NULL, 
                 is_current BOOLEAN NOT NULL,
                 CONSTRAINT things_systemtypecrossref_pkey PRIMARY KEY (id)
 );
@@ -510,7 +508,7 @@ CREATE TABLE public.system_property (
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
-                description TEXT NOT NULL,
+                description TEXT,
                 type_id INTEGER NOT NULL,
                 unitofmeasurement_id INTEGER NOT NULL,
                 CONSTRAINT system_property_pkey PRIMARY KEY (id)
@@ -853,7 +851,7 @@ CREATE TABLE public.people_personorganisationcrossref (
                 last_updated TIMESTAMP NOT NULL,
                 person_id INTEGER NOT NULL,
                 organisation_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100) NOT NULL,
+                relationship_type VARCHAR NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT people_personorganisationcrossref_pkey PRIMARY KEY (id)
@@ -944,7 +942,7 @@ CREATE TABLE public.events_eventlocationcrossref (
                 last_updated TIMESTAMP NOT NULL,
                 location_id INTEGER NOT NULL,
                 event_id INTEGER NOT NULL,
-                relationship_type VARCHAR(100) NOT NULL,
+                relationship_type VARCHAR NOT NULL,
                 is_current BOOLEAN NOT NULL,
                 relationshiprecord_id INTEGER NOT NULL,
                 CONSTRAINT events_eventlocationcrossref_pkey PRIMARY KEY (id)
