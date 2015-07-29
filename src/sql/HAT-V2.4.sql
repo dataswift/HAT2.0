@@ -504,7 +504,7 @@ CREATE TABLE public.system_unitofmeasurement (
 ALTER SEQUENCE public.system_unitofmeasurement_id_seq OWNED BY public.system_unitofmeasurement.id;
 
 CREATE TABLE public.system_property (
-                id INTEGER NOT NULL,
+                id INTEGER NOT NULL DEFAULT nextval('system_property_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
