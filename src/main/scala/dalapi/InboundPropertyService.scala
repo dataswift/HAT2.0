@@ -31,11 +31,13 @@ trait InboundPropertyService extends HttpService {
       respondWithMediaType(`application/json`) {
         entity(as[ApiProperty]) { property =>
           db.withSession { implicit session =>
-            val row = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(), property.name, property.description)
+            val row = new SystemPropertyRow(0, LocalDateTime.now(), LocalDateTime.now(),
+              property.name, property.description, property.typeId, property.unitOfMeasurementId)
             val pid = (SystemProperty returning SystemProperty.map(_.id)) += row
             complete(Created, {
               property.copy(id = Some(pid))
             })
+            complete(404, {})
           }
 
         }
