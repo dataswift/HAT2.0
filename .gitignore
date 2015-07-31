@@ -12,3 +12,4 @@ target/
 include “application.conf"`
 
 *.conf
+/heroku-deploy.sh

@@ -1,11 +1,15 @@
 package dalapi.models
 
+import org.joda.time.LocalDateTime
+
 import com.wordnik.swagger.annotations.{ApiModel, ApiModelProperty}
 
 import scala.annotation.meta.field
 
 case class ApiDataField(
                          id: Option[Int],
+                         dateCreated: Option[LocalDateTime],
+                         lastUpdated: Option[LocalDateTime],
                          tableId: Int,
                          name: String)
 
@@ -16,8 +20,13 @@ case class ApiDataRecord (
 
 case class ApiDataTable(
                          id: Option[Int],
+                         dateCreated: Option[LocalDateTime],
+                         lastUpdated: Option[LocalDateTime],
                          name: String,
-                         source: String)
+                         source: String,
+                         fields: Option[Seq[ApiDataField]],
+                         subTables: Seq[ApiDataTable]
+                         )
 
 
 case class ApiDataValue(

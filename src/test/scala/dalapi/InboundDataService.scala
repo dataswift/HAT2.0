@@ -6,7 +6,7 @@ import spray.http._
 import StatusCodes._
 import spray.http.MediaTypes._
 
-class InboundDataServiceSpec extends Specification with Specs2RouteTest with InboundDataService {
+class DataServiceSpec extends Specification with Specs2RouteTest with DataService {
   def actorRefFactory = system
 
   val home = get {

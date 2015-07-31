@@ -24,7 +24,7 @@ class ApiServiceActor extends HttpServiceActor with ActorLogging {
     def actorRefFactory = context
   }
 
-  val inboundDataService = new InboundDataService {
+  val inboundDataService = new DataService {
     def actorRefFactory = context
   }
 
