@@ -25,7 +25,7 @@ trait InboundOrganisationsService extends HttpService with InboundService {
     }
   }
 
-  import InboundJsonProtocol._
+  import ApiJsonProtocol._
 
   def createOrganisation = path("organisation") {
     post {

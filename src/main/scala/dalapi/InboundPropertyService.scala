@@ -24,7 +24,7 @@ trait InboundPropertyService extends HttpService {
   val dbconfig = conf.getString("applicationDb")
   val db = Database.forConfig(dbconfig)
 
-  import InboundJsonProtocol._
+  import ApiJsonProtocol._
 
   def creteProperty = path("property") {
     post {

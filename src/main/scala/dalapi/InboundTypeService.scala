@@ -22,7 +22,7 @@ trait InboundTypeService extends HttpService with InboundService {
     }
   }
 
-  import InboundJsonProtocol._
+  import ApiJsonProtocol._
 
   def createType = path("type") {
     post {

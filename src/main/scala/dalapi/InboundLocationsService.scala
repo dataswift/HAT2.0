@@ -25,7 +25,7 @@ trait InboundLocationsService extends HttpService with InboundService {
     }
   }
 
-  import InboundJsonProtocol._
+  import ApiJsonProtocol._
 
   def createLocation = path("location") {
     post {

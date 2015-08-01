@@ -11,12 +11,22 @@ case class ApiDataField(
                          dateCreated: Option[LocalDateTime],
                          lastUpdated: Option[LocalDateTime],
                          tableId: Int,
-                         name: String)
+                         name: String,
+                         values: Option[Seq[ApiDataValue]]
+                         )
 
-case class ApiDataRecord (
-                           id: Option[Int],
-                           name: String
-                           )
+case class ApiDataFieldValues(
+                             field: ApiDataField,
+                             data: Seq[ApiDataValue]
+                               )
+
+case class ApiDataRecord(
+                          id: Option[Int],
+                          dateCreated: Option[LocalDateTime],
+                          lastUpdated: Option[LocalDateTime],
+                          name: String,
+                          fields: Option[Seq[ApiDataField]]
+                          )
 
 case class ApiDataTable(
                          id: Option[Int],
@@ -31,6 +41,9 @@ case class ApiDataTable(
 
 case class ApiDataValue(
                          id: Option[Int],
+                         dateCreated: Option[LocalDateTime],
+                         lastUpdated: Option[LocalDateTime],
                          value: String,
                          fieldId: Int,
-                         recordId: Int)
+                         recordId: Int
+                         )

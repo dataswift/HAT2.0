@@ -37,7 +37,7 @@ trait InboundEventsService extends HttpService with InboundService {
     }
   }
 
-  import InboundJsonProtocol._
+  import ApiJsonProtocol._
 
   /*
    * Create a simple event, containing only the name

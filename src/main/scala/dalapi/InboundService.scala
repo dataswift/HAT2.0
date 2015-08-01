@@ -16,7 +16,7 @@ trait InboundService {
   val dbconfig = conf.getString("applicationDb")
   val db = Database.forConfig(dbconfig)
 
-  import InboundJsonProtocol._
+  import ApiJsonProtocol._
 
   def createRelationshipRecord(relationshipName: String) = {
     db.withSession { implicit session =>

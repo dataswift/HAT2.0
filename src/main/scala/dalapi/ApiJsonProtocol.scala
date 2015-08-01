@@ -10,7 +10,7 @@ import dalapi.models._
 import org.joda.time.{DateTimeZone, LocalDateTime}
 import org.joda.time.format.ISODateTimeFormat
 
-object InboundJsonProtocol extends DefaultJsonProtocol with NullOptions {
+object ApiJsonProtocol extends DefaultJsonProtocol {
   implicit object DateTimeFormat extends RootJsonFormat[LocalDateTime] {
 
     val formatter = ISODateTimeFormat.dateTimeNoMillis
@@ -36,15 +36,13 @@ object InboundJsonProtocol extends DefaultJsonProtocol with NullOptions {
     }
   }
 
-  // Data configuration
-  implicit val dataFieldformat = jsonFormat5(ApiDataField)
+  // Data
+  implicit val apiDataValueFormat = jsonFormat6(ApiDataValue)
+  implicit val dataFieldformat = jsonFormat6(ApiDataField)
+  implicit val apiDataRecord = jsonFormat5(ApiDataRecord)
   implicit val virtualTableFormat: RootJsonFormat[ApiDataTable] = rootFormat(lazyFormat(jsonFormat7(ApiDataTable)))
 
-
-
-  // Data
-  implicit val apiDataRecord = jsonFormat2(ApiDataRecord)
-  implicit val apiDataValueFormat = jsonFormat4(ApiDataValue)
+  implicit val apiDataFieldValues = jsonFormat2(ApiDataFieldValues)
 
   // Any id (used for crossreferences)
   implicit val apiGenericId = jsonFormat1(ApiGenericId)
