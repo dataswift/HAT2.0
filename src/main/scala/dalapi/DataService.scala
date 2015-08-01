@@ -43,12 +43,14 @@ trait DataService extends HttpService with InboundService {
   def createTable = path("table") {
     post {
       entity(as[ApiDataTable]) { table =>
-        val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, table.source)
-        val tableId = (DataTable returning DataTable.map(_.id)) += newTable
+        db.withSession { implicit session =>
+          val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, table.source)
+          val tableId = (DataTable returning DataTable.map(_.id)) += newTable
 
-        complete(Created, {
-          constructTableStructure(tableId)
-        })
+          complete(Created, {
+            constructTableStructure(tableId)
+          })
+        }
       }
 
     }
@@ -61,14 +63,16 @@ trait DataService extends HttpService with InboundService {
     (parentId: Int, childId: Int) =>
       post {
         entity(as[ApiRelationship]) { relationship =>
-          val dataTableToTableCrossRefRow = new DataTabletotablecrossrefRow(
-            1, LocalDateTime.now(), LocalDateTime.now(),
-            "Parent_Child", parentId, childId
-          )
-          val id = (DataTabletotablecrossref returning DataTabletotablecrossref.map(_.id)) += dataTableToTableCrossRefRow
+          db.withSession { implicit session =>
+            val dataTableToTableCrossRefRow = new DataTabletotablecrossrefRow(
+              1, LocalDateTime.now(), LocalDateTime.now(),
+              "Parent_Child", parentId, childId
+            )
+            val id = (DataTabletotablecrossref returning DataTabletotablecrossref.map(_.id)) += dataTableToTableCrossRefRow
 
-          complete {
-            ApiGenericId(id)
+            complete {
+              ApiGenericId(id)
+            }
           }
         }
       }
@@ -84,28 +88,30 @@ trait DataService extends HttpService with InboundService {
   }
 
   private def constructTableStructure(tableId: Int): ApiDataTable = {
-    val table = DataTable.filter(_.id === tableId).run.head
-    val fields = DataField.filter(_.tableIdFk === tableId).run
-    val apiFields = fields.map { field =>
-      new ApiDataField(Some(field.id), Some(field.dateCreated), Some(field.lastUpdated), field.tableIdFk, field.name)
+    db.withSession { implicit session =>
+      val table = DataTable.filter(_.id === tableId).run.head
+      val fields = DataField.filter(_.tableIdFk === tableId).run
+      val apiFields = fields.map { field =>
+        new ApiDataField(Some(field.id), Some(field.dateCreated), Some(field.lastUpdated), field.tableIdFk, field.name)
+      }
+
+      val subtables = DataTabletotablecrossref.filter(_.table1 === tableId).map(_.table2).run
+      val apiTables = subtables.map { subtableId =>
+        constructTableStructure(subtableId)
+      }
+
+      val apiTable = new ApiDataTable(
+        Some(table.id),
+        Some(table.dateCreated),
+        Some(table.lastUpdated),
+        table.name,
+        table.sourceName,
+        Some(apiFields),
+        apiTables
+      )
+
+      apiTable
     }
-
-    val subtables = DataTabletotablecrossref.filter(_.table1 === tableId).map(_.table2).run
-    val apiTables = subtables.map { subtableId =>
-      constructTableStructure(subtableId)
-    }
-
-    val apiTable = new ApiDataTable(
-      Some(table.id),
-      Some(table.dateCreated),
-      Some(table.lastUpdated),
-      table.name,
-      table.sourceName,
-      Some(apiFields),
-      apiTables
-    )
-
-    apiTable
   }
 
 
@@ -115,10 +121,12 @@ trait DataService extends HttpService with InboundService {
   def createField = path("field") {
     post {
       entity(as[ApiDataField]) { field =>
-        val newField = new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.name, field.tableId)
-        val id = (DataField returning DataField.map(_.id)) += newField
-        complete {
-          field.copy(id = Some(id))
+        db.withSession { implicit session =>
+          val newField = new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.name, field.tableId)
+          val id = (DataField returning DataField.map(_.id)) += newField
+          complete {
+            field.copy(id = Some(id))
+          }
         }
       }
     }
@@ -127,10 +135,12 @@ trait DataService extends HttpService with InboundService {
   def getField = path("field" / IntNumber) {
     (fieldId: Int) =>
       get {
-        val field = DataField.filter(_.id === fieldId).run.head
-        val apiField = new ApiDataField(Some(field.id), Some(field.dateCreated), Some(field.lastUpdated), field.tableIdFk, field.name)
-        complete {
-          apiField
+        db.withSession { implicit session =>
+          val field = DataField.filter(_.id === fieldId).run.head
+          val apiField = new ApiDataField(Some(field.id), Some(field.dateCreated), Some(field.lastUpdated), field.tableIdFk, field.name)
+          complete {
+            apiField
+          }
         }
       }
   }
@@ -139,10 +149,12 @@ trait DataService extends HttpService with InboundService {
     post {
       respondWithMediaType(`application/json`) {
         entity(as[ApiDataRecord]) { record =>
-          val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), record.name)
-          val recordId = (DataRecord returning DataRecord.map(_.id)) += newRecord
-          complete{
-            record.copy(id = Some(recordId))
+          db.withSession { implicit session =>
+            val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), record.name)
+            val recordId = (DataRecord returning DataRecord.map(_.id)) += newRecord
+            complete {
+              record.copy(id = Some(recordId))
+            }
           }
         }
       }
@@ -153,10 +165,12 @@ trait DataService extends HttpService with InboundService {
     post {
       respondWithMediaType(`application/json`) {
         entity(as[ApiDataValue]) { value =>
-          val newValue = new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.fieldId, value.recordId)
-          DataValue += newValue
-          complete{
-            value
+          db.withSession { implicit session =>
+            val newValue = new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.fieldId, value.recordId)
+            DataValue += newValue
+            complete {
+              value
+            }
           }
         }
       }
@@ -167,13 +181,15 @@ trait DataService extends HttpService with InboundService {
     post {
       respondWithMediaType(`application/json`) {
         entity(as[Seq[ApiDataValue]]) { values =>
-          val dataValues = values.map { value =>
-            DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.fieldId, value.recordId)
-          }
+          db.withSession { implicit session =>
+            val dataValues = values.map { value =>
+              DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.fieldId, value.recordId)
+            }
 
-          DataValue ++= dataValues
-          complete{
-            values.head
+            DataValue ++= dataValues
+            complete {
+              values.head
+            }
           }
         }
       }

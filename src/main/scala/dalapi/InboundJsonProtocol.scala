@@ -13,9 +13,8 @@ import org.joda.time.format.ISODateTimeFormat
 object InboundJsonProtocol extends DefaultJsonProtocol with NullOptions {
   implicit object DateTimeFormat extends RootJsonFormat[LocalDateTime] {
 
-    val formatter = ISODateTimeFormat.basicDateTimeNoMillis
+    val formatter = ISODateTimeFormat.dateTimeNoMillis
 
-    //FIXME: does not seem to do the formatting
     def write(obj: LocalDateTime): JsValue = {
       JsString(formatter.print(obj))
     }
