@@ -185,19 +185,19 @@ trait DataService extends HttpService with InboundService {
   def getRecordValues = path("record" / IntNumber / "values") { (recordId: Int) =>
     get {
       db.withSession { implicit session =>
-//        val valueQuery = DataValue.filter(_.recordId === recordId)
-//        val fieldquery = valueQuery.flatMap(_.DataField)
-
+        // Retrieve joined Data Values, Fields and Tables
         val fieldValuesTables =  DataValue.filter(_.recordId === recordId) join
             DataField on (_.fieldId === _.id) join
             DataTable on (_._2.tableIdFk === _.id)
 
         val result = fieldValuesTables.run
+        // Group the retrieved result by DataTable
+        val resultGrouped = result.groupBy(_._2)
 
-        val resultGrouped: Map[DataTableRow, Seq[((DataValueRow, DataFieldRow), DataTableRow)]]  = result.groupBy(_._2)
-
+        // Transform the result into API encoding
         val transformed = resultGrouped.map { case (table, fieldValues) =>
-          val fields = fieldValues.map { case ((value, field), table) =>
+          // Map all (value, field) tuples to put values inside the fields
+          val fields = fieldValues.map { case ((value, field), _) =>
             val dataValue = new ApiDataValue(
               Some(value.id), Some(value.dateCreated), Some(value.lastUpdated),
               value.value, value.fieldId, value.recordId
@@ -209,6 +209,7 @@ trait DataService extends HttpService with InboundService {
             dataField
           }
 
+          // Convert the Data Table into ApiDataTable with the converted ApiDataFields
           new ApiDataTable(
             Some(table.id),
             Some(table.dateCreated),
@@ -220,8 +221,13 @@ trait DataService extends HttpService with InboundService {
           )
         }
 
+        // Retrieve and prepare the record itself
         val record = DataRecord.filter(_.id === recordId).run.head
-        val apiRecord = new ApiDataRecord(Some(record.id), Some(record.dateCreated), Some(record.lastUpdated), record.name, Some(transformed.toSeq))
+        val apiRecord = new ApiDataRecord(
+          Some(record.id), Some(record.dateCreated), Some(record.lastUpdated),
+          record.name, Some(transformed.toSeq)
+        )
+
         complete {
           apiRecord
         }
