@@ -25,7 +25,7 @@ case class ApiDataRecord(
                           dateCreated: Option[LocalDateTime],
                           lastUpdated: Option[LocalDateTime],
                           name: String,
-                          fields: Option[Seq[ApiDataField]]
+                          tables: Option[Seq[ApiDataTable]]
                           )
 
 case class ApiDataTable(
@@ -35,7 +35,7 @@ case class ApiDataTable(
                          name: String,
                          source: String,
                          fields: Option[Seq[ApiDataField]],
-                         subTables: Seq[ApiDataTable]
+                         subTables: Option[Seq[ApiDataTable]]
                          )
 
 

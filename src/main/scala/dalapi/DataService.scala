@@ -185,15 +185,43 @@ trait DataService extends HttpService with InboundService {
   def getRecordValues = path("record" / IntNumber / "values") { (recordId: Int) =>
     get {
       db.withSession { implicit session =>
-        val fieldValues = (DataValue.filter(_.recordId === recordId) join DataField on (_.fieldId === _.id)).run
+//        val valueQuery = DataValue.filter(_.recordId === recordId)
+//        val fieldquery = valueQuery.flatMap(_.DataField)
 
-        val apiDataValues = fieldValues.map { case ((value, field)) =>
-          val dataValue = new ApiDataValue(Some(value.id), Some(value.dateCreated), Some(value.lastUpdated), value.value, value.fieldId, value.recordId)
-          new ApiDataField(Some(field.id), Some(field.dateCreated), Some(field.lastUpdated), field.tableIdFk, field.name, Some(Seq(dataValue)))
+        val fieldValuesTables =  DataValue.filter(_.recordId === recordId) join
+            DataField on (_.fieldId === _.id) join
+            DataTable on (_._2.tableIdFk === _.id)
+
+        val result = fieldValuesTables.run
+
+        val resultGrouped: Map[DataTableRow, Seq[((DataValueRow, DataFieldRow), DataTableRow)]]  = result.groupBy(_._2)
+
+        val transformed = resultGrouped.map { case (table, fieldValues) =>
+          val fields = fieldValues.map { case ((value, field), table) =>
+            val dataValue = new ApiDataValue(
+              Some(value.id), Some(value.dateCreated), Some(value.lastUpdated),
+              value.value, value.fieldId, value.recordId
+            )
+            val dataField = new ApiDataField(
+              Some(field.id), Some(field.dateCreated), Some(field.lastUpdated),
+              field.tableIdFk, field.name, Some(Seq(dataValue))
+            )
+            dataField
+          }
+
+          new ApiDataTable(
+            Some(table.id),
+            Some(table.dateCreated),
+            Some(table.lastUpdated),
+            table.name,
+            table.sourceName,
+            Some(fields),
+            None
+          )
         }
 
         val record = DataRecord.filter(_.id === recordId).run.head
-        val apiRecord = new ApiDataRecord(Some(record.id), Some(record.dateCreated), Some(record.lastUpdated), record.name, Some(apiDataValues))
+        val apiRecord = new ApiDataRecord(Some(record.id), Some(record.dateCreated), Some(record.lastUpdated), record.name, Some(transformed.toSeq))
         complete {
           apiRecord
         }
@@ -284,7 +312,7 @@ trait DataService extends HttpService with InboundService {
         table.name,
         table.sourceName,
         Some(apiFields),
-        apiTables
+        Some(apiTables)
       )
 
       apiTable

@@ -39,8 +39,8 @@ object ApiJsonProtocol extends DefaultJsonProtocol {
   // Data
   implicit val apiDataValueFormat = jsonFormat6(ApiDataValue)
   implicit val dataFieldformat = jsonFormat6(ApiDataField)
-  implicit val apiDataRecord = jsonFormat5(ApiDataRecord)
   implicit val virtualTableFormat: RootJsonFormat[ApiDataTable] = rootFormat(lazyFormat(jsonFormat7(ApiDataTable)))
+  implicit val apiDataRecord = jsonFormat5(ApiDataRecord)
 
   implicit val apiDataFieldValues = jsonFormat2(ApiDataFieldValues)
 
