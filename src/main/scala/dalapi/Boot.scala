@@ -5,10 +5,8 @@ import akka.actor.{ActorLogging, ActorSystem, Props}
 import akka.io.IO
 import akka.io.Tcp.Bound
 import akka.util.Timeout
+import com.typesafe.config.ConfigFactory
 import spray.can.Http
-
-import com.typesafe.config.{Config, ConfigFactory}
-
 import scala.concurrent.duration._
 
 object Boot extends App {
@@ -17,7 +15,7 @@ object Boot extends App {
   implicit val system = ActorSystem("on-spray-can")
 
   // create and start our service actor
-  val service = system.actorOf(Props[ApiServiceActor], "dalapi-service")
+  val service = system.actorOf(Props[ApiService], "dalapi-service")
 
   implicit val timeout = Timeout(5.seconds)
 

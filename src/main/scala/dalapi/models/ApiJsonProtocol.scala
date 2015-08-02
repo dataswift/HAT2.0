@@ -1,6 +1,5 @@
-package dalapi
+package dalapi.models
 
-import dalapi.models.{ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _}
 import org.joda.time.LocalDateTime
 import org.joda.time.format.ISODateTimeFormat
 import spray.json._

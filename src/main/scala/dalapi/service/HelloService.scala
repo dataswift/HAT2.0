@@ -1,6 +1,5 @@
-package dalapi
+package dalapi.service
 
-import com.wordnik.swagger.annotations.{ApiOperation, Api}
 import spray.http.MediaTypes._
 import spray.routing.HttpService
 

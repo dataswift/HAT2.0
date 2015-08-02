@@ -1,15 +1,12 @@
 package dalapi
 
 import akka.actor.ActorLogging
-import com.gettyimages.spray.swagger.SwaggerHttpService
-import com.wordnik.swagger.model.ApiInfo
-import spray.routing.{HttpService, HttpServiceActor}
-import scala.reflect.runtime.universe._
-import dal.SlickPostgresDriver.simple._
+import dalapi.service.{DataService, HelloService}
+import spray.routing.HttpServiceActor
 
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor
-class ApiServiceActor extends HttpServiceActor with ActorLogging {
+class ApiService extends HttpServiceActor with ActorLogging {
 
   // the HttpService trait defines only one abstract member, which
   // connects the services environment to the enclosing actor or test
@@ -20,11 +17,7 @@ class ApiServiceActor extends HttpServiceActor with ActorLogging {
     def actorRefFactory = context
   }
 
-  val swaggerSite = new SwaggerSite {
-    def actorRefFactory = context
-  }
-
-  val inboundDataService = new DataService {
+  val dataService = new DataService {
     def actorRefFactory = context
   }
 
@@ -33,14 +26,7 @@ class ApiServiceActor extends HttpServiceActor with ActorLogging {
   }
 
   // Concatenate all their handled routes
-  val routes = helloService.routes ~ swaggerSite.site ~ inboundDataService.routes
+  val routes = helloService.routes ~ dataService.routes
 
   def receive = runRoute(routes)
-}
-
-
-trait SwaggerSite extends HttpService {
-  val site =
-    pathPrefix("api-docs-ui") { getFromResource("swagger-ui/index.html") } ~
-      getFromResourceDirectory("swagger-ui")
 }

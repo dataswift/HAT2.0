@@ -1,5 +1,6 @@
 package dalapi
 
+import dalapi.service.DataService
 import org.specs2.mutable.Specification
 import spray.testkit.Specs2RouteTest
 import spray.http._
