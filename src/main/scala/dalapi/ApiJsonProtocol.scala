@@ -37,12 +37,11 @@ object ApiJsonProtocol extends DefaultJsonProtocol {
   }
 
   // Data
-  implicit val apiDataValueFormat = jsonFormat6(ApiDataValue)
-  implicit val dataFieldformat = jsonFormat6(ApiDataField)
-  implicit val virtualTableFormat: RootJsonFormat[ApiDataTable] = rootFormat(lazyFormat(jsonFormat7(ApiDataTable)))
-  implicit val apiDataRecord = jsonFormat5(ApiDataRecord)
-
-  implicit val apiDataFieldValues = jsonFormat2(ApiDataFieldValues)
+  implicit val apiDataValueFormat = jsonFormat6(ApiDataValue.apply)
+  implicit val dataFieldformat = jsonFormat6(ApiDataField.apply)
+  // Need to go via "lazyFormat" for recursive types
+  implicit val virtualTableFormat: RootJsonFormat[ApiDataTable] = rootFormat(lazyFormat(jsonFormat7(ApiDataTable.apply)))
+  implicit val apiDataRecord = jsonFormat5(ApiDataRecord.apply)
 
   // Any id (used for crossreferences)
   implicit val apiGenericId = jsonFormat1(ApiGenericId)
