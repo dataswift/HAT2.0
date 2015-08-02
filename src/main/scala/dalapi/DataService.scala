@@ -190,42 +190,37 @@ trait DataService extends HttpService with InboundService {
             DataField on (_.fieldId === _.id) join
             DataTable on (_._2.tableIdFk === _.id)
 
-        val result = fieldValuesTables.run
         // Group the retrieved result by DataTable
-        val resultGrouped = result.groupBy(_._2)
+        val result = fieldValuesTables.run//.groupBy(_._2)
 
-        // Transform the result into API encoding
-        val transformed = resultGrouped.map { case (table, fieldValues) =>
-          // Map all (value, field) tuples to put values inside the fields
-          val fields = fieldValues.map { case ((value, field), _) =>
-            val dataValue = new ApiDataValue(
-              Some(value.id), Some(value.dateCreated), Some(value.lastUpdated),
-              value.value, value.fieldId, value.recordId
-            )
-            val dataField = new ApiDataField(
-              Some(field.id), Some(field.dateCreated), Some(field.lastUpdated),
-              field.tableIdFk, field.name, Some(Seq(dataValue))
-            )
-            dataField
-          }
+        val values = result.map(_._1._1)
+        val valueMap = Map(values map { value =>
+          value.fieldId -> new ApiDataValue(
+            Some(value.id), Some(value.dateCreated), Some(value.lastUpdated),
+            value.value, value.fieldId, value.recordId
+          )
+        }: _*)
 
-          // Convert the Data Table into ApiDataTable with the converted ApiDataFields
+
+        val structures = getStructures(result.map(_._2).map{ table =>
           new ApiDataTable(
             Some(table.id),
             Some(table.dateCreated),
             Some(table.lastUpdated),
             table.name,
             table.sourceName,
-            Some(fields),
+            None,
             None
           )
-        }
+        })
+
+        val recordData = fillStructures(structures)(valueMap)
 
         // Retrieve and prepare the record itself
         val record = DataRecord.filter(_.id === recordId).run.head
         val apiRecord = new ApiDataRecord(
           Some(record.id), Some(record.dateCreated), Some(record.lastUpdated),
-          record.name, Some(transformed.toSeq)
+          record.name, Some(recordData)
         )
 
         complete {
@@ -294,6 +289,110 @@ trait DataService extends HttpService with InboundService {
       }
     }
   }
+
+  private def fillStructures(tables: Seq[ApiDataTable])(values: Map[Int, ApiDataValue]): Seq[ApiDataTable] = {
+    tables.map { table =>
+      val filledFields = table.fields match {
+        // If the table has some fields
+        case Some(fields) =>
+          // Wrap the fields with added values in "Some"
+          Some(fields.map { field:ApiDataField =>
+            field.id match {
+              // If a given field has an ID (all fields should)
+              case Some(fieldId) =>
+                // Get the value from the map to be added to the field
+                val fieldValue = values get fieldId match {
+                  case Some(value) =>
+                    // Give it a sequence of 1 element
+                    Some(Seq(value))
+                  case None =>
+                    None
+                }
+                // Create a new field with only the values updated
+                field.copy(values = fieldValues)
+              case None =>
+                field
+            }
+          })
+        case None =>
+          None
+      }
+      table.copy(fields = filledFields)
+    }
+  }
+
+  private def getStructures(tables: Seq[ApiDataTable]): Seq[ApiDataTable] = {
+    // Get all root tables from the given ApiDataTables
+    val roots = tables.map{ table =>
+      table.id match {
+        case Some(id) =>
+          getRootTables(id)
+      }
+    }
+
+    // Get the set of "root" tables to build data trees from
+    val rootSet = roots.foldLeft(Set[Int]())((roots, parents) => roots ++ parents)
+
+    // Construct table structures from the root
+    rootSet.toSeq.map { root =>
+      constructTableStructure(root)
+    }
+
+  }
+
+  /*
+   * Get IDs of all (Database) DataTables, using the DataTabletotablecrossref
+   */
+  private def getRootTables(tableId: Int): Set[Int] = {
+    db.withSession { implicit session =>
+      val parents = DataTabletotablecrossref.filter(_.table2 === tableId).map(_.table1).run
+      // If a table doesn't have any parents, it is a root
+      if (parents.isEmpty) {
+        Set(tableId)
+      }
+      else {
+        // Get all roots recursively
+        val parentSets = parents map { parentId =>
+          getRootTables(parentId)
+        }
+        // Fold them into a single set with no repetitions
+        parentSets.foldLeft(Set[Int]())((roots, parents) => roots ++ parents)
+      }
+    }
+  }
+
+//  private def getStructure(tables: Seq[ApiDataTable]) = {
+//    val tableMap = Map(tables map { table =>
+//      table.id match {
+//        case Some(id) =>
+//          id -> table
+//      }
+//    }: _*)
+//
+//    val structure = constructTableStructureUp(tables, tableMap)
+//
+//    for ((k,v) <- structure)
+//      printf("key: %s, value: %s\n", k, v.toJson)
+//  }
+//
+//  private def constructTableStructureUp(queue: Seq[ApiDataTable], structure: Map[Int, ApiDataTable]) : Map[Int, ApiDataTable] = {
+//    val next = queue.headOption
+//
+//    next match {
+//      case Some(table) =>
+//        val structTable = structure get table.tableId
+//        structTable match {
+//          case None =>
+//            val parents = DataTabletotablecrossref.filter(_.table2 === table.tableId).map(_.table1).run
+//            val
+//            constructTableStructureUp(queue.tail ++ parents, structure + (table.tableId, table))
+//          case Some(_) =>
+//            structure
+//        }
+//      case None =>
+//        structure
+//    }
+//  }
 
   /*
    * Recursively construct nested DataTable records with associated fields and sub-tables
