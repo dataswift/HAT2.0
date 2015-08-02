@@ -1,14 +1,9 @@
 package dalapi
 
-import com.wordnik.swagger.annotations.{ApiModelProperty, ApiModel}
-import dalapi.models.{ApiDataTable, ApiDataRecord, ApiDataField, ApiDataValue}
-
-import spray.json._
-import scala.reflect.runtime.universe._
-import scala.annotation.meta.field
-import dalapi.models._
-import org.joda.time.{DateTimeZone, LocalDateTime}
+import dalapi.models.{ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _}
+import org.joda.time.LocalDateTime
 import org.joda.time.format.ISODateTimeFormat
+import spray.json._
 
 object ApiJsonProtocol extends DefaultJsonProtocol {
   implicit object DateTimeFormat extends RootJsonFormat[LocalDateTime] {

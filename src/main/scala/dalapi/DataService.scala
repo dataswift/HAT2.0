@@ -254,31 +254,23 @@ trait DataService extends HttpService with InboundService {
   }
 
   private def fillStructures(tables: Seq[ApiDataTable])(values: Map[Int, ApiDataValue]): Seq[ApiDataTable] = {
-    tables.map { table =>
-      val filledFields = table.fields match {
-        // If the table has some fields
-        case Some(fields) =>
-          // Wrap the fields with added values in "Some"
-          Some(fields.map { field:ApiDataField =>
-            field.id match {
-              // If a given field has an ID (all fields should)
-              case Some(fieldId) =>
-                // Get the value from the map to be added to the field
-                val fieldValue = values get fieldId match {
-                  case Some(value) =>
-                    // Give it a sequence of 1 element
-                    Some(Seq(value))
-                  case None =>
-                    None
-                }
-                // Create a new field with only the values updated
-                field.copy(values = fieldValue)
-              case None =>
-                field
-            }
-          })
-        case None =>
-          None
+    tables map { table =>
+      val filledFields = table.fields map { fields =>
+        // For each field, insert values
+        fields map { field: ApiDataField =>
+          field.id match {
+            // If a given field has an ID (all fields should)
+            case Some(fieldId) =>
+              // Get the value from the map to be added to the field
+              val fieldValue = values get fieldId map { value: ApiDataValue =>
+                Seq(value)
+              }
+              // Create a new field with only the values updated
+              field.copy(values = fieldValue)
+            case None =>
+              field
+          }
+        }
       }
       table.copy(fields = filledFields)
     }

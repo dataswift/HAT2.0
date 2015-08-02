@@ -1,11 +1,7 @@
 package dalapi.models
 
-import dal.Tables.{DataRecordRow, DataTableRow, DataValueRow, DataFieldRow}
+import dal.Tables.{DataFieldRow, DataRecordRow, DataTableRow, DataValueRow}
 import org.joda.time.LocalDateTime
-
-import com.wordnik.swagger.annotations.{ApiModel, ApiModelProperty}
-
-import scala.annotation.meta.field
 
 case class ApiDataField(
     id: Option[Int],
