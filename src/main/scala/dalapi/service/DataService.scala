@@ -22,6 +22,7 @@ trait DataService extends HttpService with InboundService {
         getField ~
         getFieldValues ~
         getTable ~
+        getTableValues ~
         getRecord ~
         getRecordValues ~
         getValue
@@ -81,6 +82,58 @@ trait DataService extends HttpService with InboundService {
           constructTableStructure(tableId)
         }
       }
+  }
+
+  def getTableValues = path("table" / IntNumber / "values") {
+    (tableId: Int) =>
+      get {
+        val structure = constructTableStructure(tableId)
+
+        // Partially applied function to fill the data into table structure
+        def filler = fillStructure(structure) _
+
+        // Get all data fields of interest according to the data structure
+        val fieldsToGet = getStructureFields(structure)
+
+        // Retrieve values of those fields from the database, grouping by Record ID
+        val values = db.withSession { implicit session =>
+          DataValue.filter(_.fieldId inSet fieldsToGet)
+            .take(fieldsToGet.size * 1000) // FIXME: magic number for getting X records
+            .sortBy(_.recordId.asc)
+            .run
+            .groupBy(_.recordId)
+        }
+
+        // Convert the retrieved structure into a sequence of maps from field ID to values
+        val data = values map { case (recordId, recordValues) =>
+          Map(recordValues map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
+        }
+
+        // Fill the structure with the data
+        val tableValues = data.map(filler)
+
+        complete {
+          tableValues
+        }
+      }
+  }
+
+  private def getStructureFields(structure : ApiDataTable) : Set[Int] = {
+    val fieldSet = structure.fields match {
+      case Some(fields) =>
+        fields.flatMap(_.id).toSet
+      case None =>
+        Set[Int]()
+    }
+
+    val subtableFieldSets: Seq[Set[Int]] = structure.subTables match {
+      case Some(subTables) =>
+        subTables map getStructureFields
+      case None =>
+        Seq[Set[Int]]()
+    }
+
+    subtableFieldSets.foldLeft(fieldSet)((fields, subtableFields) => fields ++ subtableFields)
   }
 
   /*
@@ -256,25 +309,29 @@ trait DataService extends HttpService with InboundService {
 
   private def fillStructures(tables: Seq[ApiDataTable])(values: Map[Int, ApiDataValue]): Seq[ApiDataTable] = {
     tables map { table =>
-      val filledFields = table.fields map { fields =>
-        // For each field, insert values
-        fields map { field: ApiDataField =>
-          field.id match {
-            // If a given field has an ID (all fields should)
-            case Some(fieldId) =>
-              // Get the value from the map to be added to the field
-              val fieldValue = values get fieldId map { value: ApiDataValue =>
-                Seq(value)
-              }
-              // Create a new field with only the values updated
-              field.copy(values = fieldValue)
-            case None =>
-              field
-          }
+      fillStructure(table)(values)
+    }
+  }
+
+  private def fillStructure(table: ApiDataTable)(values: Map[Int, ApiDataValue]): ApiDataTable = {
+    val filledFields = table.fields map { fields =>
+      // For each field, insert values
+      fields map { field: ApiDataField =>
+        field.id match {
+          // If a given field has an ID (all fields should)
+          case Some(fieldId) =>
+            // Get the value from the map to be added to the field
+            val fieldValue = values get fieldId map { value: ApiDataValue =>
+              Seq(value)
+            }
+            // Create a new field with only the values updated
+            field.copy(values = fieldValue)
+          case None =>
+            field
         }
       }
-      table.copy(fields = filledFields)
     }
+    table.copy(fields = filledFields)
   }
 
   private def getStructures(tables: Seq[ApiDataTable]): Seq[ApiDataTable] = {
