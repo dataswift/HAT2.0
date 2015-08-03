@@ -42,7 +42,7 @@ trait DataService extends HttpService with InboundService {
           val tableId = (DataTable returning DataTable.map(_.id)) += newTable
 
           complete(Created, {
-            constructTableStructure(tableId)
+            getTableStructure(tableId)
           })
         }
       }
@@ -79,7 +79,7 @@ trait DataService extends HttpService with InboundService {
     (tableId: Int) =>
       get {
         complete {
-          constructTableStructure(tableId)
+          getTableStructure(tableId)
         }
       }
   }
@@ -87,7 +87,7 @@ trait DataService extends HttpService with InboundService {
   def getTableValues = path("table" / IntNumber / "values") {
     (tableId: Int) =>
       get {
-        val structure = constructTableStructure(tableId)
+        val structure = getTableStructure(tableId)
 
         // Partially applied function to fill the data into table structure
         def filler = fillStructure(structure) _
@@ -116,24 +116,6 @@ trait DataService extends HttpService with InboundService {
           tableValues
         }
       }
-  }
-
-  private def getStructureFields(structure : ApiDataTable) : Set[Int] = {
-    val fieldSet = structure.fields match {
-      case Some(fields) =>
-        fields.flatMap(_.id).toSet
-      case None =>
-        Set[Int]()
-    }
-
-    val subtableFieldSets: Seq[Set[Int]] = structure.subTables match {
-      case Some(subTables) =>
-        subTables map getStructureFields
-      case None =>
-        Seq[Set[Int]]()
-    }
-
-    subtableFieldSets.foldLeft(fieldSet)((fields, subtableFields) => fields ++ subtableFields)
   }
 
   /*
@@ -350,7 +332,7 @@ trait DataService extends HttpService with InboundService {
 
     // Construct table structures from the root
     rootSet.toSeq.map { root =>
-      constructTableStructure(root)
+      getTableStructure(root)
     }
 
   }
@@ -379,7 +361,7 @@ trait DataService extends HttpService with InboundService {
   /*
    * Recursively construct nested DataTable records with associated fields and sub-tables
    */
-  private def constructTableStructure(tableId: Int): ApiDataTable = {
+  private def getTableStructure(tableId: Int): ApiDataTable = {
     db.withSession { implicit session =>
       val table = DataTable.filter(_.id === tableId).run.head
       val fields = DataField.filter(_.tableIdFk === tableId).run
@@ -387,11 +369,29 @@ trait DataService extends HttpService with InboundService {
 
       val subtables = DataTabletotablecrossref.filter(_.table1 === tableId).map(_.table2).run
       val apiTables = subtables.map { subtableId =>
-        constructTableStructure(subtableId)
+        getTableStructure(subtableId)
       }
 
       ApiDataTable.fromDataTable(table)(Some(apiFields))(Some(apiTables))
     }
+  }
+
+  private def getStructureFields(structure : ApiDataTable) : Set[Int] = {
+    val fieldSet = structure.fields match {
+      case Some(fields) =>
+        fields.flatMap(_.id).toSet
+      case None =>
+        Set[Int]()
+    }
+
+    val subtableFieldSets: Seq[Set[Int]] = structure.subTables match {
+      case Some(subTables) =>
+        subTables map getStructureFields
+      case None =>
+        Seq[Set[Int]]()
+    }
+
+    subtableFieldSets.foldLeft(fieldSet)((fields, subtableFields) => fields ++ subtableFields)
   }
 
 
