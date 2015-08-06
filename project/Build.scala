@@ -28,8 +28,8 @@ object myBuild extends Build {
         "com.typesafe.akka"   %%  "akka-actor"    % akkaV,
         "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
         "io.spray"      %%  "spray-testkit" % sprayV  % "test",
-        "org.specs2" % "specs2-core_2.11" % "3.3",
-        "org.specs2" % "specs2_2.11" % "3.3",
+        "org.specs2" % "specs2-core_2.11" % "3.3"  % "test",
+        "org.specs2" % "specs2_2.11" % "3.3" % "test",
         "com.gettyimages" %% "spray-swagger" % "0.5.1",
         "io.spray" %%  "spray-json" % "1.3.2"
       ),
