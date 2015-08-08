@@ -1,7 +1,7 @@
 ---
 applications:
 - name: thehat
-  memory: 1024M
+  memory: 512M
   random-route: true
   buildpack: https://github.com/heroku/heroku-buildpack-scala
   instances: 1
@@ -11,4 +11,4 @@ applications:
 #  command: echo "port $VCAP_APP_PORT" && ./bin/hat-dal -Dhttp.port=$VCAP_APP_PORT
   command: sh run.sh
   services:
-  - ElephantSQL-fe
+  - hatdb
