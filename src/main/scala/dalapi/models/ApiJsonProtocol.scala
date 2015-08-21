@@ -30,6 +30,15 @@ object ApiJsonProtocol extends DefaultJsonProtocol {
     }
   }
 
+  def jsonEnum[T <: Enumeration](enu: T) = new JsonFormat[T#Value] {
+    def write(obj: T#Value) = JsString(obj.toString)
+
+    def read(json: JsValue) = json match {
+      case JsString(txt) => enu.withName(txt)
+      case something => throw new DeserializationException(s"Expected a value from enum $enu instead of $something")
+    }
+  }
+
   // Data
   implicit val apiDataValueFormat = jsonFormat6(ApiDataValue.apply)
   implicit val dataFieldformat = jsonFormat6(ApiDataField.apply)
@@ -69,4 +78,13 @@ object ApiJsonProtocol extends DefaultJsonProtocol {
   // Types
   implicit val apiType = jsonFormat3(ApiSystemType)
   implicit val apiUom = jsonFormat4(ApiSystemUnitofmeasurement)
+
+  // Bundles
+  implicit val apiOperator = jsonEnum(ComparisonOperator)
+
+  implicit val apiBundleTableCondition = jsonFormat6(ApiBundleTableCondition.apply)
+  implicit val apiBundleTableSlice = jsonFormat5(ApiBundleTableSlice.apply)
+  implicit val apiBundleTable = jsonFormat6(ApiBundleTable.apply)
+  implicit val apiBundleCombination = jsonFormat8(ApiBundleCombination.apply)
+  implicit val apiBundleContextless = jsonFormat5(ApiBundleContextless.apply)
 }
