@@ -1082,6 +1082,8 @@ CREATE SEQUENCE public.bundle_table_id_seq;
 
 CREATE TABLE public.bundle_table (
   id INTEGER NOT NULL DEFAULT nextval('public.bundle_table_id_seq'),
+  date_created TIMESTAMP NOT NULL,
+  last_updated TIMESTAMP NOT NULL,
   name VARCHAR NOT NULL,
   data_table INTEGER NOT NULL,
   CONSTRAINT bundle_table_pk PRIMARY KEY (id)
@@ -1094,7 +1096,8 @@ CREATE SEQUENCE public.bundle_tableslice_id_seq;
 
 CREATE TABLE public.bundle_tableslice (
   id INTEGER NOT NULL DEFAULT nextval('public.bundle_tableslice_id_seq'),
-  name VARCHAR NOT NULL,
+  date_created TIMESTAMP NOT NULL,
+  last_updated TIMESTAMP NOT NULL,
   bundle_table_id INTEGER NOT NULL,
   data_table_id INTEGER NOT NULL,
   CONSTRAINT bundle_tableslice_pk PRIMARY KEY (id)
@@ -1107,6 +1110,8 @@ CREATE SEQUENCE public.bundle_tableslicecondition_id_seq;
 
 CREATE TABLE public.bundle_tableslicecondition (
   id INTEGER NOT NULL DEFAULT nextval('public.bundle_tableslicecondition_id_seq'),
+  date_created TIMESTAMP NOT NULL,
+  last_updated TIMESTAMP NOT NULL,
   field_id INTEGER NOT NULL,
   tableslice_id INTEGER NOT NULL,
   operator VARCHAR NOT NULL,
@@ -1121,6 +1126,8 @@ CREATE SEQUENCE public.bundle_contextless_id_seq;
 
 CREATE TABLE public.bundle_contextless (
   id INTEGER NOT NULL DEFAULT nextval('public.bundle_contextless_id_seq'),
+  date_created TIMESTAMP NOT NULL,
+  last_updated TIMESTAMP NOT NULL,
   name VARCHAR NOT NULL,
   CONSTRAINT bundle_contextless_bundle_pk PRIMARY KEY (id)
 );
@@ -1132,10 +1139,13 @@ CREATE SEQUENCE public.bundle_join_id_seq;
 
 CREATE TABLE public.bundle_join (
   id INTEGER NOT NULL DEFAULT nextval('public.bundle_join_id_seq'),
+  date_created TIMESTAMP NOT NULL,
+  last_updated TIMESTAMP NOT NULL,
+  name VARCHAR NOT NULL,
   bundle_table_id INTEGER NOT NULL,
   bundle_id INTEGER NOT NULL,
-  bundle_join_field INTEGER NOT NULL,
-  bundle_table_field INTEGER NOT NULL,
+  bundle_join_field INTEGER,
+  bundle_table_field INTEGER,
   Operator VARCHAR,
   CONSTRAINT bundle_join_pk PRIMARY KEY (id)
 );
@@ -1153,13 +1163,6 @@ NOT DEFERRABLE;
 ALTER TABLE public.bundle_tableslice ADD CONSTRAINT data_table_bundle_tableslice_fk
 FOREIGN KEY (data_table_id)
 REFERENCES public.data_table (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.data_value ADD CONSTRAINT data_field_data_value_fk
-FOREIGN KEY (field_id)
-REFERENCES public.data_field (id)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
@@ -1212,7 +1215,6 @@ REFERENCES public.bundle_contextless (id)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
-
 
 ALTER SEQUENCE public.people_personlocationcrossref_id_seq OWNED BY public.people_personlocationcrossref.id;
 
