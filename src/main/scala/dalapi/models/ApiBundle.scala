@@ -10,18 +10,7 @@ object ComparisonOperator extends Enumeration {
 
 import ComparisonOperator._
 
-/*
-  EXAMPLE:
-  condition: {
-    field: {
-      id: 1,
-      tableId: 1,
-      name: "location"
-    },
-    value: "home",
-    operator: "equals"
-  }
- */
+
 case class ApiBundleTableCondition(
     id: Option[Int],
     dateCreated: Option[LocalDateTime],
@@ -39,36 +28,6 @@ object ApiBundleTableCondition {
   }
 }
 
-/*
-  EXAMPLE:
-  slice: {
-    table: {
-      id: 1
-      name: "event",
-      source: "facebook",
-    },
-    conditions: [
-      {
-        field: {
-          id: 1,
-          tableId: 1,
-          name: "location"
-        },
-        value: "home",
-        operator: "equals"
-      },
-      {
-        field: {
-          id: 2,
-          tableId: 1,
-          name: "startTime"
-        },
-        value: "saturday",
-        operator: "equals"
-      },
-    ]
-  }
- */
 case class ApiBundleTableSlice(
     id: Option[Int],
     dateCreated: Option[LocalDateTime],
@@ -84,69 +43,7 @@ object ApiBundleTableSlice {
   }
 }
 
-/*
-  EXAMPLE:
-  {
-    name: "Weekend events at home"
-    table: {
-      id: 1
-      name: "event",
-      source: "facebook",
-    },
-    slices: [
-      [
-        {
-          field: {
-            id: 1,
-            tableId: 1,
-            name: "location"
-          },
-          value: "home",
-          operator: "equals"
-        },
-        {
-          field: {
-            id: 2,
-            tableId: 1,
-            name: "startTime"
-          },
-          value: "saturday",
-          operator: "equals"
-        },
-      ],
-      [
-        {
-          field: {
-            id: 1,
-            tableId: 1,
-            name: "location"
-          },
-          value: "home",
-          operator: "equals"
-        },
-        {
-          field: {
-            id: 2,
-            tableId: 1,
-            name: "startTime"
-          },
-          value: "sunday",
-          operator: "equals"
-        },
-      ]
-    ]
-  }
 
-  EXAMPLE:
-  {
-    name: "Electricity in the kitchen"
-    table: {
-      id: 3,
-      name: "kichenElectricity",
-      source: "fibaro"
-    }
-  }
- */
 case class ApiBundleTable(
     id: Option[Int],
     dateCreated: Option[LocalDateTime],

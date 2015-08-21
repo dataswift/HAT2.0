@@ -86,7 +86,7 @@ trait BundleService extends HttpService with InboundService {
                         (slice: ApiBundleTableSlice)
                         (implicit session: Session): Try[ApiBundleTableSlice] = {
 
-    (bundleTable.table.id, bundleTable.table.id, slice.table.id) match {
+    (bundleTable.table.id, bundleTable.id, slice.table.id) match {
       case (None, _, _) =>
         Failure(new IllegalArgumentException("Table provided for bundling must contain ID"))
 
