@@ -1,26 +1,16 @@
-# Example YAML to get you started quickly.
-# Be aware that YAML has indentation based scoping.
-# Code completion support is available so start typing for available options.
 swagger: '2.0'
-
-# This is your document metadata
 info:
-  version: "2.0.0"
-  title: HAT 2.0 Inbound API
-
-host:
-  api.hubofallthings.com
+  version: 2.0.0
+  title: HAT 2.0 API
+host: api.hubofallthings.com
 schemes:
   - http
-basePath: /inbound
+basePath: /api
 consumes:
   - application/json
 produces:
   - application/json
-
-# Describe your paths here
 paths:
-  # This is a path endpoint. Change it.
   /table:
     post:
       description: |
@@ -36,37 +26,43 @@ paths:
         - Tables
         - Setup
       responses:
-        201:
+        '201':
           description: Table has been created
           schema:
-            $ref: '#/definitions/Table'
+            $ref: '#/definitions/TableResponse'
+              
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-
-  /table/{parentId}/addTable/{childId}:
+  /table/{tableId}/addTable/{subtableId}:
     post:
-      description: |
-        Marks provided table as a "child" of another, e.g. to created nested data structured
+      description: >
+        Marks provided table as a "child" of another, e.g. to created nested data
+        structured
       parameters:
-        - name: parentId
+        - name: tableId
           in: path
-          description: the "parent" table to add the provided "child" table within
+          description: the table to which another table is to be added
           required: true
           type: number
           format: integer
-        - name: childId
+        - name: subtableId
           in: path
-          description: the "child" table ID
+          description: the sub-table ID
           required: true
           type: number
           format: integer
+        - name: RelationshipType
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Relationship'
       tags:
         - Tables
         - Setup
       responses:
-        201:
+        '201':
           description: Tables have been linked. Returns ID of the crossreference
           schema:
             $ref: '#/definitions/EntityCreated'
@@ -74,7 +70,54 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-
+  /table/{tableId}:
+    get:
+      description: |
+        Retrieves table information by Table ID
+      parameters:
+        - name: tableId
+          in: path
+          description: table ID
+          required: true
+          type: number
+          format: integer
+      tags:
+        - Tables
+      responses:
+        '200':
+          description: Table has been found. Returns table information
+          schema:
+            $ref: '#/definitions/TableStructure'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /table/{tableId}/values:
+    get:
+      description: |
+        Retrieves all data associated with the table, including sub-tables
+        recursively
+      parameters:
+        - name: tableId
+          in: path
+          description: table ID
+          required: true
+          type: number
+          format: integer
+      tags:
+        - Tables
+        - Data
+      responses:
+        '200':
+          description: 'A table with data filled, each record as a data array element'
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/TableValues'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
   /field:
     post:
       description: |
@@ -90,15 +133,61 @@ paths:
         - Fields
         - Setup
       responses:
-        201:
+        '201':
           description: Field has been created
           schema:
-            $ref: '#/definitions/Field'
+            $ref: '#/definitions/FieldResponse'
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-
+            
+  /field/{fieldId}:
+    get:
+      description: |
+        Retrieves Field information by Table ID
+      parameters:
+        - name: fieldId
+          in: path
+          description: field ID
+          required: true
+          type: number
+          format: integer
+      tags:
+        - Fields
+      responses:
+        '200':
+          description: Field has been found. Returns field information
+          schema:
+            $ref: '#/definitions/FieldResponse'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+            
+  /field/{fieldId}/values:
+    get:
+      description: |
+        Retrieves all data associated with the specific field
+      parameters:
+        - name: fieldId
+          in: path
+          description: field ID
+          required: true
+          type: number
+          format: integer
+      tags:
+        - Fields
+        - Data
+      responses:
+        '200':
+          description: A list of values.
+          schema:
+            $ref: '#/definitions/FieldValues'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
   /record:
     post:
       description: |
@@ -113,21 +202,111 @@ paths:
       tags:
         - Records
         - Setup
-        - Storage
       responses:
-        201:
+        '201':
           description: Record has been created
           schema:
-            $ref: '#/definitions/Record'
+            $ref: '#/definitions/RecordResponse'
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-
+            
+  /record/{recordId}:
+    get:
+      description: |
+        Retrieves Record information by Record ID
+      parameters:
+        - name: recordId
+          in: path
+          description: record ID
+          required: true
+          type: number
+          format: integer
+      tags:
+        - Records
+      responses:
+        '200':
+          description: Record has been found. Returns record information
+          schema:
+            $ref: '#/definitions/RecordResponse'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /record/{recordId}/values:
+    get:
+      description: |
+        Retrieves all data associated with the specific record ID
+      parameters:
+        - name: recordId
+          in: path
+          description: record ID
+          required: true
+          type: number
+          format: integer
+      tags:
+        - Records
+        - Data
+      responses:
+        '200':
+          description: A record with data filled
+          schema:
+            $ref: '#/definitions/RecordValues'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
   /value:
     post:
       description: |
         Store a new data value, associated with a database field and a record
+      parameters:
+        - name: Value
+          in: body
+          description: Information about a single value to be inserted in the database
+          required: true
+          schema:
+            $ref: '#/definitions/Value'
+      tags:
+        - Values
+      responses:
+        '201':
+          description: Data Value has been saved
+          schema:
+            $ref: '#/definitions/Value'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /value/{valueId}:
+    post:
+      description: |
+        Store a new data value, associated with a database field and a record
+      parameters:
+        - name: valueId
+          in: path
+          description: value ID
+          required: true
+          type: number
+          format: integer
+      tags:
+        - Values
+      responses:
+        '200':
+          description: Value has been found. Returns value data
+          schema:
+            $ref: '#/definitions/Value'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+            
+  /value/list:
+    post:
+      description: >
+        Store a list of values, all with its own information of what it is
+        associated with
       parameters:
         - name: Value
           in: body
@@ -139,93 +318,185 @@ paths:
               $ref: '#/definitions/Value'
       tags:
         - Values
-        - Storage
       responses:
-        201:
+        '201':
           description: Data Value has been saved
+          schema:
+            type: array
+            items: 
+              $ref: '#/definitions/Value'
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-
-  /value/list:
-    post:
-      description: |
-        Store a list of values, all with its own information of what it is associated with
-      parameters:
-        - name: Value
-          in: body
-          description: Information about a single value to be inserted in the database
-          required: true
-          schema:
-            $ref: '#/definitions/Value'
-      tags:
-        - Values
-        - Storage
-      responses:
-        201:
-          description: Data Value has been saved
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
-
+            
 definitions:
+  TimeStructure:
+    properties:
+      dateCreated:
+        type: string
+        format: date-time
+        description: Time the entity was created
+        example: "2015-08-16T21:45:22.551Z"
+      lastUpdated:
+        type: string
+        format: date-time
+        description: Time the entity was last updated
+        example: "2015-08-16T21:45:22.551Z"
+    required:
+      - dateCreated
+      - lastUpdated
+        
   Table:
+    required:
+      - name
+      - source
     properties:
       id:
         type: number
+        format: int32
         description: Unique Table ID
-
+        example: 1
       name:
         type: string
         description: Name of the table
+        example: Location
       source:
         type: string
         description: Name of the source
-
+        example: Facebook
+      
+  TableResponse:
+    description: Table response object
+    allOf:
+    - $ref: '#/definitions/Table'
+    - $ref: '#/definitions/TimeStructure'
+      
+  TableStructure:
+    description: Data Table information with structure - related fields and sub-tables
+    allOf:
+    - $ref: '#/definitions/TableResponse'
+    - properties:
+        fields:
+          type: array
+          description: Array of fields (columns) in the table
+          items:
+            $ref: '#/definitions/Field'
+        subTables:
+          type: array
+          description: 'Array of sub-tables (recursive type) in the table, used to represent complex types, nested objects, etc.'
+          items:
+            $ref: '#/definitions/TableStructure'
+            
+  TableValues:
+    description: Data Table information with structure and values filled in - related fields and sub-tables
+    allOf:
+    - $ref: '#/definitions/TableStructure'
+    - properties:
+        fields:
+          type: array
+          description: Array of fields (columns) in the table
+          items:
+            $ref: '#/definitions/FieldValues'
+      
   Record:
+    required:
+      - name
     properties:
-      id:
-        type: number
-        description: Unique data record ID, connecting tables and records in a single received record
-      name:
-        type: string
-        description: Name of the record
-
+        id:
+          type: number
+          description: 'Unique data record ID, connecting tables and records in a single received record'
+        name:
+          type: string
+          description: Name of the record
+    
+  RecordResponse:
+    required:
+      - name
+    allOf:
+    - $ref: '#/definitions/Record'
+    - $ref: '#/definitions/TimeStructure'
+    
+  RecordValues:
+    allOf:
+    - $ref: '#/definitions/RecordResponse'
+    - properties:
+        tables:
+          type: array
+          description: "Array of tables that contain the record's values. Only set for outbound API calls"
+          items:
+            $ref: '#/definitions/TableValues'
+      
   Field:
+    required:
+      - tableId
+      - name
     properties:
-      id:
-        type: number
-        description: Unique Field ID
-      tableId:
-        type: number
-        description: ID of the table the field is part of
-      name:
-        type: string
-        description: name of the field (column name in the database)
-
+        id:
+          type: number
+          description: Unique Field ID
+        tableId:
+          type: number
+          description: ID of the table the field is part of
+        name:
+          type: string
+          description: name of the field (column name in the database)
+    
+  FieldResponse:
+    allOf:
+    - $ref: '#/definitions/Field'
+    - $ref: '#/definitions/TimeStructure'
+    
+  FieldValues:
+    allOf:
+    - $ref: '#/definitions/FieldResponse'
+    - properties:
+        values:
+          type: array
+          description: Array of values associated with the field. Only set for outbound API calls
+          items:
+            $ref: '#/definitions/Value'
+    
   Value:
+    required:
+      - value
+      - fieldId
+      - recordId
+    allOf:
+    - properties:
+        id:
+          type: number
+          description: Unique data value ID
+        value:
+          type: string
+          description: An arbitrary data value to be stored
+        fieldId:
+          type: number
+          description: Which field (column) the value is in
+        recordId:
+          type: number
+          description: ID of the record the value is part of
+    - $ref: '#/definitions/TimeStructure'
+        
+        
+  Relationship:
+    description: 'The type of the relationship between two tables. Currently only relationship type "owns" is supported.'
     properties:
-      id:
-        type: number
-        description: Unique data value ID
-      value:
+      relationshipType:
         type: string
-        description: An arbitrary data value to be stored
-      fieldId:
-        type: number
-        description: Which field (column) the value is in
-      recordId:
-        type: number
-        description: ID of the record the value is part of
-
+        description: 'The type of relationship between two entities (e.g. one entity "owns" another)'
+        example: "owns"
+        
+        
+        
   EntityCreated:
     properties:
       id:
         type: number
-        description: ID of the creatd entity
-
+        description: ID of the created entity
+        
+        
+        
   Error:
     properties:
       code:
