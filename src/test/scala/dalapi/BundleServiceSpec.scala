@@ -1,6 +1,7 @@
 package dalapi
 
 import dal.Tables._
+import dalapi.models.{ApiJsonProtocol, ApiBundleTable}
 import dalapi.service.BundleService
 import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
@@ -16,6 +17,8 @@ import dal.SlickPostgresDriver.simple._
 
 class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with BundleService {
   def actorRefFactory = system
+
+  import ApiJsonProtocol._
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
@@ -81,6 +84,28 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       }
     }
 
+    "Create and retrieve a bundle by ID" in {
+      var bundleId: Option[Int] = Some(0)
+      HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+        createBundleTable ~> check {
+//        print(response.message)
+        response.status should be equalTo Created
+        responseAs[String] must contain("Weekend events at home")
+        bundleId = responseAs[ApiBundleTable].id
+      }
+
+      bundleId must beSome
+
+      val url = s"/table/${bundleId.get}"
+      print(url)
+      HttpRequest(GET, url) ~>
+        getBundleTable ~> check {
+//        print(response.message)
+        response.status should be equalTo OK
+        responseAs[String] must contain("Weekend events at home")
+      }
+    }
+
   }
 }
 
@@ -132,7 +157,7 @@ object BundleExamples {
       |              "name": "location"
       |            },
       |            "value": "home",
-      |            "operator": "equals"
+      |            "operator": "equal"
       |          },
       |          {
       |            "field": {
@@ -141,7 +166,7 @@ object BundleExamples {
       |              "name": "startTime"
       |            },
       |            "value": "saturday",
-      |            "operator": "equals"
+      |            "operator": "equal"
       |          }
       |        ]
       |      },
@@ -159,7 +184,7 @@ object BundleExamples {
       |              "name": "location"
       |            },
       |            "value": "home",
-      |            "operator": "equals"
+      |            "operator": "equal"
       |          },
       |          {
       |            "field": {
@@ -168,7 +193,7 @@ object BundleExamples {
       |              "name": "startTime"
       |            },
       |            "value": "sunday",
-      |            "operator": "equals"
+      |            "operator": "equal"
       |          }
       |        ]
       |      }

@@ -10,7 +10,7 @@ object ApiJsonProtocol extends DefaultJsonProtocol {
     val formatter = ISODateTimeFormat.dateTimeNoMillis
 
     def write(obj: LocalDateTime): JsValue = {
-      JsString(formatter.print(obj))
+      JsString(formatter.print(obj.toDateTime))
     }
 
     def read(json: JsValue): LocalDateTime = json match {
@@ -80,7 +80,32 @@ object ApiJsonProtocol extends DefaultJsonProtocol {
   implicit val apiUom = jsonFormat4(ApiSystemUnitofmeasurement)
 
   // Bundles
-  implicit val apiOperator = jsonEnum(ComparisonOperator)
+
+  // The scala way of doing "Enums"
+  import ComparisonOperators._
+
+  // serialising/deserialising between json and sealed case class
+  implicit object ElementKindFormat extends JsonFormat[ComparisonOperator] {
+    def write(obj: ComparisonOperator) = JsString(obj.toString)
+
+    def read(json: JsValue): ComparisonOperator = {
+      json match {
+        case JsString(txt) =>
+          try {
+            ComparisonOperators.fromString(txt)
+          } catch {
+            case t: Throwable => error(txt)
+          }
+        case _ =>
+          error(json)
+      }
+    }
+
+    def error(v: Any): ComparisonOperator = {
+      val availableOperators = comparisonOperators.toString()
+      deserializationError(f"'$v' is not a valid operator, must be one of $availableOperators")
+    }
+  }
 
   implicit val apiBundleTableCondition = jsonFormat6(ApiBundleTableCondition.apply)
   implicit val apiBundleTableSlice = jsonFormat5(ApiBundleTableSlice.apply)

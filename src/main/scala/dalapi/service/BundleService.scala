@@ -16,7 +16,7 @@ trait BundleService extends HttpService with InboundService {
 
   val routes = {
     pathPrefix("bundles") {
-      createBundleTable
+      createBundleTable ~ getBundleTable
     }
   }
 
@@ -27,7 +27,7 @@ trait BundleService extends HttpService with InboundService {
     post {
       entity(as[ApiBundleTable]) { bundleTable =>
         db.withSession { implicit session =>
-
+//          print("Inserting bundle table " + bundleTable.toString)
           val result = storeBundleTable(bundleTable)
 
           complete {
@@ -41,6 +41,25 @@ trait BundleService extends HttpService with InboundService {
         }
       }
     }
+  }
+
+  def getBundleTable = path("table" / IntNumber) {
+    (bundleTableId: Int) =>
+      get {
+        db.withSession { implicit session =>
+
+          val bundleTable = getBundleTableById(bundleTableId)
+
+          complete {
+            bundleTable match {
+              case Some(table) =>
+                table
+              case None =>
+                (NotFound, s"Bundle Table {bundleTableId} not found")
+            }
+          }
+        }
+      }
   }
 //
 //  /*
@@ -82,6 +101,24 @@ trait BundleService extends HttpService with InboundService {
 
   }
 
+  private def getBundleTableById(bundleTableId: Int)(implicit session: Session): Option[ApiBundleTable] = {
+    val tableQuery = for {
+      t <- BundleTable.filter(_.id === bundleTableId)
+      d <- t.dataTableFk
+    } yield (t, d)
+
+
+    val table = tableQuery.run.headOption
+
+    table map {
+      case (bundleTable: BundleTableRow, dataTable: DataTableRow) =>
+        val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
+        val apiBundleTable = ApiBundleTable.fromBundleTable(bundleTable)(apiDataTable)
+        val slices = getBundleTableSlices(apiBundleTable)
+        apiBundleTable.copy(slices = slices)
+    }
+  }
+
   private def storeSlice(bundleTable: ApiBundleTable)
                         (slice: ApiBundleTableSlice)
                         (implicit session: Session): Try[ApiBundleTableSlice] = {
@@ -116,6 +153,26 @@ trait BundleService extends HttpService with InboundService {
 
   }
 
+  private def getBundleTableSlices(bundleTable: ApiBundleTable)
+                                  (implicit session: Session): Option[Seq[ApiBundleTableSlice]] = {
+    bundleTable.id map { bundleTableId =>
+      val slicesQuery = for {
+        s <- BundleTableslice.filter(_.bundleTableId === bundleTableId)
+        t <- s.dataTableFk
+      } yield (s, t)
+
+      val slices = slicesQuery.run
+
+      slices map { case (slice: BundleTablesliceRow, dataTable: DataTableRow) =>
+        // Returning the Data Table information of the slice without subTables or fields
+        val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
+        val apiSlice = ApiBundleTableSlice.fromBundleTableSlice(slice)(apiDataTable)
+        val conditions = getSliceConditions(apiSlice)
+        apiSlice.copy(conditions = conditions)
+      }
+    }
+  }
+
   private def storeCondition(bundleTableSlice: ApiBundleTableSlice)
                             (condition: ApiBundleTableCondition)
                             (implicit session: Session): Try[ApiBundleTableCondition] = {
@@ -133,6 +190,26 @@ trait BundleService extends HttpService with InboundService {
       case _ =>
         Failure(new IllegalArgumentException("Invalid table slice or table field provided"))
 
+    }
+  }
+
+  private def getSliceConditions(bundleTableSlice: ApiBundleTableSlice)
+                                (implicit session: Session): Seq[ApiBundleTableCondition] = {
+    bundleTableSlice.id match {
+      case Some(tableSliceId) =>
+        val conditionsQuery = for {
+          c <- BundleTableslicecondition.filter(_.tablesliceId === bundleTableSlice.id)
+          f <- c.dataFieldFk
+        } yield (c, f)
+
+        val conditions = conditionsQuery.run
+        conditions map { case (condition:BundleTablesliceconditionRow, field:DataFieldRow) =>
+          val apiField = ApiDataField.fromDataField(field)
+          ApiBundleTableCondition.fromBundleTableSliceCondition(condition)(apiField)
+        }
+
+      case None =>
+        Seq()
     }
   }
 

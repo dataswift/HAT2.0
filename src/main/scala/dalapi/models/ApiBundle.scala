@@ -1,14 +1,43 @@
 package dalapi.models
 
 import dal.Tables._
+import dalapi.models.ComparisonOperators.ComparisonOperator
 import org.joda.time.LocalDateTime
 
-object ComparisonOperator extends Enumeration {
-  type ComparisonOperator = Value
-  val equals, like, likeTime = Value
+
+object ComparisonOperators {
+  sealed trait ComparisonOperator
+  case object equal extends ComparisonOperator
+  case object notEqual extends ComparisonOperator
+  case object greaterThan extends ComparisonOperator
+  case object lessThan extends ComparisonOperator
+  case object like extends ComparisonOperator
+  case object dateGreaterThan extends ComparisonOperator
+  case object dateLessThan extends ComparisonOperator
+  case object dateWeekdayGreaterThan extends ComparisonOperator
+  case object dateWeekdayLessThan extends ComparisonOperator
+  case object dateHourGreaterThan extends ComparisonOperator
+  case object dateHourLessThan extends ComparisonOperator
+
+  def fromString(value: String): ComparisonOperator = {
+    Vector(equal, notEqual, greaterThan, lessThan, like,
+      dateGreaterThan, dateLessThan,
+      dateWeekdayGreaterThan, dateWeekdayLessThan,
+      dateHourGreaterThan, dateHourLessThan).find(_.toString == value).get
+  }
+
+  val comparisonOperators: Set[ComparisonOperator] = Set(equal, notEqual, greaterThan, lessThan, like, dateGreaterThan,
+    dateLessThan, dateWeekdayGreaterThan, dateWeekdayLessThan, dateHourGreaterThan, dateHourLessThan)
 }
 
-import ComparisonOperator._
+//object ComparisonOperator extends Enumeration {
+//  type ComparisonOperator = Value
+//  val equal, notEqual, greaterThan, lessThan, like,
+//    dateGreaterThan, dateLessThan,
+//    dateWeekdayGreaterThan, dateWeekdayLessThan,
+//    dateHourGreaterThan, dateHourLessThan = Value
+//}
+
 
 
 case class ApiBundleTableCondition(
@@ -24,7 +53,7 @@ object ApiBundleTableCondition {
     new ApiBundleTableCondition(Some(condition.id),
       Some(condition.dateCreated), Some(condition.lastUpdated),
       field, condition.value,
-      ComparisonOperator.withName(condition.operator))
+      ComparisonOperators.fromString(condition.operator))
   }
 }
 
@@ -40,6 +69,12 @@ object ApiBundleTableSlice {
     new ApiBundleTableSlice(Some(slice.id),
       Some(slice.dateCreated), Some(slice.lastUpdated),
       table, Seq())
+  }
+
+  def fromBundleTableSliceConditions(slice: BundleTablesliceRow)(table: ApiDataTable)(conditions: Seq[ApiBundleTableCondition]) : ApiBundleTableSlice = {
+    new ApiBundleTableSlice(Some(slice.id),
+      Some(slice.dateCreated), Some(slice.lastUpdated),
+      table, conditions)
   }
 }
 
