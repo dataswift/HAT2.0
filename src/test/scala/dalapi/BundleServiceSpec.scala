@@ -169,14 +169,32 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       val bundleJson: String = completeBundle.toJson.toString
 
       import ApiJsonProtocol._
-      HttpRequest(POST, "/contextless", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
+      val bundleId = HttpRequest(POST, "/contextless", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
         createBundleContextless ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain(""""operator": "equal"""")
         responseAs[String] must contain(""""name": "startTime"""")
+        responseAs[ApiBundleContextless].id
       }
 
+      bundleId must beSome
+
+      HttpRequest(GET, s"/contextless/${bundleId.get}") ~>
+        getBundleContextless ~> check {
+        response.status should be equalTo OK
+        responseAs[String] must contain(""""operator": "equal"""")
+        responseAs[String] must contain(""""name": "startTime"""")
+      }
     }
+
+    "Return correct error code for bundle that doesn't exist" in {
+      HttpRequest(GET, "/contextless/0") ~>
+        getBundleContextless ~> check {
+        response.status should be equalTo NotFound
+      }
+    }
+
+
   }
 }
 

@@ -16,7 +16,7 @@ trait BundleService extends HttpService with InboundService {
 
   val routes = {
     pathPrefix("bundles") {
-      createBundleTable ~ getBundleTable
+      createBundleTable ~ getBundleTable ~ createBundleContextless ~ getBundleContextless
     }
   }
 
@@ -58,7 +58,7 @@ trait BundleService extends HttpService with InboundService {
               case Some(table) =>
                 table
               case None =>
-                (NotFound, s"Bundle Table {bundleTableId} not found")
+                (NotFound, s"Bundle Table ${bundleTableId} not found")
             }
           }
         }
@@ -87,6 +87,24 @@ trait BundleService extends HttpService with InboundService {
         }
       }
     }
+  }
+
+  def getBundleContextless = path("contextless" / IntNumber) {
+    (bundleId: Int) =>
+      get {
+        db.withSession { implicit session =>
+          val bundle = getBundleContextlessById(bundleId)
+
+          complete {
+            bundle match {
+              case Some(foundBundle) =>
+                foundBundle
+              case None =>
+                (NotFound, s"Contextless Bundle $bundleId not found")
+            }
+          }
+        }
+      }
   }
 
   private def storeBundleTable(bundleTable: ApiBundleTable)(implicit session: Session): Try[ApiBundleTable] = {
@@ -245,6 +263,32 @@ trait BundleService extends HttpService with InboundService {
         bundleApi.copy(tables = apiCombinations)
       }
     }
+  }
+
+  private def getBundleContextlessById(bundleId: Int)(implicit session: Session): Option[ApiBundleContextless] = {
+    BundleContextless.filter(_.id === bundleId).run.headOption map { bundle =>
+      val tableQuery = for {
+        join <- BundleJoin.filter(_.bundleId === bundleId)
+        bundleTable <- join.bundleTableFk
+        dataTable <- bundleTable.dataTableFk
+        joinField <- join.dataFieldFk3
+        tableField <- join.dataFieldFk4
+      } yield (join, bundleTable, dataTable, joinField, tableField)
+
+      val tables = tableQuery.run
+
+      val apiTables = tables.map {
+        case (join: BundleJoinRow, bundleTable: BundleTableRow, dataTable: DataTableRow, joinField: DataFieldRow, tableField: DataFieldRow) =>
+          val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
+          val apiTable = ApiBundleTable.fromBundleTable(bundleTable)(apiDataTable)
+          val apiJoinField = ApiDataField.fromDataField(joinField)
+          val apiTableField = ApiDataField.fromDataField(tableField)
+          ApiBundleCombination.fromBundleJoin(join)(Some(apiJoinField), Some(apiTableField), apiTable)
+      }
+
+      ApiBundleContextless.fromBundleContextlessTables(bundle)(apiTables)
+    }
+
   }
 
   private def storeBundleCombination(combination: ApiBundleCombination)
