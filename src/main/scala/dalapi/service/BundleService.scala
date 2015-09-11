@@ -16,7 +16,12 @@ trait BundleService extends HttpService with InboundService {
 
   val routes = {
     pathPrefix("bundles") {
-      createBundleTable ~ getBundleTable ~ createBundleContextless ~ getBundleContextless
+      createBundleTable ~
+        getBundleTable ~
+        createBundleContextless ~
+        getBundleContextless ~
+        getBundleTableValues ~
+        getBundleContextlessValues
     }
   }
 
@@ -46,7 +51,7 @@ trait BundleService extends HttpService with InboundService {
   }
 
   /*
-   * Retrieves bundle table by ID
+   * Retrieves bundle table structure by ID
    */
   def getBundleTable = path("table" / IntNumber) {
     (bundleTableId: Int) =>
@@ -61,6 +66,18 @@ trait BundleService extends HttpService with InboundService {
                 (NotFound, s"Bundle Table ${bundleTableId} not found")
             }
           }
+        }
+      }
+  }
+
+  /*
+   * Retrieves bundle table data
+   */
+  def getBundleTableValues = path("table" / IntNumber / "values") {
+    (bundleTableId: Int) =>
+      get {
+        complete {
+          (NotImplemented, s"Data retrieval for contextless bundles not yet implemented")
         }
       }
   }
@@ -89,6 +106,9 @@ trait BundleService extends HttpService with InboundService {
     }
   }
 
+  /*
+   * Retrieves contextless bundle structure by ID
+   */
   def getBundleContextless = path("contextless" / IntNumber) {
     (bundleId: Int) =>
       get {
@@ -107,17 +127,37 @@ trait BundleService extends HttpService with InboundService {
       }
   }
 
+  /*
+   * Retrieves contextless bundle data
+   */
+  def getBundleContextlessValues = path("contextless" / IntNumber / "values") {
+    (bundleId: Int) =>
+      get {
+        complete {
+          (NotImplemented, s"Data retrieval for contextless bundles not yet implemented")
+        }
+      }
+  }
+
+  /*
+   * Stores bundle table provided from the incoming API call
+   */
   private def storeBundleTable(bundleTable: ApiBundleTable)(implicit session: Session): Try[ApiBundleTable] = {
+    // Require the bundle to be based on a data table that already exists
     bundleTable.table.id match {
       case Some(tableId) =>
         val bundleTableRow = new BundleTableRow(0, LocalDateTime.now(), LocalDateTime.now(), bundleTable.name, tableId)
 
+        // Using Try to handle errors
         Try((BundleTable returning BundleTable) += bundleTableRow) flatMap { insertedBundleTable =>
+          // Convert from database format to API format
           val insertedApiBundleTable = ApiBundleTable.fromBundleTable(insertedBundleTable)(bundleTable.table)
+          // A partial function to store all table slices related to this bundle table
           def storeBundleSlice = storeSlice (insertedApiBundleTable) _
 
           val apiSlices = bundleTable.slices map { tableSlices =>
             val slices = tableSlices.map(storeBundleSlice)
+            // Flattens to a simple Try with list if slices or returns the first error that occurred
             flatten(slices)
           }
 
@@ -127,6 +167,7 @@ trait BundleService extends HttpService with InboundService {
             case Some(Failure(e)) =>
               Failure(e)
             case None =>
+              // Bundle Table with no slicing
               Success(insertedApiBundleTable)
           }
 
@@ -138,14 +179,15 @@ trait BundleService extends HttpService with InboundService {
   }
 
   private def getBundleTableById(bundleTableId: Int)(implicit session: Session): Option[ApiBundleTable] = {
+    // Traversing entity graph the Slick way
     val tableQuery = for {
-      t <- BundleTable.filter(_.id === bundleTableId)
-      d <- t.dataTableFk
-    } yield (t, d)
-
+      bundleTable <- BundleTable.filter(_.id === bundleTableId)
+      dataTable <- t.dataTableFk
+    } yield (bundleTable, dataTable)
 
     val table = tableQuery.run.headOption
 
+    // Map back from database types to API ones
     table map {
       case (bundleTable: BundleTableRow, dataTable: DataTableRow) =>
         val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
@@ -192,10 +234,11 @@ trait BundleService extends HttpService with InboundService {
   private def getBundleTableSlices(bundleTable: ApiBundleTable)
                                   (implicit session: Session): Option[Seq[ApiBundleTableSlice]] = {
     bundleTable.id map { bundleTableId =>
+      // Traversing entity graph the Slick way
       val slicesQuery = for {
-        s <- BundleTableslice.filter(_.bundleTableId === bundleTableId)
-        t <- s.dataTableFk
-      } yield (s, t)
+        slice <- BundleTableslice.filter(_.bundleTableId === bundleTableId)
+        dataTable <- s.dataTableFk
+      } yield (slice, dataTable)
 
       val slices = slicesQuery.run
 
@@ -233,6 +276,7 @@ trait BundleService extends HttpService with InboundService {
                                 (implicit session: Session): Seq[ApiBundleTableCondition] = {
     bundleTableSlice.id match {
       case Some(tableSliceId) =>
+        // Traversing entity graph the Slick way
         val conditionsQuery = for {
           c <- BundleTableslicecondition.filter(_.tablesliceId === bundleTableSlice.id)
           f <- c.dataFieldFk
@@ -267,8 +311,12 @@ trait BundleService extends HttpService with InboundService {
 
   private def getBundleContextlessById(bundleId: Int)(implicit session: Session): Option[ApiBundleContextless] = {
     BundleContextless.filter(_.id === bundleId).run.headOption map { bundle =>
+      // Traversing entity graph the Slick way
+      // A fairly complex case with a lot of related data that needs to be retrieved for each bundle join
       val tableQuery = for {
         join <- BundleJoin.filter(_.bundleId === bundleId)
+          .prefetch(_.bundleTableFk).prefetch(_.dataTableFk)
+          .prefetch(_.dataFieldFk3).prefetch(_.dataFieldFk4)
         bundleTable <- join.bundleTableFk
         dataTable <- bundleTable.dataTableFk
         joinField <- join.dataFieldFk3
@@ -296,12 +344,11 @@ trait BundleService extends HttpService with InboundService {
                                     (implicit session: Session): Try[ApiBundleCombination] = {
 
     (combination.bundleTable.id, bundle.id) match {
-
+      // Both bundle table and bundle id have to be "well defined", already with IDs
       case (Some(bundleTableId), Some(bundleId)) =>
-
         (combination.bundleJoinField, combination.bundleTableField, combination.operator) match {
+          // Either both bundleJoinField, bundleTableField and the comparison operator have to be defined
           case (Some(bundleJoinField), Some(bundleTableField), Some(comparisonOperator)) =>
-            Success(combination)
             val combinationRow = new BundleJoinRow(0, LocalDateTime.now(), LocalDateTime.now(),
               combination.name, bundleTableId, bundleId,
               bundleJoinField.id, bundleTableField.id, Some(comparisonOperator.toString))
@@ -310,6 +357,7 @@ trait BundleService extends HttpService with InboundService {
               ApiBundleCombination.fromBundleJoin(insertedCombination)(Some(bundleJoinField), Some(bundleTableField), combination.bundleTable)
             }
 
+          // Or none of them
           case (None, None, None) =>
             val combinationRow = new BundleJoinRow(0, LocalDateTime.now(), LocalDateTime.now(),
               combination.name, bundleTableId, bundleId,
