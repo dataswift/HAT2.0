@@ -90,15 +90,15 @@ case class ApiBundleCombination(
     operator: Option[ComparisonOperator])
 
 object ApiBundleCombination {
-  def fromBundleJoin(bundleCombination: BundleJoinRow, bundleJoinField: Option[DataFieldRow], bundleTableField: Option[DataFieldRow])
-                    (bundleTable: ApiBundleTable): ApiBundleCombination = {
+  def fromBundleJoin(bundleCombination: BundleJoinRow)
+                    (bundleJoinField: Option[ApiDataField], bundleTableField: Option[ApiDataField], bundleTable: ApiBundleTable): ApiBundleCombination = {
 
     val operator = bundleCombination.operator.map(ComparisonOperators.fromString)
 
     new ApiBundleCombination(Some(bundleCombination.id),
       Some(bundleCombination.dateCreated), Some(bundleCombination.lastUpdated),
       bundleCombination.name, bundleTable,
-      bundleJoinField.map(ApiDataField.fromDataField), bundleTableField.map(ApiDataField.fromDataField),
+      bundleJoinField, bundleTableField,
       operator)
   }
 }

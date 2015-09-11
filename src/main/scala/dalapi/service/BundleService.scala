@@ -258,13 +258,21 @@ trait BundleService extends HttpService with InboundService {
         (combination.bundleJoinField, combination.bundleTableField, combination.operator) match {
           case (Some(bundleJoinField), Some(bundleTableField), Some(comparisonOperator)) =>
             Success(combination)
+            val combinationRow = new BundleJoinRow(0, LocalDateTime.now(), LocalDateTime.now(),
+              combination.name, bundleTableId, bundleId,
+              bundleJoinField.id, bundleTableField.id, Some(comparisonOperator.toString))
+
+            Try((BundleJoin returning BundleJoin) += combinationRow) map { insertedCombination =>
+              ApiBundleCombination.fromBundleJoin(insertedCombination)(Some(bundleJoinField), Some(bundleTableField), combination.bundleTable)
+            }
+
           case (None, None, None) =>
             val combinationRow = new BundleJoinRow(0, LocalDateTime.now(), LocalDateTime.now(),
               combination.name, bundleTableId, bundleId,
               None, None, None)
 
             Try((BundleJoin returning BundleJoin) += combinationRow) map { insertedCombination =>
-              ApiBundleCombination.fromBundleJoin(insertedCombination, None, None)(combination.bundleTable)
+              ApiBundleCombination.fromBundleJoin(insertedCombination)(None, None, combination.bundleTable)
             }
           case _ =>
             Failure(new IllegalArgumentException("Both columns must be provided to join data on as well as the operator, or none"))

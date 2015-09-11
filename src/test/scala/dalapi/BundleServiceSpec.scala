@@ -104,7 +104,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
   }
 
   "Contextless Bundle Service for Joins" should {
-    "Create and combine required bundles" in {
+    "Create and combine required bundles without join conditions" in {
 
       val bundleWeekendEvents = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
         createBundleTable ~> check {
@@ -136,6 +136,44 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       HttpRequest(POST, "/contextless", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
         createBundleContextless ~> check {
         response.status should be equalTo Created
+      }
+
+    }
+
+    "Create and combine required bundles with join conditions" in {
+
+      val bundleWeekendEvents = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+        createBundleTable ~> check {
+        responseAs[ApiBundleTable]
+      }
+      bundleWeekendEvents.id must beSome
+
+      val bundleTableKitchen = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchen)) ~>
+        createBundleTable ~> check {
+        responseAs[ApiBundleTable]
+      }
+      bundleTableKitchen.id must beSome
+
+      val bundle = JsonParser(BundleExamples.bundleContextlessJoin).convertTo[ApiBundleContextless]
+      bundle.tables must have size (2)
+
+      val completeBundle = bundle.copy(tables = Seq(
+        bundle.tables(0).copy(
+          bundleTable = bundle.tables(0).bundleTable.copy(id = bundleWeekendEvents.id)
+        ),
+        bundle.tables(1).copy(
+          bundleTable = bundle.tables(1).bundleTable.copy(id = bundleTableKitchen.id)
+        )
+      ))
+
+      val bundleJson: String = completeBundle.toJson.toString
+
+      import ApiJsonProtocol._
+      HttpRequest(POST, "/contextless", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
+        createBundleContextless ~> check {
+        response.status should be equalTo Created
+        responseAs[String] must contain(""""operator": "equal"""")
+        responseAs[String] must contain(""""name": "startTime"""")
       }
 
     }
@@ -276,14 +314,24 @@ object BundleExamples {
       |         "name": "Weekend events at home",
       |         "bundleTable": {
       |           "id": 0,
-      |           "name": "Weekend events at home"
+      |           "name": "Weekend events at home",
+      |           "table": {
+      |             "id": 4,
+      |             "name": "event",
+      |             "source": "Facebook"
+      |           }
       |         }
       |       },
       |       {
       |         "name": "Electricity in the kitchen",
       |         "bundleTable": {
       |           "id": 0,
-      |           "name": "Electricity in the kitchen"
+      |           "name": "Electricity in the kitchen",
+      |           "table": {
+      |             "id": 3,
+      |             "name": "kichenElectricity",
+      |             "source": "fibaro"
+      |           }
       |         },
       |         "bundleJoinField": {
       |           "id": 14,
@@ -295,7 +343,7 @@ object BundleExamples {
       |           "tableId": 3,
       |           "name": "timestamp"
       |         },
-      |         "operator": "likeTime"
+      |         "operator": "equal"
       |       }
       |     ]
       |   }
