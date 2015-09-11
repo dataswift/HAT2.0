@@ -23,11 +23,13 @@ trait BundleService extends HttpService with InboundService {
   import ApiJsonProtocol._
 
 
+  /*
+   * Creates a bundle table as per POST'ed data, including table information and its slicing conditions
+   */
   def createBundleTable = path("table") {
     post {
       entity(as[ApiBundleTable]) { bundleTable =>
         db.withSession { implicit session =>
-//          print("Inserting bundle table " + bundleTable.toString)
           val result = storeBundleTable(bundleTable)
 
           complete {
@@ -43,13 +45,14 @@ trait BundleService extends HttpService with InboundService {
     }
   }
 
+  /*
+   * Retrieves bundle table by ID
+   */
   def getBundleTable = path("table" / IntNumber) {
     (bundleTableId: Int) =>
       get {
         db.withSession { implicit session =>
-
           val bundleTable = getBundleTableById(bundleTableId)
-
           complete {
             bundleTable match {
               case Some(table) =>
@@ -61,15 +64,30 @@ trait BundleService extends HttpService with InboundService {
         }
       }
   }
-//
-//  /*
-//   * Creates a new virtual table for storing arbitrary incoming data
-//   */
-//  def createBundleContextless = path("contextless") {
-//    post {
-//
-//    }
-//  }
+
+
+  /*
+   * Creates a new virtual table for storing arbitrary incoming data
+   */
+  def createBundleContextless = path("contextless") {
+    post {
+      entity(as[ApiBundleContextless]) { bundle =>
+        db.withSession { implicit session =>
+          val result = storeBundleContextless(bundle)
+
+          complete {
+            result match {
+              case Success(storedBundle) =>
+                (Created, storedBundle)
+              case Failure(e) =>
+                (BadRequest, e.getMessage)
+            }
+          }
+
+        }
+      }
+    }
+  }
 
   private def storeBundleTable(bundleTable: ApiBundleTable)(implicit session: Session): Try[ApiBundleTable] = {
     bundleTable.table.id match {
@@ -210,6 +228,50 @@ trait BundleService extends HttpService with InboundService {
 
       case None =>
         Seq()
+    }
+  }
+
+  private def storeBundleContextless(bundle: ApiBundleContextless)
+                                    (implicit session: Session): Try[ApiBundleContextless] = {
+    val bundleContextlessRow = new BundleContextlessRow(0, LocalDateTime.now(), LocalDateTime.now(), bundle.name)
+
+    Try((BundleContextless returning BundleContextless) += bundleContextlessRow) flatMap { insertedBundle =>
+      val bundleApi = ApiBundleContextless.fromBundleContextlessTables(insertedBundle)(bundle.tables)
+      val storedCombinations = bundleApi.tables map { combination =>
+        storeBundleCombination(combination)(bundleApi)
+      }
+
+      flatten(storedCombinations) map { apiCombinations =>
+        bundleApi.copy(tables = apiCombinations)
+      }
+    }
+  }
+
+  private def storeBundleCombination(combination: ApiBundleCombination)
+                                    (bundle: ApiBundleContextless)
+                                    (implicit session: Session): Try[ApiBundleCombination] = {
+
+    (combination.bundleTable.id, bundle.id) match {
+
+      case (Some(bundleTableId), Some(bundleId)) =>
+
+        (combination.bundleJoinField, combination.bundleTableField, combination.operator) match {
+          case (Some(bundleJoinField), Some(bundleTableField), Some(comparisonOperator)) =>
+            Success(combination)
+          case (None, None, None) =>
+            val combinationRow = new BundleJoinRow(0, LocalDateTime.now(), LocalDateTime.now(),
+              combination.name, bundleTableId, bundleId,
+              None, None, None)
+
+            Try((BundleJoin returning BundleJoin) += combinationRow) map { insertedCombination =>
+              ApiBundleCombination.fromBundleJoin(insertedCombination, None, None)(combination.bundleTable)
+            }
+          case _ =>
+            Failure(new IllegalArgumentException("Both columns must be provided to join data on as well as the operator, or none"))
+        }
+
+      case _ =>
+        Failure(new IllegalArgumentException(s"Bundle Table ${combination.bundleTable.id} to create a bundle combination on (bundle ${bundle.id}) not found"))
     }
   }
 

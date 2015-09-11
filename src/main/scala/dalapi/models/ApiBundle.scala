@@ -30,16 +30,6 @@ object ComparisonOperators {
     dateLessThan, dateWeekdayGreaterThan, dateWeekdayLessThan, dateHourGreaterThan, dateHourLessThan)
 }
 
-//object ComparisonOperator extends Enumeration {
-//  type ComparisonOperator = Value
-//  val equal, notEqual, greaterThan, lessThan, like,
-//    dateGreaterThan, dateLessThan,
-//    dateWeekdayGreaterThan, dateWeekdayLessThan,
-//    dateHourGreaterThan, dateHourLessThan = Value
-//}
-
-
-
 case class ApiBundleTableCondition(
     id: Option[Int],
     dateCreated: Option[LocalDateTime],
@@ -70,12 +60,6 @@ object ApiBundleTableSlice {
       Some(slice.dateCreated), Some(slice.lastUpdated),
       table, Seq())
   }
-
-  def fromBundleTableSliceConditions(slice: BundleTablesliceRow)(table: ApiDataTable)(conditions: Seq[ApiBundleTableCondition]) : ApiBundleTableSlice = {
-    new ApiBundleTableSlice(Some(slice.id),
-      Some(slice.dateCreated), Some(slice.lastUpdated),
-      table, conditions)
-  }
 }
 
 
@@ -95,37 +79,6 @@ object ApiBundleTable {
   }
 }
 
-/*
-  EXAMPLE:
-  combination1: {
-    name: "Weekend events at home",
-    bundleTable: {
-      id: 1,
-      name: "Weekend events at home"
-    },
-  }
-
-  EXAMPLE:
-  combination2: {
-    name: "Electricity in the kitchen",
-    bundleTable: {
-      id: 2,
-      name: "Electricity in the kitchen"
-    },
-    bundleJoinField: {
-      id: 2,
-      tableId: 1,
-      name: "startTime"
-    },
-    bundleTableField: {
-      id: 3,
-      tableId: 3,
-      name: "timestamp"
-    },
-    operator: "likeTime"
-  }
- */
-
 case class ApiBundleCombination(
     id: Option[Int],
     dateCreated: Option[LocalDateTime],
@@ -136,20 +89,37 @@ case class ApiBundleCombination(
     bundleTableField: Option[ApiDataField],
     operator: Option[ComparisonOperator])
 
+object ApiBundleCombination {
+  def fromBundleJoin(bundleCombination: BundleJoinRow, bundleJoinField: Option[DataFieldRow], bundleTableField: Option[DataFieldRow])
+                    (bundleTable: ApiBundleTable): ApiBundleCombination = {
 
-/*
-  EXAMPLE:
-  bundle: {
-    name: "Kitchen electricity on weekend parties",
-    tables: [
-      combination1,
-      combination2
-    ]
+    val operator = bundleCombination.operator.map(ComparisonOperators.fromString)
+
+    new ApiBundleCombination(Some(bundleCombination.id),
+      Some(bundleCombination.dateCreated), Some(bundleCombination.lastUpdated),
+      bundleCombination.name, bundleTable,
+      bundleJoinField.map(ApiDataField.fromDataField), bundleTableField.map(ApiDataField.fromDataField),
+      operator)
   }
- */
+}
+
 case class ApiBundleContextless(
     id: Option[Int],
     dateCreated: Option[LocalDateTime],
     lastUpdated: Option[LocalDateTime],
     name: String,
     tables: Seq[ApiBundleCombination])
+
+object ApiBundleContextless {
+  def fromBundleContextless(bundleContextless: BundleContextlessRow) : ApiBundleContextless = {
+    new ApiBundleContextless(Some(bundleContextless.id),
+      Some(bundleContextless.dateCreated), Some(bundleContextless.lastUpdated),
+      bundleContextless.name, Seq())
+  }
+
+  def fromBundleContextlessTables(bundleContextless: BundleContextlessRow)(tables: Seq[ApiBundleCombination]) : ApiBundleContextless = {
+    new ApiBundleContextless(Some(bundleContextless.id),
+      Some(bundleContextless.dateCreated), Some(bundleContextless.lastUpdated),
+      bundleContextless.name, tables)
+  }
+}

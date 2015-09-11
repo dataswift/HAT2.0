@@ -1,7 +1,7 @@
 package dalapi
 
 import dal.Tables._
-import dalapi.models.{ApiJsonProtocol, ApiBundleTable}
+import dalapi.models._
 import dalapi.service.BundleService
 import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
@@ -10,6 +10,7 @@ import spray.http.MediaTypes._
 import spray.http.StatusCodes._
 import spray.http.HttpMethods._
 import spray.http._
+import spray.json._
 import spray.testkit.Specs2RouteTest
 import spray.httpx.SprayJsonSupport._
 
@@ -47,6 +48,8 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
     db.withSession { implicit session =>
       BundleTableslicecondition.delete
       BundleTableslice.delete
+      BundleJoin.delete
+      BundleContextless.delete
       BundleTable.delete
 
       DataValue.delete
@@ -59,7 +62,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
 
   sequential
 
-  "BundleService" should {
+  "Contextless Bundle Service for Tables" should {
     "Reject a bundle on table without specified id" in {
       HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenWrong)) ~>
         createBundleTable ~> check {
@@ -78,34 +81,64 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
     "create a simple Bundle Table with multiple filters" in {
       HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
         createBundleTable ~> check {
-//        print(response.message)
         response.status should be equalTo Created
         responseAs[String] must contain("Weekend events at home")
       }
     }
 
     "Create and retrieve a bundle by ID" in {
-      var bundleId: Option[Int] = Some(0)
-      HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+      val bundleId = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
         createBundleTable ~> check {
-//        print(response.message)
-        response.status should be equalTo Created
-        responseAs[String] must contain("Weekend events at home")
-        bundleId = responseAs[ApiBundleTable].id
+        responseAs[ApiBundleTable].id
       }
 
       bundleId must beSome
 
       val url = s"/table/${bundleId.get}"
-      print(url)
       HttpRequest(GET, url) ~>
         getBundleTable ~> check {
-//        print(response.message)
         response.status should be equalTo OK
         responseAs[String] must contain("Weekend events at home")
       }
     }
+  }
 
+  "Contextless Bundle Service for Joins" should {
+    "Create and combine required bundles" in {
+
+      val bundleWeekendEvents = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+        createBundleTable ~> check {
+        responseAs[ApiBundleTable]
+      }
+      bundleWeekendEvents.id must beSome
+
+      val bundleTableKitchen = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchen)) ~>
+        createBundleTable ~> check {
+        responseAs[ApiBundleTable]
+      }
+      bundleTableKitchen.id must beSome
+
+      val bundle = JsonParser(BundleExamples.bundleContextlessNoJoin).convertTo[ApiBundleContextless]
+      bundle.tables must have size (2)
+
+      val completeBundle = bundle.copy(tables = Seq(
+        bundle.tables(0).copy(
+          bundleTable = bundle.tables(0).bundleTable.copy(id = bundleWeekendEvents.id)
+        ),
+        bundle.tables(1).copy(
+          bundleTable = bundle.tables(1).bundleTable.copy(id = bundleTableKitchen.id)
+        )
+      ))
+
+      val bundleJson: String = completeBundle.toJson.toString
+
+      import ApiJsonProtocol._
+      HttpRequest(POST, "/contextless", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
+        createBundleContextless ~> check {
+        response.status should be equalTo Created
+      }
+
+    }
   }
 }
 
@@ -199,5 +232,72 @@ object BundleExamples {
       |      }
       |    ]
       |  }
+    """.stripMargin
+
+  val bundleContextlessNoJoin =
+  """
+    |   {
+    |     "name": "Kitchen electricity on weekend parties",
+    |     "tables": [
+    |       {
+    |         "name": "Weekend events at home Combination",
+    |         "bundleTable": {
+    |           "id": 0,
+    |           "name": "Weekend events at home",
+    |           "table": {
+    |             "id": 4,
+    |             "name": "event",
+    |             "source": "Facebook"
+    |           }
+    |         }
+    |       },
+    |       {
+    |         "name": "Electricity in the kitchen Combination",
+    |         "bundleTable": {
+    |           "id": 0,
+    |           "name": "Electricity in the kitchen",
+    |           "table": {
+    |             "id": 3,
+    |             "name": "kichenElectricity",
+    |             "source": "fibaro"
+    |           }
+    |         }
+    |       }
+    |     ]
+    |   }
+  """.stripMargin
+
+  val bundleContextlessJoin =
+    """
+      |   {
+      |     "name": "Kitchen electricity on weekend parties",
+      |     "tables": [
+      |       {
+      |         "name": "Weekend events at home",
+      |         "bundleTable": {
+      |           "id": 0,
+      |           "name": "Weekend events at home"
+      |         }
+      |       },
+      |       {
+      |         "name": "Electricity in the kitchen",
+      |         "bundleTable": {
+      |           "id": 0,
+      |           "name": "Electricity in the kitchen"
+      |         },
+      |         "bundleJoinField": {
+      |           "id": 14,
+      |           "tableId": 4,
+      |           "name": "startTime"
+      |         },
+      |         "bundleTableField": {
+      |           "id": 10,
+      |           "tableId": 3,
+      |           "name": "timestamp"
+      |         },
+      |         "operator": "likeTime"
+      |       }
+      |     ]
+      |   }
     """.stripMargin
 }
