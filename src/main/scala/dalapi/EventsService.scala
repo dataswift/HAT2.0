@@ -227,5 +227,44 @@ trait EventsService extends HttpService with InboundService {
     }
   }
 
+  private def getPropertiesStatic(eventId:Int)
+                           (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
+//    id serial NOT NULL,
+//    date_created timestamp without time zone NOT NULL,
+//    last_updated timestamp without time zone NOT NULL,
+//    event_id integer NOT NULL,
+//    system_property_id integer NOT NULL,
+//    record_id integer NOT NULL,
+//    field_id integer NOT NULL,
+//    relationship_type character varying(100) NOT NULL,
+//    is_current boolean NOT NULL,
+//    propertyrecord_id integer NOT NULL,
+
+    val crossrefQuery = EventsSystempropertystaticcrossref.filter(_.eventId === eventId)
+
+    val dataQuery = for {
+      crossref <- crossrefQuery
+      property <- crossref.systemPropertyFk
+      propertyType <- property.systemTypeFk
+      propertyUom <- property.systemUnitofmeasurementFk
+      field <- crossref.dataFieldFk
+      record <- crossref.dataRecordFk
+    } yield (crossref, property, propertyType, propertyUom, field, record)
+
+    val data = dataQuery.run
+
+    val apiProperties = data.map {
+      case (crossref: EventsSystempropertystaticcrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow, propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow, record: DataRecordRow) =>
+        val apiUom = ApiSystemUnitofmeasurement.fromDbModel(propertyUom)
+        val apiType = ApiSystemType.fromDbModel(propertyType)
+        val apiProperty = ApiProperty.fromDbModel(property)(apiType, apiUom)
+
+        val apiRecord = ApiDataRecord.fromDataRecord(record)(None)
+        val apiDataField = ApiDataField.fromDataField(field)
+        ApiPropertyRelationshipStatic.fromDbModel(crossref)(apiProperty, apiDataField, apiRecord)
+    }
+
+    apiProperties
+  }
 }
 

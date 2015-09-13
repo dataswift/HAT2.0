@@ -25,7 +25,7 @@ class ApiService extends HttpServiceActor with ActorLogging {
     override implicit def actorRefFactory: ActorRefFactory = context
   }
 
-  val inboundEventsService = new InboundEventsService {
+  val inboundEventsService = new EventsService {
     def actorRefFactory = context
   }
 

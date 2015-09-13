@@ -182,7 +182,7 @@ trait BundleService extends HttpService with InboundService {
     // Traversing entity graph the Slick way
     val tableQuery = for {
       bundleTable <- BundleTable.filter(_.id === bundleTableId)
-      dataTable <- t.dataTableFk
+      dataTable <- bundleTable.dataTableFk
     } yield (bundleTable, dataTable)
 
     val table = tableQuery.run.headOption
@@ -237,7 +237,7 @@ trait BundleService extends HttpService with InboundService {
       // Traversing entity graph the Slick way
       val slicesQuery = for {
         slice <- BundleTableslice.filter(_.bundleTableId === bundleTableId)
-        dataTable <- s.dataTableFk
+        dataTable <- slice.dataTableFk
       } yield (slice, dataTable)
 
       val slices = slicesQuery.run
@@ -315,8 +315,6 @@ trait BundleService extends HttpService with InboundService {
       // A fairly complex case with a lot of related data that needs to be retrieved for each bundle join
       val tableQuery = for {
         join <- BundleJoin.filter(_.bundleId === bundleId)
-          .prefetch(_.bundleTableFk).prefetch(_.dataTableFk)
-          .prefetch(_.dataFieldFk3).prefetch(_.dataFieldFk4)
         bundleTable <- join.bundleTableFk
         dataTable <- bundleTable.dataTableFk
         joinField <- join.dataFieldFk3

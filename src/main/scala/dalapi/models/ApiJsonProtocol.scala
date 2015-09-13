@@ -47,37 +47,37 @@ object ApiJsonProtocol extends DefaultJsonProtocol {
   implicit val apiDataRecord = jsonFormat5(ApiDataRecord.apply)
 
   // Any id (used for crossreferences)
-  implicit val apiGenericId = jsonFormat1(ApiGenericId)
+  implicit val apiGenericId = jsonFormat1(ApiGenericId.apply)
 
   // Events
-  implicit val apiEvent = jsonFormat2(ApiEvent)
+  implicit val apiEvent = jsonFormat2(ApiEvent.apply)
 
   // Locations
-  implicit val apiLocation = jsonFormat2(ApiLocation)
+  implicit val apiLocation = jsonFormat2(ApiLocation.apply)
 
   // Organistaions
-  implicit val apiOrganisation = jsonFormat2(ApiOrganisation)
+  implicit val apiOrganisation = jsonFormat2(ApiOrganisation.apply)
 
   // People
-  implicit val apiPerson = jsonFormat3(ApiPerson)
-  implicit val apiPersonRelationship = jsonFormat3(ApiPersonRelationshipType)
+  implicit val apiPerson = jsonFormat3(ApiPerson.apply)
+  implicit val apiPersonRelationship = jsonFormat3(ApiPersonRelationshipType.apply)
 
   // Things
-  implicit val apiThings = jsonFormat2(ApiThing)
+  implicit val apiThings = jsonFormat2(ApiThing.apply)
 
   // Properties
-  implicit val apiProperty = jsonFormat5(ApiProperty)
+  implicit val apiProperty = jsonFormat7(ApiProperty.apply)
 
   // Crossrefs
-  implicit val apiRelationship = jsonFormat1(ApiRelationship)
+  implicit val apiRelationship = jsonFormat1(ApiRelationship.apply)
 
   // Property relationships
-  implicit val apiPropertyRelationshipStatic = jsonFormat3(ApiPropertyRelationshipStatic)
-  implicit val apiPropertyRelationshipDynamic = jsonFormat2(ApiPropertyRelationshipDynamic)
+  implicit val apiPropertyRelationshipStatic = jsonFormat6(ApiPropertyRelationshipStatic.apply)
+  implicit val apiPropertyRelationshipDynamic = jsonFormat5(ApiPropertyRelationshipDynamic.apply)
 
   // Types
-  implicit val apiType = jsonFormat3(ApiSystemType)
-  implicit val apiUom = jsonFormat4(ApiSystemUnitofmeasurement)
+  implicit val apiType = jsonFormat5(ApiSystemType.apply)
+  implicit val apiUom = jsonFormat6(ApiSystemUnitofmeasurement.apply)
 
   // Bundles
 
