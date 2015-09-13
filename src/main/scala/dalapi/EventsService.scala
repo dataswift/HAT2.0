@@ -21,7 +21,7 @@ import dalapi.models._
 
 
 // this trait defines our service behavior independently from the service actor
-trait InboundEventsService extends HttpService with InboundService {
+trait EventsService extends HttpService with InboundService {
 
   val routes = {
     pathPrefix("inbound") {
