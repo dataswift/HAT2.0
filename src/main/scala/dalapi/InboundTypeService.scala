@@ -15,7 +15,7 @@ import spray.routing._
 trait InboundTypeService extends HttpService with InboundService {
 
   val routes = {
-    pathPrefix("inbound") {
+    pathPrefix("") {
       respondWithMediaType(`application/json`) {
         createType ~ linkTypeToType
       }

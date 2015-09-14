@@ -1,7 +1,7 @@
 package dalapi
 
 import akka.actor.{ActorRefFactory, ActorLogging}
-import dalapi.service.{DataService, HelloService, BundleService}
+import dalapi.service.{EventsService, DataService, HelloService, BundleService}
 import spray.routing.HttpServiceActor
 
 // we don't implement our route structure directly in the service actor because

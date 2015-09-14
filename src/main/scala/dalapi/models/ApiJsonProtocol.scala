@@ -49,6 +49,10 @@ object ApiJsonProtocol extends DefaultJsonProtocol {
   // Any id (used for crossreferences)
   implicit val apiGenericId = jsonFormat1(ApiGenericId.apply)
 
+  // Types
+  implicit val apiType = jsonFormat5(ApiSystemType.apply)
+  implicit val apiUom = jsonFormat6(ApiSystemUnitofmeasurement.apply)
+
   // Events
   implicit val apiEvent = jsonFormat2(ApiEvent.apply)
 
@@ -74,10 +78,6 @@ object ApiJsonProtocol extends DefaultJsonProtocol {
   // Property relationships
   implicit val apiPropertyRelationshipStatic = jsonFormat6(ApiPropertyRelationshipStatic.apply)
   implicit val apiPropertyRelationshipDynamic = jsonFormat5(ApiPropertyRelationshipDynamic.apply)
-
-  // Types
-  implicit val apiType = jsonFormat5(ApiSystemType.apply)
-  implicit val apiUom = jsonFormat6(ApiSystemUnitofmeasurement.apply)
 
   // Bundles
 
