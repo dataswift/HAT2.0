@@ -3,7 +3,7 @@ package dalapi.service
 import dal.SlickPostgresDriver.simple._
 import dal.Tables._
 import dalapi.InboundService
-import dalapi.models.{ApiDataField, ApiDataRecord, _}
+import dalapi.models._
 import org.joda.time.LocalDateTime
 import spray.http.MediaTypes._
 import spray.http.StatusCodes._
@@ -17,7 +17,7 @@ import scala.util.{Failure, Success, Try}
 trait EventsService extends HttpService with InboundService {
 
   val routes = {
-    pathPrefix("") {
+    pathPrefix("event") {
       createEvent ~
         linkEventToLocation ~
         linkEventToOrganisation ~
@@ -26,7 +26,9 @@ trait EventsService extends HttpService with InboundService {
         linkEventToEvent ~
         linkEventToPropertyStatic ~
         linkEventToPropertyDynamic ~
-        addEventType
+        addEventType ~
+        getEventPropertiesStatic ~
+        getEventPropertiesDynamic
     }
   }
 
@@ -35,7 +37,7 @@ trait EventsService extends HttpService with InboundService {
   /*
    * Create a simple event, containing only the name
    */
-  def createEvent = path("event") {
+  def createEvent = path("") {
     post {
       respondWithMediaType(`application/json`) {
         entity(as[ApiEvent]) { event =>
@@ -52,7 +54,7 @@ trait EventsService extends HttpService with InboundService {
     }
   }
 
-  def linkEventToLocation = path("event" / IntNumber / "location" / IntNumber) { (eventId: Int, locationId: Int) =>
+  def linkEventToLocation = path(IntNumber / "location" / IntNumber) { (eventId: Int, locationId: Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
@@ -77,7 +79,7 @@ trait EventsService extends HttpService with InboundService {
     }
   }
 
-  def linkEventToOrganisation = path("event" / IntNumber / "organisation" / IntNumber) { (eventId : Int, organisationId : Int) =>
+  def linkEventToOrganisation = path(IntNumber / "organisation" / IntNumber) { (eventId: Int, organisationId: Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
@@ -101,7 +103,7 @@ trait EventsService extends HttpService with InboundService {
     }
   }
 
-  def linkEventToPerson = path("event" / IntNumber / "person" / IntNumber) { (eventId : Int, personId : Int) =>
+  def linkEventToPerson = path(IntNumber / "person" / IntNumber) { (eventId: Int, personId: Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
@@ -126,7 +128,7 @@ trait EventsService extends HttpService with InboundService {
     }
   }
 
-  def linkEventToThing = path("event" / IntNumber / "thing" / IntNumber) { (eventId : Int, thingId : Int) =>
+  def linkEventToThing = path(IntNumber / "thing" / IntNumber) { (eventId: Int, thingId: Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
@@ -151,7 +153,7 @@ trait EventsService extends HttpService with InboundService {
     }
   }
 
-  def linkEventToEvent = path("event" / IntNumber / "event" / IntNumber) { (eventId : Int, event2Id : Int) =>
+  def linkEventToEvent = path(IntNumber / "event" / IntNumber) { (eventId: Int, event2Id: Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
@@ -179,7 +181,7 @@ trait EventsService extends HttpService with InboundService {
   /*
    * Link event to a property statically (tying it in with a specific record ID)
    */
-  def linkEventToPropertyStatic = path("event" / IntNumber / "property" / IntNumber / "static") { (eventId: Int, propertyId: Int) =>
+  def linkEventToPropertyStatic = path(IntNumber / "property" / IntNumber / "static") { (eventId: Int, propertyId: Int) =>
     post {
       entity(as[ApiPropertyRelationshipStatic]) { relationship =>
         val result: Try[Int] = (relationship.field.id, relationship.record.id) match {
@@ -220,7 +222,7 @@ trait EventsService extends HttpService with InboundService {
   /*
    * Link event to a property dynamically
    */
-  def linkEventToPropertyDynamic = path("event" / IntNumber / "property" / IntNumber / "dynamic") { (eventId: Int, propertyId: Int) =>
+  def linkEventToPropertyDynamic = path(IntNumber / "property" / IntNumber / "dynamic") { (eventId: Int, propertyId: Int) =>
     post {
       entity(as[ApiPropertyRelationshipDynamic]) { relationship =>
         val result: Try[Int] = relationship.field.id match {
@@ -258,7 +260,7 @@ trait EventsService extends HttpService with InboundService {
   /*
    * Tag event with a type
    */
-  def addEventType = path("event" / IntNumber / "type" / IntNumber) { (eventId: Int, typeId: Int) =>
+  def addEventType = path(IntNumber / "type" / IntNumber) { (eventId: Int, typeId: Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
@@ -280,8 +282,31 @@ trait EventsService extends HttpService with InboundService {
     }
   }
 
-  private def getPropertiesStatic(eventId:Int)
-                           (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
+  def getEventPropertiesStatic = path(IntNumber / "property") {
+    (eventId: Int) =>
+      get {
+        db.withSession { implicit session =>
+          complete {
+            getPropertiesStatic(eventId)
+          }
+        }
+      }
+  }
+
+  def getEventPropertiesDynamic = path(IntNumber / "property") {
+    (eventId: Int) =>
+      get {
+        db.withSession { implicit session =>
+          complete {
+            getPropertiesDynamic(eventId)
+          }
+        }
+      }
+  }
+
+
+  private def getPropertiesStatic(eventId: Int)
+                                 (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
 
     val crossrefQuery = EventsSystempropertystaticcrossref.filter(_.eventId === eventId)
 
@@ -296,18 +321,35 @@ trait EventsService extends HttpService with InboundService {
 
     val data = dataQuery.run
 
-    val apiProperties = data.map {
-      case (crossref: EventsSystempropertystaticcrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow, propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow, record: DataRecordRow) =>
-        val apiUom = ApiSystemUnitofmeasurement.fromDbModel(propertyUom)
-        val apiType = ApiSystemType.fromDbModel(propertyType)
-        val apiProperty = ApiProperty.fromDbModel(property)(apiType, apiUom)
-
-        val apiRecord = ApiDataRecord.fromDataRecord(record)(None)
-        val apiDataField = ApiDataField.fromDataField(field)
-        ApiPropertyRelationshipStatic.fromDbModel(crossref)(apiProperty, apiDataField, apiRecord)
+    data.map {
+      case (crossref: EventsSystempropertystaticcrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+      propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow, record: DataRecordRow) =>
+        ApiPropertyRelationshipStatic.fromDbModel(crossref, property, propertyType, propertyUom, field, record)
     }
-
-    apiProperties
   }
+
+  private def getPropertiesDynamic(eventId: Int)
+                                  (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+
+    val crossrefQuery = EventsSystempropertydynamiccrossref.filter(_.eventId === eventId)
+
+    val dataQuery = for {
+      crossref <- crossrefQuery
+      property <- crossref.systemPropertyFk
+      propertyType <- property.systemTypeFk
+      propertyUom <- property.systemUnitofmeasurementFk
+      field <- crossref.dataFieldFk
+    } yield (crossref, property, propertyType, propertyUom, field)
+
+    val data = dataQuery.run
+
+    data.map {
+      case (crossref: EventsSystempropertydynamiccrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+      propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow) =>
+        ApiPropertyRelationshipDynamic.fromDbModel(crossref, property, propertyType, propertyUom, field)
+    }
+  }
+
+
 }
 

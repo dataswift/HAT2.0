@@ -1,6 +1,6 @@
 package dalapi.models
 
-import dal.Tables.{SystemUnitofmeasurementRow, SystemTypeRow, EventsSystempropertystaticcrossrefRow, SystemPropertyRow}
+import dal.Tables._
 import org.joda.time.LocalDateTime
 
 case class ApiProperty(
@@ -32,11 +32,22 @@ case class ApiPropertyRelationshipDynamic(
                                            field: ApiDataField)
 
 object ApiPropertyRelationshipDynamic {
-  def fromDbModel(relationship: EventsSystempropertystaticcrossrefRow)
+  def fromDbModel(relationship: EventsSystempropertydynamiccrossrefRow)
                  (property: ApiProperty, field: ApiDataField): ApiPropertyRelationshipDynamic = {
     new ApiPropertyRelationshipDynamic(Some(relationship.id),
       Some(relationship.dateCreated), Some(relationship.lastUpdated),
       relationship.relationshipType, field)
+  }
+
+  def fromDbModel(crossref: EventsSystempropertydynamiccrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+                  propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow) : ApiPropertyRelationshipDynamic = {
+    val apiUom = ApiSystemUnitofmeasurement.fromDbModel(propertyUom)
+    val apiType = ApiSystemType.fromDbModel(propertyType)
+    val apiProperty = ApiProperty.fromDbModel(property)(apiType, apiUom)
+
+    val apiDataField = ApiDataField.fromDataField(field)
+
+    fromDbModel(crossref)(apiProperty, apiDataField)
   }
 }
 
@@ -54,6 +65,18 @@ object ApiPropertyRelationshipStatic {
     new ApiPropertyRelationshipStatic(Some(relationship.id),
       Some(relationship.dateCreated), Some(relationship.lastUpdated),
       relationship.relationshipType, field, record)
+  }
+
+  def fromDbModel(crossref: EventsSystempropertystaticcrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+                  propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow, record: DataRecordRow) : ApiPropertyRelationshipStatic = {
+    val apiUom = ApiSystemUnitofmeasurement.fromDbModel(propertyUom)
+    val apiType = ApiSystemType.fromDbModel(propertyType)
+    val apiProperty = ApiProperty.fromDbModel(property)(apiType, apiUom)
+
+    val apiRecord = ApiDataRecord.fromDataRecord(record)(None)
+    val apiDataField = ApiDataField.fromDataField(field)
+
+    fromDbModel(crossref)(apiProperty, apiDataField, apiRecord)
   }
 }
 
