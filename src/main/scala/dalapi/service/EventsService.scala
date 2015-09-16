@@ -42,10 +42,17 @@ trait EventsService extends HttpService with InboundService {
         entity(as[ApiEvent]) { event =>
           db.withSession { implicit session =>
             val eventseventRow = new EventsEventRow(0, LocalDateTime.now(), LocalDateTime.now(), event.name)
-            val eventId = (EventsEvent returning EventsEvent.map(_.id)) += eventseventRow
-            complete(Created, {
-              event.copy(id = Some(eventId))
-            })
+            val result = Try((EventsEvent returning EventsEvent.map(_.id)) += eventseventRow)
+
+            complete {
+              result match {
+                case Success(eventId) =>
+                  event.copy(id = Some(eventId))
+                case Failure(e) =>
+                  (BadRequest, e.getMessage)
+              }
+            }
+
           }
 
         }
@@ -310,10 +317,10 @@ trait EventsService extends HttpService with InboundService {
     var locationIds = locationLinks.map(_.locationId)
 
     locationLinks map { link : EventsEventlocationcrossrefRow =>
-      val apiLocation = new ApiLocation(Some(link.locationId), link.locationId.toString)
+      val apiLocation = new ApiLocation(Some(link.locationId), link.locationId.toString, None, None, None, None)
       new ApiLocationRelationship(link.relationshipType, apiLocation)
     }
-}
+  }
 
   def getOrganisations(eventID: Int)
                       (implicit session: Session) : Seq[ApiOrganisationRelationship] = {

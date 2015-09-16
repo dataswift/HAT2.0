@@ -7,7 +7,7 @@ case class ApiGenericId(id: Int)
 
 
 
-case class ApiLocation(id: Option[Int], name: String)
+
 
 case class ApiOrganisation(id: Option[Int], name: String)
 

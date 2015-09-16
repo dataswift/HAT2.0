@@ -12,7 +12,7 @@ case class ApiEvent(
     organisations: Option[Seq[ApiOrganisationRelationship]])
 
 case class ApiEventRelationship(relationshipType: String, event: ApiEvent)
-case class ApiLocationRelationship(relationshipType: String, location: ApiLocation)
+
 case class ApiPersonRelationship(relationshipType: String, person: ApiPerson)
 case class ApiThingRelationship(relationshipType: String, thing: ApiThing)
 case class ApiOrganisationRelationship(relationshipType: String, organisation: ApiOrganisation)

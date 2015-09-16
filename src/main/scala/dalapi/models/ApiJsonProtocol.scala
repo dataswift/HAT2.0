@@ -84,7 +84,7 @@ object ApiJsonProtocol extends DefaultJsonProtocol {
 
 
   // Locations
-  implicit val apiLocation = jsonFormat2(ApiLocation.apply)
+  implicit val apiLocation: RootJsonFormat[ApiLocation] = rootFormat(lazyFormat(jsonFormat6(ApiLocation.apply)))
 
   // Organistaions
   implicit val apiOrganisation = jsonFormat2(ApiOrganisation.apply)

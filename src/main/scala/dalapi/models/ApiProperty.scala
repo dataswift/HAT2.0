@@ -49,6 +49,24 @@ object ApiPropertyRelationshipDynamic {
 
     fromDbModel(crossref)(apiProperty, apiDataField)
   }
+
+  def fromDbModel(relationship: LocationsSystempropertydynamiccrossrefRow)
+                 (property: ApiProperty, field: ApiDataField): ApiPropertyRelationshipDynamic = {
+    new ApiPropertyRelationshipDynamic(Some(relationship.id),
+      Some(relationship.dateCreated), Some(relationship.lastUpdated),
+      relationship.relationshipType, field)
+  }
+
+  def fromDbModel(crossref: LocationsSystempropertydynamiccrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+                  propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow) : ApiPropertyRelationshipDynamic = {
+    val apiUom = ApiSystemUnitofmeasurement.fromDbModel(propertyUom)
+    val apiType = ApiSystemType.fromDbModel(propertyType)
+    val apiProperty = ApiProperty.fromDbModel(property)(apiType, apiUom)
+
+    val apiDataField = ApiDataField.fromDataField(field)
+
+    fromDbModel(crossref)(apiProperty, apiDataField)
+  }
 }
 
 case class ApiPropertyRelationshipStatic(
@@ -68,6 +86,25 @@ object ApiPropertyRelationshipStatic {
   }
 
   def fromDbModel(crossref: EventsSystempropertystaticcrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+                  propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow, record: DataRecordRow) : ApiPropertyRelationshipStatic = {
+    val apiUom = ApiSystemUnitofmeasurement.fromDbModel(propertyUom)
+    val apiType = ApiSystemType.fromDbModel(propertyType)
+    val apiProperty = ApiProperty.fromDbModel(property)(apiType, apiUom)
+
+    val apiRecord = ApiDataRecord.fromDataRecord(record)(None)
+    val apiDataField = ApiDataField.fromDataField(field)
+
+    fromDbModel(crossref)(apiProperty, apiDataField, apiRecord)
+  }
+
+  def fromDbModel(relationship: LocationsSystempropertystaticcrossrefRow)
+                 (property: ApiProperty, field: ApiDataField, record: ApiDataRecord): ApiPropertyRelationshipStatic = {
+    new ApiPropertyRelationshipStatic(Some(relationship.id),
+      Some(relationship.dateCreated), Some(relationship.lastUpdated),
+      relationship.relationshipType, field, record)
+  }
+
+  def fromDbModel(crossref: LocationsSystempropertystaticcrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
                   propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow, record: DataRecordRow) : ApiPropertyRelationshipStatic = {
     val apiUom = ApiSystemUnitofmeasurement.fromDbModel(propertyUom)
     val apiType = ApiSystemType.fromDbModel(propertyType)
