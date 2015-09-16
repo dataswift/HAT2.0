@@ -5,7 +5,7 @@ import org.joda.time.LocalDateTime
 
 case class ApiGenericId(id: Int)
 
-case class ApiEvent(id: Option[Int], name: String)
+
 
 case class ApiLocation(id: Option[Int], name: String)
 

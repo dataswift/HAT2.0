@@ -39,48 +39,6 @@ object ApiJsonProtocol extends DefaultJsonProtocol {
     }
   }
 
-  // Data
-  implicit val apiDataValueFormat = jsonFormat6(ApiDataValue.apply)
-  implicit val dataFieldformat = jsonFormat6(ApiDataField.apply)
-  // Need to go via "lazyFormat" for recursive types
-  implicit val virtualTableFormat: RootJsonFormat[ApiDataTable] = rootFormat(lazyFormat(jsonFormat7(ApiDataTable.apply)))
-  implicit val apiDataRecord = jsonFormat5(ApiDataRecord.apply)
-
-  // Any id (used for crossreferences)
-  implicit val apiGenericId = jsonFormat1(ApiGenericId.apply)
-
-  // Types
-  implicit val apiType = jsonFormat5(ApiSystemType.apply)
-  implicit val apiUom = jsonFormat6(ApiSystemUnitofmeasurement.apply)
-
-  // Events
-  implicit val apiEvent = jsonFormat2(ApiEvent.apply)
-
-  // Locations
-  implicit val apiLocation = jsonFormat2(ApiLocation.apply)
-
-  // Organistaions
-  implicit val apiOrganisation = jsonFormat2(ApiOrganisation.apply)
-
-  // People
-  implicit val apiPerson = jsonFormat3(ApiPerson.apply)
-  implicit val apiPersonRelationship = jsonFormat3(ApiPersonRelationshipType.apply)
-
-  // Things
-  implicit val apiThings = jsonFormat2(ApiThing.apply)
-
-  // Properties
-  implicit val apiProperty = jsonFormat7(ApiProperty.apply)
-
-  // Crossrefs
-  implicit val apiRelationship = jsonFormat1(ApiRelationship.apply)
-
-  // Property relationships
-  implicit val apiPropertyRelationshipStatic = jsonFormat6(ApiPropertyRelationshipStatic.apply)
-  implicit val apiPropertyRelationshipDynamic = jsonFormat5(ApiPropertyRelationshipDynamic.apply)
-
-  // Bundles
-
   // The scala way of doing "Enums"
   import ComparisonOperators._
 
@@ -107,6 +65,54 @@ object ApiJsonProtocol extends DefaultJsonProtocol {
     }
   }
 
+  // Data
+  implicit val apiDataValueFormat = jsonFormat6(ApiDataValue.apply)
+  implicit val dataFieldformat = jsonFormat6(ApiDataField.apply)
+  // Need to go via "lazyFormat" for recursive types
+  implicit val virtualTableFormat: RootJsonFormat[ApiDataTable] = rootFormat(lazyFormat(jsonFormat7(ApiDataTable.apply)))
+  implicit val apiDataRecord = jsonFormat5(ApiDataRecord.apply)
+
+  // Any id (used for crossreferences)
+  implicit val apiGenericId = jsonFormat1(ApiGenericId.apply)
+
+  // Types
+  implicit val apiType = jsonFormat5(ApiSystemType.apply)
+  implicit val apiUom = jsonFormat6(ApiSystemUnitofmeasurement.apply)
+
+  // Events
+  implicit val apiEvent: RootJsonFormat[ApiEvent] = rootFormat(lazyFormat(jsonFormat9(ApiEvent.apply)))
+
+
+  // Locations
+  implicit val apiLocation = jsonFormat2(ApiLocation.apply)
+
+  // Organistaions
+  implicit val apiOrganisation = jsonFormat2(ApiOrganisation.apply)
+
+  // People
+  implicit val apiPerson = jsonFormat3(ApiPerson.apply)
+  implicit val apiPersonRelationshipType = jsonFormat3(ApiPersonRelationshipType.apply)
+
+  // Things
+  implicit val apiThings = jsonFormat2(ApiThing.apply)
+
+  implicit val apiEventRelationship = jsonFormat2(ApiEventRelationship.apply)
+  implicit val apiLocationRelationship = jsonFormat2(ApiLocationRelationship.apply)
+  implicit val apiOrganisationRelationship = jsonFormat2(ApiOrganisationRelationship.apply)
+  implicit val apiPersonRelationship = jsonFormat2(ApiPersonRelationship.apply)
+  implicit val apiThingRelationship = jsonFormat2(ApiThingRelationship.apply)
+
+  // Properties
+  implicit val apiProperty = jsonFormat7(ApiProperty.apply)
+
+  // Crossrefs
+  implicit val apiRelationship = jsonFormat1(ApiRelationship.apply)
+
+  // Property relationships
+  implicit val apiPropertyRelationshipStatic = jsonFormat6(ApiPropertyRelationshipStatic.apply)
+  implicit val apiPropertyRelationshipDynamic = jsonFormat5(ApiPropertyRelationshipDynamic.apply)
+
+  // Bundles
   implicit val apiBundleTableCondition = jsonFormat6(ApiBundleTableCondition.apply)
   implicit val apiBundleTableSlice = jsonFormat5(ApiBundleTableSlice.apply)
   implicit val apiBundleTable = jsonFormat6(ApiBundleTable.apply)

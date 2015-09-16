@@ -1,22 +1,15 @@
-package dalapi
+package dalapi.service
 
 import com.typesafe.config.ConfigFactory
 import dal.SlickPostgresDriver.simple._
 import dal.Tables._
-import dalapi.models._
 import org.joda.time.LocalDateTime
-import spray.http.MediaTypes._
-import spray.http.StatusCodes._
-import spray.httpx.SprayJsonSupport._
-import spray.routing._
 
 
 trait InboundService {
   val conf = ConfigFactory.load()
   val dbconfig = conf.getString("applicationDb")
   val db = Database.forConfig(dbconfig)
-
-  import ApiJsonProtocol._
 
   def createRelationshipRecord(relationshipName: String) = {
     db.withSession { implicit session =>
@@ -32,5 +25,12 @@ trait InboundService {
       val recordId = (SystemPropertyrecord returning SystemRelationshiprecord.map(_.id)) += newRecord
       recordId
     }
+  }
+
+  private def seqOption[T](seq: Seq[T]) : Option[Seq[T]] = {
+    if (seq.isEmpty)
+      None
+    else
+      Some(seq)
   }
 }

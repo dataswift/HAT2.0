@@ -4,6 +4,7 @@ import com.typesafe.config.ConfigFactory
 import dal.SlickPostgresDriver.simple._
 import dal.Tables._
 import dalapi.models._
+import dalapi.service.InboundService
 import org.joda.time.LocalDateTime
 import spray.http.MediaTypes._
 import spray.http.StatusCodes._
