@@ -3,7 +3,6 @@ package dalapi.service
 import dal.SlickPostgresDriver.simple._
 import dal.Tables._
 import dalapi.models.{ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _}
-import dalapi.InboundService
 import org.joda.time.LocalDateTime
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._

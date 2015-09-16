@@ -27,7 +27,7 @@ trait InboundService {
     }
   }
 
-  private def seqOption[T](seq: Seq[T]) : Option[Seq[T]] = {
+  protected[service] def seqOption[T](seq: Seq[T]) : Option[Seq[T]] = {
     if (seq.isEmpty)
       None
     else

@@ -2,7 +2,6 @@ package dalapi.service
 
 import dal.SlickPostgresDriver.simple._
 import dal.Tables._
-import dalapi.InboundService
 import dalapi.models._
 import org.joda.time.LocalDateTime
 import spray.http.MediaTypes._
@@ -27,8 +26,8 @@ trait EventsService extends HttpService with InboundService {
         linkEventToPropertyStatic ~
         linkEventToPropertyDynamic ~
         addEventType ~
-        getEventPropertiesStatic ~
-        getEventPropertiesDynamic
+        getPropertiesStaticApi ~
+        getPropertiesDynamicApi
     }
   }
 
@@ -181,7 +180,7 @@ trait EventsService extends HttpService with InboundService {
   /*
    * Link event to a property statically (tying it in with a specific record ID)
    */
-  def linkEventToPropertyStatic = path(IntNumber / "property" / IntNumber / "static") { (eventId: Int, propertyId: Int) =>
+  def linkEventToPropertyStatic = path(IntNumber / "property" / "static" / IntNumber) { (eventId: Int, propertyId: Int) =>
     post {
       entity(as[ApiPropertyRelationshipStatic]) { relationship =>
         val result: Try[Int] = (relationship.field.id, relationship.record.id) match {
@@ -222,7 +221,7 @@ trait EventsService extends HttpService with InboundService {
   /*
    * Link event to a property dynamically
    */
-  def linkEventToPropertyDynamic = path(IntNumber / "property" / IntNumber / "dynamic") { (eventId: Int, propertyId: Int) =>
+  def linkEventToPropertyDynamic = path(IntNumber / "property" / "dynamic" / IntNumber ) { (eventId: Int, propertyId: Int) =>
     post {
       entity(as[ApiPropertyRelationshipDynamic]) { relationship =>
         val result: Try[Int] = relationship.field.id match {
@@ -282,7 +281,7 @@ trait EventsService extends HttpService with InboundService {
     }
   }
 
-  def getEventPropertiesStatic = path(IntNumber / "property") {
+  def getPropertiesStaticApi = path(IntNumber / "property" / "static") {
     (eventId: Int) =>
       get {
         db.withSession { implicit session =>
@@ -293,7 +292,7 @@ trait EventsService extends HttpService with InboundService {
       }
   }
 
-  def getEventPropertiesDynamic = path(IntNumber / "property") {
+  def getPropertiesDynamicApi = path(IntNumber / "property" / "dynamic") {
     (eventId: Int) =>
       get {
         db.withSession { implicit session =>
@@ -302,6 +301,65 @@ trait EventsService extends HttpService with InboundService {
           }
         }
       }
+  }
+  
+  def getLocations(eventId: Int)
+                  (implicit session: Session) : Seq[ApiLocationRelationship] = {
+
+    val locationLinks = EventsEventlocationcrossref.filter(_.eventId === eventId).run
+    var locationIds = locationLinks.map(_.locationId)
+
+    locationLinks map { link : EventsEventlocationcrossrefRow =>
+      val apiLocation = new ApiLocation(Some(link.locationId), link.locationId.toString)
+      new ApiLocationRelationship(link.relationshipType, apiLocation)
+    }
+}
+
+  def getOrganisations(eventID: Int)
+                      (implicit session: Session) : Seq[ApiOrganisationRelationship] = {
+    Seq();
+  }
+
+  def getPeople(eventID: Int)
+                      (implicit session: Session) : Seq[ApiPersonRelationship] = {
+    Seq();
+  }
+
+  def getThings(eventID: Int)
+               (implicit session: Session) : Seq[ApiThingRelationship] = {
+    Seq();
+  }
+
+  def getEvents(eventID: Int)
+               (implicit session: Session) : Seq[ApiEventRelationship] = {
+    val eventLinks = EventsEventtoeventcrossref.filter(_.eventOneId === eventID).run
+    var eventIds = eventLinks.map(_.eventTwoId)
+
+    eventLinks flatMap { link : EventsEventtoeventcrossrefRow =>
+      val apiEvent = getEvent(link.eventTwoId)
+      apiEvent.map { event =>
+        new ApiEventRelationship(link.relationshipType, event)
+      }
+    }
+  }
+
+  def getEvent(eventID: Int)
+              (implicit session: Session): Option[ApiEvent] = {
+    var event = EventsEvent.filter(_.id === eventID).run.headOption
+
+    event.map { e =>
+      new ApiEvent(
+        Some(e.id),
+        e.name,
+        seqOption(getPropertiesStatic(e.id)),
+        seqOption(getPropertiesDynamic(e.id)),
+        seqOption(getEvents(e.id)),
+        seqOption(getLocations(e.id)),
+        seqOption(getPeople(e.id)),
+        seqOption(getThings(e.id)),
+        seqOption(getOrganisations(e.id))
+      )
+    }
   }
 
 
