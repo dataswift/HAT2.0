@@ -17,7 +17,7 @@ import scala.util.{Failure, Success, Try}
 trait InboundPropertyService extends HttpService {
 
   val routes = {
-    pathPrefix("inbound") {
+    pathPrefix("property") {
       creteProperty
     }
   }
@@ -26,9 +26,9 @@ trait InboundPropertyService extends HttpService {
   val dbconfig = conf.getString("applicationDb")
   val db = Database.forConfig(dbconfig)
 
-  import ApiJsonProtocol._
+  import JsonProtocol._
 
-  def creteProperty = path("property") {
+  def creteProperty = path("") {
     post {
       respondWithMediaType(`application/json`) {
         entity(as[ApiProperty]) { property =>

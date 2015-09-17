@@ -16,16 +16,16 @@ import spray.routing._
 trait InboundTypeService extends HttpService with InboundService {
 
   val routes = {
-    pathPrefix("") {
+    pathPrefix("type") {
       respondWithMediaType(`application/json`) {
         createType ~ linkTypeToType
       }
     }
   }
 
-  import ApiJsonProtocol._
+  import JsonProtocol._
 
-  def createType = path("type") {
+  def createType = path("") {
     post {
       entity(as[ApiSystemType]) { systemType =>
         db.withSession { implicit session =>
@@ -41,7 +41,7 @@ trait InboundTypeService extends HttpService with InboundService {
     }
   }
 
-  def linkTypeToType = path("type" / IntNumber / "type" / IntNumber) { (typeId : Int, toTypeId : Int) =>
+  def linkTypeToType = path(IntNumber / "type" / IntNumber) { (typeId : Int, toTypeId : Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
