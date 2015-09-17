@@ -1,18 +1,16 @@
-package dalapi
+package dalapi.service
 
-import com.typesafe.config.ConfigFactory
 import dal.SlickPostgresDriver.simple._
 import dal.Tables._
 import dalapi.models._
 import org.joda.time.LocalDateTime
 import spray.http.MediaTypes._
 import spray.http.StatusCodes._
-import spray.httpx.SprayJsonSupport._
 import spray.routing._
 
 
 // this trait defines our service behavior independently from the service actor
-trait InboundPeopleService extends HttpService with InboundService {
+trait PeopleService extends HttpService with InboundService {
 
   val routes = {
     pathPrefix("inbound") {
@@ -26,8 +24,6 @@ trait InboundPeopleService extends HttpService with InboundService {
       addPersonType
     }
   }
-
-  import ApiJsonProtocol._
 
   def createPerson = path("person") {
     post {
