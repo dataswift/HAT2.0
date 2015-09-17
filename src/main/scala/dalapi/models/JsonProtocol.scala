@@ -4,7 +4,7 @@ import org.joda.time.LocalDateTime
 import org.joda.time.format.ISODateTimeFormat
 import spray.json._
 
-object ApiJsonProtocol extends DefaultJsonProtocol {
+object JsonProtocol extends DefaultJsonProtocol {
   implicit object DateTimeFormat extends RootJsonFormat[LocalDateTime] {
 
     val formatter = ISODateTimeFormat.dateTimeNoMillis
@@ -87,14 +87,14 @@ object ApiJsonProtocol extends DefaultJsonProtocol {
   implicit val apiLocation: RootJsonFormat[ApiLocation] = rootFormat(lazyFormat(jsonFormat6(ApiLocation.apply)))
 
   // Organistaions
-  implicit val apiOrganisation = jsonFormat2(ApiOrganisation.apply)
+  implicit val apiOrganisation: RootJsonFormat[ApiOrganisation] = rootFormat(lazyFormat(jsonFormat6(ApiOrganisation.apply)))
 
   // People
-  implicit val apiPerson = jsonFormat3(ApiPerson.apply)
+  implicit val apiPerson: RootJsonFormat[ApiPerson] = rootFormat(lazyFormat(jsonFormat7(ApiPerson.apply)))
   implicit val apiPersonRelationshipType = jsonFormat3(ApiPersonRelationshipType.apply)
 
   // Things
-  implicit val apiThings = jsonFormat2(ApiThing.apply)
+  implicit val apiThing: RootJsonFormat[ApiThing] = rootFormat(lazyFormat(jsonFormat6(ApiThing.apply)))
 
   implicit val apiEventRelationship = jsonFormat2(ApiEventRelationship.apply)
   implicit val apiLocationRelationship = jsonFormat2(ApiLocationRelationship.apply)

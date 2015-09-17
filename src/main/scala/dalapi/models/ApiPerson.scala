@@ -1,14 +1,14 @@
 package dalapi.models
 
-case class ApiEvent(
+case class ApiPerson(
     id: Option[Int],
     name: String,
     staticProperties: Option[Seq[ApiPropertyRelationshipStatic]],
     dynamicProperties: Option[Seq[ApiPropertyRelationshipDynamic]],
-    events: Option[Seq[ApiEventRelationship]],
-    locations: Option[Seq[ApiLocationRelationship]],
     people: Option[Seq[ApiPersonRelationship]],
-    things: Option[Seq[ApiThingRelationship]],
+    locations: Option[Seq[ApiLocationRelationship]],
     organisations: Option[Seq[ApiOrganisationRelationship]])
 
-case class ApiEventRelationship(relationshipType: String, event: ApiEvent)
+case class ApiPersonRelationship(relationshipType: String, person: ApiPerson)
+
+case class ApiPersonRelationshipType(id: Option[Int], name: String, description: Option[String])
