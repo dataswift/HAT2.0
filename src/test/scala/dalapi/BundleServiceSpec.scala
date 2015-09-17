@@ -19,7 +19,7 @@ import dal.SlickPostgresDriver.simple._
 class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with BundleService {
   def actorRefFactory = system
 
-  import ApiJsonProtocol._
+  import JsonProtocol._
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
@@ -132,7 +132,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
 
       val bundleJson: String = completeBundle.toJson.toString
 
-      import ApiJsonProtocol._
+      import JsonProtocol._
       HttpRequest(POST, "/contextless", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
         createBundleContextless ~> check {
         response.status should be equalTo Created
@@ -168,7 +168,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
 
       val bundleJson: String = completeBundle.toJson.toString
 
-      import ApiJsonProtocol._
+      import JsonProtocol._
       val bundleId = HttpRequest(POST, "/contextless", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
         createBundleContextless ~> check {
         response.status should be equalTo Created
