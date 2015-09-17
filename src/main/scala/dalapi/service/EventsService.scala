@@ -314,7 +314,6 @@ trait EventsService extends HttpService with InboundService with EntityService {
                   (implicit session: Session) : Seq[ApiLocationRelationship] = {
 
     val locationLinks = EventsEventlocationcrossref.filter(_.eventId === eventId).run
-    var locationIds = locationLinks.map(_.locationId)
 
     locationLinks flatMap { link : EventsEventlocationcrossrefRow =>
       val apiLocation = getLocation(link.locationId)
@@ -326,17 +325,38 @@ trait EventsService extends HttpService with InboundService with EntityService {
 
   def getOrganisations(eventID: Int)
                       (implicit session: Session) : Seq[ApiOrganisationRelationship] = {
-    Seq();
+    val links = EventsEventorganisationcrossref.filter(_.eventOd === eventID).run
+
+    links flatMap { link : EventsEventorganisationcrossrefRow =>
+      val apiOrganisation = getOrganisation(link.organisationId)
+      apiOrganisation.map { organisation =>
+        new ApiOrganisationRelationship(link.relationshipType, organisation)
+      }
+    }
   }
 
   def getPeople(eventID: Int)
                       (implicit session: Session) : Seq[ApiPersonRelationship] = {
-    Seq();
+    val links = EventsEventpersoncrossref.filter(_.eventOd === eventID).run
+
+    links flatMap { link : EventsEventpersoncrossrefRow =>
+      val apiPerson = getPerson(link.personId)
+      apiPerson.map { person =>
+        new ApiPersonRelationship(link.relationshipType, person)
+      }
+    }
   }
 
   def getThings(eventID: Int)
                (implicit session: Session) : Seq[ApiThingRelationship] = {
-    Seq();
+    val links = EventsEventthingcrossref.filter(_.eventId === eventID).run
+
+    links flatMap { link : EventsEventthingcrossrefRow =>
+      val apiThing = getThing(link.thingId)
+      apiThing.map { thing =>
+        new ApiThingRelationship(link.relationshipType, thing)
+      }
+    }
   }
 
   def getEvents(eventID: Int)
