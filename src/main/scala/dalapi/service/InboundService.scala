@@ -26,11 +26,4 @@ trait InboundService {
       recordId
     }
   }
-
-  protected[service] def seqOption[T](seq: Seq[T]) : Option[Seq[T]] = {
-    if (seq.isEmpty)
-      None
-    else
-      Some(seq)
-  }
 }

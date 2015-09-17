@@ -13,7 +13,7 @@ import scala.util.{Failure, Success, Try}
 
 
 // this trait defines our service behavior independently from the service actor
-trait LocationsService extends HttpService with InboundService {
+trait LocationsService extends HttpService with InboundService with EntityService {
 
   val routes = {
     pathPrefix("location") {
@@ -26,9 +26,9 @@ trait LocationsService extends HttpService with InboundService {
     }
   }
 
-  import ApiJsonProtocol._
+  import JsonProtocol._
 
-  def createLocation = path("location") {
+  def createLocation = path("") {
     post {
       respondWithMediaType(`application/json`) {
         entity(as[ApiLocation]) { location =>
@@ -230,9 +230,10 @@ trait LocationsService extends HttpService with InboundService {
                (implicit session: Session) : Seq[ApiThingRelationship] = {
     val locationLinks = LocationsLocationthingcrossref.filter(_.locationId === locationID).run
 
-    locationLinks map { link : LocationsLocationthingcrossrefRow =>
-      val apiThing = new ApiThing(Some(link.thingId), link.thingId.toString)
-      new ApiThingRelationship(link.relationshipType, apiThing)
+    locationLinks flatMap { link : LocationsLocationthingcrossrefRow =>
+//      val apiThing = new ApiThing(Some(link.thingId), link.thingId.toString)
+//      new ApiThingRelationship(link.relationshipType, apiThing)
+      None
     }
   }
 
@@ -248,23 +249,22 @@ trait LocationsService extends HttpService with InboundService {
     }
   }
 
-  def getLocation(locationID: Int)
-              (implicit session: Session): Option[ApiLocation] = {
-    var location = LocationsLocation.filter(_.id === locationID).run.headOption
-
-    location.map { l =>
-      new ApiLocation(
-        Some(l.id),
-        l.name,
-        seqOption(getPropertiesStatic(l.id)),
-        seqOption(getPropertiesDynamic(l.id)),
-        seqOption(getLocations(l.id)),
-        seqOption(getThings(l.id))
-      )
-    }
+  protected def getOrganisations(entityId: Int)(implicit session: Session) : Seq[ApiOrganisationRelationship] = {
+    // No links directly from Location
+    Seq()
   }
 
-  private def getPropertiesStatic(locationId: Int)
+  protected def getPeople(entityId: Int)(implicit session: Session) : Seq[ApiPersonRelationship] = {
+    // No links directly from Location
+    Seq()
+  }
+
+  protected def getEvents(entityId: Int)(implicit session: Session) : Seq[ApiEventRelationship] = {
+    // No links directly from Location
+    Seq()
+  }
+
+  protected def getPropertiesStatic(locationId: Int)
                                  (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
 
     val crossrefQuery = LocationsSystempropertystaticcrossref.filter(_.locationId === locationId)
@@ -287,7 +287,7 @@ trait LocationsService extends HttpService with InboundService {
     }
   }
 
-  private def getPropertiesDynamic(locationId: Int)
+  protected def getPropertiesDynamic(locationId: Int)
                                   (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
 
     val crossrefQuery = LocationsSystempropertydynamiccrossref.filter(_.locationId === locationId)

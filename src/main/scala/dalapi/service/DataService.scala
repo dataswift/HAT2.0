@@ -28,7 +28,7 @@ trait DataService extends HttpService with InboundService {
     }
   }
 
-  import ApiJsonProtocol._
+  import JsonProtocol._
 
   /*
    * Creates a new virtual table for storing arbitrary incoming data

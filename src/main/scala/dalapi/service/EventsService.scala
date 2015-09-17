@@ -13,7 +13,7 @@ import scala.util.{Failure, Success, Try}
 
 
 // this trait defines our service behavior independently from the service actor
-trait EventsService extends HttpService with InboundService {
+trait EventsService extends HttpService with InboundService with EntityService {
 
   val routes = {
     pathPrefix("event") {
@@ -31,7 +31,7 @@ trait EventsService extends HttpService with InboundService {
     }
   }
 
-  import ApiJsonProtocol._
+  import JsonProtocol._
 
   /*
    * Create a simple event, containing only the name
@@ -316,9 +316,11 @@ trait EventsService extends HttpService with InboundService {
     val locationLinks = EventsEventlocationcrossref.filter(_.eventId === eventId).run
     var locationIds = locationLinks.map(_.locationId)
 
-    locationLinks map { link : EventsEventlocationcrossrefRow =>
-      val apiLocation = new ApiLocation(Some(link.locationId), link.locationId.toString, None, None, None, None)
-      new ApiLocationRelationship(link.relationshipType, apiLocation)
+    locationLinks flatMap { link : EventsEventlocationcrossrefRow =>
+      val apiLocation = getLocation(link.locationId)
+      apiLocation.map { location =>
+        new ApiLocationRelationship(link.relationshipType, location)
+      }
     }
   }
 
@@ -350,27 +352,7 @@ trait EventsService extends HttpService with InboundService {
     }
   }
 
-  def getEvent(eventID: Int)
-              (implicit session: Session): Option[ApiEvent] = {
-    var event = EventsEvent.filter(_.id === eventID).run.headOption
-
-    event.map { e =>
-      new ApiEvent(
-        Some(e.id),
-        e.name,
-        seqOption(getPropertiesStatic(e.id)),
-        seqOption(getPropertiesDynamic(e.id)),
-        seqOption(getEvents(e.id)),
-        seqOption(getLocations(e.id)),
-        seqOption(getPeople(e.id)),
-        seqOption(getThings(e.id)),
-        seqOption(getOrganisations(e.id))
-      )
-    }
-  }
-
-
-  private def getPropertiesStatic(eventId: Int)
+  protected def getPropertiesStatic(eventId: Int)
                                  (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
 
     val crossrefQuery = EventsSystempropertystaticcrossref.filter(_.eventId === eventId)
@@ -393,7 +375,7 @@ trait EventsService extends HttpService with InboundService {
     }
   }
 
-  private def getPropertiesDynamic(eventId: Int)
+  protected def getPropertiesDynamic(eventId: Int)
                                   (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
 
     val crossrefQuery = EventsSystempropertydynamiccrossref.filter(_.eventId === eventId)

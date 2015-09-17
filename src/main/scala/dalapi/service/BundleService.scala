@@ -24,7 +24,7 @@ trait BundleService extends HttpService with InboundService {
     }
   }
 
-  import ApiJsonProtocol._
+  import JsonProtocol._
 
 
   /*
