@@ -38,24 +38,22 @@ trait EventsService extends HttpService with InboundService with EntityService {
    */
   def createEvent = path("") {
     post {
-      respondWithMediaType(`application/json`) {
-        entity(as[ApiEvent]) { event =>
-          db.withSession { implicit session =>
-            val eventseventRow = new EventsEventRow(0, LocalDateTime.now(), LocalDateTime.now(), event.name)
-            val result = Try((EventsEvent returning EventsEvent.map(_.id)) += eventseventRow)
+      entity(as[ApiEvent]) { event =>
+        db.withSession { implicit session =>
+          val eventseventRow = new EventsEventRow(0, LocalDateTime.now(), LocalDateTime.now(), event.name)
+          val result = Try((EventsEvent returning EventsEvent.map(_.id)) += eventseventRow)
 
-            complete {
-              result match {
-                case Success(eventId) =>
-                  event.copy(id = Some(eventId))
-                case Failure(e) =>
-                  (BadRequest, e.getMessage)
-              }
+          complete {
+            result match {
+              case Success(eventId) =>
+                event.copy(id = Some(eventId))
+              case Failure(e) =>
+                (BadRequest, e.getMessage)
             }
-
           }
 
         }
+
       }
     }
   }
@@ -228,7 +226,7 @@ trait EventsService extends HttpService with InboundService with EntityService {
   /*
    * Link event to a property dynamically
    */
-  def linkEventToPropertyDynamic = path(IntNumber / "property" / "dynamic" / IntNumber ) { (eventId: Int, propertyId: Int) =>
+  def linkEventToPropertyDynamic = path(IntNumber / "property" / "dynamic" / IntNumber) { (eventId: Int, propertyId: Int) =>
     post {
       entity(as[ApiPropertyRelationshipDynamic]) { relationship =>
         val result: Try[Int] = relationship.field.id match {
@@ -309,13 +307,13 @@ trait EventsService extends HttpService with InboundService with EntityService {
         }
       }
   }
-  
+
   def getLocations(eventId: Int)
-                  (implicit session: Session) : Seq[ApiLocationRelationship] = {
+                  (implicit session: Session): Seq[ApiLocationRelationship] = {
 
     val locationLinks = EventsEventlocationcrossref.filter(_.eventId === eventId).run
 
-    locationLinks flatMap { link : EventsEventlocationcrossrefRow =>
+    locationLinks flatMap { link: EventsEventlocationcrossrefRow =>
       val apiLocation = getLocation(link.locationId)
       apiLocation.map { location =>
         new ApiLocationRelationship(link.relationshipType, location)
@@ -324,10 +322,10 @@ trait EventsService extends HttpService with InboundService with EntityService {
   }
 
   def getOrganisations(eventID: Int)
-                      (implicit session: Session) : Seq[ApiOrganisationRelationship] = {
+                      (implicit session: Session): Seq[ApiOrganisationRelationship] = {
     val links = EventsEventorganisationcrossref.filter(_.eventOd === eventID).run
 
-    links flatMap { link : EventsEventorganisationcrossrefRow =>
+    links flatMap { link: EventsEventorganisationcrossrefRow =>
       val apiOrganisation = getOrganisation(link.organisationId)
       apiOrganisation.map { organisation =>
         new ApiOrganisationRelationship(link.relationshipType, organisation)
@@ -336,10 +334,10 @@ trait EventsService extends HttpService with InboundService with EntityService {
   }
 
   def getPeople(eventID: Int)
-                      (implicit session: Session) : Seq[ApiPersonRelationship] = {
+               (implicit session: Session): Seq[ApiPersonRelationship] = {
     val links = EventsEventpersoncrossref.filter(_.eventOd === eventID).run
 
-    links flatMap { link : EventsEventpersoncrossrefRow =>
+    links flatMap { link: EventsEventpersoncrossrefRow =>
       val apiPerson = getPerson(link.personId)
       apiPerson.map { person =>
         new ApiPersonRelationship(link.relationshipType, person)
@@ -348,10 +346,10 @@ trait EventsService extends HttpService with InboundService with EntityService {
   }
 
   def getThings(eventID: Int)
-               (implicit session: Session) : Seq[ApiThingRelationship] = {
+               (implicit session: Session): Seq[ApiThingRelationship] = {
     val links = EventsEventthingcrossref.filter(_.eventId === eventID).run
 
-    links flatMap { link : EventsEventthingcrossrefRow =>
+    links flatMap { link: EventsEventthingcrossrefRow =>
       val apiThing = getThing(link.thingId)
       apiThing.map { thing =>
         new ApiThingRelationship(link.relationshipType, thing)
@@ -360,11 +358,11 @@ trait EventsService extends HttpService with InboundService with EntityService {
   }
 
   def getEvents(eventID: Int)
-               (implicit session: Session) : Seq[ApiEventRelationship] = {
+               (implicit session: Session): Seq[ApiEventRelationship] = {
     val eventLinks = EventsEventtoeventcrossref.filter(_.eventOneId === eventID).run
     var eventIds = eventLinks.map(_.eventTwoId)
 
-    eventLinks flatMap { link : EventsEventtoeventcrossrefRow =>
+    eventLinks flatMap { link: EventsEventtoeventcrossrefRow =>
       val apiEvent = getEvent(link.eventTwoId)
       apiEvent.map { event =>
         new ApiEventRelationship(link.relationshipType, event)
@@ -373,7 +371,7 @@ trait EventsService extends HttpService with InboundService with EntityService {
   }
 
   protected def getPropertiesStatic(eventId: Int)
-                                 (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
+                                   (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
 
     val crossrefQuery = EventsSystempropertystaticcrossref.filter(_.eventId === eventId)
 
@@ -396,7 +394,7 @@ trait EventsService extends HttpService with InboundService with EntityService {
   }
 
   protected def getPropertiesDynamic(eventId: Int)
-                                  (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+                                    (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
 
     val crossrefQuery = EventsSystempropertydynamiccrossref.filter(_.eventId === eventId)
 
