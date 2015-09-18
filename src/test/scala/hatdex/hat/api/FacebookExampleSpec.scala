@@ -262,12 +262,12 @@ class FacebookExampleSpec extends Specification with AfterAll {
         val localdatetime = Some(LocalDateTime.now())
 
         val systempropertyRecordRows = Seq(
-          new SystemPropertyrecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "Location Property")
+          new SystemPropertyRecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "Location Property")
         )
 
-        SystemPropertyrecord ++= systempropertyRecordRows
+        SystemPropertyRecord ++= systempropertyRecordRows
 
-        val result = SystemPropertyrecord.run
+        val result = SystemPropertyRecord.run
         result must have size (1)
       }
       "have Locationssystempropertystaticcrossref created" in {
@@ -400,7 +400,7 @@ class FacebookExampleSpec extends Specification with AfterAll {
 
         val peoplesystempropertystaticcrossref = new PeopleSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findPersonId, findpropertyId, findrecordId, findfieldId, relationshiptype, true, pspsId)
 
-        PeopleSystempropertystaticcrossref += peoplesystempropertystaticcrossref
+        PeopleSystempropertystaticcrossref += peoplesystempropertystaticcrossrefRows
 
         val result = PeopleSystempropertystaticcrossref.run
         result must have size (1)
@@ -449,10 +449,102 @@ class FacebookExampleSpec extends Specification with AfterAll {
     db.withSession { implicit session =>
       "have eventseventpersoncrossref created" in {
         val localdatetime = Some(LocalDateTime.now())
-        val eventseventpersonrelationshiprecord = new SystemRelationshiprecordRow(0,
-          LocalDateTime.now(), LocalDateTime.now(), "Facebook Thing Property Static")
-        val eventseventpersonrelationshiprecordId = (SystemRelationshiprecord returning SystemRelationshiprecord.map(_.id)) +=
-          eventseventpersonrelationshiprecord
+        val eventseventpersonrelationshiprecord = new SystemRelationshiprecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "Facebook Thing Property Static")
+        val eventseventpersonrelationshiprecordId = (SystemRelationshiprecord returning SystemRelationshiprecord.map(_.id)) += thingpersonrelationshiprecord
+
+        val eventseventpersoncrossrefRows = Seq(
+          new EventsEventpersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findPersonId, findeventId, "Relationship_Type", TRUE, eventseventpersonrelationshiprecordId)
+        )
+
+        EventsEventpersoncrossref ++= eventseventpersoncrossrefRows
+
+        val result = EventsEventpersoncrossref.run
+        result must have size (1)
+      }
+
+       "have peoplepersonlocationcrossref created" in {
+        val localdatetime = Some(LocalDateTime.now())
+        val peoplepersonlocationrelationshiprecord = new SystemRelationshiprecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "Facebook Thing Property Static")
+        val peoplepersonlocationrelationshiprecordId = (SystemRelationshiprecord returning SystemRelationshiprecord.map(_.id)) += peoplepersonlocationrelationshiprecord
+
+        val peoplepersonlocationcrossrefRows = Seq(
+          new PeoplePersonlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findLocationId, findPersonId, "Relationship_Type", TRUE, locationslocationpersonrelationshiprecordId)
+        )
+
+        PeoplePersonlocationcrossref ++= peoplepersonlocationcrossrefRows
+
+        val result = PeoplePersonlocationcrossref.run
+        result must have size (1)
+      }
+
+         "have thingsthingpersoncrossref created" in {
+        val localdatetime = Some(LocalDateTime.now())
+        val thingsthingpersonrelationshiprecord = new SystemRelationshiprecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "Facebook Thing Property Static")
+        val thingsthingpersonrelationshiprecordId = (SystemRelationshiprecord returning SystemRelationshiprecord.map(_.id)) += thingpersonrelationshiprecord
+
+        val thingsthingpersoncrossrefRows = Seq(
+          new ThingsThingpersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findPersonId, findthingId, "Relationship_Type", TRUE, thingpersonrelationshiprecordId)
+        )
+
+        ThingsThingpersoncrossref ++= thingsthingpersoncrossrefRows
+
+        val result = ThingsThingpersoncrossref.run
+        result must have size (1)
+  
+      }
+
+       "have peoplepersonorganisationcrossref created" in {
+        val localdatetime = Some(LocalDateTime.now())
+        val peoplepersonorganisationrelationshiprecord = new SystemRelationshiprecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "Facebook Thing Property Static")
+        val peoplepersonorganisationrelationshiprecordId = (SystemRelationshiprecord returning SystemRelationshiprecord.map(_.id)) += peoplepersonorganisationrelationshiprecord
+
+        val peoplepersonorganisationcrossrefRows = Seq(
+          new PeoplePersonorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findPersonId, findorganisationId, "Relationship_Type", TRUE, thingpersonrelationshiprecordId)
+        )
+
+        PeoplePersonorganisationcrossref ++= peoplepersonorganisationcrossrefRows
+
+        val result = PeoplePersonorganisationcrossref.run
+        result must have size (1)
+  
+      }
+    }
+  }
+
+  "Facebook bundle structures" should {
+    db.withSession { implicit session =>
+      "have bundle created" in {
+        val localdatetime = Some(LocalDateTime.now())
+        val systemrelationshiprecordtobundlecrossref = new SystemRelationshiprecordtobundlecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), "Facebook Thing Property Static")
+        val systemrelationshiprecordtobundlecrossrefId = (SystemRelationshiprecordtobundlecrossref returning SystemRelationshiprecordtobundlecrossref.map(_.id)) += systemrelationshiprecordtobundlecrossref
+
+        val systempropertyrecordtobundlecrrossref = new SystemPropertyrecordtobundlecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), "Facebook Thing Property Static")
+        val systempropertyrecordtobundlecrrossrefId = (SystemPropertyrecordtobundlecrossref returning SystemPropertyrecordtobundlecrossref.map(_.id)) += systempropertyrecordtobundlecrrossref
+
+
+
+        val databundleRows = Seq(
+          new DataBundleRow(1, LocalDateTime.now(), LocalDateTime.now(), "Facebook Event bundle")
+        )
+
+        DataBundle ++= databundleRows
+
+        val result = DataBundle.run
+        result must have size (1)
+  
+      }
+    }
+  }
+
+  "Facebook bundle structures" should {
+    db.withSession { implicit session =>
+      "have datadebit created" in {
+        val localdatetime = Some(LocalDateTime.now())
+        val datadebit = new DataDebitRow(0, LocalDateTime.now()), LocalDateTime.now, "Facebook Event Data Debit", LocalDateTime.now(), LocalDateTime.now(), TRUE, FALSE, 3.25, "Abc-123-def-456-ghj-789","martin.noggin.com", "terry.noggin.com") 
+        val datadebitId = (DataDebit returning DataDebit.map(_.id)) += datadebit
+      }
+    }
+  }
 
         val findPersonId = PeoplePerson.filter(_.name === "Martin").map(_.id).run.head
         val findeventId = EventsEvent.filter(_.name === "WMG Event").map(_.id).run.head
@@ -508,6 +600,12 @@ class FacebookExampleSpec extends Specification with AfterAll {
 
         val result = ThingsThingpersoncrossref.run
         result must have size (1)
+
+        SystemRelationshiprecord.delete
+        SystemRelationshiprecord.run must have size (0)
+
+        SystemPropertyrecord.delete
+        SystemPropertyrecord.run must have size (0)
 
       }
 
@@ -592,11 +690,11 @@ class FacebookExampleSpec extends Specification with AfterAll {
         OrganisationsSystempropertystaticcrossref.delete
         OrganisationsSystempropertystaticcrossref.run must have size (0)
 
-        LocationsSystempropertydynamiccrossref.delete
-        LocationsSystempropertydynamiccrossref.run must have size (0)
+        EventsEventpersoncrossref.delete
+        EventsEventpersoncrossref.run must have size (0)
 
-        LocationsSystempropertystaticcrossref.delete
-        LocationsSystempropertystaticcrossref.run must have size (0)
+        EventsEvent.delete
+        EventsEvent.run must have size (0)
 
         EventsSystempropertydynamiccrossref.delete
         EventsSystempropertydynamiccrossref.run must have size (0)
@@ -637,6 +735,10 @@ class FacebookExampleSpec extends Specification with AfterAll {
         ThingsThing.delete
         ThingsThing.run must have size (0)
 
+        PeoplePersonlocationcrossref.delete
+        PeoplePersonlocationcrossref.run must have size (0)
+
+
         PeoplePerson.delete
         PeoplePerson.run must have size (0)
 
@@ -666,6 +768,11 @@ class FacebookExampleSpec extends Specification with AfterAll {
         SystemUnitofmeasurement.run must have size (0)
 
 
+        ThingsThing.delete
+        ThingsThing.run must have size (0)
+
+        ThingsThingpersoncrossref.delete
+        ThingsThingpersoncrossref.run must have size (0)
       }
 
       "allow data to be removed" in {
@@ -682,6 +789,11 @@ class FacebookExampleSpec extends Specification with AfterAll {
         DataTabletotablecrossref.run must have size (0)
         DataTable.run must have size (0)
 
+        DataBundle.delete
+        DataBundle.run must have size (0)
+
+        DataDebit.delete
+        DataDebit.run must have size (0)
       }
     }
   }
