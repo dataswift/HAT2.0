@@ -51,9 +51,7 @@ trait EventsService extends HttpService with InboundService with EntityService {
                 (BadRequest, e.getMessage)
             }
           }
-
         }
-
       }
     }
   }

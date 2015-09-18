@@ -3,6 +3,7 @@ package dalapi.models
 case class ApiPerson(
     id: Option[Int],
     name: String,
+    personId: String,
     staticProperties: Option[Seq[ApiPropertyRelationshipStatic]],
     dynamicProperties: Option[Seq[ApiPropertyRelationshipDynamic]],
     people: Option[Seq[ApiPersonRelationship]],

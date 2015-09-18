@@ -60,6 +60,7 @@ trait EntityService {
       new ApiPerson(
         Some(e.id),
         e.name,
+        e.personId,
         seqOption(getPropertiesStatic(e.id)),
         seqOption(getPropertiesDynamic(e.id)),
         seqOption(getPeople(e.id)),
