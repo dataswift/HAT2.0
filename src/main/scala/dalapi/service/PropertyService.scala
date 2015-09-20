@@ -18,7 +18,8 @@ trait PropertyService extends HttpService with DatabaseInfo {
 
   val routes = {
     pathPrefix("property") {
-      createProperty
+      createProperty ~
+        getPropertyApi
     }
   }
 
@@ -42,6 +43,22 @@ trait PropertyService extends HttpService with DatabaseInfo {
     }
   }
 
+  def getPropertyApi = path(IntNumber) { (propertyId: Int) =>
+    get {
+      db.withSession { implicit session =>
+        val propertyOption = getProperty(propertyId)
+        complete {
+          propertyOption match {
+            case Some(property) =>
+              property
+            case None =>
+              (NotFound, s"Property $propertyId not found")
+          }
+        }
+      }
+    }
+  }
+
   protected def storeProperty(property: ApiProperty)(implicit session: Session): Try[ApiProperty] = {
     (property.propertyType.id, property.unitOfMeasurement.id) match {
       case (Some(typeId: Int), Some(uomId: Int)) =>
@@ -58,5 +75,21 @@ trait PropertyService extends HttpService with DatabaseInfo {
         Failure(new IllegalArgumentException("Property must have an existing Unit of Measurement with ID"))
     }
   }
+
+  protected def getProperty(propertyId: Int)(implicit session: Session) : Option[ApiProperty] = {
+    val propertyQuery = for {
+      property <- SystemProperty.filter(_.id === propertyId)
+      systemType <- property.systemTypeFk
+      uom <- property.systemUnitofmeasurementFk
+    } yield (property, systemType, uom)
+
+    val property = propertyQuery.run.headOption
+
+    property map {
+      case (property: SystemPropertyRow, systemType: SystemTypeRow, uom: SystemUnitofmeasurementRow) =>
+        ApiProperty.fromDbModel(property)(ApiSystemType.fromDbModel(systemType), ApiSystemUnitofmeasurement.fromDbModel(uom))
+    }
+  }
+
 }
 
