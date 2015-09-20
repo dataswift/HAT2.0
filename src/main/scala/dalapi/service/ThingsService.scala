@@ -18,12 +18,15 @@ trait ThingsService extends EntityServiceApi {
 
   val routes = {
     pathPrefix(entityKind) {
-      create ~
+      createApi ~
+        getApi ~
         linkToPerson ~
         linkToThing ~
         linkToPropertyStatic ~
         linkToPropertyDynamic ~
-        addType
+        addType ~
+        getPropertiesStaticApi ~
+        getPropertiesDynamicApi
     }
   }
 

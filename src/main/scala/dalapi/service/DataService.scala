@@ -2,6 +2,7 @@ package dalapi.service
 
 import dal.SlickPostgresDriver.simple._
 import dal.Tables._
+import dalapi.DatabaseInfo
 import dalapi.models.{ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _}
 import org.joda.time.LocalDateTime
 import spray.http.StatusCodes._
@@ -9,7 +10,7 @@ import spray.httpx.SprayJsonSupport._
 import spray.routing._
 
 // this trait defines our service behavior independently from the service actor
-trait DataService extends HttpService with HatApiService {
+trait DataService extends HttpService with DatabaseInfo {
 
   val routes = { pathPrefix("data") {
       createTable ~

@@ -18,13 +18,16 @@ trait OrganisationsService extends EntityServiceApi {
 
   val routes = {
     pathPrefix(entityKind) {
-      create ~
+      createApi ~
+      getApi ~
       linkToLocation ~
       linkToOrganisation ~
       linkToThing ~
       linkToPropertyStatic ~
-      linkToPropertyDynamic// ~
-//      addOrganisationType
+      linkToPropertyDynamic ~
+      addType ~
+      getPropertiesStaticApi ~
+      getPropertiesDynamicApi
     }
   }
 

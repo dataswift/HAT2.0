@@ -18,14 +18,17 @@ trait PeopleService extends EntityServiceApi {
 
   val routes = {
     pathPrefix(entityKind) {
-      create ~
+      createApi ~
+      getApi ~
       createPersonRelationshipType ~
       linkToPerson ~
       linkToLocation ~
       linkToOrganisation ~
       linkToPropertyStatic ~
       linkToPropertyDynamic ~
-      addType
+      addType ~
+      getPropertiesStaticApi ~
+      getPropertiesDynamicApi
     }
   }
 

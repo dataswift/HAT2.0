@@ -22,7 +22,8 @@ trait EventsService extends EntityServiceApi {
 
   val routes = {
     pathPrefix(entityKind) {
-      create ~
+      createApi ~
+        getApi ~
         linkToLocation ~
         linkToOrganisation ~
         linkToPerson ~

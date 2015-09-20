@@ -1,10 +1,9 @@
-package dalapi
+package dalapi.service
 
-import com.typesafe.config.ConfigFactory
 import dal.SlickPostgresDriver.simple._
 import dal.Tables._
+import dalapi.DatabaseInfo
 import dalapi.models._
-import dalapi.service.HatApiService
 import org.joda.time.LocalDateTime
 import spray.http.MediaTypes._
 import spray.http.StatusCodes._
@@ -13,13 +12,13 @@ import spray.routing._
 
 
 // this trait defines our service behavior independently from the service actor
-trait InboundTypeService extends HttpService with HatApiService {
+trait TypeService extends HttpService with DatabaseInfo {
 
   val routes = {
     pathPrefix("type") {
-      respondWithMediaType(`application/json`) {
-        createType ~ linkTypeToType
-      }
+      createType ~
+        linkTypeToType ~
+        createUnitOfMeasurement
     }
   }
 

@@ -2,16 +2,17 @@ package dalapi.service
 
 import dal.SlickPostgresDriver.simple._
 import dal.Tables._
+import dalapi.DatabaseInfo
 import dalapi.models._
 import org.joda.time.LocalDateTime
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
 
-import scala.util.{Failure, Try, Success}
+import scala.util.{Failure, Success, Try}
 
 // this trait defines our service behavior independently from the service actor
-trait BundleService extends HttpService with HatApiService {
+trait BundleService extends HttpService with DatabaseInfo {
 
   val routes = {
     pathPrefix("bundles") {
@@ -370,5 +371,13 @@ trait BundleService extends HttpService with HatApiService {
       case _ =>
         Failure(new IllegalArgumentException(s"Bundle Table ${combination.bundleTable.id} to create a bundle combination on (bundle ${bundle.id}) not found"))
     }
+  }
+
+  protected def flatten[T](xs: Seq[Try[T]]): Try[Seq[T]] = {
+    val (ss: Seq[Success[T]]@unchecked, fs: Seq[Failure[T]]@unchecked) =
+      xs.partition(_.isSuccess)
+
+    if (fs.isEmpty) Success(ss map (_.get))
+    else Failure[Seq[T]](fs(0).exception) // Only keep the first failure
   }
 }

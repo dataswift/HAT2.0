@@ -1,6 +1,6 @@
 package dalapi
 
-import dalapi.service.{DataService, BundleService}
+import dalapi.service.DataService
 import org.specs2.mutable.Specification
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
