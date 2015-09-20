@@ -13,38 +13,35 @@ import scala.util.{Failure, Success, Try}
 
 
 // this trait defines our service behavior independently from the service actor
-trait PeopleService extends HttpService with InboundService with EntityService {
+trait PeopleService extends EntityServiceApi {
+  val entityKind = "person"
 
   val routes = {
-    pathPrefix("person") {
-      createPerson ~
+    pathPrefix(entityKind) {
+      create ~
       createPersonRelationshipType ~
       linkPersonToPerson ~
       linkPersonToLocation ~
       linkPersonToOrganisation ~
-      linkPersonToPropertyStatic ~
-      linkPersonToPropertyDynamic ~
-      addPersonType
+      linkToPropertyStatic ~
+      linkToPropertyDynamic ~
+      addType
     }
   }
 
   import JsonProtocol._
 
-  def createPerson = path("") {
-    post {
-      entity(as[ApiPerson]) { person =>
-        db.withSession { implicit session =>
-          val personspersonRow = new PeoplePersonRow(0, LocalDateTime.now(), LocalDateTime.now(), person.name, person.personId)
-          val result = Try((PeoplePerson returning PeoplePerson.map(_.id)) += personspersonRow)
+  def createEntity = entity(as[ApiPerson]) { person =>
+    db.withSession { implicit session =>
+      val personspersonRow = new PeoplePersonRow(0, LocalDateTime.now(), LocalDateTime.now(), person.name, person.personId)
+      val result = Try((PeoplePerson returning PeoplePerson) += personspersonRow)
 
-          complete {
-            result match {
-              case Success(personId) =>
-                person.copy(id = Some(personId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
+      complete {
+        result match {
+          case Success(createdPerson) =>
+            ApiPerson.fromDbModel(createdPerson)
+          case Failure(e) =>
+            (BadRequest, e.getMessage)
         }
       }
     }
@@ -151,127 +148,42 @@ trait PeopleService extends HttpService with InboundService with EntityService {
   /*
    * Link person to a property statically (tying it in with a specific record ID)
    */
-  def linkPersonToPropertyStatic = path(IntNumber / "property" / "static" / IntNumber) { (personId: Int, propertyId: Int) =>
-    post {
-      entity(as[ApiPropertyRelationshipStatic]) { relationship =>
-        val result: Try[Int] = (relationship.field.id, relationship.record.id) match {
-          case (Some(fieldId), Some(recordId)) =>
-            val propertyRecordId = createPropertyRecord(
-              s"person/$personId/property/$propertyId:${relationship.relationshipType}(${fieldId},${recordId},${relationship.relationshipType}")
+  protected def createPropertyLinkDynamic(entityId: Int, propertyId: Int,
+                                                   fieldId: Int, relationshipType: String, propertyRecordId: Int)
+                                                  (implicit session: Session) : Try[Int] = {
+    val crossref = new PeopleSystempropertydynamiccrossrefRow(
+      0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, propertyId,
+      fieldId, relationshipType,
+      true, propertyRecordId)
 
-            // Create the crossreference record and insert into db
-            val crossref = new PeopleSystempropertystaticcrossrefRow(
-              0, LocalDateTime.now(), LocalDateTime.now(),
-              personId, propertyId,
-              recordId, fieldId, relationship.relationshipType,
-              true, propertyRecordId
-            )
-
-            db.withSession { implicit session =>
-              Try((PeopleSystempropertystaticcrossref returning PeopleSystempropertystaticcrossref.map(_.id)) += crossref)
-            }
-          case (None, _) =>
-            Failure(new IllegalArgumentException("Property relationship must have an existing Data Field with ID"))
-          case (_, None) =>
-            Failure(new IllegalArgumentException("Static Property relationship must have an existing Data Record with ID"))
-        }
-
-        complete {
-          result match {
-            case Success(crossrefId) =>
-              (Created, ApiGenericId(crossrefId))
-            case Failure(e) =>
-              (BadRequest, e.getMessage)
-          }
-        }
-
-      }
-    }
+    Try((PeopleSystempropertydynamiccrossref returning PeopleSystempropertydynamiccrossref.map(_.id)) += crossref)
   }
 
   /*
   * Link person to a property dynamically
   */
-  def linkPersonToPropertyDynamic = path(IntNumber / "property" / "dynamic" / IntNumber) { (personId: Int, propertyId: Int) =>
-    post {
-      entity(as[ApiPropertyRelationshipDynamic]) { relationship =>
-        val result: Try[Int] = relationship.field.id match {
-          case Some(fieldId) =>
-            val propertyRecordId = createPropertyRecord(
-              s"""person/$personId/property/$propertyId:${relationship.relationshipType}
-                  |(${fieldId},${relationship.relationshipType})""".stripMargin)
+  protected def createPropertyLinkStatic(entityId: Int, propertyId: Int,
+                                                  recordId: Int, fieldId: Int, relationshipType: String, propertyRecordId: Int)
+                                                 (implicit session: Session) : Try[Int] = {
+    val crossref = new PeopleSystempropertystaticcrossrefRow(
+      0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, propertyId,
+      recordId, fieldId, relationshipType,
+      true, propertyRecordId)
 
-            // Create the crossreference record and insert into db
-            val crossref = new PeopleSystempropertydynamiccrossrefRow(
-              0, LocalDateTime.now(), LocalDateTime.now(),
-              personId, propertyId,
-              fieldId, relationship.relationshipType,
-              true, propertyRecordId)
-
-            db.withSession { implicit session =>
-              Try((PeopleSystempropertydynamiccrossref returning PeopleSystempropertydynamiccrossref.map(_.id)) += crossref)
-            }
-          case None =>
-            Failure(new IllegalArgumentException("Property relationship must have an existing Data Field with ID"))
-        }
-
-        complete {
-          result match {
-            case Success(crossrefId) =>
-              (Created, ApiGenericId(crossrefId))
-            case Failure(e) =>
-              (BadRequest, e.getMessage)
-          }
-        }
-      }
-    }
+    Try((PeopleSystempropertystaticcrossref returning PeopleSystempropertystaticcrossref.map(_.id)) += crossref)
   }
 
   /*
    * Tag person with a type
    */
-  def addPersonType = path(IntNumber / "type" / IntNumber) { (personId: Int, typeId: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val personType = new PeopleSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-            personId, typeId, relationship.relationshipType, true)
-          val result = Try((PeopleSystemtypecrossref returning PeopleSystemtypecrossref.map(_.id)) += personType)
+  protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)
+                             (implicit session: Session) : Try[Int] = {
 
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-        }
-      }
-
-    }
-  }
-
-  def getPropertiesStaticApi = path(IntNumber / "property" / "static") {
-    (eventId: Int) =>
-      get {
-        db.withSession { implicit session =>
-          complete {
-            getPropertiesStatic(eventId)
-          }
-        }
-      }
-  }
-
-  def getPropertiesDynamicApi = path(IntNumber / "property" / "dynamic") {
-    (eventId: Int) =>
-      get {
-        db.withSession { implicit session =>
-          complete {
-            getPropertiesDynamic(eventId)
-          }
-        }
-      }
+    val entityType = new PeopleSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, typeId, relationship.relationshipType, true)
+    Try((PeopleSystemtypecrossref returning PeopleSystemtypecrossref.map(_.id)) += entityType)
   }
 
   def getLocations(personId: Int)

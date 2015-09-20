@@ -1,5 +1,7 @@
 package dalapi.models
 
+import dal.Tables._
+
 case class ApiEvent(
     id: Option[Int],
     name: String,
@@ -10,5 +12,11 @@ case class ApiEvent(
     people: Option[Seq[ApiPersonRelationship]],
     things: Option[Seq[ApiThingRelationship]],
     organisations: Option[Seq[ApiOrganisationRelationship]])
+
+object ApiEvent {
+    def fromDbModel(event: EventsEventRow) : ApiEvent = {
+        new ApiEvent(Some(event.id), event.name, None, None, None, None, None, None, None)
+    }
+}
 
 case class ApiEventRelationship(relationshipType: String, event: ApiEvent)

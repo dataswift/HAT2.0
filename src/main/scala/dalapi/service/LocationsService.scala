@@ -13,39 +13,33 @@ import scala.util.{Failure, Success, Try}
 
 
 // this trait defines our service behavior independently from the service actor
-trait LocationsService extends HttpService with InboundService with EntityService {
+trait LocationsService extends EntityServiceApi {
+  val entityKind = "location"
 
   val routes = {
-    pathPrefix("location") {
-      createLocation ~
+    pathPrefix(entityKind) {
+      create ~
       linkLocationToLocation ~
       linkLocationToThing ~
-      linkLocationToPropertyStatic ~
-      linkLocationToPropertyDynamic ~
-      addLocationType
+      linkToPropertyStatic ~
+      linkToPropertyDynamic ~
+      addType
     }
   }
 
   import JsonProtocol._
 
-  def createLocation = path("") {
-    post {
-      respondWithMediaType(`application/json`) {
-        entity(as[ApiLocation]) { location =>
-          db.withSession { implicit session =>
-            val locationslocationRow = new LocationsLocationRow(0, LocalDateTime.now(), LocalDateTime.now(), location.name)
-            val result = Try((LocationsLocation returning LocationsLocation.map(_.id)) += locationslocationRow)
+  def createEntity = entity(as[ApiLocation]) { location =>
+    db.withSession { implicit session =>
+      val locationslocationRow = new LocationsLocationRow(0, LocalDateTime.now(), LocalDateTime.now(), location.name)
+      val result = Try((LocationsLocation returning LocationsLocation) += locationslocationRow)
 
-            complete {
-              result match {
-                case Success(locationId) =>
-                  location.copy(id = Some(locationId))
-                case Failure(e) =>
-                  (BadRequest, e.getMessage)
-              }
-            }
-          }
-
+      complete {
+        result match {
+          case Success(createdLocation) =>
+            ApiLocation.fromDbModel(createdLocation)
+          case Failure(e) =>
+            (BadRequest, e.getMessage)
         }
       }
     }
@@ -103,127 +97,42 @@ trait LocationsService extends HttpService with InboundService with EntityServic
   /*
    * Link location to a property statically (tying it in with a specific record ID)
    */
-  def linkLocationToPropertyStatic = path(IntNumber / "property" / "static" / IntNumber) { (locationId: Int, propertyId: Int) =>
-    post {
-      entity(as[ApiPropertyRelationshipStatic]) { relationship =>
-        val result: Try[Int] = (relationship.field.id, relationship.record.id) match {
-          case (Some(fieldId), Some(recordId)) =>
-            val propertyRecordId = createPropertyRecord(
-              s"location/$locationId/property/$propertyId:${relationship.relationshipType}(${fieldId},${recordId},${relationship.relationshipType}")
+  protected def createPropertyLinkDynamic(entityId: Int, propertyId: Int,
+                                                   fieldId: Int, relationshipType: String, propertyRecordId: Int)
+                                                  (implicit session: Session) : Try[Int] = {
+    val crossref = new LocationsSystempropertydynamiccrossrefRow(
+      0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, propertyId,
+      fieldId, relationshipType,
+      true, propertyRecordId)
 
-            // Create the crossreference record and insert into db
-            val crossref = new LocationsSystempropertystaticcrossrefRow(
-              0, LocalDateTime.now(), LocalDateTime.now(),
-              locationId, propertyId,
-              recordId, fieldId, relationship.relationshipType,
-              true, propertyRecordId
-            )
-
-            db.withSession { implicit session =>
-              Try((LocationsSystempropertystaticcrossref returning LocationsSystempropertystaticcrossref.map(_.id)) += crossref)
-            }
-          case (None, _) =>
-            Failure(new IllegalArgumentException("Property relationship must have an existing Data Field with ID"))
-          case (_, None) =>
-            Failure(new IllegalArgumentException("Static Property relationship must have an existing Data Record with ID"))
-        }
-
-        complete {
-          result match {
-            case Success(crossrefId) =>
-              (Created, ApiGenericId(crossrefId))
-            case Failure(e) =>
-              (BadRequest, e.getMessage)
-          }
-        }
-
-      }
-    }
+    Try((LocationsSystempropertydynamiccrossref returning LocationsSystempropertydynamiccrossref.map(_.id)) += crossref)
   }
 
   /*
    * Link location to a property dynamically
    */
-  def linkLocationToPropertyDynamic = path(IntNumber / "property" / "dynamic" / IntNumber ) { (locationId: Int, propertyId: Int) =>
-    post {
-      entity(as[ApiPropertyRelationshipDynamic]) { relationship =>
-        val result: Try[Int] = relationship.field.id match {
-          case Some(fieldId) =>
-            val propertyRecordId = createPropertyRecord(
-              s"""location/$locationId/property/$propertyId:${relationship.relationshipType}
-                  |(${fieldId},${relationship.relationshipType})""".stripMargin)
+  protected def createPropertyLinkStatic(entityId: Int, propertyId: Int,
+                                                  recordId: Int, fieldId: Int, relationshipType: String, propertyRecordId: Int)
+                                                 (implicit session: Session) : Try[Int] = {
+    val crossref = new LocationsSystempropertystaticcrossrefRow(
+      0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, propertyId,
+      recordId, fieldId, relationshipType,
+      true, propertyRecordId)
 
-            // Create the crossreference record and insert into db
-            val crossref = new LocationsSystempropertydynamiccrossrefRow(
-              0, LocalDateTime.now(), LocalDateTime.now(),
-              locationId, propertyId,
-              fieldId, relationship.relationshipType,
-              true, propertyRecordId)
-
-            db.withSession { implicit session =>
-              Try((LocationsSystempropertydynamiccrossref returning LocationsSystempropertydynamiccrossref.map(_.id)) += crossref)
-            }
-          case None =>
-            Failure(new IllegalArgumentException("Property relationship must have an existing Data Field with ID"))
-        }
-
-        complete {
-          result match {
-            case Success(crossrefId) =>
-              (Created, ApiGenericId(crossrefId))
-            case Failure(e) =>
-              (BadRequest, e.getMessage)
-          }
-        }
-      }
-    }
+    Try((LocationsSystempropertystaticcrossref returning LocationsSystempropertystaticcrossref.map(_.id)) += crossref)
   }
 
   /*
    * Tag location with a type
    */
-  def addLocationType = path(IntNumber / "type" / IntNumber) { (locationId: Int, typeId: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val locationType = new LocationsSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-            locationId, typeId, relationship.relationshipType, true)
-          val result = Try((LocationsSystemtypecrossref returning LocationsSystemtypecrossref.map(_.id)) += locationType)
+  protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)
+                             (implicit session: Session) : Try[Int] = {
 
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-        }
-      }
-
-    }
-  }
-
-  def getPropertiesStaticApi = path(IntNumber / "property" / "static") {
-    (eventId: Int) =>
-      get {
-        db.withSession { implicit session =>
-          complete {
-            getPropertiesStatic(eventId)
-          }
-        }
-      }
-  }
-
-  def getPropertiesDynamicApi = path(IntNumber / "property" / "dynamic") {
-    (eventId: Int) =>
-      get {
-        db.withSession { implicit session =>
-          complete {
-            getPropertiesDynamic(eventId)
-          }
-        }
-      }
+    val entityType = new LocationsSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, typeId, relationship.relationshipType, true)
+    Try((LocationsSystemtypecrossref returning LocationsSystemtypecrossref.map(_.id)) += entityType)
   }
 
   def getThings(locationID: Int)

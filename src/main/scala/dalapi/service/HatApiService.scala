@@ -8,7 +8,7 @@ import org.joda.time.LocalDateTime
 import scala.util.{Failure, Success, Try}
 
 
-trait InboundService {
+trait HatApiService {
   val conf = ConfigFactory.load()
   val dbconfig = conf.getString("applicationDb")
   val db = Database.forConfig(dbconfig)

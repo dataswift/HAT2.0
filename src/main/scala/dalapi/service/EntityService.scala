@@ -3,8 +3,15 @@ package dalapi.service
 import dal.Tables._
 import dalapi.models._
 import dal.SlickPostgresDriver.simple._
+import spray.routing
+
+import scala.util.{Failure, Try}
 
 trait EntityService {
+  val entityKind:String
+
+  protected def createEntity: routing.Route
+
   protected def getEvent(eventID: Int)(implicit session: Session): Option[ApiEvent] = {
     var event = EventsEvent.filter(_.id === eventID).run.headOption
 
@@ -98,6 +105,17 @@ trait EntityService {
   protected def getPropertiesStatic(eventId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipStatic]
 
   protected def getPropertiesDynamic(eventId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipDynamic]
+
+  protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)
+      (implicit session: Session) : Try[Int]
+
+  protected def createPropertyLinkStatic(entityId: Int, propertyId: Int,
+                                         recordId: Int, fieldId: Int, relationshipType: String, propertyRecordId: Int)
+                                        (implicit session: Session) : Try[Int]
+
+  protected def createPropertyLinkDynamic(entityId: Int, propertyId: Int,
+                                          fieldId: Int, relationshipType: String, propertyRecordId: Int)
+                                         (implicit session: Session) : Try[Int]
 
   private def seqOption[T](seq: Seq[T]) : Option[Seq[T]] = {
     if (seq.isEmpty)

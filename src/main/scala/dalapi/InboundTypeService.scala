@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import dal.SlickPostgresDriver.simple._
 import dal.Tables._
 import dalapi.models._
-import dalapi.service.InboundService
+import dalapi.service.HatApiService
 import org.joda.time.LocalDateTime
 import spray.http.MediaTypes._
 import spray.http.StatusCodes._
@@ -13,7 +13,7 @@ import spray.routing._
 
 
 // this trait defines our service behavior independently from the service actor
-trait InboundTypeService extends HttpService with InboundService {
+trait InboundTypeService extends HttpService with HatApiService {
 
   val routes = {
     pathPrefix("type") {

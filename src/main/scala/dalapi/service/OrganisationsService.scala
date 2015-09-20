@@ -13,39 +13,34 @@ import scala.util.{Failure, Success, Try}
 
 
 // this trait defines our service behavior independently from the service actor
-trait OrganisationsService extends HttpService with InboundService with EntityService {
+trait OrganisationsService extends EntityServiceApi {
+  val entityKind = "organisation"
 
   val routes = {
-    pathPrefix("organisation") {
-      createOrganisation ~
+    pathPrefix(entityKind) {
+      create ~
       linkOrganisationToLocation ~
       linkOrganisationToOrganisation ~
-      linkOrganisationToPropertyStatic ~
-      linkOrganisationToPropertyDynamic// ~
+      linkToPropertyStatic ~
+      linkToPropertyDynamic// ~
 //      addOrganisationType
     }
   }
 
   import JsonProtocol._
 
-  def createOrganisation = path("") {
-    post {
-      entity(as[ApiOrganisation]) { organisation =>
-        db.withSession { implicit session =>
-          val organisationsorganisationRow = new OrganisationsOrganisationRow(0, LocalDateTime.now(), LocalDateTime.now(), organisation.name)
-          val result = Try((OrganisationsOrganisation returning OrganisationsOrganisation.map(_.id)) += organisationsorganisationRow)
+  def createEntity = entity(as[ApiOrganisation]) { organisation =>
+    db.withSession { implicit session =>
+      val organisationsorganisationRow = new OrganisationsOrganisationRow(0, LocalDateTime.now(), LocalDateTime.now(), organisation.name)
+      val result = Try((OrganisationsOrganisation returning OrganisationsOrganisation) += organisationsorganisationRow)
 
-          complete {
-            result match {
-              case Success(organisationId) =>
-                organisation.copy(id = Some(organisationId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-
+      complete {
+        result match {
+          case Success(createdOrganisation) =>
+            ApiOrganisation.fromDbModel(createdOrganisation)
+          case Failure(e) =>
+            (BadRequest, e.getMessage)
         }
-
       }
     }
   }
@@ -106,120 +101,42 @@ trait OrganisationsService extends HttpService with InboundService with EntitySe
   /*
    * Link organisation to a property statically (tying it in with a specific record ID)
    */
-  def linkOrganisationToPropertyStatic = path(IntNumber / "property" / "static" / IntNumber) { (organisationId: Int, propertyId: Int) =>
-    post {
-      entity(as[ApiPropertyRelationshipStatic]) { relationship =>
-        val result: Try[Int] = (relationship.field.id, relationship.record.id) match {
-          case (Some(fieldId), Some(recordId)) =>
-            val propertyRecordId = createPropertyRecord(
-              s"organisation/$organisationId/property/$propertyId:${relationship.relationshipType}(${fieldId},${recordId},${relationship.relationshipType}")
+  protected def createPropertyLinkDynamic(entityId: Int, propertyId: Int,
+                                                   fieldId: Int, relationshipType: String, propertyRecordId: Int)
+                                                  (implicit session: Session) : Try[Int] = {
+    val crossref = new OrganisationsSystempropertydynamiccrossrefRow(
+      0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, propertyId,
+      fieldId, relationshipType,
+      true, propertyRecordId)
 
-            // Create the crossreference record and insert into db
-            val crossref = new OrganisationsSystempropertystaticcrossrefRow(
-              0, LocalDateTime.now(), LocalDateTime.now(),
-              organisationId, propertyId,
-              recordId, fieldId, relationship.relationshipType,
-              true, propertyRecordId
-            )
-
-            db.withSession { implicit session =>
-              Try((OrganisationsSystempropertystaticcrossref returning OrganisationsSystempropertystaticcrossref.map(_.id)) += crossref)
-            }
-          case (None, _) =>
-            Failure(new IllegalArgumentException("Property relationship must have an existing Data Field with ID"))
-          case (_, None) =>
-            Failure(new IllegalArgumentException("Static Property relationship must have an existing Data Record with ID"))
-        }
-
-        complete {
-          result match {
-            case Success(crossrefId) =>
-              (Created, ApiGenericId(crossrefId))
-            case Failure(e) =>
-              (BadRequest, e.getMessage)
-          }
-        }
-
-      }
-    }
+    Try((OrganisationsSystempropertydynamiccrossref returning OrganisationsSystempropertydynamiccrossref.map(_.id)) += crossref)
   }
 
   /*
    * Link organisation to a property dynamically
    */
-  def linkOrganisationToPropertyDynamic = path(IntNumber / "property" / "dynamic" / IntNumber ) { (organisationId: Int, propertyId: Int) =>
-    post {
-      entity(as[ApiPropertyRelationshipDynamic]) { relationship =>
-        val result: Try[Int] = relationship.field.id match {
-          case Some(fieldId) =>
-            val propertyRecordId = createPropertyRecord(
-              s"""organisation/$organisationId/property/$propertyId:${relationship.relationshipType}
-                  |(${fieldId},${relationship.relationshipType})""".stripMargin)
+  protected def createPropertyLinkStatic(entityId: Int, propertyId: Int,
+                                                  recordId: Int, fieldId: Int, relationshipType: String, propertyRecordId: Int)
+                                                 (implicit session: Session) : Try[Int] = {
+    val crossref = new OrganisationsSystempropertystaticcrossrefRow(
+      0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, propertyId,
+      recordId, fieldId, relationshipType,
+      true, propertyRecordId)
 
-            // Create the crossreference record and insert into db
-            val crossref = new OrganisationsSystempropertydynamiccrossrefRow(
-              0, LocalDateTime.now(), LocalDateTime.now(),
-              organisationId, propertyId,
-              fieldId, relationship.relationshipType,
-              true, propertyRecordId)
-
-            db.withSession { implicit session =>
-              Try((OrganisationsSystempropertydynamiccrossref returning OrganisationsSystempropertydynamiccrossref.map(_.id)) += crossref)
-            }
-          case None =>
-            Failure(new IllegalArgumentException("Property relationship must have an existing Data Field with ID"))
-        }
-
-        complete {
-          result match {
-            case Success(crossrefId) =>
-              (Created, ApiGenericId(crossrefId))
-            case Failure(e) =>
-              (BadRequest, e.getMessage)
-          }
-        }
-      }
-    }
+    Try((OrganisationsSystempropertystaticcrossref returning OrganisationsSystempropertystaticcrossref.map(_.id)) += crossref)
   }
 
   /*
    * Tag organisation with a type
    */
-//  def addOrganisationType = path(IntNumber / "type" / IntNumber) { (organisationId: Int, typeId: Int) =>
-//    post {
-//      entity(as[ApiRelationship]) { relationship =>
-//        db.withSession { implicit session =>
-//          val organisationType = new OrganisationsSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), organisationId, typeId, relationship.relationshipType, true)
-//          val organisationTypeId = (OrganisationsSystemtypecrossref returning OrganisationsSystemtypecrossref.map(_.id)) += organisationType
-//          complete {
-//            ApiGenericId(organisationTypeId)
-//          }
-//        }
-//      }
-//
-//    }
-//  }
+  protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)
+                             (implicit session: Session) : Try[Int] = {
 
-  def getPropertiesStaticApi = path(IntNumber / "property" / "static") {
-    (eventId: Int) =>
-      get {
-        db.withSession { implicit session =>
-          complete {
-            getPropertiesStatic(eventId)
-          }
-        }
-      }
-  }
-
-  def getPropertiesDynamicApi = path(IntNumber / "property" / "dynamic") {
-    (eventId: Int) =>
-      get {
-        db.withSession { implicit session =>
-          complete {
-            getPropertiesDynamic(eventId)
-          }
-        }
-      }
+    Failure(new NotImplementedError("Adding entity to organisations not supported"))
+//    val organisationType = new OrganisationsSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), organisationId, typeId, relationship.relationshipType, true)
+//    Try((OrganisationsSystemtypecrossref returning OrganisationsSystemtypecrossref.map(_.id)) += organisationType)
   }
 
   def getLocations(organisationId: Int)

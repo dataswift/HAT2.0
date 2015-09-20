@@ -9,7 +9,7 @@ import spray.httpx.SprayJsonSupport._
 import spray.routing._
 
 // this trait defines our service behavior independently from the service actor
-trait DataService extends HttpService with InboundService {
+trait DataService extends HttpService with HatApiService {
 
   val routes = { pathPrefix("data") {
       createTable ~

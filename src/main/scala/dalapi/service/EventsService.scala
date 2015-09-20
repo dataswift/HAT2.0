@@ -7,60 +7,65 @@ import org.joda.time.LocalDateTime
 import spray.http.MediaTypes._
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
+import spray.httpx.marshalling.Marshaller
+import spray.httpx.unmarshalling.Unmarshaller
 import spray.routing._
 
 import scala.util.{Failure, Success, Try}
 
 
 // this trait defines our service behavior independently from the service actor
-trait EventsService extends HttpService with InboundService with EntityService {
+trait EventsService extends EntityServiceApi {
+  import JsonProtocol._
+
+  val entityKind = "event"
 
   val routes = {
-    pathPrefix("event") {
-      createEvent ~
+    pathPrefix(entityKind) {
+      create ~
         linkEventToLocation ~
         linkEventToOrganisation ~
         linkEventToPerson ~
         linkEventToThing ~
         linkEventToEvent ~
-        linkEventToPropertyStatic ~
-        linkEventToPropertyDynamic ~
-        addEventType ~
+        linkToPropertyStatic ~
+        linkToPropertyDynamic ~
+        addType ~
         getPropertiesStaticApi ~
         getPropertiesDynamicApi
     }
   }
 
-  import JsonProtocol._
-
   /*
    * Create a simple event, containing only the name
    */
-  def createEvent = path("") {
-    post {
-      entity(as[ApiEvent]) { event =>
-        db.withSession { implicit session =>
-          val eventseventRow = new EventsEventRow(0, LocalDateTime.now(), LocalDateTime.now(), event.name)
-          val result = Try((EventsEvent returning EventsEvent.map(_.id)) += eventseventRow)
+  def createEntity = entity(as[ApiEvent]) { event =>
+    db.withSession { implicit session =>
+      val eventseventRow = new EventsEventRow(0, LocalDateTime.now(), LocalDateTime.now(), event.name)
+      val result = Try((EventsEvent returning EventsEvent) += eventseventRow)
 
-          complete {
-            result match {
-              case Success(eventId) =>
-                event.copy(id = Some(eventId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
+      complete {
+        result match {
+          case Success(createdEvent) =>
+            ApiEvent.fromDbModel(createdEvent)
+          case Failure(e) =>
+            (BadRequest, e.getMessage)
         }
       }
     }
+  }
+
+
+  def createEntity (event: ApiEvent)(implicit session: Session) = {
+    val eventseventRow = new EventsEventRow(0, LocalDateTime.now(), LocalDateTime.now(), event.name)
+    Try((EventsEvent returning EventsEvent.map(_.id)) += eventseventRow)
   }
 
   def linkEventToLocation = path(IntNumber / "location" / IntNumber) { (eventId: Int, locationId: Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"event/$eventId/location/$locationId:${relationship.relationshipType}")
+          val recordId = createRelationshipRecord(s"$entityKind/$eventId/location/$locationId:${relationship.relationshipType}")
 
           val crossref = new EventsEventlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
             locationId, eventId, relationship.relationshipType, true, recordId)
@@ -85,7 +90,7 @@ trait EventsService extends HttpService with InboundService with EntityService {
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"event/$eventId/organisation/$organisationId:${relationship.relationshipType}")
+          val recordId = createRelationshipRecord(s"$entityKind/$eventId/organisation/$organisationId:${relationship.relationshipType}")
 
           val crossref = new EventsEventorganisationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
             organisationId, eventId, relationship.relationshipType, true, recordId)
@@ -109,7 +114,7 @@ trait EventsService extends HttpService with InboundService with EntityService {
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"event/$eventId/person/$personId:${relationship.relationshipType}")
+          val recordId = createRelationshipRecord(s"$entityKind/$eventId/person/$personId:${relationship.relationshipType}")
 
           val crossref = new EventsEventpersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
             personId, eventId, relationship.relationshipType, true, recordId)
@@ -134,7 +139,7 @@ trait EventsService extends HttpService with InboundService with EntityService {
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"event/$eventId/thing/$thingId:${relationship.relationshipType}")
+          val recordId = createRelationshipRecord(s"$entityKind/$eventId/thing/$thingId:${relationship.relationshipType}")
 
           val crossref = new EventsEventthingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
             thingId, eventId, relationship.relationshipType, true, recordId)
@@ -159,7 +164,7 @@ trait EventsService extends HttpService with InboundService with EntityService {
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"event/$eventId/event/$event2Id:${relationship.relationshipType}")
+          val recordId = createRelationshipRecord(s"$entityKind/$eventId/event/$event2Id:${relationship.relationshipType}")
 
           val crossref = new EventsEventtoeventcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
             eventId, event2Id, relationship.relationshipType, true, recordId)
@@ -180,133 +185,38 @@ trait EventsService extends HttpService with InboundService with EntityService {
     }
   }
 
-  /*
-   * Link event to a property statically (tying it in with a specific record ID)
-   */
-  def linkEventToPropertyStatic = path(IntNumber / "property" / "static" / IntNumber) { (eventId: Int, propertyId: Int) =>
-    post {
-      entity(as[ApiPropertyRelationshipStatic]) { relationship =>
-        val result: Try[Int] = (relationship.field.id, relationship.record.id) match {
-          case (Some(fieldId), Some(recordId)) =>
-            val propertyRecordId = createPropertyRecord(
-              s"event/$eventId/property/$propertyId:${relationship.relationshipType}(${fieldId},${recordId},${relationship.relationshipType}")
+  protected def createPropertyLinkDynamic(entityId: Int, propertyId: Int,
+      fieldId: Int, relationshipType: String, propertyRecordId: Int)
+      (implicit session: Session) : Try[Int] = {
+    val crossref = new EventsSystempropertydynamiccrossrefRow(
+      0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, propertyId,
+      fieldId, relationshipType,
+      true, propertyRecordId)
 
-            // Create the crossreference record and insert into db
-            val crossref = new EventsSystempropertystaticcrossrefRow(
-              0, LocalDateTime.now(), LocalDateTime.now(),
-              eventId, propertyId,
-              recordId, fieldId, relationship.relationshipType,
-              true, propertyRecordId
-            )
-
-            db.withSession { implicit session =>
-              Try((EventsSystempropertystaticcrossref returning EventsSystempropertystaticcrossref.map(_.id)) += crossref)
-            }
-          case (None, _) =>
-            Failure(new IllegalArgumentException("Property relationship must have an existing Data Field with ID"))
-          case (_, None) =>
-            Failure(new IllegalArgumentException("Static Property relationship must have an existing Data Record with ID"))
-        }
-
-        complete {
-          result match {
-            case Success(crossrefId) =>
-              (Created, ApiGenericId(crossrefId))
-            case Failure(e) =>
-              (BadRequest, e.getMessage)
-          }
-        }
-
-      }
-    }
+    Try((EventsSystempropertydynamiccrossref returning EventsSystempropertydynamiccrossref.map(_.id)) += crossref)
   }
 
-  /*
-   * Link event to a property dynamically
-   */
-  def linkEventToPropertyDynamic = path(IntNumber / "property" / "dynamic" / IntNumber) { (eventId: Int, propertyId: Int) =>
-    post {
-      entity(as[ApiPropertyRelationshipDynamic]) { relationship =>
-        val result: Try[Int] = relationship.field.id match {
-          case Some(fieldId) =>
-            val propertyRecordId = createPropertyRecord(
-              s"""event/$eventId/property/$propertyId:${relationship.relationshipType}
-                  |(${fieldId},${relationship.relationshipType})""".stripMargin)
+  protected def createPropertyLinkStatic(entityId: Int, propertyId: Int,
+      recordId: Int, fieldId: Int, relationshipType: String, propertyRecordId: Int)
+      (implicit session: Session) : Try[Int] = {
+    val crossref = new EventsSystempropertystaticcrossrefRow(
+      0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, propertyId,
+      recordId, fieldId, relationshipType,
+      true, propertyRecordId)
 
-            // Create the crossreference record and insert into db
-            val crossref = new EventsSystempropertydynamiccrossrefRow(
-              0, LocalDateTime.now(), LocalDateTime.now(),
-              eventId, propertyId,
-              fieldId, relationship.relationshipType,
-              true, propertyRecordId)
-
-            db.withSession { implicit session =>
-              Try((EventsSystempropertydynamiccrossref returning EventsSystempropertydynamiccrossref.map(_.id)) += crossref)
-            }
-          case None =>
-            Failure(new IllegalArgumentException("Property relationship must have an existing Data Field with ID"))
-        }
-
-        complete {
-          result match {
-            case Success(crossrefId) =>
-              (Created, ApiGenericId(crossrefId))
-            case Failure(e) =>
-              (BadRequest, e.getMessage)
-          }
-        }
-      }
-    }
+    Try((EventsSystempropertystaticcrossref returning EventsSystempropertystaticcrossref.map(_.id)) += crossref)
   }
 
-  /*
-   * Tag event with a type
-   */
-  def addEventType = path(IntNumber / "type" / IntNumber) { (eventId: Int, typeId: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val eventType = new EventsSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-            eventId, typeId, relationship.relationshipType, true)
-          val result = Try((EventsSystemtypecrossref returning EventsSystemtypecrossref.map(_.id)) += eventType)
-
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-        }
-      }
-
-    }
+  protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)
+                           (implicit session: Session) : Try[Int] = {
+    val entityType = new EventsSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, typeId, relationship.relationshipType, true)
+    Try((EventsSystemtypecrossref returning EventsSystemtypecrossref.map(_.id)) += entityType)
   }
 
-  def getPropertiesStaticApi = path(IntNumber / "property" / "static") {
-    (eventId: Int) =>
-      get {
-        db.withSession { implicit session =>
-          complete {
-            getPropertiesStatic(eventId)
-          }
-        }
-      }
-  }
-
-  def getPropertiesDynamicApi = path(IntNumber / "property" / "dynamic") {
-    (eventId: Int) =>
-      get {
-        db.withSession { implicit session =>
-          complete {
-            getPropertiesDynamic(eventId)
-          }
-        }
-      }
-  }
-
-  def getLocations(eventId: Int)
+  protected def getLocations(eventId: Int)
                   (implicit session: Session): Seq[ApiLocationRelationship] = {
 
     val locationLinks = EventsEventlocationcrossref.filter(_.eventId === eventId).run
@@ -319,7 +229,7 @@ trait EventsService extends HttpService with InboundService with EntityService {
     }
   }
 
-  def getOrganisations(eventID: Int)
+  protected def getOrganisations(eventID: Int)
                       (implicit session: Session): Seq[ApiOrganisationRelationship] = {
     val links = EventsEventorganisationcrossref.filter(_.eventOd === eventID).run
 
@@ -331,7 +241,7 @@ trait EventsService extends HttpService with InboundService with EntityService {
     }
   }
 
-  def getPeople(eventID: Int)
+  protected def getPeople(eventID: Int)
                (implicit session: Session): Seq[ApiPersonRelationship] = {
     val links = EventsEventpersoncrossref.filter(_.eventOd === eventID).run
 
@@ -343,7 +253,7 @@ trait EventsService extends HttpService with InboundService with EntityService {
     }
   }
 
-  def getThings(eventID: Int)
+  protected def getThings(eventID: Int)
                (implicit session: Session): Seq[ApiThingRelationship] = {
     val links = EventsEventthingcrossref.filter(_.eventId === eventID).run
 
@@ -355,7 +265,7 @@ trait EventsService extends HttpService with InboundService with EntityService {
     }
   }
 
-  def getEvents(eventID: Int)
+  protected def getEvents(eventID: Int)
                (implicit session: Session): Seq[ApiEventRelationship] = {
     val eventLinks = EventsEventtoeventcrossref.filter(_.eventOneId === eventID).run
     var eventIds = eventLinks.map(_.eventTwoId)
