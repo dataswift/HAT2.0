@@ -1,3 +1,19 @@
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+
+CREATE SEQUENCE public.bundle_contextless_id_seq;
+
+CREATE TABLE public.bundle_contextless (
+  id           INTEGER   NOT NULL DEFAULT nextval('public.bundle_contextless_id_seq'),
+  name         VARCHAR   NOT NULL,
+  date_created TIMESTAMP NOT NULL,
+  last_updated TIMESTAMP NOT NULL,
+  CONSTRAINT bundle_contextless_bundle_pk PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.bundle_contextless_id_seq OWNED BY public.bundle_contextless.id;
+
 CREATE SEQUENCE public.system_relationshiprecord_id_seq;
 
 CREATE TABLE public.system_relationshiprecord (
@@ -40,49 +56,6 @@ CREATE TABLE public.system_propertyrecord (
 
 ALTER SEQUENCE public.system_propertyrecord_id_seq OWNED BY public.system_propertyrecord.id;
 
-CREATE SEQUENCE public.data_bundle_id_seq;
-
-CREATE TABLE public.data_bundle (
-  id                    INTEGER   NOT NULL DEFAULT nextval('public.data_bundle_id_seq'),
-  date_created          TIMESTAMP NOT NULL,
-  last_updated          TIMESTAMP NOT NULL,
-  name                  VARCHAR   NOT NULL,
-  relationshiprecord_id INTEGER   NOT NULL,
-  propertyrecord_id     INTEGER   NOT NULL,
-  CONSTRAINT data_bundle_pk PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.data_bundle_id_seq OWNED BY public.data_bundle.id;
-
-CREATE SEQUENCE public.system_relationshiprecordtobundlecrossref_id_seq;
-
-CREATE TABLE public.system_relationshiprecordtobundlecrossref (
-  id                    INTEGER   NOT NULL DEFAULT nextval('public.system_relationshiprecordtobundlecrossref_id_seq'),
-  date_created          TIMESTAMP NOT NULL,
-  last_updated          TIMESTAMP NOT NULL,
-  relationshiprecord_id INTEGER   NOT NULL,
-  bundle_id             INTEGER   NOT NULL,
-  CONSTRAINT system_relationshiprecordtobundlecrossref_pk PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.system_relationshiprecordtobundlecrossref_id_seq OWNED BY public.system_relationshiprecordtobundlecrossref.id;
-
-CREATE SEQUENCE public.system_propertyrecordtobundlecrrossref_id_seq;
-
-CREATE TABLE public.system_propertyrecordtobundlecrrossref (
-  id                INTEGER   NOT NULL DEFAULT nextval('public.system_propertyrecordtobundlecrrossref_id_seq'),
-  date_created      TIMESTAMP NOT NULL,
-  last_updated      TIMESTAMP NOT NULL,
-  propertyrecord_id INTEGER   NOT NULL,
-  bundle_id         INTEGER   NOT NULL,
-  CONSTRAINT system_propertyrecordtobundlecrrossref_pk PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.system_propertyrecordtobundlecrrossref_id_seq OWNED BY public.system_propertyrecordtobundlecrrossref.id;
-
 CREATE SEQUENCE public.data_debit_id_seq;
 
 CREATE TABLE public.data_debit (
@@ -96,7 +69,6 @@ CREATE TABLE public.data_debit (
   sell_rent      BOOLEAN     NOT NULL,
   price          REAL        NOT NULL,
   data_debit_key VARCHAR     NOT NULL,
-  bundle_id      INTEGER     NOT NULL,
   sender_id      VARCHAR(36) NOT NULL,
   recipient_id   VARCHAR(36) NOT NULL,
   CONSTRAINT data_debit_pk PRIMARY KEY (id)
@@ -231,6 +203,34 @@ CREATE TABLE public.data_table (
 
 ALTER SEQUENCE public.data_table_id_seq OWNED BY public.data_table.id;
 
+CREATE SEQUENCE public.bundle_table_id_seq;
+
+CREATE TABLE public.bundle_table (
+  id           INTEGER   NOT NULL DEFAULT nextval('public.bundle_table_id_seq'),
+  last_updated TIMESTAMP NOT NULL,
+  date_created TIMESTAMP NOT NULL,
+  name         VARCHAR   NOT NULL,
+  data_table   INTEGER   NOT NULL,
+  CONSTRAINT bundle_table_pk PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.bundle_table_id_seq OWNED BY public.bundle_table.id;
+
+CREATE SEQUENCE public.bundle_tableslice_id_seq;
+
+CREATE TABLE public.bundle_tableslice (
+  id              INTEGER   NOT NULL DEFAULT nextval('public.bundle_tableslice_id_seq'),
+  date_created    TIMESTAMP NOT NULL,
+  last_updated    TIMESTAMP NOT NULL,
+  bundle_table_id INTEGER   NOT NULL,
+  data_table_id   INTEGER   NOT NULL,
+  CONSTRAINT bundle_tableslice_pk PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.bundle_tableslice_id_seq OWNED BY public.bundle_tableslice.id;
+
 CREATE SEQUENCE public.data_tabletotablecrossref_id_seq;
 
 CREATE TABLE public.data_tabletotablecrossref (
@@ -259,6 +259,40 @@ CREATE TABLE public.data_field (
 
 
 ALTER SEQUENCE public.data_field_id_seq OWNED BY public.data_field.id;
+
+CREATE SEQUENCE public.bundle_join_id_seq;
+
+CREATE TABLE public.bundle_join (
+  id                 INTEGER   NOT NULL DEFAULT nextval('public.bundle_join_id_seq'),
+  date_created       TIMESTAMP NOT NULL,
+  last_updated       TIMESTAMP NOT NULL,
+  name               VARCHAR   NOT NULL,
+  bundle_table_id    INTEGER   NOT NULL,
+  bundle_id          INTEGER   NOT NULL,
+  bundle_join_field  INTEGER,
+  bundle_table_field INTEGER,
+  Operator           VARCHAR,
+  CONSTRAINT bundle_join_pk PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.bundle_join_id_seq OWNED BY public.bundle_join.id;
+
+CREATE SEQUENCE public.bundle_tableslicecondition_id_seq;
+
+CREATE TABLE public.bundle_tableslicecondition (
+  id            INTEGER   NOT NULL DEFAULT nextval('public.bundle_tableslicecondition_id_seq'),
+  date_created  TIMESTAMP NOT NULL,
+  last_updated  TIMESTAMP NOT NULL,
+  field_id      INTEGER   NOT NULL,
+  tableslice_id INTEGER   NOT NULL,
+  operator      VARCHAR   NOT NULL,
+  value         VARCHAR   NOT NULL,
+  CONSTRAINT bundle_tableslicecondition_pk PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.bundle_tableslicecondition_id_seq OWNED BY public.bundle_tableslicecondition.id;
 
 CREATE SEQUENCE public.data_value_id_seq;
 
@@ -356,9 +390,9 @@ CREATE TABLE public.people_persontopersoncrossref (
   last_updated          TIMESTAMP NOT NULL,
   person_one_id         INTEGER   NOT NULL,
   person_two_id         INTEGER   NOT NULL,
+  relationship_type_id  INTEGER   NOT NULL,
   is_current            BOOLEAN   NOT NULL,
   relationshiprecord_id INTEGER   NOT NULL,
-  relationship_type_id  INTEGER   NOT NULL,
   CONSTRAINT people_persontopersoncrossref_pkey PRIMARY KEY (id)
 );
 
@@ -372,10 +406,6 @@ ON public.people_persontopersoncrossref USING BTREE
 CREATE INDEX users_persontopersoncrossref_person_two_id
 ON public.people_persontopersoncrossref USING BTREE
 (person_two_id);
-
-CREATE INDEX users_persontopersoncrossref_relationship_type_id
-ON public.people_persontopersoncrossref USING BTREE
-(relationship_type_id);
 
 CREATE SEQUENCE public.things_thing_id_seq;
 
@@ -887,6 +917,110 @@ CREATE TABLE public.locations_location (
 
 ALTER SEQUENCE public.locations_location_id_seq OWNED BY public.locations_location.id;
 
+CREATE SEQUENCE public.entity_id_seq;
+
+CREATE TABLE public.entity (
+  id              INTEGER      NOT NULL DEFAULT nextval('public.entity_id_seq'),
+  date_created    TIMESTAMP    NOT NULL,
+  last_updated    TIMESTAMP    NOT NULL,
+  name            VARCHAR(100) NOT NULL,
+  kind            VARCHAR(100) NOT NULL,
+  location_id     INTEGER      NOT NULL,
+  thing_id        INTEGER      NOT NULL,
+  event_id        INTEGER      NOT NULL,
+  organisation_id INTEGER      NOT NULL,
+  person_id       INTEGER      NOT NULL,
+  CONSTRAINT entity_pk PRIMARY KEY (id),
+  CONSTRAINT kind CHECK
+  (CASE WHEN location_id IS NOT NULL AND kind = 'location'
+    THEN 0
+   ELSE 1 END +
+   CASE WHEN thing_id IS NOT NULL AND kind = 'thing'
+     THEN 0
+   ELSE 1 END +
+   CASE WHEN event_id IS NOT NULL AND kind = 'event'
+     THEN 0
+   ELSE 1 END +
+   CASE WHEN organisation_id IS NOT NULL AND kind = 'organisation'
+     THEN 0
+   ELSE 1 END +
+   CASE WHEN person_id IS NOT NULL AND kind = 'person'
+     THEN 0
+   ELSE 1 END = 1)
+);
+
+
+ALTER SEQUENCE public.entity_id_seq OWNED BY public.entity.id;
+
+CREATE SEQUENCE public.entity_selection_id_seq;
+
+CREATE TABLE public.entity_selection (
+  id           INTEGER      NOT NULL DEFAULT nextval('public.entity_selection_id_seq'),
+  date_created TIMESTAMP    NOT NULL,
+  last_updated TIMESTAMP    NOT NULL,
+  entity_name  VARCHAR(100) NOT NULL,
+  entity_id    INTEGER      NOT NULL,
+  entity_kind  VARCHAR(100) NOT NULL,
+  CONSTRAINT entity_pkey PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.entity_selection_id_seq OWNED BY public.entity_selection.id;
+
+CREATE SEQUENCE public.bundle_context_id_seq;
+
+CREATE TABLE public.bundle_context (
+  id                  INTEGER   NOT NULL DEFAULT nextval('public.bundle_context_id_seq'),
+  parent_bundle_id    INTEGER   NOT NULL,
+  date_created        TIMESTAMP NOT NULL,
+  last_updated        TIMESTAMP NOT NULL,
+  name                VARCHAR   NOT NULL,
+  entity_selection_id INTEGER   NOT NULL,
+  CONSTRAINT bundle_context_bundle_pk PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.bundle_context_id_seq OWNED BY public.bundle_context.id;
+
+CREATE SEQUENCE public.bundle_propertyrecord_crossref_id_seq;
+
+CREATE TABLE public.bundle_propertyrecord_crossref (
+  id                INTEGER   NOT NULL DEFAULT nextval('public.bundle_propertyrecord_crossref_id_seq'),
+  date_created      TIMESTAMP NOT NULL,
+  last_updated      TIMESTAMP NOT NULL,
+  propertyrecord_id INTEGER   NOT NULL,
+  bundle_context_id INTEGER   NOT NULL,
+  CONSTRAINT bundle_propertyrecord_crossref_pk PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.bundle_propertyrecord_crossref_id_seq OWNED BY public.bundle_propertyrecord_crossref.id;
+
+CREATE SEQUENCE public.bundle_propertylice_id_seq;
+
+CREATE TABLE public.bundle_propertylice (
+  id                                INTEGER NOT NULL DEFAULT nextval('public.bundle_propertylice_id_seq'),
+  name                              VARCHAR NOT NULL,
+  bundle_propertyrecord_crossref_id INTEGER NOT NULL,
+  CONSTRAINT bundle_propertylice_pk PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.bundle_propertylice_id_seq OWNED BY public.bundle_propertylice.id;
+
+CREATE SEQUENCE public.bundle_propertylicecondition_id_seq;
+
+CREATE TABLE public.bundle_propertylicecondition (
+  id               INTEGER NOT NULL DEFAULT nextval('public.bundle_propertylicecondition_id_seq'),
+  propertyslice_id INTEGER NOT NULL,
+  operator         VARCHAR NOT NULL,
+  value            VARCHAR NOT NULL,
+  CONSTRAINT bundle_propertylicecondition_pk PRIMARY KEY (id)
+);
+
+
+ALTER SEQUENCE public.bundle_propertylicecondition_id_seq OWNED BY public.bundle_propertylicecondition.id;
+
 CREATE SEQUENCE public.locations_systempropertystaticcrossref_id_seq;
 
 CREATE TABLE public.locations_systempropertystaticcrossref (
@@ -1080,144 +1214,6 @@ CREATE TABLE public.people_personlocationcrossref (
 );
 
 
-CREATE SEQUENCE public.bundle_table_id_seq;
-
-CREATE TABLE public.bundle_table (
-  id           INTEGER   NOT NULL DEFAULT nextval('public.bundle_table_id_seq'),
-  date_created TIMESTAMP NOT NULL,
-  last_updated TIMESTAMP NOT NULL,
-  name         VARCHAR   NOT NULL,
-  data_table   INTEGER   NOT NULL,
-  CONSTRAINT bundle_table_pk PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.bundle_table_id_seq OWNED BY public.bundle_table.id;
-
-CREATE SEQUENCE public.bundle_tableslice_id_seq;
-
-CREATE TABLE public.bundle_tableslice (
-  id              INTEGER   NOT NULL DEFAULT nextval('public.bundle_tableslice_id_seq'),
-  date_created    TIMESTAMP NOT NULL,
-  last_updated    TIMESTAMP NOT NULL,
-  bundle_table_id INTEGER   NOT NULL,
-  data_table_id   INTEGER   NOT NULL,
-  CONSTRAINT bundle_tableslice_pk PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.bundle_tableslice_id_seq OWNED BY public.bundle_tableslice.id;
-
-CREATE SEQUENCE public.bundle_tableslicecondition_id_seq;
-
-CREATE TABLE public.bundle_tableslicecondition (
-  id            INTEGER   NOT NULL DEFAULT nextval('public.bundle_tableslicecondition_id_seq'),
-  date_created  TIMESTAMP NOT NULL,
-  last_updated  TIMESTAMP NOT NULL,
-  field_id      INTEGER   NOT NULL,
-  tableslice_id INTEGER   NOT NULL,
-  operator      VARCHAR   NOT NULL,
-  value         VARCHAR   NOT NULL,
-  CONSTRAINT bundle_tableslicecondition_pk PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.bundle_tableslicecondition_id_seq OWNED BY public.bundle_tableslicecondition.id;
-
-CREATE SEQUENCE public.bundle_contextless_id_seq;
-
-CREATE TABLE public.bundle_contextless (
-  id           INTEGER   NOT NULL DEFAULT nextval('public.bundle_contextless_id_seq'),
-  date_created TIMESTAMP NOT NULL,
-  last_updated TIMESTAMP NOT NULL,
-  name         VARCHAR   NOT NULL,
-  CONSTRAINT bundle_contextless_bundle_pk PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.bundle_contextless_id_seq OWNED BY public.bundle_contextless.id;
-
-CREATE SEQUENCE public.bundle_join_id_seq;
-
-CREATE TABLE public.bundle_join (
-  id                 INTEGER   NOT NULL DEFAULT nextval('public.bundle_join_id_seq'),
-  date_created       TIMESTAMP NOT NULL,
-  last_updated       TIMESTAMP NOT NULL,
-  name               VARCHAR   NOT NULL,
-  bundle_table_id    INTEGER   NOT NULL,
-  bundle_id          INTEGER   NOT NULL,
-  bundle_join_field  INTEGER,
-  bundle_table_field INTEGER,
-  Operator           VARCHAR,
-  CONSTRAINT bundle_join_pk PRIMARY KEY (id)
-);
-
-
-ALTER SEQUENCE public.bundle_join_id_seq OWNED BY public.bundle_join.id;
-
-ALTER TABLE public.bundle_table ADD CONSTRAINT data_table_bundle_table_fk
-FOREIGN KEY (data_table)
-REFERENCES public.data_table (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.bundle_tableslice ADD CONSTRAINT data_table_bundle_tableslice_fk
-FOREIGN KEY (data_table_id)
-REFERENCES public.data_table (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.bundle_tableslicecondition ADD CONSTRAINT data_field_bundle_tableslicecondition_fk
-FOREIGN KEY (field_id)
-REFERENCES public.data_field (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.bundle_join ADD CONSTRAINT data_field_bundle_join_fk
-FOREIGN KEY (bundle_join_field)
-REFERENCES public.data_field (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.bundle_join ADD CONSTRAINT data_field_bundle_join_fk1
-FOREIGN KEY (bundle_table_field)
-REFERENCES public.data_field (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.bundle_tableslice ADD CONSTRAINT bundle_table_bundle_tableslice_fk
-FOREIGN KEY (bundle_table_id)
-REFERENCES public.bundle_table (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.bundle_join ADD CONSTRAINT bundle_table_bundle_join_fk
-FOREIGN KEY (bundle_table_id)
-REFERENCES public.bundle_table (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.bundle_tableslicecondition ADD CONSTRAINT bundle_tableslice_bundle_tableslicecondition_fk
-FOREIGN KEY (tableslice_id)
-REFERENCES public.bundle_tableslice (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.bundle_join ADD CONSTRAINT acontextual_bundle_bundle_join_fk
-FOREIGN KEY (bundle_id)
-REFERENCES public.bundle_contextless (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
 ALTER SEQUENCE public.people_personlocationcrossref_id_seq OWNED BY public.people_personlocationcrossref.id;
 
 CREATE INDEX locations_locationpersoncrossref_location_id
@@ -1227,6 +1223,13 @@ ON public.people_personlocationcrossref USING BTREE
 CREATE INDEX locations_locationpersoncrossref_person_id
 ON public.people_personlocationcrossref USING BTREE
 (person_id);
+
+ALTER TABLE public.bundle_join ADD CONSTRAINT acontextual_bundle_bundle_join_fk
+FOREIGN KEY (bundle_id)
+REFERENCES public.bundle_contextless (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
 
 ALTER TABLE public.organisations_organisationlocationcrossref ADD CONSTRAINT system_relationshiprecord_organisations_organisationlocation278
 FOREIGN KEY (relationshiprecord_id)
@@ -1298,13 +1301,6 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
-ALTER TABLE public.data_bundle ADD CONSTRAINT system_relationshiprecord_bundle_fk
-FOREIGN KEY (relationshiprecord_id)
-REFERENCES public.system_relationshiprecord (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
 ALTER TABLE public.system_relationshiprecordtorecordcrossref ADD CONSTRAINT system_relationshiprecord_system_relationshiprecordtorecordc18
 FOREIGN KEY (relationshiprecord_id2)
 REFERENCES public.system_relationshiprecord (id)
@@ -1314,13 +1310,6 @@ NOT DEFERRABLE;
 
 ALTER TABLE public.system_relationshiprecordtorecordcrossref ADD CONSTRAINT system_relationshiprecord_system_relationshiprecordtorecordc567
 FOREIGN KEY (relationshiprecord_id1)
-REFERENCES public.system_relationshiprecord (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.system_relationshiprecordtobundlecrossref ADD CONSTRAINT system_relationshiprecord_system_relationshiprecordtobundlec161
-FOREIGN KEY (relationshiprecord_id)
 REFERENCES public.system_relationshiprecord (id)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION
@@ -1431,44 +1420,9 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
-ALTER TABLE public.data_bundle ADD CONSTRAINT system_propertyrecord_bundle_fk
+ALTER TABLE public.bundle_propertyrecord_crossref ADD CONSTRAINT system_propertyrecord_system_propertyrecordtobundlecrrossref_fk
 FOREIGN KEY (propertyrecord_id)
 REFERENCES public.system_propertyrecord (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.data_bundle ADD CONSTRAINT system_propertyrecord_bundle_fk1
-FOREIGN KEY (propertyrecord_id)
-REFERENCES public.system_propertyrecord (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.system_propertyrecordtobundlecrrossref ADD CONSTRAINT system_propertyrecord_system_propertytobundlecrossref_fk
-FOREIGN KEY (propertyrecord_id)
-REFERENCES public.system_propertyrecord (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.data_debit ADD CONSTRAINT data_bundle_data_debit_fk1
-FOREIGN KEY (bundle_id)
-REFERENCES public.data_bundle (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.system_propertyrecordtobundlecrrossref ADD CONSTRAINT data_bundle_system_propertytobundlecrossref_fk
-FOREIGN KEY (bundle_id)
-REFERENCES public.data_bundle (id)
-ON DELETE NO ACTION
-ON UPDATE NO ACTION
-NOT DEFERRABLE;
-
-ALTER TABLE public.system_relationshiprecordtobundlecrossref ADD CONSTRAINT data_bundle_system_relationshiprecordtobundlecrossref_fk
-FOREIGN KEY (bundle_id)
-REFERENCES public.data_bundle (id)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
@@ -1530,6 +1484,13 @@ ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
 ALTER TABLE public.events_systempropertystaticcrossref ADD CONSTRAINT events_systempropertycrossref_fk
+FOREIGN KEY (event_id)
+REFERENCES public.events_event (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.entity ADD CONSTRAINT events_event_entity_fk
 FOREIGN KEY (event_id)
 REFERENCES public.events_event (id)
 ON DELETE NO ACTION
@@ -1655,6 +1616,41 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
+ALTER TABLE public.bundle_table ADD CONSTRAINT data_table_bundle_table_fk
+FOREIGN KEY (data_table)
+REFERENCES public.data_table (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.bundle_tableslice ADD CONSTRAINT data_table_bundle_tableslice_fk
+FOREIGN KEY (data_table_id)
+REFERENCES public.data_table (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.bundle_tableslice ADD CONSTRAINT bundle_table_bundle_tableslice_fk
+FOREIGN KEY (bundle_table_id)
+REFERENCES public.bundle_table (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.bundle_join ADD CONSTRAINT bundle_table_bundle_join_fk
+FOREIGN KEY (bundle_table_id)
+REFERENCES public.bundle_table (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.bundle_tableslicecondition ADD CONSTRAINT bundle_tableslice_bundle_tableslicecondition_fk
+FOREIGN KEY (tableslice_id)
+REFERENCES public.bundle_tableslice (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
 ALTER TABLE public.things_systempropertydynamiccrossref ADD CONSTRAINT data_field_things_systempropertydynamiccrossref_fk
 FOREIGN KEY (field_id)
 REFERENCES public.data_field (id)
@@ -1732,6 +1728,27 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
+ALTER TABLE public.bundle_tableslicecondition ADD CONSTRAINT data_field_bundle_tableslicecondition_fk
+FOREIGN KEY (field_id)
+REFERENCES public.data_field (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.bundle_join ADD CONSTRAINT data_field_bundle_join_fk
+FOREIGN KEY (bundle_join_field)
+REFERENCES public.data_field (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.bundle_join ADD CONSTRAINT data_field_bundle_join_fk1
+FOREIGN KEY (bundle_table_field)
+REFERENCES public.data_field (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
 ALTER TABLE public.people_persontopersoncrossref ADD CONSTRAINT relationship_type_id_refs_id_fk
 FOREIGN KEY (relationship_type_id)
 REFERENCES public.people_persontopersonrelationshiptype (id)
@@ -1802,6 +1819,13 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
+ALTER TABLE public.entity ADD CONSTRAINT people_person_entity_fk
+FOREIGN KEY (person_id)
+REFERENCES public.people_person (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
 ALTER TABLE public.locations_locationthingcrossref ADD CONSTRAINT thing_id_refs_id_fk
 FOREIGN KEY (thing_id)
 REFERENCES public.things_thing (id)
@@ -1859,6 +1883,13 @@ ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
 ALTER TABLE public.organisations_organisationthingcrossref ADD CONSTRAINT things_thing_organisations_organisationthingcrossref_fk
+FOREIGN KEY (thing_id)
+REFERENCES public.things_thing (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.entity ADD CONSTRAINT things_thing_entity_fk
 FOREIGN KEY (thing_id)
 REFERENCES public.things_thing (id)
 ON DELETE NO ACTION
@@ -2005,6 +2036,13 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
+ALTER TABLE public.entity ADD CONSTRAINT organisations_organisation_entity_fk
+FOREIGN KEY (organisation_id)
+REFERENCES public.organisations_organisation (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
 ALTER TABLE public.people_personlocationcrossref ADD CONSTRAINT locations_locationpersoncrossref_location_id_fkey
 FOREIGN KEY (location_id)
 REFERENCES public.locations_location (id)
@@ -2064,6 +2102,55 @@ NOT DEFERRABLE;
 ALTER TABLE public.locations_systempropertystaticcrossref ADD CONSTRAINT locations_location_locations_systempropertystaticcrossref_fk
 FOREIGN KEY (location_id)
 REFERENCES public.locations_location (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.entity ADD CONSTRAINT locations_location_entity_fk
+FOREIGN KEY (location_id)
+REFERENCES public.locations_location (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.entity_selection ADD CONSTRAINT entity_entity_selection_fk
+FOREIGN KEY (entity_id)
+REFERENCES public.entity (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.bundle_context ADD CONSTRAINT entity_selection_bundle_context_fk
+FOREIGN KEY (entity_selection_id)
+REFERENCES public.entity_selection (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.bundle_context ADD CONSTRAINT bundle_context_bundle_context_fk
+FOREIGN KEY (parent_bundle_id)
+REFERENCES public.bundle_context (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.bundle_propertyrecord_crossref ADD CONSTRAINT bundle_context_system_propertyrecordtobundlecrrossref_fk
+FOREIGN KEY (bundle_context_id)
+REFERENCES public.bundle_context (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.bundle_propertylice ADD CONSTRAINT bundle_propertyrecord_crossref_contextual_bundlepropertyslic823
+FOREIGN KEY (bundle_propertyrecord_crossref_id)
+REFERENCES public.bundle_propertyrecord_crossref (id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION
+NOT DEFERRABLE;
+
+ALTER TABLE public.bundle_propertylicecondition ADD CONSTRAINT bundle_propertyslice_bundle_propertyslicecondition_fk
+FOREIGN KEY (propertyslice_id)
+REFERENCES public.bundle_propertylice (id)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
