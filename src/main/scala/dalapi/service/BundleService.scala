@@ -294,7 +294,7 @@ trait BundleService extends HttpService with InboundService {
 
   private def storeBundleContextless(bundle: ApiBundleContextless)
                                     (implicit session: Session): Try[ApiBundleContextless] = {
-    val bundleContextlessRow = new BundleContextlessRow(0, LocalDateTime.now(), LocalDateTime.now(), bundle.name)
+    val bundleContextlessRow = new BundleContextlessRow(0, bundle.name, LocalDateTime.now(), LocalDateTime.now())
 
     Try((BundleContextless returning BundleContextless) += bundleContextlessRow) flatMap { insertedBundle =>
       val bundleApi = ApiBundleContextless.fromBundleContextlessTables(insertedBundle)(bundle.tables)

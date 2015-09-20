@@ -77,7 +77,7 @@ trait PeopleService extends HttpService with InboundService with EntityService {
           val result = relationship.id match {
             case Some(relationshipTypeId) =>
               val crossref = new PeoplePersontopersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-                personId, person2Id, true, recordId, relationshipTypeId)
+                personId, person2Id, recordId, true, relationshipTypeId)
               Try((PeoplePersontopersoncrossref returning PeoplePersontopersoncrossref.map(_.id)) += crossref)
             case None =>
               Failure(new IllegalArgumentException("People can only be linked with an existing relationship type"))

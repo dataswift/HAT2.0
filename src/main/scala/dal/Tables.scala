@@ -90,22 +90,23 @@ trait Tables {
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
+   *  @param name Database column name SqlType(varchar)
    *  @param bundleTableId Database column bundle_table_id SqlType(int4)
    *  @param bundleId Database column bundle_id SqlType(int4)
-   *  @param bundleJoinField Database column bundle_join_field SqlType(int4)
-   *  @param bundleTableField Database column bundle_table_field SqlType(int4)
+   *  @param bundleJoinField Database column bundle_join_field SqlType(int4), Default(None)
+   *  @param bundleTableField Database column bundle_table_field SqlType(int4), Default(None)
    *  @param operator Database column operator SqlType(varchar), Default(None) */
-  case class BundleJoinRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, bundleTableId: Int, bundleId: Int, bundleJoinField: Int, bundleTableField: Int, operator: Option[String] = None)
+  case class BundleJoinRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, bundleTableId: Int, bundleId: Int, bundleJoinField: Option[Int] = None, bundleTableField: Option[Int] = None, operator: Option[String] = None)
   /** GetResult implicit for fetching BundleJoinRow objects using plain SQL queries */
-  implicit def GetResultBundleJoinRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[Option[String]]): GR[BundleJoinRow] = GR{
+  implicit def GetResultBundleJoinRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Option[Int]], e4: GR[Option[String]]): GR[BundleJoinRow] = GR{
     prs => import prs._
-    BundleJoinRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int], <<[Int], <<?[String]))
+    BundleJoinRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int], <<[Int], <<?[Int], <<?[Int], <<?[String]))
   }
   /** Table description of table bundle_join. Objects of this class serve as prototypes for rows in queries. */
   class BundleJoin(_tableTag: Tag) extends Table[BundleJoinRow](_tableTag, "bundle_join") {
-    def * = (id, dateCreated, lastUpdated, bundleTableId, bundleId, bundleJoinField, bundleTableField, operator) <> (BundleJoinRow.tupled, BundleJoinRow.unapply)
+    def * = (id, dateCreated, lastUpdated, name, bundleTableId, bundleId, bundleJoinField, bundleTableField, operator) <> (BundleJoinRow.tupled, BundleJoinRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(bundleTableId), Rep.Some(bundleId), Rep.Some(bundleJoinField), Rep.Some(bundleTableField), operator).shaped.<>({r=>import r._; _1.map(_=> BundleJoinRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(bundleTableId), Rep.Some(bundleId), bundleJoinField, bundleTableField, operator).shaped.<>({r=>import r._; _1.map(_=> BundleJoinRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7, _8, _9)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -113,14 +114,16 @@ trait Tables {
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
+    /** Database column name SqlType(varchar) */
+    val name: Rep[String] = column[String]("name")
     /** Database column bundle_table_id SqlType(int4) */
     val bundleTableId: Rep[Int] = column[Int]("bundle_table_id")
     /** Database column bundle_id SqlType(int4) */
     val bundleId: Rep[Int] = column[Int]("bundle_id")
-    /** Database column bundle_join_field SqlType(int4) */
-    val bundleJoinField: Rep[Int] = column[Int]("bundle_join_field")
-    /** Database column bundle_table_field SqlType(int4) */
-    val bundleTableField: Rep[Int] = column[Int]("bundle_table_field")
+    /** Database column bundle_join_field SqlType(int4), Default(None) */
+    val bundleJoinField: Rep[Option[Int]] = column[Option[Int]]("bundle_join_field", O.Default(None))
+    /** Database column bundle_table_field SqlType(int4), Default(None) */
+    val bundleTableField: Rep[Option[Int]] = column[Option[Int]]("bundle_table_field", O.Default(None))
     /** Database column operator SqlType(varchar), Default(None) */
     val operator: Rep[Option[String]] = column[Option[String]]("operator", O.Default(None))
 
@@ -129,9 +132,9 @@ trait Tables {
     /** Foreign key referencing BundleTable (database name bundle_table_bundle_join_fk) */
     lazy val bundleTableFk = foreignKey("bundle_table_bundle_join_fk", bundleTableId, BundleTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
     /** Foreign key referencing DataField (database name data_field_bundle_join_fk) */
-    lazy val dataFieldFk3 = foreignKey("data_field_bundle_join_fk", bundleJoinField, DataField)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    lazy val dataFieldFk3 = foreignKey("data_field_bundle_join_fk", bundleJoinField, DataField)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
     /** Foreign key referencing DataField (database name data_field_bundle_join_fk1) */
-    lazy val dataFieldFk4 = foreignKey("data_field_bundle_join_fk1", bundleTableField, DataField)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    lazy val dataFieldFk4 = foreignKey("data_field_bundle_join_fk1", bundleTableField, DataField)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
   }
   /** Collection-like TableQuery object for table BundleJoin */
   lazy val BundleJoin = new TableQuery(tag => new BundleJoin(tag))
@@ -273,20 +276,19 @@ trait Tables {
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param name Database column name SqlType(varchar)
    *  @param bundleTableId Database column bundle_table_id SqlType(int4)
    *  @param dataTableId Database column data_table_id SqlType(int4) */
-  case class BundleTablesliceRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, bundleTableId: Int, dataTableId: Int)
+  case class BundleTablesliceRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, bundleTableId: Int, dataTableId: Int)
   /** GetResult implicit for fetching BundleTablesliceRow objects using plain SQL queries */
-  implicit def GetResultBundleTablesliceRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[BundleTablesliceRow] = GR{
+  implicit def GetResultBundleTablesliceRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[BundleTablesliceRow] = GR{
     prs => import prs._
-    BundleTablesliceRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int], <<[Int]))
+    BundleTablesliceRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int]))
   }
   /** Table description of table bundle_tableslice. Objects of this class serve as prototypes for rows in queries. */
   class BundleTableslice(_tableTag: Tag) extends Table[BundleTablesliceRow](_tableTag, "bundle_tableslice") {
-    def * = (id, dateCreated, lastUpdated, name, bundleTableId, dataTableId) <> (BundleTablesliceRow.tupled, BundleTablesliceRow.unapply)
+    def * = (id, dateCreated, lastUpdated, bundleTableId, dataTableId) <> (BundleTablesliceRow.tupled, BundleTablesliceRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(bundleTableId), Rep.Some(dataTableId)).shaped.<>({r=>import r._; _1.map(_=> BundleTablesliceRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(bundleTableId), Rep.Some(dataTableId)).shaped.<>({r=>import r._; _1.map(_=> BundleTablesliceRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -294,8 +296,6 @@ trait Tables {
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column name SqlType(varchar) */
-    val name: Rep[String] = column[String]("name")
     /** Database column bundle_table_id SqlType(int4) */
     val bundleTableId: Rep[Int] = column[Int]("bundle_table_id")
     /** Database column data_table_id SqlType(int4) */

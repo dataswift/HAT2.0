@@ -1,7 +1,6 @@
 drop schema public cascade;
 create schema public;
-create schema private;
-       
+
 CREATE SEQUENCE public.bundle_contextless_id_seq;
 
 CREATE TABLE public.bundle_contextless (
@@ -223,7 +222,6 @@ CREATE TABLE public.bundle_tableslice (
                 id INTEGER NOT NULL DEFAULT nextval('public.bundle_tableslice_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
-                name VARCHAR NOT NULL,
                 bundle_table_id INTEGER NOT NULL,
                 data_table_id INTEGER NOT NULL,
                 CONSTRAINT bundle_tableslice_pk PRIMARY KEY (id)
@@ -267,10 +265,11 @@ CREATE TABLE public.bundle_join (
                 id INTEGER NOT NULL DEFAULT nextval('public.bundle_join_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
+                name VARCHAR NOT NULL,
                 bundle_table_id INTEGER NOT NULL,
                 bundle_id INTEGER NOT NULL,
-                bundle_join_field INTEGER NOT NULL,
-                bundle_table_field INTEGER NOT NULL,
+                bundle_join_field INTEGER,
+                bundle_table_field INTEGER,
                 Operator VARCHAR,
                 CONSTRAINT bundle_join_pk PRIMARY KEY (id)
 );
