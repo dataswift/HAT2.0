@@ -19,8 +19,8 @@ trait LocationsService extends EntityServiceApi {
   val routes = {
     pathPrefix(entityKind) {
       create ~
-      linkLocationToLocation ~
-      linkLocationToThing ~
+      linkToLocation ~
+      linkToThing ~
       linkToPropertyStatic ~
       linkToPropertyDynamic ~
       addType
@@ -72,55 +72,6 @@ trait LocationsService extends EntityServiceApi {
   protected def createLinkEvent(entityId: Int, eventId: Int, relationshipType: String, recordId: Int)
                                (implicit session: Session): Try[Int] = {
     Failure(new NotImplementedError("Operation Not Supprted"))
-  }
-
-  def linkLocationToLocation = path(IntNumber / "location" / IntNumber) { (locationId: Int, location2Id: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"location/$locationId/location/$locationId:${relationship.relationshipType}")
-
-          val crossref = new LocationsLocationtolocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
-            locationId, location2Id, relationship.relationshipType, true, recordId)
-
-          val result = Try((LocationsLocationtolocationcrossref returning LocationsLocationtolocationcrossref.map(_.id)) += crossref)
-
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-        }
-      }
-    }
-  }
-
-  def linkLocationToThing = path(IntNumber / "thing" / IntNumber) { (locationId : Int, thingId : Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"location/$locationId/thing/$thingId:${relationship.relationshipType}")
-
-          val crossref = new LocationsLocationthingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-            thingId, locationId, relationship.relationshipType, true, recordId)
-          val result = Try((LocationsLocationthingcrossref returning LocationsLocationthingcrossref.map(_.id)) += crossref)
-
-          // Return the created crossref
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-
-        }
-      }
-    }
   }
 
   /*

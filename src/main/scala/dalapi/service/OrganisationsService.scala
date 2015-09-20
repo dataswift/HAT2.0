@@ -80,59 +80,6 @@ trait OrganisationsService extends EntityServiceApi {
                                (implicit session: Session): Try[Int] = {
     Failure(new NotImplementedError("Operation Not Supprted"))
   }
-  
-  def linkOrganisationToLocation = path(IntNumber / "location" / IntNumber) { (organisationId: Int, locationId: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"organisation/$organisationId/location/$locationId:${relationship.relationshipType}")
-
-          val crossref = new OrganisationsOrganisationlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
-            locationId, organisationId, relationship.relationshipType, true, recordId)
-
-          val result = Try((OrganisationsOrganisationlocationcrossref returning OrganisationsOrganisationlocationcrossref.map(_.id)) += crossref)
-
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-
-        }
-      }
-    }
-  }
-
-  /*
-   * Link two organisations together, e.g. as one organisation part of another organisation with a parentChild relationship type
-   */
-  def linkOrganisationToOrganisation = path(IntNumber / "organisation" / IntNumber) { (organisationId: Int, organisation2Id: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"organisation/$organisationId/organisation/$organisation2Id:${relationship.relationshipType}")
-
-          val crossref = new OrganisationsOrganisationtoorganisationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-            organisationId, organisation2Id, relationship.relationshipType, true, recordId)
-          val result = Try((OrganisationsOrganisationtoorganisationcrossref returning OrganisationsOrganisationtoorganisationcrossref.map(_.id)) += crossref)
-
-          // Return the created crossref
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-
-        }
-      }
-    }
-  }
 
   /*
    * Link organisation to a property statically (tying it in with a specific record ID)

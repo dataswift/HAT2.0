@@ -1,4 +1,4 @@
-package dalapi
+package dalapi.service
 
 import com.typesafe.config.ConfigFactory
 import dal.SlickPostgresDriver.simple._
@@ -14,7 +14,7 @@ import scala.util.{Failure, Success, Try}
 
 
 // this trait defines our service behavior independently from the service actor
-trait InboundPropertyService extends HttpService {
+trait PropertyService extends HttpService {
 
   val routes = {
     pathPrefix("property") {
