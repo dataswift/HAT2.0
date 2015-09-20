@@ -14,9 +14,9 @@ case class ApiEvent(
     organisations: Option[Seq[ApiOrganisationRelationship]])
 
 object ApiEvent {
-    def fromDbModel(event: EventsEventRow) : ApiEvent = {
-        new ApiEvent(Some(event.id), event.name, None, None, None, None, None, None, None)
-    }
+  def fromDbModel(event: EventsEventRow) : ApiEvent = {
+    new ApiEvent(Some(event.id), event.name, None, None, None, None, None, None, None)
+  }
 }
 
 case class ApiEventRelationship(relationshipType: String, event: ApiEvent)

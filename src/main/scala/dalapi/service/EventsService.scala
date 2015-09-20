@@ -23,11 +23,11 @@ trait EventsService extends EntityServiceApi {
   val routes = {
     pathPrefix(entityKind) {
       create ~
-        linkEventToLocation ~
-        linkEventToOrganisation ~
-        linkEventToPerson ~
-        linkEventToThing ~
-        linkEventToEvent ~
+        linkToLocation ~
+        linkToOrganisation ~
+        linkToPerson ~
+        linkToThing ~
+        linkToEvent ~
         linkToPropertyStatic ~
         linkToPropertyDynamic ~
         addType ~
@@ -55,134 +55,45 @@ trait EventsService extends EntityServiceApi {
     }
   }
 
-
-  def createEntity (event: ApiEvent)(implicit session: Session) = {
-    val eventseventRow = new EventsEventRow(0, LocalDateTime.now(), LocalDateTime.now(), event.name)
-    Try((EventsEvent returning EventsEvent.map(_.id)) += eventseventRow)
+  protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
+                                  (implicit session: Session): Try[Int] = {
+    // FIXME: locationID and eventID swapped around in the DB!
+    val crossref = new EventsEventlocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      locationId, entityId, relationshipType, true, recordId)
+    Try((EventsEventlocationcrossref returning EventsEventlocationcrossref.map(_.id)) += crossref)
   }
 
-  def linkEventToLocation = path(IntNumber / "location" / IntNumber) { (eventId: Int, locationId: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"$entityKind/$eventId/location/$locationId:${relationship.relationshipType}")
-
-          val crossref = new EventsEventlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
-            locationId, eventId, relationship.relationshipType, true, recordId)
-
-          val result = Try((EventsEventlocationcrossref returning EventsEventlocationcrossref.map(_.id)) += crossref)
-
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-
-        }
-      }
-    }
+  protected def createLinkOrganisation(entityId: Int, organisationId: Int, relationshipType: String, recordId: Int)
+                                      (implicit session: Session): Try[Int] = {
+    // FIXME: organisationID and eventID swapped around in the DB!
+    // FIXME: event_od in the DB
+    val crossref = new EventsEventorganisationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      organisationId, entityId, relationshipType, true, recordId)
+    Try((EventsEventorganisationcrossref returning EventsEventorganisationcrossref.map(_.id)) += crossref)
   }
 
-  def linkEventToOrganisation = path(IntNumber / "organisation" / IntNumber) { (eventId: Int, organisationId: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"$entityKind/$eventId/organisation/$organisationId:${relationship.relationshipType}")
-
-          val crossref = new EventsEventorganisationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-            organisationId, eventId, relationship.relationshipType, true, recordId)
-          val result = Try((EventsEventorganisationcrossref returning EventsEventorganisationcrossref.map(_.id)) += crossref)
-
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-
-        }
-      }
-    }
+  protected def createLinkPerson(entityId: Int, personId: Int, relationshipType: String, recordId: Int)
+                                (implicit session: Session): Try[Int] = {
+    // FIXME: personID and eventID swapped around in the DB!
+    // FIXME: event_od in the DB
+    val crossref = new EventsEventpersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      personId, entityId, relationshipType, true, recordId)
+    Try((EventsEventpersoncrossref returning EventsEventpersoncrossref.map(_.id)) += crossref)
   }
 
-  def linkEventToPerson = path(IntNumber / "person" / IntNumber) { (eventId: Int, personId: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"$entityKind/$eventId/person/$personId:${relationship.relationshipType}")
-
-          val crossref = new EventsEventpersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-            personId, eventId, relationship.relationshipType, true, recordId)
-          val result = Try((EventsEventpersoncrossref returning EventsEventpersoncrossref.map(_.id)) += crossref)
-
-          // Return the created crossref
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-
-        }
-      }
-    }
+  protected def createLinkThing(entityId: Int, thingId: Int, relationshipType: String, recordId: Int)
+                               (implicit session: Session): Try[Int] = {
+    // FIXME: thingID and eventID swapped around in the DB!
+    val crossref = new EventsEventthingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      thingId, entityId, relationshipType, true, recordId)
+    Try((EventsEventthingcrossref returning EventsEventthingcrossref.map(_.id)) += crossref)
   }
 
-  def linkEventToThing = path(IntNumber / "thing" / IntNumber) { (eventId: Int, thingId: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"$entityKind/$eventId/thing/$thingId:${relationship.relationshipType}")
-
-          val crossref = new EventsEventthingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-            thingId, eventId, relationship.relationshipType, true, recordId)
-          val result = Try((EventsEventthingcrossref returning EventsEventthingcrossref.map(_.id)) += crossref)
-
-          // Return the created crossref
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-
-        }
-      }
-    }
-  }
-
-  def linkEventToEvent = path(IntNumber / "event" / IntNumber) { (eventId: Int, event2Id: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"$entityKind/$eventId/event/$event2Id:${relationship.relationshipType}")
-
-          val crossref = new EventsEventtoeventcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-            eventId, event2Id, relationship.relationshipType, true, recordId)
-          val result = Try((EventsEventtoeventcrossref returning EventsEventtoeventcrossref.map(_.id)) += crossref)
-
-          // Return the created crossref
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-
-        }
-      }
-    }
+  protected def createLinkEvent(entityId: Int, eventId: Int, relationshipType: String, recordId: Int)
+                               (implicit session: Session): Try[Int] = {
+    val crossref = new EventsEventtoeventcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, eventId, relationshipType, true, recordId)
+    Try((EventsEventtoeventcrossref returning EventsEventtoeventcrossref.map(_.id)) += crossref)
   }
 
   protected def createPropertyLinkDynamic(entityId: Int, propertyId: Int,

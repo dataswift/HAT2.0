@@ -45,6 +45,35 @@ trait LocationsService extends EntityServiceApi {
     }
   }
 
+  protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
+                                  (implicit session: Session): Try[Int] = {
+    val crossref = new LocationsLocationtolocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, locationId, relationshipType, true, recordId)
+    Try((LocationsLocationtolocationcrossref returning LocationsLocationtolocationcrossref.map(_.id)) += crossref)
+  }
+
+  protected def createLinkThing(entityId: Int, thingId: Int, relationshipType: String, recordId: Int)
+                               (implicit session: Session): Try[Int] = {
+    val crossref = new LocationsLocationthingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, thingId, relationshipType, true, recordId)
+    Try((LocationsLocationthingcrossref returning LocationsLocationthingcrossref.map(_.id)) += crossref)
+  }
+
+  protected def createLinkOrganisation(entityId: Int, organisationId: Int, relationshipType: String, recordId: Int)
+                                      (implicit session: Session): Try[Int] = {
+    Failure(new NotImplementedError("Operation Not Supprted"))
+  }
+
+  protected def createLinkPerson(entityId: Int, personId: Int, relationshipType: String, recordId: Int)
+                                (implicit session: Session): Try[Int] = {
+    Failure(new NotImplementedError("Operation Not Supprted"))
+  }
+
+  protected def createLinkEvent(entityId: Int, eventId: Int, relationshipType: String, recordId: Int)
+                               (implicit session: Session): Try[Int] = {
+    Failure(new NotImplementedError("Operation Not Supprted"))
+  }
+
   def linkLocationToLocation = path(IntNumber / "location" / IntNumber) { (locationId: Int, location2Id: Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>

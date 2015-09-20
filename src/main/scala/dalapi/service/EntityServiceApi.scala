@@ -21,6 +21,118 @@ trait EntityServiceApi extends HttpService with EntityService with HatApiService
     }
   }
 
+  def linkToLocation = path(IntNumber / "location" / IntNumber) { (entityId: Int, locationId: Int) =>
+    post {
+      entity(as[ApiRelationship]) { relationship =>
+        db.withSession { implicit session =>
+          val recordId = createRelationshipRecord(s"$entityKind/$entityId/location/$locationId:${relationship.relationshipType}")
+
+          val result = createLinkLocation(entityId, locationId, relationship.relationshipType, recordId)
+
+          complete {
+            result match {
+              case Success(crossrefId) =>
+                (Created, ApiGenericId(crossrefId))
+              case Failure(e) =>
+                (BadRequest, e.getMessage)
+            }
+          }
+
+        }
+      }
+    }
+  }
+
+  def linkToOrganisation = path(IntNumber / "organisation" / IntNumber) { (entityId: Int, organisationId: Int) =>
+    post {
+      entity(as[ApiRelationship]) { relationship =>
+        db.withSession { implicit session =>
+          val recordId = createRelationshipRecord(s"$entityKind/$entityId/organisation/$organisationId:${relationship.relationshipType}")
+
+          val result = createLinkOrganisation(entityId, organisationId, relationship.relationshipType, recordId)
+
+          complete {
+            result match {
+              case Success(crossrefId) =>
+                (Created, ApiGenericId(crossrefId))
+              case Failure(e) =>
+                (BadRequest, e.getMessage)
+            }
+          }
+
+        }
+      }
+    }
+  }
+
+  def linkToPerson = path(IntNumber / "person" / IntNumber) { (entityId: Int, personId: Int) =>
+    post {
+      entity(as[ApiRelationship]) { relationship =>
+        db.withSession { implicit session =>
+          val recordId = createRelationshipRecord(s"$entityKind/$entityId/person/$personId:${relationship.relationshipType}")
+
+          val result = createLinkPerson(entityId, personId, relationship.relationshipType, recordId)
+
+          // Return the created crossref
+          complete {
+            result match {
+              case Success(crossrefId) =>
+                (Created, ApiGenericId(crossrefId))
+              case Failure(e) =>
+                (BadRequest, e.getMessage)
+            }
+          }
+
+        }
+      }
+    }
+  }
+
+  def linkToThing = path(IntNumber / "thing" / IntNumber) { (entityId: Int, thingId: Int) =>
+    post {
+      entity(as[ApiRelationship]) { relationship =>
+        db.withSession { implicit session =>
+          val recordId = createRelationshipRecord(s"$entityKind/$entityId/thing/$thingId:${relationship.relationshipType}")
+
+          val result = createLinkThing(entityId, thingId, relationship.relationshipType, recordId)
+
+          // Return the created crossref
+          complete {
+            result match {
+              case Success(crossrefId) =>
+                (Created, ApiGenericId(crossrefId))
+              case Failure(e) =>
+                (BadRequest, e.getMessage)
+            }
+          }
+
+        }
+      }
+    }
+  }
+
+  def linkToEvent = path(IntNumber / "event" / IntNumber) { (entityId: Int, eventId: Int) =>
+    post {
+      entity(as[ApiRelationship]) { relationship =>
+        db.withSession { implicit session =>
+          val recordId = createRelationshipRecord(s"$entityKind/$entityId/event/$eventId:${relationship.relationshipType}")
+
+          val result = createLinkEvent(entityId, eventId, relationship.relationshipType, recordId)
+
+          // Return the created crossref
+          complete {
+            result match {
+              case Success(crossrefId) =>
+                (Created, ApiGenericId(crossrefId))
+              case Failure(e) =>
+                (BadRequest, e.getMessage)
+            }
+          }
+
+        }
+      }
+    }
+  }
 
   def getPropertiesStaticApi = path(IntNumber / "property" / "static") {
     (entityId: Int) =>

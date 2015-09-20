@@ -87,7 +87,7 @@ object JsonProtocol extends DefaultJsonProtocol {
   implicit val apiLocation: RootJsonFormat[ApiLocation] = rootFormat(lazyFormat(jsonFormat6(ApiLocation.apply)))
 
   // Organistaions
-  implicit val apiOrganisation: RootJsonFormat[ApiOrganisation] = rootFormat(lazyFormat(jsonFormat6(ApiOrganisation.apply)))
+  implicit val apiOrganisation: RootJsonFormat[ApiOrganisation] = rootFormat(lazyFormat(jsonFormat7(ApiOrganisation.apply)))
 
   // People
   implicit val apiPerson: RootJsonFormat[ApiPerson] = rootFormat(lazyFormat(jsonFormat8(ApiPerson.apply)))

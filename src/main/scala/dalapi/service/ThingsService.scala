@@ -19,8 +19,8 @@ trait ThingsService extends EntityServiceApi {
   val routes = {
     pathPrefix(entityKind) {
       create ~
-        linkThingToPerson ~
-        linkThingToThing ~
+        linkToPerson ~
+        linkToThing ~
         linkToPropertyStatic ~
         linkToPropertyDynamic ~
         addType
@@ -45,57 +45,34 @@ trait ThingsService extends EntityServiceApi {
     }
   }
 
-  def linkThingToPerson = path(IntNumber / "person" / IntNumber) { (thingId: Int, personId: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"thing/$thingId/person/$personId:${relationship.relationshipType}")
-
-          val crossref = new ThingsThingpersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-            personId, thingId, relationship.relationshipType, true, recordId)
-          val result = Try((ThingsThingpersoncrossref returning ThingsThingpersoncrossref.map(_.id)) += crossref)
-
-          // Return the created crossref
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-
-        }
-      }
-    }
+  protected def createLinkThing(entityId: Int, thingId: Int, relationshipType: String, recordId: Int)
+                               (implicit session: Session): Try[Int] = {
+    val crossref = new ThingsThingtothingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, thingId, relationshipType, true, recordId)
+    Try((ThingsThingtothingcrossref returning ThingsThingtothingcrossref.map(_.id)) += crossref)
+  }
+  
+  protected def createLinkPerson(entityId: Int, personId: Int, relationshipType: String, recordId: Int)
+                                (implicit session: Session): Try[Int] = {
+    // FIXME: personID and thingID swapped around in the DB!
+    val crossref = new ThingsThingpersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      personId, entityId, relationshipType, true, recordId)
+    Try((ThingsThingpersoncrossref returning ThingsThingpersoncrossref.map(_.id)) += crossref)
   }
 
-  /*
-   * Link two things together, e.g. as one thing part of another thing with a parentChild relationship type
-   */
-  def linkThingToThing = path(IntNumber / "thing" / IntNumber) { (thingId: Int, thing2Id: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"thing/$thingId/thing/$thing2Id:${relationship.relationshipType}")
+  protected def createLinkEvent(entityId: Int, eventId: Int, relationshipType: String, recordId: Int)
+                               (implicit session: Session): Try[Int] = {
+    Failure(new NotImplementedError("Operation Not Supprted"))
+  }
 
-          val crossref = new ThingsThingtothingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-            thingId, thing2Id, relationship.relationshipType, true, recordId)
-          val result = Try((ThingsThingtothingcrossref returning ThingsThingtothingcrossref.map(_.id)) += crossref)
+  protected def createLinkOrganisation(entityId: Int, organisationId: Int, relationshipType: String, recordId: Int)
+                               (implicit session: Session): Try[Int] = {
+    Failure(new NotImplementedError("Operation Not Supprted"))
+  }
 
-          // Return the created crossref
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-
-        }
-      }
-    }
+  protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
+                               (implicit session: Session): Try[Int] = {
+    Failure(new NotImplementedError("Operation Not Supprted"))
   }
 
   /*

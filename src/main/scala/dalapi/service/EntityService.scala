@@ -3,6 +3,7 @@ package dalapi.service
 import dal.Tables._
 import dalapi.models._
 import dal.SlickPostgresDriver.simple._
+import org.joda.time.LocalDateTime
 import spray.routing
 
 import scala.util.{Failure, Try}
@@ -11,6 +12,21 @@ trait EntityService {
   val entityKind:String
 
   protected def createEntity: routing.Route
+
+  protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
+                                  (implicit session: Session): Try[Int]
+
+  protected def createLinkOrganisation(entityId: Int, organisationId: Int, relationshipType: String, recordId: Int)
+                                      (implicit session: Session): Try[Int]
+
+  protected def createLinkPerson(entityId: Int, personId: Int, relationshipType: String, recordId: Int)
+                                (implicit session: Session): Try[Int]
+
+  protected def createLinkThing(entityId: Int, thingId: Int, relationshipType: String, recordId: Int)
+                               (implicit session: Session): Try[Int]
+
+  protected def createLinkEvent(entityId: Int, eventId: Int, relationshipType: String, recordId: Int)
+                               (implicit session: Session): Try[Int]
 
   protected def getEvent(eventID: Int)(implicit session: Session): Option[ApiEvent] = {
     var event = EventsEvent.filter(_.id === eventID).run.headOption
@@ -55,7 +71,8 @@ trait EntityService {
         seqOption(getPropertiesStatic(e.id)),
         seqOption(getPropertiesDynamic(e.id)),
         seqOption(getOrganisations(e.id)),
-        seqOption(getLocations(e.id))
+        seqOption(getLocations(e.id)),
+        seqOption(getThings(e.id))
       )
     }
   }

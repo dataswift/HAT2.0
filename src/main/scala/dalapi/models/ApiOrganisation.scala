@@ -8,11 +8,12 @@ case class ApiOrganisation(
     staticProperties: Option[Seq[ApiPropertyRelationshipStatic]],
     dynamicProperties: Option[Seq[ApiPropertyRelationshipDynamic]],
     organisations: Option[Seq[ApiOrganisationRelationship]],
-    locations: Option[Seq[ApiLocationRelationship]])
+    locations: Option[Seq[ApiLocationRelationship]],
+    things: Option[Seq[ApiThingRelationship]])
 
 object ApiOrganisation {
   def fromDbModel(entity: OrganisationsOrganisationRow) : ApiOrganisation = {
-    new ApiOrganisation(Some(entity.id), entity.name, None, None, None, None)
+    new ApiOrganisation(Some(entity.id), entity.name, None, None, None, None, None)
   }
 }
 

@@ -19,8 +19,9 @@ trait OrganisationsService extends EntityServiceApi {
   val routes = {
     pathPrefix(entityKind) {
       create ~
-      linkOrganisationToLocation ~
-      linkOrganisationToOrganisation ~
+      linkToLocation ~
+      linkToOrganisation ~
+      linkToThing ~
       linkToPropertyStatic ~
       linkToPropertyDynamic// ~
 //      addOrganisationType
@@ -45,6 +46,41 @@ trait OrganisationsService extends EntityServiceApi {
     }
   }
 
+  protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
+                                  (implicit session: Session): Try[Int] = {
+    // FIXME: locationID and OrganisationID swapped around in the DB!
+    val crossref = new OrganisationsOrganisationlocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      locationId, entityId, relationshipType, true, recordId)
+    Try((OrganisationsOrganisationlocationcrossref returning OrganisationsOrganisationlocationcrossref.map(_.id)) += crossref)
+  }
+
+  protected def createLinkThing(entityId: Int, thingId: Int, relationshipType: String, recordId: Int)
+                               (implicit session: Session): Try[Int] = {
+    // FIXME: thingID and OrganisationID swapped around in the DB!
+    // FIXME: OrganisationsOrganisationthingcrossrefRow ID is STRING
+//    val crossref = new OrganisationsOrganisationthingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+//      thingId, entityId, relationshipType, true, recordId)
+//    Try((OrganisationsOrganisationthingcrossref returning OrganisationsOrganisationthingcrossref.map(_.id)) += crossref)
+    Failure(new NotImplementedError("Operation Not Supprted"))
+  }
+
+  protected def createLinkOrganisation(entityId: Int, organisationId: Int, relationshipType: String, recordId: Int)
+                                      (implicit session: Session): Try[Int] = {
+    val crossref = new OrganisationsOrganisationtoorganisationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, organisationId, relationshipType, true, recordId)
+    Try((OrganisationsOrganisationtoorganisationcrossref returning OrganisationsOrganisationtoorganisationcrossref.map(_.id)) += crossref)
+  }
+
+  protected def createLinkPerson(entityId: Int, personId: Int, relationshipType: String, recordId: Int)
+                                (implicit session: Session): Try[Int] = {
+    Failure(new NotImplementedError("Operation Not Supprted"))
+  }
+
+  protected def createLinkEvent(entityId: Int, eventId: Int, relationshipType: String, recordId: Int)
+                               (implicit session: Session): Try[Int] = {
+    Failure(new NotImplementedError("Operation Not Supprted"))
+  }
+  
   def linkOrganisationToLocation = path(IntNumber / "location" / IntNumber) { (organisationId: Int, locationId: Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>
@@ -155,7 +191,6 @@ trait OrganisationsService extends EntityServiceApi {
   def getOrganisations(organisationID: Int)
                (implicit session: Session): Seq[ApiOrganisationRelationship] = {
     val organisationLinks = OrganisationsOrganisationtoorganisationcrossref.filter(_.organisationOneId === organisationID).run
-    var organisationIds = organisationLinks.map(_.organisationTwoId)
 
     organisationLinks flatMap { link: OrganisationsOrganisationtoorganisationcrossrefRow =>
       val apiOrganisation = getOrganisation(link.organisationTwoId)
@@ -165,19 +200,28 @@ trait OrganisationsService extends EntityServiceApi {
     }
   }
 
-  def getPeople(eventID: Int)
+  def getPeople(entityId: Int)
                (implicit session: Session): Seq[ApiPersonRelationship] = {
-    Seq();
+    Seq()
   }
 
-  def getThings(eventID: Int)
+  def getThings(entityId: Int)
                (implicit session: Session): Seq[ApiThingRelationship] = {
-    Seq();
+    //FIXME: organisationID is a string, can't match
+    Seq()
+//    val thingLinks = OrganisationsOrganisationthingcrossref.filter(_.organisationId === entityId).run
+//
+//    thingLinks flatMap { link: OrganisationsOrganisationthingcrossrefRow =>
+//      val apiThing = getThing(link.thingId)
+//      apiThing.map { thing =>
+//        new ApiThingRelationship(link.relationshipType, thing)
+//      }
+//    }
   }
 
   def getEvents(eventID: Int)
                (implicit session: Session): Seq[ApiEventRelationship] = {
-    Seq();
+    Seq()
   }
 
   protected def getPropertiesStatic(organisationId: Int)

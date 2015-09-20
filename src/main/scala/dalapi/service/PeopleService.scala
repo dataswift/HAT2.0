@@ -20,9 +20,9 @@ trait PeopleService extends EntityServiceApi {
     pathPrefix(entityKind) {
       create ~
       createPersonRelationshipType ~
-      linkPersonToPerson ~
-      linkPersonToLocation ~
-      linkPersonToOrganisation ~
+      linkToPerson ~
+      linkToLocation ~
+      linkToOrganisation ~
       linkToPropertyStatic ~
       linkToPropertyDynamic ~
       addType
@@ -65,21 +65,18 @@ trait PeopleService extends EntityServiceApi {
   /*
    * Link two people together, e.g. as one person part of another person with a given relationship type
    */
-  def linkPersonToPerson = path(IntNumber / "person" / IntNumber) { (personId: Int, person2Id: Int) =>
+  override def linkToPerson = path(IntNumber / "person" / IntNumber) { (personId: Int, person2Id: Int) =>
     post {
       entity(as[ApiPersonRelationshipType]) { relationship =>
         db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"person/$personId/person/$person2Id:${relationship.name}")
+          val recordId = createRelationshipRecord(s"$entityKind/$personId/person/$person2Id:${relationship.name}")
 
           val result = relationship.id match {
             case Some(relationshipTypeId) =>
-              val crossref = new PeoplePersontopersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-                personId, person2Id, recordId, true, relationshipTypeId)
-              Try((PeoplePersontopersoncrossref returning PeoplePersontopersoncrossref.map(_.id)) += crossref)
+              createLinkPerson(personId, person2Id, relationshipTypeId, recordId)
             case None =>
               Failure(new IllegalArgumentException("People can only be linked with an existing relationship type"))
           }
-
 
           // Return the created crossref
           complete {
@@ -96,53 +93,41 @@ trait PeopleService extends EntityServiceApi {
     }
   }
 
-  def linkPersonToLocation = path(IntNumber / "location" / IntNumber) { (personId: Int, locationId: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"person/$personId/location/$locationId:${relationship.relationshipType}")
-
-          val crossref = new PeoplePersonlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
-            locationId, personId, relationship.relationshipType, true, recordId)
-
-          val result = Try((PeoplePersonlocationcrossref returning PeoplePersonlocationcrossref.map(_.id)) += crossref)
-
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-
-        }
-      }
-    }
+  protected def createLinkPerson(entityId: Int, personId: Int, relationshipType: String, recordId: Int)
+                                (implicit session: Session): Try[Int] = {
+    Failure(new IllegalArgumentException("People must be linked via a defined relationship type"))
   }
 
-  def linkPersonToOrganisation = path(IntNumber / "organisation" / IntNumber) { (personId: Int, organisationId: Int) =>
-    post {
-      entity(as[ApiRelationship]) { relationship =>
-        db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"person/$personId/organisation/$organisationId:${relationship.relationshipType}")
+  protected def createLinkPerson(entityId: Int, personId: Int, relationshipTypeId: Int, recordId: Int)
+                                      (implicit session: Session): Try[Int] = {
+    val crossref = new PeoplePersontopersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, personId, recordId, true, relationshipTypeId)
+    Try((PeoplePersontopersoncrossref returning PeoplePersontopersoncrossref.map(_.id)) += crossref)
+  }
 
-          val crossref = new PeoplePersonorganisationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-            organisationId, personId, relationship.relationshipType, true, recordId)
-          val result = Try((PeoplePersonorganisationcrossref returning PeoplePersonorganisationcrossref.map(_.id)) += crossref)
+  protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
+                                  (implicit session: Session): Try[Int] = {
+    // FIXME: locationID and personID swapped around in the DB!
+    val crossref = new PeoplePersonlocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      locationId, entityId, relationshipType, true, recordId)
+    Try((PeoplePersonlocationcrossref returning PeoplePersonlocationcrossref.map(_.id)) += crossref)
+  }
 
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
+  protected def createLinkOrganisation(entityId: Int, organisationId: Int, relationshipType: String, recordId: Int)
+                                      (implicit session: Session): Try[Int] = {
+    val crossref = new PeoplePersonorganisationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+      entityId, organisationId, relationshipType, true, recordId)
+    Try((PeoplePersonorganisationcrossref returning PeoplePersonorganisationcrossref.map(_.id)) += crossref)
+  }
 
-        }
-      }
-    }
+  protected def createLinkEvent(entityId: Int, eventId: Int, relationshipType: String, recordId: Int)
+                               (implicit session: Session): Try[Int] = {
+    Failure(new NotImplementedError("Operation Not Supprted"))
+  }
+
+  protected def createLinkThing(entityId: Int, thingId: Int, relationshipType: String, recordId: Int)
+                               (implicit session: Session): Try[Int] = {
+    Failure(new NotImplementedError("Operation Not Supprted"))
   }
 
   /*
