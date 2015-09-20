@@ -4,13 +4,13 @@ import dal.Tables._
 import org.joda.time.LocalDateTime
 
 case class ApiProperty(
-                        id: Option[Int],
-                        dateCreated: Option[LocalDateTime],
-                        lastUpdated: Option[LocalDateTime],
-                        name: String,
-                        description: Option[String],
-                        propertyType: ApiSystemType,
-                        unitOfMeasurement: ApiSystemUnitofmeasurement)
+    id: Option[Int],
+    dateCreated: Option[LocalDateTime],
+    lastUpdated: Option[LocalDateTime],
+    name: String,
+    description: Option[String],
+    propertyType: ApiSystemType,
+    unitOfMeasurement: ApiSystemUnitofmeasurement)
 
 object ApiProperty {
   def fromDbModel(property: SystemPropertyRow)
@@ -25,13 +25,14 @@ object ApiProperty {
 case class ApiRelationship(relationshipType: String)
 
 case class ApiPropertyRelationshipDynamic(
-                                           id: Option[Int],
-                                           dateCreated: Option[LocalDateTime],
-                                           lastUpdated: Option[LocalDateTime],
-                                           relationshipType: String,
-                                           field: ApiDataField)
+    id: Option[Int],
+    dateCreated: Option[LocalDateTime],
+    lastUpdated: Option[LocalDateTime],
+    relationshipType: String,
+    field: ApiDataField)
 
 object ApiPropertyRelationshipDynamic {
+  // Event properties
   def fromDbModel(relationship: EventsSystempropertydynamiccrossrefRow)
                  (property: ApiProperty, field: ApiDataField): ApiPropertyRelationshipDynamic = {
     new ApiPropertyRelationshipDynamic(Some(relationship.id),
@@ -50,6 +51,7 @@ object ApiPropertyRelationshipDynamic {
     fromDbModel(crossref)(apiProperty, apiDataField)
   }
 
+  // Location properties
   def fromDbModel(relationship: LocationsSystempropertydynamiccrossrefRow)
                  (property: ApiProperty, field: ApiDataField): ApiPropertyRelationshipDynamic = {
     new ApiPropertyRelationshipDynamic(Some(relationship.id),
@@ -67,17 +69,75 @@ object ApiPropertyRelationshipDynamic {
 
     fromDbModel(crossref)(apiProperty, apiDataField)
   }
+  
+  // Person properties
+  def fromDbModel(relationship: PeopleSystempropertydynamiccrossrefRow)
+                 (property: ApiProperty, field: ApiDataField): ApiPropertyRelationshipDynamic = {
+    new ApiPropertyRelationshipDynamic(Some(relationship.id),
+      Some(relationship.dateCreated), Some(relationship.lastUpdated),
+      relationship.relationshipType, field)
+  }
+
+  def fromDbModel(crossref: PeopleSystempropertydynamiccrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+                  propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow) : ApiPropertyRelationshipDynamic = {
+    val apiUom = ApiSystemUnitofmeasurement.fromDbModel(propertyUom)
+    val apiType = ApiSystemType.fromDbModel(propertyType)
+    val apiProperty = ApiProperty.fromDbModel(property)(apiType, apiUom)
+
+    val apiDataField = ApiDataField.fromDataField(field)
+
+    fromDbModel(crossref)(apiProperty, apiDataField)
+  }
+  
+  // Thing Properties
+  def fromDbModel(relationship: ThingsSystempropertydynamiccrossrefRow)
+                 (property: ApiProperty, field: ApiDataField): ApiPropertyRelationshipDynamic = {
+    new ApiPropertyRelationshipDynamic(Some(relationship.id),
+      Some(relationship.dateCreated), Some(relationship.lastUpdated),
+      relationship.relationshipType, field)
+  }
+
+  def fromDbModel(crossref: ThingsSystempropertydynamiccrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+                  propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow) : ApiPropertyRelationshipDynamic = {
+    val apiUom = ApiSystemUnitofmeasurement.fromDbModel(propertyUom)
+    val apiType = ApiSystemType.fromDbModel(propertyType)
+    val apiProperty = ApiProperty.fromDbModel(property)(apiType, apiUom)
+
+    val apiDataField = ApiDataField.fromDataField(field)
+
+    fromDbModel(crossref)(apiProperty, apiDataField)
+  }
+
+  // Organisation Properties
+  def fromDbModel(relationship: OrganisationsSystempropertydynamiccrossrefRow)
+                 (property: ApiProperty, field: ApiDataField): ApiPropertyRelationshipDynamic = {
+    new ApiPropertyRelationshipDynamic(Some(relationship.id),
+      Some(relationship.dateCreated), Some(relationship.lastUpdated),
+      relationship.relationshipType, field)
+  }
+
+  def fromDbModel(crossref: OrganisationsSystempropertydynamiccrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+                  propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow) : ApiPropertyRelationshipDynamic = {
+    val apiUom = ApiSystemUnitofmeasurement.fromDbModel(propertyUom)
+    val apiType = ApiSystemType.fromDbModel(propertyType)
+    val apiProperty = ApiProperty.fromDbModel(property)(apiType, apiUom)
+
+    val apiDataField = ApiDataField.fromDataField(field)
+
+    fromDbModel(crossref)(apiProperty, apiDataField)
+  }
 }
 
 case class ApiPropertyRelationshipStatic(
-                                          id: Option[Int],
-                                          dateCreated: Option[LocalDateTime],
-                                          lastUpdated: Option[LocalDateTime],
-                                          relationshipType: String,
-                                          field: ApiDataField,
-                                          record: ApiDataRecord)
+    id: Option[Int],
+    dateCreated: Option[LocalDateTime],
+    lastUpdated: Option[LocalDateTime],
+    relationshipType: String,
+    field: ApiDataField,
+    record: ApiDataRecord)
 
 object ApiPropertyRelationshipStatic {
+  // Event Properties
   def fromDbModel(relationship: EventsSystempropertystaticcrossrefRow)
                  (property: ApiProperty, field: ApiDataField, record: ApiDataRecord): ApiPropertyRelationshipStatic = {
     new ApiPropertyRelationshipStatic(Some(relationship.id),
@@ -97,6 +157,7 @@ object ApiPropertyRelationshipStatic {
     fromDbModel(crossref)(apiProperty, apiDataField, apiRecord)
   }
 
+  // Location Properties
   def fromDbModel(relationship: LocationsSystempropertystaticcrossrefRow)
                  (property: ApiProperty, field: ApiDataField, record: ApiDataRecord): ApiPropertyRelationshipStatic = {
     new ApiPropertyRelationshipStatic(Some(relationship.id),
@@ -115,14 +176,74 @@ object ApiPropertyRelationshipStatic {
 
     fromDbModel(crossref)(apiProperty, apiDataField, apiRecord)
   }
+  
+  // Person Properties
+  def fromDbModel(relationship: PeopleSystempropertystaticcrossrefRow)
+                 (property: ApiProperty, field: ApiDataField, record: ApiDataRecord): ApiPropertyRelationshipStatic = {
+    new ApiPropertyRelationshipStatic(Some(relationship.id),
+      Some(relationship.dateCreated), Some(relationship.lastUpdated),
+      relationship.relationshipType, field, record)
+  }
+
+  def fromDbModel(crossref: PeopleSystempropertystaticcrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+                  propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow, record: DataRecordRow) : ApiPropertyRelationshipStatic = {
+    val apiUom = ApiSystemUnitofmeasurement.fromDbModel(propertyUom)
+    val apiType = ApiSystemType.fromDbModel(propertyType)
+    val apiProperty = ApiProperty.fromDbModel(property)(apiType, apiUom)
+
+    val apiRecord = ApiDataRecord.fromDataRecord(record)(None)
+    val apiDataField = ApiDataField.fromDataField(field)
+
+    fromDbModel(crossref)(apiProperty, apiDataField, apiRecord)
+  }
+  
+  // Thing propertoes
+  def fromDbModel(relationship: ThingsSystempropertystaticcrossrefRow)
+                 (property: ApiProperty, field: ApiDataField, record: ApiDataRecord): ApiPropertyRelationshipStatic = {
+    new ApiPropertyRelationshipStatic(Some(relationship.id),
+      Some(relationship.dateCreated), Some(relationship.lastUpdated),
+      relationship.relationshipType, field, record)
+  }
+
+  def fromDbModel(crossref: ThingsSystempropertystaticcrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+                  propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow, record: DataRecordRow) : ApiPropertyRelationshipStatic = {
+    val apiUom = ApiSystemUnitofmeasurement.fromDbModel(propertyUom)
+    val apiType = ApiSystemType.fromDbModel(propertyType)
+    val apiProperty = ApiProperty.fromDbModel(property)(apiType, apiUom)
+
+    val apiRecord = ApiDataRecord.fromDataRecord(record)(None)
+    val apiDataField = ApiDataField.fromDataField(field)
+
+    fromDbModel(crossref)(apiProperty, apiDataField, apiRecord)
+  }
+
+  // Organisation propertoes
+  def fromDbModel(relationship: OrganisationsSystempropertystaticcrossrefRow)
+                 (property: ApiProperty, field: ApiDataField, record: ApiDataRecord): ApiPropertyRelationshipStatic = {
+    new ApiPropertyRelationshipStatic(Some(relationship.id),
+      Some(relationship.dateCreated), Some(relationship.lastUpdated),
+      relationship.relationshipType, field, record)
+  }
+
+  def fromDbModel(crossref: OrganisationsSystempropertystaticcrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+                  propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow, record: DataRecordRow) : ApiPropertyRelationshipStatic = {
+    val apiUom = ApiSystemUnitofmeasurement.fromDbModel(propertyUom)
+    val apiType = ApiSystemType.fromDbModel(propertyType)
+    val apiProperty = ApiProperty.fromDbModel(property)(apiType, apiUom)
+
+    val apiRecord = ApiDataRecord.fromDataRecord(record)(None)
+    val apiDataField = ApiDataField.fromDataField(field)
+
+    fromDbModel(crossref)(apiProperty, apiDataField, apiRecord)
+  }
 }
 
 case class ApiSystemType(
-                          id: Option[Int],
-                          dateCreated: Option[LocalDateTime],
-                          lastUpdated: Option[LocalDateTime],
-                          name: String,
-                          description: Option[String])
+    id: Option[Int],
+    dateCreated: Option[LocalDateTime],
+    lastUpdated: Option[LocalDateTime],
+    name: String,
+    description: Option[String])
 
 object ApiSystemType {
   def fromDbModel(systemType: SystemTypeRow) = {
@@ -133,12 +254,12 @@ object ApiSystemType {
 }
 
 case class ApiSystemUnitofmeasurement(
-                                       id: Option[Int],
-                                       dateCreated: Option[LocalDateTime],
-                                       lastUpdated: Option[LocalDateTime],
-                                       name: String,
-                                       description: Option[String],
-                                       symbol: Option[String])
+    id: Option[Int],
+    dateCreated: Option[LocalDateTime],
+    lastUpdated: Option[LocalDateTime],
+    name: String,
+    description: Option[String],
+    symbol: Option[String])
 
 object ApiSystemUnitofmeasurement {
   def fromDbModel(uom: SystemUnitofmeasurementRow) = {

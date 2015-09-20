@@ -199,5 +199,113 @@ trait OrganisationsService extends HttpService with InboundService with EntitySe
 //
 //    }
 //  }
+
+  def getPropertiesStaticApi = path(IntNumber / "property" / "static") {
+    (eventId: Int) =>
+      get {
+        db.withSession { implicit session =>
+          complete {
+            getPropertiesStatic(eventId)
+          }
+        }
+      }
+  }
+
+  def getPropertiesDynamicApi = path(IntNumber / "property" / "dynamic") {
+    (eventId: Int) =>
+      get {
+        db.withSession { implicit session =>
+          complete {
+            getPropertiesDynamic(eventId)
+          }
+        }
+      }
+  }
+
+  def getLocations(organisationId: Int)
+                  (implicit session: Session): Seq[ApiLocationRelationship] = {
+
+    val locationLinks = OrganisationsOrganisationlocationcrossref.filter(_.organisationId === organisationId).run
+
+    locationLinks flatMap { link: OrganisationsOrganisationlocationcrossrefRow =>
+      val apiLocation = getLocation(link.locationId)
+      apiLocation.map { location =>
+        new ApiLocationRelationship(link.relationshipType, location)
+      }
+    }
+  }
+
+  def getOrganisations(organisationID: Int)
+               (implicit session: Session): Seq[ApiOrganisationRelationship] = {
+    val organisationLinks = OrganisationsOrganisationtoorganisationcrossref.filter(_.organisationOneId === organisationID).run
+    var organisationIds = organisationLinks.map(_.organisationTwoId)
+
+    organisationLinks flatMap { link: OrganisationsOrganisationtoorganisationcrossrefRow =>
+      val apiOrganisation = getOrganisation(link.organisationTwoId)
+      apiOrganisation.map { organisation =>
+        new ApiOrganisationRelationship(link.relationshipType, organisation)
+      }
+    }
+  }
+
+  def getPeople(eventID: Int)
+               (implicit session: Session): Seq[ApiPersonRelationship] = {
+    Seq();
+  }
+
+  def getThings(eventID: Int)
+               (implicit session: Session): Seq[ApiThingRelationship] = {
+    Seq();
+  }
+
+  def getEvents(eventID: Int)
+               (implicit session: Session): Seq[ApiEventRelationship] = {
+    Seq();
+  }
+
+  protected def getPropertiesStatic(organisationId: Int)
+                                   (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
+
+    val crossrefQuery = OrganisationsSystempropertystaticcrossref.filter(_.organisationId === organisationId)
+
+    val dataQuery = for {
+      crossref <- crossrefQuery
+      property <- crossref.systemPropertyFk
+      propertyType <- property.systemTypeFk
+      propertyUom <- property.systemUnitofmeasurementFk
+      field <- crossref.dataFieldFk
+      record <- crossref.dataRecordFk
+    } yield (crossref, property, propertyType, propertyUom, field, record)
+
+    val data = dataQuery.run
+
+    data.map {
+      case (crossref: OrganisationsSystempropertystaticcrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+      propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow, record: DataRecordRow) =>
+        ApiPropertyRelationshipStatic.fromDbModel(crossref, property, propertyType, propertyUom, field, record)
+    }
+  }
+
+  protected def getPropertiesDynamic(organisationId: Int)
+                                    (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+
+    val crossrefQuery = OrganisationsSystempropertydynamiccrossref.filter(_.organisationId === organisationId)
+
+    val dataQuery = for {
+      crossref <- crossrefQuery
+      property <- crossref.systemPropertyFk
+      propertyType <- property.systemTypeFk
+      propertyUom <- property.systemUnitofmeasurementFk
+      field <- crossref.dataFieldFk
+    } yield (crossref, property, propertyType, propertyUom, field)
+
+    val data = dataQuery.run
+
+    data.map {
+      case (crossref: OrganisationsSystempropertydynamiccrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+      propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow) =>
+        ApiPropertyRelationshipDynamic.fromDbModel(crossref, property, propertyType, propertyUom, field)
+    }
+  }
 }
 

@@ -190,8 +190,8 @@ trait PeopleService extends HttpService with InboundService with EntityService {
   }
 
   /*
-   * Link person to a property dynamically
-   */
+  * Link person to a property dynamically
+  */
   def linkPersonToPropertyDynamic = path(IntNumber / "property" / "dynamic" / IntNumber) { (personId: Int, propertyId: Int) =>
     post {
       entity(as[ApiPropertyRelationshipDynamic]) { relationship =>
@@ -251,5 +251,125 @@ trait PeopleService extends HttpService with InboundService with EntityService {
 
     }
   }
+
+  def getPropertiesStaticApi = path(IntNumber / "property" / "static") {
+    (eventId: Int) =>
+      get {
+        db.withSession { implicit session =>
+          complete {
+            getPropertiesStatic(eventId)
+          }
+        }
+      }
+  }
+
+  def getPropertiesDynamicApi = path(IntNumber / "property" / "dynamic") {
+    (eventId: Int) =>
+      get {
+        db.withSession { implicit session =>
+          complete {
+            getPropertiesDynamic(eventId)
+          }
+        }
+      }
+  }
+
+  def getLocations(personId: Int)
+                  (implicit session: Session): Seq[ApiLocationRelationship] = {
+
+    val locationLinks = PeoplePersonlocationcrossref.filter(_.personId === personId).run
+
+    locationLinks flatMap { link: PeoplePersonlocationcrossrefRow =>
+      val apiLocation = getLocation(link.locationId)
+      apiLocation.map { location =>
+        new ApiLocationRelationship(link.relationshipType, location)
+      }
+    }
+  }
+
+  def getOrganisations(personID: Int)
+                      (implicit session: Session): Seq[ApiOrganisationRelationship] = {
+    val links = PeoplePersonorganisationcrossref.filter(_.personId === personID).run
+
+    links flatMap { link: PeoplePersonorganisationcrossrefRow =>
+      val apiOrganisation = getOrganisation(link.organisationId)
+      apiOrganisation.map { organisation =>
+        new ApiOrganisationRelationship(link.relationshipType, organisation)
+      }
+    }
+  }
+
+  def getPeople(personID: Int)
+               (implicit session: Session): Seq[ApiPersonRelationship] = {
+    val links = for {
+      link <- PeoplePersontopersoncrossref.filter(_.personOneId === personID)
+      relationship <- link.peoplePersontopersonrelationshiptypeFk
+    } yield (link, relationship)
+
+    links.run flatMap {
+      case (link: PeoplePersontopersoncrossrefRow, rel: PeoplePersontopersonrelationshiptypeRow) =>
+        val apiPerson = getPerson(link.personTwoId)
+        apiPerson.map { person =>
+          new ApiPersonRelationship(rel.name, person)
+        }
+    }
+  }
+
+  def getThings(eventID: Int)
+               (implicit session: Session): Seq[ApiThingRelationship] = {
+    Seq();
+  }
+
+  def getEvents(eventID: Int)
+               (implicit session: Session): Seq[ApiEventRelationship] = {
+    Seq();
+  }
+
+
+  protected def getPropertiesStatic(personId: Int)
+                                   (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
+
+    val crossrefQuery = PeopleSystempropertystaticcrossref.filter(_.personId === personId)
+
+    val dataQuery = for {
+      crossref <- crossrefQuery
+      property <- crossref.systemPropertyFk
+      propertyType <- property.systemTypeFk
+      propertyUom <- property.systemUnitofmeasurementFk
+      field <- crossref.dataFieldFk
+      record <- crossref.dataRecordFk
+    } yield (crossref, property, propertyType, propertyUom, field, record)
+
+    val data = dataQuery.run
+
+    data.map {
+      case (crossref: PeopleSystempropertystaticcrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+      propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow, record: DataRecordRow) =>
+        ApiPropertyRelationshipStatic.fromDbModel(crossref, property, propertyType, propertyUom, field, record)
+    }
+  }
+
+  protected def getPropertiesDynamic(personId: Int)
+                                    (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+
+    val crossrefQuery = PeopleSystempropertydynamiccrossref.filter(_.personId === personId)
+
+    val dataQuery = for {
+      crossref <- crossrefQuery
+      property <- crossref.systemPropertyFk
+      propertyType <- property.systemTypeFk
+      propertyUom <- property.systemUnitofmeasurementFk
+      field <- crossref.dataFieldFk
+    } yield (crossref, property, propertyType, propertyUom, field)
+
+    val data = dataQuery.run
+
+    data.map {
+      case (crossref: PeopleSystempropertydynamiccrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+      propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow) =>
+        ApiPropertyRelationshipDynamic.fromDbModel(crossref, property, propertyType, propertyUom, field)
+    }
+  }
+
 }
 

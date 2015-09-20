@@ -1,7 +1,7 @@
 package dalapi
 
 import akka.actor.{ActorRefFactory, ActorLogging}
-import dalapi.service.{EventsService, DataService, HelloService, BundleService}
+import dalapi.service._
 import spray.routing.HttpServiceActor
 
 // we don't implement our route structure directly in the service actor because
@@ -25,12 +25,35 @@ class ApiService extends HttpServiceActor with ActorLogging {
     override implicit def actorRefFactory: ActorRefFactory = context
   }
 
-  val inboundEventsService = new EventsService {
+  val eventsService = new EventsService {
+    def actorRefFactory = context
+  }
+
+  val locationsService = new LocationsService {
+    def actorRefFactory = context
+  }
+
+  val peopleService = new PeopleService {
+    def actorRefFactory = context
+  }
+
+  val thingsService = new ThingsService {
+    def actorRefFactory = context
+  }
+
+  val organisationsService = new OrganisationsService {
     def actorRefFactory = context
   }
 
   // Concatenate all their handled routes
-  val routes = helloService.routes ~ dataService.routes ~ bundleService.routes
+  val routes = helloService.routes ~
+    dataService.routes ~
+    bundleService.routes ~
+    eventsService.routes ~
+    locationsService.routes ~
+    peopleService.routes ~
+    thingsService.routes ~
+    organisationsService.routes
 
   def receive = runRoute(routes)
 }
