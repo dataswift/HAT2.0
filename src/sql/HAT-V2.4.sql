@@ -344,7 +344,7 @@ CREATE TABLE public.events_eventpersoncrossref (
   date_created          TIMESTAMP    NOT NULL,
   last_updated          TIMESTAMP    NOT NULL,
   person_id             INTEGER      NOT NULL,
-  event_od              INTEGER      NOT NULL,
+  event_id              INTEGER      NOT NULL,
   relationship_type     VARCHAR(100) NOT NULL,
   is_current            BOOLEAN      NOT NULL,
   relationshiprecord_id INTEGER      NOT NULL,
@@ -360,7 +360,7 @@ ON public.events_eventpersoncrossref USING BTREE
 
 CREATE INDEX events_eventpersoncrossref_event_id
 ON public.events_eventpersoncrossref USING BTREE
-(event_od);
+(event_id);
 
 CREATE SEQUENCE public.people_systemtypecrossref_id_seq;
 
@@ -837,7 +837,7 @@ CREATE TABLE public.events_eventorganisationcrossref (
   date_created          TIMESTAMP    NOT NULL,
   last_updated          TIMESTAMP    NOT NULL,
   organisation_id       INTEGER      NOT NULL,
-  event_od              INTEGER      NOT NULL,
+  event_id              INTEGER      NOT NULL,
   relationship_type     VARCHAR(100) NOT NULL,
   is_current            BOOLEAN      NOT NULL,
   relationshiprecord_id INTEGER      NOT NULL,
@@ -853,7 +853,7 @@ ON public.events_eventorganisationcrossref USING BTREE
 
 CREATE INDEX events_eventorganisationcrossref_event_id
 ON public.events_eventorganisationcrossref USING BTREE
-(event_od);
+(event_id);
 
 CREATE SEQUENCE public.organisation_systemtypecrossref_id_seq;
 
@@ -1428,7 +1428,7 @@ ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
 ALTER TABLE public.events_eventpersoncrossref ADD CONSTRAINT events_eventpersoncrossref_thing_id_fkey
-FOREIGN KEY (event_od)
+FOREIGN KEY (event_id)
 REFERENCES public.events_event (id)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION
@@ -1470,7 +1470,7 @@ ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
 ALTER TABLE public.events_eventorganisationcrossref ADD CONSTRAINT events_eventorganisationcrossref_fk
-FOREIGN KEY (event_od)
+FOREIGN KEY (event_id)
 REFERENCES public.events_event (id)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION
