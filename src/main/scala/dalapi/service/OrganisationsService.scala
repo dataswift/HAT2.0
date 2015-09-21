@@ -51,7 +51,6 @@ trait OrganisationsService extends EntityServiceApi {
 
   protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
                                   (implicit session: Session): Try[Int] = {
-    // FIXME: locationID and OrganisationID swapped around in the DB!
     val crossref = new OrganisationsOrganisationlocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
       entityId, locationId, relationshipType, true, recordId)
     Try((OrganisationsOrganisationlocationcrossref returning OrganisationsOrganisationlocationcrossref.map(_.id)) += crossref)
@@ -59,8 +58,6 @@ trait OrganisationsService extends EntityServiceApi {
 
   protected def createLinkThing(entityId: Int, thingId: Int, relationshipType: String, recordId: Int)
                                (implicit session: Session): Try[Int] = {
-    // FIXME: thingID and OrganisationID swapped around in the DB!
-    // FIXME: OrganisationsOrganisationthingcrossrefRow ID is STRING
 //    val crossref = new OrganisationsOrganisationthingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
 //      entityId, thingId, relationshipType, true, recordId)
 //    Try((OrganisationsOrganisationthingcrossref returning OrganisationsOrganisationthingcrossref.map(_.id)) += crossref)
@@ -120,9 +117,9 @@ trait OrganisationsService extends EntityServiceApi {
   protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)
                              (implicit session: Session) : Try[Int] = {
 
-    Failure(new NotImplementedError("Adding entity to organisations not supported"))
-//    val organisationType = new OrganisationsSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), organisationId, typeId, relationship.relationshipType, true)
-//    Try((OrganisationsSystemtypecrossref returning OrganisationsSystemtypecrossref.map(_.id)) += organisationType)
+//    Failure(new NotImplementedError("Adding entity to organisations not supported"))
+    val organisationType = new OrganisationsSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), entityId, typeId, relationship.relationshipType, true)
+    Try((OrganisationsSystemtypecrossref returning OrganisationsSystemtypecrossref.map(_.id)) += organisationType)
   }
 
   def getLocations(organisationId: Int)
@@ -157,16 +154,14 @@ trait OrganisationsService extends EntityServiceApi {
 
   def getThings(entityId: Int)
                (implicit session: Session): Seq[ApiThingRelationship] = {
-    //FIXME: organisationID is a string, can't match
-    Seq()
-//    val thingLinks = OrganisationsOrganisationthingcrossref.filter(_.organisationId === entityId).run
-//
-//    thingLinks flatMap { link: OrganisationsOrganisationthingcrossrefRow =>
-//      val apiThing = getThing(link.thingId)
-//      apiThing.map { thing =>
-//        new ApiThingRelationship(link.relationshipType, thing)
-//      }
-//    }
+    val thingLinks = OrganisationsOrganisationthingcrossref.filter(_.organisationId === entityId).run
+
+    thingLinks flatMap { link: OrganisationsOrganisationthingcrossrefRow =>
+      val apiThing = getThing(link.thingId)
+      apiThing.map { thing =>
+        new ApiThingRelationship(link.relationshipType, thing)
+      }
+    }
   }
 
   def getEvents(eventID: Int)

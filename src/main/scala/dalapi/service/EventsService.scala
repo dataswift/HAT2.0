@@ -58,7 +58,6 @@ trait EventsService extends EntityServiceApi {
 
   protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
                                   (implicit session: Session): Try[Int] = {
-    // FIXME: locationID and eventID swapped around in the DB!
     val crossref = new EventsEventlocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
       entityId, locationId, relationshipType, true, recordId)
     Try((EventsEventlocationcrossref returning EventsEventlocationcrossref.map(_.id)) += crossref)
@@ -66,8 +65,6 @@ trait EventsService extends EntityServiceApi {
 
   protected def createLinkOrganisation(entityId: Int, organisationId: Int, relationshipType: String, recordId: Int)
                                       (implicit session: Session): Try[Int] = {
-    // FIXME: organisationID and eventID swapped around in the DB!
-    // FIXME: event_od in the DB
     val crossref = new EventsEventorganisationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
       entityId, organisationId, relationshipType, true, recordId)
     Try((EventsEventorganisationcrossref returning EventsEventorganisationcrossref.map(_.id)) += crossref)
@@ -75,8 +72,6 @@ trait EventsService extends EntityServiceApi {
 
   protected def createLinkPerson(entityId: Int, personId: Int, relationshipType: String, recordId: Int)
                                 (implicit session: Session): Try[Int] = {
-    // FIXME: personID and eventID swapped around in the DB!
-    // FIXME: event_od in the DB
     val crossref = new EventsEventpersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
       entityId, personId, relationshipType, true, recordId)
     Try((EventsEventpersoncrossref returning EventsEventpersoncrossref.map(_.id)) += crossref)
@@ -84,7 +79,6 @@ trait EventsService extends EntityServiceApi {
 
   protected def createLinkThing(entityId: Int, thingId: Int, relationshipType: String, recordId: Int)
                                (implicit session: Session): Try[Int] = {
-    // FIXME: thingID and eventID swapped around in the DB!
     val crossref = new EventsEventthingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
       entityId, thingId, relationshipType, true, recordId)
     Try((EventsEventthingcrossref returning EventsEventthingcrossref.map(_.id)) += crossref)
@@ -143,7 +137,7 @@ trait EventsService extends EntityServiceApi {
 
   protected def getOrganisations(eventID: Int)
                       (implicit session: Session): Seq[ApiOrganisationRelationship] = {
-    val links = EventsEventorganisationcrossref.filter(_.eventOd === eventID).run
+    val links = EventsEventorganisationcrossref.filter(_.eventId === eventID).run
 
     links flatMap { link: EventsEventorganisationcrossrefRow =>
       val apiOrganisation = getOrganisation(link.organisationId)
@@ -155,7 +149,7 @@ trait EventsService extends EntityServiceApi {
 
   protected def getPeople(eventID: Int)
                (implicit session: Session): Seq[ApiPersonRelationship] = {
-    val links = EventsEventpersoncrossref.filter(_.eventOd === eventID).run
+    val links = EventsEventpersoncrossref.filter(_.eventId === eventID).run
 
     links flatMap { link: EventsEventpersoncrossrefRow =>
       val apiPerson = getPerson(link.personId)

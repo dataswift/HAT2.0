@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{GetResult => GR}
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema = Array(BundleContext.schema, BundleContextless.schema, BundleJoin.schema, BundlePropertylice.schema, BundlePropertylicecondition.schema, BundlePropertyrecordCrossref.schema, BundleTable.schema, BundleTableslice.schema, BundleTableslicecondition.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataValue.schema, Entity.schema, EntitySelection.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema).reduceLeft(_ ++ _)
+  lazy val schema = Array(BundleContext.schema, BundleContextless.schema, BundleJoin.schema, BundlePropertylice.schema, BundlePropertylicecondition.schema, BundlePropertyrecordCrossref.schema, BundleTable.schema, BundleTableslice.schema, BundleTableslicecondition.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataValue.schema, Entity.schema, EntitySelection.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -759,11 +759,11 @@ trait Tables {
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param organisationId Database column organisation_id SqlType(int4)
-   *  @param eventOd Database column event_od SqlType(int4)
+   *  @param eventId Database column event_id SqlType(int4)
    *  @param relationshipType Database column relationship_type SqlType(varchar), Length(100,true)
    *  @param isCurrent Database column is_current SqlType(bool)
    *  @param relationshiprecordId Database column relationshiprecord_id SqlType(int4) */
-  case class EventsEventorganisationcrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, organisationId: Int, eventOd: Int, relationshipType: String, isCurrent: Boolean, relationshiprecordId: Int)
+  case class EventsEventorganisationcrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, organisationId: Int, eventId: Int, relationshipType: String, isCurrent: Boolean, relationshiprecordId: Int)
   /** GetResult implicit for fetching EventsEventorganisationcrossrefRow objects using plain SQL queries */
   implicit def GetResultEventsEventorganisationcrossrefRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Boolean]): GR[EventsEventorganisationcrossrefRow] = GR{
     prs => import prs._
@@ -771,9 +771,9 @@ trait Tables {
   }
   /** Table description of table events_eventorganisationcrossref. Objects of this class serve as prototypes for rows in queries. */
   class EventsEventorganisationcrossref(_tableTag: Tag) extends Table[EventsEventorganisationcrossrefRow](_tableTag, "events_eventorganisationcrossref") {
-    def * = (id, dateCreated, lastUpdated, organisationId, eventOd, relationshipType, isCurrent, relationshiprecordId) <> (EventsEventorganisationcrossrefRow.tupled, EventsEventorganisationcrossrefRow.unapply)
+    def * = (id, dateCreated, lastUpdated, organisationId, eventId, relationshipType, isCurrent, relationshiprecordId) <> (EventsEventorganisationcrossrefRow.tupled, EventsEventorganisationcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(organisationId), Rep.Some(eventOd), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> EventsEventorganisationcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(organisationId), Rep.Some(eventId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> EventsEventorganisationcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -783,8 +783,8 @@ trait Tables {
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
     /** Database column organisation_id SqlType(int4) */
     val organisationId: Rep[Int] = column[Int]("organisation_id")
-    /** Database column event_od SqlType(int4) */
-    val eventOd: Rep[Int] = column[Int]("event_od")
+    /** Database column event_id SqlType(int4) */
+    val eventId: Rep[Int] = column[Int]("event_id")
     /** Database column relationship_type SqlType(varchar), Length(100,true) */
     val relationshipType: Rep[String] = column[String]("relationship_type", O.Length(100,varying=true))
     /** Database column is_current SqlType(bool) */
@@ -793,7 +793,7 @@ trait Tables {
     val relationshiprecordId: Rep[Int] = column[Int]("relationshiprecord_id")
 
     /** Foreign key referencing EventsEvent (database name events_eventorganisationcrossref_fk) */
-    lazy val eventsEventFk = foreignKey("events_eventorganisationcrossref_fk", eventOd, EventsEvent)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    lazy val eventsEventFk = foreignKey("events_eventorganisationcrossref_fk", eventId, EventsEvent)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
     /** Foreign key referencing OrganisationsOrganisation (database name organisations_organisation_events_eventorganisationcrossref_fk) */
     lazy val organisationsOrganisationFk = foreignKey("organisations_organisation_events_eventorganisationcrossref_fk", organisationId, OrganisationsOrganisation)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
     /** Foreign key referencing SystemRelationshiprecord (database name system_relationshiprecord_events_eventorganisationcrossref_fk) */
@@ -807,11 +807,11 @@ trait Tables {
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param personId Database column person_id SqlType(int4)
-   *  @param eventOd Database column event_od SqlType(int4)
+   *  @param eventId Database column event_id SqlType(int4)
    *  @param relationshipType Database column relationship_type SqlType(varchar), Length(100,true)
    *  @param isCurrent Database column is_current SqlType(bool)
    *  @param relationshiprecordId Database column relationshiprecord_id SqlType(int4) */
-  case class EventsEventpersoncrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, personId: Int, eventOd: Int, relationshipType: String, isCurrent: Boolean, relationshiprecordId: Int)
+  case class EventsEventpersoncrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, personId: Int, eventId: Int, relationshipType: String, isCurrent: Boolean, relationshiprecordId: Int)
   /** GetResult implicit for fetching EventsEventpersoncrossrefRow objects using plain SQL queries */
   implicit def GetResultEventsEventpersoncrossrefRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Boolean]): GR[EventsEventpersoncrossrefRow] = GR{
     prs => import prs._
@@ -819,9 +819,9 @@ trait Tables {
   }
   /** Table description of table events_eventpersoncrossref. Objects of this class serve as prototypes for rows in queries. */
   class EventsEventpersoncrossref(_tableTag: Tag) extends Table[EventsEventpersoncrossrefRow](_tableTag, "events_eventpersoncrossref") {
-    def * = (id, dateCreated, lastUpdated, personId, eventOd, relationshipType, isCurrent, relationshiprecordId) <> (EventsEventpersoncrossrefRow.tupled, EventsEventpersoncrossrefRow.unapply)
+    def * = (id, dateCreated, lastUpdated, personId, eventId, relationshipType, isCurrent, relationshiprecordId) <> (EventsEventpersoncrossrefRow.tupled, EventsEventpersoncrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(personId), Rep.Some(eventOd), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> EventsEventpersoncrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(personId), Rep.Some(eventId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> EventsEventpersoncrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -831,8 +831,8 @@ trait Tables {
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
     /** Database column person_id SqlType(int4) */
     val personId: Rep[Int] = column[Int]("person_id")
-    /** Database column event_od SqlType(int4) */
-    val eventOd: Rep[Int] = column[Int]("event_od")
+    /** Database column event_id SqlType(int4) */
+    val eventId: Rep[Int] = column[Int]("event_id")
     /** Database column relationship_type SqlType(varchar), Length(100,true) */
     val relationshipType: Rep[String] = column[String]("relationship_type", O.Length(100,varying=true))
     /** Database column is_current SqlType(bool) */
@@ -841,7 +841,7 @@ trait Tables {
     val relationshiprecordId: Rep[Int] = column[Int]("relationshiprecord_id")
 
     /** Foreign key referencing EventsEvent (database name events_eventpersoncrossref_thing_id_fkey) */
-    lazy val eventsEventFk = foreignKey("events_eventpersoncrossref_thing_id_fkey", eventOd, EventsEvent)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    lazy val eventsEventFk = foreignKey("events_eventpersoncrossref_thing_id_fkey", eventId, EventsEvent)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
     /** Foreign key referencing PeoplePerson (database name people_person_people_eventpersoncrossref_fk) */
     lazy val peoplePersonFk = foreignKey("people_person_people_eventpersoncrossref_fk", personId, PeoplePerson)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
     /** Foreign key referencing SystemRelationshiprecord (database name system_relationshiprecord_events_eventpersoncrossref_fk) */
@@ -1133,12 +1133,12 @@ trait Tables {
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param locationId Database column location_id SqlType(int4)
    *  @param thingId Database column thing_id SqlType(int4)
+   *  @param locationId Database column location_id SqlType(int4)
    *  @param relationshipType Database column relationship_type SqlType(varchar), Length(100,true)
    *  @param isCurrent Database column is_current SqlType(bool)
    *  @param relationshiprecordId Database column relationshiprecord_id SqlType(int4) */
-  case class LocationsLocationthingcrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, locationId: Int, thingId: Int, relationshipType: String, isCurrent: Boolean, relationshiprecordId: Int)
+  case class LocationsLocationthingcrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, thingId: Int, locationId: Int, relationshipType: String, isCurrent: Boolean, relationshiprecordId: Int)
   /** GetResult implicit for fetching LocationsLocationthingcrossrefRow objects using plain SQL queries */
   implicit def GetResultLocationsLocationthingcrossrefRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Boolean]): GR[LocationsLocationthingcrossrefRow] = GR{
     prs => import prs._
@@ -1146,9 +1146,9 @@ trait Tables {
   }
   /** Table description of table locations_locationthingcrossref. Objects of this class serve as prototypes for rows in queries. */
   class LocationsLocationthingcrossref(_tableTag: Tag) extends Table[LocationsLocationthingcrossrefRow](_tableTag, "locations_locationthingcrossref") {
-    def * = (id, dateCreated, lastUpdated, locationId, thingId, relationshipType, isCurrent, relationshiprecordId) <> (LocationsLocationthingcrossrefRow.tupled, LocationsLocationthingcrossrefRow.unapply)
+    def * = (id, dateCreated, lastUpdated, thingId, locationId, relationshipType, isCurrent, relationshiprecordId) <> (LocationsLocationthingcrossrefRow.tupled, LocationsLocationthingcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(locationId), Rep.Some(thingId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> LocationsLocationthingcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(thingId), Rep.Some(locationId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> LocationsLocationthingcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -1156,10 +1156,10 @@ trait Tables {
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column location_id SqlType(int4) */
-    val locationId: Rep[Int] = column[Int]("location_id")
     /** Database column thing_id SqlType(int4) */
     val thingId: Rep[Int] = column[Int]("thing_id")
+    /** Database column location_id SqlType(int4) */
+    val locationId: Rep[Int] = column[Int]("location_id")
     /** Database column relationship_type SqlType(varchar), Length(100,true) */
     val relationshipType: Rep[String] = column[String]("relationship_type", O.Length(100,varying=true))
     /** Database column is_current SqlType(bool) */
@@ -1457,7 +1457,7 @@ trait Tables {
   lazy val OrganisationsOrganisationlocationcrossref = new TableQuery(tag => new OrganisationsOrganisationlocationcrossref(tag))
 
   /** Entity class storing rows of table OrganisationsOrganisationthingcrossref
-   *  @param id Database column id SqlType(varchar), AutoInc, PrimaryKey
+   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param thingId Database column thing_id SqlType(int4)
@@ -1465,11 +1465,11 @@ trait Tables {
    *  @param relationshipType Database column relationship_type SqlType(varchar), Length(100,true)
    *  @param isCurrent Database column is_current SqlType(bool)
    *  @param relationshiprecordId Database column relationshiprecord_id SqlType(int4) */
-  case class OrganisationsOrganisationthingcrossrefRow(id: String, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, thingId: Int, organisationId: Int, relationshipType: String, isCurrent: Boolean, relationshiprecordId: Int)
+  case class OrganisationsOrganisationthingcrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, thingId: Int, organisationId: Int, relationshipType: String, isCurrent: Boolean, relationshiprecordId: Int)
   /** GetResult implicit for fetching OrganisationsOrganisationthingcrossrefRow objects using plain SQL queries */
-  implicit def GetResultOrganisationsOrganisationthingcrossrefRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime], e2: GR[Int], e3: GR[Boolean]): GR[OrganisationsOrganisationthingcrossrefRow] = GR{
+  implicit def GetResultOrganisationsOrganisationthingcrossrefRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Boolean]): GR[OrganisationsOrganisationthingcrossrefRow] = GR{
     prs => import prs._
-    OrganisationsOrganisationthingcrossrefRow.tupled((<<[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
+    OrganisationsOrganisationthingcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table organisations_organisationthingcrossref. Objects of this class serve as prototypes for rows in queries. */
   class OrganisationsOrganisationthingcrossref(_tableTag: Tag) extends Table[OrganisationsOrganisationthingcrossrefRow](_tableTag, "organisations_organisationthingcrossref") {
@@ -1477,8 +1477,8 @@ trait Tables {
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(thingId), Rep.Some(organisationId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> OrganisationsOrganisationthingcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column id SqlType(varchar), AutoInc, PrimaryKey */
-    val id: Rep[String] = column[String]("id", O.AutoInc, O.PrimaryKey)
+    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
+    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
     /** Database column date_created SqlType(timestamp) */
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
@@ -1663,7 +1663,7 @@ trait Tables {
   /** Collection-like TableQuery object for table OrganisationsSystempropertystaticcrossref */
   lazy val OrganisationsSystempropertystaticcrossref = new TableQuery(tag => new OrganisationsSystempropertystaticcrossref(tag))
 
-  /** Entity class storing rows of table OrganisationSystemtypecrossref
+  /** Entity class storing rows of table OrganisationsSystemtypecrossref
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
@@ -1671,17 +1671,17 @@ trait Tables {
    *  @param systemTypeId Database column system_type_id SqlType(int4)
    *  @param relationshipType Database column relationship_type SqlType(varchar), Length(100,true)
    *  @param isCurrent Database column is_current SqlType(bool) */
-  case class OrganisationSystemtypecrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, organisationId: Int, systemTypeId: Int, relationshipType: String, isCurrent: Boolean)
-  /** GetResult implicit for fetching OrganisationSystemtypecrossrefRow objects using plain SQL queries */
-  implicit def GetResultOrganisationSystemtypecrossrefRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Boolean]): GR[OrganisationSystemtypecrossrefRow] = GR{
+  case class OrganisationsSystemtypecrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, organisationId: Int, systemTypeId: Int, relationshipType: String, isCurrent: Boolean)
+  /** GetResult implicit for fetching OrganisationsSystemtypecrossrefRow objects using plain SQL queries */
+  implicit def GetResultOrganisationsSystemtypecrossrefRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Boolean]): GR[OrganisationsSystemtypecrossrefRow] = GR{
     prs => import prs._
-    OrganisationSystemtypecrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean]))
+    OrganisationsSystemtypecrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean]))
   }
-  /** Table description of table organisation_systemtypecrossref. Objects of this class serve as prototypes for rows in queries. */
-  class OrganisationSystemtypecrossref(_tableTag: Tag) extends Table[OrganisationSystemtypecrossrefRow](_tableTag, "organisation_systemtypecrossref") {
-    def * = (id, dateCreated, lastUpdated, organisationId, systemTypeId, relationshipType, isCurrent) <> (OrganisationSystemtypecrossrefRow.tupled, OrganisationSystemtypecrossrefRow.unapply)
+  /** Table description of table organisations_systemtypecrossref. Objects of this class serve as prototypes for rows in queries. */
+  class OrganisationsSystemtypecrossref(_tableTag: Tag) extends Table[OrganisationsSystemtypecrossrefRow](_tableTag, "organisations_systemtypecrossref") {
+    def * = (id, dateCreated, lastUpdated, organisationId, systemTypeId, relationshipType, isCurrent) <> (OrganisationsSystemtypecrossrefRow.tupled, OrganisationsSystemtypecrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(organisationId), Rep.Some(systemTypeId), Rep.Some(relationshipType), Rep.Some(isCurrent)).shaped.<>({r=>import r._; _1.map(_=> OrganisationSystemtypecrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(organisationId), Rep.Some(systemTypeId), Rep.Some(relationshipType), Rep.Some(isCurrent)).shaped.<>({r=>import r._; _1.map(_=> OrganisationsSystemtypecrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -1698,13 +1698,13 @@ trait Tables {
     /** Database column is_current SqlType(bool) */
     val isCurrent: Rep[Boolean] = column[Boolean]("is_current")
 
-    /** Foreign key referencing OrganisationsOrganisation (database name organisations_organisation_organisation_systemtypecrossref_fk) */
-    lazy val organisationsOrganisationFk = foreignKey("organisations_organisation_organisation_systemtypecrossref_fk", organisationId, OrganisationsOrganisation)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing SystemType (database name system_type_organisation_systemtypecrossref_fk) */
-    lazy val systemTypeFk = foreignKey("system_type_organisation_systemtypecrossref_fk", systemTypeId, SystemType)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing OrganisationsOrganisation (database name organisations_organisation_organisations_systemtypecrossref_fk) */
+    lazy val organisationsOrganisationFk = foreignKey("organisations_organisation_organisations_systemtypecrossref_fk", organisationId, OrganisationsOrganisation)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing SystemType (database name system_type_organisations_systemtypecrossref_fk) */
+    lazy val systemTypeFk = foreignKey("system_type_organisations_systemtypecrossref_fk", systemTypeId, SystemType)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
   }
-  /** Collection-like TableQuery object for table OrganisationSystemtypecrossref */
-  lazy val OrganisationSystemtypecrossref = new TableQuery(tag => new OrganisationSystemtypecrossref(tag))
+  /** Collection-like TableQuery object for table OrganisationsSystemtypecrossref */
+  lazy val OrganisationsSystemtypecrossref = new TableQuery(tag => new OrganisationsSystemtypecrossref(tag))
 
   /** Entity class storing rows of table PeoplePerson
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
@@ -1790,12 +1790,12 @@ trait Tables {
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param personId Database column person_id SqlType(int4)
    *  @param organisationId Database column organisation_id SqlType(int4)
+   *  @param personId Database column person_id SqlType(int4)
    *  @param relationshipType Database column relationship_type SqlType(varchar), Length(100,true)
    *  @param isCurrent Database column is_current SqlType(bool)
    *  @param relationshiprecordId Database column relationshiprecord_id SqlType(int4) */
-  case class PeoplePersonorganisationcrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, personId: Int, organisationId: Int, relationshipType: String, isCurrent: Boolean, relationshiprecordId: Int)
+  case class PeoplePersonorganisationcrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, organisationId: Int, personId: Int, relationshipType: String, isCurrent: Boolean, relationshiprecordId: Int)
   /** GetResult implicit for fetching PeoplePersonorganisationcrossrefRow objects using plain SQL queries */
   implicit def GetResultPeoplePersonorganisationcrossrefRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Boolean]): GR[PeoplePersonorganisationcrossrefRow] = GR{
     prs => import prs._
@@ -1803,9 +1803,9 @@ trait Tables {
   }
   /** Table description of table people_personorganisationcrossref. Objects of this class serve as prototypes for rows in queries. */
   class PeoplePersonorganisationcrossref(_tableTag: Tag) extends Table[PeoplePersonorganisationcrossrefRow](_tableTag, "people_personorganisationcrossref") {
-    def * = (id, dateCreated, lastUpdated, personId, organisationId, relationshipType, isCurrent, relationshiprecordId) <> (PeoplePersonorganisationcrossrefRow.tupled, PeoplePersonorganisationcrossrefRow.unapply)
+    def * = (id, dateCreated, lastUpdated, organisationId, personId, relationshipType, isCurrent, relationshiprecordId) <> (PeoplePersonorganisationcrossrefRow.tupled, PeoplePersonorganisationcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(personId), Rep.Some(organisationId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> PeoplePersonorganisationcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(organisationId), Rep.Some(personId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> PeoplePersonorganisationcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -1813,10 +1813,10 @@ trait Tables {
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column person_id SqlType(int4) */
-    val personId: Rep[Int] = column[Int]("person_id")
     /** Database column organisation_id SqlType(int4) */
     val organisationId: Rep[Int] = column[Int]("organisation_id")
+    /** Database column person_id SqlType(int4) */
+    val personId: Rep[Int] = column[Int]("person_id")
     /** Database column relationship_type SqlType(varchar), Length(100,true) */
     val relationshipType: Rep[String] = column[String]("relationship_type", O.Length(100,varying=true))
     /** Database column is_current SqlType(bool) */
