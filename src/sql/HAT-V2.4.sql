@@ -855,28 +855,28 @@ CREATE INDEX events_eventorganisationcrossref_event_id
 ON public.events_eventorganisationcrossref USING BTREE
 (event_id);
 
-CREATE SEQUENCE public.organisation_systemtypecrossref_id_seq;
+CREATE SEQUENCE public.organisations_systemtypecrossref_id_seq;
 
-CREATE TABLE public.organisation_systemtypecrossref (
-  id                INTEGER      NOT NULL DEFAULT nextval('public.organisation_systemtypecrossref_id_seq'),
+CREATE TABLE public.organisations_systemtypecrossref (
+  id                INTEGER      NOT NULL DEFAULT nextval('public.organisations_systemtypecrossref_id_seq'),
   date_created      TIMESTAMP    NOT NULL,
   last_updated      TIMESTAMP    NOT NULL,
   organisation_id   INTEGER      NOT NULL,
   system_type_id    INTEGER      NOT NULL,
   relationship_type VARCHAR(100) NOT NULL,
   is_current        BOOLEAN      NOT NULL,
-  CONSTRAINT organisation_systemtypecrossref_pkey PRIMARY KEY (id)
+  CONSTRAINT organisations_systemtypecrossref_pkey PRIMARY KEY (id)
 );
 
 
-ALTER SEQUENCE public.organisation_systemtypecrossref_id_seq OWNED BY public.organisation_systemtypecrossref.id;
+ALTER SEQUENCE public.organisations_systemtypecrossref_id_seq OWNED BY public.organisations_systemtypecrossref.id;
 
-CREATE INDEX organisation_systemtypecrossref_organisation_id
-ON public.organisation_systemtypecrossref USING BTREE
+CREATE INDEX organisations_systemtypecrossref_organisation_id
+ON public.organisations_systemtypecrossref USING BTREE
 (organisation_id);
 
-CREATE INDEX organisation_systemtypecrossref_system_type_id
-ON public.organisation_systemtypecrossref USING BTREE
+CREATE INDEX organisations_systemtypecrossref_system_type_id
+ON public.organisations_systemtypecrossref USING BTREE
 (system_type_id);
 
 CREATE SEQUENCE public.people_personorganisationcrossref_id_seq;
@@ -1546,7 +1546,7 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
-ALTER TABLE public.organisation_systemtypecrossref ADD CONSTRAINT system_type_organisation_systemtypecrossref_fk
+ALTER TABLE public.organisations_systemtypecrossref ADD CONSTRAINT system_type_organisations_systemtypecrossref_fk
 FOREIGN KEY (system_type_id)
 REFERENCES public.system_type (id)
 ON DELETE NO ACTION
@@ -1987,7 +1987,7 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 DEFERRABLE INITIALLY DEFERRED;
 
-ALTER TABLE public.organisation_systemtypecrossref ADD CONSTRAINT organisations_organisation_organisation_systemtypecrossref_fk
+ALTER TABLE public.organisations_systemtypecrossref ADD CONSTRAINT organisations_organisation_organisations_systemtypecrossref_fk
 FOREIGN KEY (organisation_id)
 REFERENCES public.organisations_organisation (id)
 ON DELETE NO ACTION
