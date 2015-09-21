@@ -59,7 +59,7 @@ trait ThingsService extends EntityServiceApi {
                                 (implicit session: Session): Try[Int] = {
     // FIXME: personID and thingID swapped around in the DB!
     val crossref = new ThingsThingpersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      personId, entityId, relationshipType, true, recordId)
+      entityId, personId, relationshipType, true, recordId)
     Try((ThingsThingpersoncrossref returning ThingsThingpersoncrossref.map(_.id)) += crossref)
   }
 

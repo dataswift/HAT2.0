@@ -60,7 +60,7 @@ trait EventsService extends EntityServiceApi {
                                   (implicit session: Session): Try[Int] = {
     // FIXME: locationID and eventID swapped around in the DB!
     val crossref = new EventsEventlocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      locationId, entityId, relationshipType, true, recordId)
+      entityId, locationId, relationshipType, true, recordId)
     Try((EventsEventlocationcrossref returning EventsEventlocationcrossref.map(_.id)) += crossref)
   }
 
@@ -69,7 +69,7 @@ trait EventsService extends EntityServiceApi {
     // FIXME: organisationID and eventID swapped around in the DB!
     // FIXME: event_od in the DB
     val crossref = new EventsEventorganisationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      organisationId, entityId, relationshipType, true, recordId)
+      entityId, organisationId, relationshipType, true, recordId)
     Try((EventsEventorganisationcrossref returning EventsEventorganisationcrossref.map(_.id)) += crossref)
   }
 
@@ -78,7 +78,7 @@ trait EventsService extends EntityServiceApi {
     // FIXME: personID and eventID swapped around in the DB!
     // FIXME: event_od in the DB
     val crossref = new EventsEventpersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      personId, entityId, relationshipType, true, recordId)
+      entityId, personId, relationshipType, true, recordId)
     Try((EventsEventpersoncrossref returning EventsEventpersoncrossref.map(_.id)) += crossref)
   }
 
@@ -86,7 +86,7 @@ trait EventsService extends EntityServiceApi {
                                (implicit session: Session): Try[Int] = {
     // FIXME: thingID and eventID swapped around in the DB!
     val crossref = new EventsEventthingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      thingId, entityId, relationshipType, true, recordId)
+      entityId, thingId, relationshipType, true, recordId)
     Try((EventsEventthingcrossref returning EventsEventthingcrossref.map(_.id)) += crossref)
   }
 

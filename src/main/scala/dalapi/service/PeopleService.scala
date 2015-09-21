@@ -112,7 +112,7 @@ trait PeopleService extends EntityServiceApi {
                                   (implicit session: Session): Try[Int] = {
     // FIXME: locationID and personID swapped around in the DB!
     val crossref = new PeoplePersonlocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      locationId, entityId, relationshipType, true, recordId)
+      entityId, locationId, relationshipType, true, recordId)
     Try((PeoplePersonlocationcrossref returning PeoplePersonlocationcrossref.map(_.id)) += crossref)
   }
 

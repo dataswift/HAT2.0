@@ -53,7 +53,7 @@ trait OrganisationsService extends EntityServiceApi {
                                   (implicit session: Session): Try[Int] = {
     // FIXME: locationID and OrganisationID swapped around in the DB!
     val crossref = new OrganisationsOrganisationlocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      locationId, entityId, relationshipType, true, recordId)
+      entityId, locationId, relationshipType, true, recordId)
     Try((OrganisationsOrganisationlocationcrossref returning OrganisationsOrganisationlocationcrossref.map(_.id)) += crossref)
   }
 
@@ -62,7 +62,7 @@ trait OrganisationsService extends EntityServiceApi {
     // FIXME: thingID and OrganisationID swapped around in the DB!
     // FIXME: OrganisationsOrganisationthingcrossrefRow ID is STRING
 //    val crossref = new OrganisationsOrganisationthingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-//      thingId, entityId, relationshipType, true, recordId)
+//      entityId, thingId, relationshipType, true, recordId)
 //    Try((OrganisationsOrganisationthingcrossref returning OrganisationsOrganisationthingcrossref.map(_.id)) += crossref)
     Failure(new NotImplementedError("Operation Not Supprted"))
   }
