@@ -737,7 +737,7 @@ ALTER SEQUENCE public.organisations_organisation_id_seq OWNED BY public.organisa
 CREATE SEQUENCE public.organisations_organisationthingcrossref_id_seq;
 
 CREATE TABLE public.organisations_organisationthingcrossref (
-  id                    VARCHAR      NOT NULL DEFAULT nextval('public.organisations_organisationthingcrossref_id_seq'),
+  id                    INTEGER      NOT NULL DEFAULT nextval('public.organisations_organisationthingcrossref_id_seq'),
   date_created          TIMESTAMP    NOT NULL,
   last_updated          TIMESTAMP    NOT NULL,
   thing_id              INTEGER      NOT NULL,
