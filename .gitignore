@@ -13,3 +13,6 @@ include “application.conf"`
 
 *.conf
 /heroku-deploy.sh
+codegen/src/main/resources/application.conf
+
+src/main/resources/application.conf
