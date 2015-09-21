@@ -971,7 +971,7 @@ CREATE SEQUENCE public.bundle_context_id_seq;
 
 CREATE TABLE public.bundle_context (
   id                  INTEGER   NOT NULL DEFAULT nextval('public.bundle_context_id_seq'),
-  parent_bundle_id    INTEGER   NOT NULL,
+  parent_bundle_id    INTEGER,
   date_created        TIMESTAMP NOT NULL,
   last_updated        TIMESTAMP NOT NULL,
   name                VARCHAR   NOT NULL,
