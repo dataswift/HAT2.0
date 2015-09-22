@@ -1,9 +1,9 @@
-@@ -0,0 +1,418 @@
 package dalapi.service
 
 import dal.SlickPostgresDriver.simple._
 import dal.Tables._
 import dalapi.models._
+import dalapi.DatabaseInfo
 import org.joda.time.LocalDateTime
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
@@ -12,7 +12,7 @@ import spray.routing._
 import scala.util.{Failure, Try, Success}
 
 // this trait defines our service behavior independently from the service actor
-trait ContextualBundleService extends HttpService with InboundService {
+trait ContextualBundleService extends HttpService with DatabaseInfo {
 
   val routes = {
     pathPrefix("bundles") {
@@ -149,7 +149,7 @@ trait ContextualBundleService extends HttpService with InboundService {
     (bundlepropertyrecordcrossrefId: Int) =>
       get {
         db.withSession { implicit session =>
-          val entityselection = bundlepropertyrecordcrossrefById(bundlepropertyrecordcrossrefId)
+          val bundlepropertyrecordcrossref = bundlepropertyrecordcrossrefById(bundlepropertyrecordcrossrefId)
 
           complete {
             bundle match {
@@ -180,7 +180,7 @@ trait ContextualBundleService extends HttpService with InboundService {
    */
   private def storeBundleContext(bundleContext: ApiBundleContext)(implicit session: Session): Try[ApiBundleContext] = {
     // Require the bundle to be based on a data table that already exists
-    bundleContext.table.id match {
+    bundleContext.entity.id match {
       case Some(bundlecontextId) =>
         val bundleContextRow = new bundleContextRow(0, parentbundleId, LocalDateTime.now(), LocalDateTime.now(), bundleTable.name, entityselectionId)
 
