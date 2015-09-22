@@ -41,6 +41,8 @@ trait OrganisationsService extends EntityServiceApi {
       complete {
         result match {
           case Success(createdOrganisation) =>
+            val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdOrganisation.name, "organisation", None, None, None, Some(createdOrganisation.id), None)
+            Try(Entity += newEntity)
             ApiOrganisation.fromDbModel(createdOrganisation)
           case Failure(e) =>
             (BadRequest, e.getMessage)

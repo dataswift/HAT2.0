@@ -42,6 +42,8 @@ trait PeopleService extends EntityServiceApi {
       complete {
         result match {
           case Success(createdPerson) =>
+            val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdPerson.name, "person", None, None, None, None, Some(createdPerson.id))
+            Try(Entity += newEntity)
             ApiPerson.fromDbModel(createdPerson)
           case Failure(e) =>
             (BadRequest, e.getMessage)

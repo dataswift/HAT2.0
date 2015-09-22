@@ -19,27 +19,27 @@ trait Tables {
 
   /** Entity class storing rows of table BundleContext
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
-   *  @param parentBundleId Database column parent_bundle_id SqlType(int4)
+   *  @param parentBundleId Database column parent_bundle_id SqlType(int4), Default(None)
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param name Database column name SqlType(varchar)
    *  @param entitySelectionId Database column entity_selection_id SqlType(int4) */
-  case class BundleContextRow(id: Int, parentBundleId: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, entitySelectionId: Int)
+  case class BundleContextRow(id: Int, parentBundleId: Option[Int] = None, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, entitySelectionId: Int)
   /** GetResult implicit for fetching BundleContextRow objects using plain SQL queries */
-  implicit def GetResultBundleContextRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[BundleContextRow] = GR{
+  implicit def GetResultBundleContextRow(implicit e0: GR[Int], e1: GR[Option[Int]], e2: GR[org.joda.time.LocalDateTime], e3: GR[String]): GR[BundleContextRow] = GR{
     prs => import prs._
-    BundleContextRow.tupled((<<[Int], <<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int]))
+    BundleContextRow.tupled((<<[Int], <<?[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int]))
   }
   /** Table description of table bundle_context. Objects of this class serve as prototypes for rows in queries. */
   class BundleContext(_tableTag: Tag) extends Table[BundleContextRow](_tableTag, "bundle_context") {
     def * = (id, parentBundleId, dateCreated, lastUpdated, name, entitySelectionId) <> (BundleContextRow.tupled, BundleContextRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(parentBundleId), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(entitySelectionId)).shaped.<>({r=>import r._; _1.map(_=> BundleContextRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), parentBundleId, Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(entitySelectionId)).shaped.<>({r=>import r._; _1.map(_=> BundleContextRow.tupled((_1.get, _2, _3.get, _4.get, _5.get, _6.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
-    /** Database column parent_bundle_id SqlType(int4) */
-    val parentBundleId: Rep[Int] = column[Int]("parent_bundle_id")
+    /** Database column parent_bundle_id SqlType(int4), Default(None) */
+    val parentBundleId: Rep[Option[Int]] = column[Option[Int]]("parent_bundle_id", O.Default(None))
     /** Database column date_created SqlType(timestamp) */
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
@@ -50,7 +50,7 @@ trait Tables {
     val entitySelectionId: Rep[Int] = column[Int]("entity_selection_id")
 
     /** Foreign key referencing BundleContext (database name bundle_context_bundle_context_fk) */
-    lazy val bundleContextFk = foreignKey("bundle_context_bundle_context_fk", parentBundleId, BundleContext)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    lazy val bundleContextFk = foreignKey("bundle_context_bundle_context_fk", parentBundleId, BundleContext)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
     /** Foreign key referencing EntitySelection (database name entity_selection_bundle_context_fk) */
     lazy val entitySelectionFk = foreignKey("entity_selection_bundle_context_fk", entitySelectionId, EntitySelection)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
   }
@@ -587,22 +587,22 @@ trait Tables {
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param name Database column name SqlType(varchar), Length(100,true)
    *  @param kind Database column kind SqlType(varchar), Length(100,true)
-   *  @param locationId Database column location_id SqlType(int4)
-   *  @param thingId Database column thing_id SqlType(int4)
-   *  @param eventId Database column event_id SqlType(int4)
-   *  @param organisationId Database column organisation_id SqlType(int4)
-   *  @param personId Database column person_id SqlType(int4) */
-  case class EntityRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, kind: String, locationId: Int, thingId: Int, eventId: Int, organisationId: Int, personId: Int)
+   *  @param locationId Database column location_id SqlType(int4), Default(None)
+   *  @param thingId Database column thing_id SqlType(int4), Default(None)
+   *  @param eventId Database column event_id SqlType(int4), Default(None)
+   *  @param organisationId Database column organisation_id SqlType(int4), Default(None)
+   *  @param personId Database column person_id SqlType(int4), Default(None) */
+  case class EntityRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, kind: String, locationId: Option[Int] = None, thingId: Option[Int] = None, eventId: Option[Int] = None, organisationId: Option[Int] = None, personId: Option[Int] = None)
   /** GetResult implicit for fetching EntityRow objects using plain SQL queries */
-  implicit def GetResultEntityRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[EntityRow] = GR{
+  implicit def GetResultEntityRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Option[Int]]): GR[EntityRow] = GR{
     prs => import prs._
-    EntityRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[String], <<[Int], <<[Int], <<[Int], <<[Int], <<[Int]))
+    EntityRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[String], <<?[Int], <<?[Int], <<?[Int], <<?[Int], <<?[Int]))
   }
   /** Table description of table entity. Objects of this class serve as prototypes for rows in queries. */
   class Entity(_tableTag: Tag) extends Table[EntityRow](_tableTag, "entity") {
     def * = (id, dateCreated, lastUpdated, name, kind, locationId, thingId, eventId, organisationId, personId) <> (EntityRow.tupled, EntityRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(kind), Rep.Some(locationId), Rep.Some(thingId), Rep.Some(eventId), Rep.Some(organisationId), Rep.Some(personId)).shaped.<>({r=>import r._; _1.map(_=> EntityRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get, _10.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(kind), locationId, thingId, eventId, organisationId, personId).shaped.<>({r=>import r._; _1.map(_=> EntityRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7, _8, _9, _10)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -614,27 +614,27 @@ trait Tables {
     val name: Rep[String] = column[String]("name", O.Length(100,varying=true))
     /** Database column kind SqlType(varchar), Length(100,true) */
     val kind: Rep[String] = column[String]("kind", O.Length(100,varying=true))
-    /** Database column location_id SqlType(int4) */
-    val locationId: Rep[Int] = column[Int]("location_id")
-    /** Database column thing_id SqlType(int4) */
-    val thingId: Rep[Int] = column[Int]("thing_id")
-    /** Database column event_id SqlType(int4) */
-    val eventId: Rep[Int] = column[Int]("event_id")
-    /** Database column organisation_id SqlType(int4) */
-    val organisationId: Rep[Int] = column[Int]("organisation_id")
-    /** Database column person_id SqlType(int4) */
-    val personId: Rep[Int] = column[Int]("person_id")
+    /** Database column location_id SqlType(int4), Default(None) */
+    val locationId: Rep[Option[Int]] = column[Option[Int]]("location_id", O.Default(None))
+    /** Database column thing_id SqlType(int4), Default(None) */
+    val thingId: Rep[Option[Int]] = column[Option[Int]]("thing_id", O.Default(None))
+    /** Database column event_id SqlType(int4), Default(None) */
+    val eventId: Rep[Option[Int]] = column[Option[Int]]("event_id", O.Default(None))
+    /** Database column organisation_id SqlType(int4), Default(None) */
+    val organisationId: Rep[Option[Int]] = column[Option[Int]]("organisation_id", O.Default(None))
+    /** Database column person_id SqlType(int4), Default(None) */
+    val personId: Rep[Option[Int]] = column[Option[Int]]("person_id", O.Default(None))
 
     /** Foreign key referencing EventsEvent (database name events_event_entity_fk) */
-    lazy val eventsEventFk = foreignKey("events_event_entity_fk", eventId, EventsEvent)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    lazy val eventsEventFk = foreignKey("events_event_entity_fk", eventId, EventsEvent)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
     /** Foreign key referencing LocationsLocation (database name locations_location_entity_fk) */
-    lazy val locationsLocationFk = foreignKey("locations_location_entity_fk", locationId, LocationsLocation)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    lazy val locationsLocationFk = foreignKey("locations_location_entity_fk", locationId, LocationsLocation)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
     /** Foreign key referencing OrganisationsOrganisation (database name organisations_organisation_entity_fk) */
-    lazy val organisationsOrganisationFk = foreignKey("organisations_organisation_entity_fk", organisationId, OrganisationsOrganisation)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    lazy val organisationsOrganisationFk = foreignKey("organisations_organisation_entity_fk", organisationId, OrganisationsOrganisation)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
     /** Foreign key referencing PeoplePerson (database name people_person_entity_fk) */
-    lazy val peoplePersonFk = foreignKey("people_person_entity_fk", personId, PeoplePerson)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    lazy val peoplePersonFk = foreignKey("people_person_entity_fk", personId, PeoplePerson)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
     /** Foreign key referencing ThingsThing (database name things_thing_entity_fk) */
-    lazy val thingsThingFk = foreignKey("things_thing_entity_fk", thingId, ThingsThing)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    lazy val thingsThingFk = foreignKey("things_thing_entity_fk", thingId, ThingsThing)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
   }
   /** Collection-like TableQuery object for table Entity */
   lazy val Entity = new TableQuery(tag => new Entity(tag))

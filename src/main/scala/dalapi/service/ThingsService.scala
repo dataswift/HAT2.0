@@ -40,6 +40,8 @@ trait ThingsService extends EntityServiceApi {
       complete {
         result match {
           case Success(createdThing) =>
+            val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdThing.name, "thing", None, Some(createdThing.id), None, None, None)
+            Try(Entity += newEntity)
             ApiThing.fromDbModel(createdThing)
           case Failure(e) =>
             (BadRequest, e.getMessage)

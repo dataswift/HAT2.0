@@ -48,6 +48,8 @@ trait EventsService extends EntityServiceApi {
       complete {
         result match {
           case Success(createdEvent) =>
+            val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdEvent.name, "event", None, None, Some(createdEvent.id), None, None)
+            Try(Entity += newEntity)
             ApiEvent.fromDbModel(createdEvent)
           case Failure(e) =>
             (BadRequest, e.getMessage)
