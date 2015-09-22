@@ -308,23 +308,5 @@ trait ContextualBundleService extends HttpService with DatabaseInfo {
         Seq()
     }
   }
-
-  private def storeBundleConext(bundle: ApiBundleConext)
-                                    (implicit session: Session): Try[ApiBundleConext] = {
-    val bundleConextRow = new BundleConextRow(0, LocalDateTime.now(), LocalDateTime.now(), bundle.name)
-
-    Try((BundleConext returning BundleConext) += bundleConextRow) flatMap { insertedBundle =>
-      val bundleApi = ApiBundleConext.fromBundleConextTables(insertedBundle)(bundle.tables)
-      val storedCombinations = bundleApi.tables map { combination =>
-        storeBundleCombination(combination)(bundleApi)
-      }
-
-      flatten(storedCombinations) map { apiCombinations =>
-        bundleApi.copy(tables = apiCombinations)
-      }
-    }
-  }
-
-
 }
 \ No newline at end of file
