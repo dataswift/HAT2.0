@@ -925,11 +925,11 @@ CREATE TABLE public.entity (
   last_updated    TIMESTAMP    NOT NULL,
   name            VARCHAR(100) NOT NULL,
   kind            VARCHAR(100) NOT NULL,
-  location_id     INTEGER      NOT NULL,
-  thing_id        INTEGER      NOT NULL,
-  event_id        INTEGER      NOT NULL,
-  organisation_id INTEGER      NOT NULL,
-  person_id       INTEGER      NOT NULL,
+  location_id     INTEGER,      
+  thing_id        INTEGER,      
+  event_id        INTEGER,      
+  organisation_id INTEGER,      
+  person_id       INTEGER,
   CONSTRAINT entity_pk PRIMARY KEY (id),
   CONSTRAINT kind CHECK
   (CASE WHEN location_id IS NOT NULL AND kind = 'location'
