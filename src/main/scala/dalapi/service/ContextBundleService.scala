@@ -213,25 +213,6 @@ trait ContextualBundleService extends HttpService with DatabaseInfo {
     }
 
   }
-//CONVERTED TO HERE
-  private def getBundleEntitySelectionById(bundleTableId: Int)(implicit session: Session): Option[ApiBundleTable] = {
-    // Traversing entity graph the Slick way
-    val tableQuery = for {
-      bundleTable <- BundleTable.filter(_.id === bundleTableId)
-      dataTable <- bundleTable.dataTableFk
-    } yield (bundleTable, dataTable)
-
-    val table = tableQuery.run.headOption
-
-    // Map back from database types to API ones
-    table map {
-      case (bundleTable: BundleTableRow, dataTable: DataTableRow) =>
-        val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
-        val apiBundleTable = ApiBundleTable.fromBundleTable(bundleTable)(apiDataTable)
-        val slices = getbundlePropertySlices(apiBundleTable)
-        apiBundleTable.copy(slices = slices)
-    }
-  }
 
   private def storePropertySlice(bundleTable: ApiBundleTable)
                         (slice: ApiBundlePropertySlice)
@@ -295,7 +276,7 @@ trait ContextualBundleService extends HttpService with DatabaseInfo {
       case (Some(condition.field.tableId), Some(fieldId), Some(sliceId)) =>
         val conditionRow = new bundlePropertySliceconditionRow(
           0, LocalDateTime.now(), LocalDateTime.now(),
-          fieldId, sliceId, condition.operator.toString, condition.value)
+          propertysliceId, condition.operator.toString, condition.value)
 
         Try((bundlePropertySlicecondition returning bundlePropertySlicecondition) += conditionRow) map { insertedCondition =>
           ApiBundleTableCondition.frombundlePropertySliceCondition(insertedCondition)(condition.field)
