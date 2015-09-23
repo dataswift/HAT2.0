@@ -24,6 +24,7 @@ trait EventsService extends EntityServiceApi {
     pathPrefix(entityKind) {
       createApi ~
         getApi ~
+        getApiValues ~
         linkToLocation ~
         linkToOrganisation ~
         linkToPerson ~
@@ -33,7 +34,9 @@ trait EventsService extends EntityServiceApi {
         linkToPropertyDynamic ~
         addTypeApi ~
         getPropertiesStaticApi ~
-        getPropertiesDynamicApi
+        getPropertiesDynamicApi ~
+        getPropertyStaticValueApi ~
+        getPropertyDynamicValueApi
     }
   }
 
@@ -212,14 +215,14 @@ trait EventsService extends EntityServiceApi {
     }
   }
 
-  override protected def getPropertyStaticValues(eventId: Int, propertyRelationshipId: Int)
+  protected def getPropertyStaticValues(eventId: Int, propertyRelationshipId: Int)
                                        (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
     val crossrefQuery = EventsSystempropertystaticcrossref.filter(_.eventId === eventId).filter(_.id === propertyRelationshipId)
     val propertyRelationships = getPropertiesStaticQuery(crossrefQuery)
     propertyRelationships.map(propertyService.getPropertyRelationshipValues)
   }
 
-  override protected def getPropertyDynamicValues(eventId: Int, propertyRelationshipId: Int)
+  protected def getPropertyDynamicValues(eventId: Int, propertyRelationshipId: Int)
                                                  (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
     val crossrefQuery = EventsSystempropertydynamiccrossref.filter(_.eventId === eventId).filter(_.id === propertyRelationshipId)
     val propertyRelationships = getPropertiesDynamicQuery(crossrefQuery)

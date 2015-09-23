@@ -19,14 +19,17 @@ trait LocationsService extends EntityServiceApi {
   val routes = {
     pathPrefix(entityKind) {
       createApi ~
-      getApi ~
-      linkToLocation ~
-      linkToThing ~
-      linkToPropertyStatic ~
-      linkToPropertyDynamic ~
-      addTypeApi ~
-      getPropertiesStaticApi ~
-      getPropertiesDynamicApi
+        getApi ~
+        getApiValues ~
+        linkToLocation ~
+        linkToThing ~
+        linkToPropertyStatic ~
+        linkToPropertyDynamic ~
+        addTypeApi ~
+        getPropertiesStaticApi ~
+        getPropertiesDynamicApi ~
+        getPropertyStaticValueApi ~
+        getPropertyDynamicValueApi
     }
   }
 
@@ -182,6 +185,20 @@ trait LocationsService extends EntityServiceApi {
       case true =>
         properties.map(propertyService.getPropertyRelationshipValues)
     }
+  }
+
+  protected def getPropertyStaticValues(locationId: Int, propertyRelationshipId: Int)
+                                       (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
+    val crossrefQuery = LocationsSystempropertystaticcrossref.filter(_.locationId === locationId).filter(_.id === propertyRelationshipId)
+    val propertyRelationships = getPropertiesStaticQuery(crossrefQuery)
+    propertyRelationships.map(propertyService.getPropertyRelationshipValues)
+  }
+
+  protected def getPropertyDynamicValues(locationId: Int, propertyRelationshipId: Int)
+                                        (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+    val crossrefQuery = LocationsSystempropertydynamiccrossref.filter(_.locationId === locationId).filter(_.id === propertyRelationshipId)
+    val propertyRelationships = getPropertiesDynamicQuery(crossrefQuery)
+    propertyRelationships.map(propertyService.getPropertyRelationshipValues)
   }
 
   private def getPropertiesStaticQuery(crossrefQuery: Query[LocationsSystempropertystaticcrossref, LocationsSystempropertystaticcrossrefRow, Seq])

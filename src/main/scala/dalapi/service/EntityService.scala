@@ -125,16 +125,11 @@ trait EntityService {
 
   protected def getPropertiesDynamic(eventId: Int)(implicit session: Session, getValues: Boolean): Seq[ApiPropertyRelationshipDynamic]
 
-  protected def getPropertyStaticValues(eventId: Int, propertyRelationshipId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
-    Seq()
-  }
+  protected def getPropertyStaticValues(eventId: Int, propertyRelationshipId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipStatic]
 
-  protected def getPropertyDynamicValues(eventId: Int, propertyRelationshipId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
-    Seq()
-  }
+  protected def getPropertyDynamicValues(eventId: Int, propertyRelationshipId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipDynamic]
 
-  protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)
-      (implicit session: Session) : Try[Int]
+  protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)(implicit session: Session) : Try[Int]
 
   protected def createPropertyLinkStatic(entityId: Int, propertyId: Int,
                                          recordId: Int, fieldId: Int, relationshipType: String, propertyRecordId: Int)
@@ -144,6 +139,7 @@ trait EntityService {
                                           fieldId: Int, relationshipType: String, propertyRecordId: Int)
                                          (implicit session: Session) : Try[Int]
 
+  // Utility function to return None for empty sequences
   private def seqOption[T](seq: Seq[T]) : Option[Seq[T]] = {
     if (seq.isEmpty)
       None

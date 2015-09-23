@@ -19,15 +19,18 @@ trait OrganisationsService extends EntityServiceApi {
   val routes = {
     pathPrefix(entityKind) {
       createApi ~
-      getApi ~
-      linkToLocation ~
-      linkToOrganisation ~
-      linkToThing ~
-      linkToPropertyStatic ~
-      linkToPropertyDynamic ~
-      addTypeApi ~
-      getPropertiesStaticApi ~
-      getPropertiesDynamicApi
+        getApi ~
+        getApiValues ~
+        linkToLocation ~
+        linkToOrganisation ~
+        linkToThing ~
+        linkToPropertyStatic ~
+        linkToPropertyDynamic ~
+        addTypeApi ~
+        getPropertiesStaticApi ~
+        getPropertiesDynamicApi ~
+        getPropertyStaticValueApi ~
+        getPropertyDynamicValueApi
     }
   }
 
@@ -194,6 +197,20 @@ trait OrganisationsService extends EntityServiceApi {
       case true =>
         properties.map(propertyService.getPropertyRelationshipValues)
     }
+  }
+
+  protected def getPropertyStaticValues(organisationId: Int, propertyRelationshipId: Int)
+                                       (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
+    val crossrefQuery = OrganisationsSystempropertystaticcrossref.filter(_.organisationId === organisationId).filter(_.id === propertyRelationshipId)
+    val propertyRelationships = getPropertiesStaticQuery(crossrefQuery)
+    propertyRelationships.map(propertyService.getPropertyRelationshipValues)
+  }
+
+  protected def getPropertyDynamicValues(organisationId: Int, propertyRelationshipId: Int)
+                                        (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+    val crossrefQuery = OrganisationsSystempropertydynamiccrossref.filter(_.organisationId === organisationId).filter(_.id === propertyRelationshipId)
+    val propertyRelationships = getPropertiesDynamicQuery(crossrefQuery)
+    propertyRelationships.map(propertyService.getPropertyRelationshipValues)
   }
 
   private def getPropertiesStaticQuery(crossrefQuery: Query[OrganisationsSystempropertystaticcrossref, OrganisationsSystempropertystaticcrossrefRow, Seq])

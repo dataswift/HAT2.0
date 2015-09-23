@@ -19,16 +19,19 @@ trait PeopleService extends EntityServiceApi {
   val routes = {
     pathPrefix(entityKind) {
       createApi ~
-      getApi ~
-      createPersonRelationshipType ~
-      linkToPerson ~
-      linkToLocation ~
-      linkToOrganisation ~
-      linkToPropertyStatic ~
-      linkToPropertyDynamic ~
-      addTypeApi ~
-      getPropertiesStaticApi ~
-      getPropertiesDynamicApi
+        getApi ~
+        getApiValues ~
+        createPersonRelationshipType ~
+        linkToPerson ~
+        linkToLocation ~
+        linkToOrganisation ~
+        linkToPropertyStatic ~
+        linkToPropertyDynamic ~
+        addTypeApi ~
+        getPropertiesStaticApi ~
+        getPropertiesDynamicApi ~
+        getPropertyStaticValueApi ~
+        getPropertyDynamicValueApi
     }
   }
 
@@ -251,6 +254,20 @@ trait PeopleService extends EntityServiceApi {
       case true =>
         properties.map(propertyService.getPropertyRelationshipValues)
     }
+  }
+
+  protected def getPropertyStaticValues(personId: Int, propertyRelationshipId: Int)
+                                       (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
+    val crossrefQuery = PeopleSystempropertystaticcrossref.filter(_.personId === personId).filter(_.id === propertyRelationshipId)
+    val propertyRelationships = getPropertiesStaticQuery(crossrefQuery)
+    propertyRelationships.map(propertyService.getPropertyRelationshipValues)
+  }
+
+  protected def getPropertyDynamicValues(personId: Int, propertyRelationshipId: Int)
+                                        (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+    val crossrefQuery = PeopleSystempropertydynamiccrossref.filter(_.personId === personId).filter(_.id === propertyRelationshipId)
+    val propertyRelationships = getPropertiesDynamicQuery(crossrefQuery)
+    propertyRelationships.map(propertyService.getPropertyRelationshipValues)
   }
 
   private def getPropertiesStaticQuery(crossrefQuery: Query[PeopleSystempropertystaticcrossref, PeopleSystempropertystaticcrossrefRow, Seq])
