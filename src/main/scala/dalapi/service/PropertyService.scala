@@ -16,6 +16,8 @@ import scala.util.{Failure, Success, Try}
 // this trait defines our service behavior independently from the service actor
 trait PropertyService extends HttpService with DatabaseInfo {
 
+  val dataService: DataService
+
   val routes = {
     pathPrefix("property") {
       createProperty ~
@@ -56,6 +58,48 @@ trait PropertyService extends HttpService with DatabaseInfo {
           }
         }
       }
+    }
+  }
+
+  def getPropertyRelationshipValues(propertyRel: ApiPropertyRelationshipStatic)
+                                   (implicit session: Session): ApiPropertyRelationshipStatic = {
+    // For each property relationship (should only ever be one)
+    val fieldDataRetrieved = (propertyRel.field.id, propertyRel.record.id) match {
+      // that has both data field with id and data record with id
+      case (Some(propertyFieldId), Some(propertyRecordId)) =>
+        // get the values
+        dataService.getFieldRecordValue(propertyFieldId, propertyRecordId)
+      case _ =>
+        None
+    }
+    fieldDataRetrieved match {
+      case Some(fieldData) =>
+        // Copy the new Data Field with data if found
+        propertyRel.copy(field = fieldData)
+      case None =>
+        // Otherwise leave as is
+        propertyRel
+    }
+  }
+
+  def getPropertyRelationshipValues(propertyRel: ApiPropertyRelationshipDynamic)
+                                   (implicit session: Session): ApiPropertyRelationshipDynamic = {
+    // For each property relationship (should only ever be one)
+    val fieldDataRetrieved = propertyRel.field.id match {
+      // that has both data field with id and data record with id
+      case Some(propertyFieldId) =>
+        // get the values
+        dataService.getFieldValues(propertyFieldId)
+      case _ =>
+        None
+    }
+    fieldDataRetrieved match {
+      case Some(fieldData) =>
+        // Copy the new Data Field with data if found
+        propertyRel.copy(field = fieldData)
+      case None =>
+        // Otherwise leave as is
+        propertyRel
     }
   }
 

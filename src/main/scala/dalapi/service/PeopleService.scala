@@ -232,7 +232,30 @@ trait PeopleService extends EntityServiceApi {
                                    (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
 
     val crossrefQuery = PeopleSystempropertystaticcrossref.filter(_.personId === personId)
+    val properties = getPropertiesStaticQuery(crossrefQuery)
+    getValues match {
+      case false =>
+        properties
+      case true =>
+        properties.map(propertyService.getPropertyRelationshipValues)
+    }
+  }
 
+  protected def getPropertiesDynamic(personId: Int, getValues: Boolean)
+                                    (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+
+    val crossrefQuery = PeopleSystempropertydynamiccrossref.filter(_.personId === personId)
+    val properties = getPropertiesDynamicQuery(crossrefQuery)
+    getValues match {
+      case false =>
+        properties
+      case true =>
+        properties.map(propertyService.getPropertyRelationshipValues)
+    }
+  }
+
+  private def getPropertiesStaticQuery(crossrefQuery: Query[PeopleSystempropertystaticcrossref, PeopleSystempropertystaticcrossrefRow, Seq])
+                                      (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
     val dataQuery = for {
       crossref <- crossrefQuery
       property <- crossref.systemPropertyFk
@@ -251,11 +274,8 @@ trait PeopleService extends EntityServiceApi {
     }
   }
 
-  protected def getPropertiesDynamic(personId: Int, getValues: Boolean)
-                                    (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
-
-    val crossrefQuery = PeopleSystempropertydynamiccrossref.filter(_.personId === personId)
-
+  private def getPropertiesDynamicQuery(crossrefQuery: Query[PeopleSystempropertydynamiccrossref, PeopleSystempropertydynamiccrossrefRow, Seq])
+                                       (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
     val dataQuery = for {
       crossref <- crossrefQuery
       property <- crossref.systemPropertyFk
@@ -272,6 +292,5 @@ trait PeopleService extends EntityServiceApi {
         ApiPropertyRelationshipDynamic.fromDbModel(crossref, property, propertyType, propertyUom, field)
     }
   }
-
 }
 

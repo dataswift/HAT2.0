@@ -162,7 +162,30 @@ trait LocationsService extends EntityServiceApi {
                                  (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
 
     val crossrefQuery = LocationsSystempropertystaticcrossref.filter(_.locationId === locationId)
+    val properties = getPropertiesStaticQuery(crossrefQuery)
+    getValues match {
+      case false =>
+        properties
+      case true =>
+        properties.map(propertyService.getPropertyRelationshipValues)
+    }
+  }
 
+  protected def getPropertiesDynamic(locationId: Int, getValues: Boolean)
+                                  (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+
+    val crossrefQuery = LocationsSystempropertydynamiccrossref.filter(_.locationId === locationId)
+    val properties = getPropertiesDynamicQuery(crossrefQuery)
+    getValues match {
+      case false =>
+        properties
+      case true =>
+        properties.map(propertyService.getPropertyRelationshipValues)
+    }
+  }
+
+  private def getPropertiesStaticQuery(crossrefQuery: Query[LocationsSystempropertystaticcrossref, LocationsSystempropertystaticcrossrefRow, Seq])
+                                      (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
     val dataQuery = for {
       crossref <- crossrefQuery
       property <- crossref.systemPropertyFk
@@ -181,11 +204,8 @@ trait LocationsService extends EntityServiceApi {
     }
   }
 
-  protected def getPropertiesDynamic(locationId: Int, getValues: Boolean)
-                                  (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
-
-    val crossrefQuery = LocationsSystempropertydynamiccrossref.filter(_.locationId === locationId)
-
+  private def getPropertiesDynamicQuery(crossrefQuery: Query[LocationsSystempropertydynamiccrossref, LocationsSystempropertydynamiccrossrefRow, Seq])
+                                       (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
     val dataQuery = for {
       crossref <- crossrefQuery
       property <- crossref.systemPropertyFk

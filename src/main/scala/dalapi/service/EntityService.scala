@@ -11,6 +11,7 @@ import scala.util.{Failure, Try}
 trait EntityService {
   val entityKind: String
   val dataService: DataService
+  val propertyService: PropertyService
 
   protected def createEntity: routing.Route
 

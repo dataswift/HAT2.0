@@ -118,8 +118,7 @@ trait OrganisationsService extends EntityServiceApi {
    */
   protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)
                              (implicit session: Session) : Try[Int] = {
-
-//    Failure(new NotImplementedError("Adding entity to organisations not supported"))
+    
     val organisationType = new OrganisationsSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), entityId, typeId, relationship.relationshipType, true)
     Try((OrganisationsSystemtypecrossref returning OrganisationsSystemtypecrossref.map(_.id)) += organisationType)
   }
@@ -175,7 +174,30 @@ trait OrganisationsService extends EntityServiceApi {
                                    (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
 
     val crossrefQuery = OrganisationsSystempropertystaticcrossref.filter(_.organisationId === organisationId)
+    val properties = getPropertiesStaticQuery(crossrefQuery)
+    getValues match {
+      case false =>
+        properties
+      case true =>
+        properties.map(propertyService.getPropertyRelationshipValues)
+    }
+  }
 
+  protected def getPropertiesDynamic(organisationId: Int, getValues: Boolean)
+                                    (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+
+    val crossrefQuery = OrganisationsSystempropertydynamiccrossref.filter(_.organisationId === organisationId)
+    val properties = getPropertiesDynamicQuery(crossrefQuery)
+    getValues match {
+      case false =>
+        properties
+      case true =>
+        properties.map(propertyService.getPropertyRelationshipValues)
+    }
+  }
+
+  private def getPropertiesStaticQuery(crossrefQuery: Query[OrganisationsSystempropertystaticcrossref, OrganisationsSystempropertystaticcrossrefRow, Seq])
+                                      (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
     val dataQuery = for {
       crossref <- crossrefQuery
       property <- crossref.systemPropertyFk
@@ -194,11 +216,8 @@ trait OrganisationsService extends EntityServiceApi {
     }
   }
 
-  protected def getPropertiesDynamic(organisationId: Int, getValues: Boolean)
-                                    (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
-
-    val crossrefQuery = OrganisationsSystempropertydynamiccrossref.filter(_.organisationId === organisationId)
-
+  private def getPropertiesDynamicQuery(crossrefQuery: Query[OrganisationsSystempropertydynamiccrossref, OrganisationsSystempropertydynamiccrossrefRow, Seq])
+                                       (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
     val dataQuery = for {
       crossref <- crossrefQuery
       property <- crossref.systemPropertyFk

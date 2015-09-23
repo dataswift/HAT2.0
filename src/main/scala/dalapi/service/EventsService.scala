@@ -195,7 +195,7 @@ trait EventsService extends EntityServiceApi {
       case false =>
         properties
       case true =>
-        properties.map(getPropertyRelationshipValues)
+        properties.map(propertyService.getPropertyRelationshipValues)
     }
   }
 
@@ -208,7 +208,7 @@ trait EventsService extends EntityServiceApi {
       case false =>
         properties
       case true =>
-        properties.map(getPropertyRelationshipValues)
+        properties.map(propertyService.getPropertyRelationshipValues)
     }
   }
 
@@ -216,59 +216,17 @@ trait EventsService extends EntityServiceApi {
                                        (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
     val crossrefQuery = EventsSystempropertystaticcrossref.filter(_.eventId === eventId).filter(_.id === propertyRelationshipId)
     val propertyRelationships = getPropertiesStaticQuery(crossrefQuery)
-    propertyRelationships.map(getPropertyRelationshipValues)
+    propertyRelationships.map(propertyService.getPropertyRelationshipValues)
   }
 
   override protected def getPropertyDynamicValues(eventId: Int, propertyRelationshipId: Int)
                                                  (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
     val crossrefQuery = EventsSystempropertydynamiccrossref.filter(_.eventId === eventId).filter(_.id === propertyRelationshipId)
     val propertyRelationships = getPropertiesDynamicQuery(crossrefQuery)
-    propertyRelationships.map(getPropertyRelationshipValues)
+    propertyRelationships.map(propertyService.getPropertyRelationshipValues)
   }
 
   // Private methods
-
-  private def getPropertyRelationshipValues(propertyRel: ApiPropertyRelationshipStatic)
-                                           (implicit session: Session): ApiPropertyRelationshipStatic = {
-    // For each property relationship (should only ever be one)
-    val fieldDataRetrieved = (propertyRel.field.id, propertyRel.record.id) match {
-      // that has both data field with id and data record with id
-      case (Some(propertyFieldId), Some(propertyRecordId)) =>
-        // get the values
-        dataService.getFieldRecordValue(propertyFieldId, propertyRecordId)
-      case _ =>
-        None
-    }
-    fieldDataRetrieved match {
-      case Some(fieldData) =>
-        // Copy the new Data Field with data if found
-        propertyRel.copy(field = fieldData)
-      case None =>
-        // Otherwise leave as is
-        propertyRel
-    }
-  }
-
-  private def getPropertyRelationshipValues(propertyRel: ApiPropertyRelationshipDynamic)
-                                           (implicit session: Session): ApiPropertyRelationshipDynamic = {
-    // For each property relationship (should only ever be one)
-    val fieldDataRetrieved = propertyRel.field.id match {
-      // that has both data field with id and data record with id
-      case Some(propertyFieldId) =>
-        // get the values
-        dataService.getFieldValues(propertyFieldId)
-      case _ =>
-        None
-    }
-    fieldDataRetrieved match {
-      case Some(fieldData) =>
-        // Copy the new Data Field with data if found
-        propertyRel.copy(field = fieldData)
-      case None =>
-        // Otherwise leave as is
-        propertyRel
-    }
-  }
 
   private def getPropertiesStaticQuery(crossrefQuery: Query[EventsSystempropertystaticcrossref, EventsSystempropertystaticcrossrefRow, Seq])
                                       (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
