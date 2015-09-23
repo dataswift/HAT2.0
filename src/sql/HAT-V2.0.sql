@@ -645,16 +645,16 @@ CREATE INDEX events_eventorganisationcrossref_organisation_id
 
 CREATE SEQUENCE public.events_eventlocationcrossref_id_seq;
 
-CREATE TABLE public.events_eventlocationcrossref (
-                id INTEGER NOT NULL DEFAULT nextval('public.events_eventlocationcrossref_id_seq'),
-                date_created TIMESTAMP NOT NULL,
-                last_updated TIMESTAMP NOT NULL,
-                location_id INTEGER NOT NULL,
-                event_id INTEGER NOT NULL,
-                relationship_type VARCHAR NOT NULL,
-                is_current BOOLEAN NOT NULL,
-                relationshiprecord_id INTEGER NOT NULL,
-                CONSTRAINT events_eventlocationcrossref_pkey PRIMARY KEY (id)
+CREATE TABLE public.people_personorganisationcrossref (
+  id                    INTEGER      NOT NULL DEFAULT nextval('public.people_personorganisationcrossref_id_seq'),
+  date_created          TIMESTAMP    NOT NULL,
+  last_updated          TIMESTAMP    NOT NULL,
+  organisation_id       INTEGER      NOT NULL,
+  person_id             INTEGER      NOT NULL,
+  relationship_type     VARCHAR(100) NOT NULL,
+  is_current            BOOLEAN      NOT NULL,
+  relationshiprecord_id INTEGER      NOT NULL,
+  CONSTRAINT people_personorganisationcrossref_pkey PRIMARY KEY (id)
 );
 
 

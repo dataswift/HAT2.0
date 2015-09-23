@@ -20,6 +20,7 @@ class ContextualBundleServiceSpec extends Specification with Specs2RouteTest wit
   // Prepare the data to create test bundles on
   def beforeAll() = {
 
+    // Data tables
     val dataTablesRows = Seq (
 
          new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "events", "facebook")
@@ -114,6 +115,7 @@ class ContextualBundleServiceSpec extends Specification with Specs2RouteTest wit
       new DataRecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "FacebookEvent1")
       )
 
+    // contextualisation tools 
     val systemUnitOfMeasurementRows = Seq(
       new SystemUnitOfMeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "meters", "distance measurement", "m"),
       new SystemUnitOfMeasurementRow(2, LocalDateTime.now(), LocalDateTime.now(), "kilograms",, "weight measurement" "kg"),
@@ -137,6 +139,7 @@ class ContextualBundleServiceSpec extends Specification with Specs2RouteTest wit
       new SystemPropertyRow(5, LocalDateTime.now(), LocalDateTime.now(), "elevation", "Fibaro", typeID, unitofmeasurementID)
     )
 
+    // Entities
     val thingsThingRows = Seq(
       new ThingsThingRow(1, LocalDateTime.now(), LocalDateTime.now(), "cupbord")     
     )
@@ -164,7 +167,8 @@ class ContextualBundleServiceSpec extends Specification with Specs2RouteTest wit
       new EntityRow(4, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "organisation", None, None, None, organisationID, None),
       new EntityRow(5, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "event", None, None, eventID, None, None),
     )
-
+    
+    // thing to thing relationships etc
     val eventsEventToEventCrossRefRows = Seq(
       new EventsEventToEventCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), eventoneID, eventtwoID, "bleh", true, relationshiprecordID)
       )
@@ -181,9 +185,61 @@ class ContextualBundleServiceSpec extends Specification with Specs2RouteTest wit
       new OrganisationsOrganisationToOrganisationCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), organisationoneID, organisationtwoID, "bleh", true, relationshiprecordID)
       )
 
-    val locationsLocationtoLocationCrossRefRows = Seq(
-      new  LocationsLocationtoLocationCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), locationoneID, locationtwoID, "bleh", true, relationshiprecordID)
+    val locationsLocationToLocationCrossRefRows = Seq(
+      new  LocationsLocationToLocationCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), locationoneID, locationtwoID, "bleh", true, relationshiprecordID)
       )
+
+    // Event Relationships
+
+    val eventsEventToThingCrossRefRows = Seq(
+      new  EventsEventToThingCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), locationoneID, locationtwoID, "bleh", true, relationshiprecordID)
+      )
+
+    val eventsEventToLocationCrossRefRows = Seq(
+      new  EventsEventToLocationCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), locationoneID, locationtwoID, "bleh", true, relationshiprecordID)
+      )
+
+    val eventsEventToPersonCrossRefRows = Seq(
+      new  EventsEventToPersonCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), locationoneID, locationtwoID, "bleh", true, relationshiprecordID)
+      )
+
+    val eventsEventToOrganisationCrossRefRows = Seq(
+      new  EventsEventToOrganisationCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), locationoneID, locationtwoID, "bleh", true, relationshiprecordID)
+      )
+    
+    //  Thing Relationships
+
+        val thingsThingToPersonCrossRefRows = Seq(
+      new  thingsThingToPersonCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), personID, thingID, "bleh", true, relationshiprecordID)
+      )
+
+    // Location Relationships
+
+    val locationsLocationToThingCrossRefRows = Seq(
+      new  LocationsLocationToThingCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), thingID, locationID, "bleh", true, relationshiprecordID)
+      )
+
+    // Organisation Relationships
+
+     val organisationOrganisationLocationCrossRefRows = Seq(
+      new  OrganisationOrganisationLocationCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), locationID, organisationID, "bleh", true, relationshiprecordID)
+      )
+
+     val organisationOrganisationThingCrossRefRows = Seq(
+      new  OrganisationOrganisationThingCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), thingID, organisationID, "bleh", true, relationshiprecordID)
+      )
+
+    //People Relationships
+
+    val peoplePersonOrganisationCrossRefRows = Seq(
+      new  PeoplePersonOrganisationCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), personID, organisationID, "bleh", true, relationshiprecordID)
+      )
+
+     val peopleOrganisationThingCrossRefRows = Seq(
+      new  PeopleOrganisationThingCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), locationID, personID, "bleh", true, relationshiprecordID)
+      )
+
+    // location Property/type Relationships 
 
     val locationsSystemPropertyDynamicCrossRefRows = Seq(
       new LocationsSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), locationID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
@@ -193,6 +249,12 @@ class ContextualBundleServiceSpec extends Specification with Specs2RouteTest wit
       new LocationsSystemPropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), locationID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
 
+    val locationsSystemTypeRows = Seq(
+      new LocationsSystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), locationID, systemtypeID, "recordID", true)
+    )
+    
+    // things Property/type Relationships
+
     val thingsSystemPropertyStaticCrossRefRows = Seq(
       new ThingsSystemPropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), thingID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
@@ -201,6 +263,12 @@ class ContextualBundleServiceSpec extends Specification with Specs2RouteTest wit
       new ThingsSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), thingID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
 
     )
+    
+    val thingsSystemTypeRows = Seq(
+      new thingsSystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), thingID, systemtypeID, "recordID", true)
+    )
+
+    // people Property/type Relationships
 
      val peopleSystemPropertyStaticCrossRefRows = Seq(
       new PeopleSystemPropertyStaticCrossRefRows(1, LocalDateTime.now(), LocalDateTime.now(), peopleID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
@@ -211,22 +279,37 @@ class ContextualBundleServiceSpec extends Specification with Specs2RouteTest wit
       new PeopleSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), peopleID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
 
+    val peopleSystemTypeRows = Seq(
+      new peopleSystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), userID, systemtypeID, "recordID", true)
+    )
+
+    // events Property/type Relationships
+
      val eventsSystemPropertyStaticCrossRefRows = Seq(
       new  EventsSystemPropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), eventID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
     
-
     val eventsSystemPropertyDynamicCrossRefRows = Seq(
       new EventsSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(),  eventID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
+
+    val eventsSystemTypeRows = Seq(
+      new eventsSystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), eventID, systemtypeID, "recordID", true)
+    )
+
+
+    // organisation Property/type Relationships
 
      val organisationsSystemPropertyStaticCrossRefRows = Seq(
       new OrganisationsSystemPropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), organisationID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
     
-
     val organisationsSystemPropertyDynamicCrossRefRows = Seq(
       new OrganisationsSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), organisationID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
+    )
+
+    val organisationsSystemTypeRows = Seq(
+    new organisationSystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), organisationID, systemtypeID, "recordID", true)
     )
 
     db.withSession { implicit session =>
