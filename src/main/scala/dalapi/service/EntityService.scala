@@ -9,7 +9,8 @@ import spray.routing
 import scala.util.{Failure, Try}
 
 trait EntityService {
-  val entityKind:String
+  val entityKind: String
+  val dataService: DataService
 
   protected def createEntity: routing.Route
 
@@ -122,6 +123,14 @@ trait EntityService {
   protected def getPropertiesStatic(eventId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipStatic]
 
   protected def getPropertiesDynamic(eventId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipDynamic]
+
+  protected def getPropertyStaticValues(eventId: Int, propertyRelationshipId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
+    Seq()
+  }
+
+  protected def getPropertyDynamicValues(eventId: Int, propertyRelationshipId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+    Seq()
+  }
 
   protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)
       (implicit session: Session) : Try[Int]

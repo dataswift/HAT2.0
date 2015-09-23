@@ -189,10 +189,36 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
       }
   }
 
+  // staticproperty as a way of differentiating between a property that is linked statically 
+  // and the propertyRelatonship link
+  def getPropertyStaticValueApi = path(IntNumber / "staticproperty" / IntNumber / "values") {
+    (entityId: Int, propertyRelationshipId: Int) =>
+      get {
+        db.withSession { implicit session: Session =>
+          complete {
+            getPropertyStaticValues(entityId, propertyRelationshipId)
+          }
+        }
+      }
+  }
+
+  // dynamicproperty as a way of differentiating between a property that is linked dynamically 
+  // and the propertyRelatonship link
+  def getPropertyDynamicValueApi = path(IntNumber / "dynamicproperty" / IntNumber / "values") {
+    (entityId: Int, propertyRelationshipId: Int) =>
+      get {
+        db.withSession { implicit session: Session =>
+          complete {
+            getPropertyDynamicValues(entityId, propertyRelationshipId)
+          }
+        }
+      }
+  }
+
   /*
    * Tag event with a type
    */
-  def addType = path(IntNumber / "type" / IntNumber) { (entityId: Int, typeId: Int) =>
+  def addTypeApi = path(IntNumber / "type" / IntNumber) { (entityId: Int, typeId: Int) =>
     post {
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>

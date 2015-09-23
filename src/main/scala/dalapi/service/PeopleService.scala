@@ -26,7 +26,7 @@ trait PeopleService extends EntityServiceApi {
       linkToOrganisation ~
       linkToPropertyStatic ~
       linkToPropertyDynamic ~
-      addType ~
+      addTypeApi ~
       getPropertiesStaticApi ~
       getPropertiesDynamicApi
     }

@@ -109,8 +109,8 @@ object JsonProtocol extends DefaultJsonProtocol {
   implicit val apiRelationship = jsonFormat1(ApiRelationship.apply)
 
   // Property relationships
-  implicit val apiPropertyRelationshipStatic = jsonFormat6(ApiPropertyRelationshipStatic.apply)
-  implicit val apiPropertyRelationshipDynamic = jsonFormat5(ApiPropertyRelationshipDynamic.apply)
+  implicit val apiPropertyRelationshipStatic = jsonFormat7(ApiPropertyRelationshipStatic.apply)
+  implicit val apiPropertyRelationshipDynamic = jsonFormat6(ApiPropertyRelationshipDynamic.apply)
 
   // Bundles
   implicit val apiBundleTableCondition = jsonFormat6(ApiBundleTableCondition.apply)

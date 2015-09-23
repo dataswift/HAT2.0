@@ -26,6 +26,7 @@ case class ApiRelationship(relationshipType: String)
 
 case class ApiPropertyRelationshipDynamic(
     id: Option[Int],
+    property: ApiProperty,
     dateCreated: Option[LocalDateTime],
     lastUpdated: Option[LocalDateTime],
     relationshipType: String,
@@ -35,7 +36,7 @@ object ApiPropertyRelationshipDynamic {
   // Event properties
   def fromDbModel(relationship: EventsSystempropertydynamiccrossrefRow)
                  (property: ApiProperty, field: ApiDataField): ApiPropertyRelationshipDynamic = {
-    new ApiPropertyRelationshipDynamic(Some(relationship.id),
+    new ApiPropertyRelationshipDynamic(Some(relationship.id), property,
       Some(relationship.dateCreated), Some(relationship.lastUpdated),
       relationship.relationshipType, field)
   }
@@ -54,7 +55,7 @@ object ApiPropertyRelationshipDynamic {
   // Location properties
   def fromDbModel(relationship: LocationsSystempropertydynamiccrossrefRow)
                  (property: ApiProperty, field: ApiDataField): ApiPropertyRelationshipDynamic = {
-    new ApiPropertyRelationshipDynamic(Some(relationship.id),
+    new ApiPropertyRelationshipDynamic(Some(relationship.id), property,
       Some(relationship.dateCreated), Some(relationship.lastUpdated),
       relationship.relationshipType, field)
   }
@@ -73,7 +74,7 @@ object ApiPropertyRelationshipDynamic {
   // Person properties
   def fromDbModel(relationship: PeopleSystempropertydynamiccrossrefRow)
                  (property: ApiProperty, field: ApiDataField): ApiPropertyRelationshipDynamic = {
-    new ApiPropertyRelationshipDynamic(Some(relationship.id),
+    new ApiPropertyRelationshipDynamic(Some(relationship.id), property,
       Some(relationship.dateCreated), Some(relationship.lastUpdated),
       relationship.relationshipType, field)
   }
@@ -92,7 +93,7 @@ object ApiPropertyRelationshipDynamic {
   // Thing Properties
   def fromDbModel(relationship: ThingsSystempropertydynamiccrossrefRow)
                  (property: ApiProperty, field: ApiDataField): ApiPropertyRelationshipDynamic = {
-    new ApiPropertyRelationshipDynamic(Some(relationship.id),
+    new ApiPropertyRelationshipDynamic(Some(relationship.id), property,
       Some(relationship.dateCreated), Some(relationship.lastUpdated),
       relationship.relationshipType, field)
   }
@@ -111,7 +112,7 @@ object ApiPropertyRelationshipDynamic {
   // Organisation Properties
   def fromDbModel(relationship: OrganisationsSystempropertydynamiccrossrefRow)
                  (property: ApiProperty, field: ApiDataField): ApiPropertyRelationshipDynamic = {
-    new ApiPropertyRelationshipDynamic(Some(relationship.id),
+    new ApiPropertyRelationshipDynamic(Some(relationship.id), property,
       Some(relationship.dateCreated), Some(relationship.lastUpdated),
       relationship.relationshipType, field)
   }
@@ -130,6 +131,7 @@ object ApiPropertyRelationshipDynamic {
 
 case class ApiPropertyRelationshipStatic(
     id: Option[Int],
+    property: ApiProperty,
     dateCreated: Option[LocalDateTime],
     lastUpdated: Option[LocalDateTime],
     relationshipType: String,
@@ -140,7 +142,7 @@ object ApiPropertyRelationshipStatic {
   // Event Properties
   def fromDbModel(relationship: EventsSystempropertystaticcrossrefRow)
                  (property: ApiProperty, field: ApiDataField, record: ApiDataRecord): ApiPropertyRelationshipStatic = {
-    new ApiPropertyRelationshipStatic(Some(relationship.id),
+    new ApiPropertyRelationshipStatic(Some(relationship.id), property,
       Some(relationship.dateCreated), Some(relationship.lastUpdated),
       relationship.relationshipType, field, record)
   }
@@ -160,7 +162,7 @@ object ApiPropertyRelationshipStatic {
   // Location Properties
   def fromDbModel(relationship: LocationsSystempropertystaticcrossrefRow)
                  (property: ApiProperty, field: ApiDataField, record: ApiDataRecord): ApiPropertyRelationshipStatic = {
-    new ApiPropertyRelationshipStatic(Some(relationship.id),
+    new ApiPropertyRelationshipStatic(Some(relationship.id), property,
       Some(relationship.dateCreated), Some(relationship.lastUpdated),
       relationship.relationshipType, field, record)
   }
@@ -180,7 +182,7 @@ object ApiPropertyRelationshipStatic {
   // Person Properties
   def fromDbModel(relationship: PeopleSystempropertystaticcrossrefRow)
                  (property: ApiProperty, field: ApiDataField, record: ApiDataRecord): ApiPropertyRelationshipStatic = {
-    new ApiPropertyRelationshipStatic(Some(relationship.id),
+    new ApiPropertyRelationshipStatic(Some(relationship.id), property,
       Some(relationship.dateCreated), Some(relationship.lastUpdated),
       relationship.relationshipType, field, record)
   }
@@ -200,7 +202,7 @@ object ApiPropertyRelationshipStatic {
   // Thing propertoes
   def fromDbModel(relationship: ThingsSystempropertystaticcrossrefRow)
                  (property: ApiProperty, field: ApiDataField, record: ApiDataRecord): ApiPropertyRelationshipStatic = {
-    new ApiPropertyRelationshipStatic(Some(relationship.id),
+    new ApiPropertyRelationshipStatic(Some(relationship.id), property,
       Some(relationship.dateCreated), Some(relationship.lastUpdated),
       relationship.relationshipType, field, record)
   }
@@ -220,7 +222,7 @@ object ApiPropertyRelationshipStatic {
   // Organisation propertoes
   def fromDbModel(relationship: OrganisationsSystempropertystaticcrossrefRow)
                  (property: ApiProperty, field: ApiDataField, record: ApiDataRecord): ApiPropertyRelationshipStatic = {
-    new ApiPropertyRelationshipStatic(Some(relationship.id),
+    new ApiPropertyRelationshipStatic(Some(relationship.id), property,
       Some(relationship.dateCreated), Some(relationship.lastUpdated),
       relationship.relationshipType, field, record)
   }

@@ -20,7 +20,7 @@ trait DataService extends HttpService with DatabaseInfo {
         createValue ~
         storeValueList ~
         getField ~
-        getFieldValues ~
+        getFieldValuesApi ~
         getTable ~
         getTableValues ~
         getRecord ~
@@ -141,7 +141,12 @@ trait DataService extends HttpService with DatabaseInfo {
   def getField = path("field" / IntNumber){ (fieldId: Int) =>
     get {
       complete {
-        retrieveDataFieldId(fieldId)
+        retrieveDataFieldId(fieldId) match {
+          case Some(field) =>
+            field
+          case None =>
+            (NotFound, "Data field $fieldId not found")
+        }
       }
     }
   }
@@ -150,19 +155,36 @@ trait DataService extends HttpService with DatabaseInfo {
    * Get data stored in a specific field.
    * Returns all Data Values stored in the field
    */
-  def getFieldValues = path("field" / IntNumber / "values") { (fieldId: Int) =>
+  def getFieldValuesApi = path("field" / IntNumber / "values") { (fieldId: Int) =>
     get {
       db.withSession { implicit session =>
-        val field = retrieveDataFieldId(fieldId)
-        val values = DataValue.filter(_.fieldId === fieldId).run
-
-        // Translate all DB values to ApiDataValue
-        val apiDataValues = values.map(ApiDataValue.fromDataValue)
-
         complete {
-          field.copy(values = Some(apiDataValues))
+          getFieldValues(fieldId) match {
+            case Some(field) =>
+              field
+            case None =>
+              (NotFound, "Data field $fieldId not found")
+          }
         }
       }
+    }
+  }
+  
+  def getFieldValues(fieldId: Int)(implicit session: Session): Option[ApiDataField] = {
+    val apiFieldOption = retrieveDataFieldId(fieldId)
+    apiFieldOption map { apiField =>
+      val values = DataValue.filter(_.fieldId === fieldId).run
+      val apiDataValues = values.map(ApiDataValue.fromDataValue)
+      apiField.copy(values = Some(apiDataValues))
+    }
+  }
+
+  def getFieldRecordValue(fieldId: Int, recordId: Int)(implicit session: Session): Option[ApiDataField] = {
+    val apiFieldOption = retrieveDataFieldId(fieldId)
+    apiFieldOption map { apiField =>
+      val values = DataValue.filter(_.fieldId === fieldId).filter(_.recordId === recordId).run
+      val apiDataValues = values.map(ApiDataValue.fromDataValue)
+      apiField.copy(values = Some(apiDataValues))
     }
   }
 
@@ -398,10 +420,12 @@ trait DataService extends HttpService with DatabaseInfo {
   /*
    * Private function finding data field by ID
    */
-  private def retrieveDataFieldId(fieldId: Int): ApiDataField = {
+  private def retrieveDataFieldId(fieldId: Int): Option[ApiDataField] = {
     db.withSession { implicit session =>
-      val field = DataField.filter(_.id === fieldId).run.head
-      ApiDataField.fromDataField(field)
+      val field = DataField.filter(_.id === fieldId).run.headOption
+      field map { dataField =>
+        ApiDataField.fromDataField(dataField)
+      }
     }
   }
 }

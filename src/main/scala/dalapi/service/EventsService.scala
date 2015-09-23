@@ -31,7 +31,7 @@ trait EventsService extends EntityServiceApi {
         linkToEvent ~
         linkToPropertyStatic ~
         linkToPropertyDynamic ~
-        addType ~
+        addTypeApi ~
         getPropertiesStaticApi ~
         getPropertiesDynamicApi
     }
@@ -190,7 +190,70 @@ trait EventsService extends EntityServiceApi {
                                    (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
 
     val crossrefQuery = EventsSystempropertystaticcrossref.filter(_.eventId === eventId)
+    getPropertiesStaticQuery(crossrefQuery)
+  }
 
+  protected def getPropertiesDynamic(eventId: Int)
+                                    (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+
+    val crossrefQuery = EventsSystempropertydynamiccrossref.filter(_.eventId === eventId)
+
+    getPropertiesDynamicQuery(crossrefQuery)
+  }
+
+  override protected def getPropertyStaticValues(eventId: Int, propertyRelationshipId: Int)
+                                       (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
+    val crossrefQuery = EventsSystempropertystaticcrossref.filter(_.eventId === eventId).filter(_.id === propertyRelationshipId)
+    val propertyRelationships = getPropertiesStaticQuery(crossrefQuery)
+    propertyRelationships map { propertyRel =>
+      // For each property relationship (should only ever be one)
+      val fieldDataRetrieved = (propertyRel.field.id, propertyRel.record.id) match {
+        // that has both data field with id and data record with id
+        case (Some(propertyFieldId), Some(propertyRecordId)) =>
+          // get the values
+          dataService.getFieldRecordValue(propertyFieldId, propertyRecordId)
+        case _ =>
+          None
+      }
+      fieldDataRetrieved match {
+        case Some(fieldData) =>
+          // Copy the new Data Field with data if found
+          propertyRel.copy(field = fieldData)
+        case None =>
+          // Otherwise leave as is
+          propertyRel
+      }
+    }
+  }
+
+  override protected def getPropertyDynamicValues(eventId: Int, propertyRelationshipId: Int)
+                                                 (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+    val crossrefQuery = EventsSystempropertydynamiccrossref.filter(_.eventId === eventId).filter(_.id === propertyRelationshipId)
+
+    val propertyRelationships = getPropertiesDynamicQuery(crossrefQuery)
+    propertyRelationships map { propertyRel =>
+      // For each property relationship (should only ever be one)
+      val fieldDataRetrieved = propertyRel.field.id match {
+        // that has both data field with id and data record with id
+        case Some(propertyFieldId) =>
+          // get the values
+          dataService.getFieldValues(propertyFieldId)
+        case _ =>
+          None
+      }
+      fieldDataRetrieved match {
+        case Some(fieldData) =>
+          // Copy the new Data Field with data if found
+          propertyRel.copy(field = fieldData)
+        case None =>
+          // Otherwise leave as is
+          propertyRel
+      }
+    }
+  }
+
+  private def getPropertiesStaticQuery(crossrefQuery: Query[EventsSystempropertystaticcrossref, EventsSystempropertystaticcrossrefRow, Seq])
+                                      (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
     val dataQuery = for {
       crossref <- crossrefQuery
       property <- crossref.systemPropertyFk
@@ -209,11 +272,8 @@ trait EventsService extends EntityServiceApi {
     }
   }
 
-  protected def getPropertiesDynamic(eventId: Int)
-                                    (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
-
-    val crossrefQuery = EventsSystempropertydynamiccrossref.filter(_.eventId === eventId)
-
+  private def getPropertiesDynamicQuery(crossrefQuery: Query[EventsSystempropertydynamiccrossref, EventsSystempropertydynamiccrossrefRow, Seq])
+                                       (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
     val dataQuery = for {
       crossref <- crossrefQuery
       property <- crossref.systemPropertyFk
@@ -230,7 +290,6 @@ trait EventsService extends EntityServiceApi {
         ApiPropertyRelationshipDynamic.fromDbModel(crossref, property, propertyType, propertyUom, field)
     }
   }
-
 
 }
 

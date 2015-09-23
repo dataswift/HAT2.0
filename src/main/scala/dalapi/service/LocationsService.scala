@@ -24,7 +24,7 @@ trait LocationsService extends EntityServiceApi {
       linkToThing ~
       linkToPropertyStatic ~
       linkToPropertyDynamic ~
-      addType ~
+      addTypeApi ~
       getPropertiesStaticApi ~
       getPropertiesDynamicApi
     }
