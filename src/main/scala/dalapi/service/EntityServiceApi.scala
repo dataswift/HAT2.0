@@ -172,7 +172,7 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
       get {
         db.withSession { implicit session: Session =>
           complete {
-            getPropertiesStatic(entityId)
+            getPropertiesStatic(entityId, false)
           }
         }
       }
@@ -183,7 +183,29 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
       get {
         db.withSession { implicit session: Session =>
           complete {
-            getPropertiesDynamic(entityId)
+            getPropertiesDynamic(entityId, false)
+          }
+        }
+      }
+  }
+
+  def getPropertiesStaticValuesApi = path(IntNumber / "property" / "static" / "values") {
+    (entityId: Int) =>
+      get {
+        db.withSession { implicit session: Session =>
+          complete {
+            getPropertiesStatic(entityId, true)
+          }
+        }
+      }
+  }
+
+  def getPropertiesDynamicValuesApi = path(IntNumber / "property" / "dynamic" / "values") {
+    (entityId: Int) =>
+      get {
+        db.withSession { implicit session: Session =>
+          complete {
+            getPropertiesDynamic(entityId, true)
           }
         }
       }

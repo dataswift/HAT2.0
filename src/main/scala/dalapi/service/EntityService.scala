@@ -36,8 +36,8 @@ trait EntityService {
       new ApiEvent(
         Some(e.id),
         e.name,
-        seqOption(getPropertiesStatic(e.id)),
-        seqOption(getPropertiesDynamic(e.id)),
+        seqOption(getPropertiesStatic(e.id, false)),
+        seqOption(getPropertiesDynamic(e.id, false)),
         seqOption(getEvents(e.id)),
         seqOption(getLocations(e.id)),
         seqOption(getPeople(e.id)),
@@ -54,8 +54,8 @@ trait EntityService {
       new ApiLocation(
         Some(l.id),
         l.name,
-        seqOption(getPropertiesStatic(l.id)),
-        seqOption(getPropertiesDynamic(l.id)),
+        seqOption(getPropertiesStatic(l.id, false)),
+        seqOption(getPropertiesDynamic(l.id, false)),
         seqOption(getLocations(l.id)),
         seqOption(getThings(l.id))
       )
@@ -69,8 +69,8 @@ trait EntityService {
       new ApiOrganisation(
         Some(e.id),
         e.name,
-        seqOption(getPropertiesStatic(e.id)),
-        seqOption(getPropertiesDynamic(e.id)),
+        seqOption(getPropertiesStatic(e.id, false)),
+        seqOption(getPropertiesDynamic(e.id, false)),
         seqOption(getOrganisations(e.id)),
         seqOption(getLocations(e.id)),
         seqOption(getThings(e.id))
@@ -86,8 +86,8 @@ trait EntityService {
         Some(e.id),
         e.name,
         e.personId,
-        seqOption(getPropertiesStatic(e.id)),
-        seqOption(getPropertiesDynamic(e.id)),
+        seqOption(getPropertiesStatic(e.id, false)),
+        seqOption(getPropertiesDynamic(e.id, false)),
         seqOption(getPeople(e.id)),
         seqOption(getLocations(e.id)),
         seqOption(getOrganisations(e.id))
@@ -102,8 +102,8 @@ trait EntityService {
       new ApiThing(
         Some(e.id),
         e.name,
-        seqOption(getPropertiesStatic(e.id)),
-        seqOption(getPropertiesDynamic(e.id)),
+        seqOption(getPropertiesStatic(e.id, false)),
+        seqOption(getPropertiesDynamic(e.id, false)),
         seqOption(getThings(e.id)),
         seqOption(getPeople(e.id))
       )
@@ -120,9 +120,9 @@ trait EntityService {
 
   protected def getEvents(entityId: Int)(implicit session: Session) : Seq[ApiEventRelationship]
 
-  protected def getPropertiesStatic(eventId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipStatic]
+  protected def getPropertiesStatic(eventId: Int, getValues: Boolean)(implicit session: Session): Seq[ApiPropertyRelationshipStatic]
 
-  protected def getPropertiesDynamic(eventId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipDynamic]
+  protected def getPropertiesDynamic(eventId: Int, getValues: Boolean)(implicit session: Session): Seq[ApiPropertyRelationshipDynamic]
 
   protected def getPropertyStaticValues(eventId: Int, propertyRelationshipId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
     Seq()

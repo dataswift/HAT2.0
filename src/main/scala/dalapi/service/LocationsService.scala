@@ -83,8 +83,8 @@ trait LocationsService extends EntityServiceApi {
    * Link location to a property statically (tying it in with a specific record ID)
    */
   protected def createPropertyLinkDynamic(entityId: Int, propertyId: Int,
-                                                   fieldId: Int, relationshipType: String, propertyRecordId: Int)
-                                                  (implicit session: Session) : Try[Int] = {
+                                          fieldId: Int, relationshipType: String, propertyRecordId: Int)
+                                         (implicit session: Session) : Try[Int] = {
     val crossref = new LocationsSystempropertydynamiccrossrefRow(
       0, LocalDateTime.now(), LocalDateTime.now(),
       entityId, propertyId,
@@ -98,8 +98,8 @@ trait LocationsService extends EntityServiceApi {
    * Link location to a property dynamically
    */
   protected def createPropertyLinkStatic(entityId: Int, propertyId: Int,
-                                                  recordId: Int, fieldId: Int, relationshipType: String, propertyRecordId: Int)
-                                                 (implicit session: Session) : Try[Int] = {
+                                         recordId: Int, fieldId: Int, relationshipType: String, propertyRecordId: Int)
+                                        (implicit session: Session) : Try[Int] = {
     val crossref = new LocationsSystempropertystaticcrossrefRow(
       0, LocalDateTime.now(), LocalDateTime.now(),
       entityId, propertyId,
@@ -125,9 +125,9 @@ trait LocationsService extends EntityServiceApi {
     val locationLinks = LocationsLocationthingcrossref.filter(_.locationId === locationID).run
 
     locationLinks flatMap { link : LocationsLocationthingcrossrefRow =>
-//      val apiThing = new ApiThing(Some(link.thingId), link.thingId.toString)
-//      new ApiThingRelationship(link.relationshipType, apiThing)
-      None
+      getThing(link.thingId) map { thing =>
+        new ApiThingRelationship(link.relationshipType, thing)
+      }
     }
   }
 
@@ -158,7 +158,7 @@ trait LocationsService extends EntityServiceApi {
     Seq()
   }
 
-  protected def getPropertiesStatic(locationId: Int)
+  protected def getPropertiesStatic(locationId: Int, getValues: Boolean)
                                  (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
 
     val crossrefQuery = LocationsSystempropertystaticcrossref.filter(_.locationId === locationId)
@@ -181,7 +181,7 @@ trait LocationsService extends EntityServiceApi {
     }
   }
 
-  protected def getPropertiesDynamic(locationId: Int)
+  protected def getPropertiesDynamic(locationId: Int, getValues: Boolean)
                                   (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
 
     val crossrefQuery = LocationsSystempropertydynamiccrossref.filter(_.locationId === locationId)

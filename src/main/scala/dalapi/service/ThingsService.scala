@@ -161,7 +161,7 @@ trait ThingsService extends EntityServiceApi {
     }
   }
 
-  protected def getPropertiesStatic(thingId: Int)
+  protected def getPropertiesStatic(thingId: Int, getValues: Boolean)
                                    (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
 
     val crossrefQuery = ThingsSystempropertystaticcrossref.filter(_.thingId === thingId)
@@ -184,7 +184,7 @@ trait ThingsService extends EntityServiceApi {
     }
   }
 
-  protected def getPropertiesDynamic(thingId: Int)
+  protected def getPropertiesDynamic(thingId: Int, getValues: Boolean)
                                     (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
 
     val crossrefQuery = ThingsSystempropertydynamiccrossref.filter(_.thingId === thingId)

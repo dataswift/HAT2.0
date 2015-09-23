@@ -171,7 +171,7 @@ trait OrganisationsService extends EntityServiceApi {
     Seq()
   }
 
-  protected def getPropertiesStatic(organisationId: Int)
+  protected def getPropertiesStatic(organisationId: Int, getValues: Boolean)
                                    (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
 
     val crossrefQuery = OrganisationsSystempropertystaticcrossref.filter(_.organisationId === organisationId)
@@ -194,7 +194,7 @@ trait OrganisationsService extends EntityServiceApi {
     }
   }
 
-  protected def getPropertiesDynamic(organisationId: Int)
+  protected def getPropertiesDynamic(organisationId: Int, getValues: Boolean)
                                     (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
 
     val crossrefQuery = OrganisationsSystempropertydynamiccrossref.filter(_.organisationId === organisationId)
