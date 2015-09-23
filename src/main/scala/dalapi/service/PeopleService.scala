@@ -112,7 +112,6 @@ trait PeopleService extends EntityServiceApi {
 
   protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
                                   (implicit session: Session): Try[Int] = {
-    // FIXME: locationID and personID swapped around in the DB!
     val crossref = new PeoplePersonlocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
       entityId, locationId, relationshipType, true, recordId)
     Try((PeoplePersonlocationcrossref returning PeoplePersonlocationcrossref.map(_.id)) += crossref)
@@ -177,7 +176,7 @@ trait PeopleService extends EntityServiceApi {
   }
 
   def getLocations(personId: Int)
-                  (implicit session: Session): Seq[ApiLocationRelationship] = {
+                  (implicit session: Session, getValues: Boolean): Seq[ApiLocationRelationship] = {
 
     val locationLinks = PeoplePersonlocationcrossref.filter(_.personId === personId).run
 
@@ -190,7 +189,7 @@ trait PeopleService extends EntityServiceApi {
   }
 
   def getOrganisations(personID: Int)
-                      (implicit session: Session): Seq[ApiOrganisationRelationship] = {
+                      (implicit session: Session, getValues: Boolean): Seq[ApiOrganisationRelationship] = {
     val links = PeoplePersonorganisationcrossref.filter(_.personId === personID).run
 
     links flatMap { link: PeoplePersonorganisationcrossrefRow =>
@@ -202,7 +201,7 @@ trait PeopleService extends EntityServiceApi {
   }
 
   def getPeople(personID: Int)
-               (implicit session: Session): Seq[ApiPersonRelationship] = {
+               (implicit session: Session, getValues: Boolean): Seq[ApiPersonRelationship] = {
     val links = for {
       link <- PeoplePersontopersoncrossref.filter(_.personOneId === personID)
       relationship <- link.peoplePersontopersonrelationshiptypeFk
@@ -218,18 +217,18 @@ trait PeopleService extends EntityServiceApi {
   }
 
   def getThings(eventID: Int)
-               (implicit session: Session): Seq[ApiThingRelationship] = {
+               (implicit session: Session, getValues: Boolean): Seq[ApiThingRelationship] = {
     Seq();
   }
 
   def getEvents(eventID: Int)
-               (implicit session: Session): Seq[ApiEventRelationship] = {
+               (implicit session: Session, getValues: Boolean): Seq[ApiEventRelationship] = {
     Seq();
   }
 
 
-  protected def getPropertiesStatic(personId: Int, getValues: Boolean)
-                                   (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
+  protected def getPropertiesStatic(personId: Int)
+                                   (implicit session: Session, getValues: Boolean): Seq[ApiPropertyRelationshipStatic] = {
 
     val crossrefQuery = PeopleSystempropertystaticcrossref.filter(_.personId === personId)
     val properties = getPropertiesStaticQuery(crossrefQuery)
@@ -241,8 +240,8 @@ trait PeopleService extends EntityServiceApi {
     }
   }
 
-  protected def getPropertiesDynamic(personId: Int, getValues: Boolean)
-                                    (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+  protected def getPropertiesDynamic(personId: Int)
+                                    (implicit session: Session, getValues: Boolean): Seq[ApiPropertyRelationshipDynamic] = {
 
     val crossrefQuery = PeopleSystempropertydynamiccrossref.filter(_.personId === personId)
     val properties = getPropertiesDynamicQuery(crossrefQuery)

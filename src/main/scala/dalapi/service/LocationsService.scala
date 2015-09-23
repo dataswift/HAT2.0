@@ -121,7 +121,7 @@ trait LocationsService extends EntityServiceApi {
   }
 
   def getThings(locationID: Int)
-               (implicit session: Session) : Seq[ApiThingRelationship] = {
+               (implicit session: Session, getValues: Boolean) : Seq[ApiThingRelationship] = {
     val locationLinks = LocationsLocationthingcrossref.filter(_.locationId === locationID).run
 
     locationLinks flatMap { link : LocationsLocationthingcrossrefRow =>
@@ -132,7 +132,7 @@ trait LocationsService extends EntityServiceApi {
   }
 
   def getLocations(locationID: Int)
-               (implicit session: Session) : Seq[ApiLocationRelationship] = {
+               (implicit session: Session, getValues: Boolean) : Seq[ApiLocationRelationship] = {
     val locationLinks = LocationsLocationtolocationcrossref.filter(_.locOneId === locationID).run
 
     locationLinks flatMap { link : LocationsLocationtolocationcrossrefRow =>
@@ -143,23 +143,23 @@ trait LocationsService extends EntityServiceApi {
     }
   }
 
-  protected def getOrganisations(entityId: Int)(implicit session: Session) : Seq[ApiOrganisationRelationship] = {
+  protected def getOrganisations(entityId: Int)(implicit session: Session, getValues: Boolean) : Seq[ApiOrganisationRelationship] = {
     // No links directly from Location
     Seq()
   }
 
-  protected def getPeople(entityId: Int)(implicit session: Session) : Seq[ApiPersonRelationship] = {
+  protected def getPeople(entityId: Int)(implicit session: Session, getValues: Boolean) : Seq[ApiPersonRelationship] = {
     // No links directly from Location
     Seq()
   }
 
-  protected def getEvents(entityId: Int)(implicit session: Session) : Seq[ApiEventRelationship] = {
+  protected def getEvents(entityId: Int)(implicit session: Session, getValues: Boolean) : Seq[ApiEventRelationship] = {
     // No links directly from Location
     Seq()
   }
 
-  protected def getPropertiesStatic(locationId: Int, getValues: Boolean)
-                                 (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
+  protected def getPropertiesStatic(locationId: Int)
+                                 (implicit session: Session, getValues: Boolean): Seq[ApiPropertyRelationshipStatic] = {
 
     val crossrefQuery = LocationsSystempropertystaticcrossref.filter(_.locationId === locationId)
     val properties = getPropertiesStaticQuery(crossrefQuery)
@@ -171,8 +171,8 @@ trait LocationsService extends EntityServiceApi {
     }
   }
 
-  protected def getPropertiesDynamic(locationId: Int, getValues: Boolean)
-                                  (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+  protected def getPropertiesDynamic(locationId: Int)
+                                  (implicit session: Session, getValues: Boolean): Seq[ApiPropertyRelationshipDynamic] = {
 
     val crossrefQuery = LocationsSystempropertydynamiccrossref.filter(_.locationId === locationId)
     val properties = getPropertiesDynamicQuery(crossrefQuery)

@@ -25,31 +25,45 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
   def getApi = path(IntNumber) { (entityId: Int) =>
     get {
       db.withSession { implicit session =>
-        val result = entityKind match {
-          case "person" => getPerson(entityId)
-          case "thing" => getThing(entityId)
-          case "event" => getEvent(entityId)
-          case "location" => getLocation(entityId)
-          case "organisation" => getOrganisation(entityId)
-          case _ => None
-        }
+        implicit val getValues: Boolean = false
+        getEntity(entityId)
+      }
+    }
+  }
 
-        complete {
-          result match {
-            case Some(entity: ApiPerson) =>
-              entity
-            case Some(entity: ApiThing) =>
-              entity
-            case Some(entity: ApiEvent) =>
-              entity
-            case Some(entity: ApiLocation) =>
-              entity
-            case Some(entity: ApiOrganisation) =>
-              entity
-            case _ =>
-              (NotFound, s"$entityKind with ID $entityId not found")
-          }
-        }
+  def getApiValues = path(IntNumber / "values") { (entityId: Int) =>
+    get {
+      db.withSession { implicit session =>
+        implicit val getValues: Boolean = true
+        getEntity(entityId)
+      }
+    }
+  }
+
+  private def getEntity(entityId: Int)(implicit session: Session, getValues: Boolean) = {
+    val result = entityKind match {
+      case "person" => getPerson(entityId)
+      case "thing" => getThing(entityId)
+      case "event" => getEvent(entityId)
+      case "location" => getLocation(entityId)
+      case "organisation" => getOrganisation(entityId)
+      case _ => None
+    }
+
+    complete {
+      result match {
+        case Some(entity: ApiPerson) =>
+          entity
+        case Some(entity: ApiThing) =>
+          entity
+        case Some(entity: ApiEvent) =>
+          entity
+        case Some(entity: ApiLocation) =>
+          entity
+        case Some(entity: ApiOrganisation) =>
+          entity
+        case _ =>
+          (NotFound, s"$entityKind with ID $entityId not found")
       }
     }
   }
@@ -172,7 +186,8 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
       get {
         db.withSession { implicit session: Session =>
           complete {
-            getPropertiesStatic(entityId, false)
+            implicit val getValues: Boolean = false
+            getPropertiesStatic(entityId)
           }
         }
       }
@@ -183,7 +198,8 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
       get {
         db.withSession { implicit session: Session =>
           complete {
-            getPropertiesDynamic(entityId, false)
+            implicit val getValues: Boolean = false
+            getPropertiesDynamic(entityId)
           }
         }
       }
@@ -194,7 +210,8 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
       get {
         db.withSession { implicit session: Session =>
           complete {
-            getPropertiesStatic(entityId, true)
+            implicit val getValues: Boolean = true
+            getPropertiesStatic(entityId)
           }
         }
       }
@@ -205,7 +222,8 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
       get {
         db.withSession { implicit session: Session =>
           complete {
-            getPropertiesDynamic(entityId, true)
+            implicit val getValues: Boolean = true
+            getPropertiesDynamic(entityId)
           }
         }
       }

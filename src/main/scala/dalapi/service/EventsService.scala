@@ -125,7 +125,7 @@ trait EventsService extends EntityServiceApi {
   }
 
   protected def getLocations(eventId: Int)
-                  (implicit session: Session): Seq[ApiLocationRelationship] = {
+                  (implicit session: Session, getValues: Boolean): Seq[ApiLocationRelationship] = {
 
     val locationLinks = EventsEventlocationcrossref.filter(_.eventId === eventId).run
 
@@ -138,7 +138,7 @@ trait EventsService extends EntityServiceApi {
   }
 
   protected def getOrganisations(eventID: Int)
-                      (implicit session: Session): Seq[ApiOrganisationRelationship] = {
+                      (implicit session: Session, getValues: Boolean): Seq[ApiOrganisationRelationship] = {
     val links = EventsEventorganisationcrossref.filter(_.eventId === eventID).run
 
     links flatMap { link: EventsEventorganisationcrossrefRow =>
@@ -150,7 +150,7 @@ trait EventsService extends EntityServiceApi {
   }
 
   protected def getPeople(eventID: Int)
-               (implicit session: Session): Seq[ApiPersonRelationship] = {
+               (implicit session: Session, getValues: Boolean): Seq[ApiPersonRelationship] = {
     val links = EventsEventpersoncrossref.filter(_.eventId === eventID).run
 
     links flatMap { link: EventsEventpersoncrossrefRow =>
@@ -162,7 +162,7 @@ trait EventsService extends EntityServiceApi {
   }
 
   protected def getThings(eventID: Int)
-               (implicit session: Session): Seq[ApiThingRelationship] = {
+               (implicit session: Session, getValues: Boolean): Seq[ApiThingRelationship] = {
     val links = EventsEventthingcrossref.filter(_.eventId === eventID).run
 
     links flatMap { link: EventsEventthingcrossrefRow =>
@@ -174,7 +174,7 @@ trait EventsService extends EntityServiceApi {
   }
 
   protected def getEvents(eventID: Int)
-               (implicit session: Session): Seq[ApiEventRelationship] = {
+               (implicit session: Session, getValues: Boolean): Seq[ApiEventRelationship] = {
     val eventLinks = EventsEventtoeventcrossref.filter(_.eventOneId === eventID).run
     var eventIds = eventLinks.map(_.eventTwoId)
 
@@ -186,8 +186,8 @@ trait EventsService extends EntityServiceApi {
     }
   }
 
-  protected def getPropertiesStatic(eventId: Int, getValues: Boolean)
-                                   (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
+  protected def getPropertiesStatic(eventId: Int)
+                                   (implicit session: Session, getValues: Boolean): Seq[ApiPropertyRelationshipStatic] = {
 
     val crossrefQuery = EventsSystempropertystaticcrossref.filter(_.eventId === eventId)
     val properties = getPropertiesStaticQuery(crossrefQuery)
@@ -199,8 +199,8 @@ trait EventsService extends EntityServiceApi {
     }
   }
 
-  protected def getPropertiesDynamic(eventId: Int, getValues: Boolean)
-                                    (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+  protected def getPropertiesDynamic(eventId: Int)
+                                    (implicit session: Session, getValues: Boolean): Seq[ApiPropertyRelationshipDynamic] = {
 
     val crossrefQuery = EventsSystempropertydynamiccrossref.filter(_.eventId === eventId)
     val properties = getPropertiesDynamicQuery(crossrefQuery)
