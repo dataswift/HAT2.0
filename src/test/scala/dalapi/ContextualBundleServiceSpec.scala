@@ -22,12 +22,12 @@ class ContextualBundleServiceSpec extends Specification with Specs2RouteTest wit
 
     val dataTablesRows = Seq (
 
-         DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "events", "facebook")
-         DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "me", "facebook")
-         DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", "facebook")
-         DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "owner", "facebook")
-         DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "place", "facebook")
-         DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "location", "facebook")
+         new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "events", "facebook")
+         new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "me", "facebook")
+         new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "cover", "facebook")
+         new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "owner", "facebook")
+         new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "place", "facebook")
+         new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), "location", "facebook")
          )
 
      val dataTableToTableCrossRefRows = Seq(
@@ -109,99 +109,124 @@ class ContextualBundleServiceSpec extends Specification with Specs2RouteTest wit
           new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), "id", placeId)
         )
 
+    val dataRecordRows = Seq(
+
+      new DataRecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "FacebookEvent1")
+      )
+
     val systemUnitOfMeasurementRows = Seq(
-      new DataTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "meters", "distance measurement", "m"),
-      new DataTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "kilograms",, "weight measurement" "kg"),
-      new DataTableRow(3, LocalDateTime.now(), LocalDateTime.now(), "meters cubed", "3d spaceq" "m^3"),
-      new DataTableRow(4, LocalDateTime.now(), LocalDateTime.now(), "personattributes", "Fibaro"),
-      new DataTableRow(5, LocalDateTime.now(), LocalDateTime.now(), "locationattributes", "Fibaro")
+      new SystemUnitOfMeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "meters", "distance measurement", "m"),
+      new SystemUnitOfMeasurementRow(2, LocalDateTime.now(), LocalDateTime.now(), "kilograms",, "weight measurement" "kg"),
+      new SystemUnitOfMeasurementRow(3, LocalDateTime.now(), LocalDateTime.now(), "meters cubed", "3d spaceq" "m^3"),
+      new SystemUnitOfMeasurementRow(4, LocalDateTime.now(), LocalDateTime.now(), "personattributes", "Fibaro"),
+      new SystemUnitOfMeasurementRow(5, LocalDateTime.now(), LocalDateTime.now(), "locationattributes", "Fibaro")
     )
 
     val systemTypeRows = Seq(
-      new DataTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "room dimensions", "Fibaro"),
-      new DataTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "dayily activities", "Fibaro"),
-      new DataTableRow(3, LocalDateTime.now(), LocalDateTime.now(), "utilities", "Fibaro"),
-      new DataTableRow(4, LocalDateTime.now(), LocalDateTime.now(), "personattributes", "Fibaro"),
-      new DataTableRow(5, LocalDateTime.now(), LocalDateTime.now(), "locationattributes", "Fibaro")
+      new SystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "room dimensions", "Fibaro"),
+      new SystemTypeRow(2, LocalDateTime.now(), LocalDateTime.now(), "dayily activities", "Fibaro"),
+      new SystemTypeRow(3, LocalDateTime.now(), LocalDateTime.now(), "utilities", "Fibaro"),
+      new SystemTypeRow(4, LocalDateTime.now(), LocalDateTime.now(), "personattributes", "Fibaro"),
+      new SystemTypeRow(5, LocalDateTime.now(), LocalDateTime.now(), "locationattributes", "Fibaro")
     )
     val systemPropertyRows = Seq(
-      new DataTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", "Fibaro", typeID, unitofmeasurementID),
-      new DataTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "wateruse", "Fibaro", typeID, unitofmeasurementID),
-      new DataTableRow(3, LocalDateTime.now(), LocalDateTime.now(), "size", "Fibaro", typeID, unitofmeasurementID),
-      new DataTableRow(4, LocalDateTime.now(), LocalDateTime.now(), "weight", "Fibaro", typeID, unitofmeasurementID)
-      new DataTableRow(5, LocalDateTime.now(), LocalDateTime.now(), "elevation", "Fibaro", typeID, unitofmeasurementID)
+      new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", "Fibaro", typeID, unitofmeasurementID),
+      new SystemPropertyRow(2, LocalDateTime.now(), LocalDateTime.now(), "wateruse", "Fibaro", typeID, unitofmeasurementID),
+      new SystemPropertyRow(3, LocalDateTime.now(), LocalDateTime.now(), "size", "Fibaro", typeID, unitofmeasurementID),
+      new SystemPropertyRow(4, LocalDateTime.now(), LocalDateTime.now(), "weight", "Fibaro", typeID, unitofmeasurementID)
+      new SystemPropertyRow(5, LocalDateTime.now(), LocalDateTime.now(), "elevation", "Fibaro", typeID, unitofmeasurementID)
     )
 
     val thingsThingRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), "cupbord")     
+      new ThingsThingRow(1, LocalDateTime.now(), LocalDateTime.now(), "cupbord")     
     )
 
     val peoplePersonRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin")     
+      new ThingsThingRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin")     
     )
 
     val locationsLocationRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), "kitchen")     
+      new ThingsThingRow(1, LocalDateTime.now(), LocalDateTime.now(), "kitchen")     
     )
 
     val organisationsOrganisationRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), "seventrent")     
+      new ThingsThingRow(1, LocalDateTime.now(), LocalDateTime.now(), "seventrent")     
     )
 
         val eventsEventRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), "having a shower")     
+      new ThingsThingRow(1, LocalDateTime.now(), LocalDateTime.now(), "having a shower")     
     )
 
     val entityRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "thing", None, thingID, None, None, None),
-      new DataFieldRow(2, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "location", locationID, None, None, None, None),
-      new DataFieldRow(3, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "peron", None, None, None, None, personID),
-      new DataFieldRow(4, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "organisation", None, None, None, organisationID, None),
-      new DataFieldRow(5, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "event", None, None, eventID, None, None),
+      new EntityRow(1, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "thing", None, thingID, None, None, None),
+      new EntityRow(2, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "location", locationID, None, None, None, None),
+      new EntityRow(3, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "peron", None, None, None, None, personID),
+      new EntityRow(4, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "organisation", None, None, None, organisationID, None),
+      new EntityRow(5, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "event", None, None, eventID, None, None),
     )
 
+    val eventsEventToEventCrossRefRows = Seq(
+      new EventsEventToEventCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), eventoneID, eventtwoID, "bleh", true, relationshiprecordID)
+      )
+
+    val thingsThingToThingCrossRefRows = Seq(
+      new ThingsThingToThingCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), thingoneID,thingtwoID, "bleh", true, relationshiprecordID)
+      )
+
+    val peoplePersonToPersonCrossRefRows = Seq(
+      new PeoplePersonToPersonCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), persononeID, persontwoID, "bleh", true, relationshiprecordID)
+      )
+
+    val organisationsOrganisationToOrganisationCrossRefRows = Seq(
+      new OrganisationsOrganisationToOrganisationCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), organisationoneID, organisationtwoID, "bleh", true, relationshiprecordID)
+      )
+
+    val locationsLocationtoLocationCrossRefRows = Seq(
+      new  LocationsLocationtoLocationCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), locationoneID, locationtwoID, "bleh", true, relationshiprecordID)
+      )
+
     val locationsSystemPropertyDynamicCrossRefRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), locationID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
+      new LocationsSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), locationID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
 
     val locationsSystemPropertyStaticCrossRefRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), locationID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
+      new LocationsSystemPropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), locationID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
 
     val thingsSystemPropertyStaticCrossRefRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), thingID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
+      new ThingsSystemPropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), thingID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
 
     val thingsSystemPropertyDynamicCrossRefRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), thingID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
+      new ThingsSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), thingID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
 
     )
 
      val peopleSystemPropertyStaticCrossRefRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), peopleID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
+      new PeopleSystemPropertyStaticCrossRefRows(1, LocalDateTime.now(), LocalDateTime.now(), peopleID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
     
 
     val peopleSystemPropertyDynamicCrossRefRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), peopleID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
+      new PeopleSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), peopleID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
 
      val eventsSystemPropertyStaticCrossRefRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), eventID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
+      new  EventsSystemPropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), eventID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
     
 
     val eventsSystemPropertyDynamicCrossRefRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(),  eventID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
+      new EventsSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(),  eventID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
 
      val organisationsSystemPropertyStaticCrossRefRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), organisationID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
+      new OrganisationsSystemPropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), organisationID, systempropertyID, recordID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
     
 
     val organisationsSystemPropertyDynamicCrossRefRows = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), organisationID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
+      new OrganisationsSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), organisationID, systempropertyID, fieldID, thingID, "Parent Child", true, propertyrecordID)
     )
 
     db.withSession { implicit session =>
