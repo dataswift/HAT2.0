@@ -14,8 +14,10 @@ import scala.util.{Failure, Success, Try}
 // this trait defines our service behavior independently from the service actor
 trait BundleService extends HttpService with DatabaseInfo {
 
+  val dataService: DataService
+
   val routes = {
-    pathPrefix("bundles") {
+    pathPrefix("bundles" / "contextless") {
       createBundleTable ~
         getBundleTable ~
         createBundleContextless ~
@@ -63,7 +65,7 @@ trait BundleService extends HttpService with DatabaseInfo {
               case Some(table) =>
                 table
               case None =>
-                (NotFound, s"Bundle Table ${bundleTableId} not found")
+                (NotFound, s"Bundle Table $bundleTableId not found")
             }
           }
         }
@@ -77,7 +79,66 @@ trait BundleService extends HttpService with DatabaseInfo {
     (bundleTableId: Int) =>
       get {
         db.withSession { implicit session =>
-          val slices = getBundleTableSlices(bundleTableId)
+          val tableIdOption = (for {
+            bundleTable <- BundleTable.filter(_.id === bundleTableId)
+            dataTable <- bundleTable.dataTableFk
+          } yield dataTable.id).take(1).run.headOption
+
+          tableIdOption map { tableId =>
+            val slices = getBundleTableSlices(bundleTableId)
+
+            // Get a list of record IDs that match the given conditions
+            val conditionRecords = slices map { tableSlice =>
+              tableSlice.foldLeft(Set[Int]()) { (recordLists, slice) =>
+
+                val sliceRecords = slice.conditions.foldLeft(Set[Int]()) { (sliceRecordSet, condition) =>
+                  val recordSet = DataValue.filter(_.fieldId === condition.field.id).filter(_.value === condition.value)
+                    .flatMap(_.dataRecordFk).map(_.id).run.toSet
+                  // Intersection
+                  sliceRecordSet intersect recordSet
+                }
+
+                recordLists union sliceRecords
+              }
+            }
+
+            val dataRecords = conditionRecords match {
+              case Some(records) =>
+                records
+              case None =>
+                // If we have no conditions, get all the records
+                (for {
+                  bundleTable <- BundleTable.filter(_.id === bundleTableId)
+                  dataTable <- bundleTable.dataTableFk
+                  dataField <- DataField.filter(_.tableIdFk === dataTable.id)
+                  dataValue <- DataValue.filter(_.fieldId === dataField.id)
+                  dataRecord <- dataValue.dataRecordFk
+                } yield dataRecord.id).run.toSet
+            }
+
+            // Get the (recursive) structure of the data table you want filled with data
+            val structure = dataService.getTableStructure(tableId)
+
+            // Partially applied function to fill the data into table structure
+            def filler = dataService.fillStructure(structure) _
+
+            val values = DataValue.filter(_.recordId inSet dataRecords)
+                .take(10000) // FIXME: magic number for getting X records
+                .sortBy(_.recordId.asc)
+                .run
+              .groupBy(_.recordId)
+
+            // Convert the retrieved structure into a sequence of maps from field ID to values
+            val data = values map { case (recordId, recordValues) =>
+              Map(recordValues map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
+            }
+
+            // Fill the structure with the data
+            val tableValues = data.map(filler)
+
+            tableValues
+          }
+
           complete {
             (NotImplemented, s"Data retrieval for contextless bundles not yet implemented")
           }
@@ -88,10 +149,11 @@ trait BundleService extends HttpService with DatabaseInfo {
 
 
 
+
   /*
    * Creates a new virtual table for storing arbitrary incoming data
    */
-  def createBundleContextless = path("contextless") {
+  def createBundleContextless = path("") {
     post {
       entity(as[ApiBundleContextless]) { bundle =>
         db.withSession { implicit session =>
@@ -114,7 +176,7 @@ trait BundleService extends HttpService with DatabaseInfo {
   /*
    * Retrieves contextless bundle structure by ID
    */
-  def getBundleContextless = path("contextless" / IntNumber) {
+  def getBundleContextless = path(IntNumber) {
     (bundleId: Int) =>
       get {
         db.withSession { implicit session =>
@@ -135,7 +197,7 @@ trait BundleService extends HttpService with DatabaseInfo {
   /*
    * Retrieves contextless bundle data
    */
-  def getBundleContextlessValues = path("contextless" / IntNumber / "values") {
+  def getBundleContextlessValues = path(IntNumber / "values") {
     (bundleId: Int) =>
       get {
         complete {

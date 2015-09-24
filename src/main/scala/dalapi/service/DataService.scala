@@ -317,7 +317,7 @@ trait DataService extends HttpService with DatabaseInfo {
     }
   }
 
-  private def fillStructure(table: ApiDataTable)(values: Map[Int, ApiDataValue]): ApiDataTable = {
+  def fillStructure(table: ApiDataTable)(values: Map[Int, ApiDataValue]): ApiDataTable = {
     val filledFields = table.fields map { fields =>
       // For each field, insert values
       fields map { field: ApiDataField =>
@@ -383,7 +383,7 @@ trait DataService extends HttpService with DatabaseInfo {
   /*
    * Recursively construct nested DataTable records with associated fields and sub-tables
    */
-  private def getTableStructure(tableId: Int): ApiDataTable = {
+  def getTableStructure(tableId: Int): ApiDataTable = {
     db.withSession { implicit session =>
       val table = DataTable.filter(_.id === tableId).run.head
       val fields = DataField.filter(_.tableIdFk === tableId).run

@@ -27,7 +27,8 @@ class ApiService extends HttpServiceActor with ActorLogging {
   }
 
   val bundleService = new BundleService {
-    override implicit def actorRefFactory: ActorRefFactory = context
+    def actorRefFactory = context
+    val dataService = apiDataService
   }
 
   val eventsService = new EventsService {
