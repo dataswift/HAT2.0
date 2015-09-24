@@ -76,11 +76,16 @@ trait BundleService extends HttpService with DatabaseInfo {
   def getBundleTableValues = path("table" / IntNumber / "values") {
     (bundleTableId: Int) =>
       get {
-        complete {
-          (NotImplemented, s"Data retrieval for contextless bundles not yet implemented")
+        db.withSession { implicit session =>
+          val slices = getBundleTableSlices(bundleTableId)
+          complete {
+            (NotImplemented, s"Data retrieval for contextless bundles not yet implemented")
+          }
         }
       }
   }
+
+
 
 
   /*
@@ -192,7 +197,7 @@ trait BundleService extends HttpService with DatabaseInfo {
       case (bundleTable: BundleTableRow, dataTable: DataTableRow) =>
         val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
         val apiBundleTable = ApiBundleTable.fromBundleTable(bundleTable)(apiDataTable)
-        val slices = getBundleTableSlices(apiBundleTable)
+        val slices = apiBundleTable.id.flatMap(getBundleTableSlices)
         apiBundleTable.copy(slices = slices)
     }
   }
@@ -231,25 +236,26 @@ trait BundleService extends HttpService with DatabaseInfo {
 
   }
 
-  private def getBundleTableSlices(bundleTable: ApiBundleTable)
+  private def getBundleTableSlices(bundleTableId: Int)
                                   (implicit session: Session): Option[Seq[ApiBundleTableSlice]] = {
-    bundleTable.id map { bundleTableId =>
-      // Traversing entity graph the Slick way
-      val slicesQuery = for {
-        slice <- BundleTableslice.filter(_.bundleTableId === bundleTableId)
-        dataTable <- slice.dataTableFk
-      } yield (slice, dataTable)
 
-      val slices = slicesQuery.run
+    // Traversing entity graph the Slick way
+    val slicesQuery = for {
+      slice <- BundleTableslice.filter(_.bundleTableId === bundleTableId)
+      dataTable <- slice.dataTableFk
+    } yield (slice, dataTable)
 
-      slices map { case (slice: BundleTablesliceRow, dataTable: DataTableRow) =>
-        // Returning the Data Table information of the slice without subTables or fields
-        val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
-        val apiSlice = ApiBundleTableSlice.fromBundleTableSlice(slice)(apiDataTable)
-        val conditions = getSliceConditions(apiSlice)
+    val slices = slicesQuery.run
+
+    val result = slices flatMap { case (slice: BundleTablesliceRow, dataTable: DataTableRow) =>
+      // Returning the Data Table information of the slice without subTables or fields
+      val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
+      val apiSlice = ApiBundleTableSlice.fromBundleTableSlice(slice)(apiDataTable)
+      apiSlice.id.map(getSliceConditions) map { conditions =>
         apiSlice.copy(conditions = conditions)
       }
     }
+    seqOption(result)
   }
 
   private def storeCondition(bundleTableSlice: ApiBundleTableSlice)
@@ -272,24 +278,18 @@ trait BundleService extends HttpService with DatabaseInfo {
     }
   }
 
-  private def getSliceConditions(bundleTableSlice: ApiBundleTableSlice)
+  private def getSliceConditions(tableSliceId: Int)
                                 (implicit session: Session): Seq[ApiBundleTableCondition] = {
-    bundleTableSlice.id match {
-      case Some(tableSliceId) =>
-        // Traversing entity graph the Slick way
-        val conditionsQuery = for {
-          c <- BundleTableslicecondition.filter(_.tablesliceId === bundleTableSlice.id)
-          f <- c.dataFieldFk
-        } yield (c, f)
+    // Traversing entity graph the Slick way
+    val conditionsQuery = for {
+      c <- BundleTableslicecondition.filter(_.tablesliceId === tableSliceId)
+      f <- c.dataFieldFk
+    } yield (c, f)
 
-        val conditions = conditionsQuery.run
-        conditions map { case (condition:BundleTablesliceconditionRow, field:DataFieldRow) =>
-          val apiField = ApiDataField.fromDataField(field)
-          ApiBundleTableCondition.fromBundleTableSliceCondition(condition)(apiField)
-        }
-
-      case None =>
-        Seq()
+    val conditions = conditionsQuery.run
+    conditions map { case (condition: BundleTablesliceconditionRow, field: DataFieldRow) =>
+      val apiField = ApiDataField.fromDataField(field)
+      ApiBundleTableCondition.fromBundleTableSliceCondition(condition)(apiField)
     }
   }
 
@@ -379,5 +379,13 @@ trait BundleService extends HttpService with DatabaseInfo {
 
     if (fs.isEmpty) Success(ss map (_.get))
     else Failure[Seq[T]](fs(0).exception) // Only keep the first failure
+  }
+
+  // Utility function to return None for empty sequences
+  private def seqOption[T](seq: Seq[T]) : Option[Seq[T]] = {
+    if (seq.isEmpty)
+      None
+    else
+      Some(seq)
   }
 }
