@@ -1,0 +1,803 @@
+swagger: '2.0'
+info:
+  version: 2.0.0
+  title: HAT 2.0 API
+host: api.hubofallthings.com
+schemes:
+  - http
+basePath: /api
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /event:
+    post:
+      description: |
+        Creates a new event for storing events
+      parameters:
+        - name: Event
+          in: body
+          description: Table information to be inserted
+          required: true
+          schema:
+            $ref: '#/definitions/Event'
+      tags:
+        - Event
+        - Contextualisation
+      responses:
+        '201':
+          description: Event has been created
+          schema:
+            $ref: '#/definitions/EventResponse'
+              
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /event/{eventId}/addEvent/{subeventId}:
+    post:
+      description: >
+        Marks provided event as a "child" of another, e.g. to created nested data
+        structured
+      parameters:
+        - name: eventId
+          in: path
+          description: the table to which another table is to be added
+          required: true
+          type: number
+          format: integer
+        - name: eventId
+          in: path
+          description: the sub-event ID
+          required: true
+          type: number
+          format: integer
+        - name: RelationshipType
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Relationship'
+      tags:
+        - Event
+        - Contextualisation
+      responses:
+        '201':
+          description: Events have been linked. Returns ID of the crossreference
+          schema:
+            $ref: '#/definitions/EntityCreated'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /event/{eventId}:
+    get:
+      description: |
+        Retrieves event information by event ID
+      parameters:
+        - name: eventId
+          in: path
+          description: event ID
+          required: true
+          type: number
+          format: integer
+      tags:
+        - Event
+        - Contextualisation
+      responses:
+        '200':
+          description: Event has been found. Returns Event information
+          schema:
+            $ref: '#/definitions/EventStructure'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /thing:
+    post:
+      description: |
+        Creates a new thing for storing things
+      parameters:
+        - name: Thing
+          in: body
+          description: Table information to be inserted
+          required: true
+          schema:
+            $ref: '#/definitions/Thing'
+      tags:
+        - thing
+        - Contextualisation
+      responses:
+        '201':
+          description: thing has been created
+          schema:
+            $ref: '#/definitions/thingResponse'
+              
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /thing/{thingId}/addthing/{subthingId}:
+    post:
+      description: >
+        Marks provided thing as a "child" of another, e.g. to created nested data
+        structured
+      parameters:
+        - name: thingId
+          in: path
+          description: the table to which another table is to be added
+          required: true
+          type: number
+          format: integer
+        - name: thingId
+          in: path
+          description: the sub-thing ID
+          required: true
+          type: number
+          format: integer
+        - name: RelationshipType
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Relationship'
+      tags:
+        - thing
+        - Contextualisation
+      responses:
+        '201':
+          description: things have been linked. Returns ID of the crossreference
+          schema:
+            $ref: '#/definitions/EntityCreated'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /thing/{thingId}:
+    get:
+      description: |
+        Retrieves thing information by thing ID
+      parameters:
+        - name: thingId
+          in: path
+          description: thing ID
+          required: true
+          type: number
+          format: integer
+      tags:
+        - thing
+        - Contextualisation
+      responses:
+        '200':
+          description: thing has been found. Returns thing information
+          schema:
+            $ref: '#/definitions/thingStructure'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /people:
+    post:
+      description: |
+        Creates a new people for storing people
+      parameters:
+        - name: people
+          in: body
+          description: Table information to be inserted
+          required: true
+          schema:
+            $ref: '#/definitions/Person'
+      tags:
+        - people
+        - Contextualisation
+      responses:
+        '201':
+          description: people has been created
+          schema:
+            $ref: '#/definitions/peopleResponse'
+              
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /people/{personId}/addpeople/{subpersonId}:
+    post:
+      description: >
+        Marks provided people as a "child" of another, e.g. to created nested data
+        structured
+      parameters:
+        - name: personId
+          in: path
+          description: the table to which another table is to be added
+          required: true
+          type: number
+          format: integer
+        - name: personId
+          in: path
+          description: the sub-person ID
+          required: true
+          type: number
+          format: integer
+        - name: RelationshipType
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Relationship'
+      tags:
+        - people
+        - Contextualisation
+      responses:
+        '201':
+          description: peoples have been linked. Returns ID of the crossreference
+          schema:
+            $ref: '#/definitions/EntityCreated'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /people/{personId}:
+    get:
+      description: |
+        Retrieves people information by people ID
+      parameters:
+        - name: peopleId
+          in: path
+          description: people ID
+          required: true
+          type: number
+          format: integer
+      tags:
+        - people
+        - Contextualisation
+      responses:
+        '200':
+          description: people has been found. Returns people information
+          schema:
+            $ref: '#/definitions/peopleStructure'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /location:
+    post:
+      description: |
+        Creates a new location for storing locations
+      parameters:
+        - name: location
+          in: body
+          description: Table information to be inserted
+          required: true
+          schema:
+            $ref: '#/definitions/location'
+      tags:
+        - location
+        - Contextualisation
+      responses:
+        '201':
+          description: location has been created
+          schema:
+            $ref: '#/definitions/locationResponse'
+              
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /location/{locationId}/addlocation/{sublocationId}:
+    post:
+      description: >
+        Marks provided location as a "child" of another, e.g. to created nested data
+        structured
+      parameters:
+        - name: locationId
+          in: path
+          description: the table to which another table is to be added
+          required: true
+          type: number
+          format: integer
+        - name: locationId
+          in: path
+          description: the sub-location ID
+          required: true
+          type: number
+          format: integer
+        - name: RelationshipType
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Relationship'
+      tags:
+        - location
+        - Contextualisation
+      responses:
+        '201':
+          description: locations have been linked. Returns ID of the crossreference
+          schema:
+            $ref: '#/definitions/EntityCreated'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /location/{locationId}:
+    get:
+      description: |
+        Retrieves location information by location ID
+      parameters:
+        - name: locationId
+          in: path
+          description: location ID
+          required: true
+          type: number
+          format: integer
+      tags:
+        - location
+        - Contextualisation
+      responses:
+        '200':
+          description: location has been found. Returns location information
+          schema:
+            $ref: '#/definitions/locationStructure'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+/organisation:
+    post:
+      description: |
+        Creates a new organisation for storing organisations
+      parameters:
+        - name: organisation
+          in: body
+          description: Table information to be inserted
+          required: true
+          schema:
+            $ref: '#/definitions/organisation'
+      tags:
+        - organisation
+        - Contextualisation
+      responses:
+        '201':
+          description: organisation has been created
+          schema:
+            $ref: '#/definitions/organisationResponse'
+              
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /organisation/{organisationId}/addorganisation/{suborganisationId}:
+    post:
+      description: >
+        Marks provided organisation as a "child" of another, e.g. to created nested data
+        structured
+      parameters:
+        - name: organisationId
+          in: path
+          description: the table to which another table is to be added
+          required: true
+          type: number
+          format: integer
+        - name: organisationId
+          in: path
+          description: the sub-organisation ID
+          required: true
+          type: number
+          format: integer
+        - name: RelationshipType
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Relationship'
+      tags:
+        - organisation
+        - Contextualisation
+      responses:
+        '201':
+          description: organisations have been linked. Returns ID of the crossreference
+          schema:
+            $ref: '#/definitions/EntityCreated'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /organisation/{organisationId}:
+    get:
+      description: |
+        Retrieves organisation information by organisation ID
+      parameters:
+        - name: organisationId
+          in: path
+          description: organisation ID
+          required: true
+          type: number
+          format: integer
+      tags:
+        - organisation
+        - Contextualisation
+      responses:
+        '200':
+          description: organisation has been found. Returns organisation information
+          schema:
+            $ref: '#/definitions/organisationStructure'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+/Type:
+    post:
+      description: |
+        Creates a new Type for storing Types
+      parameters:
+        - name: Type
+          in: body
+          description: Table information to be inserted
+          required: true
+          schema:
+            $ref: '#/definitions/Type'
+      tags:
+        - Type
+        - Contextualisation
+      responses:
+        '201':
+          description: Type has been created
+          schema:
+            $ref: '#/definitions/TypeResponse'
+              
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /Type/{TypeId}/addType/{subTypeId}:
+    post:
+      description: >
+        Marks provided Type as a "child" of another, e.g. to created nested data
+        structured
+      parameters:
+        - name: TypeId
+          in: path
+          description: the table to which another table is to be added
+          required: true
+          type: number
+          format: integer
+        - name: TypeId
+          in: path
+          description: the sub-Type ID
+          required: true
+          type: number
+          format: integer
+        - name: RelationshipType
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Relationship'
+      tags:
+        - Type
+        - Contextualisation
+      responses:
+        '201':
+          description: Types have been linked. Returns ID of the crossreference
+          schema:
+            $ref: '#/definitions/EntityCreated'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /Type/{TypeId}:
+    get:
+      description: |
+        Retrieves Type information by Type ID
+      parameters:
+        - name: TypeId
+          in: path
+          description: Type ID
+          required: true
+          type: number
+          format: integer
+      tags:
+        - Type
+        - Contextualisation
+      responses:
+        '200':
+          description: Type has been found. Returns Type information
+          schema:
+            $ref: '#/definitions/TypeStructure'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /Property:
+    post:
+      description: |
+        Creates a new Property for storing Propertys
+      parameters:
+        - name: Property
+          in: body
+          description: Table information to be inserted
+          required: true
+          schema:
+            $ref: '#/definitions/Property'
+      tags:
+        - Property
+        - Contextualisation
+      responses:
+        '201':
+          description: Property has been created
+          schema:
+            $ref: '#/definitions/PropertyResponse'
+              
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /Property/{PropertyId}:
+    get:
+      description: |
+        Retrieves Property information by Property ID
+      parameters:
+        - name: PropertyId
+          in: path
+          description: Property ID
+          required: true
+          Property: number
+          format: integer
+      tags:
+        - Property
+        - Contextualisation
+      responses:
+        '200':
+          description: Property has been found. Returns Property information
+          schema:
+            $ref: '#/definitions/PropertyStructure'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /UnitOfMeasurement:
+    post:
+      description: |
+        Creates a new UnitOfMeasurement for storing UnitOfMeasurements
+      parameters:
+        - name: UnitOfMeasurement
+          in: body
+          description: Table information to be inserted
+          required: true
+          schema:
+            $ref: '#/definitions/UnitOfMeasurement'
+      tags:
+        - UnitOfMeasurement
+        - Contextualisation
+      responses:
+        '201':
+          description: UnitOfMeasurement has been created
+          schema:
+            $ref: '#/definitions/UnitOfMeasurementResponse'
+              
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /UnitOfMeasurement/{UnitOfMeasurementId}:
+    get:
+      description: |
+        Retrieves UnitOfMeasurement information by UnitOfMeasurement ID
+      parameters:
+        - name: UnitOfMeasurementId
+          in: path
+          description: UnitOfMeasurement ID
+          required: true
+          UnitOfMeasurement: number
+          format: integer
+      tags:
+        - UnitOfMeasurement
+        - Contextualisation
+      responses:
+        '200':
+          description: UnitOfMeasurement has been found. Returns UnitOfMeasurement information
+          schema:
+            $ref: '#/definitions/UnitOfMeasurementStructure'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+definitions:
+  TimeStructure:
+    properties:
+      dateCreated:
+        type: string
+        format: date-time
+        description: Time the entity was created
+        example: "2015-08-16T21:45:22.551Z"
+      lastUpdated:
+        type: string
+        format: date-time
+        description: Time the entity was last updated
+        example: "2015-08-16T21:45:22.551Z"
+    required:
+      - dateCreated
+      - lastUpdated
+  
+  Event:
+    required:
+      - name
+    properties:
+      id:
+        type: number
+        format: int32
+        description: Unique Event ID
+        example: 1
+      name:
+        type: string
+        description: Name of the event
+        example: Birthday Party
+      
+  EventResponse:
+    description: Event response object
+    allOf:
+    - $ref: '#/definitions/Event'
+    - $ref: '#/definitions/TimeStructure'
+      
+  Person:
+    required:
+      - name
+    properties:
+        id:
+          type: number
+          description: Unique Person ID
+        name:
+          type: string
+          description: Name of the Person
+    
+  PersonResponse:
+    required:
+      - name
+    allOf:
+    - $ref: '#/definitions/Person'
+    - $ref: '#/definitions/TimeStructure'
+      
+  Organisation:
+      required:
+      - name
+    properties:
+        id:
+          type: number
+          description: Unique Organisation ID
+        organisationId:
+          type: number
+          description: ID of the table the Organisation is part of
+        name:
+          type: string
+          description: name of the Organisation
+    
+  OrganisationResponse:
+    allOf:
+    - $ref: '#/definitions/Organisation'
+    - $ref: '#/definitions/TimeStructure'
+        
+  Thing:
+      required:
+      - name
+    properties:
+        id:
+          type: number
+          description: Unique Thing ID
+        ThingId:
+          type: number
+          description: ID of the table the Thing is part of
+        name:
+          type: string
+          description: name of the Thing
+    
+  ThingResponse:
+    allOf:
+    - $ref: '#/definitions/Thing'
+    - $ref: '#/definitions/TimeStructure'
+  
+  Location:
+    required:
+      - name
+    properties:
+        id:
+          type: number
+          description: Unique Location ID
+        LocationId:
+          type: number
+          description: ID of the table the Location is part of
+        name:
+          type: string
+          description: name of the Location
+    
+  LocationResponse:
+    allOf:
+    - $ref: '#/definitions/Location'
+    - $ref: '#/definitions/TimeStructure'
+
+  Property:
+      required:
+      - name
+    properties:
+        id:
+          type: number
+          description: Unique Property ID
+        PropertyId:
+          type: number
+          description: ID of the table the Property is part of
+        name:
+          type: string
+          description: name of the Property
+    
+  PropertyResponse:
+    allOf:
+    - $ref: '#/definitions/Property'
+    - $ref: '#/definitions/TimeStructure'
+
+  Type:
+      required:
+      - name
+    properties:
+        id:
+          type: number
+          description: Unique Type ID
+        TypeId:
+          type: number
+          description: ID of the table the Type is part of
+        name:
+          type: string
+          description: name of the Type
+    
+  TypeResponse:
+    allOf:
+    - $ref: '#/definitions/Type'
+    - $ref: '#/definitions/TimeStructure'
+
+    UnitOfMeasurement:
+      required:
+      - name
+    properties:
+        id:
+          type: number
+          description: Unique UnitOfMeasurement ID
+        UnitOfMeasurementId:
+          type: number
+          description: ID of the table the UnitOfMeasurement is part of
+        name:
+          type: string
+          description: name of the UnitOfMeasurement
+    
+  UnitOfMeasurementResponse:
+    allOf:
+    - $ref: '#/definitions/UnitOfMeasurement'
+    - $ref: '#/definitions/TimeStructure'
+
+  
+  Relationship:
+    description: 'The type of the relationship between two tables. Currently only relationship type "owns" is supported.'
+    properties:
+      relationshipType:
+        type: string
+        description: 'The type of relationship between two entities (e.g. one entity "owns" another)'
+        example: "owns"
+        
+        
+        
+  EntityCreated:
+    properties:
+      id:
+        type: number
+        description: ID of the created entity
+        
+        
+        
+  Error:
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      fields:
+        type: string
