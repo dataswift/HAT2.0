@@ -2,7 +2,7 @@ import dal.Tables._
 import org.joda.time.LocalDateTime
 import dal.SlickPostgresDriver.simple._
 
-class TestFixtures {
+object TestFixtures {
   def prepareContextualStructures(implicit sesion: Session) = {
     // Data tables
     val dataTablesRows = Seq(
