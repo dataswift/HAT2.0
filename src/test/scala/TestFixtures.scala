@@ -122,7 +122,7 @@ object TestFixtures {
       new PeoplePersonRow(2, LocalDateTime.now(), LocalDateTime.now(), "Andrius"),
       new PeoplePersonRow(3, LocalDateTime.now(), LocalDateTime.now(), "Xiao"))
 
-    PeoplePerson.forceInsertAll(PeoplePersonRows: _*)
+    PeoplePerson.forceInsertAll(peoplePersonRows: _*)
 
     val locationsLocationRows = Seq(
       new LocationsLocationRow(1, LocalDateTime.now(), LocalDateTime.now(), "kitchen"),
@@ -228,28 +228,28 @@ object TestFixtures {
     )
 
 
-    EventsEventToThingCrossRef.forceInsertAll(EventsEventToThingCrossRefRows: _*)
+    EventsEventToThingCrossRef.forceInsertAll(eventsEventToThingCrossRefRows: _*)
 
     val eventsEventToLocationCrossRefRows = Seq(
       new EventsEventlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, "Is_At", true, 6)
     )
 
 
-    EventsEventToLocationCrossRef.forceInsertAll(EventsEventToLocationCrossRefRows: _*)
+    EventsEventToLocationCrossRef.forceInsertAll(eventsEventToLocationCrossRefRows: _*)
 
     val eventsEventToPersonCrossRefRows = Seq(
       new EventsEventpersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, "Is_At", true, 7)
     )
 
 
-    EventsEventToPersonCrossRef.forceInsertAll(EventsEventToPersonCrossRefRows: _*)
+    EventsEventToPersonCrossRef.forceInsertAll(eventsEventToPersonCrossRefRows: _*)
 
     val eventsEventToOrganisationCrossRefRows = Seq(
       new EventsEventorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 3, 2, "Uses_Utility", true, 8)
     )
 
 
-    EventsEventToOrganisationCrossRef.forceInsertAll(EventsEventToOrganisationCrossRefRows: _*)
+    EventsEventToOrganisationCrossRef.forceInsertAll(eventsEventToOrganisationCrossRefRows: _*)
     //  Thing Relationships
 
     val thingsThingToPersonCrossRefRows = Seq(
@@ -257,7 +257,7 @@ object TestFixtures {
     )
 
 
-    ThingsThingToPersonCrossRef.forceInsertAll(ThingsThingToPersonCrossRefRows: _*)
+    ThingsThingToPersonCrossRef.forceInsertAll(thingsThingToPersonCrossRefRows: _*)
 
     // Location Relationships
 
@@ -266,7 +266,7 @@ object TestFixtures {
     )
 
 
-    LocationsLocationToThingCrossRef.forceInsertAll(LocationsLocationToThingCrossRefRows: _*)
+    LocationsLocationToThingCrossRef.forceInsertAll(locationsLocationToThingCrossRefRows: _*)
 
 
     // Organisation Relationships
@@ -276,7 +276,7 @@ object TestFixtures {
     )
 
 
-    OrganisationOrganisationLocationCrossRef.forceInsertAll(OrganisationOrganisationLocationCrossRefRows: _*)
+    OrganisationOrganisationLocationCrossRef.forceInsertAll(organisationOrganisationLocationCrossRefRows: _*)
 
 
     val organisationOrganisationThingCrossRefRows = Seq(
@@ -284,7 +284,7 @@ object TestFixtures {
     )
 
 
-    OrganisationOrganisationThingCrossRef.forceInsertAll(OrganisationOrganisationThingCrossRefRows: _*)
+    OrganisationOrganisationThingCrossRef.forceInsertAll(organisationOrganisationThingCrossRefRows: _*)
 
     //People Relationships
 
@@ -293,7 +293,7 @@ object TestFixtures {
     )
 
 
-    PeoplePersonOrganisationCrossRefCrossRef.forceInsertAll(PeoplePersonOrganisationCrossRefRows: _*)
+    PeoplePersonOrganisationCrossRefCrossRef.forceInsertAll(peoplePersonOrganisationCrossRefRows: _*)
 
 
     val peoplePersonOrganisationCrossRefRows = Seq(
@@ -301,7 +301,7 @@ object TestFixtures {
     )
 
 
-    PeoplePersonOrganisationCrossRef.forceInsertAll(PeoplePersonOrganisationCrossRefRefRows: _*)
+    PeoplePersonOrganisationCrossRef.forceInsertAll(peoplePersonOrganisationCrossRefRefRows: _*)
 
     // location Property/type Relationships 
 
@@ -310,21 +310,21 @@ object TestFixtures {
     )
 
 
-    LocationsSystemPropertyDynamicCrossRefCrossRef.forceInsertAll(LocationsSystemPropertyDynamicCrossRefRows: _*)
+    LocationsSystemPropertyDynamicCrossRefCrossRef.forceInsertAll(locationsSystemPropertyDynamicCrossRefRows: _*)
 
     val locationsSystemPropertyStaticCrossRefRows = Seq(
       new LocationsSystemPropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 4, 3, 4, "Parent Child", true, 5)
     )
 
 
-    LocationsSystemPropertyStaticCrossRef.forceInsertAll(LocationsSystemPropertyStaticCrossRefRows: _*)
+    LocationsSystemPropertyStaticCrossRef.forceInsertAll(locationsSystemPropertyStaticCrossRefRows: _*)
 
     val locationsSystemTypeRows = Seq(
       new LocationsSystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), 2, 1, "recordID", true)
     )
 
 
-    LocationsSystemTypeCrossRef.forceInsertAll(LocationsSystemTypeRows: _*)
+    LocationsSystemTypeCrossRef.forceInsertAll(locationsSystemTypeRows: _*)
 
     // things Property/type Relationships
 
@@ -333,7 +333,7 @@ object TestFixtures {
     )
 
 
-    ThingsSystemPropertyStaticCrossRef.forceInsertAll(LocationsSystemTypeRows: _*)
+    ThingsSystemPropertyStaticCrossRef.forceInsertAll(locationsSystemTypeRows: _*)
 
 
     val thingsSystemPropertyDynamicCrossRefRows = Seq(
@@ -342,14 +342,14 @@ object TestFixtures {
     )
 
 
-    ThingsSystemPropertyDynamicCrossRef.forceInsertAll(ThingsSystemPropertyDynamicCrossRefRows: _*)
+    ThingsSystemPropertyDynamicCrossRef.forceInsertAll(thingsSystemPropertyDynamicCrossRefRows: _*)
 
     val thingsSystemTypeCrossRefRows = Seq(
       new ThingsSystemTypeCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), thingID, 2, "recordID", true)
     )
 
 
-    ThingsThingSystemTypeCrossRef.forceInsertAll(ThingsSystemTypeCrossRefRows: _*)
+    ThingsThingSystemTypeCrossRef.forceInsertAll(thingsSystemTypeCrossRefRows: _*)
 
     // people Property/type Relationships
 
@@ -358,21 +358,21 @@ object TestFixtures {
     )
 
 
-    PeopleSystemPropertyStaticCrossRef.forceInsertAll(PeopleSystemPropertyStaticCrossRefRows: _*)
+    PeopleSystemPropertyStaticCrossRef.forceInsertAll(peopleSystemPropertyStaticCrossRefRows: _*)
 
     val peopleSystemPropertyDynamicCrossRefRows = Seq(
       new PeopleSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, 1, 3, "Parent Child", true, 2)
     )
 
 
-    PeopleSystemPropertyDynamicCrossRef.forceInsertAll(PeopleSystemPropertyDynamicCrossRefRows: _*)
+    PeopleSystemPropertyDynamicCrossRef.forceInsertAll(peopleSystemPropertyDynamicCrossRefRows: _*)
 
     val peopleSystemTypeRows = Seq(
       new PeopleSystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "recordID", true)
     )
 
 
-    PeopleSystemTypeCrossRef.forceInsertAll(PeopleSystemTypeRows: _*)
+    PeopleSystemTypeCrossRef.forceInsertAll(peopleSystemTypeRows: _*)
 
     // events Property/type Relationships
 
@@ -381,21 +381,21 @@ object TestFixtures {
     )
 
 
-    EventsSystemPropertyStaticCrossRef.forceInsertAll(EventsSystemPropertyStaticCrossRefRows: _*)
+    EventsSystemPropertyStaticCrossRef.forceInsertAll(eventsSystemPropertyStaticCrossRefRows: _*)
 
     val eventsSystemPropertyDynamicCrossRefRows = Seq(
       new EventsSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 3, 2, 5, 2, "Parent Child", true, 3)
     )
 
 
-    EventsSystemPropertyDynamicCrossRef.forceInsertAll(EventsSystemPropertyDynamicCrossRefRows: _*)
+    EventsSystemPropertyDynamicCrossRef.forceInsertAll(eventsSystemPropertyDynamicCrossRefRows: _*)
 
     val eventsSystemTypeRows = Seq(
       new EventsSystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 4, "recordID", true)
     )
 
 
-    EventsSystemTypeRef.forceInsertAll(EventsSystemTypeRows: _*)
+    EventsSystemTypeRef.forceInsertAll(eventsSystemTypeRows: _*)
 
     // organisation Property/type Relationships
 
@@ -404,19 +404,19 @@ object TestFixtures {
     )
 
 
-    OrganisationsSystemPropertyStaticCrossRef.forceInsertAll(OrganisationsSystemPropertyStaticCrossRefRows: _*)
+    OrganisationsSystemPropertyStaticCrossRef.forceInsertAll(organisationsSystemPropertyStaticCrossRefRows: _*)
 
     val organisationsSystemPropertyDynamicCrossRefRows = Seq(
       new OrganisationsSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, 2, 3, "Parent Child", true, 1)
     )
 
-    OrganisationsSystemPropertyDynamicCrossRef.forceInsertAll(OrganisationsSystemPropertyDynamicCrossRefRows: _*)
+    OrganisationsSystemPropertyDynamicCrossRef.forceInsertAll(organisationsSystemPropertyDynamicCrossRefRows: _*)
 
     val organisationsSystemTypeRows = Seq(
       new OrganisationSystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, "recordID", true)
     )
 
-    OrganisationSystemType.forceInsertAll(OrganisationSystemTypeRows: _*)
+    OrganisationSystemType.forceInsertAll(organisationSystemTypeRows: _*)
   }
 
   def clearAllData(implicit session: Session) = {
