@@ -14,7 +14,7 @@ import spray.httpx.SprayJsonSupport._
 
 import dal.SlickPostgresDriver.simple._
 
-class ContextualBundleServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with ContexBundleService {
+class ContexualBundleServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with ContextBundleService {
   def actorRefFactory = system
 
   // Prepare the data to create test bundles on
@@ -34,13 +34,13 @@ class ContextualBundleServiceSpec extends Specification with Specs2RouteTest wit
       DataTables.forceInsertAll(DataTablesRows: _*)
     }
 
-    val findFacebookTableId = dataTables.filter(_.name === "Facebook").map(_.id).run.head
+    /*val findFacebookTableId = dataTables.filter(_.name === "Facebook").map(_.id).run.head
     val findEventsTableId = dataTables.filter(_.name === "events").map(_.id).run.head
     val findMeTableId = dataTables.filter(_.name === "me").map(_.id).run.head
     val findlocationsTableId = dataTables.filter(_.name === "locations").map(_.id).run.head
     val findFibaroTableId = dataTables.filter(_.name === "Fibaro").map(_.id).run.head
     val findFitbitTableId = dataTables.filter(_.name === "Fitbit").map(_.id).run.head
-
+    */
      val dataTableToTableCrossRefRows = Seq(
           new DataTabletotablecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", findFacebookTableId, findEventsTableId),
           new DataTabletotablecrossrefRow(2, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", findFacebookTableId, findlocationsTableId),
