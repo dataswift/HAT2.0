@@ -76,8 +76,8 @@ object TestFixtures {
       new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "meters", "distance measurement", "m"),
       new SystemUnitofmeasurementRow(2, LocalDateTime.now(), LocalDateTime.now(), "kilograms", "weight measurement", "kg"),
       new SystemUnitofmeasurementRow(3, LocalDateTime.now(), LocalDateTime.now(), "meters cubed", "3d spaceq", "m^3"),
-      new SystemUnitofmeasurementRow(4, LocalDateTime.now(), LocalDateTime.now(), "personattributes", "Fibaro"),
-      new SystemUnitofmeasurementRow(5, LocalDateTime.now(), LocalDateTime.now(), "locationattributes", "Fibaro"))
+      new SystemUnitofmeasurementRow(4, LocalDateTime.now(), LocalDateTime.now(), "personattributes", "Fibaro"),  // FIXME wrong number of arguments, values don't make sense
+      new SystemUnitofmeasurementRow(5, LocalDateTime.now(), LocalDateTime.now(), "locationattributes", "Fibaro"))  // FIXME: wrong number of arguments, values don't make sense
 
     SystemUnitOfMeasurement.forceInsertAll(systemUnitOfMeasurementRows: _*)
 
@@ -91,10 +91,18 @@ object TestFixtures {
     SystemType.forceInsertAll(systemTypeRows: _*)
 
     val systemPropertyRows = Seq(
+      // FIXME: kitchenEleectricity has type 1, which is room dimensions?
+      // FIXME: UoM is in meters
       new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", "Fibaro", 1, 1),
+      // FIXME: wateruse has type 3, which is type utilities?
+      // FIXME: wateruse UoM is kg
       new SystemPropertyRow(2, LocalDateTime.now(), LocalDateTime.now(), "wateruse", "Fibaro", 3, 2),
-      new SystemPropertyRow(3, LocalDateTime.now(), LocalDateTime.now(), "size", "Fibaro", 1, 3),
+      new SystemPropertyRow(3, LocalDateTime.now(), LocalDateTime.now(), "size", "Fibaro", systemTypeRows(0).id, 3),
+      // FIXME: weight has type 2 which is _dayily_ activities?
+      // FIXME: UoM 4 is broken
       new SystemPropertyRow(4, LocalDateTime.now(), LocalDateTime.now(), "weight", "Fibaro", 2, 4),
+      // FIXME: elevation has type 4 which is personattributes?
+      // FIXME: UoM 5 is broken
       new SystemPropertyRow(5, LocalDateTime.now(), LocalDateTime.now(), "elevation", "Fibaro", 4, 5))
 
     SystemProperty.forceInsertAll(systemPropertyRows: _*)
@@ -147,25 +155,45 @@ object TestFixtures {
 
     EventsEvent.forceInsertAll(eventsEventRows: _*)
 
-    val entityRows = Seq(
-      new EntityRow(1, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "thing", None, 1, None, None, None),
-      new EntityRow(2, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "location", 1, None, None, None, None),
-      new EntityRow(3, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "peron", None, None, None, None, 1),
-      new EntityRow(4, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "organisation", None, None, None, 1, None),
-      new EntityRow(5, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "event", None, None, 1, None, None),
-      new EntityRow(6, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "thing", None, 2, None, None, None),
-      new EntityRow(7, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "location", 2, None, None, None, None),
-      new EntityRow(8, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "peron", None, None, None, None, 2),
-      new EntityRow(9, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "organisation", None, None, None, 2, None),
-      new EntityRow(10, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "event", None, None, 2, None, None),
-      new EntityRow(11, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "event", None, None, 3, None, None),
-      new EntityRow(12, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "thing", None, 3, None, None, None),
-      new EntityRow(13, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "location", 3, None, None, None, None),
-      new EntityRow(14, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "peron", None, None, None, None, 3),
-      new EntityRow(15, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "event", None, None, 3, None, None),
-      new EntityRow(16, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "event", None, None, 4, None, None),
-      new EntityRow(16, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "thing", None, 4, None, None, None)
-    )
+//    val entityRows = Seq(
+//      // FIXME: why do all entities have name timestamp?
+        // FIXME: a suggestion on doing it more automatically below
+//      new EntityRow(1, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "thing", None, 1, None, None, None),
+//      new EntityRow(2, LocalDateTime.now(), LocalDateTime.now(), locationsLocationRows(0).name, locationsLocationRows(0).id, None, None, None, None),
+//      new EntityRow(3, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "peron", None, None, None, None, 1),
+//      new EntityRow(4, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "organisation", None, None, None, 1, None),
+//      new EntityRow(5, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "event", None, None, 1, None, None),
+//      new EntityRow(6, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "thing", None, 2, None, None, None),
+//      new EntityRow(7, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "location", 2, None, None, None, None),
+//      new EntityRow(8, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "peron", None, None, None, None, 2),
+//      new EntityRow(9, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "organisation", None, None, None, 2, None),
+//      new EntityRow(10, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "event", None, None, 2, None, None),
+//      new EntityRow(11, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "event", None, None, 3, None, None),
+//      new EntityRow(12, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "thing", None, 3, None, None, None),
+//      new EntityRow(13, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "location", 3, None, None, None, None),
+//      new EntityRow(14, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "peron", None, None, None, None, 3),
+//      new EntityRow(15, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "event", None, None, 3, None, None),
+//      new EntityRow(16, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "event", None, None, 4, None, None),
+//      new EntityRow(16, LocalDateTime.now(), LocalDateTime.now(), "timestamp", "thing", None, 4, None, None, None)
+//    )
+
+    var entityId = 1
+    val entityRows = thingsThingRows.map { thing =>
+      entity += 1
+      new EntityRow(entityId, LocalDateTime.now(), LocalDateTime.now(), thing.name, "thing", None, thing.id, None, None, None)
+    } ++ peoplePersonRows.map { person =>
+      entity += 1
+      new EntityRow(entityId, LocalDateTime.now(), LocalDateTime.now(), person.name, "person", None, None, None, None, person.id)
+    } ++ locationsLocationRows.map { location =>
+      entity += 1
+      new EntityRow(entityId, LocalDateTime.now(), LocalDateTime.now(), location.name, "location", location.id, None, None, None, None)
+    } ++ organisationsOrganisationRows.map { organisation =>
+      entity += 1
+      new EntityRow(entityId, LocalDateTime.now(), LocalDateTime.now(), organisation.name, "organisation", None, None, None, organisation.id, None)
+    } ++ eventsEventRows.map { event =>
+      entity += 1
+      new EntityRow(entityId, LocalDateTime.now(), LocalDateTime.now(), event.name, "event", None, None, Some(event.id), None, None)
+    }
 
     Entity.forceInsertAll(entityRows: _*)
 
@@ -190,11 +218,14 @@ object TestFixtures {
 
     SystemRelationshipRecord.forceInsertAll(systemRelationshipRecordRows: _*)
 
-
+    // FIXME: for clarity and consistency, do it this way
     val eventsEventToEventCrossRefRows = Seq(
-      new EventsEventtoeventcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 3, 2, "Parent_Child", true, 1)
+      new EventsEventtoeventcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+        eventsEventRows.find(_.name === "going to work").get.id,
+        eventsEventRows.find(_.name === "driving").get.id, "Parent_Child",
+        true,
+        systemRelationshipRecordRows.find(_.name === "Driving to Work").get.id)
     )
-
     EventsEventToEventCrossRef.forceInsertAll(eventsEventToEventCrossRefRows: _*)
 
     val thingsThingToThingCrossRefRows = Seq(
@@ -224,7 +255,7 @@ object TestFixtures {
     // Event Relationships
 
     val eventsEventToThingCrossRefRows = Seq(
-      new Events(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "Used_During", true, 5)
+      new EventsEvent(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "Used_During", true, 5)
     )
 
 
@@ -280,7 +311,7 @@ object TestFixtures {
 
 
     val organisationOrganisationThingCrossRefRows = Seq(
-      new OrganisationOrganisationThingCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 2, 2, "Rents", true, 12)
+      new OrganisationsOrganisationthingcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 2, 2, "Rents", true, 12)
     )
 
 
@@ -289,7 +320,7 @@ object TestFixtures {
     //People Relationships
 
     val peoplePersonOrganisationCrossRefRows = Seq(
-      new PeoplePersonOrganisationCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "Works_at", true, 13)
+      new PeoplePersonorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "Works_at", true, 13)
     )
 
 
@@ -297,7 +328,7 @@ object TestFixtures {
 
 
     val peoplePersonOrganisationCrossRefRows = Seq(
-      new PeoplePersonOrganisationCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 3, 1, "Is_at", true, 14)
+      new PeoplePersonorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 3, 1, "Is_at", true, 14)
     )
 
 
@@ -305,31 +336,35 @@ object TestFixtures {
 
     // location Property/type Relationships 
 
+    ocationId: Int, systemPropertyId: Int, fieldId: Int, relationshipType
     val locationsSystemPropertyDynamicCrossRefRows = Seq(
-      new LocationsSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 4, 2, 3, 2, "Parent Child", true, 1)
+      // Location 2 -
+      // systemProeprty 3 -
+      // fieldId 2 -
+      //
+      new LocationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 2, 3, 2, "Parent Child", true, 1)
     )
 
 
     LocationsSystemPropertyDynamicCrossRefCrossRef.forceInsertAll(locationsSystemPropertyDynamicCrossRefRows: _*)
 
     val locationsSystemPropertyStaticCrossRefRows = Seq(
-      new LocationsSystemPropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 4, 3, 4, "Parent Child", true, 5)
+      new LocationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 4, 3, 4, "Parent Child", true, 5)
     )
 
 
     LocationsSystemPropertyStaticCrossRef.forceInsertAll(locationsSystemPropertyStaticCrossRefRows: _*)
 
     val locationsSystemTypeRows = Seq(
-      new LocationsSystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), 2, 1, "recordID", true)
+      new LocationsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 2, 1, "recordID", true)
     )
-
 
     LocationsSystemTypeCrossRef.forceInsertAll(locationsSystemTypeRows: _*)
 
     // things Property/type Relationships
 
     val thingsSystemPropertyStaticCrossRefRows = Seq(
-      new ThingsSystemPropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 3, 2, 1, "Parent Child", true, 3)
+      new ThingsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 3, 2, 1, "Parent Child", true, 3)
     )
 
 
@@ -337,7 +372,7 @@ object TestFixtures {
 
 
     val thingsSystemPropertyDynamicCrossRefRows = Seq(
-      new ThingsSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 3, 2, 1, 2, "Parent Child", true, 3)
+      new ThingsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 3, 2, 1, 2, "Parent Child", true, 3)
 
     )
 
@@ -345,7 +380,7 @@ object TestFixtures {
     ThingsSystemPropertyDynamicCrossRef.forceInsertAll(thingsSystemPropertyDynamicCrossRefRows: _*)
 
     val thingsSystemTypeCrossRefRows = Seq(
-      new ThingsSystemTypeCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), thingID, 2, "recordID", true)
+      new ThingsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), thingID, 2, "recordID", true)
     )
 
 
@@ -354,21 +389,21 @@ object TestFixtures {
     // people Property/type Relationships
 
     val peopleSystemPropertyStaticCrossRefRows = Seq(
-      new PeopleSystemPropertyStaticCrossRefRows(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, 2, 1, 4, "Parent Child", true, 2)
+      new PeopleSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, 2, 1, 4, "Parent Child", true, 2)
     )
 
 
     PeopleSystemPropertyStaticCrossRef.forceInsertAll(peopleSystemPropertyStaticCrossRefRows: _*)
 
     val peopleSystemPropertyDynamicCrossRefRows = Seq(
-      new PeopleSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, 1, 3, "Parent Child", true, 2)
+      new PeopleSystempropertydynamiccrossrefRow()(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, 1, 3, "Parent Child", true, 2)
     )
 
 
     PeopleSystemPropertyDynamicCrossRef.forceInsertAll(peopleSystemPropertyDynamicCrossRefRows: _*)
 
     val peopleSystemTypeRows = Seq(
-      new PeopleSystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "recordID", true)
+      new PeopleSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "recordID", true)
     )
 
 
@@ -377,21 +412,21 @@ object TestFixtures {
     // events Property/type Relationships
 
     val eventsSystemPropertyStaticCrossRefRows = Seq(
-      new EventsSystemPropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 4, 3, 2, 1, "Parent Child", true, 2)
+      new EventsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 4, 3, 2, 1, "Parent Child", true, 2)
     )
 
 
     EventsSystemPropertyStaticCrossRef.forceInsertAll(eventsSystemPropertyStaticCrossRefRows: _*)
 
     val eventsSystemPropertyDynamicCrossRefRows = Seq(
-      new EventsSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 3, 2, 5, 2, "Parent Child", true, 3)
+      new EventsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 3, 2, 5, 2, "Parent Child", true, 3)
     )
 
 
     EventsSystemPropertyDynamicCrossRef.forceInsertAll(eventsSystemPropertyDynamicCrossRefRows: _*)
 
     val eventsSystemTypeRows = Seq(
-      new EventsSystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 4, "recordID", true)
+      new EventsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 4, "recordID", true)
     )
 
 
@@ -400,20 +435,20 @@ object TestFixtures {
     // organisation Property/type Relationships
 
     val organisationsSystemPropertyStaticCrossRefRows = Seq(
-      new OrganisationsSystemPropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 3, 2, 1, "Parent Child", true, 4)
+      new OrganisationsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 3, 2, 1, "Parent Child", true, 4)
     )
 
 
     OrganisationsSystemPropertyStaticCrossRef.forceInsertAll(organisationsSystemPropertyStaticCrossRefRows: _*)
 
     val organisationsSystemPropertyDynamicCrossRefRows = Seq(
-      new OrganisationsSystemPropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, 2, 3, "Parent Child", true, 1)
+      new OrganisationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, 2, 3, "Parent Child", true, 1)
     )
 
     OrganisationsSystemPropertyDynamicCrossRef.forceInsertAll(organisationsSystemPropertyDynamicCrossRefRows: _*)
 
     val organisationsSystemTypeRows = Seq(
-      new OrganisationSystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, "recordID", true)
+      new OrganisationsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, "recordID", true)
     )
 
     OrganisationSystemType.forceInsertAll(organisationSystemTypeRows: _*)
