@@ -191,7 +191,7 @@ trait ContextBundleService extends HttpService with DatabaseInfo {
           // A partial function to store all table slices related to this bundle table
           def storeBundlePropertySlice = storePropertySlice (insertedApiBundleContext) _
 
-          val apiPropertySlices = bundleContext.slices map { tableContext =>
+          val apiPropertySlices = bundleContext.slices map { propertySlices =>
             val propertyslices = bundlePropertySlices.map(storeBundlePropertySlice)
             // Flattens to a simple Try with list if slices or returns the first error that occurred
             flatten(propertyslices)
@@ -214,15 +214,34 @@ trait ContextBundleService extends HttpService with DatabaseInfo {
 
   }
 
-  private def storePropertySlice(bundleTable: ApiBundleTable)
+   private def getBundleContextById(bundleContextId: Int)(implicit session: Session): Option[ApiBundleContext] = {
+    // Traversing entity graph the Slick way
+    val tableQuery = for {
+      bundleContext <- BundleContext.filter(_.id === bundleContextId)
+      entitySelection <- bundleContext.entitySelectionFk
+    } yield (bundleContext, entitySelection)
+
+    val table = tableQuery.run.headOption
+
+    // Map back from database types to API ones
+    bundleContext map {
+      case (bundleContext: bundleContextRow, entitySelection: entitySelectionRow) =>
+        val apiDataTable = ApiEntitySelection.fromentitySelection(entitySelection)(None)(None)
+        val apibundleContext = ApibundleContext.frombundleContext(bundleContext)(apiEntitySelection)
+        val slices = getBundleContextSlices(apibundleContext)
+        apibundleContext.copy(slices = slices)
+    }
+  }
+
+  private def storePropertySlice(bundleContext: ApiBundleContext)
                         (slice: ApiBundlePropertySlice)
                         (implicit session: Session): Try[ApiBundlePropertySlice] = {
 
-    (bundleTable.table.id, bundleTable.id, slice.table.id) match {
+    (bundleContext.table.id, bundleContext.id, slice.table.id) match {
       case (None, _, _) =>
         Failure(new IllegalArgumentException("Table provided for bundling must contain ID"))
 
-      case (slice.table.id, Some(bundleTableId), Some(sliceTableId)) =>
+      case (slice.table.id, Some((bundleContextId), Some(sliceTableId)) =>
 
         val sliceRow = new bundlePropertySliceRow(
           0, LocalDateTime.now(), LocalDateTime.now(), propertyrecordcrossreId)
@@ -247,21 +266,21 @@ trait ContextBundleService extends HttpService with DatabaseInfo {
 
   }
 
-  private def getbundlePropertySlices(bundleTable: ApiBundleTable)
+  private def getbundlePropertySlices(bundleContext: ApiBundleContext)
                                   (implicit session: Session): Option[Seq[ApibundlePropertySlice]] = {
-    bundleTable.id map { bundleTableId =>
+    bundleContext.id map { bundleContextId =>
       // Traversing entity graph the Slick way
       val slicesQuery = for {
-        slice <- bundlePropertySlice.filter(_.bundleTableId === bundleTableId)
-        dataTable <- slice.dataTableFk
-      } yield (slice, dataTable)
+        slice <- bundlePropertySlice.filter(_.bundleContextId === bundleContextId)
+        bundleProperyRecordCrossRef <- slice.bundleProperyRecordCrossRefFk
+      } yield (slice, bundleProperyRecordCrossRef)
 
       val slices = slicesQuery.run
 
-      slices map { case (slice: bundlePropertySliceRow, dataTable: DataTableRow) =>
+      slices map { case (slice: bundlePropertySliceRow, bundleProperyRecordCrossRef: BundleProperyRecordCrossRefRow) =>
         // Returning the Data Table information of the slice without subTables or fields
-        val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
-        val apiSlice = ApibundlePropertySlice.frombundlePropertySlice(slice)(apiDataTable)
+        val apiBundleProperyRecordCrossRef = ApBundleProperyRecordCrossRef.fromBundleProperyRecordCrossRef(bundleProperyRecordCrossRef)(None)(None)
+        val apiSlice = ApibundlePropertySlice.frombundlePropertySlice(slice)(apiBundleProperyRecordCrossRef)
         val conditions = getSliceConditions(apiSlice)
         apiSlice.copy(conditions = conditions)
       }
@@ -269,11 +288,11 @@ trait ContextBundleService extends HttpService with DatabaseInfo {
   }
 
   private def storeCondition(bundlePropertySlice: ApibundlePropertySlice)
-                            (condition: ApiBundleTableCondition)
+                            (propertyCondition: ApiPropertySliceCondition)
                             (implicit session: Session): Try[ApiBundleTableCondition] = {
 
     (bundlePropertySlice.table.id, condition.field.id, bundlePropertySlice.id) match {
-      case (Some(condition.field.tableId), Some(fieldId), Some(sliceId)) =>
+      case (Some(condition.field.tableId), Some(propertyrecordcrossreId), Some(sliceId)) =>
         val conditionRow = new bundlePropertySliceconditionRow(
           0, LocalDateTime.now(), LocalDateTime.now(),
           propertysliceId, condition.operator.toString, condition.value)
@@ -295,18 +314,53 @@ trait ContextBundleService extends HttpService with DatabaseInfo {
         // Traversing entity graph the Slick way
         val conditionsQuery = for {
           c <- bundlePropertySlicecondition.filter(_.propertySliceId === bundlePropertySlice.id)
-          f <- c.dataFieldFk
+          f <- c.propertyrecordcrossreIdFk
         } yield (c, f)
 
         val conditions = conditionsQuery.run
-        conditions map { case (condition:bundlePropertySliceconditionRow, field:DataFieldRow) =>
-          val apiField = ApiDataField.fromDataField(field)
-          ApiBundleTableCondition.frombundlePropertySliceCondition(condition)(apiField)
+        conditions map { case (condition:bundlePropertySliceconditionRow, field:ApiPropertyRecordCrossRefIdRow) =>
+          val apiField = ApiPropertyRecordCrossRef.fromDataField(field)
+          ApiPropertySliceCondition.frombundlePropertySliceCondition(condition)(apiField)
         }
 
       case None =>
         Seq()
     }
   }
+
+   private def getBundleContextById(bundleContextId: Int)(implicit session: Session): Option[ApiBundleContext] = {
+    BundleContext.filter(_.id === bundleContextId).run.headOption map { bundlecontext =>
+      // Traversing entity graph the Slick way
+      // A fairly complex case with a lot of related data that needs to be retrieved for each bundle join
+      val tableQuery = for {
+        join <- BundleContextJoin.filter(_.bundleContextId === bundleContextId)
+        bundleContext <- join.bundleContextFk
+        propertyRecordCrossRef <- join.propertyRecordCrossRefFk
+        entitySelection <- join.entitySelectionFk
+      } yield (join, bundleContext, propertyRecordCrossRef, entitySelection)
+
+      val tables = tableQuery.run
+
+      val apiTables = tables.map {
+        case (join:BundleContextJoin, bundleContext: BundleContextRow, entitySelection: EntitySelectionRow, propertyRecordCrossRef: PropertyRecordCrossRef) =>
+          val apiPropertyRecordCrossRef = ApiPropertyRecordCrossRef.fromPropertyRecordCrossRef(propertyRecordCrossRef)(None)(None)
+          val apiEntitySelection = ApiBEntitySelection.fromEntitySelection(entitySelection)(apiEntitySelection)
+          val apiBundleContext = ApiBundleContext.fromDataField(bundleContextd)
+          ApiBundleCombination.frombundleContext(join)(Some(apiJoinField), Some(propertyRecordCrossRef), entitySelection)
+      }
+
+      ApiBundleContext.fromBundleContextTables(bundle)(apiTables)
+    }
+
+  }
+
+  protected def flatten[T](xs: Seq[Try[T]]): Try[Seq[T]] = {
+    val (ss: Seq[Success[T]]@unchecked, fs: Seq[Failure[T]]@unchecked) =
+      xs.partition(_.isSuccess)
+
+    if (fs.isEmpty) Success(ss map (_.get))
+    else Failure[Seq[T]](fs(0).exception) // Only keep the first failure
+
+
 }
 \ No newline at end of file
