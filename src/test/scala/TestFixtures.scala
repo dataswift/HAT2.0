@@ -3,7 +3,7 @@ import org.joda.time.LocalDateTime
 import dal.SlickPostgresDriver.simple._
 
 object TestFixtures {
-  def prepareContextualStructures(implicit sesion: Session) = {
+  def prepareDataStructures(implicit session: Session) = {
     // Data tables
     val dataTablesRows = Seq(
       new DataTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "Facebook", "facebook"),
@@ -63,14 +63,16 @@ object TestFixtures {
     val findTemperatureFieldId = dataTables.filter(_.name === "temperature").map(_.id).run.head
     */
     val dataValueRows = Seq(
-      new DataValueRow(1, LocalDateTime.now(), LocalDateTime.now(), "62", findWeightFieldId, findFacebookMeRecordId),
-      new DataValueRow(2, LocalDateTime.now(), LocalDateTime.now(), "300", findElevationFieldId, findFacebookLocationRecordId),
-      new DataValueRow(3, LocalDateTime.now(), LocalDateTime.now(), "20KwH", findKichenElectricityFieldId, findFibaroKitchenRecordId),
-      new DataValueRow(4, LocalDateTime.now(), LocalDateTime.now(), "Having a Shower", findFacebookEventRecordId, findFibaroBathroomRecordId),
-      new DataValueRow(5, LocalDateTime.now(), LocalDateTime.now(), "25", findTemperatureFieldId, findFacebookEventRecordId))
+      new DataValueRow(1, LocalDateTime.now(), LocalDateTime.now(), "62", findWeightFieldId, findFacebookMeRecordId), // FIXME
+      new DataValueRow(2, LocalDateTime.now(), LocalDateTime.now(), "300", findElevationFieldId, findFacebookLocationRecordId),  // FIXME
+      new DataValueRow(3, LocalDateTime.now(), LocalDateTime.now(), "20KwH", findKichenElectricityFieldId, findFibaroKitchenRecordId), // FIXME
+      new DataValueRow(4, LocalDateTime.now(), LocalDateTime.now(), "Having a Shower", findFacebookEventRecordId, findFibaroBathroomRecordId), // FIXME
+      new DataValueRow(5, LocalDateTime.now(), LocalDateTime.now(), "25", findTemperatureFieldId, findFacebookEventRecordId))  // FIXME
 
     DataValue.forceInsertAll(dataValueRows: _*)
+  }
 
+  def prepareContextualStructures(implicit sesion: Session) = {
     // contextualisation tools 
     val systemUnitOfMeasurementRows = Seq(
       new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "meters", "distance measurement", "m"),
@@ -197,6 +199,7 @@ object TestFixtures {
 
     Entity.forceInsertAll(entityRows: _*)
 
+
     // Relationship Record
 
     val systemRelationshipRecordRows = Seq(
@@ -218,73 +221,72 @@ object TestFixtures {
 
     SystemRelationshipRecord.forceInsertAll(systemRelationshipRecordRows: _*)
 
+    // Event Relationships
+
     // FIXME: for clarity and consistency, do it this way
     val eventsEventToEventCrossRefRows = Seq(
       new EventsEventtoeventcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         eventsEventRows.find(_.name === "going to work").get.id,
-        eventsEventRows.find(_.name === "driving").get.id, "Parent_Child",
-        true,
+        eventsEventRows.find(_.name === "driving").get.id,
+        "Parent_Child", true,
         systemRelationshipRecordRows.find(_.name === "Driving to Work").get.id)
     )
     EventsEventToEventCrossRef.forceInsertAll(eventsEventToEventCrossRefRows: _*)
 
-    val thingsThingToThingCrossRefRows = Seq(
-      new ThingsThingtothingcrossrefRow()(1, LocalDateTime.now(), LocalDateTime.now(), 1, 1, "Parent_Child", true, 2)
-    )
-
-    ThingsThingToThingCrossRefCrossRef.forceInsertAll(thingsThingToThingCrossRefRows: _*)
-
-    val peoplePersonToPersonCrossRefRows = Seq(
-      new PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, "Colleague", true, 3)
-    )
-
-    PeoplePersonToPersonCrossRef.forceInsertAll(peoplePersonToPersonCrossRefRows: _*)
-
-    val organisationsOrganisationToOrganisationCrossRefRows = Seq(
-      new OrganisationsOrganisationtoorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, "Buys_From", true, 4)
-    )
-
-    OrganisationsOrganisationToOrganisationCrossRef.forceInsertAll(organisationsOrganisationToOrganisationCrossRefRows: _*)
-
-    val locationsLocationToLocationCrossRefRows = Seq(
-      new LocationsLocationtolocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, "Next_To", true, 4)
-    )
-
-    LocationsLocationToLocationCrossRef.forceInsertAll(locationsLocationToLocationCrossRefRows: _*)
-
-    // Event Relationships
-
     val eventsEventToThingCrossRefRows = Seq(
-      new EventsEvent(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "Used_During", true, 5)
+      new EventsEvent(1, LocalDateTime.now(), LocalDateTime.now(),
+        eventsEventRows.find(_.name === "having a shower").get.id,
+        thingsThingRows.find(_.name === "shower").get.id,
+        "Used_During", true,
+        5)  // FIXME: system relationship record "elevation"?
     )
 
 
     EventsEventToThingCrossRef.forceInsertAll(eventsEventToThingCrossRefRows: _*)
 
     val eventsEventToLocationCrossRefRows = Seq(
-      new EventsEventlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, "Is_At", true, 6)
+      new EventsEventlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+        eventsEventRows.find(_.name === "having a shower").get.id,
+        locationsLocationRows.find(_.name === "bathroom").get.id,
+        "Is_At", true,
+        6)  // FIXME: Driving to work?
     )
 
 
     EventsEventToLocationCrossRef.forceInsertAll(eventsEventToLocationCrossRefRows: _*)
 
     val eventsEventToPersonCrossRefRows = Seq(
-      new EventsEventpersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, "Is_At", true, 7)
+      new EventsEventpersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+        eventsEventRows.find(_.name === "having a shower").get.id,
+        peoplePersonRows.find(_.name === "Martin").get.id,
+        "Is_At", true,
+        7)  // FIXME: water use?
     )
 
 
     EventsEventToPersonCrossRef.forceInsertAll(eventsEventToPersonCrossRefRows: _*)
 
     val eventsEventToOrganisationCrossRefRows = Seq(
-      new EventsEventorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 3, 2, "Uses_Utility", true, 8)
+      new EventsEventorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+        eventsEventRows.find(_.name === "going to work").get.id,
+        organisationsOrganisationRows.find(_.name === "WMG").get.id,
+        "Uses_Utility", true,
+        8)  // FIXME: size?
     )
 
 
     EventsEventToOrganisationCrossRef.forceInsertAll(eventsEventToOrganisationCrossRefRows: _*)
+
     //  Thing Relationships
 
+    val thingsThingToThingCrossRefRows = Seq(
+      new ThingsThingtothingcrossrefRow()(1, LocalDateTime.now(), LocalDateTime.now(), 1, 1, "Parent_Child", true, 2) // FIXME: thing1 linking to thing1 (cupboard to cupboard) with relationship type driving to work
+    )
+
+    ThingsThingToThingCrossRefCrossRef.forceInsertAll(thingsThingToThingCrossRefRows: _*)
+
     val thingsThingToPersonCrossRefRows = Seq(
-      new ThingsThingpersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "Owns", true, 9)
+      new ThingsThingpersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "Owns", true, 9) // FIXME: cupbord related to xiao with rel "Car Ownership"
     )
 
 
@@ -292,15 +294,27 @@ object TestFixtures {
 
     // Location Relationships
 
+    val locationsLocationToLocationCrossRefRows = Seq(
+      new LocationsLocationtolocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, "Next_To", true, 4)
+    )
+
+    LocationsLocationToLocationCrossRef.forceInsertAll(locationsLocationToLocationCrossRefRows: _*)
+
     val locationsLocationToThingCrossRefRows = Seq(
       new LocationsLocationthingcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 3, 2, "Is_At", true, 10)
     )
-
 
     LocationsLocationToThingCrossRef.forceInsertAll(locationsLocationToThingCrossRefRows: _*)
 
 
     // Organisation Relationships
+
+    val organisationsOrganisationToOrganisationCrossRefRows = Seq(
+      new OrganisationsOrganisationtoorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, "Buys_From", true, 4)
+    )
+
+    OrganisationsOrganisationToOrganisationCrossRef.forceInsertAll(organisationsOrganisationToOrganisationCrossRefRows: _*)
+
 
     val organisationOrganisationLocationCrossRefRows = Seq(
       new OrganisationsOrganisationlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 2, 3, "Is_At", true, 11)
@@ -319,25 +333,24 @@ object TestFixtures {
 
     //People Relationships
 
-    val peoplePersonOrganisationCrossRefRows = Seq(
-      new PeoplePersonorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "Works_at", true, 13)
+    val peoplePersonToPersonCrossRefRows = Seq(
+      new PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, "Colleague", true, 3)
     )
 
-
-    PeoplePersonOrganisationCrossRefCrossRef.forceInsertAll(peoplePersonOrganisationCrossRefRows: _*)
-
+    PeoplePersonToPersonCrossRef.forceInsertAll(peoplePersonToPersonCrossRefRows: _*)
 
     val peoplePersonOrganisationCrossRefRows = Seq(
+      new PeoplePersonorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "Works_at", true, 13),
       new PeoplePersonorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 3, 1, "Is_at", true, 14)
     )
 
-
-    PeoplePersonOrganisationCrossRef.forceInsertAll(peoplePersonOrganisationCrossRefRefRows: _*)
+    PeoplePersonOrganisationCrossRefCrossRef.forceInsertAll(peoplePersonOrganisationCrossRefRows: _*)
 
     // location Property/type Relationships 
 
-    ocationId: Int, systemPropertyId: Int, fieldId: Int, relationshipType
+
     val locationsSystemPropertyDynamicCrossRefRows = Seq(
+      // locationId: Int, systemPropertyId: Int, fieldId: Int, relationshipType
       // Location 2 -
       // systemProeprty 3 -
       // fieldId 2 -
@@ -349,7 +362,7 @@ object TestFixtures {
     LocationsSystemPropertyDynamicCrossRefCrossRef.forceInsertAll(locationsSystemPropertyDynamicCrossRefRows: _*)
 
     val locationsSystemPropertyStaticCrossRefRows = Seq(
-      new LocationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 4, 3, 4, "Parent Child", true, 5)
+      new LocationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 4, 3, 4, "Parent Child", true, 5) // FIXME: too many arguments!
     )
 
 
