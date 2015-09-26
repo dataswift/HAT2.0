@@ -31,14 +31,14 @@ object TestFixtures {
     DataTabletotablecrossref.forceInsertAll(dataTableToTableCrossRefRows: _*)
 
     // Adding data fields to data tables
-    val dataFieldRows = Seq(
+    val dataFields = Seq(
       new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), "weight", MeTableId),
       new DataFieldRow(2, LocalDateTime.now(), LocalDateTime.now(), "elevation", locationsTableId),
       new DataFieldRow(3, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", EventsTableId),
       new DataFieldRow(4, LocalDateTime.now(), LocalDateTime.now(), "size", FibaroTableId),
       new DataFieldRow(5, LocalDateTime.now(), LocalDateTime.now(), "temperature", FibaroTableId))
 
-    DataField.forceInsertAll(dataFieldRows: _*)
+    DataField.forceInsertAll(dataFields: _*)
 
     val WeightFieldId = dataTables.find(_.name === "weight").get.id
     val ElevationFieldId = dataTables.find(_.name === "elevation").get.id
@@ -70,9 +70,12 @@ object TestFixtures {
       new DataValueRow(5, LocalDateTime.now(), LocalDateTime.now(), "25", TemperatureFieldId, FacebookEventRecordId))
 
     DataValue.forceInsertAll(dataValueRows: _*)
+
+    prepareContextualStructures(dataFields)
   }
 
-  def prepareContextualStructures(implicit sesion: Session) = {
+  def prepareContextualStructures(dataFields: Seq[DataFieldRow])
+                                 (implicit sesion: Session) = {
     // contextualisation tools 
     val systemUOMs = Seq(
       new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "meters", "distance measurement", "m"),
@@ -152,14 +155,14 @@ object TestFixtures {
     Entity.forceInsertAll(entities: _*)
 
     contextualiseEntities(systemUOMs, systemTypes, systemProperties, propertyRecords, things, people, locatons,
-      organisations, events, entities)
+      organisations, events, entities, dataFields)
   }
 
   def contextualiseEntities(systemUOMs: Seq[SystemUnitofmeasurementRow], systemTypes: Seq[SystemTypeRow],
                             systemProperties: Seq[SystemPropertyRow], propertyRecords: Seq[SystemPropertyrecordRow],
                             things: Seq[ThingsThingRow], people: Seq[PeoplePersonRow], locations: Seq[LocationsLocationRow],
                             organisations: Seq[OrganisationsOrganisationRow], events: Seq[EventsEventRow],
-                            entities: Seq[EntityRow])
+                            entities: Seq[EntityRow], dataFields: Seq[DataFieldRow])
                            (implicit session: Session) = {
 
     // Relationship Record
@@ -200,7 +203,7 @@ object TestFixtures {
         events.find(_.name === "having a shower").get.id,
         things.find(_.name === "shower").get.id,
         "Used_During", true,
-        5)  // FIXME: system relationship record "elevation"?
+        5) // FIXME: system relationship record "elevation"?
     )
 
 
@@ -211,7 +214,7 @@ object TestFixtures {
         events.find(_.name === "having a shower").get.id,
         locations.find(_.name === "bathroom").get.id,
         "Is_At", true,
-        6)  // FIXME: Driving to work?
+        6) // FIXME: Driving to work?
     )
 
 
@@ -222,7 +225,7 @@ object TestFixtures {
         events.find(_.name === "having a shower").get.id,
         people.find(_.name === "Martin").get.id,
         "Is_At", true,
-        7)  // FIXME: water use?
+        7) // FIXME: water use?
     )
 
 
@@ -233,7 +236,7 @@ object TestFixtures {
         events.find(_.name === "going to work").get.id,
         organisations.find(_.name === "WMG").get.id,
         "Uses_Utility", true,
-        8)  // FIXME: size?
+        8) // FIXME: size?
     )
 
 
@@ -338,7 +341,7 @@ object TestFixtures {
         people.find(_.name === "Martin").get.id,
         organisations.find(_.name === "WMG").get.id,
         "Works_at", true,
-        13),  // FIXME: size
+        13), // FIXME: size
       new PeoplePersonorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         people.find(_.name === "Xiao").get.id,
         organisations.find(_.name === "seventrent").get.id,
@@ -348,6 +351,16 @@ object TestFixtures {
 
     PeoplePersonOrganisationCrossRefCrossRef.forceInsertAll(peoplePersonOrganisationCrossRefRows: _*)
 
+    linkEntityData(systemUOMs, systemTypes, systemProperties, propertyRecords, things, people, locatons,
+      organisations, events, entities, dataFields)
+  }
+
+  def linkEntityData(systemUOMs: Seq[SystemUnitofmeasurementRow], systemTypes: Seq[SystemTypeRow],
+                     systemProperties: Seq[SystemPropertyRow], propertyRecords: Seq[SystemPropertyrecordRow],
+                     things: Seq[ThingsThingRow], people: Seq[PeoplePersonRow], locations: Seq[LocationsLocationRow],
+                     organisations: Seq[OrganisationsOrganisationRow], events: Seq[EventsEventRow],
+                     entities: Seq[EntityRow], dataFields: Seq[DataFieldRow])
+                    (implicit session: Session) = {
     // Entity - Property linking
 
     val systemProperties = Seq(
@@ -400,7 +413,7 @@ object TestFixtures {
     LocationsSystemPropertyStaticCrossRef.forceInsertAll(locationsSystemPropertyStaticCrossRefRows: _*)
 
     val locationsSystemTypeRows = Seq(
-      new LocationsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 2, 1, "recordID", true)
+      new LocationsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 2, 1, "recordID", true) //FIXME: location 2 (bathroom) is linked to type "room dimensions" with relationship type "recordID" ???
     )
 
     LocationsSystemTypeCrossRef.forceInsertAll(locationsSystemTypeRows: _*)
@@ -416,7 +429,12 @@ object TestFixtures {
 
 
     val thingsSystemPropertyDynamicCrossRefRows = Seq(
-      new ThingsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 3, 2, 1, 2, "Parent Child", true, 3)
+      new ThingsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+        things.find(_.name === "shower"),
+        systemProperties.find(_.name === "wateruse"),
+        2,  // FIXME: no data field to relate to water use
+        "Parent Child", true,
+        3)  // FIXME: property record "size"
 
     )
 
@@ -449,7 +467,6 @@ object TestFixtures {
     val peopleSystemTypeRows = Seq(
       new PeopleSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "recordID", true)
     )
-
 
     PeopleSystemTypeCrossRef.forceInsertAll(peopleSystemTypeRows: _*)
 
