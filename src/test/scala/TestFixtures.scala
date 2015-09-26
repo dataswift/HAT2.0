@@ -510,43 +510,43 @@ object TestFixtures {
     DataTable.delete
     SystemProperty.delete
     SystemType.delete
-    SystemUnitOfMeasurement.delete
-    SystemPropertyRecord.delete
-    SystemRelationshipRecord.delete
-    EventsSystemPropertyStaticCrossRef.delete
-    EventsSystemPropertyDynamicCrossRef.delete
-    EventsSystemType.delete
-    EventsEventToEventCrossRef.delete
-    EventsEventToOrganisationCrossRef.delete
-    EventsEventToThingCrossRef.delete
-    EventsEventToLocationCrossRef.delete
+    SystemUnitofmeasurement.delete
+    SystemPropertyrecord.delete
+    SystemRelationshiprecord.delete
+    EventsSystempropertydynamiccrossref.delete
+    EventsSystempropertystaticcrossref.delete
+    EventsSystemtypecrossref.delete
+    EventsEventtoeventcrossref.delete
+    EventsEventorganisationcrossref.delete
+    EventsEventthingcrossref.delete
+    EventsEventlocationcrossref.delete
     EventsEvent.delete
     OrganisationsOrganisation.delete
-    OrganisationsOrganisationToOrganisationCrossRef.delete
-    OrganisationsSystemType.delete
-    OrganisationsSystemPropertyDynamicCrossRef.delete
-    OrganisationsSystemPropertyStaticCrossRef.delete
-    OrganisationOrganisationThingCrossRef.delete
-    OrganisationOrganisationLocationCrossRef.delete
+    OrganisationsOrganisationtoorganisationcrossref.delete
+    OrganisationsSystemtypecrossref.delete
+    OrganisationsSystempropertystaticcrossref.delete
+    OrganisationsSystempropertystaticcrossref.delete
+    OrganisationsOrganisationthingcrossref.delete
+    OrganisationsOrganisationlocationcrossref.delete
     ThingsThing.delete
-    ThingsThingtoThingCrossRef.delete
-    ThingsSystemTypeCrossRef.delete
-    ThingsSystemPropertyDynamicCrossRef.delete
-    ThingsSystemPropertyStaticCrossRef.delete
-    ThingsThingToPersonCrossRef.delete
+    ThingsThingtothingcrossref.delete
+    ThingsSystemtypecrossref.delete
+    ThingsSystempropertydynamiccrossref.delete
+    ThingsSystempropertystaticcrossref.delete
+    ThingsThingpersoncrossref.delete
     PeoplePerson.delete
-    PeoplePersontoPersonCrossRef.delete
-    PeopleSystemTypeCrossRef.delete
-    PeopleSystemPropertyDynamicCrossRef.delete
-    PeopleSystemPropertyStaticCrossRef.delete
-    PeoplePersonOrganisationCrossRef.delete
-    PeoplePersonLocationCrossRef.delete
-    PeoplePersonOrganisationCrossRef.delete
+    PeoplePersontopersoncrossref.delete
+    PeopleSystemtypecrossref.delete
+    PeopleSystempropertydynamiccrossref.delete
+    PeopleSystempropertystaticcrossref.delete
+    PeoplePersonorganisationcrossref.delete
+    PeoplePersonlocationcrossref.delete
+    PeoplePersonorganisationcrossref.delete
     LocationsLocation.delete
-    LocationsToLocationsCrossRef.delete
-    LocationsSystemTypeCrossRef.delete
-    LocationsSystemPropertyDynamicCrossRef.delete
-    LocationsSystemPropertyStaticCrossRef.delete
-    LocationsLocationToThingCrossRef.delete
+    LocationsLocationtolocationcrossref.delete
+    LocationsSystemtypecrossref.delete
+    LocationsSystempropertydynamiccrossref.delete
+    LocationsSystempropertystaticcrossref.delete
+    LocationsLocationthingcrossref.delete
   }
 }
