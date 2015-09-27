@@ -3,6 +3,7 @@ import org.specs2.specification.{AfterAll, BeforeAfterAll}
 
 //import Tables._
 //import Tables.profile.simple._
+
 import dal.SlickPostgresDriver.simple._
 import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
@@ -18,34 +19,34 @@ class ModelSpec extends Specification with AfterAll {
   "Core Tables" should {
     "be created" in {
 
-        val getTables = MTable.getTables(None, Some("public"), None, None).map { ts =>
-          ts.map { t =>
-            t.name.name
-          }
+      val getTables = MTable.getTables(None, Some("public"), None, None).map { ts =>
+        ts.map { t =>
+          t.name.name
         }
+      }
 
-        val requiredTables: Seq[String] = Seq(
-          "data_table",
-          "things_thing",
-          "events_event",
-          "people_person",
-          "locations_location",
-          "organisations_organisation",
-          "data_field",
-          "system_property"
-        )
+      val requiredTables: Seq[String] = Seq(
+        "data_table",
+        "things_thing",
+        "events_event",
+        "people_person",
+        "locations_location",
+        "organisations_organisation",
+        "data_field",
+        "system_property"
+      )
 
-        val tables = db.run(getTables)
-        tables must containAllOf[String](requiredTables).await
+      val tables = db.run(getTables)
+      tables must containAllOf[String](requiredTables).await
     }
   }
 
   "Data tables" should {
     "be empty" in {
-// FIXME: attempt to use the new slick API
-//      val allValues = for (value <- DataValue) yield value.id
-//      val values = db.run(DataValue.result)
-//      values must haveSize[Seq[_]](0).await
+      // FIXME: attempt to use the new slick API
+      //      val allValues = for (value <- DataValue) yield value.id
+      //      val values = db.run(DataValue.result)
+      //      values must haveSize[Seq[_]](0).await
       db.withSession { implicit session =>
         val result = DataValue.run
         result must have size (0)
@@ -273,10 +274,10 @@ class ModelSpec extends Specification with AfterAll {
         val ppRelRecord = new SystemRelationshiprecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "peoplePersontopersonrelationshiptype")
         val ppRelRecordId = (SystemRelationshiprecord returning SystemRelationshiprecord.map(_.id)) += ppRelRecord
 
-        val peoplePersontopersonrelationshiptypeRow = new PeoplePersontopersonrelationshiptypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin's Martin", Some(relationshiptype))
-        val peoplePersontopersonrelationshiptypeId = (PeoplePersontopersonrelationshiptype returning PeoplePersontopersonrelationshiptype.map(_.id)) += peoplePersontopersonrelationshiptypeRow
+        val personRelationshipType = new PeoplePersontopersonrelationshiptypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin's Martin", Some(relationshiptype))
+        val personRelationshipTypeId = (PeoplePersontopersonrelationshiptype returning PeoplePersontopersonrelationshiptype.map(_.id)) += personRelationshipType
 
-        val peoplePersontopersoncrossrefRow = new PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findpeopleId, findpeopleId, ppRelRecordId, true, peoplePersontopersonrelationshiptypeId)
+        val peoplePersontopersoncrossrefRow = new PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findpeopleId, findpeopleId, personRelationshipTypeId, true, ppRelRecordId)
         val peoplePersontopersoncrossrefId = (PeoplePersontopersoncrossref returning PeoplePersontopersoncrossref.map(_.id)) += peoplePersontopersoncrossrefRow
 
 
@@ -344,127 +345,10 @@ class ModelSpec extends Specification with AfterAll {
     }
   }
 
-  "Structure cleanup" should {
-    db.withSession { implicit session =>
-      "allow crossref system data to be removed" in {
-        ThingsSystempropertydynamiccrossref.delete
-        ThingsSystempropertydynamiccrossref.run must have size (0)
-
-        ThingsSystempropertystaticcrossref.delete
-        ThingsSystempropertystaticcrossref.run must have size (0)
-
-        PeopleSystempropertydynamiccrossref.delete
-        PeopleSystempropertydynamiccrossref.run must have size (0)
-
-        PeopleSystempropertystaticcrossref.delete
-        PeopleSystempropertystaticcrossref.run must have size (0)
-
-        OrganisationsSystempropertydynamiccrossref.delete
-        OrganisationsSystempropertydynamiccrossref.run must have size (0)
-
-        OrganisationsSystempropertystaticcrossref.delete
-        OrganisationsSystempropertystaticcrossref.run must have size (0)
-
-        LocationsSystempropertydynamiccrossref.delete
-        LocationsSystempropertydynamiccrossref.run must have size (0)
-
-        LocationsSystempropertystaticcrossref.delete
-        LocationsSystempropertystaticcrossref.run must have size (0)
-
-        EventsSystempropertydynamiccrossref.delete
-        EventsSystempropertydynamiccrossref.run must have size (0)
-
-        EventsSystempropertystaticcrossref.delete
-        EventsSystempropertystaticcrossref.run must have size (0)
-      }
-      "allow data to be removed" in {
-        ThingsThingtothingcrossref.delete
-        ThingsThingtothingcrossref.run must have size (0)
-
-        ThingsThing.delete
-        ThingsThing.run must have size (0)
-      }
-
-      "allow system data to be removed" in {
-        db.withSession { implicit session =>
-
-          SystemTypetotypecrossref.delete
-          SystemTypetotypecrossref.run must have size (0)
-
-          SystemProperty.delete
-          SystemProperty.run must have size (0)
-
-          SystemType.delete
-          SystemType.run must have size (0)
-
-          SystemUnitofmeasurement.delete
-          SystemUnitofmeasurement.run must have size (0)
-
-        }
-      }
-
-      "allow people data to be removed" in {
-        PeoplePersontopersoncrossref.delete
-        PeoplePersontopersoncrossref.run must have size (0)
-
-        PeoplePersontopersonrelationshiptype.delete
-        PeoplePersontopersonrelationshiptype.run must have size (0)
-
-        PeoplePerson.delete
-        PeoplePerson.run must have size (0)
-
-      }
-
-      "allow organisation data to be removed" in {
-        OrganisationsOrganisationtoorganisationcrossref.delete
-        OrganisationsOrganisationtoorganisationcrossref.run must have size (0)
-
-        OrganisationsOrganisation.delete
-        OrganisationsOrganisation.run must have size (0)
-
-      }
-
-      "allow location data to be removed" in {
-        LocationsLocationtolocationcrossref.delete
-        LocationsLocationtolocationcrossref.run must have size (0)
-
-        LocationsLocation.delete
-        LocationsLocation.run must have size (0)
-
-      }
-
-      "allow event data to be removed" in {
-        EventsEventtoeventcrossref.delete
-        EventsEventtoeventcrossref.run must have size (0)
-
-
-
-        EventsEvent.delete
-        EventsEvent.run must have size (0)
-
-      }
-
-      "allow data to be removed" in {
-
-          DataValue.delete
-          DataRecord.delete
-          DataField.delete
-          DataTabletotablecrossref.delete
-          DataTable.delete
-
-          DataValue.run must have size (0)
-          DataRecord.run must have size (0)
-          DataField.run must have size (0)
-          DataTabletotablecrossref.run must have size (0)
-          DataTable.run must have size (0)
-
-      }
-    }
-  }
-
-
-
   def afterAll() = {
+    db.withSession { implicit session =>
+      TestDataCleanup.cleanupAll
+    }
     db.close
   }
 

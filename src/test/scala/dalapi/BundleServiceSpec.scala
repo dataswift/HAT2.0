@@ -137,7 +137,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       val bundleJson: String = completeBundle.toJson.toString
 
       import JsonProtocol._
-      HttpRequest(POST, "/contextless", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
+      HttpRequest(POST, "/", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
         createBundleContextless ~> check {
         response.status should be equalTo Created
       }
@@ -173,7 +173,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       val bundleJson: String = completeBundle.toJson.toString
 
       import JsonProtocol._
-      val bundleId = HttpRequest(POST, "/contextless", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
+      val bundleId = HttpRequest(POST, "/", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
         createBundleContextless ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain(""""operator": "equal"""")
@@ -183,7 +183,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
 
       bundleId must beSome
 
-      HttpRequest(GET, s"/contextless/${bundleId.get}") ~>
+      HttpRequest(GET, s"/${bundleId.get}") ~>
         getBundleContextless ~> check {
         response.status should be equalTo OK
         responseAs[String] must contain(""""operator": "equal"""")
@@ -192,7 +192,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
     }
 
     "Return correct error code for bundle that doesn't exist" in {
-      HttpRequest(GET, "/contextless/0") ~>
+      HttpRequest(GET, "/0") ~>
         getBundleContextless ~> check {
         response.status should be equalTo NotFound
       }

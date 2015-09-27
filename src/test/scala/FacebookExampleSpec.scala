@@ -16,10 +16,6 @@ class FacebookExampleSpec extends Specification with AfterAll {
 
   sequential
 
-  def afterAll() = {
-    db.close
-  }
-
   "Facebook data structures" should {
     db.withSession { implicit session =>
       "have virtual tables created" in {
@@ -576,26 +572,14 @@ class FacebookExampleSpec extends Specification with AfterAll {
   //    }
   //  }
 
-  "Facebook data structures" should {
+  "Structure cleanup" should {
     db.withSession { implicit session =>
-      "allow proeprty crossrefs to be removed" in {
-        LocationsSystempropertydynamiccrossref.delete
-        LocationsSystempropertydynamiccrossref.run must have size (0)
+      "allow crossref system data to be removed" in {
+        ThingsSystempropertydynamiccrossref.delete
+        ThingsSystempropertydynamiccrossref.run must have size (0)
 
-        LocationsSystempropertystaticcrossref.delete
-        LocationsSystempropertystaticcrossref.run must have size (0)
-
-        OrganisationsSystempropertydynamiccrossref.delete
-        OrganisationsSystempropertydynamiccrossref.run must have size (0)
-
-        OrganisationsSystempropertystaticcrossref.delete
-        OrganisationsSystempropertystaticcrossref.run must have size (0)
-
-        EventsSystempropertydynamiccrossref.delete
-        EventsSystempropertydynamiccrossref.run must have size (0)
-
-        EventsSystempropertystaticcrossref.delete
-        EventsSystempropertystaticcrossref.run must have size (0)
+        ThingsSystempropertystaticcrossref.delete
+        ThingsSystempropertystaticcrossref.run must have size (0)
 
         PeopleSystempropertydynamiccrossref.delete
         PeopleSystempropertydynamiccrossref.run must have size (0)
@@ -603,14 +587,72 @@ class FacebookExampleSpec extends Specification with AfterAll {
         PeopleSystempropertystaticcrossref.delete
         PeopleSystempropertystaticcrossref.run must have size (0)
 
-        ThingsSystempropertydynamiccrossref.delete
-        ThingsSystempropertydynamiccrossref.run must have size (0)
+        OrganisationsSystempropertydynamiccrossref.delete
+        OrganisationsSystempropertydynamiccrossref.run must have size (0)
 
-        ThingsSystempropertystaticcrossref.delete
-        ThingsSystempropertystaticcrossref.run must have size (0)
+        OrganisationsSystempropertystaticcrossref.delete
+        OrganisationsSystempropertystaticcrossref.run must have size (0)
+
+        LocationsSystempropertydynamiccrossref.delete
+        LocationsSystempropertydynamiccrossref.run must have size (0)
+
+        LocationsSystempropertystaticcrossref.delete
+        LocationsSystempropertystaticcrossref.run must have size (0)
+
+        EventsSystempropertydynamiccrossref.delete
+        EventsSystempropertydynamiccrossref.run must have size (0)
+
+        EventsSystempropertystaticcrossref.delete
+        EventsSystempropertystaticcrossref.run must have size (0)
+
+        SystemPropertyrecord.delete
+        SystemPropertyrecord.run must have size (0)
       }
 
-      "allow Property tables to be cleaned up" in {
+      "allow entity crossrefs to be removed" in {
+        EventsEventlocationcrossref.delete
+        EventsEventorganisationcrossref.delete
+        EventsEventtoeventcrossref.delete
+        EventsEventpersoncrossref.delete
+        EventsEventthingcrossref.delete
+
+        OrganisationsOrganisationtoorganisationcrossref.delete
+        OrganisationsOrganisationthingcrossref.delete
+        OrganisationsOrganisationlocationcrossref.delete
+
+        PeoplePersontopersoncrossref.delete
+        PeoplePersonlocationcrossref.delete
+        PeoplePersonorganisationcrossref.delete
+        PeoplePersontopersonrelationshiptype.delete
+
+        LocationsLocationthingcrossref.delete
+        LocationsLocationtolocationcrossref.delete
+
+        ThingsThingtothingcrossref.delete
+        ThingsThingpersoncrossref.delete
+
+        ThingsThingpersoncrossref.run must have size (0)
+      }
+
+      "allow entities to be removed" in {
+        ThingsThing.delete
+        ThingsThing.run must have size (0)
+
+        PeoplePerson.delete
+        PeoplePerson.run must have size (0)
+
+        OrganisationsOrganisation.delete
+        OrganisationsOrganisation.run must have size (0)
+
+        LocationsLocation.delete
+        LocationsLocation.run must have size (0)
+
+        EventsEvent.delete
+        EventsEvent.run must have size (0)
+      }
+
+      "allow system data to be removed" in {
+
 
         SystemTypetotypecrossref.delete
         SystemTypetotypecrossref.run must have size (0)
@@ -624,102 +666,32 @@ class FacebookExampleSpec extends Specification with AfterAll {
         SystemUnitofmeasurement.delete
         SystemUnitofmeasurement.run must have size (0)
 
-        SystemRelationshiprecord.delete
-        SystemRelationshiprecord.run must have size (0)
-
-        SystemPropertyrecord.delete
-        SystemPropertyrecord.run must have size (0)
 
       }
 
-      "allow location data to be cleaned up" in {
+      "allow data to be removed" in {
 
-        LocationsLocationtolocationcrossref.delete
-        LocationsLocationtolocationcrossref.run must have size (0)
-
-        LocationsLocation.delete
-        LocationsLocation.run must have size (0)
-
-      }
-
-      "allow organisation data to be removed" in {
-
-
-        OrganisationsOrganisationtoorganisationcrossref.delete
-        OrganisationsOrganisationtoorganisationcrossref.run must have size (0)
-
-        OrganisationsOrganisation.delete
-        OrganisationsOrganisation.run must have size (0)
-
-      }
-
-      "allow event data to be removed" in {
-        EventsEventtoeventcrossref.delete
-        EventsEventtoeventcrossref.run must have size (0)
-
-        EventsEventpersoncrossref.delete
-        EventsEventpersoncrossref.run must have size (0)
-
-        EventsEvent.delete
-        EventsEvent.run must have size (0)
-
-
-      }
-
-      "allow person data to be removed" in {
-
-
-        PeoplePersontopersonrelationshiptype.delete
-        PeoplePersontopersonrelationshiptype.run must have size (0)
-
-        PeoplePersontopersoncrossref.delete
-        PeoplePersontopersoncrossref.run must have size (0)
-
-        PeoplePersonlocationcrossref.delete
-        PeoplePersonlocationcrossref.run must have size (0)
-
-
-        PeoplePerson.delete
-        PeoplePerson.run must have size (0)
-
-      }
-
-      "allow things tables to be cleaned up" in {
-
-
-        ThingsThingtothingcrossref.delete
-        ThingsThingtothingcrossref.run must have size (0)
-
-        ThingsThing.delete
-        ThingsThing.run must have size (0)
-
-        ThingsThingpersoncrossref.delete
-        ThingsThingpersoncrossref.run must have size (0)
-      }
-
-      "be cleaned up after testing" in {
         DataValue.delete
-        DataValue.run must have size (0)
-
         DataRecord.delete
-        DataRecord.run must have size (0)
-
         DataField.delete
-        DataField.run must have size (0)
-
         DataTabletotablecrossref.delete
-        DataTabletotablecrossref.run must have size (0)
-
         DataTable.delete
+
+        DataValue.run must have size (0)
+        DataRecord.run must have size (0)
+        DataField.run must have size (0)
+        DataTabletotablecrossref.run must have size (0)
         DataTable.run must have size (0)
 
-//        DataBundle.delete
-//        DataBundle.run must have size (0)
-
-        DataDebit.delete
-        DataDebit.run must have size (0)
       }
     }
+  }
+
+  def afterAll() = {
+    db.withSession { implicit session =>
+      TestDataCleanup.cleanupAll
+    }
+    db.close
   }
 
 
