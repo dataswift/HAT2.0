@@ -15,16 +15,16 @@ import scala.util.{Failure, Success, Try}
 trait DataService extends HttpService with DatabaseInfo {
 
   val routes = { pathPrefix("data") {
-      createTable ~
-        linkTableToTable ~
-        createField ~
+      createTableApi ~
+        linkTableToTableApi ~
+        createFieldApi ~
         createRecord ~
         createValue ~
-        storeValueList ~
-        getField ~
+        storeValueListApi ~
+        getFieldApi ~
         getFieldValuesApi ~
-        getTable ~
-        getTableValues ~
+        getTableApi ~
+        getTableValuesApi ~
         getRecord ~
         getRecordValues ~
         getValue
@@ -36,7 +36,7 @@ trait DataService extends HttpService with DatabaseInfo {
   /*
    * Creates a new virtual table for storing arbitrary incoming data
    */
-  def createTable = path("table") {
+  def createTableApi = path("table") {
     post {
       entity(as[ApiDataTable]) { table =>
         db.withSession { implicit session =>
@@ -67,7 +67,7 @@ trait DataService extends HttpService with DatabaseInfo {
   /*
    * Marks provided table as a "child" of another, e.g. to created nested data structured
    */
-  def linkTableToTable = path("table" / IntNumber / "table" / IntNumber) {
+  def linkTableToTableApi = path("table" / IntNumber / "table" / IntNumber) {
     (parentId: Int, childId: Int) =>
       post {
         entity(as[ApiRelationship]) { relationship =>
@@ -94,7 +94,7 @@ trait DataService extends HttpService with DatabaseInfo {
   /*
    * Get specific table information. Includes all fields and sub-tables
    */
-  def getTable = path("table" / IntNumber) {
+  def getTableApi = path("table" / IntNumber) {
     (tableId: Int) =>
       get {
         db.withSession { implicit session =>
@@ -105,7 +105,7 @@ trait DataService extends HttpService with DatabaseInfo {
       }
   }
 
-  def getTableValues = path("table" / IntNumber / "values") {
+  def getTableValuesApi = path("table" / IntNumber / "values") {
     (tableId: Int) =>
       get {
         db.withSession { implicit session =>
@@ -151,14 +151,19 @@ trait DataService extends HttpService with DatabaseInfo {
   /*
    * Create a new field in a virtual table
    */
-  def createField = path("field") {
+  def createFieldApi = path("field") {
     post {
       entity(as[ApiDataField]) { field =>
         db.withSession { implicit session =>
           val newField = new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.name, field.tableId)
-          val insertedField = (DataField returning DataField) += newField
+          val insertedField = Try((DataField returning DataField) += newField)
           complete {
-            ApiDataField.fromDataField(insertedField)
+            insertedField match {
+              case Success(field) =>
+                (Created, ApiDataField.fromDataField(field))
+              case Failure(e) =>
+                (BadRequest, e.getMessage)
+            }
           }
         }
       }
@@ -168,7 +173,7 @@ trait DataService extends HttpService with DatabaseInfo {
   /*
    * Get field (information only) by ID
    */
-  def getField = path("field" / IntNumber){ (fieldId: Int) =>
+  def getFieldApi = path("field" / IntNumber){ (fieldId: Int) =>
     get {
       db.withSession { implicit session =>
         complete {
@@ -323,7 +328,7 @@ trait DataService extends HttpService with DatabaseInfo {
   /*
    * Batch-insert data values as a list
    */
-  def storeValueList = path("value" / "list") {
+  def storeValueListApi = path("value" / "list") {
     post {
       entity(as[Seq[ApiDataValue]]) { values =>
         db.withSession { implicit session =>
@@ -372,7 +377,7 @@ trait DataService extends HttpService with DatabaseInfo {
     table.copy(fields = filledFields)
   }
 
-  private def getStructures(tables: Seq[ApiDataTable])(implicit session: Session): Seq[ApiDataTable] = {
+  def getStructures(tables: Seq[ApiDataTable])(implicit session: Session): Seq[ApiDataTable] = {
     // Get all root tables from the given ApiDataTables
     val roots = tables.map{ table =>
       table.id match {
