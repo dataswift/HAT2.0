@@ -1,5 +1,7 @@
+package dalapi
+
 import dal.Tables._
-import org.specs2.specification.{AfterAll, BeforeAfterAll}
+import org.specs2.specification.AfterAll
 
 //import Tables._
 //import Tables.profile.simple._

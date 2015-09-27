@@ -1,5 +1,7 @@
+package dalapi
+
 import dal.Tables._
-import org.specs2.specification.{AfterAll, BeforeAfterAll}
+import org.specs2.specification.AfterAll
 
 //import Tables._
 //import Tables.profile.simple._
@@ -7,9 +9,6 @@ import org.specs2.specification.{AfterAll, BeforeAfterAll}
 import dal.SlickPostgresDriver.simple._
 import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
-import slick.jdbc.meta.MTable
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class FacebookExampleSpec extends Specification with AfterAll {
   val db = Database.forConfig("devdb")

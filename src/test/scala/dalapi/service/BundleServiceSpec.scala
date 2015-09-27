@@ -1,20 +1,18 @@
-package dalapi
+package dalapi.service
 
+import dal.SlickPostgresDriver.simple._
 import dal.Tables._
+import dalapi.TestDataCleanup
 import dalapi.models._
-import dalapi.service.{DataService, BundleService}
 import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
-import spray.http.MediaTypes._
-import spray.http.StatusCodes._
 import spray.http.HttpMethods._
+import spray.http.StatusCodes._
 import spray.http._
+import spray.httpx.SprayJsonSupport._
 import spray.json._
 import spray.testkit.Specs2RouteTest
-import spray.httpx.SprayJsonSupport._
-
-import dal.SlickPostgresDriver.simple._
 
 class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with BundleService {
   def actorRefFactory = system
@@ -50,18 +48,9 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
   // Clean up all data
   def afterAll() = {
     db.withSession { implicit session =>
-      BundleTableslicecondition.delete
-      BundleTableslice.delete
-      BundleJoin.delete
-      BundleContextless.delete
-      BundleTable.delete
-
-      DataValue.delete
-      DataRecord.delete
-      DataField.delete
-      DataTabletotablecrossref.delete
-      DataTable.delete
+      TestDataCleanup.cleanupAll
     }
+    db.close
   }
 
   sequential
@@ -135,8 +124,6 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       ))
 
       val bundleJson: String = completeBundle.toJson.toString
-
-      import JsonProtocol._
       HttpRequest(POST, "/", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
         createBundleContextless ~> check {
         response.status should be equalTo Created

@@ -1,5 +1,7 @@
-import dal.Tables._
+package dalapi
+
 import dal.SlickPostgresDriver.simple._
+import dal.Tables._
 
 object TestDataCleanup {
   def cleanupPropertyCrossrefs(implicit session: Session) = {
@@ -43,6 +45,14 @@ object TestDataCleanup {
     EventsEvent.delete
   }
 
+  def cleanupBundles(implicit session: Session) = {
+    BundleTableslicecondition.delete
+    BundleTableslice.delete
+    BundleJoin.delete
+    BundleContextless.delete
+    BundleTable.delete
+  }
+
   def cleanupSystemData(implicit session: Session) = {
     SystemTypetotypecrossref.delete
     SystemProperty.delete
@@ -62,6 +72,7 @@ object TestDataCleanup {
     cleanupPropertyCrossrefs
     cleanupEntityCrossrefs
     cleanupEntities
+    cleanupBundles
     cleanupSystemData
     cleanupData
   }

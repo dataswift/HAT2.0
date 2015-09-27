@@ -1,19 +1,32 @@
-package dalapi
+package dalapi.service
 
+import dalapi.TestDataCleanup
 import dalapi.models._
-import dalapi.service.DataService
 import org.specs2.mutable.Specification
+import org.specs2.specification.BeforeAfterAll
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
-import spray.testkit.Specs2RouteTest
-import spray.json._
 import spray.httpx.SprayJsonSupport._
+import spray.json._
+import spray.testkit.Specs2RouteTest
 
-class DataServiceSpec extends Specification with Specs2RouteTest with DataService {
+class DataServiceSpec extends Specification with Specs2RouteTest with DataService with BeforeAfterAll {
   def actorRefFactory = system
 
   import JsonProtocol._
+
+  def beforeAll() = {
+
+  }
+
+  // Clean up all data
+  def afterAll() = {
+    db.withSession { implicit session =>
+      TestDataCleanup.cleanupAll
+    }
+    db.close
+  }
 
   sequential
 

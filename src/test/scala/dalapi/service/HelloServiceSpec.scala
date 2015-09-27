@@ -1,6 +1,5 @@
-package dalapi
+package dalapi.service
 
-import dalapi.service.HelloService
 import org.specs2.mutable.Specification
 import spray.http.StatusCodes._
 import spray.testkit.Specs2RouteTest
