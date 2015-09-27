@@ -18,16 +18,16 @@ trait DataService extends HttpService with DatabaseInfo {
       createTableApi ~
         linkTableToTableApi ~
         createFieldApi ~
-        createRecord ~
-        createValue ~
+        createRecordApi ~
+        createValueApi ~
         storeValueListApi ~
         getFieldApi ~
         getFieldValuesApi ~
         getTableApi ~
         getTableValuesApi ~
-        getRecord ~
-        getRecordValues ~
-        getValue
+        getRecordApi ~
+        getRecordValuesApi ~
+        getValueApi
     }
   }
 
@@ -206,29 +206,11 @@ trait DataService extends HttpService with DatabaseInfo {
       }
     }
   }
-  
-  def getFieldValues(fieldId: Int)(implicit session: Session): Option[ApiDataField] = {
-    val apiFieldOption = retrieveDataFieldId(fieldId)
-    apiFieldOption map { apiField =>
-      val values = DataValue.filter(_.fieldId === fieldId).run
-      val apiDataValues = values.map(ApiDataValue.fromDataValue)
-      apiField.copy(values = Some(apiDataValues))
-    }
-  }
-
-  def getFieldRecordValue(fieldId: Int, recordId: Int)(implicit session: Session): Option[ApiDataField] = {
-    val apiFieldOption = retrieveDataFieldId(fieldId)
-    apiFieldOption map { apiField =>
-      val values = DataValue.filter(_.fieldId === fieldId).filter(_.recordId === recordId).run
-      val apiDataValues = values.map(ApiDataValue.fromDataValue)
-      apiField.copy(values = Some(apiDataValues))
-    }
-  }
 
   /*
    * Insert a new, potentially named, data record
    */
-  def createRecord = path("record") {
+  def createRecordApi = path("record") {
     post {
       entity(as[ApiDataRecord]) { record =>
         db.withSession { implicit session =>
@@ -245,7 +227,7 @@ trait DataService extends HttpService with DatabaseInfo {
   /*
    * Get record
    */
-  def getRecord = path("record" / IntNumber) { (recordId: Int) =>
+  def getRecordApi = path("record" / IntNumber) { (recordId: Int) =>
     get {
       db.withSession { implicit session =>
         val record = DataRecord.filter(_.id === recordId).run.head
@@ -261,7 +243,7 @@ trait DataService extends HttpService with DatabaseInfo {
    * Get values associated with a record.
    * Constructs a hierarchy of fields and data within each field for the record
    */
-  def getRecordValues = path("record" / IntNumber / "values") { (recordId: Int) =>
+  def getRecordValuesApi = path("record" / IntNumber / "values") { (recordId: Int) =>
     get {
       db.withSession { implicit session =>
         // Retrieve joined Data Values, Fields and Tables
@@ -293,7 +275,7 @@ trait DataService extends HttpService with DatabaseInfo {
   /*
    * Create (insert) a new data value
    */
-  def createValue = path("value") {
+  def createValueApi = path("value") {
     post {
       entity(as[ApiDataValue]) { value =>
         db.withSession { implicit session =>
@@ -311,7 +293,7 @@ trait DataService extends HttpService with DatabaseInfo {
   /*
    * Retrieve a data value by ID
    */
-  def getValue = path("value" / IntNumber) {  (valueId: Int) =>
+  def getValueApi = path("value" / IntNumber) {  (valueId: Int) =>
     get {
       db.withSession { implicit session =>
         val value = DataValue.filter(_.id === valueId).run.head
@@ -347,6 +329,24 @@ trait DataService extends HttpService with DatabaseInfo {
           }
         }
       }
+    }
+  }
+
+  def getFieldValues(fieldId: Int)(implicit session: Session): Option[ApiDataField] = {
+    val apiFieldOption = retrieveDataFieldId(fieldId)
+    apiFieldOption map { apiField =>
+      val values = DataValue.filter(_.fieldId === fieldId).run
+      val apiDataValues = values.map(ApiDataValue.fromDataValue)
+      apiField.copy(values = Some(apiDataValues))
+    }
+  }
+
+  def getFieldRecordValue(fieldId: Int, recordId: Int)(implicit session: Session): Option[ApiDataField] = {
+    val apiFieldOption = retrieveDataFieldId(fieldId)
+    apiFieldOption map { apiField =>
+      val values = DataValue.filter(_.fieldId === fieldId).filter(_.recordId === recordId).run
+      val apiDataValues = values.map(ApiDataValue.fromDataValue)
+      apiField.copy(values = Some(apiDataValues))
     }
   }
 
