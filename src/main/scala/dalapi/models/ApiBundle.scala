@@ -124,3 +124,9 @@ object ApiBundleContextless {
       bundleContextless.name, tables)
   }
 }
+
+
+case class ApiBundleContextlessData(
+    id: Int,
+    name: String,
+    dataGroups: Iterable[Map[String, ApiBundleTable]])

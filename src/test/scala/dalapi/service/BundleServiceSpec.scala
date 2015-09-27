@@ -162,6 +162,30 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
         responseString must not contain("event name 1")
       }
     }
+
+    "create a Bundle Table with multiple filters and correctly retrieve data" in {
+      val bundleTable = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+        createBundleTable ~> check {
+        response.status should be equalTo Created
+        responseAs[String] must contain("Weekend events at home")
+        responseAs[ApiBundleTable]
+      }
+
+      bundleTable.id must beSome
+
+      HttpRequest(GET, s"/table/${bundleTable.id.get}/values") ~>
+        getBundleTableValues ~> check {
+        response.status should be equalTo OK
+
+        val responseString = responseAs[String]
+
+        responseString must contain("event")
+        responseString must contain("event record 1")
+        responseString must contain("event record 2")
+        responseString must not contain("event record 3")
+        responseString must not contain("kitchen record 1")
+      }
+    }
   }
 
   "Contextless Bundle Service for Joins" should {
@@ -316,16 +340,7 @@ object BundleExamples {
       |              "tableId": 4,
       |              "name": "location"
       |            },
-      |            "value": "home",
-      |            "operator": "equal"
-      |          },
-      |          {
-      |            "field": {
-      |              "id": 14,
-      |              "tableId": 4,
-      |              "name": "startTime"
-      |            },
-      |            "value": "saturday",
+      |            "value": "event location 1",
       |            "operator": "equal"
       |          }
       |        ]
@@ -343,7 +358,7 @@ object BundleExamples {
       |              "tableId": 4,
       |              "name": "location"
       |            },
-      |            "value": "home",
+      |            "value": "event location 2",
       |            "operator": "equal"
       |          },
       |          {
@@ -352,7 +367,7 @@ object BundleExamples {
       |              "tableId": 4,
       |              "name": "startTime"
       |            },
-      |            "value": "sunday",
+      |            "value": "event startTime 2",
       |            "operator": "equal"
       |          }
       |        ]

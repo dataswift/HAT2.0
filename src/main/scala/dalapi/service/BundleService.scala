@@ -97,16 +97,22 @@ trait BundleService extends HttpService with DatabaseInfo {
                 // Get a list of record IDs that match the given conditions
                 val records = tableSlices.foldLeft(Set[Int]()) { (recordLists, slice) =>
 
-                    val sliceRecords = slice.conditions.foldLeft(Set[Int]()) { (sliceRecordSet, condition) =>
-                      val recordSet = DataValue.filter(_.fieldId === condition.field.id).filter(_.value === condition.value)
-                        .flatMap(_.dataRecordFk).map(_.id).run.toSet
-                      // Intersection
+                    val sliceRecords = slice.conditions.foldLeft(Seq[Set[Int]]()) { (sliceRecordSet, condition) =>
+                      val recordSet = DataValue.filter(_.fieldId === condition.field.id)
+                        .filter(_.value === condition.value)
+                        .flatMap(_.dataRecordFk)
+                        .map(_.id).run.toSet
+
+                      sliceRecordSet.+:(recordSet)
+                    }
+
+                    val filteredRecords = sliceRecords.foldLeft(sliceRecords.head) { (sliceRecordSet, recordSet) =>
                       sliceRecordSet intersect recordSet
                     }
 
-                    recordLists union sliceRecords
+                    recordLists union filteredRecords
                   }
-
+                
                 val values = DataValue.filter(_.recordId inSet records)
 
                 dataService.getTableValues(tableId, values)
@@ -123,7 +129,6 @@ trait BundleService extends HttpService with DatabaseInfo {
               case None =>
                 (NotFound, s"Contextless Bundle $bundleTableId not found")
             }
-//            (NotImplemented, "Not yet implemented")
           }
         }
       }
