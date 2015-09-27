@@ -276,7 +276,7 @@ class ModelSpec extends Specification with AfterAll {
         val peoplePersontopersonrelationshiptypeRow = new PeoplePersontopersonrelationshiptypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin's Martin", Some(relationshiptype))
         val peoplePersontopersonrelationshiptypeId = (PeoplePersontopersonrelationshiptype returning PeoplePersontopersonrelationshiptype.map(_.id)) += peoplePersontopersonrelationshiptypeRow
 
-        val peoplePersontopersoncrossrefRow = new PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findpeopleId, findpeopleId, true, ppRelRecordId, peoplePersontopersonrelationshiptypeId)
+        val peoplePersontopersoncrossrefRow = new PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findpeopleId, findpeopleId, ppRelRecordId, true, peoplePersontopersonrelationshiptypeId)
         val peoplePersontopersoncrossrefId = (PeoplePersontopersoncrossref returning PeoplePersontopersoncrossref.map(_.id)) += peoplePersontopersoncrossrefRow
 
 

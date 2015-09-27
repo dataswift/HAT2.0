@@ -2,7 +2,7 @@ package dalapi
 
 import dal.Tables._
 import dalapi.models._
-import dalapi.service.BundleService
+import dalapi.service.{DataService, BundleService}
 import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
@@ -18,6 +18,10 @@ import dal.SlickPostgresDriver.simple._
 
 class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with BundleService {
   def actorRefFactory = system
+
+  val dataService = new DataService {
+    def actorRefFactory = system
+  }
 
   import JsonProtocol._
 
