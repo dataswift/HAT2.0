@@ -9,6 +9,8 @@ import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
 
+import scala.util.{Failure, Success, Try}
+
 // this trait defines our service behavior independently from the service actor
 trait DataService extends HttpService with DatabaseInfo {
 
@@ -39,11 +41,23 @@ trait DataService extends HttpService with DatabaseInfo {
       entity(as[ApiDataTable]) { table =>
         db.withSession { implicit session =>
           val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, table.source)
-          val tableId = (DataTable returning DataTable.map(_.id)) += newTable
+          val tableId = Try((DataTable returning DataTable.map(_.id)) += newTable)
 
-          complete(Created, {
-            getTableStructure(tableId)
-          })
+          val tableStructure = tableId match {
+            case Success(id) =>
+              Success(getTableStructure(id).get)
+            case Failure(e) =>
+              Failure(e)
+          }
+
+          complete {
+            tableStructure match {
+              case Success(structure) =>
+                (Created, structure)
+              case Failure(e) =>
+                (BadRequest, e.getMessage)
+            }
+          }
         }
       }
 
@@ -62,10 +76,15 @@ trait DataService extends HttpService with DatabaseInfo {
               1, LocalDateTime.now(), LocalDateTime.now(),
               relationship.relationshipType, parentId, childId
             )
-            val id = (DataTabletotablecrossref returning DataTabletotablecrossref.map(_.id)) += dataTableToTableCrossRefRow
+            val inserted = Try((DataTabletotablecrossref returning DataTabletotablecrossref.map(_.id)) += dataTableToTableCrossRefRow)
 
             complete {
-              ApiGenericId(id)
+              inserted match {
+                case Success(id) =>
+                  ApiGenericId(id)
+                case Failure(e) =>
+                  (BadRequest, e.getMessage)
+              }
             }
           }
         }
@@ -78,8 +97,10 @@ trait DataService extends HttpService with DatabaseInfo {
   def getTable = path("table" / IntNumber) {
     (tableId: Int) =>
       get {
-        complete {
-          getTableStructure(tableId)
+        db.withSession { implicit session =>
+          complete {
+            getTableStructure(tableId)
+          }
         }
       }
   }
@@ -87,33 +108,42 @@ trait DataService extends HttpService with DatabaseInfo {
   def getTableValues = path("table" / IntNumber / "values") {
     (tableId: Int) =>
       get {
-        val structure = getTableStructure(tableId)
+        db.withSession { implicit session =>
+          val someStructure = getTableStructure(tableId)
 
-        // Partially applied function to fill the data into table structure
-        def filler = fillStructure(structure) _
+          val someTableValues = someStructure map { structure =>
+            // Partially applied function to fill the data into table structure
+            def filler = fillStructure(structure) _
 
-        // Get all data fields of interest according to the data structure
-        val fieldsToGet = getStructureFields(structure)
+            // Get all data fields of interest according to the data structure
+            val fieldsToGet = getStructureFields(structure)
 
-        // Retrieve values of those fields from the database, grouping by Record ID
-        val values = db.withSession { implicit session =>
-          DataValue.filter(_.fieldId inSet fieldsToGet)
-            .take(fieldsToGet.size * 1000) // FIXME: magic number for getting X records
-            .sortBy(_.recordId.asc)
-            .run
-            .groupBy(_.recordId)
-        }
+            // Retrieve values of those fields from the database, grouping by Record ID
+            val values = db.withSession { implicit session =>
+              DataValue.filter(_.fieldId inSet fieldsToGet)
+                .take(fieldsToGet.size * 1000) // FIXME: magic number for getting X records
+                .sortBy(_.recordId.asc)
+                .run
+                .groupBy(_.recordId)
+            }
 
-        // Convert the retrieved structure into a sequence of maps from field ID to values
-        val data = values map { case (recordId, recordValues) =>
-          Map(recordValues map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
-        }
+            // Convert the retrieved structure into a sequence of maps from field ID to values
+            val data = values map { case (recordId, recordValues) =>
+              Map(recordValues map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
+            }
 
-        // Fill the structure with the data
-        val tableValues = data.map(filler)
+            // Fill the structure with the data
+            data.map(filler)
+          }
 
-        complete {
-          tableValues
+          complete {
+            someTableValues match {
+              case Some(tableValues) =>
+                tableValues
+              case None =>
+                (NotFound, s"Table $tableId not found")
+            }
+          }
         }
       }
   }
@@ -140,12 +170,14 @@ trait DataService extends HttpService with DatabaseInfo {
    */
   def getField = path("field" / IntNumber){ (fieldId: Int) =>
     get {
-      complete {
-        retrieveDataFieldId(fieldId) match {
-          case Some(field) =>
-            field
-          case None =>
-            (NotFound, "Data field $fieldId not found")
+      db.withSession { implicit session =>
+        complete {
+          retrieveDataFieldId(fieldId) match {
+            case Some(field) =>
+              field
+            case None =>
+              (NotFound, "Data field $fieldId not found")
+          }
         }
       }
     }
@@ -299,9 +331,11 @@ trait DataService extends HttpService with DatabaseInfo {
             DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.fieldId, value.recordId)
           }
 
-          val insertedValues = (DataValue returning DataValue) ++= dataValues
+          val insertedValues = Try((DataValue returning DataValue) ++= dataValues)
 
-          val returning = insertedValues.map(ApiDataValue.fromDataValue)
+          val returning = insertedValues map { inserted =>
+            inserted.map(ApiDataValue.fromDataValue)
+          }
 
           complete {
             returning
@@ -311,7 +345,7 @@ trait DataService extends HttpService with DatabaseInfo {
     }
   }
 
-  private def fillStructures(tables: Seq[ApiDataTable])(values: Map[Int, ApiDataValue]): Seq[ApiDataTable] = {
+  def fillStructures(tables: Seq[ApiDataTable])(values: Map[Int, ApiDataValue]): Seq[ApiDataTable] = {
     tables map { table =>
       fillStructure(table)(values)
     }
@@ -338,7 +372,7 @@ trait DataService extends HttpService with DatabaseInfo {
     table.copy(fields = filledFields)
   }
 
-  private def getStructures(tables: Seq[ApiDataTable]): Seq[ApiDataTable] = {
+  private def getStructures(tables: Seq[ApiDataTable])(implicit session: Session): Seq[ApiDataTable] = {
     // Get all root tables from the given ApiDataTables
     val roots = tables.map{ table =>
       table.id match {
@@ -353,49 +387,50 @@ trait DataService extends HttpService with DatabaseInfo {
     val rootSet = roots.foldLeft(Set[Int]())((roots, parents) => roots ++ parents)
 
     // Construct table structures from the root
-    rootSet.toSeq.map { root =>
+    rootSet.toSeq.flatMap { root =>
       getTableStructure(root)
     }
-
   }
 
   /*
    * Get IDs of all (Database) DataTables, using the DataTabletotablecrossref
    */
-  private def getRootTables(tableId: Int): Set[Int] = {
-    db.withSession { implicit session =>
-      val parents = DataTabletotablecrossref.filter(_.table2 === tableId).map(_.table1).run
-      // If a table doesn't have any parents, it is a root
-      if (parents.isEmpty) {
-        Set(tableId)
+  private def getRootTables(tableId: Int)(implicit session: Session): Set[Int] = {
+    val parents = DataTabletotablecrossref.filter(_.table2 === tableId).map(_.table1).run
+    // If a table doesn't have any parents, it is a root
+    if (parents.isEmpty) {
+      Set(tableId)
+    }
+    else {
+      // Get all roots recursively
+      val parentSets = parents map { parentId =>
+        getRootTables(parentId)
       }
-      else {
-        // Get all roots recursively
-        val parentSets = parents map { parentId =>
-          getRootTables(parentId)
-        }
-        // Fold them into a single set with no repetitions
-        parentSets.foldLeft(Set[Int]())((roots, parents) => roots ++ parents)
-      }
+      // Fold them into a single set with no repetitions
+      parentSets.foldLeft(Set[Int]())((roots, parents) => roots ++ parents)
     }
   }
 
   /*
    * Recursively construct nested DataTable records with associated fields and sub-tables
    */
-  def getTableStructure(tableId: Int): ApiDataTable = {
-    db.withSession { implicit session =>
-      val table = DataTable.filter(_.id === tableId).run.head
+  def getTableStructure(tableId: Int)(implicit session: Session): Option[ApiDataTable] = {
+
+    val someTable = DataTable.filter(_.id === tableId).run.headOption
+
+    someTable map { table =>
       val fields = DataField.filter(_.tableIdFk === tableId).run
       val apiFields = fields.map(ApiDataField.fromDataField)
 
       val subtables = DataTabletotablecrossref.filter(_.table1 === tableId).map(_.table2).run
       val apiTables = subtables.map { subtableId =>
-        getTableStructure(subtableId)
+        // Every subtable with a linked ID exists, no need to handle Option
+        getTableStructure(subtableId).get
       }
 
       ApiDataTable.fromDataTable(table)(Some(apiFields))(Some(apiTables))
     }
+
   }
 
   private def getStructureFields(structure : ApiDataTable) : Set[Int] = {
@@ -420,12 +455,10 @@ trait DataService extends HttpService with DatabaseInfo {
   /*
    * Private function finding data field by ID
    */
-  private def retrieveDataFieldId(fieldId: Int): Option[ApiDataField] = {
-    db.withSession { implicit session =>
-      val field = DataField.filter(_.id === fieldId).run.headOption
-      field map { dataField =>
-        ApiDataField.fromDataField(dataField)
-      }
+  private def retrieveDataFieldId(fieldId: Int)(implicit session: Session): Option[ApiDataField] = {
+    val field = DataField.filter(_.id === fieldId).run.headOption
+    field map { dataField =>
+      ApiDataField.fromDataField(dataField)
     }
   }
 }

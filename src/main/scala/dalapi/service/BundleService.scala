@@ -117,7 +117,8 @@ trait BundleService extends HttpService with DatabaseInfo {
             }
 
             // Get the (recursive) structure of the data table you want filled with data
-            val structure = dataService.getTableStructure(tableId)
+            // Since tableId is retrieved as a reference from bundle table, it is safe to assume it exists and "get" it
+            val structure = dataService.getTableStructure(tableId).get
 
             // Partially applied function to fill the data into table structure
             def filler = dataService.fillStructure(structure) _
