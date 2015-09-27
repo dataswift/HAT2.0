@@ -200,7 +200,7 @@ trait DataService extends HttpService with DatabaseInfo {
             case Some(field) =>
               field
             case None =>
-              (NotFound, "Data field $fieldId not found")
+              (NotFound, s"Data field $fieldId not found")
           }
         }
       }
@@ -215,9 +215,15 @@ trait DataService extends HttpService with DatabaseInfo {
       entity(as[ApiDataRecord]) { record =>
         db.withSession { implicit session =>
           val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), record.name)
-          val recordId = (DataRecord returning DataRecord.map(_.id)) += newRecord
+          val recordId = Try((DataRecord returning DataRecord.map(_.id)) += newRecord)
           complete {
-            record.copy(id = Some(recordId))
+            recordId match {
+              case Success(id) =>
+                (Created, record.copy(id = Some(id)))
+              case Failure(e) =>
+                (BadRequest, e.getMessage)
+            }
+
           }
         }
       }
@@ -230,10 +236,15 @@ trait DataService extends HttpService with DatabaseInfo {
   def getRecordApi = path("record" / IntNumber) { (recordId: Int) =>
     get {
       db.withSession { implicit session =>
-        val record = DataRecord.filter(_.id === recordId).run.head
+        val record = DataRecord.filter(_.id === recordId).run.headOption
 
         complete {
-          ApiDataRecord(Some(record.id), Some(record.dateCreated), Some(record.lastUpdated), record.name, None)
+          record match {
+            case Some(dataRecord) =>
+              ApiDataRecord.fromDataRecord(dataRecord)(None)
+            case None =>
+              (NotFound, s"Data Record $recordId not found")
+          }
         }
       }
     }
@@ -257,16 +268,26 @@ trait DataService extends HttpService with DatabaseInfo {
           ApiDataTable.fromDataTable(table)(None)(None)
         })
 
-        val values = result.map(_._1._1)
-        val valueMap = Map(values map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
-        val recordData = fillStructures(structures)(valueMap)
+        val apiRecord: Option[ApiDataRecord] = structures match {
+          case Seq() =>
+            None
+          case _ =>
+            val values = result.map(_._1._1)
+            val valueMap = Map(values map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
+            val recordData = fillStructures(structures)(valueMap)
 
-        // Retrieve and prepare the record itself
-        val record = DataRecord.filter(_.id === recordId).run.head
-        val apiRecord = ApiDataRecord.fromDataRecord(record)(Some(recordData))
+            // Retrieve and prepare the record itself
+            val record = DataRecord.filter(_.id === recordId).run.head
+            Some(ApiDataRecord.fromDataRecord(record)(Some(recordData)))
+        }
 
         complete {
-          apiRecord
+          apiRecord match {
+            case Some(dataRecord) =>
+              dataRecord
+            case None =>
+              (NotFound, s"Data Record $recordId not found")
+          }
         }
       }
     }
@@ -280,10 +301,16 @@ trait DataService extends HttpService with DatabaseInfo {
       entity(as[ApiDataValue]) { value =>
         db.withSession { implicit session =>
           val newValue = new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.fieldId, value.recordId)
-          val inserted = (DataValue returning DataValue) += newValue
+          val inserted = Try((DataValue returning DataValue) += newValue)
 
           complete {
-            ApiDataValue.fromDataValue(inserted)
+            inserted match {
+              case Success(value) =>
+                (Created, ApiDataValue.fromDataValue(value))
+              case Failure(e) =>
+                (BadRequest, e.getMessage)
+            }
+
           }
         }
       }
@@ -296,11 +323,18 @@ trait DataService extends HttpService with DatabaseInfo {
   def getValueApi = path("value" / IntNumber) {  (valueId: Int) =>
     get {
       db.withSession { implicit session =>
-        val value = DataValue.filter(_.id === valueId).run.head
-        val apiValue = ApiDataValue.fromDataValue(value)
+        val someValue = DataValue.filter(_.id === valueId).run.headOption
+        val apiValue = someValue map { value =>
+          ApiDataValue.fromDataValue(value)
+        }
 
         complete {
-          apiValue
+          apiValue match {
+            case Some(response) =>
+              response
+            case None =>
+              (NotFound, s"Data value $valueId not found")
+          }
         }
       }
     }
@@ -320,12 +354,17 @@ trait DataService extends HttpService with DatabaseInfo {
 
           val insertedValues = Try((DataValue returning DataValue) ++= dataValues)
 
-          val returning = insertedValues map { inserted =>
-            inserted.map(ApiDataValue.fromDataValue)
+          val apiValues = insertedValues map { data =>
+            data.map(ApiDataValue.fromDataValue)
           }
 
           complete {
-            returning
+            apiValues match {
+              case Success(response) =>
+                (Created, response)
+              case Failure(e) =>
+                (BadRequest, e.getMessage)
+            }
           }
         }
       }
@@ -374,7 +413,13 @@ trait DataService extends HttpService with DatabaseInfo {
         }
       }
     }
-    table.copy(fields = filledFields)
+
+    var filledSubtables = table.subTables map { subtables =>
+      subtables map { subtable: ApiDataTable =>
+        fillStructure(subtable)(values)
+      }
+    }
+    table.copy(fields = filledFields, subTables = filledSubtables)
   }
 
   def getStructures(tables: Seq[ApiDataTable])(implicit session: Session): Seq[ApiDataTable] = {
