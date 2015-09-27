@@ -80,9 +80,9 @@ object TestFixtures {
     val systemUOMs = Seq(
       new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "meters", "distance measurement", "m"),
       new SystemUnitofmeasurementRow(2, LocalDateTime.now(), LocalDateTime.now(), "kilograms", "weight measurement", "kg"),
-      new SystemUnitofmeasurementRow(3, LocalDateTime.now(), LocalDateTime.now(), "meters cubed", "3d spaceq", "m^3"),
-      new SystemUnitofmeasurementRow(4, LocalDateTime.now(), LocalDateTime.now(), "personattributes", "Fibaro"), // FIXME wrong number of arguments, values don't make sense
-      new SystemUnitofmeasurementRow(5, LocalDateTime.now(), LocalDateTime.now(), "locationattributes", "Fibaro")) // FIXME: wrong number of arguments, values don't make sense
+      new SystemUnitofmeasurementRow(3, LocalDateTime.now(), LocalDateTime.now(), "meters cubed", "3d space", "m^3"),
+      new SystemUnitofmeasurementRow(4, LocalDateTime.now(), LocalDateTime.now(), "Kilowatt hours","electricity measurement", "KwH"), // FIXME wrong number of arguments, values don't make sense
+      new SystemUnitofmeasurementRow(5, LocalDateTime.now(), LocalDateTime.now(), "centigrade","heat measurement", "C")) // FIXME: wrong number of arguments, values don't make sense
 
     SystemUnitOfMeasurement.forceInsertAll(systemUOMs: _*)
 
