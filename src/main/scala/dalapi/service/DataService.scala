@@ -109,32 +109,7 @@ trait DataService extends HttpService with DatabaseInfo {
     (tableId: Int) =>
       get {
         db.withSession { implicit session =>
-          val someStructure = getTableStructure(tableId)
-
-          val someTableValues = someStructure map { structure =>
-            // Partially applied function to fill the data into table structure
-            def filler = fillStructure(structure) _
-
-            // Get all data fields of interest according to the data structure
-            val fieldsToGet = getStructureFields(structure)
-
-            // Retrieve values of those fields from the database, grouping by Record ID
-            val values = db.withSession { implicit session =>
-              DataValue.filter(_.fieldId inSet fieldsToGet)
-                .take(fieldsToGet.size * 1000) // FIXME: magic number for getting X records
-                .sortBy(_.recordId.asc)
-                .run
-                .groupBy(_.recordId)
-            }
-
-            // Convert the retrieved structure into a sequence of maps from field ID to values
-            val data = values map { case (recordId, recordValues) =>
-              Map(recordValues map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
-            }
-
-            // Fill the structure with the data
-            data.map(filler)
-          }
+          val someTableValues = getTableValues(tableId)
 
           complete {
             someTableValues match {
@@ -146,6 +121,48 @@ trait DataService extends HttpService with DatabaseInfo {
           }
         }
       }
+  }
+
+  def getTableValues(tableId: Int)(implicit session: Session): Option[Iterable[ApiDataRecord]] = {
+    val valuesQuery = DataValue
+    getTableValues(tableId, valuesQuery)
+  }
+
+  def getTableValues(tableId: Int, valuesQuery: Query[DataValue, DataValueRow, Seq])
+                    (implicit session: Session): Option[Iterable[ApiDataRecord]] = {
+    val someStructure = getTableStructure(tableId)
+
+    someStructure map { structure =>
+      // Partially applied function to fill the data into table structure
+      def filler = fillStructure(structure) _
+
+      // Get all data fields of interest according to the data structure
+      val fieldsToGet = getStructureFields(structure)
+
+      // Retrieve values of those fields from the database, grouping by Record ID
+      val values = valuesQuery.filter(_.fieldId inSet fieldsToGet)
+        .take(10000) // FIXME: magic number for getting X records
+        .sortBy(_.recordId.asc)
+        .run
+        .groupBy(_.recordId)
+
+      // Retrieve matching data records and transform to ApiDataRecord format
+      val records: Map[Int, ApiDataRecord] = DataRecord.filter(_.id inSet values.keySet)
+        .run
+        .groupBy(_.id)
+        .map { case (recordId, records) =>
+          (recordId, ApiDataRecord.fromDataRecord(records.head)(None))
+        }
+
+      // Convert the retrieved structure into a sequence of maps from field ID to values
+      val dataRecords = values map { case (recordId, recordValues) =>
+        val fieldValueMap = Map(recordValues map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
+        val mappedValues = filler(fieldValueMap)
+        records(recordId).copy(tables = Some(Seq(mappedValues)))
+      }
+
+      dataRecords
+    }
   }
 
   /*

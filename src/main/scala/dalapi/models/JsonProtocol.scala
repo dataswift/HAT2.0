@@ -115,7 +115,7 @@ object JsonProtocol extends DefaultJsonProtocol {
   // Bundles
   implicit val apiBundleTableCondition = jsonFormat6(ApiBundleTableCondition.apply)
   implicit val apiBundleTableSlice = jsonFormat5(ApiBundleTableSlice.apply)
-  implicit val apiBundleTable = jsonFormat6(ApiBundleTable.apply)
+  implicit val apiBundleTable = jsonFormat7(ApiBundleTable.apply)
   implicit val apiBundleCombination = jsonFormat8(ApiBundleCombination.apply)
   implicit val apiBundleContextless = jsonFormat5(ApiBundleContextless.apply)
 }

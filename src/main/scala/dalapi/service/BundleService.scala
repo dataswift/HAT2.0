@@ -1,5 +1,6 @@
 package dalapi.service
 
+import akka.event.LoggingAdapter
 import dal.SlickPostgresDriver.simple._
 import dal.Tables._
 import dalapi.DatabaseInfo
@@ -79,69 +80,50 @@ trait BundleService extends HttpService with DatabaseInfo {
     (bundleTableId: Int) =>
       get {
         db.withSession { implicit session =>
-          val tableIdOption = (for {
+          val bundleDataTable = (for {
             bundleTable <- BundleTable.filter(_.id === bundleTableId)
             dataTable <- bundleTable.dataTableFk
-          } yield dataTable.id).take(1).run.headOption
+          } yield (bundleTable, dataTable)).take(1).run.headOption
 
-          tableIdOption map { tableId =>
+          val someResults = bundleDataTable map { case (bundleTable: BundleTableRow, dataTable: DataTableRow) =>
+            val tableId = dataTable.id
             val slices = getBundleTableSlices(bundleTableId)
-
-            // Get a list of record IDs that match the given conditions
-            val conditionRecords = slices map { tableSlice =>
-              tableSlice.foldLeft(Set[Int]()) { (recordLists, slice) =>
-
-                val sliceRecords = slice.conditions.foldLeft(Set[Int]()) { (sliceRecordSet, condition) =>
-                  val recordSet = DataValue.filter(_.fieldId === condition.field.id).filter(_.value === condition.value)
-                    .flatMap(_.dataRecordFk).map(_.id).run.toSet
-                  // Intersection
-                  sliceRecordSet intersect recordSet
-                }
-
-                recordLists union sliceRecords
-              }
-            }
-
-            val dataRecords = conditionRecords match {
-              case Some(records) =>
-                records
+            val apiDataTables = slices match {
+                // Without any slices, the case degrades to plain data table access
               case None =>
-                // If we have no conditions, get all the records
-                (for {
-                  bundleTable <- BundleTable.filter(_.id === bundleTableId)
-                  dataTable <- bundleTable.dataTableFk
-                  dataField <- DataField.filter(_.tableIdFk === dataTable.id)
-                  dataValue <- DataValue.filter(_.fieldId === dataField.id)
-                  dataRecord <- dataValue.dataRecordFk
-                } yield dataRecord.id).run.toSet
+                dataService.getTableValues(tableId)
+              case Some(tableSlices) =>
+                // FIXME: optimise, very inefficient currently
+                // Get a list of record IDs that match the given conditions
+                val records = tableSlices.foldLeft(Set[Int]()) { (recordLists, slice) =>
+
+                    val sliceRecords = slice.conditions.foldLeft(Set[Int]()) { (sliceRecordSet, condition) =>
+                      val recordSet = DataValue.filter(_.fieldId === condition.field.id).filter(_.value === condition.value)
+                        .flatMap(_.dataRecordFk).map(_.id).run.toSet
+                      // Intersection
+                      sliceRecordSet intersect recordSet
+                    }
+
+                    recordLists union sliceRecords
+                  }
+
+                val values = DataValue.filter(_.recordId inSet records)
+
+                dataService.getTableValues(tableId, values)
             }
 
-            // Get the (recursive) structure of the data table you want filled with data
-            // Since tableId is retrieved as a reference from bundle table, it is safe to assume it exists and "get" it
-            val structure = dataService.getTableStructure(tableId).get
-
-            // Partially applied function to fill the data into table structure
-            def filler = dataService.fillStructure(structure) _
-
-            val values = DataValue.filter(_.recordId inSet dataRecords)
-                .take(10000) // FIXME: magic number for getting X records
-                .sortBy(_.recordId.asc)
-                .run
-              .groupBy(_.recordId)
-
-            // Convert the retrieved structure into a sequence of maps from field ID to values
-            val data = values map { case (recordId, recordValues) =>
-              Map(recordValues map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
-            }
-
-            // Fill the structure with the data
-            val tableValues = data.map(filler)
-
-            tableValues
+            val emptyBundleTable = ApiBundleTable.fromBundleTable(bundleTable)(ApiDataTable.fromDataTable(dataTable)(None)(None))
+            emptyBundleTable.copy(data = apiDataTables)
           }
 
           complete {
-            (NotImplemented, s"Data retrieval for contextless bundles not yet implemented")
+            someResults match {
+              case Some(results) =>
+                results
+              case None =>
+                (NotFound, s"Contextless Bundle $bundleTableId not found")
+            }
+//            (NotImplemented, "Not yet implemented")
           }
         }
       }

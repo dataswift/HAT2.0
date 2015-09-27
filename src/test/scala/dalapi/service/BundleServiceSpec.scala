@@ -26,8 +26,13 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
   // Prepare the data to create test bundles on
   def beforeAll() = {
     val dataTableRows = Seq(
+      new DataTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "kitchen", "Fibaro"),
       new DataTableRow(3, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", "Fibaro"),
       new DataTableRow(4, LocalDateTime.now(), LocalDateTime.now(), "event", "Facebook")
+    )
+
+    val dataTableCrossrefs = Seq(
+      new DataTabletotablecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), "contains", 2, 3)
     )
 
     val dataFieldRows = Seq(
@@ -39,9 +44,48 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       new DataFieldRow(15, LocalDateTime.now(), LocalDateTime.now(), "endTime", 4)
     )
 
+    val dataRecordRows = Seq(
+      new DataRecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "kitchen record 1"),
+      new DataRecordRow(2, LocalDateTime.now(), LocalDateTime.now(), "kitchen record 2"),
+      new DataRecordRow(3, LocalDateTime.now(), LocalDateTime.now(), "kitchen record 3"),
+      new DataRecordRow(4, LocalDateTime.now(), LocalDateTime.now(), "event record 1"),
+      new DataRecordRow(5, LocalDateTime.now(), LocalDateTime.now(), "event record 2"),
+      new DataRecordRow(6, LocalDateTime.now(), LocalDateTime.now(), "event record 3")
+    )
+
+    val dataValues = Seq(
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1", 10, 1),
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 1", 11, 1),
+
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 2", 10, 2),
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 2", 11, 2),
+
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 3", 10, 3),
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 3", 11, 3),
+
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 1", 12, 4),
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 1", 13, 4),
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 1", 14, 4),
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 1", 15, 4),
+
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 2", 12, 5),
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 2", 13, 5),
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 2", 14, 5),
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 2", 15, 5),
+
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 3", 12, 6),
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 3", 13, 6),
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 3", 14, 6),
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 3", 15, 6)
+    )
+
     db.withSession { implicit session =>
       DataTable.forceInsertAll(dataTableRows: _*)
+      DataTabletotablecrossref.forceInsertAll(dataTableCrossrefs: _*)
       DataField.forceInsertAll(dataFieldRows: _*)
+      DataRecord.forceInsertAll(dataRecordRows: _*)
+      // Don't _foce_ insert all data values -- IDs don't particularly matter to us
+      DataValue.insertAll(dataValues: _*)
     }
   }
 
@@ -64,7 +108,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
     }
 
     "create a simple Bundle Table with no filters on data" in {
-      HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchen)) ~>
+      HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
         createBundleTable ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain("Electricity in the kitchen")
@@ -94,6 +138,30 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
         responseAs[String] must contain("Weekend events at home")
       }
     }
+    
+    "Bundle without filters should contain all data of linked table only" in {
+      val bundleTableKitchen = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchen)) ~>
+        createBundleTable ~> check {
+        responseAs[ApiBundleTable]
+      }
+      bundleTableKitchen.id must beSome
+
+      HttpRequest(GET, s"/table/${bundleTableKitchen.id.get}/values") ~>
+        getBundleTableValues ~> check {
+        response.status should be equalTo OK
+        val responseString = responseAs[String]
+        responseString must contain("kitchen")
+        responseString must contain("kitchen record 1")
+        responseString must contain("kitchen record 2")
+        responseString must not contain("event record 1")
+
+        responseString must contain("kitchen time 1")
+        responseString must contain("kitchen value 1")
+        responseString must contain("kitchen value 2")
+        responseString must contain("kitchen value 3")
+        responseString must not contain("event name 1")
+      }
+    }
   }
 
   "Contextless Bundle Service for Joins" should {
@@ -105,7 +173,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       }
       bundleWeekendEvents.id must beSome
 
-      val bundleTableKitchen = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchen)) ~>
+      val bundleTableKitchen = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
         createBundleTable ~> check {
         responseAs[ApiBundleTable]
       }
@@ -139,7 +207,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       }
       bundleWeekendEvents.id must beSome
 
-      val bundleTableKitchen = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchen)) ~>
+      val bundleTableKitchen = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
         createBundleTable ~> check {
         responseAs[ApiBundleTable]
       }
@@ -202,6 +270,18 @@ object BundleExamples {
     """.stripMargin
 
   val bundleTableKitchen =
+    """
+      |  {
+      |    "name": "Everything kitchen",
+      |    "table": {
+      |      "id": 2,
+      |      "name": "kitchen",
+      |      "source": "fibaro"
+      |    }
+      |  }
+    """.stripMargin
+
+  val bundleTableKitchenElectricity =
     """
       |  {
       |    "name": "Electricity in the kitchen",

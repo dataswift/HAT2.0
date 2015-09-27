@@ -68,14 +68,15 @@ case class ApiBundleTable(
     dateCreated: Option[LocalDateTime],
     lastUpdated: Option[LocalDateTime],
     name: String,
-    table: ApiDataTable,
-    slices: Option[Seq[ApiBundleTableSlice]])
+    table: ApiDataTable,                      // Used to tag which table is bundled
+    slices: Option[Seq[ApiBundleTableSlice]],
+    data: Option[Iterable[ApiDataRecord]])     // Data is optional, only used on the outbound
 
 object ApiBundleTable {
   def fromBundleTable(bundleTable: BundleTableRow)(table: ApiDataTable) : ApiBundleTable = {
     new ApiBundleTable(Some(bundleTable.id),
       Some(bundleTable.dateCreated), Some(bundleTable.lastUpdated),
-      bundleTable.name, table, None)
+      bundleTable.name, table, None, None)
   }
 }
 

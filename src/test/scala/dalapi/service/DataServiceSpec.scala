@@ -200,6 +200,7 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
         responseAs[String] must contain("testValue2")
         responseAs[String] must contain("testValue3")
         responseAs[String] must not contain("testValue2-1")
+        responseAs[String] must contain("testRecord 1")
       }
 
       HttpRequest(GET, s"/field/${dataField.id.get}/values") ~> getFieldValuesApi ~> check {
@@ -217,6 +218,8 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
         responseAs[String] must contain("testValue2-1")
         responseAs[String] must contain("testValue2-2")
         responseAs[String] must contain("testValue2-3")
+        responseAs[String] must contain("testRecord 1")
+        responseAs[String] must contain("testRecord 2")
       }
     }
   }
