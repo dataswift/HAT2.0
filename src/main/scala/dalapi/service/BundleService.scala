@@ -80,47 +80,7 @@ trait BundleService extends HttpService with DatabaseInfo {
     (bundleTableId: Int) =>
       get {
         db.withSession { implicit session =>
-          val bundleDataTable = (for {
-            bundleTable <- BundleTable.filter(_.id === bundleTableId)
-            dataTable <- bundleTable.dataTableFk
-          } yield (bundleTable, dataTable)).take(1).run.headOption
-
-          val someResults = bundleDataTable map { case (bundleTable: BundleTableRow, dataTable: DataTableRow) =>
-            val tableId = dataTable.id
-            val slices = getBundleTableSlices(bundleTableId)
-            val apiDataTables = slices match {
-                // Without any slices, the case degrades to plain data table access
-              case None =>
-                dataService.getTableValues(tableId)
-              case Some(tableSlices) =>
-                // FIXME: optimise, very inefficient currently
-                // Get a list of record IDs that match the given conditions
-                val records = tableSlices.foldLeft(Set[Int]()) { (recordLists, slice) =>
-
-                    val sliceRecords = slice.conditions.foldLeft(Seq[Set[Int]]()) { (sliceRecordSet, condition) =>
-                      val recordSet = DataValue.filter(_.fieldId === condition.field.id)
-                        .filter(_.value === condition.value)
-                        .flatMap(_.dataRecordFk)
-                        .map(_.id).run.toSet
-
-                      sliceRecordSet.+:(recordSet)
-                    }
-
-                    val filteredRecords = sliceRecords.foldLeft(sliceRecords.head) { (sliceRecordSet, recordSet) =>
-                      sliceRecordSet intersect recordSet
-                    }
-
-                    recordLists union filteredRecords
-                  }
-                
-                val values = DataValue.filter(_.recordId inSet records)
-
-                dataService.getTableValues(tableId, values)
-            }
-
-            val emptyBundleTable = ApiBundleTable.fromBundleTable(bundleTable)(ApiDataTable.fromDataTable(dataTable)(None)(None))
-            emptyBundleTable.copy(data = apiDataTables)
-          }
+          val someResults = getBundleTableValues(bundleTableId)
 
           complete {
             someResults match {
@@ -132,6 +92,48 @@ trait BundleService extends HttpService with DatabaseInfo {
           }
         }
       }
+  }
+
+  def getBundleTableValues(bundleTableId: Int)(implicit session: Session): Option[ApiBundleTable] = {
+    val bundleDataTable = (for {
+      bundleTable <- BundleTable.filter(_.id === bundleTableId)
+      dataTable <- bundleTable.dataTableFk
+    } yield (bundleTable, dataTable)).run.headOption
+
+    bundleDataTable map { case (bundleTable: BundleTableRow, dataTable: DataTableRow) =>
+      val tableId = dataTable.id
+      val slices = getBundleTableSlices(bundleTableId)
+      val apiDataTables = slices match {
+        // Without any slices, the case degrades to plain data table access
+        case None =>
+          dataService.getTableValues(tableId)
+        case Some(tableSlices) =>
+          // For each table slice, get a query that filters only the records that match the slice conditions
+          val recordLists = tableSlices map { slice =>
+            slice.conditions.foldLeft(DataValue.flatMap(_.dataRecordFk).map(_.id)) { (sliceRecordSet, condition) =>
+              // Filter only the records that have been included so far
+              DataValue.filter(_.recordId in sliceRecordSet)
+                .filter(_.fieldId === condition.field.id)     // Then for matching field
+                .filter(_.value === condition.value)          // And maching condition value
+                .flatMap(_.dataRecordFk)                      // Extract data record IDs
+                .map(_.id)
+            }
+          }
+
+          // Union all records of the different slices
+          val records = recordLists.tail.foldLeft(recordLists.head) { (recordUnion, recordSet) =>
+            recordUnion ++ recordSet
+          }
+
+          // Query that takes only the records of interest
+          val values = DataValue.filter(_.recordId in records)
+
+          dataService.getTableValues(tableId, values)
+      }
+
+      val emptyBundleTable = ApiBundleTable.fromBundleTable(bundleTable)(ApiDataTable.fromDataTable(dataTable)(None)(None))
+      emptyBundleTable.copy(data = apiDataTables)
+    }
   }
 
 
