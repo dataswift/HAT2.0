@@ -1,7 +1,5 @@
-package dalapi.models
+package hatdex.hat.api.models
 
-import dal.Tables._
-import dalapi.models.ComparisonOperators.ComparisonOperator
 import org.joda.time.LocalDateTime
 
 case class ApiBundlePropertySliceCondition(

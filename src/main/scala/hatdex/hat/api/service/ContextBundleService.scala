@@ -1,15 +1,12 @@
-package dalapi.service
+package hatdex.hat.api.service
 
-import dal.SlickPostgresDriver.simple._
-import dal.Tables._
-import dalapi.models._
-import dalapi.DatabaseInfo
+import hatdex.hat.api.DatabaseInfo
+import hatdex.hat.api.models.{ApiBundleContext, ApiBundlePropertySlice, ApiEntitySelection}
 import org.joda.time.LocalDateTime
 import spray.http.StatusCodes._
-import spray.httpx.SprayJsonSupport._
 import spray.routing._
 
-import scala.util.{Failure, Try, Success}
+import scala.util.{Failure, Success, Try}
 
 // this trait defines our service behavior independently from the service actor
 trait ContextBundleService extends HttpService with DatabaseInfo {
@@ -27,8 +24,6 @@ trait ContextBundleService extends HttpService with DatabaseInfo {
         getBundlrePropertyRecordCrossRefValues
     }
   }
-
-  import JsonProtocol._
 
 
   /*

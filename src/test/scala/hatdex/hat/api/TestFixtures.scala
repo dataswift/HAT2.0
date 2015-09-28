@@ -441,10 +441,10 @@ object TestFixtures {
   }
 
   def linkEntityData(
-                     things: Seq[ThingsThingRow], people: Seq[PeoplePersonRow], locations: Seq[LocationsLocationRow],
-                     organisations: Seq[OrganisationsOrganisationRow], events: Seq[EventsEventRow],
-                     systemProperties: Seq[SystemPropertyRow], systemTypes: Seq[SystemTypeRow],
-                     dataFields: Seq[DataFieldRow], dataRecords: Seq[DataRecordRow])
+                      things: Seq[ThingsThingRow], people: Seq[PeoplePersonRow], locations: Seq[LocationsLocationRow],
+                      organisations: Seq[OrganisationsOrganisationRow], events: Seq[EventsEventRow],
+                      systemProperties: Seq[SystemPropertyRow], systemTypes: Seq[SystemTypeRow],
+                      dataFields: Seq[DataFieldRow], dataRecords: Seq[DataRecordRow])
                     (implicit session: Session) = {
 
     // Entity - Property linking
