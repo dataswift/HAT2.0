@@ -1,18 +1,11 @@
-package dalapi
+package hatdex.hat.api.service
 
-import dal.Tables._
-import dalapi.service.{ContextBundleService, BundleService}
-import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
-import spray.http.MediaTypes._
-import spray.http.StatusCodes._
 import spray.http.HttpMethods._
+import spray.http.StatusCodes._
 import spray.http._
 import spray.testkit.Specs2RouteTest
-import spray.httpx.SprayJsonSupport._
-
-import dal.SlickPostgresDriver.simple._
 
 class ContexualBundleServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with ContextBundleService {
   def actorRefFactory = system
