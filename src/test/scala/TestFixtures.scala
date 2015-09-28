@@ -15,36 +15,38 @@ object TestFixtures {
 
     DataTables.forceInsertAll(dataTablesRows: _*)
     
-    val FacebookTableId = dataTablesRows.find(_.name === "Facebook").get.id
-    val EventsTableId = dataTablesRows.find(_.name === "events").get.id
-    val MeTableId = dataTablesRows.find(_.name === "me").get.id
+    val facebookTableId = dataTablesRows.find(_.name === "Facebook").get.id
+    val eventsTableId = dataTablesRows.find(_.name === "events").get.id
+    val meTableId = dataTablesRows.find(_.name === "me").get.id
     val locationsTableId = dataTablesRows.find(_.name === "locations").get.id
-    val FibaroTableId = dataTablesRows.find(_.name === "Fibaro").get.id
-    val FitbitTableId = dataTablesRows.find(_.name === "Fitbit").get.id
+    val fibaroTableId = dataTablesRows.find(_.name === "Fibaro").get.id
+    val fitbitTableId = dataTablesRows.find(_.name === "Fitbit").get.id
     
     // Nesting of data tables
     val dataTableToTableCrossRefRows = Seq(
-      new DataTabletotablecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", FacebookTableId, EventsTableId),
-      new DataTabletotablecrossrefRow(2, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", FacebookTableId, locationsTableId),
-      new DataTabletotablecrossrefRow(3, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", FacebookTableId, MeTableId))
+      new DataTabletotablecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", facebookTableId, eventsTableId),
+      new DataTabletotablecrossrefRow(2, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", facebookTableId, locationsTableId),
+      new DataTabletotablecrossrefRow(3, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", facebookTableId, meTableId))
 
     DataTabletotablecrossref.forceInsertAll(dataTableToTableCrossRefRows: _*)
 
     // Adding data fields to data tables
     val dataFields = Seq(
-      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), "weight", MeTableId),
+      new DataFieldRow(1, LocalDateTime.now(), LocalDateTime.now(), "weight", meTableId),
       new DataFieldRow(2, LocalDateTime.now(), LocalDateTime.now(), "elevation", locationsTableId),
-      new DataFieldRow(3, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", EventsTableId),
-      new DataFieldRow(4, LocalDateTime.now(), LocalDateTime.now(), "size", FibaroTableId),
-      new DataFieldRow(5, LocalDateTime.now(), LocalDateTime.now(), "temperature", FibaroTableId))
+      new DataFieldRow(3, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", eventsTableId),
+      new DataFieldRow(4, LocalDateTime.now(), LocalDateTime.now(), "size", fibaroTableId),
+      new DataFieldRow(5, LocalDateTime.now(), LocalDateTime.now(), "temperature", fibaroTableId),
+      new DataFieldRow(6, LocalDateTime.now(), LocalDateTime.now(), "cars speed", fibaroTableId),
+      new DataFieldRow(6, LocalDateTime.now(), LocalDateTime.now(), "number of employees", facebookTableId))
 
     DataField.forceInsertAll(dataFields: _*)
 
-    val WeightFieldId = dataTables.find(_.name === "weight").get.id
-    val ElevationFieldId = dataTables.find(_.name === "elevation").get.id
-    val KichenElectricityFieldId = dataTables.find(_.name === "kichenElectricity").get.id
-    val SizeFieldId = dataTables.find(_.name === "size").get.id
-    val TemperatureFieldId = dataTables.find(_.name === "temperature").get.id
+    val weightFieldId = dataTables.find(_.name === "weight").get.id
+    val elevationFieldId = dataTables.find(_.name === "elevation").get.id
+    val kichenElectricityFieldId = dataTables.find(_.name === "kichenElectricity").get.id
+    val sizeFieldId = dataTables.find(_.name === "size").get.id
+    val temperatureFieldId = dataTables.find(_.name === "temperature").get.id
 
     // Data records to connect data items together
     val dataRecordRows = Seq(
@@ -52,22 +54,24 @@ object TestFixtures {
       new DataRecordRow(2, LocalDateTime.now(), LocalDateTime.now(), "FacebookLocation"),
       new DataRecordRow(3, LocalDateTime.now(), LocalDateTime.now(), "FibaroKitchen"),
       new DataRecordRow(4, LocalDateTime.now(), LocalDateTime.now(), "FacebookEvent"),
-      new DataRecordRow(5, LocalDateTime.now(), LocalDateTime.now(), "FibaroBathroom"))
+      new DataRecordRow(5, LocalDateTime.now(), LocalDateTime.now(), "FibaroBathroom"),
+      new DataRecordRow(6, LocalDateTime.now(), LocalDateTime.now(), "car journey")
+      )
 
     DataRecord.forceInsertAll(dataRecordRows: _*)
     
-    val FacebookMeRecordId = dataTables.find(_.name === "FacebookMe").get.id
-    val FacebookLocationRecordId = dataTables.find(_.name === "FacebookLocation").get.id
-    val FibaroKitchenRecordId = dataTables.find(_.name === "FibaroKitchen").get.id
-    val FacebookEventRecordId = dataTables.find(_.name === "FacebookEvent").get.id
-    val FibaroBathroomRecordId = dataTables.find(_.name === "FibaroBathroom").get.id
+    val facebookMeRecordId = dataTables.find(_.name === "FacebookMe").get.id
+    val facebookLocationRecordId = dataTables.find(_.name === "FacebookLocation").get.id
+    val fibaroKitchenRecordId = dataTables.find(_.name === "FibaroKitchen").get.id
+    val facebookEventRecordId = dataTables.find(_.name === "FacebookEvent").get.id
+    val fibaroBathroomRecordId = dataTables.find(_.name === "FibaroBathroom").get.id
     
     val dataValueRows = Seq(
-      new DataValueRow(1, LocalDateTime.now(), LocalDateTime.now(), "62", WeightFieldId, FacebookMeRecordId),
-      new DataValueRow(2, LocalDateTime.now(), LocalDateTime.now(), "300", ElevationFieldId, FacebookLocationRecordId),
-      new DataValueRow(3, LocalDateTime.now(), LocalDateTime.now(), "20KwH", KichenElectricityFieldId, FibaroKitchenRecordId),
-      new DataValueRow(4, LocalDateTime.now(), LocalDateTime.now(), "Having a Shower", FacebookEventRecordId, FibaroBathroomRecordId),
-      new DataValueRow(5, LocalDateTime.now(), LocalDateTime.now(), "25", TemperatureFieldId, FacebookEventRecordId))
+      new DataValueRow(1, LocalDateTime.now(), LocalDateTime.now(), "62", weightFieldId, facebookMeRecordId),
+      new DataValueRow(2, LocalDateTime.now(), LocalDateTime.now(), "300", elevationFieldId, facebookLocationRecordId),
+      new DataValueRow(3, LocalDateTime.now(), LocalDateTime.now(), "20", kichenElectricityFieldId, fibaroKitchenRecordId),
+      new DataValueRow(4, LocalDateTime.now(), LocalDateTime.now(), "Having a Shower", facebookEventRecordId, fibaroBathroomRecordId),
+      new DataValueRow(5, LocalDateTime.now(), LocalDateTime.now(), "25", temperatureFieldId, facebookEventRecordId))
 
     DataValue.forceInsertAll(dataValueRows: _*)
 
@@ -82,7 +86,9 @@ object TestFixtures {
       new SystemUnitofmeasurementRow(2, LocalDateTime.now(), LocalDateTime.now(), "kilograms", "weight measurement", "kg"),
       new SystemUnitofmeasurementRow(3, LocalDateTime.now(), LocalDateTime.now(), "meters cubed", "3d space", "m^3"),
       new SystemUnitofmeasurementRow(4, LocalDateTime.now(), LocalDateTime.now(), "Kilowatt hours","electricity measurement", "KwH"), 
-      new SystemUnitofmeasurementRow(5, LocalDateTime.now(), LocalDateTime.now(), "centigrade","heat measurement", "C")) 
+      new SystemUnitofmeasurementRow(5, LocalDateTime.now(), LocalDateTime.now(), "centigrade","heat measurement", "C"),
+      new SystemUnitofmeasurementRow(6, LocalDateTime.now(), LocalDateTime.now(), "miles per hour","speed measurement", "mph"),
+      new SystemUnitofmeasurementRow(7, LocalDateTime.now(), LocalDateTime.now(), "number","amount of something", "n")) 
 
     SystemUnitOfMeasurement.forceInsertAll(systemUOMs: _*)
 
@@ -91,7 +97,12 @@ object TestFixtures {
       new SystemTypeRow(2, LocalDateTime.now(), LocalDateTime.now(), "dayily activities", "Google Calendar"),
       new SystemTypeRow(3, LocalDateTime.now(), LocalDateTime.now(), "utilities", "Fibaro"),
       new SystemTypeRow(4, LocalDateTime.now(), LocalDateTime.now(), "personattributes", "Fitbit"),
-      new SystemTypeRow(5, LocalDateTime.now(), LocalDateTime.now(), "locationattributes", "GPS application"))
+      new SystemTypeRow(5, LocalDateTime.now(), LocalDateTime.now(), "locationattributes", "GPS application"),
+      new SystemTypeRow(6, LocalDateTime.now(), LocalDateTime.now(), "measurement", "measurement of something"),
+      new SystemTypeRow(7, LocalDateTime.now(), LocalDateTime.now(), "room", "building seperator"),
+      new SystemTypeRow(8, LocalDateTime.now(), LocalDateTime.now(), "vehicle", "type of transport"),
+      new SystemTypeRow(9, LocalDateTime.now(), LocalDateTime.now(), "male", "gender type"),
+      new SystemTypeRow(10, LocalDateTime.now(), LocalDateTime.now(), "department", "faculty of a university"))
 
     SystemType.forceInsertAll(systemTypes: _*)
 
@@ -379,20 +390,32 @@ object TestFixtures {
     // Entity - Property linking
 
     val systemProperties = Seq(
-      // FIXME: kitchenEleectricity has type 1, which is room dimensions?
-      // FIXME: UoM is in meters
-      new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", "Fibaro", 1, 1),
-      // FIXME: wateruse has type 3, which is type utilities?
-      // FIXME: wateruse UoM is kg
-      new SystemPropertyRow(2, LocalDateTime.now(), LocalDateTime.now(), "wateruse", "Fibaro", 3, 2),
-      new SystemPropertyRow(3, LocalDateTime.now(), LocalDateTime.now(), "size", "Fibaro", systemTypes(0).id, 3),
-      // FIXME: weight has type 2 which is _dayily_ activities?
-      // FIXME: UoM 4 is broken
-      new SystemPropertyRow(4, LocalDateTime.now(), LocalDateTime.now(), "weight", "Fibaro", 2, 4),
-      // FIXME: elevation has type 4 which is personattributes?
-      // FIXME: UoM 5 is broken
-      new SystemPropertyRow(5, LocalDateTime.now(), LocalDateTime.now(), "elevation", "Fibaro", 4, 5))
 
+      new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", "Electricity use in a kitchen", 
+      systemTypes.find(_.name ==="utilities").get.id,
+      unitOfMeasurement.find(_.name ==="Kilowatt hours").get.id),
+      new SystemPropertyRow(2, LocalDateTime.now(), LocalDateTime.now(), "wateruse", "Use of a shower",
+      systemTypes.find(_.name ==="utilities").get.id,
+      unitOfMeasurement.find(_.name ==="Kilowatt hours").get.id),
+      new SystemPropertyRow(3, LocalDateTime.now(), LocalDateTime.now(), "size", "Size of an object",
+      systemTypes.find(_.name ==="measurement").get.id,
+      unitOfMeasurement.find(_.name ==="meters cubed").get.id),
+      new SystemPropertyRow(4, LocalDateTime.now(), LocalDateTime.now(), "elevation", "Height of location or thing",
+      systemTypes.find(_.name ==="measurement").get.id,
+      unitOfMeasurement.find(_.name ==="meters").get.id),
+      new SystemPropertyRow(5, LocalDateTime.now(), LocalDateTime.now(), "temperature", "Current temperature",
+      systemTypes.find(_.name ==="measurement").get.id,
+      unitOfMeasurement.find(_.name ==="centigrade").get.id),
+      new SystemPropertyRow(6, LocalDateTime.now(), LocalDateTime.now(), "weight", "Weight of a person",
+      systemTypes.find(_.name ==="measurement").get.id,
+      unitOfMeasurement.find(_.name ==="kilograms").get.id),
+      new SystemPropertyRow(7, LocalDateTime.now(), LocalDateTime.now(), "cars speed", "Car speed",
+      systemTypes.find(_.name ==="measurement").get.id,
+      unitOfMeasurement.find(_.name ==="miles per hour").get.id)
+      new SystemPropertyRow(8, LocalDateTime.now(), LocalDateTime.now(), "employees", "number of employees",
+      systemTypes.find(_.name ==="measurement").get.id,
+      unitOfMeasurement.find(_.name ==="number").get.id))
+    
     SystemProperty.forceInsertAll(systemProperties: _*)
 
     val propertyRecords = Seq(
@@ -400,7 +423,12 @@ object TestFixtures {
       new SystemPropertyrecordRow(2, LocalDateTime.now(), LocalDateTime.now(), "wateruse"),
       new SystemPropertyrecordRow(3, LocalDateTime.now(), LocalDateTime.now(), "size"),
       new SystemPropertyrecordRow(4, LocalDateTime.now(), LocalDateTime.now(), "weight"),
-      new SystemPropertyrecordRow(5, LocalDateTime.now(), LocalDateTime.now(), "elevation"))
+      new SystemPropertyrecordRow(5, LocalDateTime.now(), LocalDateTime.now(), "elevation"),
+      new SystemPropertyrecordRow(6, LocalDateTime.now(), LocalDateTime.now(), "city size"),
+      new SystemPropertyrecordRow(7, LocalDateTime.now(), LocalDateTime.now(), "temperature"),
+      new SystemPropertyrecordRow(8, LocalDateTime.now(), LocalDateTime.now(), "speed of car"),
+      new SystemPropertyrecordRow(9, LocalDateTime.now(), LocalDateTime.now(), "number of employees")
+      )
 
     SystemPropertyRecord.forceInsertAll(propertyRecords: _*)
 
@@ -409,26 +437,33 @@ object TestFixtures {
 
 
     val locationsSystemPropertyDynamicCrossRefRows = Seq(
-      // locationId: Int, systemPropertyId: Int, fieldId: Int, relationshipType
-      // Location 2 -
-      // systemProeprty 3 -
-      // fieldId 2 -
-      //
-      new LocationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 2, 3, 2, "Parent Child", true, 1)
+      new LocationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 
+      locations.find(._name === "Coventry").get.id, 
+      systemProperties.find(._name === "size").get.id, 
+      dataFields.find(._name === "size").get.id, 
+      "Size of City Location", true, 
+      propertyRecords.find(._name === "city size").get.id))
     )
 
 
     LocationsSystemPropertyDynamicCrossRefCrossRef.forceInsertAll(locationsSystemPropertyDynamicCrossRefRows: _*)
 
     val locationsSystemPropertyStaticCrossRefRows = Seq(
-      new LocationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 4, 3, "Parent Child", true, 5) // FIXME: too many arguments!
-    )
+      new LocationsSystempropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+      locations.find(._name === "Coventry").get.id, 
+      systemProperties.find(._name === "size").get.id,
+      dataRecord.find(._name === "FacebookLocation").get.id
+      dataFields.find(._name === "size").get.id, 
+      "Size of City Location", true, 
+      propertyRecords.find(._name === "city size").get.id))
 
 
     LocationsSystemPropertyStaticCrossRef.forceInsertAll(locationsSystemPropertyStaticCrossRefRows: _*)
 
     val locationsSystemTypeRows = Seq(
-      new LocationsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 2, 1, "recordID", true) //FIXME: location 2 (bathroom) is linked to type "room dimensions" with relationship type "recordID" ???
+      new LocationsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 
+        locations.find(._name === "bathroom").get.id, 
+        systemTypes.find(._name ===, "room").get.id, "Is", true)
     )
 
     LocationsSystemTypeCrossRef.forceInsertAll(locationsSystemTypeRows: _*)
@@ -436,96 +471,129 @@ object TestFixtures {
     // things Property/type Relationships
 
     val thingsSystemPropertyStaticCrossRefRows = Seq(
-      new ThingsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 3, 2, 1, "Parent Child", true, 3)
-    )
+      new ThingsSystemPropertyStaticCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(), 
+      things.find(._name === "Coventry").get.id, 
+      systemProperties.find(._name === "size").get.id, 
+      dataRecord.find(._name === "FacebookLocation").get.id,
+      dataFields.find(._name === "size").get.id, 
+      "Parent Child", true, 
+      propertyRecords.find(._name === "city size").get.id))
+    
 
 
     ThingsSystemPropertyStaticCrossRef.forceInsertAll(locationsSystemTypeRows: _*)
 
-
     val thingsSystemPropertyDynamicCrossRefRows = Seq(
-      new ThingsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
-        things.find(_.name === "shower"),
-        systemProperties.find(_.name === "wateruse"),
-        2,  // FIXME: no data field to relate to water use
-        "Parent Child", true,
-        3)  // FIXME: property record "size"
-
-    )
+      new ThingsSystempropertyDynamicCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+      things.find(._name === "car").get.id, 
+      systemProperties.find(._name === "temperature").get.id, 
+      dataFields.find(._name === "temperature").get.id, 
+      "Parent Child", true, 
+      propertyRecords.find(._name === "temperature").get.id))
 
 
     ThingsSystemPropertyDynamicCrossRef.forceInsertAll(thingsSystemPropertyDynamicCrossRefRows: _*)
 
     val thingsSystemTypeCrossRefRows = Seq(
-      new ThingsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), thingID, 2, "recordID", true)
-    )
-
+      new ThingsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+        things.find(._name === "car").get.id, 
+        systemTypes.find(._name ===, "vehicle").get.id, "Is", true))
 
     ThingsThingSystemTypeCrossRef.forceInsertAll(thingsSystemTypeCrossRefRows: _*)
 
     // people Property/type Relationships
 
     val peopleSystemPropertyStaticCrossRefRows = Seq(
-      new PeopleSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, 2, 1, 4, "Parent Child", true, 2)
-    )
+      new PeopleSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+      people.find(._name === "martin").get.id, 
+      systemProperties.find(._name === "kilograms").get.id, 
+      dataRecord.find(._name === "FibaroBathroom").get.id,
+      dataFields.find(._name === "weight").get.id, 
+      "Parent_Child", true, 
+      propertyRecords.find(._name === "weight").get.id))
 
 
     PeopleSystemPropertyStaticCrossRef.forceInsertAll(peopleSystemPropertyStaticCrossRefRows: _*)
 
     val peopleSystemPropertyDynamicCrossRefRows = Seq(
-      new PeopleSystempropertydynamiccrossrefRow()(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, 1, 3, "Parent Child", true, 2)
-    )
+      new PeopleSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+      people.find(._name === "martin").get.id, 
+      systemProperties.find(._name === "kilograms").get.id, 
+      dataFields.find(._name === "weight").get.id, 
+      "Parent_Child", true, 
+      propertyRecords.find(._name === "weight").get.id))
+    
 
 
     PeopleSystemPropertyDynamicCrossRef.forceInsertAll(peopleSystemPropertyDynamicCrossRefRows: _*)
 
     val peopleSystemTypeRows = Seq(
-      new PeopleSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, "recordID", true)
-    )
+      new PeopleSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+        people.find(._name === "Martin").get.id, 
+        systemTypes.find(._name ===, "male").get.id, "Is", true))
 
     PeopleSystemTypeCrossRef.forceInsertAll(peopleSystemTypeRows: _*)
 
     // events Property/type Relationships
 
     val eventsSystemPropertyStaticCrossRefRows = Seq(
-      new EventsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 4, 3, 2, 1, "Parent Child", true, 2)
-    )
+      new EventsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+      events.find(._name === "driving").get.id, 
+      systemProperties.find(._name === "cars speed").get.id, 
+      dataRecord.find(._name === "car journey").get.id,
+      dataFields.find(._name === "cars speed").get.id, 
+      "Parent_Child", true, 
+      propertyRecords.find(._name === "speed of car").get.id))
 
 
     EventsSystemPropertyStaticCrossRef.forceInsertAll(eventsSystemPropertyStaticCrossRefRows: _*)
 
     val eventsSystemPropertyDynamicCrossRefRows = Seq(
-      new EventsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 3, 2, 5, 2, "Parent Child", true, 3)
-    )
+      new EventsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+      events.find(._name === "driving").get.id, 
+      systemProperties.find(._name === "cars speed").get.id,
+      dataFields.find(._name === "cars speed").get.id, 
+      "Parent_Child", true, 
+      propertyRecords.find(._name === "speed of car").get.id))
 
 
     EventsSystemPropertyDynamicCrossRef.forceInsertAll(eventsSystemPropertyDynamicCrossRefRows: _*)
 
     val eventsSystemTypeRows = Seq(
-      new EventsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 4, "recordID", true)
-    )
-
+      new EventsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+        events.find(._name === "having a shower").get.id, 
+        systemTypes.find(._name ===, "dayily activities").get.id, "Is", true))
 
     EventsSystemTypeRef.forceInsertAll(eventsSystemTypeRows: _*)
 
     // organisation Property/type Relationships
 
     val organisationsSystemPropertyStaticCrossRefRows = Seq(
-      new OrganisationsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 3, 2, 1, "Parent Child", true, 4)
-    )
+      new OrganisationsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+      organisations.find(._name === "WMG").get.id, 
+      systemProperties.find(._name === "employees").get.id, 
+      dataRecord.find(._name === "FacebookMe").get.id,
+      dataFields.find(._name === "cars speed").get.id, 
+      "Parent_Child", true, 
+      propertyRecords.find(._name === "speed of car").get.id))
 
 
     OrganisationsSystemPropertyStaticCrossRef.forceInsertAll(organisationsSystemPropertyStaticCrossRefRows: _*)
 
     val organisationsSystemPropertyDynamicCrossRefRows = Seq(
-      new OrganisationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 3, 2, 3, "Parent Child", true, 1)
-    )
+      new OrganisationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+      organisations.find(._name === "WMG").get.id, 
+      systemProperties.find(._name === "employees").get.id,
+      dataFields.find(._name === "number of employees").get.id, 
+      "Parent_Child", true, 
+      propertyRecords.find(._name === "number of employees").get.id))
 
     OrganisationsSystemPropertyDynamicCrossRef.forceInsertAll(organisationsSystemPropertyDynamicCrossRefRows: _*)
 
     val organisationsSystemTypeRows = Seq(
-      new OrganisationsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, "recordID", true)
-    )
+      new OrganisationsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+        organisations.find(._name === "WMG").get.id, 
+        systemTypes.find(._name ===, "department").get.id, "Is", true))
 
     OrganisationSystemType.forceInsertAll(organisationSystemTypeRows: _*)
   }
