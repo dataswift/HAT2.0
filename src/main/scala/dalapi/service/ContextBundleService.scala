@@ -22,7 +22,7 @@ trait ContextBundleService extends HttpService with DatabaseInfo {
         getBundleContext ~
         getBundleContextValues ~
         getEntitySelection ~
-        getEntitySelectionValues ~ 
+        getEntitySelectionValues ~
         getBundlePropertyRecordCrossRef ~
         getBundlrePropertyRecordCrossRefValues
     }
