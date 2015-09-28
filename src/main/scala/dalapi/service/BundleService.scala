@@ -112,10 +112,27 @@ trait BundleService extends HttpService with DatabaseInfo {
           val recordLists = tableSlices map { slice =>
             slice.conditions.foldLeft(DataValue.flatMap(_.dataRecordFk).map(_.id)) { (sliceRecordSet, condition) =>
               // Filter only the records that have been included so far
-              DataValue.filter(_.recordId in sliceRecordSet)
+              val fieldMatcher = DataValue.filter(_.recordId in sliceRecordSet)
                 .filter(_.fieldId === condition.field.id)     // Then for matching field
-                .filter(_.value === condition.value)          // And maching condition value
-                .flatMap(_.dataRecordFk)                      // Extract data record IDs
+
+              // And maching condition value
+              val valueMatcher = condition.operator match {
+                case ComparisonOperators.equal =>
+                  fieldMatcher.filter(_.value === condition.value)
+                case ComparisonOperators.notEqual =>
+                  fieldMatcher.filterNot(_.value === condition.value)
+                case ComparisonOperators.greaterThan =>
+                  fieldMatcher.filter(_.value > condition.value)
+                case ComparisonOperators.lessThan =>
+                  fieldMatcher.filter(_.value < condition.value)
+                case ComparisonOperators.like =>
+                  fieldMatcher.filter(_.value like condition.value)
+                // FIXME: handle date-related operators
+                case _ =>
+                  fieldMatcher.filter(_.value === condition.value)
+              }
+
+              valueMatcher.flatMap(_.dataRecordFk)                      // Extract data record IDs
                 .map(_.id)
             }
           }

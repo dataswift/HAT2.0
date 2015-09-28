@@ -12,22 +12,24 @@ object ComparisonOperators {
   case object greaterThan extends ComparisonOperator
   case object lessThan extends ComparisonOperator
   case object like extends ComparisonOperator
-  case object dateGreaterThan extends ComparisonOperator
-  case object dateLessThan extends ComparisonOperator
-  case object dateWeekdayGreaterThan extends ComparisonOperator
-  case object dateWeekdayLessThan extends ComparisonOperator
-  case object dateHourGreaterThan extends ComparisonOperator
-  case object dateHourLessThan extends ComparisonOperator
+//  case object dateGreaterThan extends ComparisonOperator
+//  case object dateLessThan extends ComparisonOperator
+//  case object dateWeekdayGreaterThan extends ComparisonOperator
+//  case object dateWeekdayLessThan extends ComparisonOperator
+//  case object dateHourGreaterThan extends ComparisonOperator
+//  case object dateHourLessThan extends ComparisonOperator
 
   def fromString(value: String): ComparisonOperator = {
-    Vector(equal, notEqual, greaterThan, lessThan, like,
-      dateGreaterThan, dateLessThan,
-      dateWeekdayGreaterThan, dateWeekdayLessThan,
-      dateHourGreaterThan, dateHourLessThan).find(_.toString == value).get
+    Vector(
+      equal, notEqual, greaterThan, lessThan, like
+//      dateGreaterThan, dateLessThan,
+//      dateWeekdayGreaterThan, dateWeekdayLessThan,
+//      dateHourGreaterThan, dateHourLessThan
+    ).find(_.toString == value).get
   }
 
-  val comparisonOperators: Set[ComparisonOperator] = Set(equal, notEqual, greaterThan, lessThan, like, dateGreaterThan,
-    dateLessThan, dateWeekdayGreaterThan, dateWeekdayLessThan, dateHourGreaterThan, dateHourLessThan)
+  val comparisonOperators: Set[ComparisonOperator] = Set(equal, notEqual, greaterThan, lessThan, like)
+//    dateGreaterThan, dateLessThan, dateWeekdayGreaterThan, dateWeekdayLessThan, dateHourGreaterThan, dateHourLessThan)
 }
 
 case class ApiBundleTableCondition(
