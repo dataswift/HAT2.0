@@ -2,6 +2,8 @@ package dalapi
 
 import akka.actor.{ActorRefFactory, ActorLogging}
 import dalapi.service._
+import hat.authentication.HatAuthHandler
+import hat.authentication.authenticators.{UserPassHandler, AccessTokenHandler}
 import spray.routing.HttpServiceActor
 
 // we don't implement our route structure directly in the service actor because

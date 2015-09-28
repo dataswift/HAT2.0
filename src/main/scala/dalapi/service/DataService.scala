@@ -8,26 +8,39 @@ import org.joda.time.LocalDateTime
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
+import hat.authentication.{HatServiceAuthHandler, User, HatAuthHandler}
 
 import scala.util.{Failure, Success, Try}
 
 // this trait defines our service behavior independently from the service actor
 trait DataService extends HttpService with DatabaseInfo {
+  import hat.authentication.HatServiceAuthHandler._
 
-  val routes = { pathPrefix("data") {
-      createTableApi ~
-        linkTableToTableApi ~
-        createFieldApi ~
-        createRecordApi ~
-        createValueApi ~
-        storeValueListApi ~
-        getFieldApi ~
-        getFieldValuesApi ~
-        getTableApi ~
-        getTableValuesApi ~
-        getRecordApi ~
-        getRecordValuesApi ~
-        getValueApi
+  val routes = {
+    pathPrefix("data") {
+      userPassHandler { implicit user: User =>
+        createTableApi ~
+          linkTableToTableApi ~
+          createFieldApi ~
+          createRecordApi ~
+          createValueApi ~
+          storeValueListApi ~
+          getFieldApi ~
+          getFieldValuesApi ~
+          getTableApi ~
+          getTableValuesApi ~
+          getRecordApi ~
+          getRecordValuesApi ~
+          getValueApi
+      } ~
+        accessTokenHandler { implicit user: User =>
+          createTableApi ~
+            linkTableToTableApi ~
+            createFieldApi ~
+            createRecordApi ~
+            createValueApi ~
+            storeValueListApi
+        }
     }
   }
 
