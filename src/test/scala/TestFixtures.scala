@@ -81,17 +81,17 @@ object TestFixtures {
       new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "meters", "distance measurement", "m"),
       new SystemUnitofmeasurementRow(2, LocalDateTime.now(), LocalDateTime.now(), "kilograms", "weight measurement", "kg"),
       new SystemUnitofmeasurementRow(3, LocalDateTime.now(), LocalDateTime.now(), "meters cubed", "3d space", "m^3"),
-      new SystemUnitofmeasurementRow(4, LocalDateTime.now(), LocalDateTime.now(), "Kilowatt hours","electricity measurement", "KwH"), // FIXME wrong number of arguments, values don't make sense
-      new SystemUnitofmeasurementRow(5, LocalDateTime.now(), LocalDateTime.now(), "centigrade","heat measurement", "C")) // FIXME: wrong number of arguments, values don't make sense
+      new SystemUnitofmeasurementRow(4, LocalDateTime.now(), LocalDateTime.now(), "Kilowatt hours","electricity measurement", "KwH"), 
+      new SystemUnitofmeasurementRow(5, LocalDateTime.now(), LocalDateTime.now(), "centigrade","heat measurement", "C")) 
 
     SystemUnitOfMeasurement.forceInsertAll(systemUOMs: _*)
 
     val systemTypes = Seq(
       new SystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "room dimensions", "Fibaro"),
-      new SystemTypeRow(2, LocalDateTime.now(), LocalDateTime.now(), "dayily activities", "Fibaro"),
+      new SystemTypeRow(2, LocalDateTime.now(), LocalDateTime.now(), "dayily activities", "Google Calendar"),
       new SystemTypeRow(3, LocalDateTime.now(), LocalDateTime.now(), "utilities", "Fibaro"),
-      new SystemTypeRow(4, LocalDateTime.now(), LocalDateTime.now(), "personattributes", "Fibaro"),
-      new SystemTypeRow(5, LocalDateTime.now(), LocalDateTime.now(), "locationattributes", "Fibaro"))
+      new SystemTypeRow(4, LocalDateTime.now(), LocalDateTime.now(), "personattributes", "Fitbit"),
+      new SystemTypeRow(5, LocalDateTime.now(), LocalDateTime.now(), "locationattributes", "GPS application"))
 
     SystemType.forceInsertAll(systemTypes: _*)
 
@@ -120,7 +120,8 @@ object TestFixtures {
 
     val organisations = Seq(
       new OrganisationsOrganisationRow(1, LocalDateTime.now(), LocalDateTime.now(), "seventrent"),
-      new OrganisationsOrganisationRow(2, LocalDateTime.now(), LocalDateTime.now(), "WMG")
+      new OrganisationsOrganisationRow(2, LocalDateTime.now(), LocalDateTime.now(), "WMG"),
+      new OrganisationsOrganisationRow(3, LocalDateTime.now(), LocalDateTime.now(), "Coventry")
     )
 
     OrganisationsOrganisation.forceInsertAll(organisations: _*)
@@ -169,19 +170,33 @@ object TestFixtures {
 
     val relationshipRecords = Seq(
       new SystemRelationshiprecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "Driving to Work"),
-      new SystemRelationshiprecordRow(2, LocalDateTime.now(), LocalDateTime.now(), "wateruse"),
-      new SystemRelationshiprecordRow(3, LocalDateTime.now(), LocalDateTime.now(), "Colleagues"),
-      new SystemRelationshiprecordRow(4, LocalDateTime.now(), LocalDateTime.now(), "weight"),
-      new SystemRelationshiprecordRow(5, LocalDateTime.now(), LocalDateTime.now(), "elevation"),
-      new SystemRelationshiprecordRow(6, LocalDateTime.now(), LocalDateTime.now(), "Driving to Work"),
-      new SystemRelationshiprecordRow(7, LocalDateTime.now(), LocalDateTime.now(), "wateruse"),
-      new SystemRelationshiprecordRow(8, LocalDateTime.now(), LocalDateTime.now(), "size"),
+      new SystemRelationshiprecordRow(2, LocalDateTime.now(), LocalDateTime.now(), "Shower Used_During having a shower"),
+      new SystemRelationshiprecordRow(3, LocalDateTime.now(), LocalDateTime.now(), "having a shower Is_At bathrom"),
+      new SystemRelationshiprecordRow(4, LocalDateTime.now(), LocalDateTime.now(), "Uses_Utility"),
+      new SystemRelationshiprecordRow(5, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child"),
+      new SystemRelationshiprecordRow(6, LocalDateTime.now(), LocalDateTime.now(), "Owns"),
+      new SystemRelationshiprecordRow(7, LocalDateTime.now(), LocalDateTime.now(), "Next_To"),
+      new SystemRelationshiprecordRow(8, LocalDateTime.now(), LocalDateTime.now(), "Buys_From"),
       new SystemRelationshiprecordRow(9, LocalDateTime.now(), LocalDateTime.now(), "Car Ownership"),
-      new SystemRelationshiprecordRow(10, LocalDateTime.now(), LocalDateTime.now(), "elevation"),
-      new SystemRelationshiprecordRow(11, LocalDateTime.now(), LocalDateTime.now(), "Driving to Work"),
-      new SystemRelationshiprecordRow(12, LocalDateTime.now(), LocalDateTime.now(), "wateruse"),
-      new SystemRelationshiprecordRow(13, LocalDateTime.now(), LocalDateTime.now(), "size"),
-      new SystemRelationshiprecordRow(14, LocalDateTime.now(), LocalDateTime.now(), "weight")
+      new SystemRelationshiprecordRow(10, LocalDateTime.now(), LocalDateTime.now(), "Martin Is having a shower"),
+      new SystemRelationshiprecordRow(11, LocalDateTime.now(), LocalDateTime.now(), "Going to Organisation WMG"),
+      new SystemRelationshiprecordRow(12, LocalDateTime.now(), LocalDateTime.now(), "Shower Parent_Child cupbord"),
+      new SystemRelationshiprecordRow(13, LocalDateTime.now(), LocalDateTime.now(), "Martin Owns Car"),
+      new SystemRelationshiprecordRow(14, LocalDateTime.now(), LocalDateTime.now(), "Kitchen Next_To bathroom")
+      new SystemRelationshiprecordRow(15, LocalDateTime.now(), LocalDateTime.now(), "WMG location Is_At Coventry"),
+      new SystemRelationshiprecordRow(16, LocalDateTime.now(), LocalDateTime.now(), "WMG Buys_From seventrent"),
+      new SystemRelationshiprecordRow(17, LocalDateTime.now(), LocalDateTime.now(), "WMG organisation Is_At Coventry"),
+      new SystemRelationshiprecordRow(18, LocalDateTime.now(), LocalDateTime.now(), "WMG organisation Rents car"),
+      new SystemRelationshiprecordRow(19, LocalDateTime.now(), LocalDateTime.now(), "Martin Works at WMG"),
+      new SystemRelationshiprecordRow(20, LocalDateTime.now(), LocalDateTime.now(), "Martin Colleague_With Andrius"),
+      new SystemRelationshiprecordRow(21, LocalDateTime.now(), LocalDateTime.now(), "Xiao Is_at Coventry"),
+      new SystemRelationshiprecordRow(22, LocalDateTime.now(), LocalDateTime.now(), "size"),
+      new SystemRelationshiprecordRow(23, LocalDateTime.now(), LocalDateTime.now(), "Car Ownership"),
+      new SystemRelationshiprecordRow(24, LocalDateTime.now(), LocalDateTime.now(), "elevation"),
+      new SystemRelationshiprecordRow(25, LocalDateTime.now(), LocalDateTime.now(), "Driving to Work"),
+      new SystemRelationshiprecordRow(26, LocalDateTime.now(), LocalDateTime.now(), "wateruse"),
+      new SystemRelationshiprecordRow(27, LocalDateTime.now(), LocalDateTime.now(), "size"),
+      new SystemRelationshiprecordRow(28, LocalDateTime.now(), LocalDateTime.now(), "weight")
     )
 
     SystemRelationshipRecord.forceInsertAll(relationshipRecords: _*)
@@ -193,7 +208,7 @@ object TestFixtures {
       new EventsEventtoeventcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         events.find(_.name === "going to work").get.id,
         events.find(_.name === "driving").get.id,
-        "Parent_Child", true,
+        "Driving to work", true,
         relationshipRecords.find(_.name === "Driving to Work").get.id)
     )
     EventsEventToEventCrossRef.forceInsertAll(eventsEventToEventCrossRefRows: _*)
@@ -202,8 +217,8 @@ object TestFixtures {
       new EventsEvent(1, LocalDateTime.now(), LocalDateTime.now(),
         events.find(_.name === "having a shower").get.id,
         things.find(_.name === "shower").get.id,
-        "Used_During", true,
-        5) // FIXME: system relationship record "elevation"?
+        "Used_During", true, 
+        relationshipRecords.find(_.name === "Shower Used_During having a shower").get.id)
     )
 
 
@@ -213,8 +228,8 @@ object TestFixtures {
       new EventsEventlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         events.find(_.name === "having a shower").get.id,
         locations.find(_.name === "bathroom").get.id,
-        "Is_At", true,
-        6) // FIXME: Driving to work?
+        "Is_At", true, 
+        relationshipRecords.find(_.name === "having a shower Is_At bathrom").get.id)
     )
 
 
@@ -224,8 +239,8 @@ object TestFixtures {
       new EventsEventpersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         events.find(_.name === "having a shower").get.id,
         people.find(_.name === "Martin").get.id,
-        "Is_At", true,
-        7) // FIXME: water use?
+        "Is", true, 
+        relationshipRecords.find(_.name === "Martin Is having a shower").get.id)
     )
 
 
@@ -235,8 +250,8 @@ object TestFixtures {
       new EventsEventorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         events.find(_.name === "going to work").get.id,
         organisations.find(_.name === "WMG").get.id,
-        "Uses_Utility", true,
-        8) // FIXME: size?
+        "Going to Organisation", true, 
+        relationshipRecords.find(_.name === "Going to Organisation WMG").get.id)
     )
 
 
@@ -246,21 +261,19 @@ object TestFixtures {
 
     val thingsThingToThingCrossRefRows = Seq(
       new ThingsThingtothingcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
-        1,
-        1, // FIXME: thing1 linking to thing1 (cupboard to cupboard)
-        "Parent_Child", true,
-        2) // FIXME: ... with relationship type driving to work
-    )
+        things.find(_.name === "cupbord"), 
+        things.find(_.name === "shower"), 
+        "Parent_Child", true, 
+        relationshipRecords.find(_.name === "Shower Parent_Child cupbord").get.id)  
 
     ThingsThingToThingCrossRefCrossRef.forceInsertAll(thingsThingToThingCrossRefRows: _*)
 
     val thingsThingToPersonCrossRefRows = Seq(
       new ThingsThingpersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
-        1,
-        3,
-        "Owns", true,
-        9) // FIXME: cupbord related to xiao with rel "Car Ownership"
-    )
+        things.find(_.name === "car"), 
+        people.find(_.name === "Martin").get.id,
+        "Owns", true, 
+        relationshipRecords.find(_.name === "Martin Owns Car").get.id)
 
 
     ThingsThingToPersonCrossRef.forceInsertAll(thingsThingToPersonCrossRefRows: _*)
@@ -271,8 +284,8 @@ object TestFixtures {
       new LocationsLocationtolocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         locations.find(_.name === "kitchen").get.id,
         locations.find(_.name === "bathroom").get.id,
-        "Next_To", true,
-        4) // FIXME: weight
+        "Next_To", true, 
+        relationshipRecords.find(_.name === "Kitchen Next_To bathroom").get.id)
     )
 
     LocationsLocationToLocationCrossRef.forceInsertAll(locationsLocationToLocationCrossRefRows: _*)
@@ -280,9 +293,9 @@ object TestFixtures {
     val locationsLocationToThingCrossRefRows = Seq(
       new LocationsLocationthingcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         locations.find(_.name === "WMG").get.id,
-        locations.find(_.name === "car").get.id,
-        "Is_At", true,
-        10) // FIXME: elevation
+        locations.find(_.name === "Coventry").get.id,
+        "Is_At", true, 
+        relationshipRecords.find(_.name === "WMG location Is_At Coventry").get.id)
     )
 
     LocationsLocationToThingCrossRef.forceInsertAll(locationsLocationToThingCrossRefRows: _*)
@@ -294,8 +307,8 @@ object TestFixtures {
       new OrganisationsOrganisationtoorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         organisations.find(_.name === "seventrent").get.id,
         organisations.find(_.name === "WMG").get.id,
-        "Buys_From", true,
-        4) // FIXME
+        "Buys_From", true, 
+        relationshipRecords.find(_.name === "WMG Buys_From seventrent").get.id)
     )
 
     OrganisationsOrganisationToOrganisationCrossRef.forceInsertAll(organisationsOrganisationToOrganisationCrossRefRows: _*)
@@ -304,9 +317,9 @@ object TestFixtures {
     val organisationOrganisationLocationCrossRefRows = Seq(
       new OrganisationsOrganisationlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         organisations.find(_.name === "WMG").get.id,
-        locations.find(_.name === "WMG").get.id,
-        "Is_At", true,
-        11) // FIXME
+        locations.find(_.name === "Coventry").get.id,
+        "Is_At", true, 
+        relationshipRecords.find(_.name === "WMG organisation Is_At Coventry").get.id)
     )
 
 
@@ -317,8 +330,8 @@ object TestFixtures {
       new OrganisationsOrganisationthingcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         organisations.find(_.name === "WMG").get.id,
         things.find(_.name === "car").get.id,
-        "Rents", true,
-        12) // FIXME: wateruse
+        "Rents", true, 
+        relationshipRecords.find(_.name === "WMG organisation Rents car").get.id)
     )
 
 
@@ -330,8 +343,8 @@ object TestFixtures {
       new PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         people.find(_.name === "Martin").get.id,
         people.find(_.name === "Andrius").get.id,
-        "Colleague", true,
-        relationshipRecords.find(_.name === "Colleagues").get.id)
+        "Colleague_With", true,
+        relationshipRecords.find(_.name === "Martin Colleague_With Andrius").get.id)
     )
 
     PeoplePersonToPersonCrossRef.forceInsertAll(peoplePersonToPersonCrossRefRows: _*)
@@ -341,15 +354,17 @@ object TestFixtures {
         people.find(_.name === "Martin").get.id,
         organisations.find(_.name === "WMG").get.id,
         "Works_at", true,
-        13), // FIXME: size
-      new PeoplePersonorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+        relationshipRecords.find(_.name === "Martin Works at WMG").get.id)
+
+    val peoplePersonLocationCrossRefCrossRefRows = Seq(   
+      new PeoplePersonLocationCrossRefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         people.find(_.name === "Xiao").get.id,
-        organisations.find(_.name === "seventrent").get.id,
+        locations.find(_.name === "Coventry").get.id,
         "Is_at", true,
-        14) // FIXME: weight
+        relationshipRecords.find(_.name === "Xiao Is_at Coventry").get.id)
     )
 
-    PeoplePersonOrganisationCrossRefCrossRef.forceInsertAll(peoplePersonOrganisationCrossRefRows: _*)
+    PeoplePersonLocationCrossRef.forceInsertAll(peoplePersonLocationCrossRefRows: _*)
 
     linkEntityData(systemUOMs, systemTypes, systemProperties, propertyRecords, things, people, locatons,
       organisations, events, entities, dataFields)
@@ -406,7 +421,7 @@ object TestFixtures {
     LocationsSystemPropertyDynamicCrossRefCrossRef.forceInsertAll(locationsSystemPropertyDynamicCrossRefRows: _*)
 
     val locationsSystemPropertyStaticCrossRefRows = Seq(
-      new LocationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 4, 3, 4, "Parent Child", true, 5) // FIXME: too many arguments!
+      new LocationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), 1, 2, 4, 3, "Parent Child", true, 5) // FIXME: too many arguments!
     )
 
 
@@ -516,54 +531,68 @@ object TestFixtures {
   }
 
   def clearAllData(implicit session: Session) = {
+
     BundleTableslicecondition.delete
     BundleTableslice.delete
     BundleTable.delete
+    BundleContext.delete
+    BundlePropertySlice.delete
+    BundlePropertySliceCondition.delete
+    BundlePropertyRecordCrossRef.delete
+    EntitySelection.delete
+    Entity.delete
+
+    SystemProperty.delete
+    SystemType.delete
+    SystemUnitOfMeasurement.delete
+    SystemPropertyRecord.delete
+    SystemRelationshipRecord.delete
+    EventsSystemPropertyDynamicCrossref.delete
+    EventsSystemPropertyStaticCrossRef.delete
+    EventsSystemTypeCrossRef.delete
+    EventsEventToEventCrossRef.delete
+    EventsEventOrganisationCrossRef.delete
+    EventsEventThingCrossRef.delete
+    EventsEventLocationCrossRef.delete
+
+    OrganisationsOrganisationToOrganisationCrossRef.delete
+    OrganisationsSystemtypeCrossRef.delete
+    OrganisationsSystemPropertyStaticCrossRef.delete
+    OrganisationsSystemPropertyDynamicCrossRef.delete
+    OrganisationsOrganisationThingCrossRef.delete
+    OrganisationsOrganisationLocatioCrossRef.delete
+
+    ThingsThingToTShingCrossRef.delete
+    ThingsSystemTypeCrossRef.delete
+    ThingsSystemPropertyDynamicCrossRef.delete
+    ThingsSystemPropertyStaticCrossRef.delete
+    ThingsThingPersonCrossRef.delete
+
+    PeoplePersonToPersonCrossRef.delete
+    PeopleSystemTypeCrossRef.delete
+    PeopleSystemPropertyDynamicCrossRef.delete
+    PeopleSystemPropertyStaticCrossRef.delete
+    PeoplePersonOrganisationCrossRef.delete
+    PeoplePersonLocationCrossRef.delete
+    PeoplePersonOrganisationCrossRef.delete
+
+    LocationsLocationToLocationCrossRef.delete
+    LocationsSystemTypeCrossRef.delete
+    LocationsSystemPropertydynamicCrossRef.delete
+    LocationsSystemPropertyStaticCrossRef.delete
+    LocationsLocationThingCrossRef.delete
+
+    EventsEvent.delete
+    ThingsThing.delete
+    PeoplePerson.delete
+    LocationsLocation.delete
+    OrganisationsOrganisation.delete
+
 
     DataValue.delete
     DataRecord.delete
     DataField.delete
     DataTabletotablecrossref.delete
     DataTable.delete
-    SystemProperty.delete
-    SystemType.delete
-    SystemUnitofmeasurement.delete
-    SystemPropertyrecord.delete
-    SystemRelationshiprecord.delete
-    EventsSystempropertydynamiccrossref.delete
-    EventsSystempropertystaticcrossref.delete
-    EventsSystemtypecrossref.delete
-    EventsEventtoeventcrossref.delete
-    EventsEventorganisationcrossref.delete
-    EventsEventthingcrossref.delete
-    EventsEventlocationcrossref.delete
-    EventsEvent.delete
-    OrganisationsOrganisation.delete
-    OrganisationsOrganisationtoorganisationcrossref.delete
-    OrganisationsSystemtypecrossref.delete
-    OrganisationsSystempropertystaticcrossref.delete
-    OrganisationsSystempropertystaticcrossref.delete
-    OrganisationsOrganisationthingcrossref.delete
-    OrganisationsOrganisationlocationcrossref.delete
-    ThingsThing.delete
-    ThingsThingtothingcrossref.delete
-    ThingsSystemtypecrossref.delete
-    ThingsSystempropertydynamiccrossref.delete
-    ThingsSystempropertystaticcrossref.delete
-    ThingsThingpersoncrossref.delete
-    PeoplePerson.delete
-    PeoplePersontopersoncrossref.delete
-    PeopleSystemtypecrossref.delete
-    PeopleSystempropertydynamiccrossref.delete
-    PeopleSystempropertystaticcrossref.delete
-    PeoplePersonorganisationcrossref.delete
-    PeoplePersonlocationcrossref.delete
-    PeoplePersonorganisationcrossref.delete
-    LocationsLocation.delete
-    LocationsLocationtolocationcrossref.delete
-    LocationsSystemtypecrossref.delete
-    LocationsSystempropertydynamiccrossref.delete
-    LocationsSystempropertystaticcrossref.delete
-    LocationsLocationthingcrossref.delete
   }
 }

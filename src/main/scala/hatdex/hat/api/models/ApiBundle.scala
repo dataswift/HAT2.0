@@ -37,6 +37,7 @@ case class ApiBundleTableCondition(
     dateCreated: Option[LocalDateTime],
     lastUpdated: Option[LocalDateTime],
     field: ApiDataField,
+    //FIX ME? Looks like missing APItableslice
     value: String,
     operator: ComparisonOperator)
 
