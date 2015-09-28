@@ -118,4 +118,6 @@ object JsonProtocol extends DefaultJsonProtocol {
   implicit val apiBundleTable = jsonFormat7(ApiBundleTable.apply)
   implicit val apiBundleCombination = jsonFormat8(ApiBundleCombination.apply)
   implicit val apiBundleContextless = jsonFormat5(ApiBundleContextless.apply)
+
+  implicit val apiBundleContextlessData = jsonFormat3(ApiBundleContextlessData.apply)
 }

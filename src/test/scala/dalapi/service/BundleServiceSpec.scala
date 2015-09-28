@@ -147,7 +147,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       bundleTableKitchen.id must beSome
 
       HttpRequest(GET, s"/table/${bundleTableKitchen.id.get}/values") ~>
-        getBundleTableValues ~> check {
+        getBundleTableValuesApi ~> check {
         response.status should be equalTo OK
         val responseString = responseAs[String]
         responseString must contain("kitchen")
@@ -174,7 +174,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       bundleTable.id must beSome
 
       HttpRequest(GET, s"/table/${bundleTable.id.get}/values") ~>
-        getBundleTableValues ~> check {
+        getBundleTableValuesApi ~> check {
         response.status should be equalTo OK
 
         val responseString = responseAs[String]
@@ -216,9 +216,30 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       ))
 
       val bundleJson: String = completeBundle.toJson.toString
-      HttpRequest(POST, "/", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
+      val cBundle = HttpRequest(POST, "/", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
         createBundleContextless ~> check {
         response.status should be equalTo Created
+        responseAs[ApiBundleContextless]
+      }
+
+      HttpRequest(GET, s"/${cBundle.id.get}/values") ~>
+        getBundleContextlessValuesApi ~> check {
+        response.status should be equalTo OK
+
+        val responseString = responseAs[String]
+
+        responseString must contain("dataGroups")
+        responseString must contain("event record 1")
+        responseString must contain("event record 2")
+        responseString must not contain("event record 3")
+
+        responseString must contain("kitchen record 1")
+        responseString must contain("kitchen record 2")
+        responseString must contain("kitchen record 3")
+
+        responseString must contain("kitchen value 1")
+        responseString must contain("event name 1")
+        responseString must contain("event location 1")
       }
 
     }

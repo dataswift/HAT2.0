@@ -3,7 +3,7 @@ package dalapi.models
 import dal.Tables._
 import dalapi.models.ComparisonOperators.ComparisonOperator
 import org.joda.time.LocalDateTime
-
+import scala.collection.immutable.Map
 
 object ComparisonOperators {
   sealed trait ComparisonOperator
@@ -130,3 +130,9 @@ case class ApiBundleContextlessData(
     id: Int,
     name: String,
     dataGroups: Iterable[Map[String, ApiBundleTable]])
+
+object ApiBundleContextlessData {
+  def fromDbModel(bundleContextless: BundleContextlessRow, dataGroups: Iterable[Map[String, ApiBundleTable]]): ApiBundleContextlessData = {
+    new ApiBundleContextlessData(bundleContextless.id, bundleContextless.name, dataGroups)
+  }
+}

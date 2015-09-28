@@ -23,8 +23,8 @@ trait BundleService extends HttpService with DatabaseInfo {
         getBundleTable ~
         createBundleContextless ~
         getBundleContextless ~
-        getBundleTableValues ~
-        getBundleContextlessValues
+        getBundleTableValuesApi ~
+        getBundleContextlessValuesApi
     }
   }
 
@@ -76,7 +76,7 @@ trait BundleService extends HttpService with DatabaseInfo {
   /*
    * Retrieves bundle table data
    */
-  def getBundleTableValues = path("table" / IntNumber / "values") {
+  def getBundleTableValuesApi = path("table" / IntNumber / "values") {
     (bundleTableId: Int) =>
       get {
         db.withSession { implicit session =>
@@ -87,7 +87,7 @@ trait BundleService extends HttpService with DatabaseInfo {
               case Some(results) =>
                 results
               case None =>
-                (NotFound, s"Contextless Bundle $bundleTableId not found")
+                (NotFound, s"Contextless Bundle Table $bundleTableId not found")
             }
           }
         }
@@ -157,7 +157,6 @@ trait BundleService extends HttpService with DatabaseInfo {
                 (BadRequest, e.getMessage)
             }
           }
-
         }
       }
     }
@@ -187,13 +186,47 @@ trait BundleService extends HttpService with DatabaseInfo {
   /*
    * Retrieves contextless bundle data
    */
-  def getBundleContextlessValues = path(IntNumber / "values") {
+  def getBundleContextlessValuesApi = path(IntNumber / "values") {
     (bundleId: Int) =>
       get {
-        complete {
-          (NotImplemented, s"Data retrieval for contextless bundles not yet implemented")
+        db.withSession { implicit session =>
+          val someResults = getBundleContextlessValues(bundleId)
+          complete {
+            someResults match {
+              case Some(results) =>
+                results
+              case None =>
+                (NotFound, s"Contextless Bundle $bundleId not found")
+            }
+          }
         }
       }
+  }
+
+  def getBundleContextlessValues(bundleId: Int)(implicit session: Session): Option[ApiBundleContextlessData] = {
+    // TODO: include join fields
+    val bundleQuery = for {
+      bundle <- BundleContextless.filter(_.id === bundleId)     // 1 or 0
+      combination <- BundleJoin.filter(_.bundleId === bundleId)       // N for each bundle
+      table <- combination.bundleTableFk                              // 1 for each combination
+    } yield (bundle, combination, table)
+
+    val bundle = bundleQuery.run
+
+    // Only one or no contextless bundles
+    val contextlessBundle = bundle.headOption.map(_._1)
+
+    contextlessBundle map { cBundle =>
+      val bundleData = bundle.groupBy(_._2.name).map { case (combinationName, tableGroup) =>
+        val bundleData = getBundleTableValues(tableGroup.map(_._3.id).head).get
+        (combinationName, bundleData)
+      }
+
+      // TODO: rearrange data as per join fields
+      val dataGroups = Iterable(bundleData)
+
+      ApiBundleContextlessData.fromDbModel(cBundle, dataGroups)
+    }
   }
 
   /*
