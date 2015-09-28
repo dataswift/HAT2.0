@@ -3,9 +3,9 @@ import com.typesafe.sbt.SbtNativePackager._
 
 enablePlugins(JavaAppPackaging)
 
-name := """hat-dal"""
+name := """The HAT"""
 
-version := "2.2-SNAPSHOT"
+version := "2.0-SNAPSHOT"
 
 scalaVersion := "2.11.6"
 

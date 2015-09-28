@@ -36,7 +36,7 @@ object myBuild extends Build {
       ),
       slick <<= slickCodeGenTask, // register manual sbt command
       // sourceGenerators in Compile <+= slickCodeGenTask, // register automatic code generation on every compile, remove for only manual use
-      cleanFiles <+= baseDirectory { base => base / "src/main/scala/dal/" }
+      cleanFiles <+= baseDirectory { base => base / "src/main/scala/hatdex/hat/dal/" }
     )
   ).dependsOn( codegenProject )
 
@@ -75,9 +75,9 @@ object myBuild extends Build {
     val main = Project("main", file("."))
     val outputDir = (main.base.getAbsoluteFile / "src/main/scala").getPath
     s.log.info("Output directory for codegen: " + outputDir.toString)
-    val pkg = "dal"
-    toError(r.run("dal.CustomizedCodeGenerator", cp.files, Array(outputDir, pkg), s.log))
-    val fname = outputDir + "/" + pkg + "/Tables.scala"
+    val pkg = "hatdex.hat.dal"
+    toError(r.run("hatdex.hat.dal.CustomizedCodeGenerator", cp.files, Array(outputDir, pkg), s.log))
+    val fname = outputDir + "/" + pkg.replace('.', '/') + "/Tables.scala"
     Seq(file(fname))
   }
 

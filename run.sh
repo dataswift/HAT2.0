@@ -5,4 +5,4 @@ if [ -z "$VCAP_APP_PORT" ];
 	else SERVER_PORT="$VCAP_APP_PORT"; 
 fi 
 echo port is $SERVER_PORT 
-./target/universal/stage/bin/hat-dal -Dhttp.port=$SERVER_PORT
+./target/universal/stage/bin/hatdex.hat-hatdex.hat.dal -Dhttp.port=$SERVER_PORT
