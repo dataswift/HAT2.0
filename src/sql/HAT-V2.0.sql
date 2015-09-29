@@ -967,7 +967,7 @@ CREATE TABLE public.bundle_bundletobundlecrossref (
 
 
 CREATE TABLE public.data_debit (
-                data_debit_key UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+                data_debit_key UUID NOT NULL DEFAULT gen_random_uuid(),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
