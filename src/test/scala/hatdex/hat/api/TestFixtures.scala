@@ -5,15 +5,23 @@ import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 
 object TestFixtures {
+  def prepareEverything(implicit session: Session) = {
+    val (dataFields, dataRecords) = prepareDataStructures
+    val (systemUoms, systemTypes) = prepareSystemTypes
+    val systemProperties = prepareSystemProperties(systemUoms, systemTypes)
+    val (things, people, locations, organisations, events, entities) = prepareEntities
+    contextualiseEntities(things, people, locations, organisations, events)
+    linkEntityData(things, people, locations, organisations, events, systemProperties, systemTypes, dataFields, dataRecords)
+  }
   def prepareDataStructures(implicit session: Session) = {
     // Data tables
     val dataTables = Seq(
       new DataTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "Facebook", "facebook"),
       new DataTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "events", "facebook"),
       new DataTableRow(3, LocalDateTime.now(), LocalDateTime.now(), "me", "facebook"),
-      new DataTableRow(3, LocalDateTime.now(), LocalDateTime.now(), "Fibaro", "Fibaro"),
-      new DataTableRow(4, LocalDateTime.now(), LocalDateTime.now(), "Fitbit", "Fitbit"),
-      new DataTableRow(5, LocalDateTime.now(), LocalDateTime.now(), "locations", "facebook"))
+      new DataTableRow(4, LocalDateTime.now(), LocalDateTime.now(), "Fibaro", "Fibaro"),
+      new DataTableRow(5, LocalDateTime.now(), LocalDateTime.now(), "Fitbit", "Fitbit"),
+      new DataTableRow(6, LocalDateTime.now(), LocalDateTime.now(), "locations", "facebook"))
 
     DataTable.forceInsertAll(dataTables: _*)
 
@@ -40,15 +48,15 @@ object TestFixtures {
       new DataFieldRow(4, LocalDateTime.now(), LocalDateTime.now(), "size", fibaroTableId),
       new DataFieldRow(5, LocalDateTime.now(), LocalDateTime.now(), "temperature", fibaroTableId),
       new DataFieldRow(6, LocalDateTime.now(), LocalDateTime.now(), "cars speed", fibaroTableId),
-      new DataFieldRow(6, LocalDateTime.now(), LocalDateTime.now(), "number of employees", facebookTableId))
+      new DataFieldRow(7, LocalDateTime.now(), LocalDateTime.now(), "number of employees", facebookTableId))
 
     DataField.forceInsertAll(dataFields: _*)
 
-    val weightFieldId = dataTables.find(_.name equals "weight").get.id
-    val elevationFieldId = dataTables.find(_.name equals "elevation").get.id
-    val kichenElectricityFieldId = dataTables.find(_.name equals "kichenElectricity").get.id
-    val sizeFieldId = dataTables.find(_.name equals "size").get.id
-    val temperatureFieldId = dataTables.find(_.name equals "temperature").get.id
+    val weightFieldId = dataFields.find(_.name equals "weight").get.id
+    val elevationFieldId = dataFields.find(_.name equals "elevation").get.id
+    val kichenElectricityFieldId = dataFields.find(_.name equals "kichenElectricity").get.id
+    val sizeFieldId = dataFields.find(_.name equals "size").get.id
+    val temperatureFieldId = dataFields.find(_.name equals "temperature").get.id
 
     // Data records to connect data items together
     val dataRecords = Seq(
@@ -62,11 +70,11 @@ object TestFixtures {
 
     DataRecord.forceInsertAll(dataRecords: _*)
 
-    val facebookMeRecordId = dataTables.find(_.name equals "FacebookMe").get.id
-    val facebookLocationRecordId = dataTables.find(_.name equals "FacebookLocation").get.id
-    val fibaroKitchenRecordId = dataTables.find(_.name equals "FibaroKitchen").get.id
-    val facebookEventRecordId = dataTables.find(_.name equals "FacebookEvent").get.id
-    val fibaroBathroomRecordId = dataTables.find(_.name equals "FibaroBathroom").get.id
+    val facebookMeRecordId = dataRecords.find(_.name equals "FacebookMe").get.id
+    val facebookLocationRecordId = dataRecords.find(_.name equals "FacebookLocation").get.id
+    val fibaroKitchenRecordId = dataRecords.find(_.name equals "FibaroKitchen").get.id
+    val facebookEventRecordId = dataRecords.find(_.name equals "FacebookEvent").get.id
+    val fibaroBathroomRecordId = dataRecords.find(_.name equals "FibaroBathroom").get.id
 
     val dataValueRows = Seq(
       new DataValueRow(1, LocalDateTime.now(), LocalDateTime.now(), "62", weightFieldId, facebookMeRecordId),
@@ -77,11 +85,10 @@ object TestFixtures {
 
     DataValue.forceInsertAll(dataValueRows: _*)
 
-    prepareContextualStructures(dataFields, dataRecords)
+    (dataFields, dataRecords)
   }
 
-  def prepareContextualStructures(dataFields: Seq[DataFieldRow], dataRecords: Seq[DataRecordRow])
-                                 (implicit sesion: Session) = {
+  def prepareSystemTypes(implicit sesion: Session) = {
     // contextualisation tools
     val systemUOMs = Seq(
       new SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "meters", Some( "distance measurement"), Some("m")),
@@ -108,6 +115,44 @@ object TestFixtures {
 
     SystemType.forceInsertAll(systemTypes: _*)
 
+    (systemUOMs, systemTypes)
+  }
+
+  def prepareSystemProperties(systemUOMs: Seq[SystemUnitofmeasurementRow], systemTypes: Seq[SystemTypeRow])
+                             (implicit sesion: Session) = {
+    val systemProperties = Seq(
+      new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", Some("Electricity use in a kitchen"),
+        systemTypes.find(_.name equals "utilities").get.id,
+        systemUOMs.find(_.name equals "Kilowatt hours").get.id),
+      new SystemPropertyRow(2, LocalDateTime.now(), LocalDateTime.now(), "wateruse", Some("Use of a shower"),
+        systemTypes.find(_.name equals "utilities").get.id,
+        systemUOMs.find(_.name equals "Kilowatt hours").get.id),
+      new SystemPropertyRow(3, LocalDateTime.now(), LocalDateTime.now(), "size", Some("Size of an object"),
+        systemTypes.find(_.name equals "measurement").get.id,
+        systemUOMs.find(_.name equals "meters cubed").get.id),
+      new SystemPropertyRow(4, LocalDateTime.now(), LocalDateTime.now(), "elevation", Some("Height of location or thing"),
+        systemTypes.find(_.name equals "measurement").get.id,
+        systemUOMs.find(_.name equals "meters").get.id),
+      new SystemPropertyRow(5, LocalDateTime.now(), LocalDateTime.now(), "temperature", Some("Current temperature"),
+        systemTypes.find(_.name equals "measurement").get.id,
+        systemUOMs.find(_.name equals "centigrade").get.id),
+      new SystemPropertyRow(6, LocalDateTime.now(), LocalDateTime.now(), "weight", Some("Weight of a person"),
+        systemTypes.find(_.name equals "measurement").get.id,
+        systemUOMs.find(_.name equals "kilograms").get.id),
+      new SystemPropertyRow(7, LocalDateTime.now(), LocalDateTime.now(), "cars speed", Some("Car speed"),
+        systemTypes.find(_.name equals "measurement").get.id,
+        systemUOMs.find(_.name equals "miles per hour").get.id),
+      new SystemPropertyRow(8, LocalDateTime.now(), LocalDateTime.now(), "employees", Some("number of employees"),
+        systemTypes.find(_.name equals "measurement").get.id,
+        systemUOMs.find(_.name equals "number").get.id)
+    )
+
+    SystemProperty.forceInsertAll(systemProperties: _*)
+
+    systemProperties
+  }
+
+  def prepareEntities(implicit session: Session) = {
     // Entities
     val things = Seq(
       new ThingsThingRow(1, LocalDateTime.now(), LocalDateTime.now(), "cupbord"),
@@ -127,7 +172,9 @@ object TestFixtures {
     val locations = Seq(
       new LocationsLocationRow(1, LocalDateTime.now(), LocalDateTime.now(), "kitchen"),
       new LocationsLocationRow(2, LocalDateTime.now(), LocalDateTime.now(), "bathroom"),
-      new LocationsLocationRow(3, LocalDateTime.now(), LocalDateTime.now(), "WMG"))
+      new LocationsLocationRow(3, LocalDateTime.now(), LocalDateTime.now(), "WMG"),
+      new LocationsLocationRow(4, LocalDateTime.now(), LocalDateTime.now(), "Coventry")
+    )
 
     LocationsLocation.forceInsertAll(locations: _*)
 
@@ -166,16 +213,18 @@ object TestFixtures {
       new EntityRow(entityId, LocalDateTime.now(), LocalDateTime.now(), event.name, "event", None, None, Some(event.id), None, None)
     }
 
-    Entity.forceInsertAll(entities: _*)
+    // FIXME: doesn't work
+    // Entity.forceInsertAll(entities: _*)
 
-    contextualiseEntities(systemUOMs, systemTypes, things, people, locations,
-      organisations, events, entities, dataFields, dataRecords)
+    val entities2 = Seq(EntityRow(1, LocalDateTime.now(), LocalDateTime.now(), "nothing", "thing", None, Some(1), None, None, None))
+    Entity.forceInsertAll(entities2: _*)
+
+    (things, people, locations, organisations, events, entities)
   }
 
-  def contextualiseEntities(systemUOMs: Seq[SystemUnitofmeasurementRow], systemTypes: Seq[SystemTypeRow],
-                            things: Seq[ThingsThingRow], people: Seq[PeoplePersonRow], locations: Seq[LocationsLocationRow],
-                            organisations: Seq[OrganisationsOrganisationRow], events: Seq[EventsEventRow],
-                            entities: Seq[EntityRow], dataFields: Seq[DataFieldRow], dataRecords: Seq[DataRecordRow])
+  def contextualiseEntities(things: Seq[ThingsThingRow], people: Seq[PeoplePersonRow],
+                            locations: Seq[LocationsLocationRow], organisations: Seq[OrganisationsOrganisationRow],
+                            events: Seq[EventsEventRow])
                            (implicit session: Session) = {
 
     // Relationship Record
@@ -208,7 +257,8 @@ object TestFixtures {
       new SystemRelationshiprecordRow(25, LocalDateTime.now(), LocalDateTime.now(), "Driving to Work"),
       new SystemRelationshiprecordRow(26, LocalDateTime.now(), LocalDateTime.now(), "wateruse"),
       new SystemRelationshiprecordRow(27, LocalDateTime.now(), LocalDateTime.now(), "size"),
-      new SystemRelationshiprecordRow(28, LocalDateTime.now(), LocalDateTime.now(), "weight")
+      new SystemRelationshiprecordRow(28, LocalDateTime.now(), LocalDateTime.now(), "weight"),
+      new SystemRelationshiprecordRow(29, LocalDateTime.now(), LocalDateTime.now(), "car is at")
     )
 
     SystemRelationshiprecord.forceInsertAll(relationshipRecords: _*)
@@ -298,7 +348,12 @@ object TestFixtures {
         locations.find(_.name equals "kitchen").get.id,
         locations.find(_.name equals "bathroom").get.id,
         "Next_To", true,
-        relationshipRecords.find(_.name equals "Kitchen Next_To bathroom").get.id)
+        relationshipRecords.find(_.name equals "Kitchen Next_To bathroom").get.id),
+      new LocationsLocationtolocationcrossrefRow(2, LocalDateTime.now(), LocalDateTime.now(),
+        locations.find(_.name equals "WMG").get.id,
+        locations.find(_.name equals "Coventry").get.id,
+        "Is_At", true,
+        relationshipRecords.find(_.name equals "WMG location Is_At Coventry").get.id)
     )
 
     LocationsLocationtolocationcrossref.forceInsertAll(locationsLocationToLocationCrossRefRows: _*)
@@ -306,9 +361,9 @@ object TestFixtures {
     val locationsLocationtothingcrossrefRows = Seq(
       new LocationsLocationthingcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         locations.find(_.name equals "WMG").get.id,
-        locations.find(_.name equals "Coventry").get.id,
+        things.find(_.name equals "car").get.id,
         "Is_At", true,
-        relationshipRecords.find(_.name equals "WMG location Is_At Coventry").get.id)
+        relationshipRecords.find(_.name equals "car is at").get.id)
     )
 
     LocationsLocationthingcrossref.forceInsertAll(locationsLocationtothingcrossrefRows: _*)
@@ -329,8 +384,8 @@ object TestFixtures {
 
     val organisationOrganisationLocationCrossRefRows = Seq(
       new OrganisationsOrganisationlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
-        organisations.find(_.name equals "WMG").get.id,
         locations.find(_.name equals "Coventry").get.id,
+        organisations.find(_.name equals "WMG").get.id,
         "Is_At", true,
         relationshipRecords.find(_.name equals "WMG organisation Is_At Coventry").get.id)
     )
@@ -363,7 +418,7 @@ object TestFixtures {
       new PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         people.find(_.name equals "Martin").get.id,
         people.find(_.name equals "Andrius").get.id,
-        personRelationshipTypes.find(_.name equals "Working Together").get.id,
+        personRelationshipTypes.find(_.name equals "Colleague With").get.id,
         true,
         relationshipRecords.find(_.name equals "Martin Colleague_With Andrius").get.id)
     )
@@ -380,53 +435,23 @@ object TestFixtures {
 
     val peoplePersonLocationCrossRefCrossRefRows = Seq(
       new PeoplePersonlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
-        people.find(_.name equals "Xiao").get.id,
         locations.find(_.name equals "Coventry").get.id,
+        people.find(_.name equals "Xiao").get.id,
         "Is_at", true,
         relationshipRecords.find(_.name equals "Xiao Is_at Coventry").get.id)
     )
 
     PeoplePersonlocationcrossref.forceInsertAll(peoplePersonLocationCrossRefCrossRefRows: _*)
-
-    linkEntityData(systemUOMs, systemTypes, things, people, locations,
-      organisations, events, entities, dataFields, dataRecords)
   }
 
-  def linkEntityData(systemUOMs: Seq[SystemUnitofmeasurementRow], systemTypes: Seq[SystemTypeRow],
+  def linkEntityData(
                      things: Seq[ThingsThingRow], people: Seq[PeoplePersonRow], locations: Seq[LocationsLocationRow],
                      organisations: Seq[OrganisationsOrganisationRow], events: Seq[EventsEventRow],
-                     entities: Seq[EntityRow], dataFields: Seq[DataFieldRow], dataRecords: Seq[DataRecordRow])
+                     systemProperties: Seq[SystemPropertyRow], systemTypes: Seq[SystemTypeRow],
+                     dataFields: Seq[DataFieldRow], dataRecords: Seq[DataRecordRow])
                     (implicit session: Session) = {
+
     // Entity - Property linking
-
-    val systemProperties = Seq(
-      new SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", Some("Electricity use in a kitchen"),
-        systemTypes.find(_.name equals "utilities").get.id,
-        systemUOMs.find(_.name equals "Kilowatt hours").get.id),
-      new SystemPropertyRow(2, LocalDateTime.now(), LocalDateTime.now(), "wateruse", Some("Use of a shower"),
-        systemTypes.find(_.name equals "utilities").get.id,
-        systemUOMs.find(_.name equals "Kilowatt hours").get.id),
-      new SystemPropertyRow(3, LocalDateTime.now(), LocalDateTime.now(), "size", Some("Size of an object"),
-        systemTypes.find(_.name equals "measurement").get.id,
-        systemUOMs.find(_.name equals "meters cubed").get.id),
-      new SystemPropertyRow(4, LocalDateTime.now(), LocalDateTime.now(), "elevation", Some("Height of location or thing"),
-        systemTypes.find(_.name equals "measurement").get.id,
-        systemUOMs.find(_.name equals "meters").get.id),
-      new SystemPropertyRow(5, LocalDateTime.now(), LocalDateTime.now(), "temperature", Some("Current temperature"),
-        systemTypes.find(_.name equals "measurement").get.id,
-        systemUOMs.find(_.name equals "centigrade").get.id),
-      new SystemPropertyRow(6, LocalDateTime.now(), LocalDateTime.now(), "weight", Some("Weight of a person"),
-        systemTypes.find(_.name equals "measurement").get.id,
-        systemUOMs.find(_.name equals "kilograms").get.id),
-      new SystemPropertyRow(7, LocalDateTime.now(), LocalDateTime.now(), "cars speed", Some("Car speed"),
-        systemTypes.find(_.name equals "measurement").get.id,
-        systemUOMs.find(_.name equals "miles per hour").get.id),
-      new SystemPropertyRow(8, LocalDateTime.now(), LocalDateTime.now(), "employees", Some("number of employees"),
-        systemTypes.find(_.name equals "measurement").get.id,
-        systemUOMs.find(_.name equals "number").get.id)
-    )
-
-    SystemProperty.forceInsertAll(systemProperties: _*)
 
     val propertyRecords = Seq(
       new SystemPropertyrecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity"),
@@ -483,7 +508,7 @@ object TestFixtures {
 
     val thingsSystempropertystaticcrossrefRows = Seq(
       new ThingsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
-        things.find(_.name equals "Coventry").get.id,
+        things.find(_.name equals "cupbord").get.id,
         systemProperties.find(_.name equals "size").get.id,
         dataRecords.find(_.name equals "FacebookLocation").get.id,
         dataFields.find(_.name equals "size").get.id,
@@ -516,8 +541,8 @@ object TestFixtures {
 
     val peopleSystempropertystaticcrossrefRows = Seq(
       new PeopleSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
-        people.find(_.name equals "martin").get.id,
-        systemProperties.find(_.name equals "kilograms").get.id,
+        people.find(_.name equals "Martin").get.id,
+        systemProperties.find(_.name equals "weight").get.id,
         dataRecords.find(_.name equals "FibaroBathroom").get.id,
         dataFields.find(_.name equals "weight").get.id,
         "Parent_Child", true,
@@ -528,8 +553,8 @@ object TestFixtures {
 
     val peopleSystempropertydynamiccrossrefRows = Seq(
       new PeopleSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
-        people.find(_.name equals "martin").get.id,
-        systemProperties.find(_.name equals "kilograms").get.id,
+        people.find(_.name equals "Martin").get.id,
+        systemProperties.find(_.name equals "weight").get.id,
         dataFields.find(_.name equals "weight").get.id,
         "Parent_Child", true,
         propertyRecords.find(_.name equals "weight").get.id))

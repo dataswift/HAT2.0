@@ -7,15 +7,23 @@ object TestDataCleanup {
   def cleanupPropertyCrossrefs(implicit session: Session) = {
     ThingsSystempropertydynamiccrossref.delete
     ThingsSystempropertystaticcrossref.delete
+    ThingsSystemtypecrossref.delete
+
     PeopleSystempropertydynamiccrossref.delete
     PeopleSystempropertystaticcrossref.delete
+    PeopleSystemtypecrossref.delete
+
     OrganisationsSystempropertydynamiccrossref.delete
     OrganisationsSystempropertystaticcrossref.delete
+    OrganisationsSystemtypecrossref.delete
+
     LocationsSystempropertydynamiccrossref.delete
     LocationsSystempropertystaticcrossref.delete
+    LocationsSystemtypecrossref.delete
+
     EventsSystempropertydynamiccrossref.delete
     EventsSystempropertystaticcrossref.delete
-    SystemPropertyrecord.delete
+    EventsSystemtypecrossref.delete
   }
 
   def cleanupEntityCrossrefs(implicit session: Session) = {
@@ -24,15 +32,19 @@ object TestDataCleanup {
     EventsEventtoeventcrossref.delete
     EventsEventpersoncrossref.delete
     EventsEventthingcrossref.delete
+
     OrganisationsOrganisationtoorganisationcrossref.delete
     OrganisationsOrganisationthingcrossref.delete
     OrganisationsOrganisationlocationcrossref.delete
+
     PeoplePersontopersoncrossref.delete
     PeoplePersonlocationcrossref.delete
     PeoplePersonorganisationcrossref.delete
     PeoplePersontopersonrelationshiptype.delete
+
     LocationsLocationthingcrossref.delete
     LocationsLocationtolocationcrossref.delete
+
     ThingsThingtothingcrossref.delete
     ThingsThingpersoncrossref.delete
   }
@@ -43,6 +55,7 @@ object TestDataCleanup {
     OrganisationsOrganisation.delete
     LocationsLocation.delete
     EventsEvent.delete
+    Entity.delete
   }
 
   def cleanupBundles(implicit session: Session) = {
@@ -55,9 +68,11 @@ object TestDataCleanup {
 
   def cleanupSystemData(implicit session: Session) = {
     SystemTypetotypecrossref.delete
+    SystemPropertyrecord.delete
     SystemProperty.delete
     SystemType.delete
     SystemUnitofmeasurement.delete
+    SystemRelationshiprecord.delete
   }
   
   def cleanupData(implicit session: Session) = {

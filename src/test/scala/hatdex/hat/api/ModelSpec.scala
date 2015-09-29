@@ -1,7 +1,7 @@
 package hatdex.hat.api
 
 import hatdex.hat.dal.Tables._
-import org.specs2.specification.AfterAll
+import org.specs2.specification.{BeforeAfterAll, AfterAll}
 
 //import Tables._
 //import Tables.profile.simple._
@@ -13,7 +13,7 @@ import slick.jdbc.meta.MTable
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ModelSpec extends Specification with AfterAll {
+class ModelSpec extends Specification with BeforeAfterAll {
   val db = Database.forConfig("devdb")
 
   sequential
@@ -347,8 +347,16 @@ class ModelSpec extends Specification with AfterAll {
     }
   }
 
+  def beforeAll() = {
+    db.withSession { implicit session =>
+      TestDataCleanup.cleanupAll
+    }
+  }
+
   def afterAll() = {
     db.withSession { implicit session =>
+      TestDataCleanup.cleanupAll
+      TestFixtures.prepareEverything
       TestDataCleanup.cleanupAll
     }
     db.close
