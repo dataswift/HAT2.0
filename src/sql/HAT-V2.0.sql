@@ -1,11 +1,11 @@
 DROP SCHEMA public CASCADE;
 CREATE SCHEMA public;
-CREATE EXTENSION pgcrypto;
+CREATE EXTENSION "uuid-ossp";
 
 CREATE SEQUENCE public.things_thing_id_seq;
 
 CREATE TABLE public.things_thing (
-                id INTEGER DEFAULT nextval('things_thing_id_seq'::regclass) NOT NULL DEFAULT nextval('public.things_thing_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.things_thing_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR(100) NOT NULL,
@@ -18,7 +18,7 @@ ALTER SEQUENCE public.things_thing_id_seq OWNED BY public.things_thing.id;
 CREATE SEQUENCE public.system_unitofmeasurement_id_seq;
 
 CREATE TABLE public.system_unitofmeasurement (
-                id INTEGER DEFAULT nextval('system_unitofmeasurement_id_seq'::regclass) NOT NULL DEFAULT nextval('public.system_unitofmeasurement_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.system_unitofmeasurement_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR(100) NOT NULL,
@@ -33,7 +33,7 @@ ALTER SEQUENCE public.system_unitofmeasurement_id_seq OWNED BY public.system_uni
 CREATE SEQUENCE public.system_type_id_seq;
 
 CREATE TABLE public.system_type (
-                id INTEGER DEFAULT nextval('system_type_id_seq'::regclass) NOT NULL DEFAULT nextval('public.system_type_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.system_type_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -47,7 +47,7 @@ ALTER SEQUENCE public.system_type_id_seq OWNED BY public.system_type.id;
 CREATE SEQUENCE public.things_systemtypecrossref_id_seq;
 
 CREATE TABLE public.things_systemtypecrossref (
-                id INTEGER DEFAULT nextval('things_systemtypecrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.things_systemtypecrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.things_systemtypecrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 thing_id INTEGER NOT NULL,
@@ -71,7 +71,7 @@ CREATE INDEX things_thingpropertycrossref_thing_property_id
 CREATE SEQUENCE public.system_typetotypecrossref_id_seq;
 
 CREATE TABLE public.system_typetotypecrossref (
-                id INTEGER DEFAULT nextval('system_typetotypecrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.system_typetotypecrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.system_typetotypecrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 type_one_id INTEGER NOT NULL,
@@ -94,7 +94,7 @@ CREATE INDEX system_typetotypecrossref_type_two_id
 CREATE SEQUENCE public.system_relationshiprecord_id_seq;
 
 CREATE TABLE public.system_relationshiprecord (
-                id INTEGER DEFAULT nextval('system_relationshiprecord_id_seq'::regclass) NOT NULL DEFAULT nextval('public.system_relationshiprecord_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.system_relationshiprecord_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -107,7 +107,7 @@ ALTER SEQUENCE public.system_relationshiprecord_id_seq OWNED BY public.system_re
 CREATE SEQUENCE public.things_thingtothingcrossref_id_seq;
 
 CREATE TABLE public.things_thingtothingcrossref (
-                id INTEGER DEFAULT nextval('things_thingtothingcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.things_thingtothingcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.things_thingtothingcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 thing_one_id INTEGER NOT NULL,
@@ -132,7 +132,7 @@ CREATE INDEX things_thingtothingcrossref_thing_two_id
 CREATE SEQUENCE public.system_relationshiprecordtorecordcrossref_id_seq;
 
 CREATE TABLE public.system_relationshiprecordtorecordcrossref (
-                id INTEGER DEFAULT nextval('system_relationshiprecordtorecordcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.system_relationshiprecordtorecordcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.system_relationshiprecordtorecordcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 relationshiprecord_id1 INTEGER NOT NULL,
@@ -147,7 +147,7 @@ ALTER SEQUENCE public.system_relationshiprecordtorecordcrossref_id_seq OWNED BY 
 CREATE SEQUENCE public.system_propertyrecord_id_seq;
 
 CREATE TABLE public.system_propertyrecord (
-                id INTEGER DEFAULT nextval('system_propertyrecord_id_seq'::regclass) NOT NULL DEFAULT nextval('public.system_propertyrecord_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.system_propertyrecord_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -160,7 +160,7 @@ ALTER SEQUENCE public.system_propertyrecord_id_seq OWNED BY public.system_proper
 CREATE SEQUENCE public.system_property_id_seq;
 
 CREATE TABLE public.system_property (
-                id INTEGER DEFAULT nextval('system_property_id_seq'::regclass) NOT NULL DEFAULT nextval('public.system_property_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.system_property_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -176,7 +176,7 @@ ALTER SEQUENCE public.system_property_id_seq OWNED BY public.system_property.id;
 CREATE SEQUENCE public.system_eventlog_id_seq;
 
 CREATE TABLE public.system_eventlog (
-                id INTEGER DEFAULT nextval('system_eventlog_id_seq'::regclass) NOT NULL DEFAULT nextval('public.system_eventlog_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.system_eventlog_id_seq'),
                 event_type VARCHAR(45) NOT NULL,
                 date DATE NOT NULL,
                 time TIME NOT NULL,
@@ -192,7 +192,7 @@ ALTER SEQUENCE public.system_eventlog_id_seq OWNED BY public.system_eventlog.id;
 CREATE SEQUENCE public.people_persontopersonrelationshiptype_id_seq;
 
 CREATE TABLE public.people_persontopersonrelationshiptype (
-                id INTEGER DEFAULT nextval('people_persontopersonrelationshiptype_id_seq'::regclass) NOT NULL DEFAULT nextval('public.people_persontopersonrelationshiptype_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.people_persontopersonrelationshiptype_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR(100) NOT NULL,
@@ -206,7 +206,7 @@ ALTER SEQUENCE public.people_persontopersonrelationshiptype_id_seq OWNED BY publ
 CREATE SEQUENCE public.people_person_id_seq;
 
 CREATE TABLE public.people_person (
-                id INTEGER DEFAULT nextval('people_person_id_seq'::regclass) NOT NULL DEFAULT nextval('public.people_person_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.people_person_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -220,7 +220,7 @@ ALTER SEQUENCE public.people_person_id_seq OWNED BY public.people_person.id;
 CREATE SEQUENCE public.things_thingpersoncrossref_id_seq;
 
 CREATE TABLE public.things_thingpersoncrossref (
-                id INTEGER DEFAULT nextval('things_thingpersoncrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.things_thingpersoncrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.things_thingpersoncrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 person_id INTEGER NOT NULL,
@@ -245,7 +245,7 @@ CREATE INDEX things_thingpersoncrossref_thing_id
 CREATE SEQUENCE public.people_systemtypecrossref_id_seq;
 
 CREATE TABLE public.people_systemtypecrossref (
-                id INTEGER DEFAULT nextval('people_systemtypecrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.people_systemtypecrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.people_systemtypecrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 users_id INTEGER NOT NULL,
@@ -265,7 +265,7 @@ CREATE INDEX people_systemtypecrossref_person_id
 CREATE SEQUENCE public.people_persontopersoncrossref_id_seq;
 
 CREATE TABLE public.people_persontopersoncrossref (
-                id INTEGER DEFAULT nextval('people_persontopersoncrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.people_persontopersoncrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.people_persontopersoncrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 person_one_id INTEGER NOT NULL,
@@ -290,7 +290,7 @@ CREATE INDEX users_persontopersoncrossref_person_two_id
 CREATE SEQUENCE public.organisations_organisation_id_seq;
 
 CREATE TABLE public.organisations_organisation (
-                id INTEGER DEFAULT nextval('organisations_organisation_id_seq'::regclass) NOT NULL DEFAULT nextval('public.organisations_organisation_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.organisations_organisation_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 lasty_updated TIMESTAMP NOT NULL,
                 name VARCHAR(100) NOT NULL,
@@ -303,7 +303,7 @@ ALTER SEQUENCE public.organisations_organisation_id_seq OWNED BY public.organisa
 CREATE SEQUENCE public.people_personorganisationcrossref_id_seq;
 
 CREATE TABLE public.people_personorganisationcrossref (
-                id INTEGER DEFAULT nextval('people_personorganisationcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.people_personorganisationcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.people_personorganisationcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 organisation_id INTEGER NOT NULL,
@@ -328,7 +328,7 @@ CREATE INDEX people_personorganisationcrossref_person_id
 CREATE SEQUENCE public.organisations_systemtypecrossref_id_seq;
 
 CREATE TABLE public.organisations_systemtypecrossref (
-                id INTEGER DEFAULT nextval('organisations_systemtypecrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.organisations_systemtypecrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.organisations_systemtypecrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 organisation_id INTEGER NOT NULL,
@@ -352,7 +352,7 @@ CREATE INDEX organisations_systemtypecrossref_system_type_id
 CREATE SEQUENCE public.organisations_organisationtoorganisationcrossref_id_seq;
 
 CREATE TABLE public.organisations_organisationtoorganisationcrossref (
-                id INTEGER DEFAULT nextval('organisations_organisationtoorganisationcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.organisations_organisationtoorganisationcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.organisations_organisationtoorganisationcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 organisation_one_id INTEGER NOT NULL,
@@ -377,7 +377,7 @@ CREATE INDEX organisation_organisationtoorganisationcrossref_person_two_id
 CREATE SEQUENCE public.organisations_organisationthingcrossref_id_seq;
 
 CREATE TABLE public.organisations_organisationthingcrossref (
-                id INTEGER DEFAULT nextval('organisations_organisationthingcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.organisations_organisationthingcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.organisations_organisationthingcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 thing_id INTEGER NOT NULL,
@@ -394,7 +394,7 @@ ALTER SEQUENCE public.organisations_organisationthingcrossref_id_seq OWNED BY pu
 CREATE SEQUENCE public.locations_location_id_seq;
 
 CREATE TABLE public.locations_location (
-                id INTEGER DEFAULT nextval('locations_location_id_seq'::regclass) NOT NULL DEFAULT nextval('public.locations_location_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.locations_location_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR(512) NOT NULL,
@@ -407,7 +407,7 @@ ALTER SEQUENCE public.locations_location_id_seq OWNED BY public.locations_locati
 CREATE SEQUENCE public.people_personlocationcrossref_id_seq;
 
 CREATE TABLE public.people_personlocationcrossref (
-                id INTEGER DEFAULT nextval('people_personlocationcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.people_personlocationcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.people_personlocationcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 location_id INTEGER NOT NULL,
@@ -432,7 +432,7 @@ CREATE INDEX locations_locationpersoncrossref_person_id
 CREATE SEQUENCE public.organisations_organisationlocationcrossref_id_seq;
 
 CREATE TABLE public.organisations_organisationlocationcrossref (
-                id INTEGER DEFAULT nextval('organisations_organisationlocationcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.organisations_organisationlocationcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.organisations_organisationlocationcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 location_id INTEGER NOT NULL,
@@ -457,7 +457,7 @@ CREATE INDEX organisations_organisationlocationcrossref_organisation_id
 CREATE SEQUENCE public.locations_systemtypecrossref_id_seq;
 
 CREATE TABLE public.locations_systemtypecrossref (
-                id INTEGER DEFAULT nextval('locations_systemtypecrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.locations_systemtypecrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.locations_systemtypecrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 location_id INTEGER NOT NULL,
@@ -481,7 +481,7 @@ CREATE INDEX location_systemtypecrossref_system_type_id
 CREATE SEQUENCE public.locations_locationtolocationcrossref_id_seq;
 
 CREATE TABLE public.locations_locationtolocationcrossref (
-                id INTEGER DEFAULT nextval('locations_locationtolocationcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.locations_locationtolocationcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.locations_locationtolocationcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 loc_one_id INTEGER NOT NULL,
@@ -506,7 +506,7 @@ CREATE INDEX locations_locationtolocationcrossref_loc_two_id
 CREATE SEQUENCE public.locations_locationthingcrossref_id_seq;
 
 CREATE TABLE public.locations_locationthingcrossref (
-                id INTEGER DEFAULT nextval('locations_locationthingcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.locations_locationthingcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.locations_locationthingcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 thing_id INTEGER NOT NULL,
@@ -531,7 +531,7 @@ CREATE INDEX locations_locationthingcrossref_thing_id
 CREATE SEQUENCE public.events_event_id_seq;
 
 CREATE TABLE public.events_event (
-                id INTEGER DEFAULT nextval('events_event_id_seq'::regclass) NOT NULL DEFAULT nextval('public.events_event_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.events_event_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR(100) NOT NULL,
@@ -544,7 +544,7 @@ ALTER SEQUENCE public.events_event_id_seq OWNED BY public.events_event.id;
 CREATE SEQUENCE public.events_systemtypecrossref_id_seq;
 
 CREATE TABLE public.events_systemtypecrossref (
-                id INTEGER DEFAULT nextval('events_systemtypecrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.events_systemtypecrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.events_systemtypecrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 event_id INTEGER NOT NULL,
@@ -568,7 +568,7 @@ CREATE INDEX events_systemtypecrossref_thing_id
 CREATE SEQUENCE public.events_eventtoeventcrossref_id_seq;
 
 CREATE TABLE public.events_eventtoeventcrossref (
-                id INTEGER DEFAULT nextval('events_eventtoeventcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.events_eventtoeventcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.events_eventtoeventcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 event_one_id INTEGER NOT NULL,
@@ -593,7 +593,7 @@ CREATE INDEX events_eventtoeventcrossref_event_two_id
 CREATE SEQUENCE public.events_eventthingcrossref_id_seq;
 
 CREATE TABLE public.events_eventthingcrossref (
-                id INTEGER DEFAULT nextval('events_eventthingcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.events_eventthingcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.events_eventthingcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 thing_id INTEGER NOT NULL,
@@ -618,7 +618,7 @@ CREATE INDEX events_eventthing_thingid_crossref_owner_id
 CREATE SEQUENCE public.events_eventpersoncrossref_id_seq;
 
 CREATE TABLE public.events_eventpersoncrossref (
-                id INTEGER DEFAULT nextval('events_eventpersoncrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.events_eventpersoncrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.events_eventpersoncrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 person_id INTEGER NOT NULL,
@@ -643,7 +643,7 @@ CREATE INDEX events_eventpersoncrossref_person_id
 CREATE SEQUENCE public.events_eventorganisationcrossref_id_seq;
 
 CREATE TABLE public.events_eventorganisationcrossref (
-                id INTEGER DEFAULT nextval('events_eventorganisationcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.events_eventorganisationcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.events_eventorganisationcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 organisation_id INTEGER NOT NULL,
@@ -668,7 +668,7 @@ CREATE INDEX events_eventorganisationcrossref_organisation_id
 CREATE SEQUENCE public.events_eventlocationcrossref_id_seq;
 
 CREATE TABLE public.events_eventlocationcrossref (
-                id INTEGER DEFAULT nextval('events_eventlocationcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.events_eventlocationcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.events_eventlocationcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 location_id INTEGER NOT NULL,
@@ -693,7 +693,7 @@ CREATE INDEX events_eventlocationcrossref_location_id
 CREATE SEQUENCE public.entity_id_seq;
 
 CREATE TABLE public.entity (
-                id INTEGER DEFAULT nextval('entity_id_seq'::regclass) NOT NULL DEFAULT nextval('public.entity_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.entity_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR(100) NOT NULL,
@@ -712,7 +712,7 @@ ALTER SEQUENCE public.entity_id_seq OWNED BY public.entity.id;
 CREATE SEQUENCE public.entity_selection_id_seq;
 
 CREATE TABLE public.entity_selection (
-                id INTEGER DEFAULT nextval('entity_selection_id_seq'::regclass) NOT NULL DEFAULT nextval('public.entity_selection_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.entity_selection_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 entity_name VARCHAR(100) NOT NULL,
@@ -727,7 +727,7 @@ ALTER SEQUENCE public.entity_selection_id_seq OWNED BY public.entity_selection.i
 CREATE SEQUENCE public.data_table_id_seq;
 
 CREATE TABLE public.data_table (
-                id INTEGER DEFAULT nextval('data_table_id_seq'::regclass) NOT NULL DEFAULT nextval('public.data_table_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.data_table_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -741,7 +741,7 @@ ALTER SEQUENCE public.data_table_id_seq OWNED BY public.data_table.id;
 CREATE SEQUENCE public.data_tabletotablecrossref_id_seq;
 
 CREATE TABLE public.data_tabletotablecrossref (
-                id INTEGER DEFAULT nextval('data_tabletotablecrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.data_tabletotablecrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.data_tabletotablecrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 relationship_type VARCHAR NOT NULL,
@@ -756,7 +756,7 @@ ALTER SEQUENCE public.data_tabletotablecrossref_id_seq OWNED BY public.data_tabl
 CREATE SEQUENCE public.data_record_id_seq;
 
 CREATE TABLE public.data_record (
-                id INTEGER DEFAULT nextval('data_record_id_seq'::regclass) NOT NULL DEFAULT nextval('public.data_record_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.data_record_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -769,7 +769,7 @@ ALTER SEQUENCE public.data_record_id_seq OWNED BY public.data_record.id;
 CREATE SEQUENCE public.data_field_id_seq;
 
 CREATE TABLE public.data_field (
-                id INTEGER DEFAULT nextval('data_field_id_seq'::regclass) NOT NULL DEFAULT nextval('public.data_field_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.data_field_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -783,7 +783,7 @@ ALTER SEQUENCE public.data_field_id_seq OWNED BY public.data_field.id;
 CREATE SEQUENCE public.things_systempropertystaticcrossref_id_seq;
 
 CREATE TABLE public.things_systempropertystaticcrossref (
-                id INTEGER DEFAULT nextval('things_systempropertystaticcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.things_systempropertystaticcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.things_systempropertystaticcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 thing_id INTEGER NOT NULL,
@@ -810,7 +810,7 @@ CREATE INDEX things_thingstaticpropertycrossref_thing_property_id
 CREATE SEQUENCE public.things_systempropertydynamiccrossref_id_seq;
 
 CREATE TABLE public.things_systempropertydynamiccrossref (
-                id INTEGER DEFAULT nextval('things_systempropertydynamiccrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.things_systempropertydynamiccrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.things_systempropertydynamiccrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 thing_id INTEGER NOT NULL,
@@ -836,7 +836,7 @@ CREATE INDEX things_thingdynamicpropertycrossref_thing_id
 CREATE SEQUENCE public.people_systempropertystaticcrossref_id_seq;
 
 CREATE TABLE public.people_systempropertystaticcrossref (
-                id INTEGER DEFAULT nextval('people_systempropertystaticcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.people_systempropertystaticcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.people_systempropertystaticcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 person_id INTEGER NOT NULL,
@@ -863,7 +863,7 @@ CREATE INDEX people_systempropertystaticcrossref_property_id
 CREATE SEQUENCE public.people_systempropertydynamiccrossref_id_seq;
 
 CREATE TABLE public.people_systempropertydynamiccrossref (
-                id INTEGER DEFAULT nextval('people_systempropertydynamiccrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.people_systempropertydynamiccrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.people_systempropertydynamiccrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 person_id INTEGER NOT NULL,
@@ -889,7 +889,7 @@ CREATE INDEX people_systempropertydynamiccrossref_property_id
 CREATE SEQUENCE public.organisations_systempropertystaticcrossref_id_seq;
 
 CREATE TABLE public.organisations_systempropertystaticcrossref (
-                id INTEGER DEFAULT nextval('organisations_systempropertystaticcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.organisations_systempropertystaticcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.organisations_systempropertystaticcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 organisation_id INTEGER NOT NULL,
@@ -916,7 +916,7 @@ CREATE INDEX organisationssystempropertystaticcrossref_property_id
 CREATE SEQUENCE public.organisations_systempropertydynamiccrossref_id_seq;
 
 CREATE TABLE public.organisations_systempropertydynamiccrossref (
-                id INTEGER DEFAULT nextval('organisations_systempropertydynamiccrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.organisations_systempropertydynamiccrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.organisations_systempropertydynamiccrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 organisation_id INTEGER NOT NULL,
@@ -942,7 +942,7 @@ CREATE INDEX organisationssystempropertydynamiccrossref_property_id
 CREATE SEQUENCE public.locations_systempropertystaticcrossref_id_seq;
 
 CREATE TABLE public.locations_systempropertystaticcrossref (
-                id INTEGER DEFAULT nextval('locations_systempropertystaticcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.locations_systempropertystaticcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.locations_systempropertystaticcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 location_id INTEGER NOT NULL,
@@ -969,7 +969,7 @@ CREATE INDEX locations_systempropertystaticcrossref_property_id
 CREATE SEQUENCE public.locations_systempropertydynamiccrossref_id_seq;
 
 CREATE TABLE public.locations_systempropertydynamiccrossref (
-                id INTEGER DEFAULT nextval('locations_systempropertydynamiccrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.locations_systempropertydynamiccrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.locations_systempropertydynamiccrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 location_id INTEGER NOT NULL,
@@ -995,7 +995,7 @@ CREATE INDEX locations_systempropertydynamiccrossref_property_id
 CREATE SEQUENCE public.events_systempropertystaticcrossref_id_seq;
 
 CREATE TABLE public.events_systempropertystaticcrossref (
-                id INTEGER DEFAULT nextval('events_systempropertystaticcrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.events_systempropertystaticcrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.events_systempropertystaticcrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 event_id INTEGER NOT NULL,
@@ -1018,7 +1018,7 @@ CREATE INDEX events_systempropertystaticcrossref_event_id
 CREATE SEQUENCE public.events_systempropertydynamiccrossref_id_seq;
 
 CREATE TABLE public.events_systempropertydynamiccrossref (
-                id INTEGER DEFAULT nextval('events_systempropertydynamiccrossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.events_systempropertydynamiccrossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.events_systempropertydynamiccrossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 event_id INTEGER NOT NULL,
@@ -1044,7 +1044,7 @@ CREATE INDEX events_systempropertydynamiccrossref_property_id
 CREATE SEQUENCE public.data_value_id_seq;
 
 CREATE TABLE public.data_value (
-                id INTEGER DEFAULT nextval('data_value_id_seq'::regclass) NOT NULL DEFAULT nextval('public.data_value_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.data_value_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 value TEXT NOT NULL,
@@ -1059,7 +1059,7 @@ ALTER SEQUENCE public.data_value_id_seq OWNED BY public.data_value.id;
 CREATE SEQUENCE public.data_debit_id_seq;
 
 CREATE TABLE public.data_debit (
-                data_debit_key NOT NULL UUID gen_random_uuid(),
+                data_debit_key UUID NOT NULL,
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -1068,12 +1068,12 @@ CREATE TABLE public.data_debit (
                 rolling BOOLEAN NOT NULL,
                 sell_rent BOOLEAN NOT NULL,
                 price REAL NOT NULL,
-                kind VARCHAR NOT NULL,
                 enabled BOOLEAN NOT NULL,
-                sender_id UUID NOT NULL,
+                sender_id VARCHAR NOT NULL,
+                recipient_id VARCHAR NOT NULL,
                 bundle_contextless_id INTEGER,
                 bundle_context_id INTEGER,
-                recipient_id UUID NOT NULL,
+                kind VARCHAR NOT NULL,
                 CONSTRAINT data_debit_pk PRIMARY KEY (data_debit_key),
                 CONSTRAINT kind CHECK
                 (CASE WHEN bundle_contextless_id IS NOT NULL AND kind = 'contextless'
@@ -1084,13 +1084,10 @@ CREATE TABLE public.data_debit (
                 ELSE 1 END = 1)
                 );
 
-
-ALTER SEQUENCE public.data_debit_id_seq OWNED BY public.data_debit.id;
-
 CREATE SEQUENCE public.bundle_table_id_seq;
 
 CREATE TABLE public.bundle_table (
-                id INTEGER DEFAULT nextval('bundle_table_id_seq'::regclass) NOT NULL DEFAULT nextval('public.bundle_table_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.bundle_table_id_seq'),
                 last_updated TIMESTAMP NOT NULL,
                 date_created TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -1104,7 +1101,7 @@ ALTER SEQUENCE public.bundle_table_id_seq OWNED BY public.bundle_table.id;
 CREATE SEQUENCE public.bundle_tableslice_id_seq;
 
 CREATE TABLE public.bundle_tableslice (
-                id INTEGER DEFAULT nextval('bundle_tableslice_id_seq'::regclass) NOT NULL DEFAULT nextval('public.bundle_tableslice_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.bundle_tableslice_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 bundle_table_id INTEGER NOT NULL,
@@ -1118,7 +1115,7 @@ ALTER SEQUENCE public.bundle_tableslice_id_seq OWNED BY public.bundle_tableslice
 CREATE SEQUENCE public.bundle_tableslicecondition_id_seq;
 
 CREATE TABLE public.bundle_tableslicecondition (
-                id INTEGER DEFAULT nextval('bundle_tableslicecondition_id_seq'::regclass) NOT NULL DEFAULT nextval('public.bundle_tableslicecondition_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.bundle_tableslicecondition_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 field_id INTEGER NOT NULL,
@@ -1134,7 +1131,7 @@ ALTER SEQUENCE public.bundle_tableslicecondition_id_seq OWNED BY public.bundle_t
 CREATE SEQUENCE public.bundle_contextless_id_seq;
 
 CREATE TABLE public.bundle_contextless (
-                id INTEGER DEFAULT nextval('bundle_contextless_id_seq'::regclass) NOT NULL DEFAULT nextval('public.bundle_contextless_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.bundle_contextless_id_seq'),
                 name VARCHAR NOT NULL,
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
@@ -1147,7 +1144,7 @@ ALTER SEQUENCE public.bundle_contextless_id_seq OWNED BY public.bundle_contextle
 CREATE SEQUENCE public.bundle_join_id_seq;
 
 CREATE TABLE public.bundle_join (
-                id INTEGER DEFAULT nextval('bundle_join_id_seq'::regclass) NOT NULL DEFAULT nextval('public.bundle_join_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.bundle_join_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -1165,7 +1162,7 @@ ALTER SEQUENCE public.bundle_join_id_seq OWNED BY public.bundle_join.id;
 CREATE SEQUENCE public.bundle_context_id_seq;
 
 CREATE TABLE public.bundle_context (
-                id INTEGER DEFAULT nextval('bundle_context_id_seq'::regclass) NOT NULL DEFAULT nextval('public.bundle_context_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.bundle_context_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -1189,7 +1186,7 @@ CREATE TABLE public.bundle_bundletobundlecrossref (
 CREATE SEQUENCE public.bundle_propertyrecord_crossref_id_seq;
 
 CREATE TABLE public.bundle_propertyrecord_crossref (
-                id INTEGER DEFAULT nextval('bundle_propertyrecord_crossref_id_seq'::regclass) NOT NULL DEFAULT nextval('public.bundle_propertyrecord_crossref_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.bundle_propertyrecord_crossref_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 propertyrecord_id INTEGER NOT NULL,
@@ -1203,7 +1200,7 @@ ALTER SEQUENCE public.bundle_propertyrecord_crossref_id_seq OWNED BY public.bund
 CREATE SEQUENCE public.bundle_propertyslice_id_seq;
 
 CREATE TABLE public.bundle_propertyslice (
-                id INTEGER DEFAULT nextval('bundle_propertyslice_id_seq'::regclass) NOT NULL DEFAULT nextval('public.bundle_propertyslice_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.bundle_propertyslice_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
@@ -1217,7 +1214,7 @@ ALTER SEQUENCE public.bundle_propertyslice_id_seq OWNED BY public.bundle_propert
 CREATE SEQUENCE public.bundle_propertyslicecondition_id_seq;
 
 CREATE TABLE public.bundle_propertyslicecondition (
-                id INTEGER DEFAULT nextval('bundle_propertyslicecondition_id_seq'::regclass) NOT NULL DEFAULT nextval('public.bundle_propertyslicecondition_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.bundle_propertyslicecondition_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 propertyslice_id INTEGER NOT NULL,
@@ -2006,7 +2003,7 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
-ALTER TABLE  CONSTRAINT data_field_bundle_join_fk1
+ALTER TABLE public.bundle_join ADD CONSTRAINT data_field_bundle_join_fk1
 FOREIGN KEY (bundle_table_field)
 REFERENCES public.data_field (id)
 ON DELETE NO ACTION
