@@ -1,11 +1,16 @@
-![GitHub Logo](http://hubofallthings.com/wp-content/uploads/banner21.png)
-Format: ![Hub of All things](url)
+![Hub of All things](http://hubofallthings.com/wp-content/uploads/banner21.png)
 
 # HAT 2.0
 
 This repository contains an implementation of the [Hub-of-All-Things](http://hubofallthings.com) project Personal Data Store.
 
 ## About the project
+
+Hub-of-All-Things is a platform for a Multi-Sided Market powered by the Internet of Things.
+
+A Personal Data Management System (“the HAT”) is a personal single tenant (“the individual self”) technology system that is fully individual self-service, to enable an individual to define a full set of “meta-data” defining as a specific set of personal data, personal preferences, personal behaviour events. The HAT allows individuals to share the right information (quality and quantity), with the right people, in the right situations for the right purposes and gain the benefits.
+
+[![PhD Comics explains the HAT](http://img.youtube.com/vi/y1txYjoSQQc/0.jpg)](http://www.youtube.com/watch?v=y1txYjoSQQc)
 
 ## Technology stack
 
