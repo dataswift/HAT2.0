@@ -693,19 +693,34 @@ CREATE INDEX events_eventlocationcrossref_location_id
 CREATE SEQUENCE public.entity_id_seq;
 
 CREATE TABLE public.entity (
-                id INTEGER NOT NULL DEFAULT nextval('public.entity_id_seq'),
-                date_created TIMESTAMP NOT NULL,
-                last_updated TIMESTAMP NOT NULL,
-                name VARCHAR(100) NOT NULL,
-                kind VARCHAR(100) NOT NULL,
-                location_id INTEGER,
-                thing_id INTEGER,
-                event_id INTEGER,
-                organisation_id INTEGER,
-                person_id INTEGER,
-                CONSTRAINT entity_pk PRIMARY KEY (id)
+  id              INTEGER      NOT NULL DEFAULT nextval('public.entity_id_seq'),
+  date_created    TIMESTAMP    NOT NULL,
+  last_updated    TIMESTAMP    NOT NULL,
+  name            VARCHAR(100) NOT NULL,
+  kind            VARCHAR(100) NOT NULL,
+  location_id     INTEGER,      
+  thing_id        INTEGER,      
+  event_id        INTEGER,      
+  organisation_id INTEGER,      
+  person_id       INTEGER,
+  CONSTRAINT entity_pk PRIMARY KEY (id),
+  CONSTRAINT kind CHECK
+  (CASE WHEN location_id IS NOT NULL AND kind = 'location'
+    THEN 0
+   ELSE 1 END +
+   CASE WHEN thing_id IS NOT NULL AND kind = 'thing'
+     THEN 0
+   ELSE 1 END +
+   CASE WHEN event_id IS NOT NULL AND kind = 'event'
+     THEN 0
+   ELSE 1 END +
+   CASE WHEN organisation_id IS NOT NULL AND kind = 'organisation'
+     THEN 0
+   ELSE 1 END +
+   CASE WHEN person_id IS NOT NULL AND kind = 'person'
+     THEN 0
+   ELSE 1 END = 1)
 );
-
 
 ALTER SEQUENCE public.entity_id_seq OWNED BY public.entity.id;
 
