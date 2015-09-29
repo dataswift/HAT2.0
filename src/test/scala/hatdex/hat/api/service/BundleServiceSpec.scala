@@ -204,16 +204,17 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       bundleTableKitchen.id must beSome
 
       val bundle = JsonParser(BundleExamples.bundleContextlessNoJoin).convertTo[ApiBundleContextless]
-      bundle.tables must have size (2)
+      bundle.tables must beSome
+      bundle.tables.get must have size (2)
 
-      val completeBundle = bundle.copy(tables = Seq(
-        bundle.tables(0).copy(
-          bundleTable = bundle.tables(0).bundleTable.copy(id = bundleWeekendEvents.id)
+      val completeBundle = bundle.copy(tables = Some(Seq(
+        bundle.tables.get(0).copy(
+          bundleTable = bundle.tables.get(0).bundleTable.copy(id = bundleWeekendEvents.id)
         ),
-        bundle.tables(1).copy(
-          bundleTable = bundle.tables(1).bundleTable.copy(id = bundleTableKitchen.id)
+        bundle.tables.get(1).copy(
+          bundleTable = bundle.tables.get(1).bundleTable.copy(id = bundleTableKitchen.id)
         )
-      ))
+      )))
 
       val bundleJson: String = completeBundle.toJson.toString
       val cBundle = HttpRequest(POST, "/", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
@@ -259,16 +260,17 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       bundleTableKitchen.id must beSome
 
       val bundle = JsonParser(BundleExamples.bundleContextlessJoin).convertTo[ApiBundleContextless]
-      bundle.tables must have size (2)
+      bundle.tables must beSome
+      bundle.tables.get must have size (2)
 
-      val completeBundle = bundle.copy(tables = Seq(
-        bundle.tables(0).copy(
-          bundleTable = bundle.tables(0).bundleTable.copy(id = bundleWeekendEvents.id)
+      val completeBundle = bundle.copy(tables = Some(Seq(
+        bundle.tables.get(0).copy(
+          bundleTable = bundle.tables.get(0).bundleTable.copy(id = bundleWeekendEvents.id)
         ),
-        bundle.tables(1).copy(
-          bundleTable = bundle.tables(1).bundleTable.copy(id = bundleTableKitchen.id)
+        bundle.tables.get(1).copy(
+          bundleTable = bundle.tables.get(1).bundleTable.copy(id = bundleTableKitchen.id)
         )
-      ))
+      )))
 
       val bundleJson: String = completeBundle.toJson.toString
 

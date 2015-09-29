@@ -401,12 +401,16 @@ trait BundleService extends HttpService with DatabaseInfo {
 
     Try((BundleContextless returning BundleContextless) += bundleContextlessRow) flatMap { insertedBundle =>
       val bundleApi = ApiBundleContextless.fromBundleContextlessTables(insertedBundle)(bundle.tables)
-      val storedCombinations = bundleApi.tables map { combination =>
-        storeBundleCombination(combination)(bundleApi)
-      }
-
-      flatten(storedCombinations) map { apiCombinations =>
-        bundleApi.copy(tables = apiCombinations)
+      bundleApi.tables match {
+        case Some(tables) =>
+          val storedCombinations = tables map { combination =>
+            storeBundleCombination(combination)(bundleApi)
+          }
+          flatten(storedCombinations) map { apiCombinations =>
+            bundleApi.copy(tables = Some(apiCombinations))
+          }
+        case None =>
+          Success(bundleApi)
       }
     }
   }
@@ -434,7 +438,7 @@ trait BundleService extends HttpService with DatabaseInfo {
           ApiBundleCombination.fromBundleJoin(join)(Some(apiJoinField), Some(apiTableField), apiTable)
       }
 
-      ApiBundleContextless.fromBundleContextlessTables(bundle)(apiTables)
+      ApiBundleContextless.fromBundleContextlessTables(bundle)(Some(apiTables))
     }
 
   }

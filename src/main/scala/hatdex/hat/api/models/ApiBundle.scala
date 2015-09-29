@@ -111,16 +111,16 @@ case class ApiBundleContextless(
     dateCreated: Option[LocalDateTime],
     lastUpdated: Option[LocalDateTime],
     name: String,
-    tables: Seq[ApiBundleCombination])
+    tables: Option[Seq[ApiBundleCombination]])
 
 object ApiBundleContextless {
   def fromBundleContextless(bundleContextless: BundleContextlessRow) : ApiBundleContextless = {
     new ApiBundleContextless(Some(bundleContextless.id),
       Some(bundleContextless.dateCreated), Some(bundleContextless.lastUpdated),
-      bundleContextless.name, Seq())
+      bundleContextless.name, None)
   }
 
-  def fromBundleContextlessTables(bundleContextless: BundleContextlessRow)(tables: Seq[ApiBundleCombination]) : ApiBundleContextless = {
+  def fromBundleContextlessTables(bundleContextless: BundleContextlessRow)(tables: Option[Seq[ApiBundleCombination]]) : ApiBundleContextless = {
     new ApiBundleContextless(Some(bundleContextless.id),
       Some(bundleContextless.dateCreated), Some(bundleContextless.lastUpdated),
       bundleContextless.name, tables)
