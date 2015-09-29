@@ -1,10 +1,23 @@
 package hatdex.hat.api.models
 
+import java.util.UUID
+
 import org.joda.time.LocalDateTime
 import org.joda.time.format.ISODateTimeFormat
 import spray.json._
 
-object JsonProtocol extends DefaultJsonProtocol {
+
+trait UuidMarshalling {
+  implicit object UuidJsonFormat extends JsonFormat[UUID] {
+    def write(x: UUID) = JsString(x toString ())
+    def read(value: JsValue) = value match {
+      case JsString(x) => UUID.fromString(x)
+      case x => deserializationError("Expected UUID as JsString, but got " + x)
+    }
+  }
+}
+
+object JsonProtocol extends DefaultJsonProtocol with UuidMarshalling {
   implicit object DateTimeFormat extends RootJsonFormat[LocalDateTime] {
 
     val formatter = ISODateTimeFormat.dateTimeNoMillis
@@ -120,4 +133,7 @@ object JsonProtocol extends DefaultJsonProtocol {
   implicit val apiBundleContextless = jsonFormat5(ApiBundleContextless.apply)
 
   implicit val apiBundleContextlessData = jsonFormat3(ApiBundleContextlessData.apply)
+
+  implicit val apiDataDebit = jsonFormat12(ApiDataDebit.apply)
+  implicit val apiDataDebitOut = jsonFormat12(ApiDataDebitOut.apply)
 }
