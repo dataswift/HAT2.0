@@ -979,8 +979,8 @@ CREATE TABLE public.data_debit (
                 kind VARCHAR NOT NULL,
                 enabled BOOLEAN NOT NULL,
                 sender_id UUID NOT NULL,
-                bundle_contextless_id INTEGER NOT NULL,
-                bundle_context_id INTEGER NOT NULL,
+                bundle_contextless_id INTEGER,
+                bundle_context_id INTEGER,
                 recipient_id UUID NOT NULL,
                 CONSTRAINT data_debit_pk PRIMARY KEY (data_debit_key),
                 CONSTRAINT kind CHECK
