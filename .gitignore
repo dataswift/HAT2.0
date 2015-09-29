@@ -9,5 +9,5 @@ target/
 /\.classpath
 /.settings/org.scala-ide.sdt.core.prefs
 .DS_Store
-codegen/src/main/resources/application.conf
+/codegen/src/main/resources/database.conf
 /src/main/resources/database.conf
