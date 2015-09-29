@@ -971,10 +971,10 @@ CREATE SEQUENCE public.bundle_context_id_seq;
 
 CREATE TABLE public.bundle_context (
   id                  INTEGER   NOT NULL DEFAULT nextval('public.bundle_context_id_seq'),
-  parent_bundle_id    INTEGER,
   date_created        TIMESTAMP NOT NULL,
   last_updated        TIMESTAMP NOT NULL,
   name                VARCHAR   NOT NULL,
+  parent_bundle_id    INTEGER,
   entity_selection_id INTEGER   NOT NULL,
   CONSTRAINT bundle_context_bundle_pk PRIMARY KEY (id)
 );
@@ -996,30 +996,34 @@ CREATE TABLE public.bundle_propertyrecord_crossref (
 
 ALTER SEQUENCE public.bundle_propertyrecord_crossref_id_seq OWNED BY public.bundle_propertyrecord_crossref.id;
 
-CREATE SEQUENCE public.bundle_propertylice_id_seq;
+CREATE SEQUENCE public.bundle_propertyslice_id_seq;
 
-CREATE TABLE public.bundle_propertylice (
-  id                                INTEGER NOT NULL DEFAULT nextval('public.bundle_propertylice_id_seq'),
+CREATE TABLE public.bundle_propertyslice (
+  id                                INTEGER NOT NULL DEFAULT nextval('public.bundle_propertyslice_id_seq'),
+  date_created      TIMESTAMP NOT NULL,
+  last_updated      TIMESTAMP NOT NULL,
   name                              VARCHAR NOT NULL,
   bundle_propertyrecord_crossref_id INTEGER NOT NULL,
-  CONSTRAINT bundle_propertylice_pk PRIMARY KEY (id)
+  CONSTRAINT bundle_propertyslice_pk PRIMARY KEY (id)
 );
 
 
-ALTER SEQUENCE public.bundle_propertylice_id_seq OWNED BY public.bundle_propertylice.id;
+ALTER SEQUENCE public.bundle_propertyslice_id_seq OWNED BY public.bundle_propertyslice.id;
 
-CREATE SEQUENCE public.bundle_propertylicecondition_id_seq;
+CREATE SEQUENCE public.bundle_propertyslicecondition_id_seq;
 
-CREATE TABLE public.bundle_propertylicecondition (
-  id               INTEGER NOT NULL DEFAULT nextval('public.bundle_propertylicecondition_id_seq'),
+CREATE TABLE public.bundle_propertyslicecondition (
+  id               INTEGER NOT NULL DEFAULT nextval('public.bundle_propertyslicecondition_id_seq'),
+  date_created      TIMESTAMP NOT NULL,
+  last_updated      TIMESTAMP NOT NULL,
   propertyslice_id INTEGER NOT NULL,
   operator         VARCHAR NOT NULL,
   value            VARCHAR NOT NULL,
-  CONSTRAINT bundle_propertylicecondition_pk PRIMARY KEY (id)
+  CONSTRAINT bundle_propertyslicecondition_pk PRIMARY KEY (id)
 );
 
 
-ALTER SEQUENCE public.bundle_propertylicecondition_id_seq OWNED BY public.bundle_propertylicecondition.id;
+ALTER SEQUENCE public.bundle_propertyslicecondition_id_seq OWNED BY public.bundle_propertyslicecondition.id;
 
 CREATE SEQUENCE public.locations_systempropertystaticcrossref_id_seq;
 
@@ -2141,16 +2145,16 @@ ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
-ALTER TABLE public.bundle_propertylice ADD CONSTRAINT bundle_propertyrecord_crossref_contextual_bundlepropertyslic823
+ALTER TABLE public.bundle_propertyslice ADD CONSTRAINT bundle_propertyrecord_crossref_contextual_bundlepropertyslic823
 FOREIGN KEY (bundle_propertyrecord_crossref_id)
 REFERENCES public.bundle_propertyrecord_crossref (id)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
 
-ALTER TABLE public.bundle_propertylicecondition ADD CONSTRAINT bundle_propertyslice_bundle_propertyslicecondition_fk
+ALTER TABLE public.bundle_propertyslicecondition ADD CONSTRAINT bundle_propertyslice_bundle_propertyslicecondition_fk
 FOREIGN KEY (propertyslice_id)
-REFERENCES public.bundle_propertylice (id)
+REFERENCES public.bundle_propertyslice (id)
 ON DELETE NO ACTION
 ON UPDATE NO ACTION
 NOT DEFERRABLE;
