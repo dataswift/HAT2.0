@@ -698,11 +698,11 @@ CREATE TABLE public.entity (
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR(100) NOT NULL,
                 kind VARCHAR(100) NOT NULL,
-                location_id INTEGER NOT NULL,
-                thing_id INTEGER NOT NULL,
-                event_id INTEGER NOT NULL,
-                organisation_id INTEGER NOT NULL,
-                person_id INTEGER NOT NULL,
+                location_id INTEGER,
+                thing_id INTEGER,
+                event_id INTEGER,
+                organisation_id INTEGER,
+                person_id INTEGER,
                 CONSTRAINT entity_pk PRIMARY KEY (id)
 );
 
@@ -1150,8 +1150,8 @@ CREATE TABLE public.bundle_join (
                 name VARCHAR NOT NULL,
                 bundle_table_id INTEGER NOT NULL,
                 bundle_id INTEGER NOT NULL,
-                bundle_join_field INTEGER NOT NULL,
-                bundle_table_field INTEGER NOT NULL,
+                bundle_join_field INTEGER,
+                bundle_table_field INTEGER,
                 operator VARCHAR,
                 CONSTRAINT bundle_join_pk PRIMARY KEY (id)
 );
