@@ -704,7 +704,7 @@ CREATE TABLE public.entity (
   organisation_id INTEGER,      
   person_id       INTEGER,
   CONSTRAINT kind CHECK
-  (CASE WHEN location_id IS  NULL AND NOT kind = 'location'
+  (CASE WHEN location_id IS NULL AND NOT kind = 'location'
     THEN 0
    ELSE 1 END +
    CASE WHEN thing_id IS NULL AND NOT kind = 'thing'
@@ -1089,10 +1089,10 @@ CREATE TABLE public.data_debit (
                 kind VARCHAR NOT NULL,
                 CONSTRAINT data_debit_pk PRIMARY KEY (data_debit_key),
                 CONSTRAINT kind CHECK
-                (CASE WHEN bundle_contextless_id IS NOT NULL AND kind = 'contextless'
+                (CASE WHEN bundle_contextless_id IS NULL AND NOT kind = 'contextless'
                 THEN 0
                 ELSE 1 END +
-                CASE WHEN bundle_context_id IS NOT NULL AND kind = 'contextual'
+                CASE WHEN bundle_context_id IS NULL AND NOT kind = 'contextual'
                 THEN 0
                 ELSE 1 END = 1)
                 );
