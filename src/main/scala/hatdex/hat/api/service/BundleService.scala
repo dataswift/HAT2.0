@@ -99,66 +99,73 @@ trait BundleService extends HttpService with DatabaseInfo {
   }
 
   def getBundleTableValues(bundleTableId: Int)(implicit session: Session): Option[ApiBundleTable] = {
-    val bundleDataTable = (for {
+    val bundleDataTableQuery = for {
       bundleTable <- BundleTable.filter(_.id === bundleTableId)
       dataTable <- bundleTable.dataTableFk
-    } yield (bundleTable, dataTable)).run.headOption
+    } yield (bundleTable, dataTable)
 
-    bundleDataTable map { case (bundleTable: BundleTableRow, dataTable: DataTableRow) =>
-      val tableId = dataTable.id
-      val slices = getBundleTableSlices(bundleTableId)
-      val apiDataTables = slices match {
-        // Without any slices, the case degrades to plain data table access
-        case None =>
-          dataService.getTableValues(tableId)
-        case Some(tableSlices) =>
-          // For each table slice, get a query that filters only the records that match the slice conditions
-          val recordLists = tableSlices map { slice =>
-            slice.conditions.foldLeft(DataValue.flatMap(_.dataRecordFk).map(_.id)) { (sliceRecordSet, condition) =>
-              // Filter only the records that have been included so far
-              val fieldMatcher = DataValue.filter(_.recordId in sliceRecordSet)
-                .filter(_.fieldId === condition.field.id)     // Then for matching field
+    val maybeBundleDataTable = Try(bundleDataTableQuery.run.headOption)
 
-              // And maching condition value
-              val valueMatcher = condition.operator match {
-                case ComparisonOperators.equal =>
-                  fieldMatcher.filter(_.value === condition.value)
-                case ComparisonOperators.notEqual =>
-                  fieldMatcher.filterNot(_.value === condition.value)
-                case ComparisonOperators.greaterThan =>
-                  fieldMatcher.filter(_.value > condition.value)
-                case ComparisonOperators.lessThan =>
-                  fieldMatcher.filter(_.value < condition.value)
-                case ComparisonOperators.like =>
-                  fieldMatcher.filter(_.value like condition.value)
-                // FIXME: handle date-related operators
-                case _ =>
-                  fieldMatcher.filter(_.value === condition.value)
+    maybeBundleDataTable match {
+      case Success(bundleDataTable) =>
+
+        bundleDataTable map { case (bundleTable: BundleTableRow, dataTable: DataTableRow) =>
+          val tableId = dataTable.id
+          val slices = getBundleTableSlices(bundleTableId)
+          val apiDataTables = slices match {
+            // Without any slices, the case degrades to plain data table access
+            case None =>
+              dataService.getTableValues(tableId)
+            case Some(tableSlices) =>
+              // For each table slice, get a query that filters only the records that match the slice conditions
+              val recordLists = tableSlices map { slice =>
+                slice.conditions.foldLeft(DataValue.flatMap(_.dataRecordFk).map(_.id)) { (sliceRecordSet, condition) =>
+                  // Filter only the records that have been included so far
+                  val fieldMatcher = DataValue.filter(_.recordId in sliceRecordSet)
+                    .filter(_.fieldId === condition.field.id) // Then for matching field
+
+                  // And maching condition value
+                  val valueMatcher = condition.operator match {
+                    case ComparisonOperators.equal =>
+                      fieldMatcher.filter(_.value === condition.value)
+                    case ComparisonOperators.notEqual =>
+                      fieldMatcher.filterNot(_.value === condition.value)
+                    case ComparisonOperators.greaterThan =>
+                      fieldMatcher.filter(_.value > condition.value)
+                    case ComparisonOperators.lessThan =>
+                      fieldMatcher.filter(_.value < condition.value)
+                    case ComparisonOperators.like =>
+                      fieldMatcher.filter(_.value like condition.value)
+                    // FIXME: handle date-related operators
+                    case _ =>
+                      fieldMatcher.filter(_.value === condition.value)
+                  }
+
+                  valueMatcher.flatMap(_.dataRecordFk) // Extract data record IDs
+                    .map(_.id)
+                }
               }
 
-              valueMatcher.flatMap(_.dataRecordFk)                      // Extract data record IDs
-                .map(_.id)
-            }
+              // Union all records of the different slices
+              val records = recordLists.tail.foldLeft(recordLists.head) { (recordUnion, recordSet) =>
+                recordUnion ++ recordSet
+              }
+
+              // Query that takes only the records of interest
+              val values = DataValue.filter(_.recordId in records)
+
+              dataService.getTableValues(tableId, values)
           }
 
-          // Union all records of the different slices
-          val records = recordLists.tail.foldLeft(recordLists.head) { (recordUnion, recordSet) =>
-            recordUnion ++ recordSet
-          }
-
-          // Query that takes only the records of interest
-          val values = DataValue.filter(_.recordId in records)
-
-          dataService.getTableValues(tableId, values)
-      }
-
-      val emptyBundleTable = ApiBundleTable.fromBundleTable(bundleTable)(ApiDataTable.fromDataTable(dataTable)(None)(None))
-      emptyBundleTable.copy(data = apiDataTables)
+          val emptyBundleTable = ApiBundleTable.fromBundleTable(bundleTable)(ApiDataTable.fromDataTable(dataTable)(None)(None))
+          emptyBundleTable.copy(data = apiDataTables)
+        }
+      case Failure(e) =>
+        print("Failure getting bundle data: " + e.getMessage)
+        None
     }
+
   }
-
-
-
 
 
   /*
@@ -226,27 +233,34 @@ trait BundleService extends HttpService with DatabaseInfo {
 
   def getBundleContextlessValues(bundleId: Int)(implicit session: Session): Option[ApiBundleContextlessData] = {
     // TODO: include join fields
+    print(s"Retrieving bundle values for bundle $bundleId\n")
     val bundleQuery = for {
-      bundle <- BundleContextless.filter(_.id === bundleId)     // 1 or 0
-      combination <- BundleJoin.filter(_.bundleId === bundleId)       // N for each bundle
-      table <- combination.bundleTableFk                              // 1 for each combination
+      bundle <- BundleContextless.filter(_.id === bundleId) // 1 or 0
+      combination <- BundleJoin.filter(_.bundleId === bundleId) // N for each bundle
+      table <- combination.bundleTableFk // 1 for each combination
     } yield (bundle, combination, table)
 
-    val bundle = bundleQuery.run
+    val maybeBundle = Try(bundleQuery.run)
 
-    // Only one or no contextless bundles
-    val contextlessBundle = bundle.headOption.map(_._1)
+    maybeBundle match {
+      case Success(bundle) =>
+        // Only one or no contextless bundles
+        val contextlessBundle = bundle.headOption.map(_._1)
 
-    contextlessBundle map { cBundle =>
-      val bundleData = bundle.groupBy(_._2.name).map { case (combinationName, tableGroup) =>
-        val bundleData = getBundleTableValues(tableGroup.map(_._3.id).head).get
-        (combinationName, bundleData)
-      }
+        contextlessBundle map { cBundle =>
+          val bundleData = bundle.groupBy(_._2.name).map { case (combinationName, tableGroup) =>
+            val bundleData = getBundleTableValues(tableGroup.map(_._3.id).head).get
+            (combinationName, bundleData)
+          }
 
-      // TODO: rearrange data as per join fields
-      val dataGroups = Iterable(bundleData)
+          // TODO: rearrange data as per join fields
+          val dataGroups = Iterable(bundleData)
 
-      ApiBundleContextlessData.fromDbModel(cBundle, dataGroups)
+          ApiBundleContextlessData.fromDbModel(cBundle, dataGroups)
+        }
+      case Failure(e) =>
+        print("Error getting bundle: " + e.getMessage)
+        None
     }
   }
 
@@ -264,7 +278,7 @@ trait BundleService extends HttpService with DatabaseInfo {
           // Convert from database format to API format
           val insertedApiBundleTable = ApiBundleTable.fromBundleTable(insertedBundleTable)(bundleTable.table)
           // A partial function to store all table slices related to this bundle table
-          def storeBundleSlice = storeSlice (insertedApiBundleTable) _
+          def storeBundleSlice = storeSlice(insertedApiBundleTable) _
 
           val apiSlices = bundleTable.slices map { tableSlices =>
             val slices = tableSlices.map(storeBundleSlice)
@@ -492,7 +506,7 @@ trait BundleService extends HttpService with DatabaseInfo {
   }
 
   // Utility function to return None for empty sequences
-  private def seqOption[T](seq: Seq[T]) : Option[Seq[T]] = {
+  private def seqOption[T](seq: Seq[T]): Option[Seq[T]] = {
     if (seq.isEmpty)
       None
     else

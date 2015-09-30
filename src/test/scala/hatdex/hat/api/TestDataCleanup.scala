@@ -50,12 +50,16 @@ object TestDataCleanup {
   }
 
   def cleanupEntities(implicit session: Session) = {
+    Entity.delete
     ThingsThing.delete
     PeoplePerson.delete
     OrganisationsOrganisation.delete
     LocationsLocation.delete
     EventsEvent.delete
-    Entity.delete
+  }
+
+  def cleanupDataDebits(implicit session: Session) = {
+    DataDebit.delete
   }
 
   def cleanupBundles(implicit session: Session) = {
@@ -87,6 +91,7 @@ object TestDataCleanup {
     cleanupPropertyCrossrefs
     cleanupEntityCrossrefs
     cleanupEntities
+    cleanupDataDebits
     cleanupBundles
     cleanupSystemData
     cleanupData

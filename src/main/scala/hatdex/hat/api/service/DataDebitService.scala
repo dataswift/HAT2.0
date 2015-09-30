@@ -88,7 +88,11 @@ trait DataDebitService extends HttpService with DatabaseInfo {
 
         authorize(hasPermissionModifyDataDebit(dataDebit)) {
           val result = dataDebit map { debit =>
-            Try(DataDebit.filter(_.dataDebitKey === debit.dataDebitKey).map(_.enabled).update(true))
+            Try(
+              DataDebit.filter(_.dataDebitKey === debit.dataDebitKey)
+                .map(dd => (dd.enabled, dd.lastUpdated))
+                .update((true, LocalDateTime.now()))
+            )
           }
 
           complete {
@@ -114,7 +118,11 @@ trait DataDebitService extends HttpService with DatabaseInfo {
 
         authorize(hasPermissionModifyDataDebit(dataDebit)) {
           val result = dataDebit map { debit =>
-            Try(DataDebit.filter(_.dataDebitKey === debit.dataDebitKey).map(_.enabled).update(false))
+            Try(
+              DataDebit.filter(_.dataDebitKey === debit.dataDebitKey)
+                .map(dd => (dd.enabled, dd.lastUpdated))
+                .update((false, LocalDateTime.now()))
+            )
           }
 
           complete {
@@ -141,7 +149,7 @@ trait DataDebitService extends HttpService with DatabaseInfo {
         authorize(hasPermissionAccessDataDebit(dataDebit)) {
           dataDebit match {
             case Some(debit) =>
-              (debit.kind, debit.bundleContextId, debit.bundleContextlessId) match {
+              (debit.kind, debit.bundleContextlessId, debit.bundleContextId) match {
                 case ("contextless", Some(bundleId), None) =>
                   complete {
                     ApiDataDebitOut.fromDbModel(debit, bundleService.getBundleContextlessValues(bundleId), None)
@@ -152,13 +160,13 @@ trait DataDebitService extends HttpService with DatabaseInfo {
                   }
                 case _ =>
                   complete {
-                    (BadRequest, "Data Debit $dataDebitKey is malformed")
+                    (BadRequest, s"Data Debit $dataDebitKey is malformed")
                   }
               }
 
             case None =>
               complete {
-                (NotFound, "Data Debit $dataDebitKey not found")
+                (NotFound, s"Data Debit $dataDebitKey not found")
               }
           }
         }

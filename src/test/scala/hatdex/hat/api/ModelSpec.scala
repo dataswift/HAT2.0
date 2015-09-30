@@ -45,10 +45,6 @@ class ModelSpec extends Specification with BeforeAfterAll {
 
   "Data tables" should {
     "be empty" in {
-      // FIXME: attempt to use the new slick API
-      //      val allValues = for (value <- DataValue) yield value.id
-      //      val values = db.run(DataValue.result)
-      //      values must haveSize[Seq[_]](0).await
       db.withSession { implicit session =>
         val result = DataValue.run
         result must have size (0)

@@ -718,7 +718,9 @@ CREATE TABLE public.entity (
    ELSE 1 END +
    CASE WHEN person_id IS NULL AND NOT kind = 'person'
      THEN 0
-   ELSE 1 END = 1));
+   ELSE 1 END = 1),
+    CONSTRAINT entity_pk PRIMARY KEY (id)
+);
 
 ALTER SEQUENCE public.entity_id_seq OWNED BY public.entity.id;
 

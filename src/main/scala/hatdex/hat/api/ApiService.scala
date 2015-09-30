@@ -28,7 +28,7 @@ class ApiService extends HttpServiceActor with ActorLogging {
     val dataService = apiDataService
   }
 
-  val bundleService = new BundleService {
+  val apiBundleService = new BundleService {
     def actorRefFactory = context
     val dataService = apiDataService
   }
@@ -62,12 +62,17 @@ class ApiService extends HttpServiceActor with ActorLogging {
     val dataService = apiDataService
     val propertyService = apiPropertyService
   }
+  
+  val dataDebitService = new DataDebitService {
+    override val bundleService: BundleService = apiBundleService
+    override implicit def actorRefFactory: ActorRefFactory = context
+  }
 
   // Concatenate all their handled routes
   val routes = helloService.routes ~
     apiDataService.routes ~
     apiPropertyService.routes ~
-    bundleService.routes ~
+    apiBundleService.routes ~
     eventsService.routes ~
     locationsService.routes ~
     peopleService.routes ~
