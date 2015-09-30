@@ -69,7 +69,7 @@ The testsuite uses the [Specs2](https://etorreborre.github.io/specs2/) framework
 
 The API code lives in `src/main/scala/hatdex/hat/dalapi`
 
-API documentation can be found at: 
+Swagger.io based API documentation can be found at [http://hub-of-all-things.github.io/api/](http://hub-of-all-things.github.io/api/) 
 
 ### Packaging and running
 
