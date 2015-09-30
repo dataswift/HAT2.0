@@ -366,7 +366,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /organisation/{organisationId}/addorganisation/{suborganisationId}:
+/organisation/{organisationId}/addorganisation/{suborganisationId}:
     post:
       description: >
         Marks provided organisation as a "child" of another, e.g. to created nested data
@@ -401,11 +401,11 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /organisation/{organisationId}:
+/organisation/{organisationId}:
     get:
       description: |
         Retrieves organisation information by organisation ID
-      parameters:
+        parameters:
         - name: organisationId
           in: path
           description: organisation ID
@@ -420,6 +420,30 @@ paths:
           description: organisation has been found. Returns organisation information
           schema:
             $ref: '#/definitions/organisationStructure'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+/Entity/{entityId}:
+  get:
+  description: |
+        Retrieves entity information by entity ID
+        parameters:
+        - name: entityId
+          in: path
+          description: Entity ID
+          required: true
+          type: number
+          format: integer
+        tags:
+        - entity
+        - Contextualisation
+        responses:
+        '200':
+          description: entity has been found. Returns entity information
+          schema:
+            $ref: '#/definitions/entity'
         default:
           description: Unexpected error
           schema:
@@ -449,7 +473,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /Type/{TypeId}/addType/{subTypeId}:
+/Type/{TypeId}/addType/{subTypeId}:
     post:
       description: >
         Marks provided Type as a "child" of another, e.g. to created nested data
@@ -484,7 +508,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /Type/{TypeId}:
+/Type/{TypeId}:
     get:
       description: |
         Retrieves Type information by Type ID
@@ -508,7 +532,7 @@ paths:
           schema:
             $ref: '#/definitions/Error'
 
-  /Property:
+/Property:
     post:
       description: |
         Creates a new Property for storing Propertys
@@ -532,7 +556,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /Property/{PropertyId}:
+/Property/{PropertyId}:
     get:
       description: |
         Retrieves Property information by Property ID
@@ -555,8 +579,79 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
+/Property:
+    post:
+      description: |
+        Creates a new Property for storing Propertys
+      parameters:
+        - name: Property
+          in: body
+          description: Table information to be inserted
+          required: true
+          schema:
+            $ref: '#/definitions/Property'
+      tags:
+        - Property
+        - Contextualisation
+      responses:
+        '201':
+          description: Property has been created
+          schema:
+            $ref: '#/definitions/PropertyResponse'
+              
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+/PropertyStatic/{EntityId}:
+    get:
+      description: |
+        Retrieves Static Property information by Property ID
+      parameters:
+        - name: EntityIdId
+          in: path
+          description: EntityId ID
+          required: true
+          Property: number
+          format: integer
+      tags:
+        - Property
+        - Contextualisation
+      responses:
+        '200':
+          description: Entity has been found. Returns Static Property information
+          schema:
+            $ref: '#/definitions/StaticProperty'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+/PropertyDynamic/{EntityId}:
+    get:
+      description: |
+        Retrieves Dynamic Property information by Property ID
+      parameters:
+        - name: EntityId
+          in: path
+          description: Entity ID
+          required: true
+          Property: number
+          format: integer
+      tags:
+        - Property
+        - Contextualisation
+      responses:
+        '200':
+          description: Entity has been found. Returns Dynamic Property information
+          schema:
+            $ref: '#/definitions/DynamicProperty'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
 
-  /UnitOfMeasurement:
+
+/UnitOfMeasurement:
     post:
       description: |
         Creates a new UnitOfMeasurement for storing UnitOfMeasurements
@@ -580,7 +675,8 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /UnitOfMeasurement/{UnitOfMeasurementId}:
+
+/UnitOfMeasurement/{UnitOfMeasurementId}:
     get:
       description: |
         Retrieves UnitOfMeasurement information by UnitOfMeasurement ID
@@ -620,8 +716,8 @@ definitions:
     required:
       - dateCreated
       - lastUpdated
-  
-  Event:
+
+Event:
     required:
       - name
     properties:
@@ -635,13 +731,13 @@ definitions:
         description: Name of the event
         example: Birthday Party
       
-  EventResponse:
+EventResponse:
     description: Event response object
     allOf:
     - $ref: '#/definitions/Event'
     - $ref: '#/definitions/TimeStructure'
       
-  Person:
+Person:
     required:
       - name
     properties:
@@ -652,15 +748,15 @@ definitions:
           type: string
           description: Name of the Person
     
-  PersonResponse:
+PersonResponse:
     required:
       - name
     allOf:
     - $ref: '#/definitions/Person'
     - $ref: '#/definitions/TimeStructure'
       
-  Organisation:
-      required:
+Organisation:
+    required:
       - name
     properties:
         id:
@@ -673,12 +769,12 @@ definitions:
           type: string
           description: name of the Organisation
     
-  OrganisationResponse:
+OrganisationResponse:
     allOf:
     - $ref: '#/definitions/Organisation'
     - $ref: '#/definitions/TimeStructure'
         
-  Thing:
+Thing:
       required:
       - name
     properties:
@@ -692,12 +788,12 @@ definitions:
           type: string
           description: name of the Thing
     
-  ThingResponse:
+ThingResponse:
     allOf:
     - $ref: '#/definitions/Thing'
     - $ref: '#/definitions/TimeStructure'
   
-  Location:
+Location:
     required:
       - name
     properties:
@@ -711,12 +807,12 @@ definitions:
           type: string
           description: name of the Location
     
-  LocationResponse:
+LocationResponse:
     allOf:
     - $ref: '#/definitions/Location'
     - $ref: '#/definitions/TimeStructure'
 
-  Property:
+Property:
       required:
       - name
     properties:
@@ -730,12 +826,12 @@ definitions:
           type: string
           description: name of the Property
     
-  PropertyResponse:
+PropertyResponse:
     allOf:
     - $ref: '#/definitions/Property'
     - $ref: '#/definitions/TimeStructure'
 
-  Type:
+Type:
       required:
       - name
     properties:
@@ -749,12 +845,12 @@ definitions:
           type: string
           description: name of the Type
     
-  TypeResponse:
+TypeResponse:
     allOf:
     - $ref: '#/definitions/Type'
     - $ref: '#/definitions/TimeStructure'
 
-    UnitOfMeasurement:
+UnitOfMeasurement:
       required:
       - name
     properties:
@@ -767,14 +863,13 @@ definitions:
         name:
           type: string
           description: name of the UnitOfMeasurement
-    
-  UnitOfMeasurementResponse:
+    UnitOfMeasurementResponse:
     allOf:
     - $ref: '#/definitions/UnitOfMeasurement'
     - $ref: '#/definitions/TimeStructure'
 
   
-  Relationship:
+Relationship:
     description: 'The type of the relationship between two tables. Currently only relationship type "owns" is supported.'
     properties:
       relationshipType:
@@ -784,7 +879,7 @@ definitions:
         
         
         
-  EntityCreated:
+EntityCreated:
     properties:
       id:
         type: number
@@ -792,7 +887,7 @@ definitions:
         
         
         
-  Error:
+    Error:
     properties:
       code:
         type: integer
