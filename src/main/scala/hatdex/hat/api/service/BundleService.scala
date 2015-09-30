@@ -233,7 +233,6 @@ trait BundleService extends HttpService with DatabaseInfo {
 
   def getBundleContextlessValues(bundleId: Int)(implicit session: Session): Option[ApiBundleContextlessData] = {
     // TODO: include join fields
-    print(s"Retrieving bundle values for bundle $bundleId\n")
     val bundleQuery = for {
       bundle <- BundleContextless.filter(_.id === bundleId) // 1 or 0
       combination <- BundleJoin.filter(_.bundleId === bundleId) // N for each bundle
@@ -241,7 +240,6 @@ trait BundleService extends HttpService with DatabaseInfo {
     } yield (bundle, combination, table)
 
     val maybeBundle = Try(bundleQuery.run)
-
     maybeBundle match {
       case Success(bundle) =>
         // Only one or no contextless bundles
@@ -259,7 +257,8 @@ trait BundleService extends HttpService with DatabaseInfo {
           ApiBundleContextlessData.fromDbModel(cBundle, dataGroups)
         }
       case Failure(e) =>
-        print("Error getting bundle: " + e.getMessage)
+        print(s"Error getting bundle: ${e.getMessage}\n")
+        e.printStackTrace()
         None
     }
   }

@@ -152,7 +152,11 @@ trait DataDebitService extends HttpService with DatabaseInfo {
               (debit.kind, debit.bundleContextlessId, debit.bundleContextId) match {
                 case ("contextless", Some(bundleId), None) =>
                   complete {
-                    ApiDataDebitOut.fromDbModel(debit, bundleService.getBundleContextlessValues(bundleId), None)
+                    // TODO: Find out why it is necessary to create a new session when working from within DataDebit
+                    val bundleValues = db.withSession { implicit session =>
+                        bundleService.getBundleContextlessValues(bundleId)
+                      }
+                    ApiDataDebitOut.fromDbModel(debit, bundleValues, None)
                   }
                 case ("contextual", None, Some(bundleId)) =>
                   complete {
