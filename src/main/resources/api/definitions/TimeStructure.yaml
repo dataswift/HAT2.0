@@ -1,0 +1,15 @@
+TimeStructure:
+    properties:
+      dateCreated:
+        type: string
+        format: date-time
+        description: Time the entity was created
+        example: "2015-08-16T21:45:22.551Z"
+      lastUpdated:
+        type: string
+        format: date-time
+        description: Time the entity was last updated
+        example: "2015-08-16T21:45:22.551Z"
+    required:
+      - dateCreated
+      - lastUpdated

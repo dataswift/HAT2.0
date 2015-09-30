@@ -1,0 +1,10 @@
+Record:
+    required:
+      - name
+    properties:
+        id:
+          type: number
+          description: 'Unique data record ID, connecting tables and records in a single received record'
+        name:
+          type: string
+          description: Name of the record

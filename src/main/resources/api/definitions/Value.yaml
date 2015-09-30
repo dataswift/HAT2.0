@@ -1,0 +1,20 @@
+  Value:
+    required:
+      - value
+      - fieldId
+      - recordId
+    allOf:
+    - properties:
+        id:
+          type: number
+          description: Unique data value ID
+        value:
+          type: string
+          description: An arbitrary data value to be stored
+        fieldId:
+          type: number
+          description: Which field (column) the value is in
+        recordId:
+          type: number
+          description: ID of the record the value is part of
+    $ref: ./TimeStructure.yaml

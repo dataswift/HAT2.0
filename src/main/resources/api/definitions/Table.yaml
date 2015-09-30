@@ -1,0 +1,18 @@
+Table:
+    required:
+      - name
+      - source
+    properties:
+      id:
+        type: number
+        format: int32
+        description: Unique Table ID
+        example: 1
+      name:
+        type: string
+        description: Name of the table
+        example: Location
+      source:
+        type: string
+        description: Name of the source
+        example: Facebook

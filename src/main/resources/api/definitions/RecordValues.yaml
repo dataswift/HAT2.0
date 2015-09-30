@@ -1,0 +1,9 @@
+ RecordValues:
+    allOf:
+    - $ref: '#/definitions/RecordResponse'
+    - properties:
+        tables:
+          type: array
+          description: "Array of tables that contain the record's values. Only set for outbound API calls"
+          items:
+            $ref: '#/definitions/TableValues'

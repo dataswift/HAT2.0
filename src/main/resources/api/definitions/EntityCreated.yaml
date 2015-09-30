@@ -1,0 +1,5 @@
+  EntityCreated:
+    properties:
+      id:
+        type: number
+        description: ID of the created entity

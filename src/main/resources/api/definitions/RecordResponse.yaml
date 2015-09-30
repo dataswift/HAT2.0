@@ -1,0 +1,6 @@
+  RecordResponse:
+    required:
+      - name
+    allOf:
+    - $ref: '#/definitions/Record'
+    - $ref: '#/definitions/TimeStructure'
