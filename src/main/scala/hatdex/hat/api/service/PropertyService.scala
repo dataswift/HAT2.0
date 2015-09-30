@@ -1,5 +1,7 @@
 package hatdex.hat.api.service
 
+import hatdex.hat.authentication.HatServiceAuthHandler._
+import hatdex.hat.authentication.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import hatdex.hat.api.DatabaseInfo
@@ -20,8 +22,10 @@ trait PropertyService extends HttpService with DatabaseInfo {
 
   val routes = {
     pathPrefix("property") {
-      createProperty ~
-        getPropertyApi
+      userPassHandler { implicit user: User =>
+        createProperty ~
+          getPropertyApi
+      }
     }
   }
 

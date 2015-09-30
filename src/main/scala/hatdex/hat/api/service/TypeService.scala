@@ -1,5 +1,7 @@
 package hatdex.hat.api.service
 
+import hatdex.hat.authentication.HatServiceAuthHandler._
+import hatdex.hat.authentication.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import hatdex.hat.api.DatabaseInfo
@@ -16,9 +18,11 @@ trait TypeService extends HttpService with DatabaseInfo {
 
   val routes = {
     pathPrefix("type") {
-      createType ~
-        linkTypeToType ~
-        createUnitOfMeasurement
+      userPassHandler { implicit user: User =>
+        createType ~
+          linkTypeToType ~
+          createUnitOfMeasurement
+      }
     }
   }
 

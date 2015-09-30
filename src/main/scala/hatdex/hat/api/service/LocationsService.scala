@@ -1,5 +1,7 @@
 package hatdex.hat.api.service
 
+import hatdex.hat.authentication.HatServiceAuthHandler._
+import hatdex.hat.authentication.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import hatdex.hat.api.models._
@@ -18,18 +20,20 @@ trait LocationsService extends EntityServiceApi {
 
   val routes = {
     pathPrefix(entityKind) {
-      createApi ~
-        getApi ~
-        getApiValues ~
-        linkToLocation ~
-        linkToThing ~
-        linkToPropertyStatic ~
-        linkToPropertyDynamic ~
-        addTypeApi ~
-        getPropertiesStaticApi ~
-        getPropertiesDynamicApi ~
-        getPropertyStaticValueApi ~
-        getPropertyDynamicValueApi
+      userPassHandler { implicit user: User =>
+        createApi ~
+          getApi ~
+          getApiValues ~
+          linkToLocation ~
+          linkToThing ~
+          linkToPropertyStatic ~
+          linkToPropertyDynamic ~
+          addTypeApi ~
+          getPropertiesStaticApi ~
+          getPropertiesDynamicApi ~
+          getPropertyStaticValueApi ~
+          getPropertyDynamicValueApi
+      }
     }
   }
 
