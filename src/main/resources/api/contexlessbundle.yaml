@@ -47,7 +47,7 @@ paths:
           in: path
           description: bundle ID
           required: true
-          type: number
+          
           format: integer
               
           responses:
@@ -62,7 +62,6 @@ paths:
 
 /ApiBundleTableValues/{bundleTableId}/value:
     get:
-    get:
       description: |
         Retrieves all values associated with the specific bundle table ID
       parameters:
@@ -70,7 +69,7 @@ paths:
           in: path
           description: bundle ID
           required: true
-          type: number
+          
           format: integer
       tags:
         - Bundle
@@ -95,18 +94,18 @@ paths:
           required: true
           schema:
             $ref: '#/definitions/BundleContextless'
-      tags:
-        - Bundle
-      responses:
-        '201':
+          tags:
+          - Bundle
+          responses:
+          '201':
           description: Bundle has been created
           schema:
             $ref: '#/definitions/BundleContextlessResponse'
               
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
+          default:
+            description: Unexpected error
+            schema:
+              $ref: '#/definitions/Error'
 
 /ApiBundleContextlessValue/{bundleId}:
     get:
@@ -117,7 +116,6 @@ paths:
           in: path
           description: bundle ID
           required: true
-          type: number
           format: integer
         tags:
         - Bundle
@@ -206,7 +204,7 @@ BundleTable:
         description: Bundle Data
         example: Facebook
 
-BundleContextlessResponse:
+BundleTableResponse:
     required:
       - name
     allOf:
@@ -274,7 +272,7 @@ BundleContextlessResponse:
     - $ref: '#/definitions/BundleContextless'
     - $ref: '#/definitions/TimeStructure'
         
-    Error:
+Error:
     properties:
       code:
         type: integer
