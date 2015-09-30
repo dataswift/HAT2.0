@@ -2,14 +2,27 @@ swagger: '2.0'
 info:
   version: 2.0.0
   title: HAT 2.0 API
+  license:
+    name: Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International
+    url: 'http://creativecommons.org/licenses/by-nc-nd/4.0/'
+  contact:
+    name: Hub-of-All-Things Project
+    url: 'http://hubofallthings.com'
 host: api.hubofallthings.com
 schemes:
   - http
-basePath: /api
+securityDefinitions:
+  access_token:
+    type: apiKey
+    name: access_token
+    in: header
+basePath: /data
 consumes:
   - application/json
 produces:
   - application/json
+security:
+  - access_token: []
 paths:
   /table:
     post:
@@ -30,12 +43,11 @@ paths:
           description: Table has been created
           schema:
             $ref: '#/definitions/TableResponse'
-              
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /table/{tableId}/addTable/{subtableId}:
+  '/table/{tableId}/addTable/{subtableId}':
     post:
       description: >
         Marks provided table as a "child" of another, e.g. to created nested data
@@ -70,7 +82,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /table/{tableId}:
+  '/table/{tableId}':
     get:
       description: |
         Retrieves table information by Table ID
@@ -92,7 +104,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /table/{tableId}/values:
+  '/table/{tableId}/values':
     get:
       description: |
         Retrieves all data associated with the table, including sub-tables
@@ -141,8 +153,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-            
-  /field/{fieldId}:
+  '/field/{fieldId}':
     get:
       description: |
         Retrieves Field information by Table ID
@@ -164,8 +175,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-            
-  /field/{fieldId}/values:
+  '/field/{fieldId}/values':
     get:
       description: |
         Retrieves all data associated with the specific field
@@ -211,8 +221,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-            
-  /record/{recordId}:
+  '/record/{recordId}':
     get:
       description: |
         Retrieves Record information by Record ID
@@ -234,7 +243,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /record/{recordId}/values:
+  '/record/{recordId}/values':
     get:
       description: |
         Retrieves all data associated with the specific record ID
@@ -279,7 +288,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /value/{valueId}:
+  '/value/{valueId}':
     post:
       description: |
         Store a new data value, associated with a database field and a record
@@ -301,7 +310,6 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-            
   /value/list:
     post:
       description: >
@@ -323,13 +331,12 @@ paths:
           description: Data Value has been saved
           schema:
             type: array
-            items: 
+            items:
               $ref: '#/definitions/Value'
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-            
 definitions:
   TimeStructure:
     properties:
@@ -337,16 +344,15 @@ definitions:
         type: string
         format: date-time
         description: Time the entity was created
-        example: "2015-08-16T21:45:22.551Z"
+        example: '2015-08-16T21:45:22.551Z'
       lastUpdated:
         type: string
         format: date-time
         description: Time the entity was last updated
-        example: "2015-08-16T21:45:22.551Z"
+        example: '2015-08-16T21:45:22.551Z'
     required:
       - dateCreated
       - lastUpdated
-        
   Table:
     required:
       - name
@@ -365,138 +371,120 @@ definitions:
         type: string
         description: Name of the source
         example: Facebook
-      
   TableResponse:
     description: Table response object
     allOf:
-    - $ref: '#/definitions/Table'
-    - $ref: '#/definitions/TimeStructure'
-      
+      - $ref: '#/definitions/Table'
+      - $ref: '#/definitions/TimeStructure'
   TableStructure:
     description: Data Table information with structure - related fields and sub-tables
     allOf:
-    - $ref: '#/definitions/TableResponse'
-    - properties:
-        fields:
-          type: array
-          description: Array of fields (columns) in the table
-          items:
-            $ref: '#/definitions/Field'
-        subTables:
-          type: array
-          description: 'Array of sub-tables (recursive type) in the table, used to represent complex types, nested objects, etc.'
-          items:
-            $ref: '#/definitions/TableStructure'
-            
+      - $ref: '#/definitions/TableResponse'
+      - properties:
+          fields:
+            type: array
+            description: Array of fields (columns) in the table
+            items:
+              $ref: '#/definitions/Field'
+          subTables:
+            type: array
+            description: 'Array of sub-tables (recursive type) in the table, used to represent complex types, nested objects, etc.'
+            items:
+              $ref: '#/definitions/TableStructure'
   TableValues:
     description: Data Table information with structure and values filled in - related fields and sub-tables
     allOf:
-    - $ref: '#/definitions/TableStructure'
-    - properties:
-        fields:
-          type: array
-          description: Array of fields (columns) in the table
-          items:
-            $ref: '#/definitions/FieldValues'
-      
+      - $ref: '#/definitions/TableStructure'
+      - properties:
+          fields:
+            type: array
+            description: Array of fields (columns) in the table
+            items:
+              $ref: '#/definitions/FieldValues'
   Record:
     required:
       - name
     properties:
-        id:
-          type: number
-          description: 'Unique data record ID, connecting tables and records in a single received record'
-        name:
-          type: string
-          description: Name of the record
-    
+      id:
+        type: number
+        description: 'Unique data record ID, connecting tables and records in a single received record'
+      name:
+        type: string
+        description: Name of the record
   RecordResponse:
     required:
       - name
     allOf:
-    - $ref: '#/definitions/Record'
-    - $ref: '#/definitions/TimeStructure'
-    
+      - $ref: '#/definitions/Record'
+      - $ref: '#/definitions/TimeStructure'
   RecordValues:
     allOf:
-    - $ref: '#/definitions/RecordResponse'
-    - properties:
-        tables:
-          type: array
-          description: "Array of tables that contain the record's values. Only set for outbound API calls"
-          items:
-            $ref: '#/definitions/TableValues'
-      
+      - $ref: '#/definitions/RecordResponse'
+      - properties:
+          tables:
+            type: array
+            description: "Array of tables that contain the record's values. Only set for outbound API calls"
+            items:
+              $ref: '#/definitions/TableValues'
   Field:
     required:
       - tableId
       - name
     properties:
-        id:
-          type: number
-          description: Unique Field ID
-        tableId:
-          type: number
-          description: ID of the table the field is part of
-        name:
-          type: string
-          description: name of the field (column name in the database)
-    
+      id:
+        type: number
+        description: Unique Field ID
+      tableId:
+        type: number
+        description: ID of the table the field is part of
+      name:
+        type: string
+        description: name of the field (column name in the database)
   FieldResponse:
     allOf:
-    - $ref: '#/definitions/Field'
-    - $ref: '#/definitions/TimeStructure'
-    
+      - $ref: '#/definitions/Field'
+      - $ref: '#/definitions/TimeStructure'
   FieldValues:
     allOf:
-    - $ref: '#/definitions/FieldResponse'
-    - properties:
-        values:
-          type: array
-          description: Array of values associated with the field. Only set for outbound API calls
-          items:
-            $ref: '#/definitions/Value'
-    
+      - $ref: '#/definitions/FieldResponse'
+      - properties:
+          values:
+            type: array
+            description: Array of values associated with the field. Only set for outbound API calls
+            items:
+              $ref: '#/definitions/Value'
   Value:
     required:
       - value
       - fieldId
       - recordId
     allOf:
-    - properties:
-        id:
-          type: number
-          description: Unique data value ID
-        value:
-          type: string
-          description: An arbitrary data value to be stored
-        fieldId:
-          type: number
-          description: Which field (column) the value is in
-        recordId:
-          type: number
-          description: ID of the record the value is part of
-    - $ref: '#/definitions/TimeStructure'
-        
-        
+      - properties:
+          id:
+            type: number
+            description: Unique data value ID
+          value:
+            type: string
+            description: An arbitrary data value to be stored
+          fieldId:
+            type: number
+            description: Which field (column) the value is in
+          recordId:
+            type: number
+            description: ID of the record the value is part of
+      - $ref: '#/definitions/TimeStructure'
   Relationship:
     description: 'The type of the relationship between two tables. Currently only relationship type "owns" is supported.'
     properties:
       relationshipType:
         type: string
         description: 'The type of relationship between two entities (e.g. one entity "owns" another)'
-        example: "owns"
-        
-        
-        
+        example: owns
   EntityCreated:
     properties:
       id:
         type: number
         description: ID of the created entity
-        
-        
-        
   Error:
     properties:
       code:
