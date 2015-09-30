@@ -703,24 +703,22 @@ CREATE TABLE public.entity (
   event_id        INTEGER,      
   organisation_id INTEGER,      
   person_id       INTEGER,
-  CONSTRAINT entity_pk PRIMARY KEY (id),
   CONSTRAINT kind CHECK
-  (CASE WHEN location_id IS NOT NULL AND kind = 'location'
+  (CASE WHEN location_id IS  NULL AND NOT kind = 'location'
     THEN 0
    ELSE 1 END +
-   CASE WHEN thing_id IS NOT NULL AND kind = 'thing'
+   CASE WHEN thing_id IS NULL AND NOT kind = 'thing'
      THEN 0
    ELSE 1 END +
-   CASE WHEN event_id IS NOT NULL AND kind = 'event'
+   CASE WHEN event_id IS NULL AND NOT kind = 'event'
      THEN 0
    ELSE 1 END +
-   CASE WHEN organisation_id IS NOT NULL AND kind = 'organisation'
+   CASE WHEN organisation_id IS NULL AND NOT kind = 'organisation'
      THEN 0
    ELSE 1 END +
-   CASE WHEN person_id IS NOT NULL AND kind = 'person'
+   CASE WHEN person_id IS NULL AND NOT kind = 'person'
      THEN 0
-   ELSE 1 END = 1)
-);
+   ELSE 1 END = 1));
 
 ALTER SEQUENCE public.entity_id_seq OWNED BY public.entity.id;
 
