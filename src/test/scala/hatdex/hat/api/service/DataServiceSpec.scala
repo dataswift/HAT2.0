@@ -64,6 +64,28 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
       }
     }
 
+    "Accept new nested tables" in {
+      val dataTable = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, DataExamples.nestedTableKitchen)) ~> createTableApi ~> check {
+        response.status should be equalTo Created
+        val responseString = responseAs[String]
+        responseString must contain("kitchen")
+        responseString must contain("fibaro")
+        responseString must contain("kitchenElectricity")
+        responseString must contain("tableTestField4")
+        responseAs[ApiDataTable]
+      }
+      dataTable.id must beSome
+
+      HttpRequest(GET, s"/table/${dataTable.id.get}") ~>
+        getTableApi ~> check {
+        val responseString = responseAs[String]
+        responseString must contain("kitchen")
+        responseString must contain("fibaro")
+        responseString must contain("kitchenElectricity")
+        responseString must contain("tableTestField4")
+      }
+    }
+
     "Reject incorrect table linking" in {
       HttpRequest(POST, s"/table/0/table/1", entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~> linkTableToTableApi ~> check {
         response.status should be equalTo BadRequest
@@ -81,7 +103,7 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
       dataTable.id must beSome
 
       val field = JsonParser(DataExamples.testField).convertTo[ApiDataField]
-      val completeField = field.copy(tableId = dataTable.id.get)
+      val completeField = field.copy(tableId = dataTable.id)
 
       HttpRequest(POST, "/field", entity = HttpEntity(MediaTypes.`application/json`, completeField.toJson.toString)) ~> createFieldApi ~> check {
         response.status should be equalTo Created
@@ -126,7 +148,7 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
 
       // Create fields
       val field = JsonParser(DataExamples.testField).convertTo[ApiDataField]
-      val completeTableField = field.copy(tableId = dataTable.id.get)
+      val completeTableField = field.copy(tableId = dataTable.id)
 
       val dataField = HttpRequest(POST, "/field", entity = HttpEntity(MediaTypes.`application/json`, completeTableField.toJson.toString)) ~>
         createFieldApi ~> check {
@@ -135,7 +157,7 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
       }
       dataField.id must beSome
 
-      val completeSubTableField1 = field.copy(tableId = dataSubtable.id.get, name = "subtableTestField1")
+      val completeSubTableField1 = field.copy(tableId = dataSubtable.id, name = "subtableTestField1")
       val dataSubfield1 = HttpRequest(POST, "/field", entity = HttpEntity(MediaTypes.`application/json`, completeSubTableField1.toJson.toString)) ~>
         createFieldApi ~> check {
         response.status should be equalTo Created
@@ -143,7 +165,7 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
       }
       dataSubfield1.id must beSome
 
-      val completeSubTableField2 = field.copy(tableId = dataSubtable.id.get, name = "subtableTestField2")
+      val completeSubTableField2 = field.copy(tableId = dataSubtable.id, name = "subtableTestField2")
       val dataSubfield2 = HttpRequest(POST, "/field", entity = HttpEntity(MediaTypes.`application/json`, completeSubTableField2.toJson.toString)) ~>
         createFieldApi ~> check {
         response.status should be equalTo Created
@@ -248,6 +270,32 @@ object DataExamples {
       |{
       | "name": "tableTestField",
       | "tableId": 0
+      |}
+    """.stripMargin
+
+  val nestedTableKitchen =
+    """
+      |{
+      | "name": "kitchen",
+      | "source": "fibaro",
+      | "fields": [
+      |   { "name": "tableTestField" },
+      |   { "name": "tableTestField2" }
+      | ],
+      | "subTables": [
+      |   {
+      |     "name": "kitchenElectricity",
+      |     "source": "fibaro",
+      |     "fields": [
+      |       {
+      |         "name": "tableTestField3"
+      |       },
+      |       {
+      |         "name": "tableTestField4"
+      |       }
+      |     ]
+      |   }
+      | ]
       |}
     """.stripMargin
 

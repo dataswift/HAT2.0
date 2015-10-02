@@ -382,7 +382,7 @@ trait BundleService extends HttpService with DatabaseInfo {
                             (implicit session: Session): Try[ApiBundleTableCondition] = {
 
     (bundleTableSlice.table.id, condition.field.id, bundleTableSlice.id) match {
-      case (Some(condition.field.tableId), Some(fieldId), Some(sliceId)) =>
+      case (condition.field.tableId, Some(fieldId), Some(sliceId)) =>
         val conditionRow = new BundleTablesliceconditionRow(
           0, LocalDateTime.now(), LocalDateTime.now(),
           fieldId, sliceId, condition.operator.toString, condition.value)

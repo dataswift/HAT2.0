@@ -1,5 +1,6 @@
 package hatdex.hat.api.service
 
+import hatdex.hat.Utils
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import hatdex.hat.api.DatabaseInfo
@@ -53,15 +54,7 @@ trait DataService extends HttpService with DatabaseInfo {
     post {
       entity(as[ApiDataTable]) { table =>
         db.withSession { implicit session =>
-          val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, table.source)
-          val tableId = Try((DataTable returning DataTable.map(_.id)) += newTable)
-
-          val tableStructure = tableId match {
-            case Success(id) =>
-              Success(getTableStructure(id).get)
-            case Failure(e) =>
-              Failure(e)
-          }
+          val tableStructure = createTable(table)
 
           complete {
             tableStructure match {
@@ -85,11 +78,7 @@ trait DataService extends HttpService with DatabaseInfo {
       post {
         entity(as[ApiRelationship]) { relationship =>
           db.withSession { implicit session =>
-            val dataTableToTableCrossRefRow = new DataTabletotablecrossrefRow(
-              1, LocalDateTime.now(), LocalDateTime.now(),
-              relationship.relationshipType, parentId, childId
-            )
-            val inserted = Try((DataTabletotablecrossref returning DataTabletotablecrossref.map(_.id)) += dataTableToTableCrossRefRow)
+            val inserted = linkTables(parentId, childId, relationship)
 
             complete {
               inserted match {
@@ -185,12 +174,11 @@ trait DataService extends HttpService with DatabaseInfo {
     post {
       entity(as[ApiDataField]) { field =>
         db.withSession { implicit session =>
-          val newField = new DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.name, field.tableId)
-          val insertedField = Try((DataField returning DataField) += newField)
+          val insertedField = createField(field)
           complete {
             insertedField match {
               case Success(field) =>
-                (Created, ApiDataField.fromDataField(field))
+                (Created, field)
               case Failure(e) =>
                 (BadRequest, e.getMessage)
             }
@@ -400,6 +388,77 @@ trait DataService extends HttpService with DatabaseInfo {
       }
     }
   }
+
+  def createTable(table: ApiDataTable)(implicit session: Session): Try[ApiDataTable] = {
+    val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, table.source)
+    val maybeTable = Try((DataTable returning DataTable) += newTable)
+
+    maybeTable flatMap { insertedTable =>
+      val apiDataFields = table.fields map { fields =>
+        val insertedFields = fields.map(createField(_, Some(insertedTable.id)))
+        // Flattens to a simple Try with list if fields
+        // or returns the first error that occurred
+        Utils.flatten(insertedFields)
+      }
+
+      val apiSubtables = table.subTables map { subtables =>
+        val insertedSubtables = subtables.map(createTable)
+        val maybeSubtables = Utils.flatten(insertedSubtables)
+        val links = maybeSubtables map { tables =>
+          // Link the table to all its subtables
+          tables.map( x => Try(linkTables(insertedTable.id, x.id.get, ApiRelationship("parent child"))) )
+        }
+        maybeSubtables
+      }
+
+      (apiDataFields, apiSubtables) match {
+        case (None, None) =>
+          Success(ApiDataTable.fromDataTable(insertedTable)(None)(None))
+        // If field insertion failed at any point, return that error
+        case (Some(Failure(e)), _) =>
+          Failure(e)
+        // If subtable insertion failed at any point, return that error
+        case (_, Some(Failure(e))) =>
+          Failure(e)
+        case (Some(Success(insertedFields)), Some(Success(insertedSubtables))) =>
+          Success(ApiDataTable.fromDataTable(insertedTable)(Some(insertedFields))(Some(insertedSubtables)))
+        case (Some(Success(insertedFields)), None) =>
+          Success(ApiDataTable.fromDataTable(insertedTable)(Some(insertedFields))(None))
+        case (None, Some(Success(insertedSubtables))) =>
+          Success(ApiDataTable.fromDataTable(insertedTable)(None)(Some(insertedSubtables)))
+      }
+    }
+  }
+
+  def linkTables(parentId: Int, childId: Int, relationship: ApiRelationship)(implicit session: Session): Try[Int] = {
+    val dataTableToTableCrossRefRow = new DataTabletotablecrossrefRow(
+      1, LocalDateTime.now(), LocalDateTime.now(),
+      relationship.relationshipType, parentId, childId
+    )
+    Try((DataTabletotablecrossref returning DataTabletotablecrossref.map(_.id)) += dataTableToTableCrossRefRow)
+  }
+
+
+  def createField(field: ApiDataField, maybeTableId: Option[Int]=None)(implicit session: Session): Try[ApiDataField] = {
+    val maybeNewField = (maybeTableId, field.tableId) match {
+      case (Some(tableId), _) =>
+        Success(DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.name, tableId))
+      case (_, Some(tableId)) =>
+        Success(DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.name, tableId))
+      case (None, None) =>
+        Failure(new IllegalArgumentException("Table ID for field being inserted must be set"))
+    }
+
+    val maybeField = maybeNewField flatMap { newField =>
+      Try((DataField returning DataField) += newField)
+    }
+    val temp = maybeField map { field =>
+      ApiDataField.fromDataField(field)
+    }
+
+    temp
+  }
+
 
   def getFieldValues(fieldId: Int)(implicit session: Session): Option[ApiDataField] = {
     val apiFieldOption = retrieveDataFieldId(fieldId)

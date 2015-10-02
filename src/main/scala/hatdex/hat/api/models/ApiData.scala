@@ -7,15 +7,15 @@ case class ApiDataField(
     id: Option[Int],
     dateCreated: Option[LocalDateTime],
     lastUpdated: Option[LocalDateTime],
-    tableId: Int,
+    tableId: Option[Int],
     name: String,
     values: Option[Seq[ApiDataValue]])
 
 object ApiDataField {
   def fromDataField(field: DataFieldRow) = {
-    new ApiDataField(
+    ApiDataField(
       Some(field.id), Some(field.dateCreated), Some(field.lastUpdated),
-      field.tableIdFk, field.name, None
+      Some(field.tableIdFk), field.name, None
     )
   }
 }
