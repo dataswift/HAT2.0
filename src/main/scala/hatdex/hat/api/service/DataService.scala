@@ -312,19 +312,41 @@ trait DataService extends HttpService with DatabaseInfo {
   }
 
   /*
+   * Batch-insert data values as a list
+   */
+  def storeValueListApi = path("record" / IntNumber / "values") { (recordId: Int) =>
+    post {
+      entity(as[Seq[ApiDataValue]]) { values =>
+        db.withSession { implicit session =>
+          val maybeApiValues = values.map(x => createValue(x, None, Some(recordId)))
+          val apiValues = Utils.flatten(maybeApiValues)
+
+          complete {
+            apiValues match {
+              case Success(response) =>
+                (Created, response)
+              case Failure(e) =>
+                (BadRequest, e.getMessage)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /*
    * Create (insert) a new data value
    */
   def createValueApi = path("value") {
     post {
       entity(as[ApiDataValue]) { value =>
         db.withSession { implicit session =>
-          val newValue = new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.fieldId, value.recordId)
-          val inserted = Try((DataValue returning DataValue) += newValue)
+          val inserted = createValue(value, None, None)
 
           complete {
             inserted match {
-              case Success(value) =>
-                (Created, ApiDataValue.fromDataValue(value))
+              case Success(insertedValue) =>
+                (Created, insertedValue)
               case Failure(e) =>
                 (BadRequest, e.getMessage)
             }
@@ -341,9 +363,16 @@ trait DataService extends HttpService with DatabaseInfo {
   def getValueApi = path("value" / IntNumber) {  (valueId: Int) =>
     get {
       db.withSession { implicit session =>
-        val someValue = DataValue.filter(_.id === valueId).run.headOption
-        val apiValue = someValue map { value =>
-          ApiDataValue.fromDataValue(value)
+        val valueQuery = for {
+          value <- DataValue.filter(_.id === valueId)
+          field <- value.dataFieldFk
+          record <- value.dataRecordFk
+        } yield (value, field, record)
+        val someValue = valueQuery.run.headOption
+        val apiValue = someValue map {
+          case (value: DataValueRow, field: DataFieldRow, record: DataRecordRow) => {
+            ApiDataValue.fromDataValue(value, Some(field), Some(record))
+          }
         }
 
         complete {
@@ -359,33 +388,43 @@ trait DataService extends HttpService with DatabaseInfo {
 
   }
 
-  /*
-   * Batch-insert data values as a list
-   */
-  def storeValueListApi = path("value" / "list") {
-    post {
-      entity(as[Seq[ApiDataValue]]) { values =>
-        db.withSession { implicit session =>
-          val dataValues = values.map { value =>
-            DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.fieldId, value.recordId)
-          }
 
-          val insertedValues = Try((DataValue returning DataValue) ++= dataValues)
+  def createValue(value: ApiDataValue, maybeFieldId: Option[Int], maybeRecordId: Option[Int])(implicit session: Session): Try[ApiDataValue] = {
+    // find field ID either from the function parameter or from within the value structure
+    val someFieldId = (maybeFieldId, value.field) match {
+      case (Some(id), _) =>
+        Some(id)
+      case (None, Some(ApiDataField(Some(id), _, _, _, _, _))) =>
+        Some(id)
+      case _ =>
+        None
+    }
 
-          val apiValues = insertedValues map { data =>
-            data.map(ApiDataValue.fromDataValue)
-          }
+    // find record ID either from the function parameter or from within the value structure
+    val someRecordId = (maybeRecordId, value.record) match {
+      case (Some(id), _) =>
+        Some(id)
+      case (None, Some(ApiDataRecord(Some(id), _, _, _, _))) =>
+        Some(id)
+      case _ =>
+        None
+    }
 
-          complete {
-            apiValues match {
-              case Success(response) =>
-                (Created, response)
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-        }
-      }
+
+    val maybeNewValue = (someFieldId, someRecordId) match {
+      case (Some(fieldId), Some(recordId)) =>
+        Success(DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, fieldId, recordId))
+      case (None, _) =>
+        Failure(new IllegalArgumentException("Correct field must be set for value to be inserted into"))
+      case (_, None) =>
+        Failure(new IllegalArgumentException("Correct record must be set for value to be inserted as part of"))
+    }
+    val insertedValue = maybeNewValue flatMap { newValue =>
+      Try((DataValue returning DataValue) += newValue)
+    }
+
+    insertedValue map { inserted =>
+      ApiDataValue.fromDataValueApi(inserted, value.field, value.record)
     }
   }
 

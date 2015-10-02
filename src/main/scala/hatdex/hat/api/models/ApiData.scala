@@ -65,14 +65,28 @@ case class ApiDataValue(
     dateCreated: Option[LocalDateTime],
     lastUpdated: Option[LocalDateTime],
     value: String,
-    fieldId: Int,
-    recordId: Int)
+    field: Option[ApiDataField],
+    record: Option[ApiDataRecord])
 
 object ApiDataValue {
-  def fromDataValue(value: DataValueRow) = {
-    new ApiDataValue(
+  // Can construct the value object with only value info (e.g. outbound, when part of record and field anyway)
+  def fromDataValue(value: DataValueRow): ApiDataValue = {
+    ApiDataValue(
       Some(value.id), Some(value.dateCreated), Some(value.lastUpdated),
-      value.value, value.fieldId, value.recordId
+      value.value, None, None
     )
+  }
+  // Or construct the value object with value, field and record info (e.g. inbound, when determining where to insert)
+  def fromDataValue(value: DataValueRow, maybeField: Option[DataFieldRow], maybeRecord: Option[DataRecordRow]): ApiDataValue = {
+    val maybeApiRecord = maybeRecord map { record =>
+      ApiDataRecord.fromDataRecord(record)(None)
+    }
+    ApiDataValue(Some(value.id), Some(value.dateCreated), Some(value.lastUpdated),
+      value.value, maybeField.map(ApiDataField.fromDataField), maybeApiRecord)
+  }
+
+  def fromDataValueApi(value: DataValueRow, maybeApiField: Option[ApiDataField], maybeApiRecord: Option[ApiDataRecord]): ApiDataValue = {
+    ApiDataValue(Some(value.id), Some(value.dateCreated), Some(value.lastUpdated),
+      value.value, maybeApiField, maybeApiRecord)
   }
 }

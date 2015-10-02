@@ -183,12 +183,12 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
 
       // Batch-fill it with data
       val dataValues = Seq(
-        new ApiDataValue(None, None, None, "testValue1", dataField.id.get, record.id.get),
-        new ApiDataValue(None, None, None, "testValue2", dataSubfield1.id.get, record.id.get),
-        new ApiDataValue(None, None, None, "testValue3", dataSubfield2.id.get, record.id.get)
+        new ApiDataValue(None, None, None, "testValue1", Some(dataField), None),
+        new ApiDataValue(None, None, None, "testValue2", Some(dataSubfield1), None),
+        new ApiDataValue(None, None, None, "testValue3", Some(dataSubfield2), None)
       )
 
-      HttpRequest(POST, "/value/list", entity = HttpEntity(MediaTypes.`application/json`, dataValues.toJson.toString)) ~>
+      HttpRequest(POST, s"/record/${record.id.get}/values", entity = HttpEntity(MediaTypes.`application/json`, dataValues.toJson.toString)) ~>
         storeValueListApi ~> check {
         response.status should be equalTo Created
       }
@@ -203,9 +203,9 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
 
       // Fill it with data one-by-one
       val dataValues2 = Seq(
-        new ApiDataValue(None, None, None, "testValue2-1", dataField.id.get, record2.id.get),
-        new ApiDataValue(None, None, None, "testValue2-2", dataSubfield1.id.get, record2.id.get),
-        new ApiDataValue(None, None, None, "testValue2-3", dataSubfield2.id.get, record2.id.get)
+        new ApiDataValue(None, None, None, "testValue2-1", Some(dataField), Some(record2)),
+        new ApiDataValue(None, None, None, "testValue2-2", Some(dataSubfield1), Some(record2)),
+        new ApiDataValue(None, None, None, "testValue2-3", Some(dataSubfield2), Some(record2))
       )
 
       dataValues2 map { dataValue =>

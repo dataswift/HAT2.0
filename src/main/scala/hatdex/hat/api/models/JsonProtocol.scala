@@ -79,7 +79,7 @@ object JsonProtocol extends DefaultJsonProtocol with UuidMarshalling {
   }
 
   // Data
-  implicit val apiDataValueFormat = jsonFormat6(ApiDataValue.apply)
+  implicit val apiDataValueFormat: RootJsonFormat[ApiDataValue] = rootFormat(lazyFormat(jsonFormat6(ApiDataValue.apply)))
   implicit val dataFieldformat = jsonFormat6(ApiDataField.apply)
   // Need to go via "lazyFormat" for recursive types
   implicit val virtualTableFormat: RootJsonFormat[ApiDataTable] = rootFormat(lazyFormat(jsonFormat7(ApiDataTable.apply)))
