@@ -1,4 +1,0 @@
- FieldResponse:
-    allOf:
-    - $ref: '#/definitions/Field'
-    - $ref: '#/definitions/TimeStructure'

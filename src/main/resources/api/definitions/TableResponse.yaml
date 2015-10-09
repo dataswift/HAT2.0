@@ -1,5 +1,0 @@
-  TableResponse:
-    description: Table response object
-    allOf:
-    - $ref: '#/definitions/Table'
-    - $ref: '#/definitions/TimeStructure'

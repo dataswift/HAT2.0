@@ -1238,6 +1238,26 @@ CREATE TABLE public.bundle_propertyslicecondition (
                 CONSTRAINT bundle_propertyslicecondition_pk PRIMARY KEY (id)
 );
 
+CREATE TABLE public.user_user (
+  user_id      UUID      NOT NULL,
+  date_created TIMESTAMP NOT NULL,
+  last_updated TIMESTAMP NOT NULL,
+  email        VARCHAR   NOT NULL,
+  pass         VARCHAR,
+  name         VARCHAR   NOT NULL,
+  role         VARCHAR   NOT NULL,
+  CONSTRAINT user_id_pk PRIMARY KEY (user_id)
+);
+
+CREATE TABLE public.user_access_token (
+  access_token VARCHAR NOT NULL,
+  user_id      UUID    NOT NULL,
+  CONSTRAINT access_token_pk PRIMARY KEY (access_token),
+  CONSTRAINT user_fk FOREIGN KEY (user_id) REFERENCES public.user_user (user_id)
+  ON DELETE NO ACTION
+  ON UPDATE NO ACTION
+);
+
 
 ALTER SEQUENCE public.bundle_propertyslicecondition_id_seq OWNED BY public.bundle_propertyslicecondition.id;
 

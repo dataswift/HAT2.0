@@ -1,7 +1,0 @@
-  Relationship:
-    description: 'The type of the relationship between two tables. Currently only relationship type "owns" is supported.'
-    properties:
-      relationshipType:
-        type: string
-        description: 'The type of relationship between two entities (e.g. one entity "owns" another)'
-        example: "owns"

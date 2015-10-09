@@ -1,4 +1,0 @@
-  PropertyResponse:
-    allOf:
-    - $ref: '#/definitions/Property'
-    - $ref: '#/definitions/TimeStructure'

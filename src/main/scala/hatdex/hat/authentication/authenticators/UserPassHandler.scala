@@ -1,5 +1,7 @@
 package hatdex.hat.authentication.authenticators
 
+import hatdex.hat.authentication.models.User
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import hatdex.hat.authentication._

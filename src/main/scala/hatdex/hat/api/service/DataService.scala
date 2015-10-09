@@ -1,6 +1,8 @@
 package hatdex.hat.api.service
 
 import hatdex.hat.Utils
+import hatdex.hat.api.json.JsonProtocol
+import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import hatdex.hat.api.DatabaseInfo
@@ -9,39 +11,30 @@ import org.joda.time.LocalDateTime
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
-import hatdex.hat.authentication.{HatServiceAuthHandler, User, HatAuthHandler}
+import hatdex.hat.authentication.{HatServiceAuthHandler, HatAuthHandler}
 
 import scala.util.{Failure, Success, Try}
 
 // this trait defines our service behavior independently from the service actor
-trait DataService extends HttpService with DatabaseInfo {
-  import hatdex.hat.authentication.HatServiceAuthHandler._
+trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandler {
+
+//  import hatdex.hat.authentication.HatServiceAuthHandler._
 
   val routes = {
     pathPrefix("data") {
-      userPassHandler { implicit user: User =>
+      getFieldApi ~
+        getFieldValuesApi ~
+        getTableApi ~
+        getTableValuesApi ~
+        getRecordApi ~
+        getRecordValuesApi ~
+        getValueApi ~
         createTableApi ~
-          linkTableToTableApi ~
-          createFieldApi ~
-          createRecordApi ~
-          createValueApi ~
-          storeValueListApi ~
-          getFieldApi ~
-          getFieldValuesApi ~
-          getTableApi ~
-          getTableValuesApi ~
-          getRecordApi ~
-          getRecordValuesApi ~
-          getValueApi
-      } ~
-        accessTokenHandler { implicit user: User =>
-          createTableApi ~
-            linkTableToTableApi ~
-            createFieldApi ~
-            createRecordApi ~
-            createValueApi ~
-            storeValueListApi
-        }
+        linkTableToTableApi ~
+        createFieldApi ~
+        createRecordApi ~
+        createValueApi ~
+        storeValueListApi
     }
   }
 
@@ -51,30 +44,31 @@ trait DataService extends HttpService with DatabaseInfo {
    * Creates a new virtual table for storing arbitrary incoming data
    */
   def createTableApi = path("table") {
-    post {
-      entity(as[ApiDataTable]) { table =>
-        db.withSession { implicit session =>
-          val tableStructure = createTable(table)
+    (accessTokenHandler | userPassHandler) { implicit user: User =>
+      post {
+        entity(as[ApiDataTable]) { table =>
+          db.withSession { implicit session =>
+            val tableStructure = createTable(table)
 
-          complete {
-            tableStructure match {
-              case Success(structure) =>
-                (Created, structure)
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
+            complete {
+              tableStructure match {
+                case Success(structure) =>
+                  (Created, structure)
+                case Failure(e) =>
+                  (BadRequest, e.getMessage)
+              }
             }
           }
         }
       }
-
     }
   }
 
   /*
    * Marks provided table as a "child" of another, e.g. to created nested data structured
    */
-  def linkTableToTableApi = path("table" / IntNumber / "table" / IntNumber) {
-    (parentId: Int, childId: Int) =>
+  def linkTableToTableApi = path("table" / IntNumber / "table" / IntNumber) { (parentId: Int, childId: Int) =>
+    (accessTokenHandler | userPassHandler) { implicit user: User =>
       post {
         entity(as[ApiRelationship]) { relationship =>
           db.withSession { implicit session =>
@@ -91,13 +85,14 @@ trait DataService extends HttpService with DatabaseInfo {
           }
         }
       }
+    }
   }
 
   /*
    * Get specific table information. Includes all fields and sub-tables
    */
-  def getTableApi = path("table" / IntNumber) {
-    (tableId: Int) =>
+  def getTableApi = path("table" / IntNumber) { (tableId: Int) =>
+    userPassHandler { implicit user: User =>
       get {
         db.withSession { implicit session =>
           complete {
@@ -105,10 +100,11 @@ trait DataService extends HttpService with DatabaseInfo {
           }
         }
       }
+    }
   }
 
-  def getTableValuesApi = path("table" / IntNumber / "values") {
-    (tableId: Int) =>
+  def getTableValuesApi = path("table" / IntNumber / "values") { (tableId: Int) =>
+    userPassHandler { implicit user: User =>
       get {
         db.withSession { implicit session =>
           val someTableValues = getTableValues(tableId)
@@ -123,6 +119,245 @@ trait DataService extends HttpService with DatabaseInfo {
           }
         }
       }
+    }
+  }
+
+  /*
+   * Create a new field in a virtual table
+   */
+  def createFieldApi = path("field") {
+    (accessTokenHandler | userPassHandler) { implicit user: User =>
+    post {
+      entity(as[ApiDataField]) { field =>
+        db.withSession { implicit session =>
+          val insertedField = createField(field)
+          complete {
+            insertedField match {
+              case Success(field) =>
+                (Created, field)
+              case Failure(e) =>
+                (BadRequest, e.getMessage)
+            }
+          }
+        }
+      }
+    }
+    }
+  }
+
+  /*
+   * Get field (information only) by ID
+   */
+  def getFieldApi = path("field" / IntNumber) { (fieldId: Int) =>
+    userPassHandler { implicit user: User =>
+      get {
+        db.withSession { implicit session =>
+          complete {
+            retrieveDataFieldId(fieldId) match {
+              case Some(field) =>
+                field
+              case None =>
+                (NotFound, "Data field $fieldId not found")
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /*
+   * Get data stored in a specific field.
+   * Returns all Data Values stored in the field
+   */
+  def getFieldValuesApi = path("field" / IntNumber / "values") { (fieldId: Int) =>
+    userPassHandler { implicit user: User =>
+      get {
+        db.withSession { implicit session =>
+          complete {
+            getFieldValues(fieldId) match {
+              case Some(field) =>
+                field
+              case None =>
+                (NotFound, s"Data field $fieldId not found")
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /*
+   * Insert a new, potentially named, data record
+   */
+  def createRecordApi = path("record") {
+    (accessTokenHandler | userPassHandler) { implicit user: User =>
+      post {
+        entity(as[ApiDataRecord]) { record =>
+          db.withSession { implicit session =>
+            val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), record.name)
+            val recordId = Try((DataRecord returning DataRecord.map(_.id)) += newRecord)
+            complete {
+              recordId match {
+                case Success(id) =>
+                  (Created, record.copy(id = Some(id)))
+                case Failure(e) =>
+                  (BadRequest, e.getMessage)
+              }
+
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /*
+   * Get record
+   */
+  def getRecordApi = path("record" / IntNumber) { (recordId: Int) =>
+    userPassHandler { implicit user: User =>
+      get {
+        db.withSession { implicit session =>
+          val record = DataRecord.filter(_.id === recordId).run.headOption
+
+          complete {
+            record match {
+              case Some(dataRecord) =>
+                ApiDataRecord.fromDataRecord(dataRecord)(None)
+              case None =>
+                (NotFound, s"Data Record $recordId not found")
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /*
+   * Get values associated with a record.
+   * Constructs a hierarchy of fields and data within each field for the record
+   */
+  def getRecordValuesApi = path("record" / IntNumber / "values") { (recordId: Int) =>
+    userPassHandler { implicit user: User =>
+      get {
+        db.withSession { implicit session =>
+          // Retrieve joined Data Values, Fields and Tables
+          val fieldValuesTables = DataValue.filter(_.recordId === recordId) join
+            DataField on (_.fieldId === _.id) join
+            DataTable on (_._2.tableIdFk === _.id)
+
+          val result = fieldValuesTables.run
+
+          val structures = getStructures(result.map(_._2).map { table =>
+            ApiDataTable.fromDataTable(table)(None)(None)
+          })
+
+          val apiRecord: Option[ApiDataRecord] = structures match {
+            case Seq() =>
+              None
+            case _ =>
+              val values = result.map(_._1._1)
+              val valueMap = Map(values map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
+              val recordData = fillStructures(structures)(valueMap)
+
+              // Retrieve and prepare the record itself
+              val record = DataRecord.filter(_.id === recordId).run.head
+              Some(ApiDataRecord.fromDataRecord(record)(Some(recordData)))
+          }
+
+          complete {
+            apiRecord match {
+              case Some(dataRecord) =>
+                dataRecord
+              case None =>
+                (NotFound, s"Data Record $recordId not found")
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /*
+   * Batch-insert data values as a list
+   */
+  def storeValueListApi = path("record" / IntNumber / "values") { (recordId: Int) =>
+    (accessTokenHandler | userPassHandler) { implicit user: User =>
+      post {
+        entity(as[Seq[ApiDataValue]]) { values =>
+          db.withSession { implicit session =>
+            val maybeApiValues = values.map(x => createValue(x, None, Some(recordId)))
+            val apiValues = Utils.flatten(maybeApiValues)
+
+            complete {
+              apiValues match {
+                case Success(response) =>
+                  (Created, response)
+                case Failure(e) =>
+                  (BadRequest, e.getMessage)
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /*
+   * Create (insert) a new data value
+   */
+  def createValueApi = path("value") {
+    (accessTokenHandler | userPassHandler) { implicit user: User =>
+      post {
+        entity(as[ApiDataValue]) { value =>
+          db.withSession { implicit session =>
+            val inserted = createValue(value, None, None)
+
+            complete {
+              inserted match {
+                case Success(insertedValue) =>
+                  (Created, insertedValue)
+                case Failure(e) =>
+                  (BadRequest, e.getMessage)
+              }
+
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /*
+   * Retrieve a data value by ID
+   */
+  def getValueApi = path("value" / IntNumber) { (valueId: Int) =>
+    userPassHandler { implicit user: User =>
+      get {
+        db.withSession { implicit session =>
+          val valueQuery = for {
+            value <- DataValue.filter(_.id === valueId)
+            field <- value.dataFieldFk
+            record <- value.dataRecordFk
+          } yield (value, field, record)
+          val someValue = valueQuery.run.headOption
+          val apiValue = someValue map {
+            case (value: DataValueRow, field: DataFieldRow, record: DataRecordRow) => {
+              ApiDataValue.fromDataValue(value, Some(field), Some(record))
+            }
+          }
+
+          complete {
+            apiValue match {
+              case Some(response) =>
+                response
+              case None =>
+                (NotFound, s"Data value $valueId not found")
+            }
+          }
+        }
+      }
+    }
   }
 
   def getTableValues(tableId: Int)(implicit session: Session): Option[Iterable[ApiDataRecord]] = {
@@ -165,227 +400,6 @@ trait DataService extends HttpService with DatabaseInfo {
 
       dataRecords
     }
-  }
-
-  /*
-   * Create a new field in a virtual table
-   */
-  def createFieldApi = path("field") {
-    post {
-      entity(as[ApiDataField]) { field =>
-        db.withSession { implicit session =>
-          val insertedField = createField(field)
-          complete {
-            insertedField match {
-              case Success(field) =>
-                (Created, field)
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-        }
-      }
-    }
-  }
-
-  /*
-   * Get field (information only) by ID
-   */
-  def getFieldApi = path("field" / IntNumber){ (fieldId: Int) =>
-    get {
-      db.withSession { implicit session =>
-        complete {
-          retrieveDataFieldId(fieldId) match {
-            case Some(field) =>
-              field
-            case None =>
-              (NotFound, "Data field $fieldId not found")
-          }
-        }
-      }
-    }
-  }
-
-  /*
-   * Get data stored in a specific field.
-   * Returns all Data Values stored in the field
-   */
-  def getFieldValuesApi = path("field" / IntNumber / "values") { (fieldId: Int) =>
-    get {
-      db.withSession { implicit session =>
-        complete {
-          getFieldValues(fieldId) match {
-            case Some(field) =>
-              field
-            case None =>
-              (NotFound, s"Data field $fieldId not found")
-          }
-        }
-      }
-    }
-  }
-
-  /*
-   * Insert a new, potentially named, data record
-   */
-  def createRecordApi = path("record") {
-    post {
-      entity(as[ApiDataRecord]) { record =>
-        db.withSession { implicit session =>
-          val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), record.name)
-          val recordId = Try((DataRecord returning DataRecord.map(_.id)) += newRecord)
-          complete {
-            recordId match {
-              case Success(id) =>
-                (Created, record.copy(id = Some(id)))
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-
-          }
-        }
-      }
-    }
-  }
-
-  /*
-   * Get record
-   */
-  def getRecordApi = path("record" / IntNumber) { (recordId: Int) =>
-    get {
-      db.withSession { implicit session =>
-        val record = DataRecord.filter(_.id === recordId).run.headOption
-
-        complete {
-          record match {
-            case Some(dataRecord) =>
-              ApiDataRecord.fromDataRecord(dataRecord)(None)
-            case None =>
-              (NotFound, s"Data Record $recordId not found")
-          }
-        }
-      }
-    }
-  }
-
-  /*
-   * Get values associated with a record.
-   * Constructs a hierarchy of fields and data within each field for the record
-   */
-  def getRecordValuesApi = path("record" / IntNumber / "values") { (recordId: Int) =>
-    get {
-      db.withSession { implicit session =>
-        // Retrieve joined Data Values, Fields and Tables
-        val fieldValuesTables =  DataValue.filter(_.recordId === recordId) join
-            DataField on (_.fieldId === _.id) join
-            DataTable on (_._2.tableIdFk === _.id)
-
-        val result = fieldValuesTables.run
-
-        val structures = getStructures(result.map(_._2).map{ table =>
-          ApiDataTable.fromDataTable(table)(None)(None)
-        })
-
-        val apiRecord: Option[ApiDataRecord] = structures match {
-          case Seq() =>
-            None
-          case _ =>
-            val values = result.map(_._1._1)
-            val valueMap = Map(values map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
-            val recordData = fillStructures(structures)(valueMap)
-
-            // Retrieve and prepare the record itself
-            val record = DataRecord.filter(_.id === recordId).run.head
-            Some(ApiDataRecord.fromDataRecord(record)(Some(recordData)))
-        }
-
-        complete {
-          apiRecord match {
-            case Some(dataRecord) =>
-              dataRecord
-            case None =>
-              (NotFound, s"Data Record $recordId not found")
-          }
-        }
-      }
-    }
-  }
-
-  /*
-   * Batch-insert data values as a list
-   */
-  def storeValueListApi = path("record" / IntNumber / "values") { (recordId: Int) =>
-    post {
-      entity(as[Seq[ApiDataValue]]) { values =>
-        db.withSession { implicit session =>
-          val maybeApiValues = values.map(x => createValue(x, None, Some(recordId)))
-          val apiValues = Utils.flatten(maybeApiValues)
-
-          complete {
-            apiValues match {
-              case Success(response) =>
-                (Created, response)
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-        }
-      }
-    }
-  }
-
-  /*
-   * Create (insert) a new data value
-   */
-  def createValueApi = path("value") {
-    post {
-      entity(as[ApiDataValue]) { value =>
-        db.withSession { implicit session =>
-          val inserted = createValue(value, None, None)
-
-          complete {
-            inserted match {
-              case Success(insertedValue) =>
-                (Created, insertedValue)
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-
-          }
-        }
-      }
-    }
-  }
-
-  /*
-   * Retrieve a data value by ID
-   */
-  def getValueApi = path("value" / IntNumber) {  (valueId: Int) =>
-    get {
-      db.withSession { implicit session =>
-        val valueQuery = for {
-          value <- DataValue.filter(_.id === valueId)
-          field <- value.dataFieldFk
-          record <- value.dataRecordFk
-        } yield (value, field, record)
-        val someValue = valueQuery.run.headOption
-        val apiValue = someValue map {
-          case (value: DataValueRow, field: DataFieldRow, record: DataRecordRow) => {
-            ApiDataValue.fromDataValue(value, Some(field), Some(record))
-          }
-        }
-
-        complete {
-          apiValue match {
-            case Some(response) =>
-              response
-            case None =>
-              (NotFound, s"Data value $valueId not found")
-          }
-        }
-      }
-    }
-
   }
 
 
@@ -445,7 +459,7 @@ trait DataService extends HttpService with DatabaseInfo {
         val maybeSubtables = Utils.flatten(insertedSubtables)
         val links = maybeSubtables map { tables =>
           // Link the table to all its subtables
-          tables.map( x => Try(linkTables(insertedTable.id, x.id.get, ApiRelationship("parent child"))) )
+          tables.map(x => Try(linkTables(insertedTable.id, x.id.get, ApiRelationship("parent child"))))
         }
         maybeSubtables
       }
@@ -478,7 +492,7 @@ trait DataService extends HttpService with DatabaseInfo {
   }
 
 
-  def createField(field: ApiDataField, maybeTableId: Option[Int]=None)(implicit session: Session): Try[ApiDataField] = {
+  def createField(field: ApiDataField, maybeTableId: Option[Int] = None)(implicit session: Session): Try[ApiDataField] = {
     val maybeNewField = (maybeTableId, field.tableId) match {
       case (Some(tableId), _) =>
         Success(DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.name, tableId))
@@ -552,7 +566,7 @@ trait DataService extends HttpService with DatabaseInfo {
 
   def getStructures(tables: Seq[ApiDataTable])(implicit session: Session): Seq[ApiDataTable] = {
     // Get all root tables from the given ApiDataTables
-    val roots = tables.map{ table =>
+    val roots = tables.map { table =>
       table.id match {
         case Some(id) =>
           getRootTables(id)
@@ -611,7 +625,7 @@ trait DataService extends HttpService with DatabaseInfo {
 
   }
 
-  private def getStructureFields(structure : ApiDataTable) : Set[Int] = {
+  private def getStructureFields(structure: ApiDataTable): Set[Int] = {
     val fieldSet = structure.fields match {
       case Some(fields) =>
         fields.flatMap(_.id).toSet

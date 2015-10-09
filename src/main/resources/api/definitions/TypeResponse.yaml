@@ -1,4 +1,0 @@
-TypeResponse:
-    allOf:
-    - $ref: '#/definitions/Type'
-    - $ref: '#/definitions/TimeStructure'

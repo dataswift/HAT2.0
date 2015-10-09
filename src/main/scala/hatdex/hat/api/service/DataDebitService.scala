@@ -1,8 +1,11 @@
 package hatdex.hat.api.service
 
 import hatdex.hat.api.DatabaseInfo
+import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
-import hatdex.hat.authentication.User
+import hatdex.hat.authentication.HatServiceAuthHandler
+import hatdex.hat.authentication.authorization.DataDebitAuthorization
+import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
@@ -14,23 +17,19 @@ import java.util.UUID
 import scala.util.{Failure, Success, Try}
 
 // this trait defines our service behavior independently from the service actor
-trait DataDebitService extends HttpService with DatabaseInfo {
-
-  import hatdex.hat.authentication.HatServiceAuthHandler._
+trait DataDebitService extends HttpService with DatabaseInfo with HatServiceAuthHandler {
 
   val bundleService: BundleService
 
   val routes = {
     pathPrefix("dataDebit") {
-      accessTokenHandler { implicit user: User =>
+      (accessTokenHandler | userPassHandler) { implicit user: User =>
         proposeDataDebitApi ~
           retrieveDataDebitValuesApi
       } ~
         userPassHandler { implicit user: User =>
           enableDataDebitApi ~
-            disableDataDebitApi ~
-            proposeDataDebitApi ~
-            retrieveDataDebitValuesApi
+            disableDataDebitApi
         }
     }
   }
@@ -48,7 +47,7 @@ trait DataDebitService extends HttpService with DatabaseInfo {
               val dataDebitKey = UUID.randomUUID()
               val newDebit = DataDebitRow(dataDebitKey, LocalDateTime.now(), LocalDateTime.now(), debit.name,
                 debit.startDate, debit.endDate, debit.rolling, debit.sell, debit.price,
-                enabled = false, "owner", user.userId,
+                enabled = false, "owner", user.userId.toString,
                 debit.bundleContextless.flatMap(bundle => bundle.id),
                 None,
                 "contextless"
@@ -86,7 +85,7 @@ trait DataDebitService extends HttpService with DatabaseInfo {
       db.withSession { implicit session =>
         val dataDebit = DataDebit.filter(_.dataDebitKey === dataDebitKey).run.headOption
 
-        authorize(hasPermissionModifyDataDebit(dataDebit)) {
+        authorize(DataDebitAuthorization.hasPermissionModifyDataDebit(dataDebit)) {
           val result = dataDebit map { debit =>
             Try(
               DataDebit.filter(_.dataDebitKey === debit.dataDebitKey)
@@ -116,7 +115,7 @@ trait DataDebitService extends HttpService with DatabaseInfo {
       db.withSession { implicit session =>
         val dataDebit = DataDebit.filter(_.dataDebitKey === dataDebitKey).run.headOption
 
-        authorize(hasPermissionModifyDataDebit(dataDebit)) {
+        authorize(DataDebitAuthorization.hasPermissionModifyDataDebit(dataDebit)) {
           val result = dataDebit map { debit =>
             Try(
               DataDebit.filter(_.dataDebitKey === debit.dataDebitKey)
@@ -146,7 +145,7 @@ trait DataDebitService extends HttpService with DatabaseInfo {
       db.withSession { implicit session =>
         val dataDebit = DataDebit.filter(_.dataDebitKey === dataDebitKey).run.headOption
 
-        authorize(hasPermissionAccessDataDebit(dataDebit)) {
+        authorize(DataDebitAuthorization.hasPermissionAccessDataDebit(dataDebit)) {
           dataDebit match {
             case Some(debit) =>
               (debit.kind, debit.bundleContextlessId, debit.bundleContextId) match {
@@ -177,24 +176,4 @@ trait DataDebitService extends HttpService with DatabaseInfo {
       }
     }
   }
-
-  private def hasPermissionAccessDataDebit(dataDebit: Option[DataDebitRow])(implicit user: User): Boolean = {
-    dataDebit match {
-      case Some(debit) =>
-        (debit.recipientId equals user.userId) && debit.enabled
-      case None =>
-        false
-    }
-  }
-
-  private def hasPermissionModifyDataDebit(dataDebit: Option[DataDebitRow])(implicit user: User): Boolean = {
-    user.role match {
-      case "owner" =>
-        true
-      case _ =>
-        false
-    }
-  }
-
-
 }

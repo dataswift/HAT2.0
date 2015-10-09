@@ -1,5 +1,6 @@
 package hatdex.hat.api.service
 
+import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import hatdex.hat.api.TestDataCleanup

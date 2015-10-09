@@ -1,7 +1,8 @@
 package hatdex.hat.api.service
 
-import hatdex.hat.authentication.HatServiceAuthHandler._
-import hatdex.hat.authentication.User
+import hatdex.hat.api.json.JsonProtocol
+import hatdex.hat.authentication.HatServiceAuthHandler
+import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import hatdex.hat.api.DatabaseInfo
@@ -16,7 +17,7 @@ import scala.util.{Failure, Success, Try}
 
 
 // this trait defines our service behavior independently from the service actor
-trait PropertyService extends HttpService with DatabaseInfo {
+trait PropertyService extends HttpService with DatabaseInfo with HatServiceAuthHandler {
 
   val dataService: DataService
 

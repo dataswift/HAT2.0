@@ -1,5 +1,7 @@
 package hatdex.hat.api.service
 
+import hatdex.hat.api.json.JsonProtocol
+import hatdex.hat.authentication.HatServiceAuthHandler
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import hatdex.hat.api.DatabaseInfo
@@ -12,7 +14,7 @@ import spray.routing._
 
 import scala.util.{Failure, Success, Try}
 
-trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo {
+trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo with HatServiceAuthHandler {
 
   import JsonProtocol._
 

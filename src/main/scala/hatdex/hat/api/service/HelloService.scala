@@ -1,7 +1,8 @@
 package hatdex.hat.api.service
 
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
-import hatdex.hat.authentication.{HatServiceAuthHandler, User, HatAuthHandler}
+import hatdex.hat.authentication.models.User
+import hatdex.hat.authentication.HatServiceAuthHandler
 import spray.http.MediaTypes._
 import spray.routing.HttpService
 import spray.routing.authentication.{BasicAuth, UserPass}
@@ -9,9 +10,8 @@ import spray.routing.authentication.{BasicAuth, UserPass}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait HelloService extends HttpService {
-  import hatdex.hat.authentication.HatServiceAuthHandler._
-  val routes = home ~ docs ~ accessTokenHat ~ userPassHat
+trait HelloService extends HttpService with HatServiceAuthHandler{
+  val routes = home ~ docs ~ authHat
 
   def home =
     path("") {
@@ -44,11 +44,7 @@ trait HelloService extends HttpService {
       }
     }
 
-  def accessTokenHat = accessTokenHandler { implicit user: User =>
-    myhat
-  }
-
-  def userPassHat = userPassHandler { implicit user: User =>
+  def authHat = (accessTokenHandler | userPassHandler) { implicit user: User =>
     myhat
   }
 

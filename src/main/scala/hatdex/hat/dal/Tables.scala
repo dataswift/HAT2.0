@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{GetResult => GR}
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema = Array(BundleBundletobundlecrossref.schema, BundleContext.schema, BundleContextless.schema, BundleJoin.schema, BundlePropertyrecordCrossref.schema, BundlePropertyslice.schema, BundlePropertyslicecondition.schema, BundleTable.schema, BundleTableslice.schema, BundleTableslicecondition.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataValue.schema, Entity.schema, EntitySelection.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema).reduceLeft(_ ++ _)
+  lazy val schema = Array(BundleBundletobundlecrossref.schema, BundleContext.schema, BundleContextless.schema, BundleJoin.schema, BundlePropertyrecordCrossref.schema, BundlePropertyslice.schema, BundlePropertyslicecondition.schema, BundleTable.schema, BundleTableslice.schema, BundleTableslicecondition.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataValue.schema, Entity.schema, EntitySelection.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -2692,4 +2692,68 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table ThingsThingtothingcrossref */
   lazy val ThingsThingtothingcrossref = new TableQuery(tag => new ThingsThingtothingcrossref(tag))
+
+  /** Entity class storing rows of table UserAccessToken
+   *  @param accessToken Database column access_token SqlType(varchar), PrimaryKey
+   *  @param userId Database column user_id SqlType(uuid) */
+  case class UserAccessTokenRow(accessToken: String, userId: java.util.UUID)
+  /** GetResult implicit for fetching UserAccessTokenRow objects using plain SQL queries */
+  implicit def GetResultUserAccessTokenRow(implicit e0: GR[String], e1: GR[java.util.UUID]): GR[UserAccessTokenRow] = GR{
+    prs => import prs._
+    UserAccessTokenRow.tupled((<<[String], <<[java.util.UUID]))
+  }
+  /** Table description of table user_access_token. Objects of this class serve as prototypes for rows in queries. */
+  class UserAccessToken(_tableTag: Tag) extends Table[UserAccessTokenRow](_tableTag, "user_access_token") {
+    def * = (accessToken, userId) <> (UserAccessTokenRow.tupled, UserAccessTokenRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(accessToken), Rep.Some(userId)).shaped.<>({r=>import r._; _1.map(_=> UserAccessTokenRow.tupled((_1.get, _2.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column access_token SqlType(varchar), PrimaryKey */
+    val accessToken: Rep[String] = column[String]("access_token", O.PrimaryKey)
+    /** Database column user_id SqlType(uuid) */
+    val userId: Rep[java.util.UUID] = column[java.util.UUID]("user_id")
+
+    /** Foreign key referencing UserUser (database name user_fk) */
+    lazy val userUserFk = foreignKey("user_fk", userId, UserUser)(r => r.userId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table UserAccessToken */
+  lazy val UserAccessToken = new TableQuery(tag => new UserAccessToken(tag))
+
+  /** Entity class storing rows of table UserUser
+   *  @param userId Database column user_id SqlType(uuid), PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param lastUpdated Database column last_updated SqlType(timestamp)
+   *  @param email Database column email SqlType(varchar)
+   *  @param pass Database column pass SqlType(varchar), Default(None)
+   *  @param name Database column name SqlType(varchar)
+   *  @param role Database column role SqlType(varchar) */
+  case class UserUserRow(userId: java.util.UUID, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, email: String, pass: Option[String] = None, name: String, role: String)
+  /** GetResult implicit for fetching UserUserRow objects using plain SQL queries */
+  implicit def GetResultUserUserRow(implicit e0: GR[java.util.UUID], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Option[String]]): GR[UserUserRow] = GR{
+    prs => import prs._
+    UserUserRow.tupled((<<[java.util.UUID], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<?[String], <<[String], <<[String]))
+  }
+  /** Table description of table user_user. Objects of this class serve as prototypes for rows in queries. */
+  class UserUser(_tableTag: Tag) extends Table[UserUserRow](_tableTag, "user_user") {
+    def * = (userId, dateCreated, lastUpdated, email, pass, name, role) <> (UserUserRow.tupled, UserUserRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(userId), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(email), pass, Rep.Some(name), Rep.Some(role)).shaped.<>({r=>import r._; _1.map(_=> UserUserRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column user_id SqlType(uuid), PrimaryKey */
+    val userId: Rep[java.util.UUID] = column[java.util.UUID]("user_id", O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column last_updated SqlType(timestamp) */
+    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
+    /** Database column email SqlType(varchar) */
+    val email: Rep[String] = column[String]("email")
+    /** Database column pass SqlType(varchar), Default(None) */
+    val pass: Rep[Option[String]] = column[Option[String]]("pass", O.Default(None))
+    /** Database column name SqlType(varchar) */
+    val name: Rep[String] = column[String]("name")
+    /** Database column role SqlType(varchar) */
+    val role: Rep[String] = column[String]("role")
+  }
+  /** Collection-like TableQuery object for table UserUser */
+  lazy val UserUser = new TableQuery(tag => new UserUser(tag))
 }

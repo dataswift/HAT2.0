@@ -1,9 +1,0 @@
-  FieldValues:
-    allOf:
-    - $ref: '#/definitions/FieldResponse'
-    - properties:
-        values:
-          type: array
-          description: Array of values associated with the field. Only set for outbound API calls
-          items:
-            $ref: '#/definitions/Value'
