@@ -1238,16 +1238,28 @@ CREATE TABLE public.bundle_propertyslicecondition (
                 CONSTRAINT bundle_propertyslicecondition_pk PRIMARY KEY (id)
 );
 
-CREATE TABLE public.user_user (
-  user_id      UUID      NOT NULL,
-  date_created TIMESTAMP NOT NULL,
-  last_updated TIMESTAMP NOT NULL,
-  email        VARCHAR   NOT NULL,
-  pass         VARCHAR,
-  name         VARCHAR   NOT NULL,
-  role         VARCHAR   NOT NULL,
-  CONSTRAINT user_id_pk PRIMARY KEY (user_id)
-);
+-- ----------------------------
+--  Table structure for user_user
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."user_user";
+CREATE TABLE "public"."user_user" (
+  "user_id" uuid NOT NULL,
+  "date_created" timestamp(6) NOT NULL,
+  "last_updated" timestamp(6) NOT NULL,
+  "email" varchar NOT NULL COLLATE "default",
+  "pass" varchar COLLATE "default",
+  "name" varchar NOT NULL COLLATE "default",
+  "role" varchar NOT NULL COLLATE "default",
+  "enabled" bool NOT NULL DEFAULT false
+)
+WITH (OIDS=FALSE);
+ALTER TABLE "public"."user_user" OWNER TO "andrius";
+
+-- ----------------------------
+--  Primary key structure for table user_user
+-- ----------------------------
+ALTER TABLE "public"."user_user" ADD PRIMARY KEY ("user_id") NOT DEFERRABLE INITIALLY IMMEDIATE;
+
 
 CREATE TABLE public.user_access_token (
   access_token VARCHAR NOT NULL,
