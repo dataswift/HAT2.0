@@ -4,6 +4,7 @@ import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.authentication.HatAuthTestHandler
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
+import hatdex.hat.api.service.jsonExamples.DataExamples
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
@@ -270,65 +271,3 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
   }
 }
 
-object DataExamples {
-  val tableKitchen =
-    """{
-      | "name": "kitchen",
-      | "source": "fibaro"
-    }""".stripMargin
-
-  val tableKitchenElectricity =
-    """{
-      "name": "kitchenElectricity",
-      "source": "fibaro"
-    }"""
-
-  val relationshipParent =
-    """{
-      | "relationshipType": "parent child"
-    }""".stripMargin
-
-  val testField =
-    """
-      |{
-      | "name": "tableTestField",
-      | "tableId": 0
-      |}
-    """.stripMargin
-
-  val nestedTableKitchen =
-    """
-      |{
-      | "name": "kitchen",
-      | "source": "fibaro",
-      | "fields": [
-      |   { "name": "tableTestField" },
-      |   { "name": "tableTestField2" }
-      | ],
-      | "subTables": [
-      |   {
-      |     "name": "kitchenElectricity",
-      |     "source": "fibaro",
-      |     "fields": [
-      |       {
-      |         "name": "tableTestField3"
-      |       },
-      |       {
-      |         "name": "tableTestField4"
-      |       }
-      |     ]
-      |   }
-      | ]
-      |}
-    """.stripMargin
-
-  val testRecord =
-    """{
-      | "name": "testRecord 1"
-  }""".stripMargin
-
-  val testRecord2 =
-    """{
-      | "name": "testRecord 2"
-  }""".stripMargin
-}

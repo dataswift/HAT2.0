@@ -23,7 +23,7 @@ object HatAuthHandler extends DatabaseInfo {
       db.withSession { implicit session:Session =>
         val mayBeUser = for {
           token <- mayBeToken
-          user <- UserAccessToken.filter(_.accessToken === token).flatMap(_.userUserFk).firstOption
+          user <- UserAccessToken.filter(_.accessToken === token).flatMap(_.userUserFk).filter(_.enabled === true).firstOption
         } yield {
             User(user.userId, user.email, None, user.name, user.role)
           }
@@ -42,7 +42,7 @@ object HatAuthHandler extends DatabaseInfo {
         val mayBeUser = for {
           email <- emailOpt
           password <- passwordOpt
-          user <- UserUser.filter(_.email === email).filter(_.role === "owner").firstOption
+          user <- UserUser.filter(_.email === email).filter(_.role === "owner").filter(_.enabled === true).firstOption
           if BCrypt.checkpw(password, user.pass.getOrElse(""))
         } yield {
             User(user.userId, user.email, None, user.name, user.role)
@@ -62,7 +62,7 @@ object HatAuthHandler extends DatabaseInfo {
         val mayBeUser = for {
           email <- emailOpt
           password <- passwordOpt
-          user <- UserUser.filter(_.email === email).firstOption
+          user <- UserUser.filter(_.email === email).filter(_.enabled === true).firstOption
           if BCrypt.checkpw(password, user.pass.getOrElse(""))
         } yield {
             User(user.userId, user.email, None, user.name, user.role)

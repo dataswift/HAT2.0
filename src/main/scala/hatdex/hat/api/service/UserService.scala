@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 trait UserService extends HttpService with DatabaseInfo with HatServiceAuthHandler {
   val routes = {
     pathPrefix("users") {
-      createApiUserAccount ~ getAccessToken
+      createApiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount
     }
   }
 
@@ -44,7 +44,7 @@ trait UserService extends HttpService with DatabaseInfo with HatServiceAuthHandl
                 case Some(userRole) =>
                   val newUserDb = UserUserRow(newUser.userId, LocalDateTime.now(), LocalDateTime.now(),
                     newUser.email, newUser.pass, // The password is assumed to come in hashed, hence stored as is!
-                    newUser.name, userRole)
+                    newUser.name, userRole, enabled = true)
                   complete {
                     val createdUser = Try((UserUser returning UserUser) += newUserDb)
                     createdUser match {
@@ -66,9 +66,51 @@ trait UserService extends HttpService with DatabaseInfo with HatServiceAuthHandl
     }
   }
 
-  //  def enableUserAccount = {}
-  //
-  //  def suspendUserAccount = {}
+  def suspendUserAccount = path("user" / JavaUUID / "disable") { userId: UUID =>
+    accessTokenHandler { implicit systemUser: User =>
+      authorize(UserAuthorization.hasPermissionDisableUser) {
+        put {
+          db.withSession { implicit session =>
+            complete {
+              Try(
+                UserUser.filter(_.userId === userId)
+                  .map(dd => (dd.enabled, dd.lastUpdated))
+                  .update((false, LocalDateTime.now()))
+              ) match {
+                case Success(_) =>
+                  OK
+                case Failure(e) =>
+                  (BadRequest, e.getMessage)
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  def enableUserAccount = path("user" / JavaUUID / "enable") { userId: UUID =>
+    accessTokenHandler { implicit systemUser: User =>
+      authorize(UserAuthorization.hasPermissionEnableUser) {
+        put {
+          db.withSession { implicit session =>
+            complete {
+              Try(
+                UserUser.filter(_.userId === userId)
+                  .map(dd => (dd.enabled, dd.lastUpdated))
+                  .update((true, LocalDateTime.now()))
+              ) match {
+                case Success(_) =>
+                  OK
+                case Failure(e) =>
+                  (BadRequest, e.getMessage)
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 
   def getAccessToken = path("access_token") {
     // Any password-authenticated user (not only owner)

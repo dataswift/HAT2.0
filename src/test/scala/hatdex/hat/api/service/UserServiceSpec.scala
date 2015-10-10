@@ -2,6 +2,7 @@ package hatdex.hat.api.service
 
 import hatdex.hat.api.authentication.HatAuthTestHandler
 import hatdex.hat.api.json.JsonProtocol
+import hatdex.hat.api.service.jsonExamples.UserExamples
 import hatdex.hat.authentication.authenticators.{UserPassHandler, AccessTokenHandler}
 import hatdex.hat.authentication.models.{AccessToken, User}
 import hatdex.hat.dal.SlickPostgresDriver.simple._
@@ -28,19 +29,19 @@ class UserServiceSpec extends Specification with Specs2RouteTest with BeforeAfte
       UserUserRow(UUID.fromString("6096eba1-0e9e-4607-9dfd-072bfa106bf4"),
         LocalDateTime.now(), LocalDateTime.now(),
         "bob@example.com", Some(BCrypt.hashpw("pa55w0rd", BCrypt.gensalt())),
-        "Test User", "owner"),
+        "Test User", "owner", enabled=true),
       UserUserRow(UUID.fromString("17380a13-16c3-49f7-968b-30df0eefbe0f"),
         LocalDateTime.now(), LocalDateTime.now(),
         "alice@example.com", Some(BCrypt.hashpw("dr0w55ap", BCrypt.gensalt())),
-        "Test Debit User", "dataDebit"),
+        "Test Debit User", "dataDebit", enabled=true),
       UserUserRow(UUID.fromString("dd15948d-18ef-4062-a3c0-33f21b3cffd1"),
         LocalDateTime.now(), LocalDateTime.now(),
         "carol@example.com", Some(BCrypt.hashpw("p4ssWOrD", BCrypt.gensalt())),
-        "Test Credit User", "dataCredit"),
+        "Test Credit User", "dataCredit", enabled=false),
       UserUserRow(UUID.fromString("bae66f37-8421-4932-9755-ed7ffa865e0f"),
         LocalDateTime.now(), LocalDateTime.now(),
         "platform@platform.com", Some(BCrypt.hashpw("p4ssWOrD", BCrypt.gensalt())),
-        "Platform User", "platform")
+        "Platform User", "platform", enabled=true)
     )
 
     val validAccessTokens = Seq(
@@ -115,6 +116,23 @@ class UserServiceSpec extends Specification with Specs2RouteTest with BeforeAfte
       }
     }
 
+    "Reject disabled user's authentication" in {
+      HttpRequest(GET, "/access_token?username=carol@example.com&password=p4ssWOrD") ~> sealRoute(getAccessToken) ~> check {
+        response.status should be equalTo Unauthorized
+      }
+    }
+
+    "Allow platform user to enable users" in {
+      HttpRequest(PUT, "/user/dd15948d-18ef-4062-a3c0-33f21b3cffd1/enable?access_token=34b7299d-16a0-4884-ad3f-7999d2cd8d3c") ~>
+        sealRoute(enableUserAccount) ~> check {
+        response.status should be equalTo OK
+      }
+
+      HttpRequest(GET, "/access_token?username=carol@example.com&password=p4ssWOrD") ~> sealRoute(getAccessToken) ~> check {
+        response.status should be equalTo OK
+      }
+    }
+
     "Let newly created user retrieve their access token" in {
       val platformCredentials = "?access_token=34b7299d-16a0-4884-ad3f-7999d2cd8d3c"
       val user = HttpRequest(POST, "/user" + platformCredentials, entity = HttpEntity(MediaTypes.`application/json`, UserExamples.userExample)) ~>
@@ -140,27 +158,3 @@ class UserServiceSpec extends Specification with Specs2RouteTest with BeforeAfte
   }
 }
 
-object UserExamples {
-  val userExample =
-    """
-      |  {
-      |    "userId": "bb5385ab-9931-40b2-b65c-239210b408f3",
-      |    "email": "apiClient@platform.com",
-      |    "pass": "$2a$10$6YoHtQqSdit9zzVSzrkK7.E.JQuioFNAggTY7vZRL4RSeY.sUbUIu",
-      |    "name": "apiclient.platform.com",
-      |    "role": "dataDebit"
-      |  }
-    """.stripMargin
-  // pass is bcrypt salted hash of simplepass
-
-  val ownerUserExample =
-    """
-      |  {
-      |    "userId": "cf6da178-ac77-4c97-b274-b7ed34d16aea",
-      |    "email": "apiClient@platform.com",
-      |    "pass": "$2a$10$6YoHtQqSdit9zzVSzrkK7.E.JQuioFNAggTY7vZRL4RSeY.sUbUIu",
-      |    "name": "apiclient.platform.com",
-      |    "role": "owner"
-      |  }
-    """.stripMargin
-}

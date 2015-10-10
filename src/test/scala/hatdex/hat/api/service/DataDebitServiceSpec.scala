@@ -2,6 +2,7 @@ package hatdex.hat.api.service
 
 import hatdex.hat.api.authentication.HatAuthTestHandler
 import hatdex.hat.api.json.JsonProtocol
+import hatdex.hat.api.service.jsonExamples.DataDebitExamples
 import hatdex.hat.authentication.authenticators.{UserPassHandler, AccessTokenHandler}
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
@@ -250,21 +251,3 @@ class DataDebitServiceSpec extends Specification with Specs2RouteTest with Befor
   }
 }
 
-object DataDebitExamples {
-  val dataDebitExample =
-    """
-      |  {
-      |    "name": "DD Kitchen electricity on weekend parties",
-      |    "startDate": "2015-09-30T10:00:00Z",
-      |    "endDate": "2015-10-30T10:00:00Z",
-      |    "rolling": false,
-      |    "sell": true,
-      |    "price": 100.0,
-      |    "kind": "contextless",
-      |    "bundleContextless": {
-      |       "id": 3,
-      |       "name": "Kitchen electricity on weekend parties"
-      |    }
-      |  }
-    """.stripMargin
-}

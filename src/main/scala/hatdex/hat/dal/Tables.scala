@@ -2726,18 +2726,19 @@ trait Tables {
    *  @param email Database column email SqlType(varchar)
    *  @param pass Database column pass SqlType(varchar), Default(None)
    *  @param name Database column name SqlType(varchar)
-   *  @param role Database column role SqlType(varchar) */
-  case class UserUserRow(userId: java.util.UUID, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, email: String, pass: Option[String] = None, name: String, role: String)
+   *  @param role Database column role SqlType(varchar)
+   *  @param enabled Database column enabled SqlType(bool), Default(false) */
+  case class UserUserRow(userId: java.util.UUID, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, email: String, pass: Option[String] = None, name: String, role: String, enabled: Boolean = false)
   /** GetResult implicit for fetching UserUserRow objects using plain SQL queries */
-  implicit def GetResultUserUserRow(implicit e0: GR[java.util.UUID], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Option[String]]): GR[UserUserRow] = GR{
+  implicit def GetResultUserUserRow(implicit e0: GR[java.util.UUID], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Option[String]], e4: GR[Boolean]): GR[UserUserRow] = GR{
     prs => import prs._
-    UserUserRow.tupled((<<[java.util.UUID], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<?[String], <<[String], <<[String]))
+    UserUserRow.tupled((<<[java.util.UUID], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<?[String], <<[String], <<[String], <<[Boolean]))
   }
   /** Table description of table user_user. Objects of this class serve as prototypes for rows in queries. */
   class UserUser(_tableTag: Tag) extends Table[UserUserRow](_tableTag, "user_user") {
-    def * = (userId, dateCreated, lastUpdated, email, pass, name, role) <> (UserUserRow.tupled, UserUserRow.unapply)
+    def * = (userId, dateCreated, lastUpdated, email, pass, name, role, enabled) <> (UserUserRow.tupled, UserUserRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(userId), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(email), pass, Rep.Some(name), Rep.Some(role)).shaped.<>({r=>import r._; _1.map(_=> UserUserRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(userId), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(email), pass, Rep.Some(name), Rep.Some(role), Rep.Some(enabled)).shaped.<>({r=>import r._; _1.map(_=> UserUserRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column user_id SqlType(uuid), PrimaryKey */
     val userId: Rep[java.util.UUID] = column[java.util.UUID]("user_id", O.PrimaryKey)
@@ -2753,6 +2754,8 @@ trait Tables {
     val name: Rep[String] = column[String]("name")
     /** Database column role SqlType(varchar) */
     val role: Rep[String] = column[String]("role")
+    /** Database column enabled SqlType(bool), Default(false) */
+    val enabled: Rep[Boolean] = column[Boolean]("enabled", O.Default(false))
   }
   /** Collection-like TableQuery object for table UserUser */
   lazy val UserUser = new TableQuery(tag => new UserUser(tag))
