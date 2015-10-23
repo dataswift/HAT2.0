@@ -11,7 +11,7 @@ import spray.routing.directives.LogEntry
 
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor
-class ApiService extends HttpServiceActor with ActorLogging {
+class ApiService extends HttpServiceActor with ActorLogging with Cors {
   // the HttpService trait defines only one abstract member, which
   // connects the services environment to the enclosing actor or test
   override def actorRefFactory = context
@@ -83,16 +83,18 @@ class ApiService extends HttpServiceActor with ActorLogging {
 
   // Concatenate all their handled routes
   val routes = logRequestResponse(requestMethodAndResponseStatusAsInfo _) {
-    helloService.routes ~
-      apiDataService.routes ~
-      apiPropertyService.routes ~
-      apiBundleService.routes ~
-      eventsService.routes ~
-      locationsService.routes ~
-      peopleService.routes ~
-      thingsService.routes ~
-      organisationsService.routes ~
-      userService.routes
+    cors {
+      helloService.routes ~
+        apiDataService.routes ~
+        apiPropertyService.routes ~
+        apiBundleService.routes ~
+        eventsService.routes ~
+        locationsService.routes ~
+        peopleService.routes ~
+        thingsService.routes ~
+        organisationsService.routes ~
+        userService.routes
+    }
   }
 
   def receive = runRoute(routes)

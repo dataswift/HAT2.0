@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 // this trait defines our service behavior independently from the service actor
 trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandler {
 
-//  import hatdex.hat.authentication.HatServiceAuthHandler._
+  //  import hatdex.hat.authentication.HatServiceAuthHandler._
 
   val routes = {
     pathPrefix("data") {
@@ -44,8 +44,8 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
    * Creates a new virtual table for storing arbitrary incoming data
    */
   def createTableApi = path("table") {
-    (accessTokenHandler | userPassHandler) { implicit user: User =>
-      post {
+    post {
+      (userPassHandler | accessTokenHandler) { implicit user: User =>
         entity(as[ApiDataTable]) { table =>
           db.withSession { implicit session =>
             val tableStructure = createTable(table)
@@ -92,7 +92,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
    * Get specific table information. Includes all fields and sub-tables
    */
   def getTableApi = path("table" / IntNumber) { (tableId: Int) =>
-    userPassHandler { implicit user: User =>
+    (userPassHandler | accessTokenHandler) { implicit user: User =>
       get {
         db.withSession { implicit session =>
           complete {
@@ -149,7 +149,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
    * Get field (information only) by ID
    */
   def getFieldApi = path("field" / IntNumber) { (fieldId: Int) =>
-    userPassHandler { implicit user: User =>
+    (userPassHandler | accessTokenHandler) { implicit user: User =>
       get {
         db.withSession { implicit session =>
           complete {
@@ -215,7 +215,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
    * Get record
    */
   def getRecordApi = path("record" / IntNumber) { (recordId: Int) =>
-    userPassHandler { implicit user: User =>
+    (userPassHandler | accessTokenHandler) { implicit user: User =>
       get {
         db.withSession { implicit session =>
           val record = DataRecord.filter(_.id === recordId).run.headOption
@@ -238,8 +238,8 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
    * Constructs a hierarchy of fields and data within each field for the record
    */
   def getRecordValuesApi = path("record" / IntNumber / "values") { (recordId: Int) =>
-    userPassHandler { implicit user: User =>
-      get {
+    get {
+      userPassHandler { implicit user: User =>
         db.withSession { implicit session =>
           // Retrieve joined Data Values, Fields and Tables
           val fieldValuesTables = DataValue.filter(_.recordId === recordId) join
@@ -282,8 +282,8 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
    * Batch-insert data values as a list
    */
   def storeValueListApi = path("record" / IntNumber / "values") { (recordId: Int) =>
-    (accessTokenHandler | userPassHandler) { implicit user: User =>
-      post {
+    post {
+      (accessTokenHandler | userPassHandler) { implicit user: User =>
         entity(as[Seq[ApiDataValue]]) { values =>
           db.withSession { implicit session =>
             val maybeApiValues = values.map(x => createValue(x, None, Some(recordId)))
