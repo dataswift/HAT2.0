@@ -74,4 +74,9 @@ object DataExamples {
     """{
       | "nam": "home"
    }""".stripMargin
+
+  val locationHomeStairs =
+    """{
+      | "name": "stairs"
+    }""".stripMargin
 }
