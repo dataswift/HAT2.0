@@ -2,6 +2,7 @@ package hatdex.hat.api.service
 
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.authentication.HatServiceAuthHandler
+import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import hatdex.hat.api.DatabaseInfo
@@ -18,7 +19,7 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
 
   import JsonProtocol._
 
-  def createApi = path("") {
+  def createApi = {
     post {
       createEntity
     }
@@ -26,18 +27,24 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
 
   def getApi = path(IntNumber) { (entityId: Int) =>
     get {
-      db.withSession { implicit session =>
-        implicit val getValues: Boolean = false
-        getEntity(entityId)
+      userPassHandler { implicit user: User =>
+        println("Getting entity for user")
+        db.withSession { implicit session =>
+          implicit val getValues: Boolean = false
+          getEntity(entityId)
+        }
       }
     }
   }
 
   def getApiValues = path(IntNumber / "values") { (entityId: Int) =>
     get {
-      db.withSession { implicit session =>
-        implicit val getValues: Boolean = true
-        getEntity(entityId)
+      userPassHandler { implicit user: User =>
+        println("Getting values for user")
+        db.withSession { implicit session =>
+          implicit val getValues: Boolean = true
+          getEntity(entityId)
+        }
       }
     }
   }
