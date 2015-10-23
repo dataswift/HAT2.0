@@ -64,4 +64,14 @@ object DataExamples {
     """{
       | "name": "testRecord 2"
   }""".stripMargin
+
+  val locationValid =
+   """{
+     | "name": "home"
+   }""".stripMargin
+
+  val locationBadName =
+    """{
+      | "nam": "home"
+   }""".stripMargin
 }
