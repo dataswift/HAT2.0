@@ -1,6 +1,5 @@
 DROP SCHEMA public CASCADE;
 CREATE SCHEMA public;
-CREATE EXTENSION "uuid-ossp";
 
 CREATE SEQUENCE public.things_thing_id_seq;
 
@@ -1241,7 +1240,6 @@ CREATE TABLE public.bundle_propertyslicecondition (
 -- ----------------------------
 --  Table structure for user_user
 -- ----------------------------
-DROP TABLE IF EXISTS "public"."user_user";
 CREATE TABLE "public"."user_user" (
   "user_id" uuid NOT NULL,
   "date_created" timestamp(6) NOT NULL,
@@ -1251,9 +1249,7 @@ CREATE TABLE "public"."user_user" (
   "name" varchar NOT NULL COLLATE "default",
   "role" varchar NOT NULL COLLATE "default",
   "enabled" bool NOT NULL DEFAULT false
-)
-WITH (OIDS=FALSE);
-ALTER TABLE "public"."user_user" OWNER TO "andrius";
+);
 
 -- ----------------------------
 --  Primary key structure for table user_user

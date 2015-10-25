@@ -25,20 +25,23 @@ This HAT PDS implementation is written in Scala (2.11.6) uses the following tech
 
 ### Database Setup
 
-You will need to set up a PostgreSQL database with the HAT2.0 schema, files for which can be found in `src/sql`. E.g.:
+You will need to set up a PostgreSQL database with the HAT2.0 schema, configure the project to use the database, compile and run it:
 
-    psql databasename < src/sql/HAT-V2.0.sql
+    ./deployment/deploy.sh
+    
+The provided script executes all required commands to get the project running and can be configured through environment variables:
 
-Configuration in *both* `codegen/src/main/resources/database.conf` and `src/main/resources/database.conf` must reflect your database configuration (can be different ones for model generation and for operation), and look similar to:
-
-    devdb = {
-      dataSourceClass = "org.postgresql.ds.PGSimpleDataSource"
-      properties = {
-        databaseName = "database"
-        user = "dbuser"
-        password = "dbpass"
-      }
-    }
+- `DATABASE` - name of the database
+- `DBUSER` - database username
+- `DBPASS` - database user password
+- `HAT_OWNER` - HAT owner identity (DNS name/username)
+- `HAT_OWNER_ID` - HAT owner GUID
+- `HAT_OWNER_NAME` - HAT owner name
+- `HAT_OWNER_PASSWORD` - HAT owner login password
+- `HAT_PLATFORM` - HAT platform identity
+- `HAT_PLATFORM_ID` - HAT platform GUID
+- `HAT_PLATFORM_NAME` - HAT platform name
+- `HAT_PLATFORM_PASSWORD_HASH` - BCrypt-hashed HAT platform password for platform-management operations (application account creation only)
 
 ### Auto-generated code recompilation
 
@@ -47,11 +50,12 @@ You should have the right code for database access already in your code, but if 
     sbt
 
 Then within the sbt console:
-
+    
+    project codegen
     clean
-    gen-tables
+    gentables
 
-*Note*: simply running `sbt clean gen-tables` does not tend to regenerate the tables
+*Note*: you should never need to do this
 
 This uses Slick's code auto-generation feature, where the necessary code to interface with the database gets generated from the provided SQL database structure.
 

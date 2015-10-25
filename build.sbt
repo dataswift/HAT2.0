@@ -1,5 +1,6 @@
 import NativePackagerKeys._
 import com.typesafe.sbt.SbtNativePackager._
+import sbt.Keys._
 
 enablePlugins(JavaAppPackaging)
 
@@ -12,3 +13,79 @@ scalaVersion := "2.11.6"
 parallelExecution in Test := false
 
 logLevel := Level.Info
+
+val akkaV = "2.3.9"
+val sprayV = "1.3.3"
+val specs2V = "3.3"
+
+lazy val commonSettings = Seq(
+  scalaVersion := "2.11.6",
+  libraryDependencies := Seq(
+    "com.typesafe.slick" %% "slick" % "3.0.0",
+    "com.github.tminglei" % "slick-pg_core_2.11" % "0.9.0",
+    "com.github.tminglei" %% "slick-pg" % "0.9.0",
+    "com.github.tminglei" %% "slick-pg_joda-time" % "0.6.5.3",
+    "com.github.tminglei" %% "slick-pg_jts" % "0.6.5.3",
+    "joda-time" % "joda-time" % "2.7",
+    "org.joda" % "joda-convert" % "1.7",
+    "com.vividsolutions" % "jts" % "1.13",
+    "org.slf4j" % "slf4j-nop" % "1.6.4",
+    "com.typesafe" % "config" % "1.3.0",
+    "com.zaxxer" % "HikariCP" % "2.3.8"
+  )
+)
+
+// code generation task
+lazy val gentables = taskKey[Seq[File]]("Slick Code generation")
+
+lazy val codegen = (project in file("codegen")).
+  settings(commonSettings: _*).
+  settings(
+    name := "codegen",
+    libraryDependencies ++= List(
+      "com.typesafe.slick" %% "slick-codegen" % "3.0.0"
+    ),
+    gentables := {
+      val main = Project("root", file("."))
+      val outputDir = (main.base.getAbsoluteFile / "src/main/scala").getPath
+      streams.value.log.info("Output directory for codegen: " + outputDir.toString)
+      val pkg = "hatdex.hat.dal"
+      streams.value.log.info("Dependency classpath: " + dependencyClasspath.toString)
+      (runner in Compile).value.run("hatdex.hat.dal.CustomizedCodeGenerator", (dependencyClasspath in Compile).value.files, Array(outputDir, pkg), streams.value.log)
+      val fname = outputDir + "/" + pkg.replace('.', '/') + "/Tables.scala"
+      Seq(file(fname))
+    },
+    cleanFiles <+= baseDirectory { base => base / "../src/main/scala/hatdex/hat/dal/" }
+  )
+
+lazy val core = (project in file(".")).
+  settings(commonSettings: _*).
+  settings(
+    name := "root",
+    libraryDependencies ++= List(
+      "io.spray"            %%  "spray-can"     % sprayV,
+      "io.spray"            %%  "spray-routing-shapeless2" % sprayV,
+      "com.typesafe.akka"   %%  "akka-actor"    % akkaV,
+      "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
+      "io.spray"      %%  "spray-testkit" % sprayV  % "test",
+      "org.specs2" % "specs2-core_2.11" % specs2V  % "test",
+      "org.specs2" % "specs2_2.11" % specs2V % "test",
+      "io.spray" %%  "spray-json" % "1.3.2",
+      "org.mindrot" % "jbcrypt" % "0.3m"
+    ),
+    gentables := {
+      //  lazy val slickCodeGenTask = (sourceManaged, dependencyClasspath in Compile, runner in Compile, streams) map { (dir, cp, r, s) =>
+      //  lazy val slickCodegenTask = {
+      val main = Project("root", file("."))
+      val outputDir = (main.base.getAbsoluteFile / "src/main/scala").getPath
+      streams.value.log.info("Output directory for codegen: " + outputDir.toString)
+      val pkg = "hatdex.hat.dal"
+      (runner in Compile).value.run("hatdex.hat.dal.CustomizedCodeGenerator", (dependencyClasspath in Compile).value.files, Array(outputDir, pkg), streams.value.log)
+      val fname = outputDir + "/" + pkg.replace('.', '/') + "/Tables.scala"
+      Seq(file(fname))
+    }
+  ).
+  dependsOn("codegen").
+  settings (
+    aggregate in update := false
+  )

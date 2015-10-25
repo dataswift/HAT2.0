@@ -1,0 +1,37 @@
+BEGIN;
+
+INSERT INTO "public"."user_user" VALUES
+  (
+    '%HAT_OWNER_ID%',
+    now(), now(),
+    '%HAT_OWNER%',
+    crypt('%HAT_OWNER_PASSWORD%', gen_salt('bf', 8)),
+    '%HAT_OWNER_NAME%',
+    'owner',
+    't'
+  );
+
+INSERT INTO "public"."user_user" VALUES
+  (
+    '%HAT_PLATFORM_ID%',
+    now(), now(),
+    '%HAT_PLATFORM%',
+    '%HAT_PLATFORM_PASSWORD_HASH%',
+    '%HAT_PLATFORM_NAME%',
+    'platform',
+    't'
+  );
+
+INSERT INTO "public"."user_access_token" VALUES
+  (
+    uuid_generate_v4(),
+    '%HAT_OWNER_ID%'
+  );
+
+INSERT INTO "public"."user_access_token" VALUES
+  (
+    uuid_generate_v4(),
+    '%HAT_PLATFORM_ID%'
+  );
+
+COMMIT;
