@@ -47,6 +47,7 @@ object HatAuthHandler extends DatabaseInfo {
         } yield {
             User(user.userId, user.email, None, user.name, user.role)
           }
+//        println("Authenticated? " + mayBeUser.toString)
         mayBeUser
       }
     }
@@ -67,6 +68,7 @@ object HatAuthHandler extends DatabaseInfo {
         } yield {
             User(user.userId, user.email, None, user.name, user.role)
           }
+//        println("Authenticated? " + mayBeUser.toString)
         mayBeUser
       }
     }

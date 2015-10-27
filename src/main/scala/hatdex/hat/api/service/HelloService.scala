@@ -28,7 +28,7 @@ trait HelloService extends HttpService with HatServiceAuthHandler{
     }
   }
 
-  def myhat(implicit user: User) = path("hat") {
+  def myhat(implicit user: User) = {
     respondWithMediaType(`text/html`) {
       get {
 
@@ -44,8 +44,10 @@ trait HelloService extends HttpService with HatServiceAuthHandler{
       }
     }
 
-  def authHat = (accessTokenHandler | userPassHandler) { implicit user: User =>
-    myhat
+  def authHat = path("hat") {
+    (accessTokenHandler | userPassHandler) { implicit user: User =>
+      myhat
+    }
   }
 
   def docs = get {

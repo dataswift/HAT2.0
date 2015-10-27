@@ -25,6 +25,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
       getFieldApi ~
         getFieldValuesApi ~
         getTableApi ~
+        findTableApi ~
         getTableValuesApi ~
         getRecordApi ~
         getRecordValuesApi ~
@@ -95,8 +96,26 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
     (userPassHandler | accessTokenHandler) { implicit user: User =>
       get {
         db.withSession { implicit session =>
+          val structure = getTableStructure(tableId)
           complete {
-            getTableStructure(tableId)
+            session.close()
+            structure
+          }
+        }
+      }
+    }
+  }
+
+  def findTableApi = path("table" / "search") {
+    (userPassHandler | accessTokenHandler) { implicit user: User =>
+      get {
+        parameters('name, 'source) { (name: String, source: String) =>
+          db.withSession { implicit session =>
+            val table = findTable(name, source)
+            complete {
+              session.close()
+              table
+            }
           }
         }
       }
@@ -108,7 +127,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
       get {
         db.withSession { implicit session =>
           val someTableValues = getTableValues(tableId)
-
+          session.close()
           complete {
             someTableValues match {
               case Some(tableValues) =>
@@ -284,7 +303,9 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
   def storeValueListApi = path("record" / IntNumber / "values") { (recordId: Int) =>
     post {
       (accessTokenHandler | userPassHandler) { implicit user: User =>
+        println("Authenticated user submitting record values")
         entity(as[Seq[ApiDataValue]]) { values =>
+          println("Authenticated user submitting PARSED record values")
           db.withSession { implicit session =>
             val maybeApiValues = values.map(x => createValue(x, None, Some(recordId)))
             val apiValues = Utils.flatten(maybeApiValues)
@@ -314,6 +335,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
             val inserted = createValue(value, None, None)
 
             complete {
+              session.close()
               inserted match {
                 case Success(insertedValue) =>
                   (Created, insertedValue)
@@ -348,6 +370,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
           }
 
           complete {
+            session.close()
             apiValue match {
               case Some(response) =>
                 response
@@ -600,6 +623,13 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
       }
       // Fold them into a single set with no repetitions
       parentSets.foldLeft(Set[Int]())((roots, parents) => roots ++ parents)
+    }
+  }
+
+  private def findTable(name: String, source: String)(implicit session: Session): Option[ApiDataTable] = {
+    val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name === name).run.headOption
+    dbDataTable map { table =>
+      ApiDataTable.fromDataTable(table)(None)(None)
     }
   }
 

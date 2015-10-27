@@ -113,7 +113,7 @@ trait PeopleService extends EntityServiceApi {
   protected def createLinkPerson(entityId: Int, personId: Int, relationshipTypeId: Int, recordId: Int)
                                       (implicit session: Session): Try[Int] = {
     val crossref = new PeoplePersontopersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, personId, recordId, true, relationshipTypeId)
+      entityId, personId, relationshipTypeId, true, recordId)
     Try((PeoplePersontopersoncrossref returning PeoplePersontopersoncrossref.map(_.id)) += crossref)
   }
 

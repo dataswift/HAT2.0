@@ -27,7 +27,6 @@ trait RestAuthenticator[U] extends ContextAuthenticator[U] {
 
   def apply(ctx: RequestContext): Future[Authentication[U]] = {
     val queryParameters = extractor(ctx)
-    println(s"### $queryParameters")
     authenticator(queryParameters) map {
       case Some(entity) ⇒ Right(entity)
       case None ⇒
