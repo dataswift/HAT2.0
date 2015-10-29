@@ -47,7 +47,7 @@ class LocationsServiceSpec extends Specification with Specs2RouteTest with Locat
 
   "LocationsService" should {
     "Accept new locations created" in {
-      val newLocation = HttpRequest(POST, "demo.hat.org/location" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.locationValid)) ~>
+      val newLocation = HttpRequest(POST, "/location" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.locationValid)) ~>
         sealRoute(createEntity) ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain("home")
@@ -56,7 +56,7 @@ class LocationsServiceSpec extends Specification with Specs2RouteTest with Locat
 
       newLocation.id must beSome
 
-      val subLocation = HttpRequest(POST, "demo.hat.org/location" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.locationHomeStairs)) ~>
+      val subLocation = HttpRequest(POST, "/location" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.locationHomeStairs)) ~>
         sealRoute(createEntity) ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain("stairs")
@@ -65,17 +65,16 @@ class LocationsServiceSpec extends Specification with Specs2RouteTest with Locat
 
       subLocation.id must beSome
 
-      /*HttpRequest(POST, s"/location/${newLocation.id.get}/location/${subLocation.id.get}"+ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
-        sealRoute(createLinkLocation) ~> check {
-        response.status should be equalTo OK
-      }*/
-    }
-
-    /*"Reject incorrect location json" in {
       val tmpLocation = HttpRequest(POST, "/location" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.locationBadName)) ~>
         sealRoute(createEntity) ~> check {
         response.status should be equalTo BadRequest
       }
-    }*/
+
+      HttpRequest(POST, s"/location/${newLocation.id.get}/location/${subLocation.id.get}" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
+        sealRoute(linkToLocation) ~> check {
+        response.status should be equalTo Created
+        responseAs[String] must contain("id")
+      }
+    }
   }
 }
