@@ -67,4 +67,6 @@ object JsonProtocol extends DefaultJsonProtocol with UuidMarshalling with DateTi
   // Users
   implicit val apiUserFormat = jsonFormat5(User.apply)
   implicit val apiAccessTokenFormat = jsonFormat2(AccessToken.apply)
+
+  implicit val apiError = jsonFormat2(ErrorMessage.apply)
 }

@@ -1,13 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <logger name="org.hatdex" level="debug"
-            additivity="false">
-        <appender-ref ref="STDOUT" />
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.out</target>
+        <encoder>
+            <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] [%thread] %logger{1} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>logs/akka.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] [%thread] %logger{1} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- if you want to dump different packages to different files, here's where you do it
+            <logger name="com.onuspride" level="DEBUG" additivity="false">
+            <appender-ref ref="logFileOutput"/>
+        </logger>-->
+
+
+    <logger name="akka" level="DEBUG">
+        <appender-ref ref="CONSOLE"/>
     </logger>
 
-    <root level="error">
-        <appender-ref ref="STDOUT" />
+    <root level="ERROR">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
     </root>
 
 </configuration>

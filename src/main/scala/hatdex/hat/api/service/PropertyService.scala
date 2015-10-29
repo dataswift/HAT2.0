@@ -23,10 +23,8 @@ trait PropertyService extends HttpService with DatabaseInfo with HatServiceAuthH
 
   val routes = {
     pathPrefix("property") {
-      userPassHandler { implicit user: User =>
-        createProperty ~
-          getPropertyApi
-      }
+      createProperty ~
+        getPropertyApi
     }
   }
 
@@ -34,15 +32,17 @@ trait PropertyService extends HttpService with DatabaseInfo with HatServiceAuthH
 
   def createProperty = path("") {
     post {
-      entity(as[ApiProperty]) { property =>
-        db.withSession { implicit session =>
-          val result = storeProperty(property)
-          complete {
-            result match {
-              case Success(created) =>
-                (Created, created)
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
+      userPassHandler { implicit user: User =>
+        entity(as[ApiProperty]) { property =>
+          db.withSession { implicit session =>
+            val result = storeProperty(property)
+            complete {
+              result match {
+                case Success(created) =>
+                  (Created, created)
+                case Failure(e) =>
+                  (BadRequest, e.getMessage)
+              }
             }
           }
         }
@@ -52,14 +52,16 @@ trait PropertyService extends HttpService with DatabaseInfo with HatServiceAuthH
 
   def getPropertyApi = path(IntNumber) { (propertyId: Int) =>
     get {
-      db.withSession { implicit session =>
-        val propertyOption = getProperty(propertyId)
-        complete {
-          propertyOption match {
-            case Some(property) =>
-              property
-            case None =>
-              (NotFound, s"Property $propertyId not found")
+      userPassHandler { implicit user: User =>
+        db.withSession { implicit session =>
+          val propertyOption = getProperty(propertyId)
+          complete {
+            propertyOption match {
+              case Some(property) =>
+                property
+              case None =>
+                (NotFound, s"Property $propertyId not found")
+            }
           }
         }
       }
@@ -125,7 +127,7 @@ trait PropertyService extends HttpService with DatabaseInfo with HatServiceAuthH
     }
   }
 
-  protected def getProperty(propertyId: Int)(implicit session: Session) : Option[ApiProperty] = {
+  protected def getProperty(propertyId: Int)(implicit session: Session): Option[ApiProperty] = {
     val propertyQuery = for {
       property <- SystemProperty.filter(_.id === propertyId)
       systemType <- property.systemTypeFk

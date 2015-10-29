@@ -17,6 +17,8 @@ logLevel := Level.Info
 val akkaV = "2.3.9"
 val sprayV = "1.3.3"
 val specs2V = "3.3"
+val slf4jV = "1.7.10"
+val logbackV = "1.1.2"
 
 lazy val commonSettings = Seq(
   scalaVersion := "2.11.6",
@@ -29,7 +31,10 @@ lazy val commonSettings = Seq(
     "joda-time" % "joda-time" % "2.7",
     "org.joda" % "joda-convert" % "1.7",
     "com.vividsolutions" % "jts" % "1.13",
-    "org.slf4j" % "slf4j-nop" % "1.6.4",
+    "org.slf4j" % "slf4j-api" % slf4jV,
+    "ch.qos.logback" % "logback-core" % logbackV,
+    "ch.qos.logback" % "logback-classic" % logbackV,
+    "com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe" % "config" % "1.3.0",
     "com.zaxxer" % "HikariCP" % "2.3.8"
   )
@@ -75,7 +80,7 @@ lazy val core = (project in file(".")).
     ),
     gentables := {
       //  lazy val slickCodeGenTask = (sourceManaged, dependencyClasspath in Compile, runner in Compile, streams) map { (dir, cp, r, s) =>
-      //  lazy val slickCodegenTask = {
+      //  lazy val slickCodegenTask = {s
       val main = Project("root", file("."))
       val outputDir = (main.base.getAbsoluteFile / "src/main/scala").getPath
       streams.value.log.info("Output directory for codegen: " + outputDir.toString)

@@ -11,7 +11,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait HelloService extends HttpService with HatServiceAuthHandler{
-  val routes = home ~ docs ~ authHat
+  val routes = home ~ authHat
 
   def home =
     path("") {
@@ -49,16 +49,4 @@ trait HelloService extends HttpService with HatServiceAuthHandler{
       myhat
     }
   }
-
-  def docs = get {
-    path("api" / "inbound") {
-      respondWithMediaType(`application/json`) {
-        getFromResource("api/inbound.json")
-      }
-    } ~ {
-      getFromResourceDirectory("web")
-    }
-  }
-
-
 }
