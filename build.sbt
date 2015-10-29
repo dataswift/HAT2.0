@@ -94,3 +94,7 @@ lazy val core = (project in file(".")).
   settings (
     aggregate in update := false
   )
+
+resolvers ++= Seq(
+  "scalaz.bintray" at "http://dl.bintray.com/scalaz/releases"
+)
