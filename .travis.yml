@@ -1,0 +1,23 @@
+language: scala
+
+scala:
+   - 2.11.6
+
+branches:
+  only:
+    - master
+
+addons:
+  postgresql: "9.3"
+
+before_script:
+  - createuser -S -D -R -e hat20
+  - createdb hat20
+  - psql hat20 -c 'CREATE EXTENSION "uuid-ossp";'
+  - psql hat20 -Uhat20 < src/sql/HAT-V2.0.sql
+  - sed -e "s;%DATABASE%;hat20;g" -e "s;%DBUSER%;hat20;g" -e "s;%DBPASS%;;g" deployment/database.conf.template > src/main/resources/database.conf
+  - cp src/main/resources/database.conf codegen/src/main/resources/database.conf
+
+script:
+   - sbt ++$TRAVIS_SCALA_VERSION compile test:compile
+   - sbt test
