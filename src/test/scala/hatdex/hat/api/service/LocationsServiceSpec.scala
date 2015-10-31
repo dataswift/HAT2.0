@@ -72,7 +72,7 @@ class LocationsServiceSpec extends Specification with Specs2RouteTest with Locat
         response.status should be equalTo BadRequest
       }
 
-      HttpRequest(POST, s"/location/${newLocation.id.get}/location/${subLocation.id.get}" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
+      HttpRequest(POST, s"/${newLocation.id.get}/location/${subLocation.id.get}" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(linkToLocation) ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain("id")
