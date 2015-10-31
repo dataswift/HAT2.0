@@ -523,7 +523,7 @@ class FacebookExampleSpec extends Specification with AfterAll {
 
         val peoplepersonorganisationcrossrefRows = Seq(
           new PeoplePersonorganisationcrossrefRow(1,
-            LocalDateTime.now(), LocalDateTime.now(), findPersonId, findorganisationId, "Relationship_Type",
+            LocalDateTime.now(), LocalDateTime.now(), findorganisationId, findPersonId, "Relationship_Type",
             true, peoplepersonorganisationrelationshiprecordId)
         )
 

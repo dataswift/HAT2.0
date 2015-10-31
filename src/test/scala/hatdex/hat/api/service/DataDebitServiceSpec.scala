@@ -1,5 +1,6 @@
 package hatdex.hat.api.service
 
+import akka.event.LoggingAdapter
 import hatdex.hat.api.authentication.HatAuthTestHandler
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.service.jsonExamples.DataDebitExamples
@@ -29,6 +30,7 @@ class DataDebitServiceSpec extends Specification with Specs2RouteTest with Befor
 
     val dataService = new DataService {
       def actorRefFactory = system
+      val logger: LoggingAdapter = system.log
     }
   }
 

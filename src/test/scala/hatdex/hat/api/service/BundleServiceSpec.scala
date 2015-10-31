@@ -1,5 +1,6 @@
 package hatdex.hat.api.service
 
+import akka.event.LoggingAdapter
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.service.jsonExamples.BundleExamples
 import hatdex.hat.dal.SlickPostgresDriver.simple._
@@ -21,6 +22,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
 
   val dataService = new DataService {
     def actorRefFactory = system
+    val logger: LoggingAdapter = system.log
   }
 
   import JsonProtocol._

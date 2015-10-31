@@ -12,6 +12,12 @@ scalaVersion := "2.11.6"
 
 parallelExecution in Test := false
 
+publishArtifact in Test := false
+
+scalacOptions ++= Seq("-unchecked", "-deprecation")
+
+scalacOptions in (Compile, doc) ++= Seq("-unchecked", /*"-deprecation", */ "-diagrams", "-implicits", "-skip-packages", "samples")
+
 logLevel := Level.Info
 
 val akkaV = "2.3.9"
@@ -22,7 +28,7 @@ val logbackV = "1.1.2"
 
 lazy val commonSettings = Seq(
   scalaVersion := "2.11.6",
-  libraryDependencies := Seq(
+  libraryDependencies ++= Seq(
     "com.typesafe.slick" %% "slick" % "3.0.0",
     "com.github.tminglei" % "slick-pg_core_2.11" % "0.9.0",
     "com.github.tminglei" %% "slick-pg" % "0.9.0",
@@ -79,8 +85,6 @@ lazy val core = (project in file(".")).
       "org.mindrot" % "jbcrypt" % "0.3m"
     ),
     gentables := {
-      //  lazy val slickCodeGenTask = (sourceManaged, dependencyClasspath in Compile, runner in Compile, streams) map { (dir, cp, r, s) =>
-      //  lazy val slickCodegenTask = {s
       val main = Project("root", file("."))
       val outputDir = (main.base.getAbsoluteFile / "src/main/scala").getPath
       streams.value.log.info("Output directory for codegen: " + outputDir.toString)
@@ -94,3 +98,8 @@ lazy val core = (project in file(".")).
   settings (
     aggregate in update := false
   )
+
+resolvers ++= Seq(
+  "scalaz.bintray" at "http://dl.bintray.com/scalaz/releases",
+  "scoverage-bintray" at "https://dl.bintray.com/sksamuel/sbt-plugins/"
+)

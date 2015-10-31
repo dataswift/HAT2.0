@@ -1,8 +1,15 @@
 ![Hub of All things](http://hubofallthings.com/wp-content/uploads/banner21.png)
 
+[![Build Status](https://travis-ci.org/Hub-of-all-Things/HAT2.0.svg?branch=master)](https://travis-ci.org/Hub-of-all-Things/HAT2.0)
+
 # HAT 2.0
 
 This repository contains an implementation of the [Hub-of-All-Things](http://hubofallthings.com) project Personal Data Store.
+
+## Releases
+
+The current project version is a pre-release [HAT 2.0](https://github.com/Hub-of-all-Things/HAT2.0/releases/tag/v2.0).
+
 
 ## About the project
 

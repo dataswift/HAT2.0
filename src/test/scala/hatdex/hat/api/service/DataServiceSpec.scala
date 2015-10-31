@@ -1,5 +1,6 @@
 package hatdex.hat.api.service
 
+import akka.event.{LoggingAdapter, Logging}
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.authentication.HatAuthTestHandler
 import hatdex.hat.api.json.JsonProtocol
@@ -19,6 +20,7 @@ import scala.concurrent.duration._
 
 class DataServiceSpec extends Specification with Specs2RouteTest with DataService with BeforeAfterAll {
   def actorRefFactory = system
+  val logger: LoggingAdapter = system.log
 
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
