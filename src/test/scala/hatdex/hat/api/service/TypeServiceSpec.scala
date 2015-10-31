@@ -1,6 +1,7 @@
 package hatdex.hat.api.service
 
 import akka.event.LoggingAdapter
+import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.authentication.HatAuthTestHandler
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models.{ApiSystemUnitofmeasurement, ApiSystemType, ErrorMessage}
@@ -32,7 +33,7 @@ class TypeServiceSpec extends Specification with Specs2RouteTest with TypeServic
   // Clean up all data
   def afterAll() = {
     db.withSession { implicit session =>
-      //      TestDataCleanup.cleanupAll
+      TestDataCleanup.cleanupAll
     }
     db.close
   }
