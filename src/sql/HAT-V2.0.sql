@@ -7,7 +7,7 @@ CREATE TABLE public.things_thing (
                 id INTEGER NOT NULL DEFAULT nextval('public.things_thing_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
-                name VARCHAR(100) NOT NULL,
+                name VARCHAR NOT NULL,
                 CONSTRAINT things_thing_pkey PRIMARY KEY (id)
 );
 
@@ -20,9 +20,9 @@ CREATE TABLE public.system_unitofmeasurement (
                 id INTEGER NOT NULL DEFAULT nextval('public.system_unitofmeasurement_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
-                name VARCHAR(100) NOT NULL,
+                name VARCHAR NOT NULL UNIQUE,
                 description TEXT,
-                symbol VARCHAR(16),
+                symbol VARCHAR,
                 CONSTRAINT system_unitofmeasurement_pkey PRIMARY KEY (id)
 );
 
@@ -35,7 +35,7 @@ CREATE TABLE public.system_type (
                 id INTEGER NOT NULL DEFAULT nextval('public.system_type_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
-                name VARCHAR NOT NULL,
+                name VARCHAR NOT NULL UNIQUE,
                 description TEXT,
                 CONSTRAINT system_type_pk PRIMARY KEY (id)
 );

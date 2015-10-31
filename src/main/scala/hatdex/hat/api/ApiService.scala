@@ -88,6 +88,11 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
     override implicit def actorRefFactory: ActorRefFactory = context
   }
 
+  val typeService = new TypeService {
+    override implicit def actorRefFactory: ActorRefFactory = context
+    val logger = log
+  }
+
   // logs request method, uri and response status at debug level
   def requestMethodAndResponseStatusAsInfo(req: HttpRequest): Any => Option[LogEntry] = {
     case res: HttpResponse => Some(LogEntry(req.method + ":" + req.uri + ":" + res.message.status, Logging.InfoLevel))
@@ -142,7 +147,8 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
         peopleService.routes ~
         thingsService.routes ~
         organisationsService.routes ~
-        userService.routes
+        userService.routes ~
+        typeService.routes
     }
   }
 

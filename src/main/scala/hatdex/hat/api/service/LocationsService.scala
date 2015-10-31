@@ -49,7 +49,7 @@ trait LocationsService extends EntityServiceApi {
           case Success(createdLocation) =>
             val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdLocation.name, "location", Some(createdLocation.id), None, None, None, None)
             Try(Entity += newEntity)
-            ApiLocation.fromDbModel(createdLocation)
+            (Created, ApiLocation.fromDbModel(createdLocation))
           case Failure(e) =>
             (BadRequest, e.getMessage)
         }

@@ -9,8 +9,9 @@ DBPASS=${DBPASS:-""}
 # NOSUPERUSER NOCREATEDB NOCREATEROLE
 echo "Setting up database user and database"
 createuser -S -D -R -e $DBUSER
-createdb $DATABASE
+createdb $DATABASE -O $DBUSER
 psql $DATABASE -c 'CREATE EXTENSION "uuid-ossp";'
+psql $DATABASE -c 'CREATE EXTENSION "pgcrypto";'
 psql $DATABASE -U$DBUSER < src/sql/HAT-V2.0.sql
 
 # Setup db config for the project
@@ -46,9 +47,11 @@ psql $DATABASE -U$DBUSER < src/sql/authentication.sql
 # Remove the sql file with sensitive credentials
 rm src/sql/authentication.sql
 
+echo "Boilerplate setup"
+psql $DATABASE -U$DBUSER < src/sql/data.sql
 
 # Rebuild and run the project
 echo "Compiling and running the project"
-sbt clean
-sbt compile
+#sbt clean
+#sbt compile
 sbt run
