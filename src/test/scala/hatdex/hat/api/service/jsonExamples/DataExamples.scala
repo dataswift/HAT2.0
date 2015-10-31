@@ -79,20 +79,4 @@ object DataExamples {
     """{
       | "name": "stairs"
     }""".stripMargin
-
-  val typesPostalAddress =
-    """
-      |{
-      | "name": "PostalAddress",
-      | "description": "Physical address of the item"
-      |}
-    """.stripMargin
-
-  val typesDate =
-    """
-      |{
-      | "name": "Date",
-      | "description": "Date in time"
-      |}
-    """.stripMargin
 }

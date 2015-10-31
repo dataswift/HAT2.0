@@ -40,6 +40,7 @@ trait TypeService extends HttpService with DatabaseInfo with HatServiceAuthHandl
           db.withSession { implicit session =>
             val typeRow = new SystemTypeRow(0, LocalDateTime.now(), LocalDateTime.now(), systemType.name, systemType.description)
             val typeMaybeInserted = Try((SystemType returning SystemType) += typeRow)
+            session.close()
             complete {
               typeMaybeInserted match {
                 case Success(typeInserted) =>
@@ -62,10 +63,16 @@ trait TypeService extends HttpService with DatabaseInfo with HatServiceAuthHandl
         entity(as[ApiRelationship]) { relationship =>
           db.withSession { implicit session =>
             val crossref = new SystemTypetotypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), typeId, toTypeId, relationship.relationshipType)
-            val crossrefId = (SystemTypetotypecrossref returning SystemTypetotypecrossref.map(_.id)) += crossref
-
+            val maybeCrossrefId = Try((SystemTypetotypecrossref returning SystemTypetotypecrossref.map(_.id)) += crossref)
+            session.close()
             complete {
-              ApiGenericId(crossrefId)
+              maybeCrossrefId match {
+                case Success(crossrefId) =>
+                  (Created, ApiGenericId(crossrefId))
+                case Failure(e) =>
+                  (BadRequest, ErrorMessage("Error linking Types", e.getMessage))
+              }
+
             }
           }
 
@@ -81,11 +88,15 @@ trait TypeService extends HttpService with DatabaseInfo with HatServiceAuthHandl
           db.withSession { implicit session =>
             val uomRow = new SystemUnitofmeasurementRow(0, LocalDateTime.now(), LocalDateTime.now(), systemUom.name, systemUom.description, systemUom.symbol)
             val uomMaybeInserted = Try((SystemUnitofmeasurement returning SystemUnitofmeasurement) += uomRow)
-            complete(Created, {
-              uomMaybeInserted.map { uomInserted =>
-                ApiSystemUnitofmeasurement.fromDbModel(uomInserted)
+            session.close()
+            complete(
+              uomMaybeInserted match {
+                case Success(uomInserted) =>
+                  (Created, ApiSystemUnitofmeasurement.fromDbModel(uomInserted))
+                case Failure(e) =>
+                  (BadRequest, ErrorMessage("Error creating Unit of Measurement", e.getMessage))
               }
-            })
+            )
           }
 
         }

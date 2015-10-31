@@ -1,5 +1,6 @@
 package hatdex.hat.api.service
 
+import akka.event.LoggingAdapter
 import hatdex.hat.api.models.ApiLocation
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.authentication.HatAuthTestHandler
@@ -18,6 +19,7 @@ class LocationsServiceSpec extends Specification with Specs2RouteTest with Locat
   def actorRefFactory = system
   val dataService = new DataService {
     def actorRefFactory = system
+    val logger: LoggingAdapter = system.log
   }
 
   val apiDataService = dataService

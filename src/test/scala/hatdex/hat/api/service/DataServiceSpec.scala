@@ -40,6 +40,8 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
     }
     db.close
   }
+
+  sequential
   
   val ownerAuthParams = "?username=bob@gmail.com&password=pa55w0rd"
 
