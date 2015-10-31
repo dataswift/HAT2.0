@@ -74,7 +74,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
   def linkTableToTableApi = path("table" / IntNumber / "table" / IntNumber) { (parentId: Int, childId: Int) =>
     post {
       logger.debug(s"POST /table/$parentId/table/$childId")
-      (accessTokenHandler | userPassHandler) { implicit user: User =>
+      (userPassHandler | accessTokenHandler) { implicit user: User =>
         entity(as[ApiRelationship]) { relationship =>
           db.withSession { implicit session =>
             val inserted = linkTables(parentId, childId, relationship)
@@ -153,7 +153,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
    */
   def createFieldApi = path("field") {
     post {
-      (accessTokenHandler | userPassHandler) { implicit user: User =>
+      (userPassHandler | accessTokenHandler) { implicit user: User =>
         logger.debug("POST /field")
         entity(as[ApiDataField]) { field =>
           db.withSession { implicit session =>
@@ -317,7 +317,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
   def storeValueListApi = path("record" / IntNumber / "values") { (recordId: Int) =>
     post {
       logger.debug(s"POST /record/$recordId/values")
-      (accessTokenHandler | userPassHandler) { implicit user: User =>
+      (userPassHandler | accessTokenHandler) { implicit user: User =>
         logger.debug("Authenticated user submitting record values")
         entity(as[Seq[ApiDataValue]]) { values =>
           logger.debug("Authenticated user submitting PARSED record values")
@@ -344,7 +344,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
    */
   def createValueApi = path("value") {
     post {
-      (accessTokenHandler | userPassHandler) { implicit user: User =>
+      (userPassHandler | accessTokenHandler) { implicit user: User =>
         logger.debug("POST /value")
         entity(as[ApiDataValue]) { value =>
           db.withSession { implicit session =>
