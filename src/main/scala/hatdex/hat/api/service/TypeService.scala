@@ -27,13 +27,15 @@ trait TypeService extends HttpService with DatabaseInfo with HatServiceAuthHandl
     pathPrefix("type") {
       createType ~
         linkTypeToType ~
-        createUnitOfMeasurement
+        getTypes ~
+        createUnitOfMeasurement ~
+        getUnitsOfMeasurement
     }
   }
 
   import JsonProtocol._
 
-  def createType = {
+  def createType = path("type") {
     post {
       userPassHandler { implicit user: User =>
         entity(as[ApiSystemType]) { systemType =>
@@ -81,6 +83,31 @@ trait TypeService extends HttpService with DatabaseInfo with HatServiceAuthHandl
     }
   }
 
+  def getTypes = path("type") {
+    get {
+      userPassHandler { implicit user =>
+        parameters('name.?) { (maybeTypeName: Option[String]) =>
+          db.withSession { implicit session =>
+            val typesQuery = SystemType
+            val typesNamed = maybeTypeName match {
+              case Some(typeName) =>
+                typesQuery.filter(_.name === typeName)
+              case None =>
+                typesQuery
+            }
+
+            val types = typesNamed.run
+
+            session.close()
+            complete {
+              types.map(ApiSystemType.fromDbModel)
+            }
+          }
+        }
+      }
+    }
+  }
+
   def createUnitOfMeasurement = path("unitofmeasurement") {
     post {
       userPassHandler { implicit user: User =>
@@ -99,6 +126,29 @@ trait TypeService extends HttpService with DatabaseInfo with HatServiceAuthHandl
             )
           }
 
+        }
+      }
+    }
+  }
+
+  def getUnitsOfMeasurement = path("unitofmeasurement") {
+    get {
+      userPassHandler { implicit user =>
+        parameters('name.?) { (maybeUomName: Option[String]) =>
+          db.withSession { implicit session =>
+            val uomsQuery = SystemUnitofmeasurement
+            val uomsNamed = maybeUomName match {
+              case Some(uomName) =>
+                uomsQuery.filter(_.name === uomName)
+              case None =>
+                uomsQuery
+            }
+            val uoms = uomsNamed.run
+            session.close()
+            complete {
+              uoms.map(ApiSystemUnitofmeasurement.fromDbModel)
+            }
+          }
         }
       }
     }

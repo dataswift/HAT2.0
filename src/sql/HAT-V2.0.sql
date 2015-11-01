@@ -746,7 +746,8 @@ CREATE TABLE public.data_table (
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
                 source_name VARCHAR NOT NULL,
-                CONSTRAINT data_table_pk PRIMARY KEY (id)
+                CONSTRAINT data_table_pk PRIMARY KEY (id),
+                CONSTRAINT data_table_name_source UNIQUE (name, source_name)
 );
 
 

@@ -24,13 +24,14 @@ trait PropertyService extends HttpService with DatabaseInfo with HatServiceAuthH
   val routes = {
     pathPrefix("property") {
       createProperty ~
-        getPropertyApi
+        getPropertyApi ~
+        getPropertiesApi
     }
   }
 
   import JsonProtocol._
 
-  def createProperty = path("") {
+  def createProperty = {
     post {
       userPassHandler { implicit user: User =>
         entity(as[ApiProperty]) { property =>
@@ -61,6 +62,39 @@ trait PropertyService extends HttpService with DatabaseInfo with HatServiceAuthH
                 property
               case None =>
                 (NotFound, s"Property $propertyId not found")
+            }
+          }
+        }
+      }
+    }
+  }
+
+  def getPropertiesApi = {
+    get {
+      userPassHandler { implicit user: User =>
+        parameters('name.?) { (maybePropertyName: Option[String]) =>
+          db.withSession { implicit session =>
+            val propertiesNamed = maybePropertyName match {
+              case Some(proeprtyName) =>
+                SystemProperty.filter(_.name === proeprtyName)
+              case None =>
+                SystemProperty
+            }
+
+            val propertiesQuery = for {
+              property <- propertiesNamed
+              systemType <- property.systemTypeFk
+              uom <- property.systemUnitofmeasurementFk
+            } yield (property, systemType, uom)
+
+            val properties = propertiesQuery.run
+            session.close()
+
+            complete {
+              properties map {
+                case (property: SystemPropertyRow, systemType: SystemTypeRow, uom: SystemUnitofmeasurementRow) =>
+                  ApiProperty.fromDbModel(property)(ApiSystemType.fromDbModel(systemType), ApiSystemUnitofmeasurement.fromDbModel(uom))
+              }
             }
           }
         }
