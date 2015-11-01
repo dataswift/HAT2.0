@@ -354,16 +354,16 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
   protected def createRelationshipRecord(relationshipName: String) = {
     db.withSession { implicit session =>
       val newRecord = new SystemRelationshiprecordRow(0, LocalDateTime.now(), LocalDateTime.now(), relationshipName)
-      val recordId = (SystemRelationshiprecord returning SystemRelationshiprecord.map(_.id)) += newRecord
-      recordId
+      val record = (SystemRelationshiprecord returning SystemRelationshiprecord) += newRecord
+      record.id
     }
   }
 
   protected def createPropertyRecord(relationshipName: String) = {
     db.withSession { implicit session =>
       val newRecord = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), relationshipName)
-      val recordId = (SystemPropertyrecord returning SystemRelationshiprecord.map(_.id)) += newRecord
-      recordId
+      val record = (SystemPropertyrecord returning SystemPropertyrecord) += newRecord
+      record.id
     }
   }
 

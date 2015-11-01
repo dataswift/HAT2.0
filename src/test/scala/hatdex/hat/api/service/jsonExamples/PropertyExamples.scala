@@ -18,4 +18,23 @@ object PropertyExamples {
       | }
       |}
     """.stripMargin
+
+  val bodyWeightRelationship =
+    """
+      |{
+      | "property": {
+      |   "id": 1,
+      |   "name": "bodyWeight"
+      | },
+      | "relationshipType": "weight",
+      | "field": {
+      |   "id": 50,
+      |   "name": "Weight"
+      | },
+      | "record": {
+      |   "id": 8,
+      |   "name": "Day 1"
+      | }
+      |}
+    """.stripMargin
 }
