@@ -28,6 +28,7 @@ trait EventsService extends EntityServiceApi {
         createApi ~
           getApi ~
           getApiValues ~
+          getAllApi ~
           linkToLocation ~
           linkToOrganisation ~
           linkToPerson ~

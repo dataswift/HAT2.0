@@ -37,6 +37,18 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
     }
   }
 
+  def getAllApi = {
+    get {
+      userPassHandler { implicit user =>
+        db.withSession { implicit session =>
+          val entities = getAllEntitiesSimple
+          session.close()
+          entities
+        }
+      }
+    }
+  }
+
   def getApiValues = path(IntNumber / "values") { (entityId: Int) =>
     get {
       userPassHandler { implicit user: User =>
@@ -45,6 +57,47 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
           implicit val getValues: Boolean = true
           getEntity(entityId)
         }
+      }
+    }
+  }
+
+  private def getAllEntitiesSimple(implicit session: Session) = {
+    val result = entityKind match {
+      case "person" =>
+        PeoplePerson.run.map { person =>
+          ApiPerson.fromDbModel(person)
+        }
+      case "thing" =>
+        ThingsThing.run.map { thing =>
+          ApiThing.fromDbModel(thing)
+        }
+      case "event" =>
+        EventsEvent.run.map { event =>
+          ApiEvent.fromDbModel(event)
+        }
+      case "location" =>
+        LocationsLocation.run.map { location =>
+          ApiLocation.fromDbModel(location)
+        }
+      case "organisation" =>
+        OrganisationsOrganisation.run.map { organisation =>
+          ApiOrganisation.fromDbModel(organisation)
+        }
+      case _ => Seq()
+    }
+
+    complete {
+      result match {
+        case entities: Seq[ApiPerson] =>
+          entities
+        case entities: Seq[ApiLocation] =>
+          entities
+        case entities: Seq[ApiEvent] =>
+          entities
+        case entities: Seq[ApiThing] =>
+          entities
+        case entities: Seq[ApiOrganisation] =>
+          entities
       }
     }
   }

@@ -24,6 +24,7 @@ trait PeopleService extends EntityServiceApi {
         createApi ~
           getApi ~
           getApiValues ~
+          getAllApi ~
           createPersonRelationshipType ~
           linkToPerson ~
           linkToLocation ~

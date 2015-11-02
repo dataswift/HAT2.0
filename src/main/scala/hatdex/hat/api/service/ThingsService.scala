@@ -24,6 +24,7 @@ trait ThingsService extends EntityServiceApi {
         createApi ~
           getApi ~
           getApiValues ~
+          getAllApi ~
           linkToPerson ~
           linkToThing ~
           linkToPropertyStatic ~

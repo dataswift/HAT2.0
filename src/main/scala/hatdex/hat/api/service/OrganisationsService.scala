@@ -24,6 +24,7 @@ trait OrganisationsService extends EntityServiceApi {
         createApi ~
           getApi ~
           getApiValues ~
+          getAllApi ~
           linkToLocation ~
           linkToOrganisation ~
           linkToThing ~
