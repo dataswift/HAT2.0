@@ -419,7 +419,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
       // Retrieve values of those fields from the database, grouping by Record ID
       val values = valuesQuery.filter(_.fieldId inSet fieldsToGet)
         .take(10000) // FIXME: magic number for getting X records
-        .sortBy(_.recordId.asc)
+        .sortBy(_.recordId.desc)
         .run
         .groupBy(_.recordId)
 
@@ -438,7 +438,13 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
         records(recordId).copy(tables = Some(Seq(mappedValues)))
       }
 
-      dataRecords
+      dataRecords.toList.sortWith((a, b) =>
+        a.lastUpdated
+          .getOrElse(LocalDateTime.now())
+          .isAfter(
+            b.lastUpdated.getOrElse(LocalDateTime.now())
+          )
+      )
     }
   }
 
@@ -556,7 +562,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
   def getFieldValues(fieldId: Int)(implicit session: Session): Option[ApiDataField] = {
     val apiFieldOption = retrieveDataFieldId(fieldId)
     apiFieldOption map { apiField =>
-      val values = DataValue.filter(_.fieldId === fieldId).run
+      val values = DataValue.filter(_.fieldId === fieldId).sortBy(_.lastUpdated.desc).run
       val apiDataValues = values.map(ApiDataValue.fromDataValue)
       apiField.copy(values = Some(apiDataValues))
     }
