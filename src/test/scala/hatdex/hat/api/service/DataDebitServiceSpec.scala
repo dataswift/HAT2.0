@@ -73,51 +73,51 @@ class DataDebitServiceSpec extends Specification with Specs2RouteTest with Befor
     )
 
     val dataValues = Seq(
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1", 
-        dataFields.find(_.name equals "timestamp").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1",
+        dataFields.find(_.name equals "timestamp").get.id,
         dataRecords.find(_.name equals "kitchen record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 1", 
-        dataFields.find(_.name equals "value").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 1",
+        dataFields.find(_.name equals "value").get.id,
         dataRecords.find(_.name equals "kitchen record 1").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 2", 
-        dataFields.find(_.name equals "timestamp").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 2",
+        dataFields.find(_.name equals "timestamp").get.id,
         dataRecords.find(_.name equals "kitchen record 2").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 2", 
-        dataFields.find(_.name equals "value").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 2",
+        dataFields.find(_.name equals "value").get.id,
         dataRecords.find(_.name equals "kitchen record 2").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 3", 
-        dataFields.find(_.name equals "timestamp").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 3",
+        dataFields.find(_.name equals "timestamp").get.id,
         dataRecords.find(_.name equals "kitchen record 3").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 3", 
-        dataFields.find(_.name equals "value").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 3",
+        dataFields.find(_.name equals "value").get.id,
         dataRecords.find(_.name equals "kitchen record 3").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 1", 
-        dataFields.find(_.name equals "name").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 1",
+        dataFields.find(_.name equals "name").get.id,
         dataRecords.find(_.name equals "event record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 1", 
-        dataFields.find(_.name equals "location").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 1",
+        dataFields.find(_.name equals "location").get.id,
         dataRecords.find(_.name equals "event record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 1", 
-        dataFields.find(_.name equals "startTime").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 1",
+        dataFields.find(_.name equals "startTime").get.id,
         dataRecords.find(_.name equals "event record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 1", 
-        dataFields.find(_.name equals "endTime").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 1",
+        dataFields.find(_.name equals "endTime").get.id,
         dataRecords.find(_.name equals "event record 1").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 2", 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 2",
         dataFields.find(_.name equals "name").get.id, dataRecords.find(_.name equals "event record 2").get.id),
       new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 2",
         dataFields.find(_.name equals "location").get.id, dataRecords.find(_.name equals "event record 2").get.id),
@@ -221,7 +221,7 @@ class DataDebitServiceSpec extends Specification with Specs2RouteTest with Befor
         val dataDebit = HttpRequest(POST, "/propose", entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitExample)) ~>
           proposeDataDebitApi ~> check {
           val responseString = responseAs[String]
-          responseString must contain("key")
+          responseString must contain("dataDebitKey")
           responseAs[ApiDataDebit]
         }
 
@@ -240,7 +240,7 @@ class DataDebitServiceSpec extends Specification with Specs2RouteTest with Befor
           response.status should be equalTo OK
         }
       }
-      
+
       val result = {
         implicit val user:User = apiUser
         HttpRequest(GET, s"/${dataDebit.key.get}/values") ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
@@ -252,4 +252,3 @@ class DataDebitServiceSpec extends Specification with Specs2RouteTest with Befor
     }
   }
 }
-

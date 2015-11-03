@@ -6,14 +6,14 @@ import hatdex.hat.dal.Tables.DataDebitRow
 import org.joda.time.LocalDateTime
 
 case class ApiDataDebit(
-    key: Option[UUID],
+    dataDebitKey: Option[UUID],
     dateCreated: Option[LocalDateTime],
     lastUpdated: Option[LocalDateTime],
     name: String,
     startDate: LocalDateTime,
     endDate: LocalDateTime,
     rolling: Boolean,
-    sell: Boolean,
+    sellRent: Boolean,
     price: Float,
     kind: String,
     bundleContextless: Option[ApiBundleContextless],
