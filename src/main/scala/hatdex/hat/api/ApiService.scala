@@ -142,7 +142,8 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
         peopleService.routes ~
         thingsService.routes ~
         organisationsService.routes ~
-        userService.routes
+        userService.routes ~
+        dataDebitService.routes
     }
   }
 
