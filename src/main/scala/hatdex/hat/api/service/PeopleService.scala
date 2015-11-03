@@ -42,19 +42,21 @@ trait PeopleService extends EntityServiceApi {
 
   import JsonProtocol._
 
-  def createEntity = entity(as[ApiPerson]) { person =>
-    db.withSession { implicit session =>
-      val personspersonRow = new PeoplePersonRow(0, LocalDateTime.now(), LocalDateTime.now(), person.name, person.personId)
-      val result = Try((PeoplePerson returning PeoplePerson) += personspersonRow)
+  def createEntity = pathEnd {
+    entity(as[ApiPerson]) { person =>
+      db.withSession { implicit session =>
+        val personspersonRow = new PeoplePersonRow(0, LocalDateTime.now(), LocalDateTime.now(), person.name, person.personId)
+        val result = Try((PeoplePerson returning PeoplePerson) += personspersonRow)
 
-      complete {
-        result match {
-          case Success(createdPerson) =>
-            val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdPerson.name, "person", None, None, None, None, Some(createdPerson.id))
-            Try(Entity += newEntity)
-            ApiPerson.fromDbModel(createdPerson)
-          case Failure(e) =>
-            (BadRequest, e.getMessage)
+        complete {
+          result match {
+            case Success(createdPerson) =>
+              val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdPerson.name, "person", None, None, None, None, Some(createdPerson.id))
+              Try(Entity += newEntity)
+              ApiPerson.fromDbModel(createdPerson)
+            case Failure(e) =>
+              (BadRequest, e.getMessage)
+          }
         }
       }
     }
@@ -65,13 +67,22 @@ trait PeopleService extends EntityServiceApi {
         entity(as[ApiPersonRelationshipType]) { relationship =>
           db.withSession { implicit session =>
             val reltypeRow = new PeoplePersontopersonrelationshiptypeRow(0, LocalDateTime.now(), LocalDateTime.now(), relationship.name, relationship.description)
-            val reltypeId = (PeoplePersontopersonrelationshiptype returning PeoplePersontopersonrelationshiptype.map(_.id)) += reltypeRow
-            complete(Created, {
-              relationship.copy(id = Some(reltypeId))
-            })
+            val reltype = (PeoplePersontopersonrelationshiptype returning PeoplePersontopersonrelationshiptype) += reltypeRow
+            complete {
+              (Created, ApiPersonRelationshipType.fromDbModel(reltype))
+            }
           }
 
         }
+    }
+
+    get {
+      db.withSession { implicit session =>
+        val relTypes = PeoplePersontopersonrelationshiptype.run
+        complete {
+          (OK, relTypes.map(ApiPersonRelationshipType.fromDbModel))
+        }
+      }
     }
   }
 
@@ -97,7 +108,7 @@ trait PeopleService extends EntityServiceApi {
               case Success(crossrefId) =>
                 (Created, ApiGenericId(crossrefId))
               case Failure(e) =>
-                (BadRequest, e.getMessage)
+                (BadRequest, ErrorMessage(s"Error linking ${entityKind} to person", e.getMessage))
             }
           }
 
@@ -121,14 +132,14 @@ trait PeopleService extends EntityServiceApi {
   protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
                                   (implicit session: Session): Try[Int] = {
     val crossref = new PeoplePersonlocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, locationId, relationshipType, true, recordId)
+      locationId, entityId, relationshipType, true, recordId)
     Try((PeoplePersonlocationcrossref returning PeoplePersonlocationcrossref.map(_.id)) += crossref)
   }
 
   protected def createLinkOrganisation(entityId: Int, organisationId: Int, relationshipType: String, recordId: Int)
                                       (implicit session: Session): Try[Int] = {
     val crossref = new PeoplePersonorganisationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, organisationId, relationshipType, true, recordId)
+      organisationId, entityId, relationshipType, true, recordId)
     Try((PeoplePersonorganisationcrossref returning PeoplePersonorganisationcrossref.map(_.id)) += crossref)
   }
 
@@ -226,12 +237,12 @@ trait PeopleService extends EntityServiceApi {
 
   def getThings(eventID: Int)
                (implicit session: Session, getValues: Boolean): Seq[ApiThingRelationship] = {
-    Seq();
+    Seq()
   }
 
   def getEvents(eventID: Int)
                (implicit session: Session, getValues: Boolean): Seq[ApiEventRelationship] = {
-    Seq();
+    Seq()
   }
 
 

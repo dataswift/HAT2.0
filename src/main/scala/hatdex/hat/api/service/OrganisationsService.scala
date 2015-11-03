@@ -41,19 +41,21 @@ trait OrganisationsService extends EntityServiceApi {
 
   import JsonProtocol._
 
-  def createEntity = entity(as[ApiOrganisation]) { organisation =>
-    db.withSession { implicit session =>
-      val organisationsorganisationRow = new OrganisationsOrganisationRow(0, LocalDateTime.now(), LocalDateTime.now(), organisation.name)
-      val result = Try((OrganisationsOrganisation returning OrganisationsOrganisation) += organisationsorganisationRow)
+  def createEntity = pathEnd {
+    entity(as[ApiOrganisation]) { organisation =>
+      db.withSession { implicit session =>
+        val organisationsorganisationRow = new OrganisationsOrganisationRow(0, LocalDateTime.now(), LocalDateTime.now(), organisation.name)
+        val result = Try((OrganisationsOrganisation returning OrganisationsOrganisation) += organisationsorganisationRow)
 
-      complete {
-        result match {
-          case Success(createdOrganisation) =>
-            val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdOrganisation.name, "organisation", None, None, None, Some(createdOrganisation.id), None)
-            Try(Entity += newEntity)
-            ApiOrganisation.fromDbModel(createdOrganisation)
-          case Failure(e) =>
-            (BadRequest, e.getMessage)
+        complete {
+          result match {
+            case Success(createdOrganisation) =>
+              val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdOrganisation.name, "organisation", None, None, None, Some(createdOrganisation.id), None)
+              Try(Entity += newEntity)
+              ApiOrganisation.fromDbModel(createdOrganisation)
+            case Failure(e) =>
+              (BadRequest, e.getMessage)
+          }
         }
       }
     }
@@ -62,7 +64,7 @@ trait OrganisationsService extends EntityServiceApi {
   protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
                                   (implicit session: Session): Try[Int] = {
     val crossref = new OrganisationsOrganisationlocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, locationId, relationshipType, true, recordId)
+      locationId, entityId, relationshipType, true, recordId)
     Try((OrganisationsOrganisationlocationcrossref returning OrganisationsOrganisationlocationcrossref.map(_.id)) += crossref)
   }
 
@@ -77,7 +79,7 @@ trait OrganisationsService extends EntityServiceApi {
   protected def createLinkOrganisation(entityId: Int, organisationId: Int, relationshipType: String, recordId: Int)
                                       (implicit session: Session): Try[Int] = {
     val crossref = new OrganisationsOrganisationtoorganisationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, organisationId, relationshipType, true, recordId)
+      organisationId, entityId, relationshipType, true, recordId)
     Try((OrganisationsOrganisationtoorganisationcrossref returning OrganisationsOrganisationtoorganisationcrossref.map(_.id)) += crossref)
   }
 

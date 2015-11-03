@@ -49,6 +49,8 @@ rm src/sql/authentication.sql
 
 echo "Boilerplate setup"
 psql $DATABASE -U$DBUSER < src/sql/data.sql
+psql $DATABASE -U$DBUSER < src/sql/collections.sql
+psql $DATABASE -U$DBUSER < src/sql/properties.sql
 
 # Rebuild and run the project
 echo "Compiling and running the project"

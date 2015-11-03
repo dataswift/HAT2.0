@@ -48,19 +48,21 @@ trait EventsService extends EntityServiceApi {
   /*
    * Create a simple event, containing only the name
    */
-  def createEntity = entity(as[ApiEvent]) { event =>
-    db.withSession { implicit session =>
-      val eventseventRow = new EventsEventRow(0, LocalDateTime.now(), LocalDateTime.now(), event.name)
-      val result = Try((EventsEvent returning EventsEvent) += eventseventRow)
+  def createEntity = pathEnd {
+    entity(as[ApiEvent]) { event =>
+      db.withSession { implicit session =>
+        val eventseventRow = new EventsEventRow(0, LocalDateTime.now(), LocalDateTime.now(), event.name)
+        val result = Try((EventsEvent returning EventsEvent) += eventseventRow)
 
-      complete {
-        result match {
-          case Success(createdEvent) =>
-            val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdEvent.name, "event", None, None, Some(createdEvent.id), None, None)
-            Try(Entity += newEntity)
-            ApiEvent.fromDbModel(createdEvent)
-          case Failure(e) =>
-            (BadRequest, e.getMessage)
+        complete {
+          result match {
+            case Success(createdEvent) =>
+              val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdEvent.name, "event", None, None, Some(createdEvent.id), None, None)
+              Try(Entity += newEntity)
+              ApiEvent.fromDbModel(createdEvent)
+            case Failure(e) =>
+              (BadRequest, e.getMessage)
+          }
         }
       }
     }
@@ -69,35 +71,35 @@ trait EventsService extends EntityServiceApi {
   protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
                                   (implicit session: Session): Try[Int] = {
     val crossref = new EventsEventlocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, locationId, relationshipType, true, recordId)
+      locationId, entityId, relationshipType, true, recordId)
     Try((EventsEventlocationcrossref returning EventsEventlocationcrossref.map(_.id)) += crossref)
   }
 
   protected def createLinkOrganisation(entityId: Int, organisationId: Int, relationshipType: String, recordId: Int)
                                       (implicit session: Session): Try[Int] = {
     val crossref = new EventsEventorganisationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, organisationId, relationshipType, true, recordId)
+      organisationId, entityId, relationshipType, true, recordId)
     Try((EventsEventorganisationcrossref returning EventsEventorganisationcrossref.map(_.id)) += crossref)
   }
 
   protected def createLinkPerson(entityId: Int, personId: Int, relationshipType: String, recordId: Int)
                                 (implicit session: Session): Try[Int] = {
     val crossref = new EventsEventpersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, personId, relationshipType, true, recordId)
+      personId, entityId, relationshipType, true, recordId)
     Try((EventsEventpersoncrossref returning EventsEventpersoncrossref.map(_.id)) += crossref)
   }
 
   protected def createLinkThing(entityId: Int, thingId: Int, relationshipType: String, recordId: Int)
                                (implicit session: Session): Try[Int] = {
     val crossref = new EventsEventthingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, thingId, relationshipType, true, recordId)
+      thingId, entityId, relationshipType, true, recordId)
     Try((EventsEventthingcrossref returning EventsEventthingcrossref.map(_.id)) += crossref)
   }
 
   protected def createLinkEvent(entityId: Int, eventId: Int, relationshipType: String, recordId: Int)
                                (implicit session: Session): Try[Int] = {
     val crossref = new EventsEventtoeventcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, eventId, relationshipType, true, recordId)
+      eventId, entityId, relationshipType, true, recordId)
     Try((EventsEventtoeventcrossref returning EventsEventtoeventcrossref.map(_.id)) += crossref)
   }
 

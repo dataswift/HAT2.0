@@ -48,6 +48,8 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
 
     val dataService = apiDataService
     val propertyService = apiPropertyService
+
+    val logger = log
   }
 
   val locationsService = new LocationsService {
@@ -55,6 +57,8 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
 
     val dataService = apiDataService
     val propertyService = apiPropertyService
+
+    val logger = log
   }
 
   val peopleService = new PeopleService {
@@ -62,6 +66,8 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
 
     val dataService = apiDataService
     val propertyService = apiPropertyService
+
+    val logger = log
   }
 
   val thingsService = new ThingsService {
@@ -69,6 +75,8 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
 
     val dataService = apiDataService
     val propertyService = apiPropertyService
+
+    val logger = log
   }
 
   val organisationsService = new OrganisationsService {
@@ -76,6 +84,8 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
 
     val dataService = apiDataService
     val propertyService = apiPropertyService
+
+    val logger = log
   }
 
   val dataDebitService = new DataDebitService {

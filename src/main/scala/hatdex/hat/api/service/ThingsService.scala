@@ -40,19 +40,21 @@ trait ThingsService extends EntityServiceApi {
 
   import JsonProtocol._
 
-  def createEntity = entity(as[ApiThing]) { thing =>
-    db.withSession { implicit session =>
-      val thingsthingRow = new ThingsThingRow(0, LocalDateTime.now(), LocalDateTime.now(), thing.name)
-      val result = Try((ThingsThing returning ThingsThing) += thingsthingRow)
+  def createEntity = pathEnd {
+    entity(as[ApiThing]) { thing =>
+      db.withSession { implicit session =>
+        val thingsthingRow = new ThingsThingRow(0, LocalDateTime.now(), LocalDateTime.now(), thing.name)
+        val result = Try((ThingsThing returning ThingsThing) += thingsthingRow)
 
-      complete {
-        result match {
-          case Success(createdThing) =>
-            val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdThing.name, "thing", None, Some(createdThing.id), None, None, None)
-            Try(Entity += newEntity)
-            ApiThing.fromDbModel(createdThing)
-          case Failure(e) =>
-            (BadRequest, e.getMessage)
+        complete {
+          result match {
+            case Success(createdThing) =>
+              val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdThing.name, "thing", None, Some(createdThing.id), None, None, None)
+              Try(Entity += newEntity)
+              ApiThing.fromDbModel(createdThing)
+            case Failure(e) =>
+              (BadRequest, e.getMessage)
+          }
         }
       }
     }
@@ -61,7 +63,7 @@ trait ThingsService extends EntityServiceApi {
   protected def createLinkThing(entityId: Int, thingId: Int, relationshipType: String, recordId: Int)
                                (implicit session: Session): Try[Int] = {
     val crossref = new ThingsThingtothingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, thingId, relationshipType, true, recordId)
+      thingId, entityId, relationshipType, true, recordId)
     Try((ThingsThingtothingcrossref returning ThingsThingtothingcrossref.map(_.id)) += crossref)
   }
   
@@ -69,7 +71,7 @@ trait ThingsService extends EntityServiceApi {
                                 (implicit session: Session): Try[Int] = {
     // FIXME: personID and thingID swapped around in the DB!
     val crossref = new ThingsThingpersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, personId, relationshipType, true, recordId)
+      personId, entityId, relationshipType, true, recordId)
     Try((ThingsThingpersoncrossref returning ThingsThingpersoncrossref.map(_.id)) += crossref)
   }
 

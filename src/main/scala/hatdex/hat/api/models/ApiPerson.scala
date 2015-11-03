@@ -1,6 +1,6 @@
 package hatdex.hat.api.models
 
-import hatdex.hat.dal.Tables.PeoplePersonRow
+import hatdex.hat.dal.Tables.{PeoplePersontopersonrelationshiptypeRow, PeoplePersonRow}
 
 case class ApiPerson(
     id: Option[Int],
@@ -14,10 +14,16 @@ case class ApiPerson(
 
 object ApiPerson {
   def fromDbModel(entity: PeoplePersonRow) : ApiPerson = {
-    new ApiPerson(Some(entity.id), entity.name, entity.personId, None, None, None, None, None)
+    ApiPerson(Some(entity.id), entity.name, entity.personId, None, None, None, None, None)
   }
 }
 
 case class ApiPersonRelationship(relationshipType: String, person: ApiPerson)
 
 case class ApiPersonRelationshipType(id: Option[Int], name: String, description: Option[String])
+
+object ApiPersonRelationshipType {
+  def fromDbModel(relationship: PeoplePersontopersonrelationshiptypeRow) : ApiPersonRelationshipType = {
+    ApiPersonRelationshipType(Some(relationship.id), relationship.name, relationship.description)
+  }
+}

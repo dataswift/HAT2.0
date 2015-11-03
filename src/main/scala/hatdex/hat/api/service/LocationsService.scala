@@ -40,19 +40,21 @@ trait LocationsService extends EntityServiceApi {
 
   import JsonProtocol._
 
-  def createEntity = entity(as[ApiLocation]) { location =>
-    db.withSession { implicit session =>
-      val locationslocationRow = new LocationsLocationRow(0, LocalDateTime.now(), LocalDateTime.now(), location.name)
-      val result = Try((LocationsLocation returning LocationsLocation) += locationslocationRow)
+  def createEntity = pathEnd {
+    entity(as[ApiLocation]) { location =>
+      db.withSession { implicit session =>
+        val locationslocationRow = new LocationsLocationRow(0, LocalDateTime.now(), LocalDateTime.now(), location.name)
+        val result = Try((LocationsLocation returning LocationsLocation) += locationslocationRow)
 
-      complete {
-        result match {
-          case Success(createdLocation) =>
-            val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdLocation.name, "location", Some(createdLocation.id), None, None, None, None)
-            Try(Entity += newEntity)
-            (Created, ApiLocation.fromDbModel(createdLocation))
-          case Failure(e) =>
-            (BadRequest, e.getMessage)
+        complete {
+          result match {
+            case Success(createdLocation) =>
+              val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdLocation.name, "location", Some(createdLocation.id), None, None, None, None)
+              Try(Entity += newEntity)
+              (Created, ApiLocation.fromDbModel(createdLocation))
+            case Failure(e) =>
+              (BadRequest, e.getMessage)
+          }
         }
       }
     }
@@ -61,14 +63,14 @@ trait LocationsService extends EntityServiceApi {
   protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
                                   (implicit session: Session): Try[Int] = {
     val crossref = new LocationsLocationtolocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, locationId, relationshipType, true, recordId)
+      locationId, entityId, relationshipType, true, recordId)
     Try((LocationsLocationtolocationcrossref returning LocationsLocationtolocationcrossref.map(_.id)) += crossref)
   }
 
   protected def createLinkThing(entityId: Int, thingId: Int, relationshipType: String, recordId: Int)
                                (implicit session: Session): Try[Int] = {
     val crossref = new LocationsLocationthingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, thingId, relationshipType, true, recordId)
+      thingId, entityId, relationshipType, true, recordId)
     Try((LocationsLocationthingcrossref returning LocationsLocationthingcrossref.map(_.id)) += crossref)
   }
 

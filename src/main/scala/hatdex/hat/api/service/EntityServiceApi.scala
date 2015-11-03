@@ -37,7 +37,7 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
     }
   }
 
-  def getAllApi = {
+  def getAllApi = pathEnd {
     get {
       userPassHandler { implicit user =>
         db.withSession { implicit session =>
@@ -62,43 +62,24 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
   }
 
   private def getAllEntitiesSimple(implicit session: Session) = {
+    import spray.json._
+    import JsonProtocol._
     val result = entityKind match {
       case "person" =>
-        PeoplePerson.run.map { person =>
-          ApiPerson.fromDbModel(person)
-        }
+        PeoplePerson.run.map(ApiPerson.fromDbModel).toJson
       case "thing" =>
-        ThingsThing.run.map { thing =>
-          ApiThing.fromDbModel(thing)
-        }
+        ThingsThing.run.map(ApiThing.fromDbModel).toJson
       case "event" =>
-        EventsEvent.run.map { event =>
-          ApiEvent.fromDbModel(event)
-        }
+        EventsEvent.run.map(ApiEvent.fromDbModel).toJson
       case "location" =>
-        LocationsLocation.run.map { location =>
-          ApiLocation.fromDbModel(location)
-        }
+        LocationsLocation.run.map(ApiLocation.fromDbModel).toJson
       case "organisation" =>
-        OrganisationsOrganisation.run.map { organisation =>
-          ApiOrganisation.fromDbModel(organisation)
-        }
+        OrganisationsOrganisation.run.map(ApiOrganisation.fromDbModel).toJson
       case _ => Seq()
     }
 
     complete {
-      result match {
-        case entities: Seq[ApiPerson] =>
-          entities
-        case entities: Seq[ApiLocation] =>
-          entities
-        case entities: Seq[ApiEvent] =>
-          entities
-        case entities: Seq[ApiThing] =>
-          entities
-        case entities: Seq[ApiOrganisation] =>
-          entities
-      }
+      result.toString
     }
   }
 
@@ -125,7 +106,7 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
         case Some(entity: ApiOrganisation) =>
           entity
         case _ =>
-          (NotFound, s"$entityKind with ID $entityId not found")
+          (NotFound, ErrorMessage("NotFound", s"$entityKind with ID $entityId not found"))
       }
     }
   }
