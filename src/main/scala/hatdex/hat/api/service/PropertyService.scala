@@ -31,7 +31,7 @@ trait PropertyService extends HttpService with DatabaseInfo with HatServiceAuthH
 
   import JsonProtocol._
 
-  def createProperty = {
+  def createProperty = pathEnd {
     post {
       userPassHandler { implicit user: User =>
         entity(as[ApiProperty]) { property =>
@@ -69,32 +69,15 @@ trait PropertyService extends HttpService with DatabaseInfo with HatServiceAuthH
     }
   }
 
-  def getPropertiesApi = {
+  def getPropertiesApi = pathEnd {
     get {
       userPassHandler { implicit user: User =>
         parameters('name.?) { (maybePropertyName: Option[String]) =>
           db.withSession { implicit session =>
-            val propertiesNamed = maybePropertyName match {
-              case Some(proeprtyName) =>
-                SystemProperty.filter(_.name === proeprtyName)
-              case None =>
-                SystemProperty
-            }
-
-            val propertiesQuery = for {
-              property <- propertiesNamed
-              systemType <- property.systemTypeFk
-              uom <- property.systemUnitofmeasurementFk
-            } yield (property, systemType, uom)
-
-            val properties = propertiesQuery.run
-            session.close()
-
             complete {
-              properties map {
-                case (property: SystemPropertyRow, systemType: SystemTypeRow, uom: SystemUnitofmeasurementRow) =>
-                  ApiProperty.fromDbModel(property)(ApiSystemType.fromDbModel(systemType), ApiSystemUnitofmeasurement.fromDbModel(uom))
-              }
+              val properties = getProperties(maybePropertyName)
+              session.close()
+              properties
             }
           }
         }
@@ -171,6 +154,28 @@ trait PropertyService extends HttpService with DatabaseInfo with HatServiceAuthH
     val property = propertyQuery.run.headOption
 
     property map {
+      case (property: SystemPropertyRow, systemType: SystemTypeRow, uom: SystemUnitofmeasurementRow) =>
+        ApiProperty.fromDbModel(property)(ApiSystemType.fromDbModel(systemType), ApiSystemUnitofmeasurement.fromDbModel(uom))
+    }
+  }
+
+  protected def getProperties(maybePropertyName: Option[String])(implicit session: Session): Seq[ApiProperty] = {
+    val propertiesNamed = maybePropertyName match {
+      case Some(proeprtyName) =>
+        SystemProperty.filter(_.name === proeprtyName)
+      case None =>
+        SystemProperty
+    }
+
+    val propertiesQuery = for {
+      property <- propertiesNamed
+      systemType <- property.systemTypeFk
+      uom <- property.systemUnitofmeasurementFk
+    } yield (property, systemType, uom)
+
+    val properties = propertiesQuery.run
+
+    properties map {
       case (property: SystemPropertyRow, systemType: SystemTypeRow, uom: SystemUnitofmeasurementRow) =>
         ApiProperty.fromDbModel(property)(ApiSystemType.fromDbModel(systemType), ApiSystemUnitofmeasurement.fromDbModel(uom))
     }

@@ -32,6 +32,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
         getRecordApi ~
         getRecordValuesApi ~
         getValueApi ~
+        getDataSourcesApi ~
         createTableApi ~
         linkTableToTableApi ~
         createFieldApi ~
@@ -400,6 +401,20 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
     }
   }
 
+  def getDataSourcesApi = path("sources") {
+    get {
+      userPassHandler { implicit user =>
+        logger.debug("GET /sources")
+        db.withSession { implicit session =>
+          complete {
+            session.close()
+            getDataSources()
+          }
+        }
+      }
+    }
+  }
+
   def getTableValues(tableId: Int)(implicit session: Session): Option[Iterable[ApiDataRecord]] = {
     val valuesQuery = DataValue
     getTableValues(tableId, valuesQuery)
@@ -653,6 +668,17 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
     val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name === name).run.headOption
     dbDataTable map { table =>
       ApiDataTable.fromDataTable(table)(None)(None)
+    }
+  }
+
+  protected def getDataSources()(implicit session: Session): Seq[ApiDataTable] = {
+    val childTablesQuery = DataTabletotablecrossref.map(_.table2)
+    val rootTablesQuery = DataTable.filterNot(_.id in childTablesQuery)
+
+    val rootTables = rootTablesQuery.run
+
+    rootTables.map { dataTable =>
+      ApiDataTable.fromDataTable(dataTable)(None)(None)
     }
   }
 
