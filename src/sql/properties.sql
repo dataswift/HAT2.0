@@ -1,7 +1,3 @@
-
-INSERT INTO system_type (date_created, last_updated, name, description)
-VALUES (now(), now(), 'PostalAddress', 'Physical address of the item');
-
 INSERT INTO system_type (date_created, last_updated, name, description) VALUES (now(), now(), 'Brand', 'The brand(s) associated with a product or service, or the brand(s) maintained by an organization or business person.');
 INSERT INTO system_type (date_created, last_updated, name, description) VALUES (now(), now(), 'ContactPoint', 'A contact point for a person or organization. Supersedes contactPoints');
 INSERT INTO system_type (date_created, last_updated, name, description) VALUES (now(), now(), 'Country', 'Nationality of the person');
@@ -21,7 +17,16 @@ INSERT INTO system_type (date_created, last_updated, name, description) VALUES (
 INSERT INTO system_unitofmeasurement VALUES (1, now(), now(), 'kilograms', 'measurement of weight', 'kg');
 INSERT INTO system_unitofmeasurement VALUES (2, now(), now(), 'meters', 'measurement of height or length', 'm');
 INSERT INTO system_unitofmeasurement VALUES (3, now(), now(), 'none', 'no unit of measurement (plain text)', NULL);
+INSERT INTO system_unitofmeasurement VALUES (4, now(), now(), 'centimeters', 'measurement of height or length', 'cm');
 
 INSERT INTO system_property VALUES (1, now(), now(), 'bodyWeight', 'Body weight of a person',
                                     (SELECT id FROM system_type WHERE name='QuantitativeValue'),
                                     (SELECT id FROM system_unitofmeasurement WHERE name='kilograms'));
+
+INSERT INTO system_property VALUES (2, now(), now(), 'name', 'Name',
+                                    (SELECT id FROM system_type WHERE name='Text'),
+                                    (SELECT id FROM system_unitofmeasurement WHERE name='none'));
+
+INSERT INTO system_property VALUES (3, now(), now(), 'height', 'Body height of a person',
+                                    (SELECT id FROM system_type WHERE name='QuantitativeValue'),
+                                    (SELECT id FROM system_unitofmeasurement WHERE name='centimeters'));

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DATABASE=${DATABASE:-"hat20"}
+DATABASE=${DATABASE:-"hat20test"}
 DBUSER=${DBUSER:-$DATABASE}
 DBPASS=${DBPASS:-""}
 
@@ -49,8 +49,9 @@ rm src/sql/authentication.sql
 
 echo "Boilerplate setup"
 psql $DATABASE -U$DBUSER < src/sql/data.sql
-psql $DATABASE -U$DBUSER < src/sql/collections.sql
+psql $DATABASE -U$DBUSER < src/sql/relationships.sql
 psql $DATABASE -U$DBUSER < src/sql/properties.sql
+psql $DATABASE -U$DBUSER < src/sql/collections.sql
 
 # Rebuild and run the project
 echo "Compiling and running the project"
