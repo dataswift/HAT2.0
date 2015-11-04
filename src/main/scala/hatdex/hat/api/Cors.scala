@@ -35,7 +35,7 @@ trait Cors extends Directives {
     context.withRouteResponseHandling {
       // If an OPTIONS request was rejected as 405, complete the request by responding with the
       // defined CORS details and the allowed options grabbed from the rejection
-      case Rejected(reasons) if context.request.method == HttpMethods.OPTIONS && reasons.exists(_.isInstanceOf[MethodRejection]) =>
+      case Rejected(reasons) => // if context.request.method == HttpMethods.OPTIONS && reasons.exists(_.isInstanceOf[MethodRejection]) =>
         val allowedMethods = reasons.collect { case r: MethodRejection => r.supported }
 
         context.complete(HttpResponse().withHeaders(
