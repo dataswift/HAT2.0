@@ -41,6 +41,8 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
     def actorRefFactory = context
 
     val dataService = apiDataService
+
+    val logger = log
   }
 
   val eventsService = new EventsService {
@@ -92,6 +94,8 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
     override val bundleService: BundleService = apiBundleService
 
     override implicit def actorRefFactory: ActorRefFactory = context
+
+    val logger = log
   }
 
   val userService = new UserService {
@@ -158,7 +162,8 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
         thingsService.routes ~
         organisationsService.routes ~
         userService.routes ~
-        typeService.routes
+        typeService.routes ~
+        dataDebitService.routes
     }
   }
 

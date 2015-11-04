@@ -40,7 +40,7 @@ trait Cors extends Directives {
 
         context.complete(HttpResponse().withHeaders(
           `Access-Control-Allow-Methods`(OPTIONS, allowedMethods: _*) ::
-            getAllowedOrigins(context) ++:
+//            getAllowedOrigins(context) ++:
               optionsCorsHeaders
         ))
 
