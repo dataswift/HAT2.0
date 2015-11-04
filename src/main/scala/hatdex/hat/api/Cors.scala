@@ -21,10 +21,16 @@ trait Cors extends Directives {
    * user-provided Origin if that Origin is acceptable, or a None if it's not.
    */
   private def getAllowedOrigins(context: RequestContext): Option[`Access-Control-Allow-Origin`] = {
-    context.request.header[Origin].collect {
-      case origin if conf.getString("cors.allow_origins").contains(origin.value) || conf.getString("cors.allow_origins").contains("*") =>
-        `Access-Control-Allow-Origin`(SomeOrigins(origin.originList))
+    context.request.header[Origin].isEmpty match {
+      case false =>
+        context.request.header[Origin].collect {
+          case origin if conf.getString("cors.allow_origins").contains(origin.value) || conf.getString("cors.allow_origins").contains("*") =>
+            `Access-Control-Allow-Origin`(SomeOrigins(origin.originList))
+        }
+      case true =>
+        Some(`Access-Control-Allow-Origin`(SomeOrigins(Seq(HttpOrigin("*", Host("*"))))))
     }
+
   }
 
   def cors[T]: Directive0 = mapRequestContext { context =>
