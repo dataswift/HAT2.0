@@ -17,10 +17,11 @@ import hatdex.hat.authentication.{HatServiceAuthHandler, HatAuthHandler}
 import scala.util.{Failure, Success, Try}
 
 // this trait defines our service behavior independently from the service actor
-trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandler {
+trait DataService extends HttpService with HatServiceAuthHandler {
   //  import hatdex.hat.authentication.HatServiceAuthHandler._
 
   val logger: LoggingAdapter
+  val db = DatabaseInfo.db
 
   val routes = {
     pathPrefix("data") {

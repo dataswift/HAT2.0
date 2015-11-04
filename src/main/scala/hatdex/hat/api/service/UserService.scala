@@ -15,7 +15,10 @@ import spray.httpx.SprayJsonSupport._
 
 import scala.util.{Failure, Success, Try}
 
-trait UserService extends HttpService with DatabaseInfo with HatServiceAuthHandler {
+trait UserService extends HttpService with HatServiceAuthHandler {
+
+  val db = DatabaseInfo.db
+
   val routes = {
     pathPrefix("users") {
       createApiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount

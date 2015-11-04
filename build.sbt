@@ -16,7 +16,7 @@ publishArtifact in Test := false
 
 scalacOptions ++= Seq("-unchecked", "-deprecation")
 
-scalacOptions in (Compile, doc) ++= Seq("-unchecked", /*"-deprecation", */ "-diagrams", "-implicits", "-skip-packages", "samples")
+scalacOptions in (Compile, doc) ++= Seq("-unchecked", /*"-deprecation", */ "-implicits", "-skip-packages", "samples")
 
 logLevel := Level.Info
 

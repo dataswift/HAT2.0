@@ -17,9 +17,10 @@ import scala.util.{Failure, Success, Try}
 
 
 // this trait defines our service behavior independently from the service actor
-trait PropertyService extends HttpService with DatabaseInfo with HatServiceAuthHandler {
+trait PropertyService extends HttpService with HatServiceAuthHandler {
 
   val dataService: DataService
+  val db = DatabaseInfo.db
 
   val routes = {
     pathPrefix("property") {

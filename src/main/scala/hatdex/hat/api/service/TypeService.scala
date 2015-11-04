@@ -19,9 +19,11 @@ import scala.util.Failure
 
 
 // this trait defines our service behavior independently from the service actor
-trait TypeService extends HttpService with DatabaseInfo with HatServiceAuthHandler {
+trait TypeService extends HttpService with HatServiceAuthHandler {
 
   val logger: LoggingAdapter
+
+  val db = DatabaseInfo.db
 
   val routes = {
     pathPrefix("type") {

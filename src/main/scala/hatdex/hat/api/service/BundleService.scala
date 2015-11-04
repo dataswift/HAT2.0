@@ -16,9 +16,10 @@ import spray.routing._
 import scala.util.{Failure, Success, Try}
 
 // this trait defines our service behavior independently from the service actor
-trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHandler {
+trait BundleService extends HttpService with HatServiceAuthHandler {
 
   val dataService: DataService
+  val db = DatabaseInfo.db
 
   val routes = {
     pathPrefix("bundles" / "contextless") {

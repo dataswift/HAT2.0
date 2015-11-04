@@ -15,9 +15,10 @@ import spray.routing._
 
 import scala.util.{Failure, Success, Try}
 
-trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo with HatServiceAuthHandler {
+trait EntityServiceApi extends HttpService with EntityService with HatServiceAuthHandler {
 
   import JsonProtocol._
+  val db = DatabaseInfo.db
 
   def createApi = {
     post {

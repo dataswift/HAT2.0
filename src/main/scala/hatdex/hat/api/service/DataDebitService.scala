@@ -17,9 +17,10 @@ import java.util.UUID
 import scala.util.{Failure, Success, Try}
 
 // this trait defines our service behavior independently from the service actor
-trait DataDebitService extends HttpService with DatabaseInfo with HatServiceAuthHandler {
+trait DataDebitService extends HttpService with HatServiceAuthHandler {
 
   val bundleService: BundleService
+  val db = DatabaseInfo.db
 
   val routes = {
     pathPrefix("dataDebit") {
