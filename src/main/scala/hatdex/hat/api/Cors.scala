@@ -13,7 +13,8 @@ trait Cors extends Directives {
   private val optionsCorsHeaders = List(
     `Access-Control-Allow-Headers`(conf.getStringList("cors.allow_headers").toArray.mkString(", ")),
     `Access-Control-Max-Age`(60 * 60 * 24 * 20), // cache pre-flight response for 20 days
-    `Access-Control-Allow-Credentials`(conf.getBoolean("cors.allow_credentials"))
+    `Access-Control-Allow-Credentials`(conf.getBoolean("cors.allow_credentials")),
+    `Access-Control-Allow-Origin`(AllOrigins)
   )
 
   /**
@@ -21,15 +22,12 @@ trait Cors extends Directives {
    * user-provided Origin if that Origin is acceptable, or a None if it's not.
    */
   private def getAllowedOrigins(context: RequestContext): Option[`Access-Control-Allow-Origin`] = {
-    context.request.header[Origin].isEmpty match {
-      case false =>
-        context.request.header[Origin].collect {
-          case origin if conf.getString("cors.allow_origins").contains(origin.value) || conf.getString("cors.allow_origins").contains("*") =>
-            `Access-Control-Allow-Origin`(SomeOrigins(origin.originList))
-        }
-      case true =>
-        Some(`Access-Control-Allow-Origin`(AllOrigins))
+
+    context.request.header[Origin].collect {
+      case origin if conf.getString("cors.allow_origins").contains(origin.value) || conf.getString("cors.allow_origins").contains("*") =>
+        `Access-Control-Allow-Origin`(SomeOrigins(origin.originList))
     }
+
 
   }
 
@@ -46,16 +44,16 @@ trait Cors extends Directives {
               optionsCorsHeaders
         ))
 
-//      case Rejected(reasons) =>
-//        println("[ERROR] Different reasons " + reasons.toString)
-//        println("[ERROR] Origins: " + getAllowedOrigins(context).toString)
-//        context.
-//        context.complete(HttpResponse().withHeaders(
-//            getAllowedOrigins(context) ++: optionsCorsHeaders
-//        ))
+      //      case Rejected(reasons) =>
+      //        println("[ERROR] Different reasons " + reasons.toString)
+      //        println("[ERROR] Origins: " + getAllowedOrigins(context).toString)
+      //        context.
+      //        context.complete(HttpResponse().withHeaders(
+      //            getAllowedOrigins(context) ++: optionsCorsHeaders
+      //        ))
 
     } withHttpResponseHeadersMapped { headers =>
-      var allHeaders = getAllowedOrigins(context).toList ++ headers
+      var allHeaders = getAllowedOrigins(context).toList ++ headers ++ optionsCorsHeaders
       println("Added headers " + context.request.toString + allHeaders.toString)
       allHeaders
     }
