@@ -1,6 +1,6 @@
 package hatdex.hat.api
 
-import spray.http.{HttpMethods, HttpOrigin, HttpResponse, SomeOrigins}
+import spray.http._
 import spray.http.HttpHeaders._
 import spray.http.HttpMethods._
 import spray.routing._
@@ -28,7 +28,7 @@ trait Cors extends Directives {
             `Access-Control-Allow-Origin`(SomeOrigins(origin.originList))
         }
       case true =>
-        Some(`Access-Control-Allow-Origin`(SomeOrigins(Seq(HttpOrigin("*", Host("*"))))))
+        Some(`Access-Control-Allow-Origin`(AllOrigins))
     }
 
   }
