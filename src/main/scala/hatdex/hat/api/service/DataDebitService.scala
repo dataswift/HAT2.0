@@ -46,7 +46,7 @@ trait DataDebitService extends HttpService with DatabaseInfo with HatServiceAuth
             case ("contextless", Some(bundle), None) =>
               val dataDebitKey = UUID.randomUUID()
               val newDebit = DataDebitRow(dataDebitKey, LocalDateTime.now(), LocalDateTime.now(), debit.name,
-                debit.startDate, debit.endDate, debit.rolling, debit.sell, debit.price,
+                debit.startDate, debit.endDate, debit.rolling, debit.sellRent, debit.price,
                 enabled = false, "owner", user.userId.toString,
                 debit.bundleContextless.flatMap(bundle => bundle.id),
                 None,

@@ -225,25 +225,25 @@ class DataDebitServiceSpec extends Specification with Specs2RouteTest with Befor
           responseAs[ApiDataDebit]
         }
 
-        HttpRequest(GET, s"/${dataDebit.key.get}/values") ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
+        HttpRequest(GET, s"/${dataDebit.dataDebitKey.get}/values") ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
           response.status should be equalTo Forbidden
         }
 
         dataDebit
       }
 
-      dataDebit.key must beSome
+      dataDebit.dataDebitKey must beSome
 
       val t = {
         implicit val user:User = ownerUser
-        HttpRequest(PUT, s"/${dataDebit.key.get}/enable") ~> sealRoute(enableDataDebitApi) ~> check {
+        HttpRequest(PUT, s"/${dataDebit.dataDebitKey.get}/enable") ~> sealRoute(enableDataDebitApi) ~> check {
           response.status should be equalTo OK
         }
       }
 
       val result = {
         implicit val user:User = apiUser
-        HttpRequest(GET, s"/${dataDebit.key.get}/values") ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
+        HttpRequest(GET, s"/${dataDebit.dataDebitKey.get}/values") ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
           response.status should be equalTo OK
           responseAs[ApiDataDebitOut]
         }
