@@ -53,7 +53,7 @@ trait Cors extends Directives {
       //        ))
 
     } withHttpResponseHeadersMapped { headers =>
-      var allHeaders = getAllowedOrigins(context).toList ++ headers ++ optionsCorsHeaders
+      var allHeaders = optionsCorsHeaders ++ headers
       println("Added headers " + context.request.toString + allHeaders.toString)
       allHeaders
     }
