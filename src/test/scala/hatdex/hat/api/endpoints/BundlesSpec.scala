@@ -2,9 +2,11 @@ package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
+import hatdex.hat.api.authentication.HatAuthTestHandler
 import hatdex.hat.api.endpoints.jsonExamples.BundleExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
+import hatdex.hat.authentication.authenticators.{UserPassHandler, AccessTokenHandler}
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
@@ -22,6 +24,9 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
   val logger: LoggingAdapter = system.log
 
   val ownerAuth = "username=bob@gmail.com&password=pa55w0rd"
+
+  override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
+  override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
 
   import JsonProtocol._
 
