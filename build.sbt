@@ -14,8 +14,6 @@ parallelExecution in Test := false
 
 publishArtifact in Test := false
 
-scalacOptions ++= Seq("-unchecked", "-deprecation")
-
 scalacOptions in (Compile, doc) ++= Seq("-unchecked", /*"-deprecation", */ "-implicits", "-skip-packages", "samples")
 
 logLevel := Level.Info

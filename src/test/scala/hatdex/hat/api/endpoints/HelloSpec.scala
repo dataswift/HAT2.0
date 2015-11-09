@@ -1,10 +1,10 @@
-package hatdex.hat.api.service
+package hatdex.hat.api.endpoints
 
 import org.specs2.mutable.Specification
 import spray.http.StatusCodes._
 import spray.testkit.Specs2RouteTest
 
-class HelloServiceSpec extends Specification with Specs2RouteTest with HelloService {
+class HelloSpec extends Specification with Specs2RouteTest with Hello {
   def actorRefFactory = system
 
   sequential

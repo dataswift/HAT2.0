@@ -1,11 +1,11 @@
-package hatdex.hat.api.service
+package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.authentication.HatAuthTestHandler
+import hatdex.hat.api.endpoints.jsonExamples.TypeExamples
 import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.api.models.{ApiSystemUnitofmeasurement, ApiSystemType, ErrorMessage}
-import hatdex.hat.api.service.jsonExamples.TypeExamples
+import hatdex.hat.api.models.{ApiSystemType, ApiSystemUnitofmeasurement, ErrorMessage}
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
@@ -15,7 +15,7 @@ import spray.http.{HttpEntity, HttpRequest, MediaTypes}
 import spray.httpx.SprayJsonSupport._
 import spray.testkit.Specs2RouteTest
 
-class TypeServiceSpec extends Specification with Specs2RouteTest with TypeService with BeforeAfterAll {
+class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeAfterAll {
   def actorRefFactory = system
 
   val logger: LoggingAdapter = system.log
@@ -35,7 +35,7 @@ class TypeServiceSpec extends Specification with Specs2RouteTest with TypeServic
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
     }
-    db.close
+//    db.close
   }
 
   sequential
@@ -105,7 +105,7 @@ class TypeServiceSpec extends Specification with Specs2RouteTest with TypeServic
     "Accept new Units of Measurement" in {
       HttpRequest(POST, "/unitofmeasurement" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.uomMeters)) ~>
-        sealRoute(createType) ~>
+        sealRoute(createUnitOfMeasurement) ~>
         check {
           response.status should be equalTo Created
           responseAs[String] must contain("meters")
@@ -116,7 +116,7 @@ class TypeServiceSpec extends Specification with Specs2RouteTest with TypeServic
     "Reject duplicate Units of Measurement" in {
       HttpRequest(POST, "/unitofmeasurement" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.uomMeters)) ~>
-        sealRoute(createType) ~>
+        sealRoute(createUnitOfMeasurement) ~>
         check {
           response.status should be equalTo BadRequest
           responseAs[ErrorMessage].message must contain("Error")

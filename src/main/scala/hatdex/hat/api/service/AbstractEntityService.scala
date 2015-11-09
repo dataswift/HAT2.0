@@ -1,18 +1,16 @@
 package hatdex.hat.api.service
 
 import akka.event.LoggingAdapter
-import hatdex.hat.dal.Tables._
 import hatdex.hat.api.models._
 import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import spray.routing
 
-import scala.util.{Failure, Try}
+import scala.util.Try
 
-trait EntityService {
+trait AbstractEntityService {
   val entityKind: String
-  val dataService: DataService
-  val propertyService: PropertyService
   val logger: LoggingAdapter
 
   protected def createEntity: routing.Route
@@ -60,7 +58,7 @@ trait EntityService {
         seqOption(getPropertiesStatic(l.id)),
         seqOption(getPropertiesDynamic(l.id)),
         seqOption(getLocations(l.id)),
-//        None,
+        //        None,
         seqOption(getThings(l.id))
       )
     }
@@ -115,15 +113,27 @@ trait EntityService {
     }
   }
 
-  protected def getLocations(entityId: Int)(implicit session: Session, getValues: Boolean) : Seq[ApiLocationRelationship]
+  protected def createRelationshipRecord(relationshipName: String)(implicit session: Session) = {
+    val newRecord = new SystemRelationshiprecordRow(0, LocalDateTime.now(), LocalDateTime.now(), relationshipName)
+    val record = (SystemRelationshiprecord returning SystemRelationshiprecord) += newRecord
+    record.id
+  }
 
-  protected def getOrganisations(entityId: Int)(implicit session: Session, getValues: Boolean) : Seq[ApiOrganisationRelationship]
+  protected def createPropertyRecord(relationshipName: String)(implicit session: Session) = {
+    val newRecord = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), relationshipName)
+    val record = (SystemPropertyrecord returning SystemPropertyrecord) += newRecord
+    record.id
+  }
 
-  protected def getPeople(entityId: Int)(implicit session: Session, getValues: Boolean) : Seq[ApiPersonRelationship]
+  protected def getLocations(entityId: Int)(implicit session: Session, getValues: Boolean): Seq[ApiLocationRelationship]
 
-  protected def getThings(entityId: Int)(implicit session: Session, getValues: Boolean) : Seq[ApiThingRelationship]
+  protected def getOrganisations(entityId: Int)(implicit session: Session, getValues: Boolean): Seq[ApiOrganisationRelationship]
 
-  protected def getEvents(entityId: Int)(implicit session: Session, getValues: Boolean) : Seq[ApiEventRelationship]
+  protected def getPeople(entityId: Int)(implicit session: Session, getValues: Boolean): Seq[ApiPersonRelationship]
+
+  protected def getThings(entityId: Int)(implicit session: Session, getValues: Boolean): Seq[ApiThingRelationship]
+
+  protected def getEvents(entityId: Int)(implicit session: Session, getValues: Boolean): Seq[ApiEventRelationship]
 
   protected def getPropertiesStatic(eventId: Int)(implicit session: Session, getValues: Boolean): Seq[ApiPropertyRelationshipStatic]
 
@@ -133,18 +143,18 @@ trait EntityService {
 
   protected def getPropertyDynamicValues(eventId: Int, propertyRelationshipId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipDynamic]
 
-  protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)(implicit session: Session) : Try[Int]
+  protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)(implicit session: Session): Try[Int]
 
   protected def createPropertyLinkStatic(entityId: Int, propertyId: Int,
                                          recordId: Int, fieldId: Int, relationshipType: String, propertyRecordId: Int)
-                                        (implicit session: Session) : Try[Int]
+                                        (implicit session: Session): Try[Int]
 
   protected def createPropertyLinkDynamic(entityId: Int, propertyId: Int,
                                           fieldId: Int, relationshipType: String, propertyRecordId: Int)
-                                         (implicit session: Session) : Try[Int]
+                                         (implicit session: Session): Try[Int]
 
   // Utility function to return None for empty sequences
-  private def seqOption[T](seq: Seq[T]) : Option[Seq[T]] = {
+  private def seqOption[T](seq: Seq[T]): Option[Seq[T]] = {
     if (seq.isEmpty)
       None
     else

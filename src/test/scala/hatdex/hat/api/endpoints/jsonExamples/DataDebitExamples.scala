@@ -1,4 +1,4 @@
-package hatdex.hat.api.service.jsonExamples
+package hatdex.hat.api.endpoints.jsonExamples
 
 /**
  * Created by andrius on 10/10/15.

@@ -1,11 +1,11 @@
-package hatdex.hat.api.service
+package hatdex.hat.api.endpoints
 
-import akka.event.{LoggingAdapter, Logging}
+import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.authentication.HatAuthTestHandler
+import hatdex.hat.api.endpoints.jsonExamples.DataExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
-import hatdex.hat.api.service.jsonExamples.DataExamples
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
@@ -18,7 +18,7 @@ import spray.testkit.Specs2RouteTest
 
 import scala.concurrent.duration._
 
-class DataServiceSpec extends Specification with Specs2RouteTest with DataService with BeforeAfterAll {
+class DataSpec extends Specification with Specs2RouteTest with Data with BeforeAfterAll {
   def actorRefFactory = system
   val logger: LoggingAdapter = system.log
 
@@ -38,12 +38,14 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
     }
-    db.close
+//    db.close
   }
 
   sequential
-  
-  val ownerAuthParams = "?username=bob@gmail.com&password=pa55w0rd"
+
+  val ownerAuth = "username=bob@gmail.com&password=pa55w0rd"
+  val ownerAuthParams = "?"+ownerAuth
+
 
   "DataService" should {
     "Accept new tables created" in {
@@ -86,9 +88,9 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
         sealRoute(createTableApi) ~> check {
         response.status should be equalTo Created
         val responseString = responseAs[String]
-        responseString must contain("kitchen")
+        responseString must contain("largeKitchen")
         responseString must contain("fibaro")
-        responseString must contain("kitchenElectricity")
+        responseString must contain("largeKitchenElectricity")
         responseString must contain("tableTestField4")
         responseAs[ApiDataTable]
       }
@@ -97,9 +99,9 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
       HttpRequest(GET, s"/table/${dataTable.id.get}"+ownerAuthParams) ~>
         sealRoute(getTableApi) ~> check {
         val responseString = responseAs[String]
-        responseString must contain("kitchen")
+        responseString must contain("largeKitchen")
         responseString must contain("fibaro")
-        responseString must contain("kitchenElectricity")
+        responseString must contain("largeKitchenElectricity")
         responseString must contain("tableTestField4")
       }
     }
@@ -112,9 +114,9 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
     }
 
     "Allow table fields to be created" in {
-      val dataTable = HttpRequest(POST, "/table"+ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.tableKitchenElectricity)) ~>
-        sealRoute(createTableApi) ~> check {
-        response.status should be equalTo Created
+      val dataTable = HttpRequest(GET, "/table/search?name=kitchenElectricity&source=fibaro&"+ownerAuth) ~>
+        sealRoute(findTableApi) ~> check {
+        response.status should be equalTo OK
         responseAs[String] must contain("kitchenElectricity")
         responseAs[String] must contain("fibaro")
         responseAs[ApiDataTable]
@@ -148,18 +150,18 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
 
     "Accept and provide data in the right formats" in {
       // Create main table
-      val dataTable = HttpRequest(POST, "/table"+ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.tableKitchen)) ~>
-        sealRoute(createTableApi) ~> check {
-        response.status should be equalTo Created
+      val dataTable = HttpRequest(GET, "/table/search?name=kitchen&source=fibaro&"+ownerAuth) ~>
+        sealRoute(findTableApi) ~> check {
+        response.status should be equalTo OK
         responseAs[ApiDataTable]
       }
 
       dataTable.id must beSome
 
       // Create sub-table
-      val dataSubtable = HttpRequest(POST, "/table"+ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.tableKitchenElectricity)) ~>
-        sealRoute(createTableApi) ~> check {
-        response.status should be equalTo Created
+      val dataSubtable = HttpRequest(GET, "/table/search?name=kitchenElectricity&source=fibaro&"+ownerAuth) ~>
+        sealRoute(findTableApi) ~> check {
+        response.status should be equalTo OK
         responseAs[ApiDataTable]
       }
 
@@ -247,7 +249,7 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
         responseAs[String] must contain("testValue1")
         responseAs[String] must contain("testValue2")
         responseAs[String] must contain("testValue3")
-        responseAs[String] must not contain ("testValue2-1")
+        responseAs[String] must not contain("testValue2-1")
         responseAs[String] must contain("testRecord 1")
       }
 
@@ -256,7 +258,7 @@ class DataServiceSpec extends Specification with Specs2RouteTest with DataServic
         response.status should be equalTo OK
         responseAs[String] must contain("testValue1")
         responseAs[String] must contain("testValue2-1")
-        responseAs[String] must not contain ("testValue3")
+        responseAs[String] must not contain("testValue3")
       }
 
       HttpRequest(GET, s"/table/${dataTable.id.get}/values"+ownerAuthParams) ~>

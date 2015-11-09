@@ -1,16 +1,11 @@
-package hatdex.hat.api.service
+package hatdex.hat.api.endpoints
 
-import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
-import hatdex.hat.authentication.models.User
 import hatdex.hat.authentication.HatServiceAuthHandler
+import hatdex.hat.authentication.models.User
 import spray.http.MediaTypes._
 import spray.routing.HttpService
-import spray.routing.authentication.{BasicAuth, UserPass}
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-
-trait HelloService extends HttpService with HatServiceAuthHandler{
+trait Hello extends HttpService with HatServiceAuthHandler{
   val routes = home ~ authHat
 
   def home =

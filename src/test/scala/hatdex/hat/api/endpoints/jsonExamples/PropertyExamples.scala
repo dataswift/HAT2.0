@@ -1,4 +1,4 @@
-package hatdex.hat.api.service.jsonExamples
+package hatdex.hat.api.endpoints.jsonExamples
 
 object PropertyExamples {
   val bodyWeight =

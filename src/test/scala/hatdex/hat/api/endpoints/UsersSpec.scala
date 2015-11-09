@@ -1,8 +1,10 @@
-package hatdex.hat.api.service
+package hatdex.hat.api.endpoints
 
+import akka.event.LoggingAdapter
 import hatdex.hat.api.authentication.HatAuthTestHandler
+import hatdex.hat.api.endpoints.Users
+import hatdex.hat.api.endpoints.jsonExamples.UserExamples
 import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.api.service.jsonExamples.UserExamples
 import hatdex.hat.authentication.authenticators.{UserPassHandler, AccessTokenHandler}
 import hatdex.hat.authentication.models.{AccessToken, User}
 import hatdex.hat.dal.SlickPostgresDriver.simple._
@@ -21,8 +23,9 @@ import spray.json._
 import spray.testkit.Specs2RouteTest
 import java.util.UUID
 
-class UserServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with UserService {
+class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll with Users {
   def actorRefFactory = system
+  val logger: LoggingAdapter = system.log
 
   def beforeAll() = {
     val validUsers = Seq(
@@ -71,7 +74,7 @@ class UserServiceSpec extends Specification with Specs2RouteTest with BeforeAfte
       UserAccessToken.filter(_.userId inSet userIds).delete
       UserUser.filter(_.userId inSet userIds).delete
     }
-    db.close
+//    db.close
   }
 
   sequential

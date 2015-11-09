@@ -1,25 +1,23 @@
-package hatdex.hat.api.service
+package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
+import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.json.JsonProtocol
+import hatdex.hat.api.models._
 import hatdex.hat.authentication.HatServiceAuthHandler
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
-import hatdex.hat.api.DatabaseInfo
-import hatdex.hat.api.models._
 import org.joda.time.LocalDateTime
-import spray.http.MediaTypes._
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
-import scala.util.Try
-import scala.util.Success
-import scala.util.Failure
+
+import scala.util.{Failure, Success, Try}
 
 
 // this trait defines our service behavior independently from the service actor
-trait TypeService extends HttpService with HatServiceAuthHandler {
+trait Type extends HttpService with HatServiceAuthHandler {
 
   val logger: LoggingAdapter
 
