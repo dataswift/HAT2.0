@@ -27,17 +27,17 @@ HAT_PLATFORM_NAME=${HAT_PLATFORM_NAME:-'hatdex'}
 HAT_PLATFORM_PASSWORD_HASH=${HAT_PLATFORM_PASSWORD_HASH:-'$2a$04$oL2CXTHzB..OekL1z8Vijus3RkHQjSsbkAYOiA5Rj.7.6GA7a4qAq'}
 
 echo "Generating Dockerfile"
-cat Dockerfile-hat-postgres | sed -e "s/RDATABASE/$DATABASE/g"\
-	-e "s/RDBUSERR/$DBUSER/g"\
-	-e "s/RDBPASSR/$DBPASS/g"\
-	-e "s/RHAT_OWNERR/$HAT_OWNER/g"\
-	-e "s/RHAT_OWNER_IDR/$HAT_OWNER_ID/g"\
-	-e "s/RHAT_OWNER_NAMER/$HAT_OWNER_NAME/g"\
-	-e "s/RHAT_OWNER_PASSWORDR/$HAT_OWNER_PASSWORD/g"\
-	-e "s/RHAT_PLATFORMR/$HAT_PLATFORM/g"\
-	-e "s/RHAT_PLATFORM_IDR/$HAT_PLATFORM_ID/g"\
-	-e "s/RHAT_PLATFORM_NAMER/$HAT_PLATFORM_NAME/g"\
-	-e "s/RHAT_PLATFORM_PASSWORD_HASHR/$HAT_PLATFORM_PASSWORD_HASH/g"\
+cat Dockerfile-hatpg.template | sed -e "s/%DATABASE%/$DATABASE/g"\
+	-e "s/%DBUSER%/$DBUSER/g"\
+	-e "s/%DBPASS%/$DBPASS/g"\
+	-e "s/%HAT_OWNER%/$HAT_OWNER/g"\
+	-e "s/%HAT_OWNER_ID%/$HAT_OWNER_ID/g"\
+	-e "s/%HAT_OWNER_NAME%/$HAT_OWNER_NAME/g"\
+	-e "s/%HAT_OWNER_PASSWORD%/$HAT_OWNER_PASSWORD/g"\
+	-e "s/%HAT_PLATFORM%/$HAT_PLATFORM/g"\
+	-e "s/%HAT_PLATFORM_ID%/$HAT_PLATFORM_ID/g"\
+	-e "s/%HAT_PLATFORM_NAME%/$HAT_PLATFORM_NAME/g"\
+	-e "s/%HAT_PLATFORM_PASSWORD_HASH%/$HAT_PLATFORM_PASSWORD_HASH/g"\
 	> $DOCKER_DEPLOY/Dockerfile
 
 cd $DOCKER_DEPLOY
@@ -61,7 +61,7 @@ fi
 echo "Building hat docker image: docker-hat-postgres"
 #sbt -sbt-dir $HAT_HOME docker:stage
 cp -r $HAT_HOME/target/docker/stage/opt $DOCKER_DEPLOY/
-mv $DOCKER_DEPLOY/Dockerfile $DOCKER_DEPLOY/Dockerfile-hat-postgres
+mv $DOCKER_DEPLOY/Dockerfile $DOCKER_DEPLOY/Dockerfile-hatpg
 cp $HAT_HOME/target/docker/stage/Dockerfile $DOCKER_DEPLOY/
 docker build -t docker-hat .
 
