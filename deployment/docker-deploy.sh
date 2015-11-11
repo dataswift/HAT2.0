@@ -10,7 +10,7 @@ echo "Creating $DOCKER_DEPLOY"
 mkdir $DOCKER_DEPLOY
 mkdir $DOCKER_DEPLOY/required
 
-echo "Copying needed files"
+echo "Copying required files"
 cp $HAT_HOME/deployment/docker-deploy-db.sh $DOCKER_DEPLOY/
 cp $HAT_HOME/src/main/resources/database.conf $DOCKER_DEPLOY/required
 cp $HAT_HOME/deployment/database.conf.template $DOCKER_DEPLOY/required
@@ -47,17 +47,14 @@ docker build -t docker-hat-postgres .
 
 echo "Creating docker-hat-postgres run script"
 echo "docker run docker-hat-postgres" > $DOCKER_DEPLOY/run-db.sh
-#sudo chmod +x run-db.sh
 
 if [ ! -f "$HAT_HOME/target/docker/Dockerfile" ]; then
-	#ls target/
     echo "Missing $HAT_HOME/target/docker/Dockerfile" 
     echo "The docker-hat container was not created."
     echo "Please run 'sbt docker:stage' on main folder and re-run this script to generate it."
     exit
 fi
 
-#cd $HAT_HOME
 echo "Building hat docker image: docker-hat-postgres"
 #sbt -sbt-dir $HAT_HOME docker:stage
 cp -r $HAT_HOME/target/docker/stage/opt $DOCKER_DEPLOY/
@@ -69,3 +66,12 @@ cd $DOCKER_DEPLOY
 echo "Creating docker-hat run script"
 echo "docker run docker-hat" > $DOCKER_DEPLOY/run-hat.sh
 #sudo chmod +x run-hat.sh
+
+echo "Launching docker-hat-postgres..."
+. $DOCKER_DEPLOY/run-db.sh &
+
+echo "Launching docker-hat container..."
+. $DOCKER_DEPLOY/run-hat.sh &
+
+#echo "docker ps"
+#docker ps
