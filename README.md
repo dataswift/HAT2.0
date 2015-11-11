@@ -54,29 +54,36 @@ If you use Ubuntu, you can use the following commands:
 
 ### Clone the HAT project
 
-Then, you will be able to clone the repository
+Then, you will be able to clone the repository:
 
     git clone https://github.com/Hub-of-all-Things/HAT2.0.git hat
 
 ### Database Setup
 
-You will need to set up a PostgreSQL database with the HAT2.0 schema, configure the project to use the database, compile and run it. You can do all that by executing the following script:
+You will need to set up a PostgreSQL database with the HAT2.0 schema, configure the project to use the database, and prepare it to be executed. You can do all that by executing the following script:
 
     ./deployment/deploy.sh
     
-The provided script executes all required commands to get the project running and can be configured through environment variables:
+The provided script executes all required commands to get the project running, and can be configured through environment variables. For example, you can run:
 
-- `DATABASE` - name of the database
-- `DBUSER` - database username
-- `DBPASS` - database user password
-- `HAT_OWNER` - HAT owner identity (DNS name/username)
+    HAT_HOME=".." DATABASE=mynewHAT DBUSER=mynewuser DBPASS=mynewpass ./deployment/deploy.sh
+
+The following variables are available:
+
+- `HAT_HOME` - path [default: current (".")]
+- `DATABASE` - name of the database [default: hat20test]
+- `DBUSER` - database username [default: hat20test]
+- `DBPASS` - database user password [default: pa55w0rd]
+- `HAT_OWNER` - HAT owner identity (DNS name/username) [default: bob@gmail.com]
 - `HAT_OWNER_ID` - HAT owner GUID
-- `HAT_OWNER_NAME` - HAT owner name
-- `HAT_OWNER_PASSWORD` - HAT owner login password
-- `HAT_PLATFORM` - HAT platform identity
+- `HAT_OWNER_NAME` - HAT owner name [default: Bob]
+- `HAT_OWNER_PASSWORD` - HAT owner login password [default: pa55w0rd]
+- `HAT_PLATFORM` - HAT platform identity [default: hatdex.org]
 - `HAT_PLATFORM_ID` - HAT platform GUID
-- `HAT_PLATFORM_NAME` - HAT platform name
+- `HAT_PLATFORM_NAME` - HAT platform name [default: hatdex]
 - `HAT_PLATFORM_PASSWORD_HASH` - BCrypt-hashed HAT platform password for platform-management operations (application account creation only)
+
+If you do not specify those variables, take a look at the deploy.sh script to see the default values.
 
 ### Run the project!
 Execute the following command:
@@ -93,12 +100,21 @@ Here we list common problems you may have encountered in this process.
 
 #### 1. Database peer authentication failed at the top
 
-Your PostgreSQL installation may be configured to use peer authentication, but this method is only supported on local connections.
+You may have seen an error message similar to `psql: FATAL:  Peer authentication failed for user "hat20"`.
 
-[This thread in Stack Overflow](http://stackoverflow.com/questions/18664074/getting-error-peer-authentication-failed-for-user-postgres-when-trying-to-ge) explains how to modify your file `pg_hba.conf` to solve it.
+Your PostgreSQL installation is configured to use peer authentication, which means that the user in your operating system and postgres must be the same.
 
-If you are using an IP address other than 127.0.0.1, you can specify your network's IP range instead.
- 
+You can change it either to **md5** (password-based authentication) or **trust** (anyone who can connect to the server can access the database).
+
+[This thread in Stack Overflow](http://stackoverflow.com/questions/18664074/getting-error-peer-authentication-failed-for-user-postgres-when-trying-to-ge) explains in more detail your options and implications.
+
+You will need to edit the file `pg_hba.conf` (`/etc/postgresql/9.3/main/pg_hba.conf`, depending on your postgres version), and change the **method**. For example:
+
+    # TYPE  DATABASE        USER            ADDRESS                 METHOD
+    local   all             postgres                                md5
+    local   all             all                                     md5
+
+
 #### 2. Another program is already listening to port 8080
 
 You can specify another port or host directly in the run command. For example:

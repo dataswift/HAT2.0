@@ -2,16 +2,18 @@
 
 DATABASE=${DATABASE:-"hat20"}
 DBUSER=${DBUSER:-$DATABASE}
-DBPASS=${DBPASS:-""}
-HAT_HOME=${HAT_HOME:-".."}
+DBPASS=${DBPASS:-"pa55w0rd"}
+HAT_HOME=${HAT_HOME:-"."}
 
-export PGUSER=postgres
+export PGUSER=postgres #force the user to be postgres, to ensure permissions in following commands
 
 # Create the DB
 # NOSUPERUSER NOCREATEDB NOCREATEROLE
-echo "Setting up database user"
+echo "Setting up database user and database"
+echo "dbuser: $DBUSER, database: $DATABASE"
 createuser -S -D -R -e $DBUSER
 createdb $DATABASE -O $DBUSER
+psql $DATABASE -c "ALTER USER $DBUSER WITH PASSWORD '$DBPASS';"
 
 #DBUSER wouldnt have required permissions to drop/create public schema otherwise
 echo "Handling schemas"
@@ -22,7 +24,12 @@ psql -c "ALTER SCHEMA public OWNER TO $DBUSER;"
 echo "Setting up database"
 psql $DATABASE -c 'CREATE EXTENSION "uuid-ossp";'
 psql $DATABASE -c 'CREATE EXTENSION "pgcrypto";'
+
+export PGPASSWORD="$DBPASS" #use the given password for the next psql commands with user DBUSER
+
+# Execute HAT-V2.0 SQL script
 psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/HAT-V2.0.sql
+echo $HAT_HOME/src/sql/HAT-V2.0.sql
 
 # Setup db config for the project
 echo "Setting up corresponding configuration"
@@ -58,13 +65,14 @@ psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/authentication.sql
 rm $HAT_HOME/src/sql/authentication.sql
 
 echo "Boilerplate setup"
+echo $HAT_HOME/src/sql/data.sql
 psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/data.sql
 psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/relationships.sql
 psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/properties.sql
 psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/collections.sql
 
-# Rebuild and run the project
-echo "Compiling and running the project"
+# Prepare the project to be executed in-place
+echo "Preparing the project to be executed"
 #sbt clean
 #sbt compile
-sbt run
+sbt stage
