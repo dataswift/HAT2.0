@@ -2,9 +2,11 @@
 
 DATABASE=${DATABASE:-"hat20"}
 DBUSER=${DBUSER:-$DATABASE}
-DBPASS=${DBPASS:-""}
+DBPASS=${DBPASS:-"h20"}
+#In case we are not executing the deploy from the repo (e.g., in container)
 HAT_HOME=${HAT_HOME:-".."}
 
+#Useful when in docker container mode
 export PGUSER=postgres
 
 # Create the DB
@@ -22,12 +24,7 @@ psql -c "ALTER SCHEMA public OWNER TO $DBUSER;"
 echo "Setting up database"
 psql $DATABASE -c 'CREATE EXTENSION "uuid-ossp";'
 psql $DATABASE -c 'CREATE EXTENSION "pgcrypto";'
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/HAT-V2.0.sql
-
-# Setup db config for the project
-echo "Setting up corresponding configuration"
-sed -e "s;%DATABASE%;$DATABASE;g" -e "s;%DBUSER%;$DBUSER;g" -e "s;%DBPASS%;$DBPASS;g" $HAT_HOME/deployment/database.conf.template > $HAT_HOME/src/main/resources/database.conf
-cp $HAT_HOME/src/main/resources/database.conf $HAT_HOME/codegen/src/main/resources/database.conf
+psql $DATABASE -U$DBUSER < $HAT_HOME/HAT-V2.0.sql
 
 # Setup HAT access
 echo "Setting up HAT access"
@@ -49,22 +46,16 @@ sed -e "s;%HAT_OWNER%;$HAT_OWNER;g"\
   -e "s;%HAT_PLATFORM_ID%;$HAT_PLATFORM_ID;g"\
   -e "s;%HAT_PLATFORM_NAME%;$HAT_PLATFORM_NAME;g"\
   -e "s;%HAT_PLATFORM_PASSWORD_HASH%;$HAT_PLATFORM_PASSWORD_HASH;g"\
-  $HAT_HOME/src/sql/authentication.sql.template > $HAT_HOME/src/sql/authentication.sql
+  $HAT_HOME/authentication.sql.template > $HAT_HOME/authentication.sql
 
 # Execute the sql script
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/authentication.sql
+psql $DATABASE -U$DBUSER < $HAT_HOME/authentication.sql
 
 # Remove the sql file with sensitive credentials
-rm $HAT_HOME/src/sql/authentication.sql
+rm $HAT_HOME/authentication.sql
 
 echo "Boilerplate setup"
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/data.sql
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/relationships.sql
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/properties.sql
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/collections.sql
-
-# Rebuild and run the project
-echo "Compiling and running the project"
-#sbt clean
-#sbt compile
-sbt run
+psql $DATABASE -U$DBUSER < $HAT_HOME/data.sql
+psql $DATABASE -U$DBUSER < $HAT_HOME/relationships.sql
+psql $DATABASE -U$DBUSER < $HAT_HOME/properties.sql
+psql $DATABASE -U$DBUSER < $HAT_HOME/collections.sql

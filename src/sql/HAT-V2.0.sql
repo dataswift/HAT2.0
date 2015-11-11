@@ -1,6 +1,3 @@
-DROP SCHEMA public CASCADE;
-CREATE SCHEMA public;
-
 CREATE SEQUENCE public.entity_id_seq;
 
 CREATE TABLE public.things_thing (
