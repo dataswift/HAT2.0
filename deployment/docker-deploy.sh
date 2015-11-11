@@ -50,7 +50,7 @@ echo "docker run docker-hat-postgres" > $DOCKER_DEPLOY/run-db.sh
 #sudo chmod +x run-db.sh
 
 if [ ! -f "$HAT_HOME/target/docker/Dockerfile" ]; then
-	ls target/
+	#ls target/
     echo "Missing $HAT_HOME/target/docker/Dockerfile" 
     echo "The docker-hat container was not created."
     echo "Please run 'sbt docker:stage' on main folder and re-run this script to generate it."
@@ -61,6 +61,7 @@ fi
 echo "Building hat docker image: docker-hat-postgres"
 #sbt -sbt-dir $HAT_HOME docker:stage
 cp -r $HAT_HOME/target/docker/stage/opt $DOCKER_DEPLOY/
+mv $DOCKER_DEPLOY/Dockerfile $DOCKER_DEPLOY/Dockerfile-hat-postgres
 cp $HAT_HOME/target/docker/stage/Dockerfile $DOCKER_DEPLOY/
 docker build -t docker-hat .
 
