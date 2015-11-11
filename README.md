@@ -66,10 +66,11 @@ You will need to set up a PostgreSQL database with the HAT2.0 schema, configure 
     
 The provided script executes all required commands to get the project running, and can be configured through environment variables. For example, you can run:
 
-    ./deployment/deploy.sh -DATABASE=mynewHAT -DBUSER=mynewuser -DBPASS=mynewpass
+    HAT_HOME=".." DATABASE=mynewHAT DBUSER=mynewuser DBPASS=mynewpass ./deployment/deploy.sh
 
 The following variables are available:
 
+- `HAT_HOME` - path [default: current (".")]
 - `DATABASE` - name of the database [default: hat20test]
 - `DBUSER` - database username [default: hat20test]
 - `DBPASS` - database user password [default: pa55w0rd]
