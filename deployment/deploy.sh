@@ -2,16 +2,19 @@
 
 DATABASE=${DATABASE:-"hat20test"}
 DBUSER=${DBUSER:-$DATABASE}
-DBPASS=${DBPASS:-""}
-
+DBPASS=${DBPASS:-"pa55w0rd"}
 
 # Create the DB
 # NOSUPERUSER NOCREATEDB NOCREATEROLE
 echo "Setting up database user and database"
 createuser -S -D -R -e $DBUSER
 createdb $DATABASE -O $DBUSER
+psql $DATABASE -c "ALTER USER $DBUSER WITH PASSWORD '$DBPASS';"
 psql $DATABASE -c 'CREATE EXTENSION "uuid-ossp";'
 psql $DATABASE -c 'CREATE EXTENSION "pgcrypto";'
+export PGPASSWORD="$DBPASS" #use the given password for the next psql commands
+
+# Execute HAT-V2.0 SQL script
 psql $DATABASE -U$DBUSER < src/sql/HAT-V2.0.sql
 
 # Setup db config for the project
@@ -53,8 +56,8 @@ psql $DATABASE -U$DBUSER < src/sql/relationships.sql
 psql $DATABASE -U$DBUSER < src/sql/properties.sql
 psql $DATABASE -U$DBUSER < src/sql/collections.sql
 
-# Rebuild and run the project
-echo "Compiling and running the project"
+# Prepare the project to be executed in-place
+echo "Preparing the project to be executed"
 #sbt clean
 #sbt compile
-sbt run
+sbt stage
