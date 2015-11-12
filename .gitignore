@@ -12,3 +12,4 @@ target/
 /codegen/src/main/resources/database.conf
 /src/main/resources/database.conf
 *.back
+/deployment/docker-deploy

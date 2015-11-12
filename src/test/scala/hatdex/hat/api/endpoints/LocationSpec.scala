@@ -1,7 +1,7 @@
 package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
-import hatdex.hat.api.endpoints.jsonExamples.{LocationExamples, DataExamples}
+import hatdex.hat.api.endpoints.jsonExamples.{EntityExamples, DataExamples}
 import hatdex.hat.api.endpoints.{Location, Property, Data}
 import hatdex.hat.api.models._
 import hatdex.hat.api.TestDataCleanup
@@ -23,24 +23,6 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
   val logger: LoggingAdapter = system.log
 
   val thingEndpoint = new Thing {
-    def actorRefFactory = system
-
-    val logger: LoggingAdapter = system.log
-  }
-
-  val personEndpoint = new Person {
-    def actorRefFactory = system
-
-    val logger: LoggingAdapter = system.log
-  }
-
-  val organisationEndpoint = new Organisation {
-    def actorRefFactory = system
-
-    val logger: LoggingAdapter = system.log
-  }
-
-  val eventEndpoint = new Event {
     def actorRefFactory = system
 
     val logger: LoggingAdapter = system.log
@@ -69,7 +51,7 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
   "LocationsService" should {
     "Accept new locations created" in {
       //test createEntity
-      val newLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, LocationExamples.locationValid)) ~>
+      val newLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationValid)) ~>
         sealRoute(createEntity) ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain("home")
@@ -78,7 +60,7 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
 
       newLocation.id must beSome
 
-      val subLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, LocationExamples.locationHomeStairs)) ~>
+      val subLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationHomeStairs)) ~>
         sealRoute(createEntity) ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain("stairs")
@@ -96,7 +78,7 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
 
     "Accept relationships with locations created" in {
 
-      val newLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, LocationExamples.locationValid)) ~>
+      val newLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationValid)) ~>
         sealRoute(createEntity) ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain("home")
@@ -105,7 +87,7 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
 
       newLocation.id must beSome
 
-      val subLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, LocationExamples.locationHomeStairs)) ~>
+      val subLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationHomeStairs)) ~>
         sealRoute(createEntity) ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain("stairs")
@@ -171,7 +153,7 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
     }
 
     "Retrieve created locations" in {
-      val newLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, LocationExamples.locationValid)) ~>
+      val newLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationValid)) ~>
         sealRoute(createEntity) ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain("home")
@@ -189,14 +171,14 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
     }
 
     "Accept retrieval of things and locations linked" in {
-      val newLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, LocationExamples.locationValid)) ~>
+      val newLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationValid)) ~>
         sealRoute(createEntity) ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain("home")
         responseAs[ApiLocation]
       }
 
-      val someThing = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, LocationExamples.validThing)) ~>
+      val someThing = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.thingValid)) ~>
         sealRoute(thingEndpoint.createEntity) ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain("tv")
@@ -221,7 +203,7 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
     }
 
     "Reject bad locations and relationships" in {
-      val tmpLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, LocationExamples.locationBadName)) ~>
+      val tmpLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationBadName)) ~>
         sealRoute(createEntity) ~> check {
         response.status should be equalTo BadRequest
       }

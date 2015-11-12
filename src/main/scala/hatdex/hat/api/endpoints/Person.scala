@@ -25,6 +25,7 @@ trait Person extends PeopleService with AbstractEntity {
           getApiValues ~
           getAllApi ~
           createPersonRelationshipType ~
+          getPersonRelationshipTypes ~
           linkToPerson ~
           linkToLocation ~
           linkToOrganisation ~
@@ -46,7 +47,7 @@ trait Person extends PeopleService with AbstractEntity {
       db.withSession { implicit session =>
         val personspersonRow = new PeoplePersonRow(0, LocalDateTime.now(), LocalDateTime.now(), person.name, person.personId)
         val result = Try((PeoplePerson returning PeoplePerson) += personspersonRow)
-
+        session.close()
         complete {
           result match {
             case Success(createdPerson) =>
@@ -62,20 +63,34 @@ trait Person extends PeopleService with AbstractEntity {
   }
 
   def createPersonRelationshipType = path("relationshipType") {
+    logger.debug("Relationship type")
     post {
+      logger.debug("Creating Relationship type")
       entity(as[ApiPersonRelationshipType]) { relationship =>
+        logger.debug("Creating Relationship type PARSED")
         db.withSession { implicit session =>
+          logger.debug("Creating Relationship SESSION")
           val reltypeRow = new PeoplePersontopersonrelationshiptypeRow(0, LocalDateTime.now(), LocalDateTime.now(), relationship.name, relationship.description)
-          val reltype = (PeoplePersontopersonrelationshiptype returning PeoplePersontopersonrelationshiptype) += reltypeRow
+          val maybeReltype = Try((PeoplePersontopersonrelationshiptype returning PeoplePersontopersonrelationshiptype) += reltypeRow)
+          session.close()
           complete {
-            (Created, ApiPersonRelationshipType.fromDbModel(reltype))
+            maybeReltype match {
+              case Success(reltype) =>
+                (Created, ApiPersonRelationshipType.fromDbModel(reltype))
+              case Failure(e) =>
+                (BadRequest, ErrorMessage("Error creating relationship type", e.getMessage))
+            }
+
           }
         }
 
       }
     }
+  }
 
+  def getPersonRelationshipTypes = path("relationshipType") {
     get {
+      logger.debug("Getting Relationship types")
       db.withSession { implicit session =>
         val relTypes = PeoplePersontopersonrelationshiptype.run
         complete {
@@ -100,6 +115,8 @@ trait Person extends PeopleService with AbstractEntity {
             case None =>
               Failure(new IllegalArgumentException("People can only be linked with an existing relationship type"))
           }
+
+          session.close()
 
           // Return the created crossref
           complete {
