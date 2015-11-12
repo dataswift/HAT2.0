@@ -1,19 +1,17 @@
 package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
-import hatdex.hat.api.endpoints.jsonExamples.{EntityExamples, DataExamples}
-import hatdex.hat.api.endpoints.{Location, Property, Data}
-import hatdex.hat.api.models._
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.authentication.HatAuthTestHandler
+import hatdex.hat.api.endpoints.jsonExamples.{DataExamples, EntityExamples}
 import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.api.service.{PropertyService, DataService, LocationsService}
+import hatdex.hat.api.models._
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
 import spray.http.HttpMethods._
-import spray.http.{MediaTypes, HttpEntity, HttpRequest}
 import spray.http.StatusCodes._
+import spray.http.{HttpEntity, HttpRequest, MediaTypes}
 import spray.httpx.SprayJsonSupport._
 import spray.testkit.Specs2RouteTest
 
@@ -48,11 +46,14 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
 
   val ownerAuthParams = "?username=bob@gmail.com&password=pa55w0rd"
 
+//  sequential
+
   "LocationsService" should {
     "Accept new locations created" in {
       //test createEntity
       val newLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationValid)) ~>
         sealRoute(createEntity) ~> check {
+        logger.debug("Response: " + response.toString)
         response.status should be equalTo Created
         responseAs[String] must contain("home")
         responseAs[ApiLocation]
@@ -217,6 +218,42 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         sealRoute(linkToThing) ~> check {
         response.status should be equalTo NotFound
       }
+    }
+
+    "List All Entities correctly" in {
+      val newLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationValid)) ~>
+        sealRoute(createEntity) ~> check {
+        response.status should be equalTo Created
+        responseAs[String] must contain("home")
+        responseAs[ApiLocation]
+      }
+
+      newLocation.id must beSome
+
+      val subLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationHomeStairs)) ~>
+        sealRoute(createEntity) ~> check {
+        response.status should be equalTo Created
+        responseAs[String] must contain("stairs")
+        responseAs[ApiLocation]
+      }
+
+      subLocation.id must beSome
+
+      HttpRequest(GET, "" + ownerAuthParams) ~> sealRoute(getAllApi) ~> check {
+        eventually {
+          response.status should be equalTo OK
+          val allLocations = responseAs[List[ApiLocation]]
+          val asString = responseAs[String]
+          asString must contain(s"${newLocation.id.get}")
+          asString must contain(s"${newLocation.name}")
+          asString must contain(s"${subLocation.id.get}")
+          asString must contain(s"${subLocation.name}")
+        }
+      }
+    }
+
+    "Accept Type annotations" in {
+      success("correct")
     }
   }
 }

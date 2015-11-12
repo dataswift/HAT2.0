@@ -1,7 +1,7 @@
 package hatdex.hat.api
 
 import hatdex.hat.dal.Tables._
-import org.specs2.specification.{BeforeAfterAll, AfterAll}
+import org.specs2.specification.BeforeAfterAll
 
 //import Tables._
 //import Tables.profile.simple._

@@ -2,7 +2,7 @@ package hatdex.hat.api.authentication
 
 import java.util.UUID
 
-import hatdex.hat.authentication.models.{User, AccessToken}
+import hatdex.hat.authentication.models.{AccessToken, User}
 import org.mindrot.jbcrypt.BCrypt
 
 import scala.concurrent.ExecutionContext.Implicits.global

@@ -3,7 +3,7 @@ package hatdex.hat.api.endpoints
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.authentication.HatAuthTestHandler
-import hatdex.hat.api.endpoints.jsonExamples.{DataExamples, EntityExamples}
+import hatdex.hat.api.endpoints.jsonExamples.EntityExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
