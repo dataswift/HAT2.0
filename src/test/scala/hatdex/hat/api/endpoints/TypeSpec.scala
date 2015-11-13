@@ -34,9 +34,71 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
   def afterAll() = {
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
+      session.close()
     }
-//    db.close
   }
+
+  def createPostalAddressType = HttpRequest(POST, "/type" + ownerAuthParams,
+    entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.postalAddress)) ~>
+    sealRoute(createType) ~>
+    check {
+      logger.debug("Create Type response: " + response.toString)
+      response.status should be equalTo Created
+      responseAs[String] must contain("PostalAddress")
+      responseAs[ApiSystemType].id must beSome
+      responseAs[ApiSystemType]
+    }
+
+  def createDateType = HttpRequest(POST, "/type" + ownerAuthParams,
+    entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.date)) ~>
+    sealRoute(createType) ~>
+    check {
+      response.status should be equalTo Created
+      responseAs[String] must contain("Date")
+      responseAs[ApiSystemType].id must beSome
+      responseAs[ApiSystemType]
+    }
+
+  def createPlaceType = HttpRequest(POST, "/type" + ownerAuthParams,
+    entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.place)) ~>
+    sealRoute(createType) ~>
+    check {
+      response.status should be equalTo Created
+      responseAs[String] must contain("Place")
+      responseAs[ApiSystemType].id must beSome
+      responseAs[ApiSystemType]
+    }
+
+  def createQuantitativeValueType = HttpRequest(POST, "/type" + ownerAuthParams,
+    entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.quantitativeValue)) ~>
+    sealRoute(createType) ~>
+    check {
+      logger.debug("Create quantitative value type response: " + response.toString)
+      response.status should be equalTo Created
+      responseAs[String] must contain("QuantitativeValue")
+      responseAs[ApiSystemType].id must beSome
+      responseAs[ApiSystemType]
+    }
+
+  def createMetersUom = HttpRequest(POST, "/unitofmeasurement" + ownerAuthParams,
+    entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.uomMeters)) ~>
+    sealRoute(createUnitOfMeasurement) ~>
+    check {
+      response.status should be equalTo Created
+      responseAs[String] must contain("meters")
+      responseAs[ApiSystemUnitofmeasurement].id must beSome
+      responseAs[ApiSystemUnitofmeasurement]
+    }
+
+  def createWeightUom = HttpRequest(POST, "/unitofmeasurement" + ownerAuthParams,
+    entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.uomWeight)) ~>
+    sealRoute(createUnitOfMeasurement) ~>
+    check {
+      response.status should be equalTo Created
+      responseAs[String] must contain("kilograms")
+      responseAs[ApiSystemUnitofmeasurement].id must beSome
+      responseAs[ApiSystemUnitofmeasurement]
+    }
 
   sequential
 
@@ -44,34 +106,9 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
 
   "Types Service" should {
     "Accept new types created" in {
-      val postalAddressType = HttpRequest(POST, "/type" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.postalAddress)) ~>
-        sealRoute(createType) ~>
-        check {
-          response.status should be equalTo Created
-          responseAs[String] must contain("PostalAddress")
-          responseAs[ApiSystemType].id must beSome
-          responseAs[ApiSystemType]
-        }
-
-      HttpRequest(POST, "/type" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.date)) ~>
-        sealRoute(createType) ~>
-        check {
-          response.status should be equalTo Created
-          responseAs[String] must contain("Date")
-          responseAs[ApiSystemType].id must beSome
-        }
-
-      val placeType = HttpRequest(POST, "/type" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.place)) ~>
-        sealRoute(createType) ~>
-        check {
-          response.status should be equalTo Created
-          responseAs[String] must contain("Place")
-          responseAs[ApiSystemType].id must beSome
-          responseAs[ApiSystemType]
-        }
+      val postalAddressType = createPostalAddressType
+      val dateType = createDateType
+      val placeType = createPlaceType
 
       HttpRequest(POST, s"/${placeType.id.get}/type/${postalAddressType.id.get}" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.addressOfPlace)) ~>
@@ -103,14 +140,8 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
     }
 
     "Accept new Units of Measurement" in {
-      HttpRequest(POST, "/unitofmeasurement" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.uomMeters)) ~>
-        sealRoute(createUnitOfMeasurement) ~>
-        check {
-          response.status should be equalTo Created
-          responseAs[String] must contain("meters")
-          responseAs[ApiSystemUnitofmeasurement].id must beSome
-        }
+      val uom = createMetersUom
+      uom.id must beSome
     }
 
     "Reject duplicate Units of Measurement" in {

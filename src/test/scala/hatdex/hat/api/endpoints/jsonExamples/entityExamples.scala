@@ -105,4 +105,9 @@ object EntityExamples {
       | "name": "Family Member",
       | "description": "Extended family member of a given person"
     }""".stripMargin
+
+  val relationshipType =
+    """{
+      | "relationshipType": "EntityType"
+    }""".stripMargin
 }

@@ -29,7 +29,6 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
   def getApi = path(IntNumber) { (entityId: Int) =>
     get {
       userPassHandler { implicit user: User =>
-        println("Getting entity for user")
         db.withSession { implicit session =>
           implicit val getValues: Boolean = false
           val entity = getEntity(entityId)

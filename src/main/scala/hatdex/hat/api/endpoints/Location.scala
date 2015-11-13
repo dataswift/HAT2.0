@@ -21,6 +21,7 @@ trait Location extends LocationsService with AbstractEntity {
     pathPrefix(entityKind) {
       userPassHandler { implicit user: User =>
         createApi ~
+          addTypeApi ~
           getApi ~
           getApiValues ~
           getAllApi ~
@@ -28,7 +29,6 @@ trait Location extends LocationsService with AbstractEntity {
           linkToThing ~
           linkToPropertyStatic ~
           linkToPropertyDynamic ~
-          addTypeApi ~
           getPropertiesStaticApi ~
           getPropertiesDynamicApi ~
           getPropertyStaticValueApi ~
