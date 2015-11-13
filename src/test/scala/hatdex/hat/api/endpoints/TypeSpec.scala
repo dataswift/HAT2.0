@@ -120,6 +120,30 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
         }
     }
 
+    "Allow type lookup" in {
+      HttpRequest(
+        GET, "/type" + ownerAuthParams + "&name=PostalAddress") ~>
+        sealRoute(typeEndpoint.getTypes) ~>
+        check {
+          response.status should be equalTo OK
+          val types = responseAs[List[ApiSystemType]]
+          types must have size (1)
+          responseAs[String] must contain("PostalAddress")
+        }
+
+      HttpRequest(
+        GET, "/type" + ownerAuthParams) ~>
+        sealRoute(typeEndpoint.getTypes) ~>
+        check {
+          response.status should be equalTo OK
+          val types = responseAs[List[ApiSystemType]]
+          types must not be empty
+          responseAs[String] must contain("PostalAddress")
+          responseAs[String] must contain("Date")
+          responseAs[String] must contain("Place")
+        }
+    }
+
     "Disallow duplicte types" in {
       HttpRequest(POST, "/type" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.postalAddress)) ~>
