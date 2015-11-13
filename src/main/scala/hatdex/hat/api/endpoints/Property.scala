@@ -42,7 +42,7 @@ trait Property extends HttpService with PropertyService with HatServiceAuthHandl
                 case Success(created) =>
                   (Created, created)
                 case Failure(e) =>
-                  (BadRequest, e.getMessage)
+                  (BadRequest, ErrorMessage("Error creating property", e.getMessage))
               }
             }
           }

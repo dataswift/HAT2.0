@@ -3,8 +3,9 @@ package hatdex.hat.api.endpoints
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.authentication.HatAuthTestHandler
+import hatdex.hat.api.endpoints.jsonExamples.PropertyExamples
 import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.api.models.ApiProperty
+import hatdex.hat.api.models.{ErrorMessage, ApiSystemUnitofmeasurement, ApiSystemType, ApiProperty}
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
@@ -54,10 +55,12 @@ class PropertySpec extends Specification with Specs2RouteTest with Property with
       entity = HttpEntity(MediaTypes.`application/json`, weightProperty.toJson.toString)) ~>
       sealRoute(createProperty) ~>
       check {
-        response.status should be equalTo Created
-        responseAs[String] must contain("BodyWeight")
-        responseAs[String] must contain("QuantitativeValue")
-        responseAs[String] must contain("kilograms")
+        eventually {
+          response.status should be equalTo Created
+          responseAs[String] must contain("BodyWeight")
+          responseAs[String] must contain("QuantitativeValue")
+          responseAs[String] must contain("kilograms")
+        }
         responseAs[ApiProperty]
       }
   }
@@ -114,6 +117,42 @@ class PropertySpec extends Specification with Specs2RouteTest with Property with
             val asList = responseAs[List[ApiProperty]]
             asList must have size (0)
           }
+        }
+    }
+
+    "Reject incomplete properties" in {
+      HttpRequest(POST, "" + ownerAuthParams,
+        entity = HttpEntity(MediaTypes.`application/json`, PropertyExamples.bodyWeight)) ~>
+        sealRoute(createProperty) ~>
+        check {
+          response.status should be equalTo BadRequest
+        }
+
+      val typeEndpoint = new Type {
+        def actorRefFactory = system
+        val logger: LoggingAdapter = system.log
+      }
+
+      val quantitativeType = HttpRequest(
+        GET, "/type" + ownerAuthParams + "&name=QuantitativeValue") ~>
+        sealRoute(typeEndpoint.getTypes) ~>
+        check {
+          response.status should be equalTo OK
+          val types = responseAs[List[ApiSystemType]]
+          types must have size (1)
+          types.head
+        }
+
+      val weightUom = ApiSystemUnitofmeasurement(None, None, None, "kilograms", None, Some("kg"))
+
+      val weightProperty = ApiProperty(None, None, None, "BodyWeight",
+        Some("Person body weight"), quantitativeType, weightUom)
+
+      HttpRequest(POST, "" + ownerAuthParams,
+        entity = HttpEntity(MediaTypes.`application/json`, weightProperty.toJson.toString)) ~>
+        sealRoute(createProperty) ~>
+        check {
+          response.status should be equalTo BadRequest
         }
     }
   }
