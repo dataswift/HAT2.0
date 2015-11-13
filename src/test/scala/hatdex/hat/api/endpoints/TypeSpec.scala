@@ -114,7 +114,9 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
         entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.addressOfPlace)) ~>
         sealRoute(linkTypeToType) ~>
         check {
-          response.status should be equalTo Created
+          eventually {
+            response.status should be equalTo Created
+          }
         }
     }
 
