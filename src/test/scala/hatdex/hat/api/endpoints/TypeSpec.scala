@@ -123,7 +123,7 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
     "Allow type lookup" in {
       HttpRequest(
         GET, "/type" + ownerAuthParams + "&name=PostalAddress") ~>
-        sealRoute(typeEndpoint.getTypes) ~>
+        sealRoute(getTypes) ~>
         check {
           response.status should be equalTo OK
           val types = responseAs[List[ApiSystemType]]
@@ -133,7 +133,7 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
 
       HttpRequest(
         GET, "/type" + ownerAuthParams) ~>
-        sealRoute(typeEndpoint.getTypes) ~>
+        sealRoute(getTypes) ~>
         check {
           response.status should be equalTo OK
           val types = responseAs[List[ApiSystemType]]
