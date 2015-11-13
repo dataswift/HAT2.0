@@ -276,8 +276,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
       ) ~>
         sealRoute(linkToPropertyDynamic) ~>
         check {
-          response.status should be equalTo Created
-          responseAs[ApiGenericId]
+          eventually {
+            response.status should be equalTo Created
+            responseAs[ApiGenericId]
+          }
         }
 
       HttpRequest(GET, s"/${newLocation.id.get}/property/dynamic/${propertyLinkId.id}/values" + ownerAuthParams) ~>
@@ -356,8 +358,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
       ) ~>
         sealRoute(linkToPropertyStatic) ~>
         check {
-          response.status should be equalTo Created
-          responseAs[ApiGenericId]
+          eventually {
+            response.status should be equalTo Created
+            responseAs[ApiGenericId]
+          }
         }
 
       HttpRequest(GET, s"/${newLocation.id.get}/property/static/${propertyLinkId.id}/values" + ownerAuthParams) ~>
