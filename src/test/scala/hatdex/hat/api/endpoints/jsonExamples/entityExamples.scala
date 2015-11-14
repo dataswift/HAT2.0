@@ -36,6 +36,16 @@ object EntityExamples {
       | "name": "HATorg"
     }""".stripMargin
 
+  val otherOrgValid =
+    """{
+      | "name": "HATcontrol"
+    }""".stripMargin
+
+  val orgBadName =
+    """{
+      | "nam": "HATorg"
+    }""".stripMargin
+
   val personValid =  /* if changing personId here, make sure to update the expectation at LocationsServiceSpec*/
     """{
       | "name": "HATperson",
@@ -109,5 +119,10 @@ object EntityExamples {
   val relationshipType =
     """{
       | "relationshipType": "EntityType"
+    }""".stripMargin
+
+  val relationshipControls =
+    """{
+      | "relationshipType": "controls"
     }""".stripMargin
 }
