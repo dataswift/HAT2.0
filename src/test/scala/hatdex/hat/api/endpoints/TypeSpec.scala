@@ -42,10 +42,11 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
     entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.postalAddress)) ~>
     sealRoute(createType) ~>
     check {
-      logger.debug("Create Type response: " + response.toString)
-      response.status should be equalTo Created
-      responseAs[String] must contain("PostalAddress")
-      responseAs[ApiSystemType].id must beSome
+      eventually {
+        response.status should be equalTo Created
+        responseAs[String] must contain("PostalAddress")
+        responseAs[ApiSystemType].id must beSome
+      }
       responseAs[ApiSystemType]
     }
 
@@ -53,9 +54,11 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
     entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.date)) ~>
     sealRoute(createType) ~>
     check {
-      response.status should be equalTo Created
-      responseAs[String] must contain("Date")
-      responseAs[ApiSystemType].id must beSome
+      eventually {
+        response.status should be equalTo Created
+        responseAs[String] must contain("Date")
+        responseAs[ApiSystemType].id must beSome
+      }
       responseAs[ApiSystemType]
     }
 
@@ -63,9 +66,11 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
     entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.place)) ~>
     sealRoute(createType) ~>
     check {
-      response.status should be equalTo Created
-      responseAs[String] must contain("Place")
-      responseAs[ApiSystemType].id must beSome
+      eventually {
+        response.status should be equalTo Created
+        responseAs[String] must contain("Place")
+        responseAs[ApiSystemType].id must beSome
+      }
       responseAs[ApiSystemType]
     }
 
@@ -73,10 +78,11 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
     entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.quantitativeValue)) ~>
     sealRoute(createType) ~>
     check {
-      logger.debug("Create quantitative value type response: " + response.toString)
-      response.status should be equalTo Created
-      responseAs[String] must contain("QuantitativeValue")
-      responseAs[ApiSystemType].id must beSome
+      eventually {
+        response.status should be equalTo Created
+        responseAs[String] must contain("QuantitativeValue")
+        responseAs[ApiSystemType].id must beSome
+      }
       responseAs[ApiSystemType]
     }
 
@@ -84,9 +90,11 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
     entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.uomMeters)) ~>
     sealRoute(createUnitOfMeasurement) ~>
     check {
-      response.status should be equalTo Created
-      responseAs[String] must contain("meters")
-      responseAs[ApiSystemUnitofmeasurement].id must beSome
+      eventually {
+        response.status should be equalTo Created
+        responseAs[String] must contain("meters")
+        responseAs[ApiSystemUnitofmeasurement].id must beSome
+      }
       responseAs[ApiSystemUnitofmeasurement]
     }
 
@@ -94,9 +102,11 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
     entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.uomWeight)) ~>
     sealRoute(createUnitOfMeasurement) ~>
     check {
-      response.status should be equalTo Created
-      responseAs[String] must contain("kilograms")
-      responseAs[ApiSystemUnitofmeasurement].id must beSome
+      eventually {
+        response.status should be equalTo Created
+        responseAs[String] must contain("kilograms")
+        responseAs[ApiSystemUnitofmeasurement].id must beSome
+      }
       responseAs[ApiSystemUnitofmeasurement]
     }
 

@@ -90,7 +90,7 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
   import spray.httpx.SprayJsonSupport._
   implicit val errorFormat = jsonFormat2(ErrorMessage.apply)
 
-  implicit val jsonRejectionHandler = RejectionHandler {
+  val jsonRejectionHandler = RejectionHandler {
     case MalformedRequestContentRejection (msg, cause) :: Nil =>
       complete (StatusCodes.BadRequest, ErrorMessage ("The request content was malformed", msg) )
 
@@ -112,18 +112,20 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
   // Concatenate all their handled routes
   val routes = logRequestResponse(requestMethodAndResponseStatusAsInfo _) {
     cors {
-      helloService.routes ~
-        apiDataService.routes ~
-        apiPropertyService.routes ~
-        apiBundleService.routes ~
-        eventsService.routes ~
-        locationsService.routes ~
-        peopleService.routes ~
-        thingsService.routes ~
-        organisationsService.routes ~
-        userService.routes ~
-        typeService.routes ~
-        dataDebitService.routes
+      handleRejections(jsonRejectionHandler) {
+        helloService.routes ~
+          apiDataService.routes ~
+          apiPropertyService.routes ~
+          apiBundleService.routes ~
+          eventsService.routes ~
+          locationsService.routes ~
+          peopleService.routes ~
+          thingsService.routes ~
+          organisationsService.routes ~
+          userService.routes ~
+          typeService.routes ~
+          dataDebitService.routes
+      }
     }
   }
 

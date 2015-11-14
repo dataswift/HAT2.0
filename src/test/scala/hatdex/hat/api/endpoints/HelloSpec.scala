@@ -63,7 +63,7 @@ class HelloSpec extends Specification with Specs2RouteTest with Hello {
     "return a MethodNotAllowed error for PUT requests to the root path" in {
       Put() ~> sealRoute(home) ~>
         check {
-          status === MethodNotAllowed
+          response.status should be equalTo MethodNotAllowed
           responseAs[String] === "HTTP method not allowed, supported methods: GET"
         }
     }
