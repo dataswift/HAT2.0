@@ -93,6 +93,41 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         }
     }
 
+    "Reject unsuported relationships" in {
+      val newLocation = createNewValidLocation
+      newLocation.id must beSome
+
+      HttpRequest(
+        POST,
+        s"/${newLocation.id.get}/organisation/1" + ownerAuthParams,
+        entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
+        sealRoute(linkToOrganisation) ~>
+        check {
+          response.status should be equalTo BadRequest
+          responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+        }
+
+      HttpRequest(
+        POST,
+        s"/${newLocation.id.get}/person/1" + ownerAuthParams,
+        entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
+        sealRoute(linkToPerson) ~>
+        check {
+          response.status should be equalTo BadRequest
+          responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+        }
+
+      HttpRequest(
+        POST,
+        s"/${newLocation.id.get}/event/1" + ownerAuthParams,
+        entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
+        sealRoute(linkToEvent) ~>
+        check {
+          response.status should be equalTo BadRequest
+          responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+        }
+    }
+
     "Retrieve created locations" in {
       val newLocation = createNewValidLocation
       newLocation.id must beSome
@@ -217,17 +252,17 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
 
     }
 
-    class Context extends Scope {
-      val property = Context.property
-      val populatedData = Context.populatedData
-    }
-
     object Context {
       val propertySpec = new PropertySpec()
       val property = propertySpec.createWeightProperty
       val dataSpec = new DataSpec()
       dataSpec.createBasicTables
       val populatedData = dataSpec.populateDataReusable
+    }
+
+    class Context extends Scope {
+      val property = Context.property
+      val populatedData = Context.populatedData
     }
 
     "Handle Dynamic Property Linking" in new Context {
@@ -258,8 +293,6 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
       }
       */
 
-      logger.debug("TEST Handle Dynamic Property Linking")
-
       val newLocation = createNewValidLocation
       newLocation.id must beSome
 
@@ -280,6 +313,17 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
             response.status should be equalTo Created
           }
           responseAs[ApiGenericId]
+        }
+
+      HttpRequest(GET, s"/location/${newLocation.id.get}/property/dynamic" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo OK
+            responseAs[String] must contain("BodyWeight")
+            responseAs[String] must contain("field")
+            responseAs[String] must not contain("record")
+          }
         }
 
       HttpRequest(GET, s"/${newLocation.id.get}/property/dynamic/${propertyLinkId.id}/values" + ownerAuthParams) ~>
@@ -335,7 +379,6 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         }
        }
        */
-      logger.debug("TEST Handle Static Property Linking")
 
       val newLocation = createNewValidLocation
       newLocation.id must beSome
@@ -364,6 +407,17 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
           responseAs[ApiGenericId]
         }
 
+      HttpRequest(GET, s"/location/${newLocation.id.get}/property/static" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo OK
+            responseAs[String] must contain("BodyWeight")
+            responseAs[String] must contain("field")
+            responseAs[String] must contain("record")
+          }
+        }
+
       HttpRequest(GET, s"/${newLocation.id.get}/property/static/${propertyLinkId.id}/values" + ownerAuthParams) ~>
         sealRoute(getPropertyStaticValueApi) ~>
         check {
@@ -380,12 +434,13 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         check {
           eventually {
             response.status should be equalTo OK
-            logger.debug("Get property linked statically response:" + response.toString)
             responseAs[String] must contain("testValue1")
             responseAs[String] must not contain("testValue2-1")
             responseAs[String] must not contain ("testValue3")
           }
         }
     }
+
+
   }
 }
