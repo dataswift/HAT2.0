@@ -18,11 +18,9 @@ import spray.testkit.Specs2RouteTest
 
 class PropertySpec extends Specification with Specs2RouteTest with Property with BeforeAfterAll {
   def actorRefFactory = system
-
   val logger: LoggingAdapter = system.log
 
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
-
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
 
   import JsonProtocol._
@@ -51,9 +49,9 @@ class PropertySpec extends Specification with Specs2RouteTest with Property with
     val weightProperty = ApiProperty(None, None, None, "BodyWeight",
       Some("Person body weight"), quantitativeType, weightUom)
 
-    HttpRequest(POST, "" + ownerAuthParams,
+    HttpRequest(POST, "/property" + ownerAuthParams,
       entity = HttpEntity(MediaTypes.`application/json`, weightProperty.toJson.toString)) ~>
-      sealRoute(createProperty) ~>
+      sealRoute(routes) ~>
       check {
         eventually {
           response.status should be equalTo Created
@@ -72,8 +70,8 @@ class PropertySpec extends Specification with Specs2RouteTest with Property with
       val weightProperty = createWeightProperty
       weightProperty.id must beSome
 
-      HttpRequest(GET, s"/${weightProperty.id.get}" + ownerAuthParams) ~>
-        sealRoute(getPropertyApi) ~>
+      HttpRequest(GET, s"/property/${weightProperty.id.get}" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK
@@ -85,8 +83,8 @@ class PropertySpec extends Specification with Specs2RouteTest with Property with
     }
 
     "List properties" in {
-      HttpRequest(GET, s"" + ownerAuthParams) ~>
-        sealRoute(getPropertiesApi) ~>
+      HttpRequest(GET, s"/property" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK
@@ -97,8 +95,8 @@ class PropertySpec extends Specification with Specs2RouteTest with Property with
           }
         }
 
-      HttpRequest(GET, s"" + ownerAuthParams + "&name=BodyWeight") ~>
-        sealRoute(getPropertiesApi) ~>
+      HttpRequest(GET, s"/property" + ownerAuthParams + "&name=BodyWeight") ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK
@@ -109,8 +107,8 @@ class PropertySpec extends Specification with Specs2RouteTest with Property with
           }
         }
 
-      HttpRequest(GET, s"" + ownerAuthParams + "&name=RandomProperty") ~>
-        sealRoute(getPropertiesApi) ~>
+      HttpRequest(GET, s"/property" + ownerAuthParams + "&name=RandomProperty") ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK
@@ -121,9 +119,9 @@ class PropertySpec extends Specification with Specs2RouteTest with Property with
     }
 
     "Reject incomplete properties" in {
-      HttpRequest(POST, "" + ownerAuthParams,
+      HttpRequest(POST, "/property" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, PropertyExamples.bodyWeight)) ~>
-        sealRoute(createProperty) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo BadRequest
         }
@@ -148,9 +146,9 @@ class PropertySpec extends Specification with Specs2RouteTest with Property with
       val weightProperty = ApiProperty(None, None, None, "BodyWeight",
         Some("Person body weight"), quantitativeType, weightUom)
 
-      HttpRequest(POST, "" + ownerAuthParams,
+      HttpRequest(POST, "/property" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, weightProperty.toJson.toString)) ~>
-        sealRoute(createProperty) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo BadRequest
         }

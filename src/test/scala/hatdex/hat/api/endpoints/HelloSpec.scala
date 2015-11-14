@@ -18,14 +18,14 @@ class HelloSpec extends Specification with Specs2RouteTest with Hello {
   "InboundDataService" should {
 
     "return a greeting for GET requests to the root path" in {
-      Get() ~> home ~>
+      Get() ~> sealRoute(routes) ~>
         check {
           responseAs[String] must contain("Hello HAT 2.0")
         }
     }
 
     "disallow GET requests to hat path without credentials" in {
-      Get("/hat") ~> sealRoute(authHat) ~>
+      Get("/hat") ~> sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo Unauthorized
@@ -35,7 +35,7 @@ class HelloSpec extends Specification with Specs2RouteTest with Hello {
 
     "disallow GET requests to hat path with incorrect credentials" in {
       Get("/hat?username=bob@gmail.com&password=asdasd") ~>
-        sealRoute(authHat) ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo Unauthorized
@@ -44,7 +44,7 @@ class HelloSpec extends Specification with Specs2RouteTest with Hello {
     }
 
     "accept access_token authenticated GET requests to hat path" in {
-      Get("/hat?access_token=df4545665drgdfg") ~> sealRoute(authHat) ~>
+      Get("/hat?access_token=df4545665drgdfg") ~> sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK
@@ -54,14 +54,14 @@ class HelloSpec extends Specification with Specs2RouteTest with Hello {
     }
 
     "leave GET requests to other paths unhandled" in {
-      Get("/kermit") ~> home ~>
+      Get("/kermit") ~> routes ~>
         check {
           handled must beFalse
         }
     }
 
     "return a MethodNotAllowed error for PUT requests to the root path" in {
-      Put() ~> sealRoute(home) ~>
+      Put() ~> sealRoute(routes) ~>
         check {
           response.status should be equalTo MethodNotAllowed
           responseAs[String] === "HTTP method not allowed, supported methods: GET"
