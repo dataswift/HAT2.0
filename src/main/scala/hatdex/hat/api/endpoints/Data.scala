@@ -32,8 +32,10 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
         findTableApi ~
         getTableValuesApi ~
         getRecordApi ~
+        getRecordByNameApi ~
         getRecordValuesApi ~
         getValueApi ~
+        findValueApi ~
         getDataSourcesApi ~
         createTableApi ~
         linkTableToTableApi ~
@@ -269,6 +271,30 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
   }
 
   /*
+   * Get Record by Name.
+   * Only useful if you use unique names in your DataRecord
+   */
+  def getRecordByNameApi = path("record" / "name") {
+    get {
+      (userPassHandler | accessTokenHandler) { implicit user: User =>
+        parameters('name) { (name: String) =>
+          db.withSession { implicit session =>
+            val record = DataRecord.filter(_.name === name).run.headOption
+            complete {
+              record match {
+                case Some(dataRecord) =>
+                  ApiDataRecord.fromDataRecord(dataRecord)(None)
+                case None =>
+                  (NotFound, s"Data Record $name not found")
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /*
    * Get values associated with a record.
    * Constructs a hierarchy of fields and data within each field for the record
    */
@@ -396,6 +422,32 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
                 response
               case None =>
                 (NotFound, s"Data value $valueId not found")
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /*
+   * Retrieve a data value using Search parameters
+   * Especially Useful to find if a Field-Value pair exists
+   */
+  def findValueApi = path("value" / "search") {
+    get {
+      (userPassHandler | accessTokenHandler) { implicit user: User =>
+        logger.debug("GET /value/search")
+        parameters('recordId, 'tableName, 'tableSource, 'fieldName, 'fieldValue) { (recordId: String, tableName: String, tableSource: String, fieldName: String, fieldValue: String) =>
+          db.withSession { implicit session =>
+            val dataValue = findValue(recordId.toInt, tableName, tableSource, fieldName, fieldValue)
+            complete {
+              session.close()
+              dataValue match {
+                case Some(response) =>
+                  response
+                case None =>
+                  (NotFound, "Data value not found")
+                }
             }
           }
         }
