@@ -352,10 +352,7 @@ class ModelSpec extends Specification with BeforeAfterAll {
   def afterAll() = {
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
-      TestFixtures.prepareEverything
-      TestDataCleanup.cleanupAll
     }
-    db.close
   }
 
 }
