@@ -30,8 +30,10 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
         findTableApi ~
         getTableValuesApi ~
         getRecordApi ~
+        getRecordByNameApi ~
         getRecordValuesApi ~
         getValueApi ~
+        findValueApi ~
         createTableApi ~
         linkTableToTableApi ~
         createFieldApi ~
@@ -53,7 +55,6 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
         entity(as[ApiDataTable]) { table =>
           db.withSession { implicit session =>
             val tableStructure = createTable(table)
-
             complete {
               tableStructure match {
                 case Success(structure) =>
@@ -266,6 +267,30 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
   }
 
   /*
+   * Get Record by Name.
+   * Only useful if you use unique names in your DataRecord
+   */
+  def getRecordByNameApi = path("record" / "name") {
+    get {
+      (userPassHandler | accessTokenHandler) { implicit user: User =>
+        parameters('name) { (name: String) =>
+          db.withSession { implicit session =>
+            val record = DataRecord.filter(_.name === name).run.headOption
+            complete {
+              record match {
+                case Some(dataRecord) =>
+                  ApiDataRecord.fromDataRecord(dataRecord)(None)
+                case None =>
+                  (NotFound, s"Data Record $name not found")
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /*
    * Get values associated with a record.
    * Constructs a hierarchy of fields and data within each field for the record
    */
@@ -393,6 +418,32 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
                 response
               case None =>
                 (NotFound, s"Data value $valueId not found")
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /*
+   * Retrieve a data value using Search parameters
+   * Especially Useful to find if a Field-Value pair exists
+   */
+  def findValueApi = path("value" / "search") {
+    get {
+      (userPassHandler | accessTokenHandler) { implicit user: User =>
+        logger.debug("GET /value/search")
+        parameters('recordId, 'tableName, 'tableSource, 'fieldName, 'fieldValue) { (recordId: String, tableName: String, tableSource: String, fieldName: String, fieldValue: String) =>
+          db.withSession { implicit session =>
+            val dataValue = findValue(recordId.toInt, tableName, tableSource, fieldName, fieldValue)
+            complete {
+              session.close()
+              dataValue match {
+                case Some(response) =>
+                  response
+                case None =>
+                  (NotFound, "Data value not found")
+                }
             }
           }
         }
@@ -647,6 +698,18 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
     val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name === name).run.headOption
     dbDataTable map { table =>
       ApiDataTable.fromDataTable(table)(None)(None)
+    }
+  }
+
+  private def findValue(recordId: Int, tableName: String, tableSource: String, fieldName: String, fieldValue: String)(implicit session: Session): Option[ApiDataValue] = {
+    val dataValueQuery = DataValue.filter(dataValue => dataValue.recordId === recordId).filter(dataValue => dataValue.value === fieldValue).flatMap(dataValue =>
+        DataField.filter(dataField => dataField.id === dataValue.fieldId).filter(dataField => dataField.name === fieldName).flatMap(dataField =>
+          DataTable.filter(dataTable => dataTable.name === tableName).filter(dataTable => dataTable.sourceName === tableSource).filter(dataTable => dataTable.id === dataField.tableIdFk).map(dataTable => (dataValue.id, dataValue.dateCreated, dataValue.lastUpdated, dataValue.value))
+        )
+    ).run.headOption
+
+    dataValueQuery map { result =>
+      new ApiDataValue(Some(result._1), Some(result._2), Some(result._3), result._4, None, None)
     }
   }
 
