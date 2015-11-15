@@ -1,12 +1,14 @@
-package hatdex.hat.api.service
+package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
+import hatdex.hat.api.TestDataCleanup
+import hatdex.hat.api.authentication.HatAuthTestHandler
+import hatdex.hat.api.endpoints.jsonExamples.BundleExamples
 import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.api.service.jsonExamples.BundleExamples
+import hatdex.hat.api.models._
+import hatdex.hat.authentication.authenticators.{UserPassHandler, AccessTokenHandler}
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
-import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.api.models._
 import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
@@ -17,13 +19,14 @@ import spray.httpx.SprayJsonSupport._
 import spray.json._
 import spray.testkit.Specs2RouteTest
 
-class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with BundleService {
+class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll with Bundles {
   def actorRefFactory = system
+  val logger: LoggingAdapter = system.log
 
-  val dataService = new DataService {
-    def actorRefFactory = system
-    val logger: LoggingAdapter = system.log
-  }
+  val ownerAuth = "username=bob@gmail.com&password=pa55w0rd"
+
+  override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
+  override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
 
   import JsonProtocol._
 
@@ -98,21 +101,21 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
     }
-    db.close
+//    db.close
   }
 
   sequential
 
   "Contextless Bundle Service for Tables" should {
     "Reject a bundle on table without specified id" in {
-      HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenWrong)) ~>
+      HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenWrong)) ~>
         createBundleTable ~> check {
         response.status should be equalTo BadRequest
       }
     }
 
     "create a simple Bundle Table with no filters on data" in {
-      HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
+      HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
         createBundleTable ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain("Electricity in the kitchen")
@@ -120,7 +123,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
     }
 
     "create a simple Bundle Table with multiple filters" in {
-      HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+      HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
         createBundleTable ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain("Weekend events at home")
@@ -128,14 +131,14 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
     }
 
     "Create and retrieve a bundle by ID" in {
-      val bundleId = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+      val bundleId = HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
         createBundleTable ~> check {
         responseAs[ApiBundleTable].id
       }
 
       bundleId must beSome
 
-      val url = s"/table/${bundleId.get}"
+      val url = s"/table/${bundleId.get}?"+ownerAuth
       HttpRequest(GET, url) ~>
         getBundleTable ~> check {
         response.status should be equalTo OK
@@ -144,13 +147,13 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
     }
     
     "Bundle without filters should contain all data of linked table only" in {
-      val bundleTableKitchen = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchen)) ~>
+      val bundleTableKitchen = HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchen)) ~>
         createBundleTable ~> check {
         responseAs[ApiBundleTable]
       }
       bundleTableKitchen.id must beSome
 
-      HttpRequest(GET, s"/table/${bundleTableKitchen.id.get}/values") ~>
+      HttpRequest(GET, s"/table/${bundleTableKitchen.id.get}/values?"+ownerAuth) ~>
         getBundleTableValuesApi ~> check {
         response.status should be equalTo OK
         val responseString = responseAs[String]
@@ -168,7 +171,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
     }
 
     "create a Bundle Table with multiple filters and correctly retrieve data" in {
-      val bundleTable = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+      val bundleTable = HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
         createBundleTable ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain("Weekend events at home")
@@ -177,7 +180,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
 
       bundleTable.id must beSome
 
-      HttpRequest(GET, s"/table/${bundleTable.id.get}/values") ~>
+      HttpRequest(GET, s"/table/${bundleTable.id.get}/values?"+ownerAuth) ~>
         getBundleTableValuesApi ~> check {
         response.status should be equalTo OK
 
@@ -195,13 +198,13 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
   "Contextless Bundle Service for Joins" should {
     "Create and combine required bundles without join conditions" in {
 
-      val bundleWeekendEvents = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+      val bundleWeekendEvents = HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
         createBundleTable ~> check {
         responseAs[ApiBundleTable]
       }
       bundleWeekendEvents.id must beSome
 
-      val bundleTableKitchen = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
+      val bundleTableKitchen = HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
         createBundleTable ~> check {
         responseAs[ApiBundleTable]
       }
@@ -221,13 +224,13 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       )))
 
       val bundleJson: String = completeBundle.toJson.toString
-      val cBundle = HttpRequest(POST, "/", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
+      val cBundle = HttpRequest(POST, "?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
         createBundleContextless ~> check {
         response.status should be equalTo Created
         responseAs[ApiBundleContextless]
       }
 
-      HttpRequest(GET, s"/${cBundle.id.get}/values") ~>
+      HttpRequest(GET, s"/${cBundle.id.get}/values?"+ownerAuth) ~>
         getBundleContextlessValuesApi ~> check {
         response.status should be equalTo OK
 
@@ -251,13 +254,13 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
 
     "Create and combine required bundles with join conditions" in {
 
-      val bundleWeekendEvents = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+      val bundleWeekendEvents = HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
         createBundleTable ~> check {
         responseAs[ApiBundleTable]
       }
       bundleWeekendEvents.id must beSome
 
-      val bundleTableKitchen = HttpRequest(POST, "/table", entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
+      val bundleTableKitchen = HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
         createBundleTable ~> check {
         responseAs[ApiBundleTable]
       }
@@ -279,7 +282,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
       val bundleJson: String = completeBundle.toJson.toString
 
       import JsonProtocol._
-      val bundleId = HttpRequest(POST, "/", entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
+      val bundleId = HttpRequest(POST, "?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
         createBundleContextless ~> check {
         response.status should be equalTo Created
         responseAs[String] must contain(""""operator": "equal"""")
@@ -289,7 +292,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
 
       bundleId must beSome
 
-      HttpRequest(GET, s"/${bundleId.get}") ~>
+      HttpRequest(GET, s"/${bundleId.get}?"+ownerAuth) ~>
         getBundleContextless ~> check {
         response.status should be equalTo OK
         responseAs[String] must contain(""""operator": "equal"""")
@@ -298,7 +301,7 @@ class BundleServiceSpec extends Specification with Specs2RouteTest with BeforeAf
     }
 
     "Return correct error code for bundle that doesn't exist" in {
-      HttpRequest(GET, "/0") ~>
+      HttpRequest(GET, "/0?"+ownerAuth) ~>
         getBundleContextless ~> check {
         response.status should be equalTo NotFound
       }

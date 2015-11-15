@@ -1,23 +1,23 @@
-package hatdex.hat.api.service
+package hatdex.hat.api.endpoints
 
+import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.json.JsonProtocol
+import hatdex.hat.api.models._
+import hatdex.hat.api.service.AbstractEntityService
 import hatdex.hat.authentication.HatServiceAuthHandler
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
-import hatdex.hat.api.DatabaseInfo
-import hatdex.hat.api.models._
-import org.joda.time.LocalDateTime
-import spray.http.MediaTypes._
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
 
 import scala.util.{Failure, Success, Try}
 
-trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo with HatServiceAuthHandler {
+trait AbstractEntity extends HttpService with AbstractEntityService with HatServiceAuthHandler {
 
   import JsonProtocol._
+  val db = DatabaseInfo.db
 
   def createApi = {
     post {
@@ -37,6 +37,18 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
     }
   }
 
+  def getAllApi = pathEnd {
+    get {
+      userPassHandler { implicit user =>
+        db.withSession { implicit session =>
+          val entities = getAllEntitiesSimple
+          session.close()
+          entities
+        }
+      }
+    }
+  }
+
   def getApiValues = path(IntNumber / "values") { (entityId: Int) =>
     get {
       userPassHandler { implicit user: User =>
@@ -46,6 +58,28 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
           getEntity(entityId)
         }
       }
+    }
+  }
+
+  private def getAllEntitiesSimple(implicit session: Session) = {
+    import JsonProtocol._
+    import spray.json._
+    val result = entityKind match {
+      case "person" =>
+        PeoplePerson.run.map(ApiPerson.fromDbModel).toJson
+      case "thing" =>
+        ThingsThing.run.map(ApiThing.fromDbModel).toJson
+      case "event" =>
+        EventsEvent.run.map(ApiEvent.fromDbModel).toJson
+      case "location" =>
+        LocationsLocation.run.map(ApiLocation.fromDbModel).toJson
+      case "organisation" =>
+        OrganisationsOrganisation.run.map(ApiOrganisation.fromDbModel).toJson
+      case _ => Seq()
+    }
+
+    complete {
+      result.toString
     }
   }
 
@@ -72,7 +106,7 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
         case Some(entity: ApiOrganisation) =>
           entity
         case _ =>
-          (NotFound, s"$entityKind with ID $entityId not found")
+          (NotFound, ErrorMessage("NotFound", s"$entityKind with ID $entityId not found"))
       }
     }
   }
@@ -295,10 +329,10 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
       entity(as[ApiPropertyRelationshipStatic]) { relationship =>
         val result: Try[Int] = (relationship.field.id, relationship.record.id) match {
           case (Some(fieldId), Some(recordId)) =>
-            val propertyRecordId = createPropertyRecord(
-              s"$entityKind/$entityId/property/static/$propertyId:${relationship.relationshipType}($fieldId,$recordId,${relationship.relationshipType}")
-
             db.withSession { implicit session =>
+              val propertyRecordId = createPropertyRecord(
+                s"$entityKind/$entityId/property/static/$propertyId:${relationship.relationshipType}($fieldId,$recordId,${relationship.relationshipType}")
+
               createPropertyLinkStatic(entityId, propertyId, recordId, fieldId, relationship.relationshipType, propertyRecordId)
             }
           case (None, _) =>
@@ -328,11 +362,11 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
       entity(as[ApiPropertyRelationshipDynamic]) { relationship =>
         val result: Try[Int] = relationship.field.id match {
           case Some(fieldId) =>
-            val propertyRecordId = createPropertyRecord(
-              s"""$entityKind/$entityId/property/dynamic/$propertyId:${relationship.relationshipType}
-                  |($fieldId,${relationship.relationshipType})""".stripMargin)
-
             db.withSession { implicit session =>
+              val propertyRecordId = createPropertyRecord(
+                s"""$entityKind/$entityId/property/dynamic/$propertyId:${relationship.relationshipType}
+                   |($fieldId,${relationship.relationshipType})""".stripMargin)
+
               createPropertyLinkDynamic(entityId, propertyId, fieldId, relationship.relationshipType, propertyRecordId)
             }
           case None =>
@@ -350,21 +384,4 @@ trait EntityServiceApi extends HttpService with EntityService with DatabaseInfo 
       }
     }
   }
-
-  protected def createRelationshipRecord(relationshipName: String) = {
-    db.withSession { implicit session =>
-      val newRecord = new SystemRelationshiprecordRow(0, LocalDateTime.now(), LocalDateTime.now(), relationshipName)
-      val recordId = (SystemRelationshiprecord returning SystemRelationshiprecord.map(_.id)) += newRecord
-      recordId
-    }
-  }
-
-  protected def createPropertyRecord(relationshipName: String) = {
-    db.withSession { implicit session =>
-      val newRecord = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), relationshipName)
-      val recordId = (SystemPropertyrecord returning SystemRelationshiprecord.map(_.id)) += newRecord
-      recordId
-    }
-  }
-
 }

@@ -1,24 +1,16 @@
 package hatdex.hat.api.service
 
-import akka.event.{LoggingAdapter, Logging}
+import akka.event.LoggingAdapter
 import hatdex.hat.Utils
-import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.authentication.models.User
+import hatdex.hat.api.models.{ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _}
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
-import hatdex.hat.api.DatabaseInfo
-import hatdex.hat.api.models.{ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _}
 import org.joda.time.LocalDateTime
-import spray.http.StatusCodes._
-import spray.httpx.SprayJsonSupport._
-import spray.routing._
-import hatdex.hat.authentication.{HatServiceAuthHandler, HatAuthHandler}
 
 import scala.util.{Failure, Success, Try}
 
 // this trait defines our service behavior independently from the service actor
-trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandler {
-  //  import hatdex.hat.authentication.HatServiceAuthHandler._
+trait DataService {
 
   val logger: LoggingAdapter
 
@@ -469,8 +461,8 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
 
       // Retrieve values of those fields from the database, grouping by Record ID
       val values = valuesQuery.filter(_.fieldId inSet fieldsToGet)
-        .take(10000) // FIXME: magic number for getting X records
-        .sortBy(_.recordId.asc)
+         .take(10000) // FIXME: magic number for getting X records
+         .sortBy(_.recordId.desc)
         .run
         .groupBy(_.recordId)
 
@@ -489,7 +481,13 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
         records(recordId).copy(tables = Some(Seq(mappedValues)))
       }
 
-      dataRecords
+      dataRecords.toList.sortWith((a, b) =>
+        a.lastUpdated
+          .getOrElse(LocalDateTime.now())
+          .isAfter(
+            b.lastUpdated.getOrElse(LocalDateTime.now())
+          )
+      )
     }
   }
 
@@ -607,7 +605,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
   def getFieldValues(fieldId: Int)(implicit session: Session): Option[ApiDataField] = {
     val apiFieldOption = retrieveDataFieldId(fieldId)
     apiFieldOption map { apiField =>
-      val values = DataValue.filter(_.fieldId === fieldId).run
+      val values = DataValue.filter(_.fieldId === fieldId).sortBy(_.lastUpdated.desc).run
       val apiDataValues = values.map(ApiDataValue.fromDataValue)
       apiField.copy(values = Some(apiDataValues))
     }
@@ -694,14 +692,14 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
     }
   }
 
-  private def findTable(name: String, source: String)(implicit session: Session): Option[ApiDataTable] = {
+  def findTable(name: String, source: String)(implicit session: Session): Option[ApiDataTable] = {
     val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name === name).run.headOption
     dbDataTable map { table =>
       ApiDataTable.fromDataTable(table)(None)(None)
     }
   }
 
-  private def findValue(recordId: Int, tableName: String, tableSource: String, fieldName: String, fieldValue: String)(implicit session: Session): Option[ApiDataValue] = {
+  def findValue(recordId: Int, tableName: String, tableSource: String, fieldName: String, fieldValue: String)(implicit session: Session): Option[ApiDataValue] = {
     val dataValueQuery = DataValue.filter(dataValue => dataValue.recordId === recordId).filter(dataValue => dataValue.value === fieldValue).flatMap(dataValue =>
         DataField.filter(dataField => dataField.id === dataValue.fieldId).filter(dataField => dataField.name === fieldName).flatMap(dataField =>
           DataTable.filter(dataTable => dataTable.name === tableName).filter(dataTable => dataTable.sourceName === tableSource).filter(dataTable => dataTable.id === dataField.tableIdFk).map(dataTable => (dataValue.id, dataValue.dateCreated, dataValue.lastUpdated, dataValue.value))
@@ -710,6 +708,17 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
 
     dataValueQuery map { result =>
       new ApiDataValue(Some(result._1), Some(result._2), Some(result._3), result._4, None, None)
+    }
+  }
+
+  def getDataSources()(implicit session: Session): Seq[ApiDataTable] = {
+    val childTablesQuery = DataTabletotablecrossref.map(_.table2)
+    val rootTablesQuery = DataTable.filterNot(_.id in childTablesQuery)
+
+    val rootTables = rootTablesQuery.run
+
+    rootTables.map { dataTable =>
+      ApiDataTable.fromDataTable(dataTable)(None)(None)
     }
   }
 
@@ -757,7 +766,7 @@ trait DataService extends HttpService with DatabaseInfo with HatServiceAuthHandl
   /*
    * Private function finding data field by ID
    */
-  private def retrieveDataFieldId(fieldId: Int)(implicit session: Session): Option[ApiDataField] = {
+  def retrieveDataFieldId(fieldId: Int)(implicit session: Session): Option[ApiDataField] = {
     val field = DataField.filter(_.id === fieldId).run.headOption
     field map { dataField =>
       ApiDataField.fromDataField(dataField)

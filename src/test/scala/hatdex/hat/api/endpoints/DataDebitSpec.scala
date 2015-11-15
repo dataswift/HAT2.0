@@ -1,15 +1,17 @@
-package hatdex.hat.api.service
+package hatdex.hat.api.endpoints
+
+import java.util.UUID
 
 import akka.event.LoggingAdapter
+import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.authentication.HatAuthTestHandler
+import hatdex.hat.api.endpoints.jsonExamples.DataDebitExamples
 import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.api.service.jsonExamples.DataDebitExamples
-import hatdex.hat.authentication.authenticators.{UserPassHandler, AccessTokenHandler}
+import hatdex.hat.api.models._
+import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
-import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.api.models._
 import org.joda.time.LocalDateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.specs2.mutable.Specification
@@ -18,21 +20,11 @@ import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
 import spray.httpx.SprayJsonSupport._
-import spray.json._
 import spray.testkit.Specs2RouteTest
-import java.util.UUID
 
-class DataDebitServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with DataDebitService {
+class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterAll with DataDebit {
   def actorRefFactory = system
-
-  val bundleService = new BundleService {
-    def actorRefFactory = system
-
-    val dataService = new DataService {
-      def actorRefFactory = system
-      val logger: LoggingAdapter = system.log
-    }
-  }
+  val logger: LoggingAdapter = system.log
 
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
@@ -41,6 +33,8 @@ class DataDebitServiceSpec extends Specification with Specs2RouteTest with Befor
   val ownerUser: User = User(UUID.randomUUID, "bob@gmail.com", Some(BCrypt.hashpw("pa55w0rd", BCrypt.gensalt())), "Test User", "owner")
 
   import JsonProtocol._
+
+  val ownerAuth = "username=bob@gmail.com&password=pa55w0rd"
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
@@ -208,7 +202,7 @@ class DataDebitServiceSpec extends Specification with Specs2RouteTest with Befor
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
     }
-    db.close
+//    db.close
   }
 
   sequential
@@ -218,14 +212,14 @@ class DataDebitServiceSpec extends Specification with Specs2RouteTest with Befor
 
       val dataDebit = {
         implicit val user:User = apiUser
-        val dataDebit = HttpRequest(POST, "/propose", entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitExample)) ~>
+        val dataDebit = HttpRequest(POST, "/propose?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitExample)) ~>
           proposeDataDebitApi ~> check {
           val responseString = responseAs[String]
           responseString must contain("dataDebitKey")
           responseAs[ApiDataDebit]
         }
 
-        HttpRequest(GET, s"/${dataDebit.dataDebitKey.get}/values") ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
+        HttpRequest(GET, s"/${dataDebit.dataDebitKey.get}/values?"+ownerAuth) ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
           response.status should be equalTo Forbidden
         }
 
@@ -236,14 +230,14 @@ class DataDebitServiceSpec extends Specification with Specs2RouteTest with Befor
 
       val t = {
         implicit val user:User = ownerUser
-        HttpRequest(PUT, s"/${dataDebit.dataDebitKey.get}/enable") ~> sealRoute(enableDataDebitApi) ~> check {
+        HttpRequest(PUT, s"/${dataDebit.dataDebitKey.get}/enable?"+ownerAuth) ~> sealRoute(enableDataDebitApi) ~> check {
           response.status should be equalTo OK
         }
       }
 
       val result = {
         implicit val user:User = apiUser
-        HttpRequest(GET, s"/${dataDebit.dataDebitKey.get}/values") ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
+        HttpRequest(GET, s"/${dataDebit.dataDebitKey.get}/values?"+ownerAuth) ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
           response.status should be equalTo OK
           responseAs[ApiDataDebitOut]
         }

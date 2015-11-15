@@ -1,105 +1,19 @@
 package hatdex.hat.api.service
 
 import akka.event.LoggingAdapter
-import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.authentication.HatServiceAuthHandler
-import hatdex.hat.authentication.models.User
+import hatdex.hat.api.models._
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
-import hatdex.hat.api.DatabaseInfo
-import hatdex.hat.api.models._
 import org.joda.time.LocalDateTime
-import spray.http.StatusCodes._
-import spray.httpx.SprayJsonSupport._
-import spray.routing._
 
 import scala.util.{Failure, Success, Try}
 
 // this trait defines our service behavior independently from the service actor
-trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHandler {
+trait BundleService extends DataService {
 
-  val dataService: DataService
+  val logger: LoggingAdapter
 
-  val routes = {
-    pathPrefix("bundles" / "contextless") {
-      userPassHandler { implicit user: User =>
-        createBundleTable ~
-          getBundleTable ~
-          createBundleContextless ~
-          getBundleContextless ~
-          getBundleTableValuesApi ~
-          getBundleContextlessValuesApi
-      }
-    }
-  }
-
-  import JsonProtocol._
-
-
-  /*
-   * Creates a bundle table as per POST'ed data, including table information and its slicing conditions
-   */
-  def createBundleTable = path("table") {
-    post {
-      entity(as[ApiBundleTable]) { bundleTable =>
-        db.withSession { implicit session =>
-          val result = storeBundleTable(bundleTable)
-
-          complete {
-            result match {
-              case Success(storedBundleTable) =>
-                (Created, storedBundleTable)
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-        }
-      }
-    }
-  }
-
-  /*
-   * Retrieves bundle table structure by ID
-   */
-  def getBundleTable = path("table" / IntNumber) {
-    (bundleTableId: Int) =>
-      get {
-        db.withSession { implicit session =>
-          val bundleTable = getBundleTableById(bundleTableId)
-          complete {
-            bundleTable match {
-              case Some(table) =>
-                table
-              case None =>
-                (NotFound, s"Bundle Table $bundleTableId not found")
-            }
-          }
-        }
-      }
-  }
-
-  /*
-   * Retrieves bundle table data
-   */
-  def getBundleTableValuesApi = path("table" / IntNumber / "values") {
-    (bundleTableId: Int) =>
-      get {
-        db.withSession { implicit session =>
-          val someResults = getBundleTableValues(bundleTableId)
-
-          complete {
-            someResults match {
-              case Some(results) =>
-                results
-              case None =>
-                (NotFound, s"Contextless Bundle Table $bundleTableId not found")
-            }
-          }
-        }
-      }
-  }
-
-  def getBundleTableValues(bundleTableId: Int)(implicit session: Session): Option[ApiBundleTable] = {
+  protected[api] def getBundleTableValues(bundleTableId: Int)(implicit session: Session): Option[ApiBundleTable] = {
     val bundleDataTableQuery = for {
       bundleTable <- BundleTable.filter(_.id === bundleTableId)
       dataTable <- bundleTable.dataTableFk
@@ -116,7 +30,7 @@ trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHan
           val apiDataTables = slices match {
             // Without any slices, the case degrades to plain data table access
             case None =>
-              dataService.getTableValues(tableId)
+              getTableValues(tableId)
             case Some(tableSlices) =>
               // For each table slice, get a query that filters only the records that match the slice conditions
               val recordLists = tableSlices map { slice =>
@@ -143,7 +57,7 @@ trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHan
                   }
 
                   valueMatcher.flatMap(_.dataRecordFk) // Extract data record IDs
-                    .map(_.id)
+                     .map(_.id)
                 }
               }
 
@@ -155,7 +69,7 @@ trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHan
               // Query that takes only the records of interest
               val values = DataValue.filter(_.recordId in records)
 
-              dataService.getTableValues(tableId, values)
+              getTableValues(tableId, values)
           }
 
           val emptyBundleTable = ApiBundleTable.fromBundleTable(bundleTable)(ApiDataTable.fromDataTable(dataTable)(None)(None))
@@ -169,70 +83,7 @@ trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHan
   }
 
 
-  /*
-   * Creates a new virtual table for storing arbitrary incoming data
-   */
-  def createBundleContextless = path("") {
-    post {
-      entity(as[ApiBundleContextless]) { bundle =>
-        db.withSession { implicit session =>
-          val result = storeBundleContextless(bundle)
-
-          complete {
-            result match {
-              case Success(storedBundle) =>
-                (Created, storedBundle)
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-        }
-      }
-    }
-  }
-
-  /*
-   * Retrieves contextless bundle structure by ID
-   */
-  def getBundleContextless = path(IntNumber) {
-    (bundleId: Int) =>
-      get {
-        db.withSession { implicit session =>
-          val bundle = getBundleContextlessById(bundleId)
-
-          complete {
-            bundle match {
-              case Some(foundBundle) =>
-                foundBundle
-              case None =>
-                (NotFound, s"Contextless Bundle $bundleId not found")
-            }
-          }
-        }
-      }
-  }
-
-  /*
-   * Retrieves contextless bundle data
-   */
-  def getBundleContextlessValuesApi = path(IntNumber / "values") {
-    (bundleId: Int) =>
-      get {
-        db.withSession { implicit session =>
-          val someResults = getBundleContextlessValues(bundleId)
-          complete {
-            someResults match {
-              case Some(results) =>
-                results
-              case None =>
-                (NotFound, s"Contextless Bundle $bundleId not found")
-            }
-          }
-        }
-      }
-  }
-
-  def getBundleContextlessValues(bundleId: Int)(implicit session: Session): Option[ApiBundleContextlessData] = {
+  protected[api] def getBundleContextlessValues(bundleId: Int)(implicit session: Session): Option[ApiBundleContextlessData] = {
     // TODO: include join fields
     val bundleQuery = for {
       bundle <- BundleContextless.filter(_.id === bundleId) // 1 or 0
@@ -267,7 +118,7 @@ trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHan
   /*
    * Stores bundle table provided from the incoming API call
    */
-  private def storeBundleTable(bundleTable: ApiBundleTable)(implicit session: Session): Try[ApiBundleTable] = {
+  protected[api] def storeBundleTable(bundleTable: ApiBundleTable)(implicit session: Session): Try[ApiBundleTable] = {
     // Require the bundle to be based on a data table that already exists
     bundleTable.table.id match {
       case Some(tableId) =>
@@ -303,7 +154,7 @@ trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHan
 
   }
 
-  private def getBundleTableById(bundleTableId: Int)(implicit session: Session): Option[ApiBundleTable] = {
+  protected[api] def getBundleTableById(bundleTableId: Int)(implicit session: Session): Option[ApiBundleTable] = {
     // Traversing entity graph the Slick way
     val tableQuery = for {
       bundleTable <- BundleTable.filter(_.id === bundleTableId)
@@ -322,9 +173,9 @@ trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHan
     }
   }
 
-  private def storeSlice(bundleTable: ApiBundleTable)
-                        (slice: ApiBundleTableSlice)
-                        (implicit session: Session): Try[ApiBundleTableSlice] = {
+  protected[api] def storeSlice(bundleTable: ApiBundleTable)
+                               (slice: ApiBundleTableSlice)
+                               (implicit session: Session): Try[ApiBundleTableSlice] = {
 
     (bundleTable.table.id, bundleTable.id, slice.table.id) match {
       case (None, _, _) =>
@@ -356,8 +207,8 @@ trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHan
 
   }
 
-  private def getBundleTableSlices(bundleTableId: Int)
-                                  (implicit session: Session): Option[Seq[ApiBundleTableSlice]] = {
+  protected[api] def getBundleTableSlices(bundleTableId: Int)
+                                         (implicit session: Session): Option[Seq[ApiBundleTableSlice]] = {
 
     // Traversing entity graph the Slick way
     val slicesQuery = for {
@@ -378,9 +229,9 @@ trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHan
     seqOption(result)
   }
 
-  private def storeCondition(bundleTableSlice: ApiBundleTableSlice)
-                            (condition: ApiBundleTableCondition)
-                            (implicit session: Session): Try[ApiBundleTableCondition] = {
+  protected[api] def storeCondition(bundleTableSlice: ApiBundleTableSlice)
+                                   (condition: ApiBundleTableCondition)
+                                   (implicit session: Session): Try[ApiBundleTableCondition] = {
 
     (bundleTableSlice.table.id, condition.field.id, bundleTableSlice.id) match {
       case (condition.field.tableId, Some(fieldId), Some(sliceId)) =>
@@ -398,8 +249,8 @@ trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHan
     }
   }
 
-  private def getSliceConditions(tableSliceId: Int)
-                                (implicit session: Session): Seq[ApiBundleTableCondition] = {
+  protected[api] def getSliceConditions(tableSliceId: Int)
+                                       (implicit session: Session): Seq[ApiBundleTableCondition] = {
     // Traversing entity graph the Slick way
     val conditionsQuery = for {
       c <- BundleTableslicecondition.filter(_.tablesliceId === tableSliceId)
@@ -413,8 +264,8 @@ trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHan
     }
   }
 
-  private def storeBundleContextless(bundle: ApiBundleContextless)
-                                    (implicit session: Session): Try[ApiBundleContextless] = {
+  protected[api] def storeBundleContextless(bundle: ApiBundleContextless)
+                                           (implicit session: Session): Try[ApiBundleContextless] = {
     val bundleContextlessRow = new BundleContextlessRow(0, bundle.name, LocalDateTime.now(), LocalDateTime.now())
 
     Try((BundleContextless returning BundleContextless) += bundleContextlessRow) flatMap { insertedBundle =>
@@ -433,7 +284,7 @@ trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHan
     }
   }
 
-  private def getBundleContextlessById(bundleId: Int)(implicit session: Session): Option[ApiBundleContextless] = {
+  protected[api] def getBundleContextlessById(bundleId: Int)(implicit session: Session): Option[ApiBundleContextless] = {
     BundleContextless.filter(_.id === bundleId).run.headOption map { bundle =>
       // Traversing entity graph the Slick way
       // A fairly complex case with a lot of related data that needs to be retrieved for each bundle join
@@ -461,9 +312,9 @@ trait BundleService extends HttpService with DatabaseInfo with HatServiceAuthHan
 
   }
 
-  private def storeBundleCombination(combination: ApiBundleCombination)
-                                    (bundle: ApiBundleContextless)
-                                    (implicit session: Session): Try[ApiBundleCombination] = {
+  protected[api] def storeBundleCombination(combination: ApiBundleCombination)
+                                           (bundle: ApiBundleContextless)
+                                           (implicit session: Session): Try[ApiBundleCombination] = {
 
     (combination.bundleTable.id, bundle.id) match {
       // Both bundle table and bundle id have to be "well defined", already with IDs

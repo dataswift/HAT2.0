@@ -1,21 +1,24 @@
-package hatdex.hat.api.service
+package hatdex.hat.api.endpoints
 
 import java.util.UUID
 
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.authentication.HatServiceAuthHandler
-import hatdex.hat.authentication.models.{User, AccessToken}
+import hatdex.hat.authentication.authorization.UserAuthorization
+import hatdex.hat.authentication.models.{AccessToken, User}
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
-import hatdex.hat.authentication.authorization.UserAuthorization
 import org.joda.time.LocalDateTime
 import spray.http.StatusCodes._
-import spray.routing.HttpService
 import spray.httpx.SprayJsonSupport._
+import spray.routing.HttpService
 
 import scala.util.{Failure, Success, Try}
 
-trait UserService extends HttpService with DatabaseInfo with HatServiceAuthHandler {
+trait Users extends HttpService with HatServiceAuthHandler {
+
+  val db = DatabaseInfo.db
+
   val routes = {
     pathPrefix("users") {
       createApiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount

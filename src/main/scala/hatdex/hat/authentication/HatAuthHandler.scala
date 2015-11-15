@@ -14,7 +14,9 @@ import hatdex.hat.dal.Tables._
  * Here we need to make authenticate function of AuthHandlers
  */
 
-object HatAuthHandler extends DatabaseInfo {
+object HatAuthHandler {
+
+  val db = DatabaseInfo.db
 
   object AccessTokenHandler {
     val authenticator = authFunction _

@@ -1,250 +1,203 @@
 package hatdex.hat.api.service
 
-import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.authentication.models.User
+import hatdex.hat.api.models._
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
-import hatdex.hat.api.models._
 import org.joda.time.LocalDateTime
-import spray.http.MediaTypes._
-import spray.http.StatusCodes._
-import spray.httpx.SprayJsonSupport._
-import spray.routing._
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Try}
 
 
 // this trait defines our service behavior independently from the service actor
-trait ThingsService extends EntityServiceApi {
-  val entityKind = "thing"
+trait ThingsService extends AbstractEntityService with PropertyService {
 
-  val routes = {
-    pathPrefix(entityKind) {
-      userPassHandler { implicit user: User =>
-        createApi ~
-          getApi ~
-          getApiValues ~
-          linkToPerson ~
-          linkToThing ~
-          linkToPropertyStatic ~
-          linkToPropertyDynamic ~
-          addTypeApi ~
-          getPropertiesStaticApi ~
-          getPropertiesDynamicApi ~
-          getPropertyStaticValueApi ~
-          getPropertyDynamicValueApi
-      }
-    }
-  }
-
-  import JsonProtocol._
-
-  def createEntity = entity(as[ApiThing]) { thing =>
-    db.withSession { implicit session =>
-      val thingsthingRow = new ThingsThingRow(0, LocalDateTime.now(), LocalDateTime.now(), thing.name)
-      val result = Try((ThingsThing returning ThingsThing) += thingsthingRow)
-
-      complete {
-        result match {
-          case Success(createdThing) =>
-            val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdThing.name, "thing", None, Some(createdThing.id), None, None, None)
-            Try(Entity += newEntity)
-            ApiThing.fromDbModel(createdThing)
-          case Failure(e) =>
-            (BadRequest, e.getMessage)
-        }
-      }
-    }
-  }
-
-  protected def createLinkThing(entityId: Int, thingId: Int, relationshipType: String, recordId: Int)
-                               (implicit session: Session): Try[Int] = {
-    val crossref = new ThingsThingtothingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, thingId, relationshipType, true, recordId)
-    Try((ThingsThingtothingcrossref returning ThingsThingtothingcrossref.map(_.id)) += crossref)
-  }
-  
-  protected def createLinkPerson(entityId: Int, personId: Int, relationshipType: String, recordId: Int)
+   protected def createLinkThing(entityId: Int, thingId: Int, relationshipType: String, recordId: Int)
                                 (implicit session: Session): Try[Int] = {
-    // FIXME: personID and thingID swapped around in the DB!
-    val crossref = new ThingsThingpersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, personId, relationshipType, true, recordId)
-    Try((ThingsThingpersoncrossref returning ThingsThingpersoncrossref.map(_.id)) += crossref)
-  }
+     val crossref = new ThingsThingtothingcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+       thingId, entityId, relationshipType, true, recordId)
+     Try((ThingsThingtothingcrossref returning ThingsThingtothingcrossref.map(_.id)) += crossref)
+   }
 
-  protected def createLinkEvent(entityId: Int, eventId: Int, relationshipType: String, recordId: Int)
-                               (implicit session: Session): Try[Int] = {
-    Failure(new NotImplementedError("Operation Not Supprted"))
-  }
+   protected def createLinkPerson(entityId: Int, personId: Int, relationshipType: String, recordId: Int)
+                                 (implicit session: Session): Try[Int] = {
+     // FIXME: personID and thingID swapped around in the DB!
+     val crossref = new ThingsThingpersoncrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+       personId, entityId, relationshipType, true, recordId)
+     Try((ThingsThingpersoncrossref returning ThingsThingpersoncrossref.map(_.id)) += crossref)
+   }
 
-  protected def createLinkOrganisation(entityId: Int, organisationId: Int, relationshipType: String, recordId: Int)
-                               (implicit session: Session): Try[Int] = {
-    Failure(new NotImplementedError("Operation Not Supprted"))
-  }
+   protected def createLinkEvent(entityId: Int, eventId: Int, relationshipType: String, recordId: Int)
+                                (implicit session: Session): Try[Int] = {
+     Failure(new NotImplementedError("Operation Not Supprted"))
+   }
 
-  protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
-                               (implicit session: Session): Try[Int] = {
-    Failure(new NotImplementedError("Operation Not Supprted"))
-  }
+   protected def createLinkOrganisation(entityId: Int, organisationId: Int, relationshipType: String, recordId: Int)
+                                (implicit session: Session): Try[Int] = {
+     Failure(new NotImplementedError("Operation Not Supprted"))
+   }
 
-  /*
-   * Link thing to a property statically (tying it in with a specific record ID)
-   */
-  protected def createPropertyLinkDynamic(entityId: Int, propertyId: Int,
-                                                   fieldId: Int, relationshipType: String, propertyRecordId: Int)
+   protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int)
+                                (implicit session: Session): Try[Int] = {
+     Failure(new NotImplementedError("Operation Not Supprted"))
+   }
+
+   /*
+    * Link thing to a property statically (tying it in with a specific record ID)
+    */
+   protected def createPropertyLinkDynamic(entityId: Int, propertyId: Int,
+                                                    fieldId: Int, relationshipType: String, propertyRecordId: Int)
+                                                   (implicit session: Session) : Try[Int] = {
+     val crossref = new ThingsSystempropertydynamiccrossrefRow(
+       0, LocalDateTime.now(), LocalDateTime.now(),
+       entityId, propertyId,
+       fieldId, relationshipType,
+       true, propertyRecordId)
+
+     Try((ThingsSystempropertydynamiccrossref returning ThingsSystempropertydynamiccrossref.map(_.id)) += crossref)
+   }
+
+   /*
+    * Link thing to a property dynamically
+    */
+   protected def createPropertyLinkStatic(entityId: Int, propertyId: Int,
+                                                   recordId: Int, fieldId: Int, relationshipType: String, propertyRecordId: Int)
                                                   (implicit session: Session) : Try[Int] = {
-    val crossref = new ThingsSystempropertydynamiccrossrefRow(
-      0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, propertyId,
-      fieldId, relationshipType,
-      true, propertyRecordId)
+     val crossref = new ThingsSystempropertystaticcrossrefRow(
+       0, LocalDateTime.now(), LocalDateTime.now(),
+       entityId, propertyId,
+       recordId, fieldId, relationshipType,
+       true, propertyRecordId)
 
-    Try((ThingsSystempropertydynamiccrossref returning ThingsSystempropertydynamiccrossref.map(_.id)) += crossref)
-  }
+     Try((ThingsSystempropertystaticcrossref returning ThingsSystempropertystaticcrossref.map(_.id)) += crossref)
+   }
 
-  /*
-   * Link thing to a property dynamically
-   */
-  protected def createPropertyLinkStatic(entityId: Int, propertyId: Int,
-                                                  recordId: Int, fieldId: Int, relationshipType: String, propertyRecordId: Int)
-                                                 (implicit session: Session) : Try[Int] = {
-    val crossref = new ThingsSystempropertystaticcrossrefRow(
-      0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, propertyId,
-      recordId, fieldId, relationshipType,
-      true, propertyRecordId)
+   /*
+    * Tag thing with a type
+    */
+   protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)
+                              (implicit session: Session) : Try[Int] = {
+     val entityType = new ThingsSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
+       entityId, typeId, relationship.relationshipType, true)
+     Try((ThingsSystemtypecrossref returning ThingsSystemtypecrossref.map(_.id)) += entityType)
+   }
 
-    Try((ThingsSystempropertystaticcrossref returning ThingsSystempropertystaticcrossref.map(_.id)) += crossref)
-  }
+   def getLocations(thingId: Int)
+                   (implicit session: Session, getValues: Boolean): Seq[ApiLocationRelationship] = {
 
-  /*
-   * Tag thing with a type
-   */
-  protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)
-                             (implicit session: Session) : Try[Int] = {
-    val entityType = new ThingsSystemtypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),
-      entityId, typeId, relationship.relationshipType, true)
-    Try((ThingsSystemtypecrossref returning ThingsSystemtypecrossref.map(_.id)) += entityType)
-  }
+     Seq()
+   }
 
-  def getLocations(thingId: Int)
-                  (implicit session: Session, getValues: Boolean): Seq[ApiLocationRelationship] = {
+   def getOrganisations(thingID: Int)
+                       (implicit session: Session, getValues: Boolean): Seq[ApiOrganisationRelationship] = {
+     Seq()
+   }
 
-    Seq()
-  }
+   def getPeople(thingID: Int)
+                (implicit session: Session, getValues: Boolean): Seq[ApiPersonRelationship] = {
+     val links = ThingsThingpersoncrossref.filter(_.thingId === thingID).run
 
-  def getOrganisations(thingID: Int)
-                      (implicit session: Session, getValues: Boolean): Seq[ApiOrganisationRelationship] = {
-    Seq()
-  }
+     links flatMap { link: ThingsThingpersoncrossrefRow =>
+       val apiPerson = getPerson(link.personId)
+       apiPerson.map { person =>
+         new ApiPersonRelationship(link.relationshipType, person)
+       }
+     }
+   }
 
-  def getPeople(thingID: Int)
-               (implicit session: Session, getValues: Boolean): Seq[ApiPersonRelationship] = {
-    val links = ThingsThingpersoncrossref.filter(_.thingId === thingID).run
+   def getEvents(eventID: Int)
+                (implicit session: Session, getValues: Boolean): Seq[ApiEventRelationship] = {
+     Seq()
+   }
 
-    links flatMap { link: ThingsThingpersoncrossrefRow =>
-      val apiPerson = getPerson(link.personId)
-      apiPerson.map { person =>
-        new ApiPersonRelationship(link.relationshipType, person)
-      }
-    }
-  }
+   def getThings(thingID: Int)
+                (implicit session: Session, getValues: Boolean): Seq[ApiThingRelationship] = {
+     val thingLinks = ThingsThingtothingcrossref.filter(_.thingOneId === thingID).run
+     var thingIds = thingLinks.map(_.thingTwoId)
 
-  def getEvents(eventID: Int)
-               (implicit session: Session, getValues: Boolean): Seq[ApiEventRelationship] = {
-    Seq()
-  }
+     thingLinks flatMap { link: ThingsThingtothingcrossrefRow =>
+       val apiThing = getThing(link.thingTwoId)
+       apiThing.map { thing =>
+         new ApiThingRelationship(link.relationshipType, thing)
+       }
+     }
+   }
 
-  def getThings(thingID: Int)
-               (implicit session: Session, getValues: Boolean): Seq[ApiThingRelationship] = {
-    val thingLinks = ThingsThingtothingcrossref.filter(_.thingOneId === thingID).run
-    var thingIds = thingLinks.map(_.thingTwoId)
+   protected def getPropertyStaticValues(thingId: Int, propertyRelationshipId: Int)
+                                        (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
+     val crossrefQuery = ThingsSystempropertystaticcrossref.filter(_.thingId === thingId).filter(_.id === propertyRelationshipId)
+     val propertyRelationships = getPropertiesStaticQuery(crossrefQuery)
+     propertyRelationships.map(getPropertyRelationshipValues)
+   }
 
-    thingLinks flatMap { link: ThingsThingtothingcrossrefRow =>
-      val apiThing = getThing(link.thingTwoId)
-      apiThing.map { thing =>
-        new ApiThingRelationship(link.relationshipType, thing)
-      }
-    }
-  }
+   protected def getPropertyDynamicValues(thingId: Int, propertyRelationshipId: Int)
+                                         (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
+     val crossrefQuery = ThingsSystempropertydynamiccrossref.filter(_.thingId === thingId).filter(_.id === propertyRelationshipId)
+     val propertyRelationships = getPropertiesDynamicQuery(crossrefQuery)
+     propertyRelationships.map(getPropertyRelationshipValues)
+   }
 
-  protected def getPropertyStaticValues(thingId: Int, propertyRelationshipId: Int)
+   protected def getPropertiesStatic(thingId: Int)
+                                    (implicit session: Session, getValues: Boolean): Seq[ApiPropertyRelationshipStatic] = {
+
+     val crossrefQuery = ThingsSystempropertystaticcrossref.filter(_.thingId === thingId)
+     val properties = getPropertiesStaticQuery(crossrefQuery)
+     getValues match {
+       case false =>
+         properties
+       case true =>
+         properties.map(getPropertyRelationshipValues)
+     }
+   }
+
+   protected def getPropertiesDynamic(thingId: Int)
+                                     (implicit session: Session, getValues: Boolean): Seq[ApiPropertyRelationshipDynamic] = {
+
+     val crossrefQuery = ThingsSystempropertydynamiccrossref.filter(_.thingId === thingId)
+     val properties = getPropertiesDynamicQuery(crossrefQuery)
+     getValues match {
+       case false =>
+         properties
+       case true =>
+         properties.map(getPropertyRelationshipValues)
+     }
+   }
+
+   private def getPropertiesStaticQuery(crossrefQuery: Query[ThingsSystempropertystaticcrossref, ThingsSystempropertystaticcrossrefRow, Seq])
                                        (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
-    val crossrefQuery = ThingsSystempropertystaticcrossref.filter(_.thingId === thingId).filter(_.id === propertyRelationshipId)
-    val propertyRelationships = getPropertiesStaticQuery(crossrefQuery)
-    propertyRelationships.map(propertyService.getPropertyRelationshipValues)
-  }
+     val dataQuery = for {
+       crossref <- crossrefQuery
+       property <- crossref.systemPropertyFk
+       propertyType <- property.systemTypeFk
+       propertyUom <- property.systemUnitofmeasurementFk
+       field <- crossref.dataFieldFk
+       record <- crossref.dataRecordFk
+     } yield (crossref, property, propertyType, propertyUom, field, record)
 
-  protected def getPropertyDynamicValues(thingId: Int, propertyRelationshipId: Int)
+     val data = dataQuery.run
+
+     data.map {
+       case (crossref: ThingsSystempropertystaticcrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+       propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow, record: DataRecordRow) =>
+         ApiPropertyRelationshipStatic.fromDbModel(crossref, property, propertyType, propertyUom, field, record)
+     }
+   }
+
+   private def getPropertiesDynamicQuery(crossrefQuery: Query[ThingsSystempropertydynamiccrossref, ThingsSystempropertydynamiccrossrefRow, Seq])
                                         (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
-    val crossrefQuery = ThingsSystempropertydynamiccrossref.filter(_.thingId === thingId).filter(_.id === propertyRelationshipId)
-    val propertyRelationships = getPropertiesDynamicQuery(crossrefQuery)
-    propertyRelationships.map(propertyService.getPropertyRelationshipValues)
-  }
+     val dataQuery = for {
+       crossref <- crossrefQuery
+       property <- crossref.systemPropertyFk
+       propertyType <- property.systemTypeFk
+       propertyUom <- property.systemUnitofmeasurementFk
+       field <- crossref.dataFieldFk
+     } yield (crossref, property, propertyType, propertyUom, field)
 
-  protected def getPropertiesStatic(thingId: Int)
-                                   (implicit session: Session, getValues: Boolean): Seq[ApiPropertyRelationshipStatic] = {
+     val data = dataQuery.run
 
-    val crossrefQuery = ThingsSystempropertystaticcrossref.filter(_.thingId === thingId)
-    val properties = getPropertiesStaticQuery(crossrefQuery)
-    getValues match {
-      case false =>
-        properties
-      case true =>
-        properties.map(propertyService.getPropertyRelationshipValues)
-    }
-  }
-
-  protected def getPropertiesDynamic(thingId: Int)
-                                    (implicit session: Session, getValues: Boolean): Seq[ApiPropertyRelationshipDynamic] = {
-
-    val crossrefQuery = ThingsSystempropertydynamiccrossref.filter(_.thingId === thingId)
-    val properties = getPropertiesDynamicQuery(crossrefQuery)
-    getValues match {
-      case false =>
-        properties
-      case true =>
-        properties.map(propertyService.getPropertyRelationshipValues)
-    }
-  }
-
-  private def getPropertiesStaticQuery(crossrefQuery: Query[ThingsSystempropertystaticcrossref, ThingsSystempropertystaticcrossrefRow, Seq])
-                                      (implicit session: Session): Seq[ApiPropertyRelationshipStatic] = {
-    val dataQuery = for {
-      crossref <- crossrefQuery
-      property <- crossref.systemPropertyFk
-      propertyType <- property.systemTypeFk
-      propertyUom <- property.systemUnitofmeasurementFk
-      field <- crossref.dataFieldFk
-      record <- crossref.dataRecordFk
-    } yield (crossref, property, propertyType, propertyUom, field, record)
-
-    val data = dataQuery.run
-
-    data.map {
-      case (crossref: ThingsSystempropertystaticcrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
-      propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow, record: DataRecordRow) =>
-        ApiPropertyRelationshipStatic.fromDbModel(crossref, property, propertyType, propertyUom, field, record)
-    }
-  }
-
-  private def getPropertiesDynamicQuery(crossrefQuery: Query[ThingsSystempropertydynamiccrossref, ThingsSystempropertydynamiccrossrefRow, Seq])
-                                       (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
-    val dataQuery = for {
-      crossref <- crossrefQuery
-      property <- crossref.systemPropertyFk
-      propertyType <- property.systemTypeFk
-      propertyUom <- property.systemUnitofmeasurementFk
-      field <- crossref.dataFieldFk
-    } yield (crossref, property, propertyType, propertyUom, field)
-
-    val data = dataQuery.run
-
-    data.map {
-      case (crossref: ThingsSystempropertydynamiccrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
-      propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow) =>
-        ApiPropertyRelationshipDynamic.fromDbModel(crossref, property, propertyType, propertyUom, field)
-    }
-  }
-}
-
+     data.map {
+       case (crossref: ThingsSystempropertydynamiccrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,
+       propertyUom: SystemUnitofmeasurementRow, field: DataFieldRow) =>
+         ApiPropertyRelationshipDynamic.fromDbModel(crossref, property, propertyType, propertyUom, field)
+     }
+   }
+ }

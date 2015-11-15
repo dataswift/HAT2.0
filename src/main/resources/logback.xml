@@ -21,14 +21,12 @@
             <appender-ref ref="logFileOutput"/>
         </logger>-->
 
-
     <logger name="akka" level="DEBUG">
         <appender-ref ref="CONSOLE"/>
     </logger>
 
-    <root level="ERROR">
+    <root level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
     </root>
 
 </configuration>

@@ -1,8 +1,5 @@
-package hatdex.hat.api.service.jsonExamples
+package hatdex.hat.api.endpoints.jsonExamples
 
-/**
- * Created by andrius on 10/10/15.
- */
 object DataExamples {
   val tableKitchen =
     """{
@@ -32,7 +29,7 @@ object DataExamples {
   val nestedTableKitchen =
     """
       |{
-      | "name": "kitchen",
+      | "name": "largeKitchen",
       | "source": "fibaro",
       | "fields": [
       |   { "name": "tableTestField" },
@@ -40,7 +37,7 @@ object DataExamples {
       | ],
       | "subTables": [
       |   {
-      |     "name": "kitchenElectricity",
+      |     "name": "largeKitchenElectricity",
       |     "source": "fibaro",
       |     "fields": [
       |       {
@@ -64,4 +61,5 @@ object DataExamples {
     """{
       | "name": "testRecord 2"
   }""".stripMargin
+
 }

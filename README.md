@@ -30,25 +30,96 @@ This HAT PDS implementation is written in Scala (2.11.6) uses the following tech
 
 ## Running the project
 
+### Environment setup
+
+You will need to install PostgreSQL, SBT (Scala Build Tool), and Java 8.
+
+If you use Ubuntu, you can use the following commands:
+
+    # Install PostgreSQL
+    sudo apt-get install postgresql postgresql-client postgresql-contrib
+    sudo apt-get update
+    
+    # Install SBT (Scala Build Tool)
+    echo "deb https://dl.bintray.com/sbt/debian /" | sudo tee -a /etc/apt/sources.list.d/sbt.list
+    sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 642AC823
+    sudo apt-get update
+    sudo apt-get install sbt
+    
+    # Install Java 8
+    sudo apt-get install software-properties-common
+    sudo add-apt-repository ppa:webupd8team/java
+    sudo apt-get update
+    sudo apt-get install oracle-java8-installer
+
+### Clone the HAT project
+
+Then, you will be able to clone the repository:
+
+    git clone https://github.com/Hub-of-all-Things/HAT2.0.git hat
+
 ### Database Setup
 
-You will need to set up a PostgreSQL database with the HAT2.0 schema, configure the project to use the database, compile and run it:
+You will need to set up a PostgreSQL database with the HAT2.0 schema, configure the project to use the database, and prepare it to be executed. You can do all that by executing the following script:
 
     ./deployment/deploy.sh
     
-The provided script executes all required commands to get the project running and can be configured through environment variables:
+The provided script executes all required commands to get the project running, and can be configured through environment variables. For example, you can run:
 
-- `DATABASE` - name of the database
-- `DBUSER` - database username
-- `DBPASS` - database user password
-- `HAT_OWNER` - HAT owner identity (DNS name/username)
+    HAT_HOME=".." DATABASE=mynewHAT DBUSER=mynewuser DBPASS=mynewpass ./deployment/deploy.sh
+
+The following variables are available:
+
+- `HAT_HOME` - path [default: current (".")]
+- `DATABASE` - name of the database [default: hat20test]
+- `DBUSER` - database username [default: hat20test]
+- `DBPASS` - database user password [default: pa55w0rd]
+- `HAT_OWNER` - HAT owner identity (DNS name/username) [default: bob@gmail.com]
 - `HAT_OWNER_ID` - HAT owner GUID
-- `HAT_OWNER_NAME` - HAT owner name
-- `HAT_OWNER_PASSWORD` - HAT owner login password
-- `HAT_PLATFORM` - HAT platform identity
+- `HAT_OWNER_NAME` - HAT owner name [default: Bob]
+- `HAT_OWNER_PASSWORD` - HAT owner login password [default: pa55w0rd]
+- `HAT_PLATFORM` - HAT platform identity [default: hatdex.org]
 - `HAT_PLATFORM_ID` - HAT platform GUID
-- `HAT_PLATFORM_NAME` - HAT platform name
+- `HAT_PLATFORM_NAME` - HAT platform name [default: hatdex]
 - `HAT_PLATFORM_PASSWORD_HASH` - BCrypt-hashed HAT platform password for platform-management operations (application account creation only)
+
+If you do not specify those variables, take a look at the deploy.sh script to see the default values.
+
+### Run the project!
+Execute the following command:
+
+    sbt run
+
+**You're all set!**
+
+Now you will be able to access `127.0.0.1:8080` or `localhost:8080` in your browser, and see the message "Hello HAT 2.0!".
+
+### Common problems
+
+Here we list common problems you may have encountered in this process.
+
+#### 1. Database peer authentication failed at the top
+
+You may have seen an error message similar to `psql: FATAL:  Peer authentication failed for user "hat20"`.
+
+Your PostgreSQL installation is configured to use peer authentication, which means that the user in your operating system and postgres must be the same.
+
+You can change it either to **md5** (password-based authentication) or **trust** (anyone who can connect to the server can access the database).
+
+[This thread in Stack Overflow](http://stackoverflow.com/questions/18664074/getting-error-peer-authentication-failed-for-user-postgres-when-trying-to-ge) explains in more detail your options and implications.
+
+You will need to edit the file `pg_hba.conf` (`/etc/postgresql/9.3/main/pg_hba.conf`, depending on your postgres version), and change the **method**. For example:
+
+    # TYPE  DATABASE        USER            ADDRESS                 METHOD
+    local   all             postgres                                md5
+    local   all             all                                     md5
+
+
+#### 2. Another program is already listening to port 8080
+
+You can specify another port or host directly in the run command. For example:
+
+    sbt run -DapplicationHost=YOUR_IP -DapplicationPort=9090
 
 ### Auto-generated code recompilation
 
@@ -62,7 +133,7 @@ Then within the sbt console:
     clean
     gentables
 
-*Note*: you should never need to do this
+*Note*: you should never need to do this.
 
 This uses Slick's code auto-generation feature, where the necessary code to interface with the database gets generated from the provided SQL database structure.
 
@@ -103,6 +174,7 @@ The `deployment` directory provides simple scripts and configuration for running
 - entity api testing
 - finished documentation of all APIs
 - more detailed documentation of the schema
+
 
 ## License
 

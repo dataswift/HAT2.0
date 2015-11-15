@@ -24,3 +24,6 @@ before_script:
 script:
    - sbt ++$TRAVIS_SCALA_VERSION compile test:compile
    - sbt coverage test
+
+after_success:
+  - sbt coveralls

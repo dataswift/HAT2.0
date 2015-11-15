@@ -1,17 +1,17 @@
 package hatdex.hat.api.service
 
-import hatdex.hat.dal.Tables._
+import akka.event.LoggingAdapter
 import hatdex.hat.api.models._
 import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import spray.routing
 
-import scala.util.{Failure, Try}
+import scala.util.Try
 
-trait EntityService {
+trait AbstractEntityService {
   val entityKind: String
-  val dataService: DataService
-  val propertyService: PropertyService
+  val logger: LoggingAdapter
 
   protected def createEntity: routing.Route
 
@@ -32,7 +32,7 @@ trait EntityService {
 
   protected def getEvent(eventID: Int)(implicit session: Session, getValues: Boolean): Option[ApiEvent] = {
     var event = EventsEvent.filter(_.id === eventID).run.headOption
-
+    logger.debug(s"For ${entityKind} get Event ${eventID}")
     event.map { e =>
       new ApiEvent(
         Some(e.id),
@@ -50,7 +50,7 @@ trait EntityService {
 
   protected def getLocation(locationID: Int)(implicit session: Session, getValues: Boolean): Option[ApiLocation] = {
     var location = LocationsLocation.filter(_.id === locationID).run.headOption
-
+    logger.debug(s"For ${entityKind} get Location ${locationID}")
     location.map { l =>
       new ApiLocation(
         Some(l.id),
@@ -58,6 +58,7 @@ trait EntityService {
         seqOption(getPropertiesStatic(l.id)),
         seqOption(getPropertiesDynamic(l.id)),
         seqOption(getLocations(l.id)),
+        //        None,
         seqOption(getThings(l.id))
       )
     }
@@ -65,7 +66,7 @@ trait EntityService {
 
   protected def getOrganisation(organisationId: Int)(implicit session: Session, getValues: Boolean): Option[ApiOrganisation] = {
     var organisation = OrganisationsOrganisation.filter(_.id === organisationId).run.headOption
-
+    logger.debug(s"For ${entityKind} get Organisation ${organisationId}")
     organisation.map { e =>
       new ApiOrganisation(
         Some(e.id),
@@ -80,24 +81,25 @@ trait EntityService {
   }
 
   protected def getPerson(personId: Int)(implicit session: Session, getValues: Boolean): Option[ApiPerson] = {
-    var person = PeoplePerson.filter(_.id === personId).run.headOption
-
-    person.map { e =>
+    var maybePerson = PeoplePerson.filter(_.id === personId).run.headOption
+    logger.debug(s"For ${entityKind} get Person ${personId}")
+    maybePerson.map { person =>
       new ApiPerson(
-        Some(e.id),
-        e.name,
-        e.personId,
-        seqOption(getPropertiesStatic(e.id)),
-        seqOption(getPropertiesDynamic(e.id)),
-        seqOption(getPeople(e.id)),
-        seqOption(getLocations(e.id)),
-        seqOption(getOrganisations(e.id))
+        Some(person.id),
+        person.name,
+        person.personId,
+        seqOption(getPropertiesStatic(person.id)),
+        seqOption(getPropertiesDynamic(person.id)),
+        seqOption(getPeople(person.id)),
+        seqOption(getLocations(person.id)),
+        seqOption(getOrganisations(person.id))
       )
     }
   }
 
   protected def getThing(thingId: Int)(implicit session: Session, getValues: Boolean): Option[ApiThing] = {
     var thing = ThingsThing.filter(_.id === thingId).run.headOption
+    logger.debug(s"For ${entityKind} get Thing ${thingId}")
 
     thing.map { e =>
       new ApiThing(
@@ -111,15 +113,27 @@ trait EntityService {
     }
   }
 
-  protected def getLocations(entityId: Int)(implicit session: Session, getValues: Boolean) : Seq[ApiLocationRelationship]
+  protected def createRelationshipRecord(relationshipName: String)(implicit session: Session) = {
+    val newRecord = new SystemRelationshiprecordRow(0, LocalDateTime.now(), LocalDateTime.now(), relationshipName)
+    val record = (SystemRelationshiprecord returning SystemRelationshiprecord) += newRecord
+    record.id
+  }
 
-  protected def getOrganisations(entityId: Int)(implicit session: Session, getValues: Boolean) : Seq[ApiOrganisationRelationship]
+  protected def createPropertyRecord(relationshipName: String)(implicit session: Session) = {
+    val newRecord = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), relationshipName)
+    val record = (SystemPropertyrecord returning SystemPropertyrecord) += newRecord
+    record.id
+  }
 
-  protected def getPeople(entityId: Int)(implicit session: Session, getValues: Boolean) : Seq[ApiPersonRelationship]
+  protected def getLocations(entityId: Int)(implicit session: Session, getValues: Boolean): Seq[ApiLocationRelationship]
 
-  protected def getThings(entityId: Int)(implicit session: Session, getValues: Boolean) : Seq[ApiThingRelationship]
+  protected def getOrganisations(entityId: Int)(implicit session: Session, getValues: Boolean): Seq[ApiOrganisationRelationship]
 
-  protected def getEvents(entityId: Int)(implicit session: Session, getValues: Boolean) : Seq[ApiEventRelationship]
+  protected def getPeople(entityId: Int)(implicit session: Session, getValues: Boolean): Seq[ApiPersonRelationship]
+
+  protected def getThings(entityId: Int)(implicit session: Session, getValues: Boolean): Seq[ApiThingRelationship]
+
+  protected def getEvents(entityId: Int)(implicit session: Session, getValues: Boolean): Seq[ApiEventRelationship]
 
   protected def getPropertiesStatic(eventId: Int)(implicit session: Session, getValues: Boolean): Seq[ApiPropertyRelationshipStatic]
 
@@ -129,18 +143,18 @@ trait EntityService {
 
   protected def getPropertyDynamicValues(eventId: Int, propertyRelationshipId: Int)(implicit session: Session): Seq[ApiPropertyRelationshipDynamic]
 
-  protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)(implicit session: Session) : Try[Int]
+  protected def addEntityType(entityId: Int, typeId: Int, relationship: ApiRelationship)(implicit session: Session): Try[Int]
 
   protected def createPropertyLinkStatic(entityId: Int, propertyId: Int,
                                          recordId: Int, fieldId: Int, relationshipType: String, propertyRecordId: Int)
-                                        (implicit session: Session) : Try[Int]
+                                        (implicit session: Session): Try[Int]
 
   protected def createPropertyLinkDynamic(entityId: Int, propertyId: Int,
                                           fieldId: Int, relationshipType: String, propertyRecordId: Int)
-                                         (implicit session: Session) : Try[Int]
+                                         (implicit session: Session): Try[Int]
 
   // Utility function to return None for empty sequences
-  private def seqOption[T](seq: Seq[T]) : Option[Seq[T]] = {
+  private def seqOption[T](seq: Seq[T]): Option[Seq[T]] = {
     if (seq.isEmpty)
       None
     else

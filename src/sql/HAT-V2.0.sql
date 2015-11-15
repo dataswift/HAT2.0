@@ -1,18 +1,12 @@
-DROP SCHEMA public CASCADE;
-CREATE SCHEMA public;
-
-CREATE SEQUENCE public.things_thing_id_seq;
+CREATE SEQUENCE public.entity_id_seq;
 
 CREATE TABLE public.things_thing (
-                id INTEGER NOT NULL DEFAULT nextval('public.things_thing_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.entity_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
-                name VARCHAR(100) NOT NULL,
+                name VARCHAR NOT NULL,
                 CONSTRAINT things_thing_pkey PRIMARY KEY (id)
 );
-
-
-ALTER SEQUENCE public.things_thing_id_seq OWNED BY public.things_thing.id;
 
 CREATE SEQUENCE public.system_unitofmeasurement_id_seq;
 
@@ -20,9 +14,9 @@ CREATE TABLE public.system_unitofmeasurement (
                 id INTEGER NOT NULL DEFAULT nextval('public.system_unitofmeasurement_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
-                name VARCHAR(100) NOT NULL,
+                name VARCHAR NOT NULL UNIQUE,
                 description TEXT,
-                symbol VARCHAR(16),
+                symbol VARCHAR,
                 CONSTRAINT system_unitofmeasurement_pkey PRIMARY KEY (id)
 );
 
@@ -35,7 +29,7 @@ CREATE TABLE public.system_type (
                 id INTEGER NOT NULL DEFAULT nextval('public.system_type_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
-                name VARCHAR NOT NULL,
+                name VARCHAR NOT NULL UNIQUE,
                 description TEXT,
                 CONSTRAINT system_type_pk PRIMARY KEY (id)
 );
@@ -202,19 +196,14 @@ CREATE TABLE public.people_persontopersonrelationshiptype (
 
 ALTER SEQUENCE public.people_persontopersonrelationshiptype_id_seq OWNED BY public.people_persontopersonrelationshiptype.id;
 
-CREATE SEQUENCE public.people_person_id_seq;
-
 CREATE TABLE public.people_person (
-                id INTEGER NOT NULL DEFAULT nextval('public.people_person_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.entity_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
                 person_id VARCHAR(36) NOT NULL,
                 CONSTRAINT people_person_pkey PRIMARY KEY (id)
 );
-
-
-ALTER SEQUENCE public.people_person_id_seq OWNED BY public.people_person.id;
 
 CREATE SEQUENCE public.things_thingpersoncrossref_id_seq;
 
@@ -286,18 +275,13 @@ CREATE INDEX users_persontopersoncrossref_person_two_id
  ON public.people_persontopersoncrossref USING BTREE
  ( person_two_id );
 
-CREATE SEQUENCE public.organisations_organisation_id_seq;
-
 CREATE TABLE public.organisations_organisation (
-                id INTEGER NOT NULL DEFAULT nextval('public.organisations_organisation_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.entity_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 lasty_updated TIMESTAMP NOT NULL,
                 name VARCHAR(100) NOT NULL,
                 CONSTRAINT organisations_organisation_pkey PRIMARY KEY (id)
 );
-
-
-ALTER SEQUENCE public.organisations_organisation_id_seq OWNED BY public.organisations_organisation.id;
 
 CREATE SEQUENCE public.people_personorganisationcrossref_id_seq;
 
@@ -390,18 +374,13 @@ CREATE TABLE public.organisations_organisationthingcrossref (
 
 ALTER SEQUENCE public.organisations_organisationthingcrossref_id_seq OWNED BY public.organisations_organisationthingcrossref.id;
 
-CREATE SEQUENCE public.locations_location_id_seq;
-
 CREATE TABLE public.locations_location (
-                id INTEGER NOT NULL DEFAULT nextval('public.locations_location_id_seq'),
+                id INTEGER NOT NULL DEFAULT nextval('public.entity_id_seq'),
                 date_created TIMESTAMP NOT NULL,
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR(512) NOT NULL,
                 CONSTRAINT locations_location_pkey PRIMARY KEY (id)
 );
-
-
-ALTER SEQUENCE public.locations_location_id_seq OWNED BY public.locations_location.id;
 
 CREATE SEQUENCE public.people_personlocationcrossref_id_seq;
 
@@ -689,8 +668,6 @@ CREATE INDEX events_eventlocationcrossref_location_id
  ON public.events_eventlocationcrossref USING BTREE
  ( location_id );
 
-CREATE SEQUENCE public.entity_id_seq;
-
 CREATE TABLE public.entity (
   id              INTEGER      NOT NULL DEFAULT nextval('public.entity_id_seq'),
   date_created    TIMESTAMP    NOT NULL,
@@ -746,7 +723,8 @@ CREATE TABLE public.data_table (
                 last_updated TIMESTAMP NOT NULL,
                 name VARCHAR NOT NULL,
                 source_name VARCHAR NOT NULL,
-                CONSTRAINT data_table_pk PRIMARY KEY (id)
+                CONSTRAINT data_table_pk PRIMARY KEY (id),
+                CONSTRAINT data_table_name_source UNIQUE (name, source_name)
 );
 
 

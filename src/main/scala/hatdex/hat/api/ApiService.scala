@@ -2,8 +2,8 @@ package hatdex.hat.api
 
 import akka.actor.{ActorRefFactory, ActorLogging}
 import akka.event.Logging
+import hatdex.hat.api.endpoints._
 import hatdex.hat.api.models.ErrorMessage
-import hatdex.hat.api.service._
 import hatdex.hat.authentication.HatAuthHandler
 import hatdex.hat.authentication.authenticators.{UserPassHandler, AccessTokenHandler}
 import spray.http._
@@ -21,71 +21,63 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
   override def actorRefFactory = context
 
   // Initialise all the service the actor handles
-  val helloService = new HelloService {
+  val helloService = new Hello {
     def actorRefFactory = context
   }
 
-  val apiDataService = new DataService {
+  val apiDataService = new Data {
     def actorRefFactory = context
-
     val logger = log
   }
 
-  val apiPropertyService = new PropertyService {
+  val apiBundleService = new Bundles {
     def actorRefFactory = context
-
-    val dataService = apiDataService
+    val logger = log
   }
 
-  val apiBundleService = new BundleService {
+  val dataDebitService = new DataDebit {
     def actorRefFactory = context
-
-    val dataService = apiDataService
+    val logger = log
   }
 
-  val eventsService = new EventsService {
+  val apiPropertyService = new Property {
     def actorRefFactory = context
-
-    val dataService = apiDataService
-    val propertyService = apiPropertyService
+    val logger = log
   }
 
-  val locationsService = new LocationsService {
+  val eventsService = new Event {
     def actorRefFactory = context
-
-    val dataService = apiDataService
-    val propertyService = apiPropertyService
+    val logger = log
   }
 
-  val peopleService = new PeopleService {
+  val locationsService = new Location {
     def actorRefFactory = context
-
-    val dataService = apiDataService
-    val propertyService = apiPropertyService
+    val logger = log
   }
 
-  val thingsService = new ThingsService {
+  val peopleService = new Person {
     def actorRefFactory = context
-
-    val dataService = apiDataService
-    val propertyService = apiPropertyService
+    val logger = log
   }
 
-  val organisationsService = new OrganisationsService {
+  val thingsService = new Thing {
     def actorRefFactory = context
-
-    val dataService = apiDataService
-    val propertyService = apiPropertyService
+    val logger = log
   }
 
-  val dataDebitService = new DataDebitService {
-    override val bundleService: BundleService = apiBundleService
+  val organisationsService = new Organisation {
+    def actorRefFactory = context
+    val logger = log
+  }
 
+  val userService = new Users {
     override implicit def actorRefFactory: ActorRefFactory = context
+    val logger = log
   }
 
-  val userService = new UserService {
+  val typeService = new Type {
     override implicit def actorRefFactory: ActorRefFactory = context
+    val logger = log
   }
 
   // logs request method, uri and response status at debug level
@@ -94,19 +86,6 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
     case Rejected(rejections) => Some(LogEntry(req.method + ":" + req.uri + ":" + rejections.toString(), Logging.ErrorLevel)) // log rejections
     case _ => None // other kind of responses
   }
-
-  //  def jsonify(response: HttpResponse): HttpResponse = {
-  //    response.withEntity(HttpBody(ContentType.`application/json`,
-  //      JSONObject(Map(
-  //        "details" -> response.entity.asString,
-  //        "errorType" -> "API Error"
-  //      )).toString()))
-  //  }
-
-  //  implicit val apiRejectionHandler = RejectionHandler {
-  //    case MalformedRequestContentRejection(msg, cause) :: Nil =>
-  //      complete((StatusCodes.BadRequest, ApiError("The request content was malformed", msg)))
-  //  }
 
   import spray.httpx.SprayJsonSupport._
   implicit val errorFormat = jsonFormat2(ErrorMessage.apply)
@@ -143,6 +122,7 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
         thingsService.routes ~
         organisationsService.routes ~
         userService.routes ~
+        typeService.routes ~
         dataDebitService.routes
     }
   }
