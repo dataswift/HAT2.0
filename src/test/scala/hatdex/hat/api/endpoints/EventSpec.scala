@@ -3,17 +3,19 @@ package hatdex.hat.api.endpoints
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.authentication.HatAuthTestHandler
-import hatdex.hat.api.endpoints.jsonExamples.EntityExamples
+import hatdex.hat.api.endpoints.jsonExamples.{DataExamples, EntityExamples}
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
-import org.specs2.specification.BeforeAfterAll
+import org.specs2.specification.{Scope, BeforeAfterAll}
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http.{HttpEntity, HttpRequest, MediaTypes}
 import spray.httpx.SprayJsonSupport._
+import spray.json._
 import spray.testkit.Specs2RouteTest
+import scala.util.{Try, Success, Failure}
 
 class EventSpec extends Specification with Specs2RouteTest with Event with BeforeAfterAll {
   def actorRefFactory = system
@@ -64,32 +66,37 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
 
   val ownerAuthParams = "?username=bob@gmail.com&password=pa55w0rd"
 
+  def createNewEvent = HttpRequest(
+    POST, "" + ownerAuthParams,
+    entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.eventValid)) ~>
+    sealRoute(createEntity) ~>
+    check {
+      eventually {
+        response.status should be equalTo Created
+        responseAs[String] must contain("sunrise")
+      }
+      responseAs[ApiEvent]
+    }
+
+  def createOtherEvent = HttpRequest(
+    POST, "" + ownerAuthParams,
+    entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.otherEventValid)) ~>
+    sealRoute(createEntity) ~>
+    check {
+      response.status should be equalTo Created
+      responseAs[String] must contain("breakfast")
+      responseAs[ApiEvent]
+    }
+
   "EventsService" should {
     "Accept new events created" in {
       //test createEntity
-      val newEvent = HttpRequest(
-        POST, "" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.eventValid)) ~>
-        sealRoute(createEntity) ~>
-        check {
-          response.status should be equalTo Created
-          responseAs[String] must contain("sunrise")
-          responseAs[ApiEvent]
-        }
-
+      val newEvent = createNewEvent
       newEvent.id must beSome
 
-      val otherEvent = HttpRequest(
-        POST, "" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.otherEventValid)) ~>
-        sealRoute(createEntity) ~>
-        check {
-          response.status should be equalTo Created
-          responseAs[String] must contain("breakfast")
-          responseAs[ApiEvent]
-        }
-
+      val otherEvent = createOtherEvent
       otherEvent.id must beSome
+
       //test linkToEvent
       HttpRequest(POST, s"/${newEvent.id.get}/event/${otherEvent.id.get}" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipDuring)) ~>
@@ -102,16 +109,7 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
 
     "Accept relationships with other entities created" in {
 
-      val newEvent = HttpRequest(
-        POST, "" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.eventValid)) ~>
-        sealRoute(createEntity) ~>
-        check {
-          response.status should be equalTo Created
-          responseAs[String] must contain("sunrise")
-          responseAs[ApiEvent]
-        }
-
+      val newEvent = createNewEvent
       newEvent.id must beSome
 
       // Linking event to Person
@@ -228,17 +226,7 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
     }
 
     "Retrieve created events" in {
-      val newEvent = HttpRequest(
-        POST, "" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.eventValid)
-      ) ~>
-        sealRoute(createEntity) ~>
-        check {
-          response.status should be equalTo Created
-          responseAs[String] must contain("sunrise")
-          responseAs[ApiEvent]
-        }
-
+      val newEvent = createNewEvent
       newEvent.id must beSome
 
       HttpRequest(
@@ -255,7 +243,7 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
     }
 
     "Reject bad events and relationships" in {
-      val tmpEvent = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.eventBadName)) ~>
+      HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.eventBadName)) ~>
         sealRoute(createEntity) ~> check {
         response.status should be equalTo BadRequest
       }
@@ -269,6 +257,195 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
         sealRoute(linkToEvent) ~> check {
         response.status should be equalTo NotFound
       }
+    }
+
+    "Reject unsuported relationships" in {
+      true should be equalTo true
+    }
+
+    "List All Entities correctly" in {
+      val newEvent = createNewEvent
+      newEvent.id must beSome
+
+      val otherEvent = createOtherEvent
+      otherEvent.id must beSome
+
+      HttpRequest(GET, "/event" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo OK
+            responseAs[List[ApiEvent]]
+            val asString = responseAs[String]
+            asString must contain(s"${newEvent.id.get}")
+            asString must contain(s"${newEvent.name}")
+            asString must contain(s"${otherEvent.id.get}")
+            asString must contain(s"${otherEvent.name}")
+          }
+        }
+    }
+
+    "Accept Type annotations" in {
+      //      addTypeApi
+      val newEvent = createNewEvent
+      newEvent.id must beSome
+
+
+      val typeSpec = new TypeSpec
+      val postalAddressType = typeSpec.createPostalAddressType
+
+      HttpRequest(
+        POST,
+        s"/event/${newEvent.id.get}/type/${postalAddressType.id.get}" + ownerAuthParams,
+        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipType)
+      ) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo Created
+        }
+
+      HttpRequest(
+        POST, s"/event/${newEvent.id.get}/type/0" + ownerAuthParams,
+        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipType)
+      ) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo BadRequest
+        }
+
+    }
+
+    object Context {
+      val propertySpec = new PropertySpec()
+      val property = propertySpec.createWeightProperty
+      val dataSpec = new DataSpec()
+      dataSpec.createBasicTables
+      val populatedData = dataSpec.populateDataReusable
+    }
+
+    class Context extends Scope {
+      val property = Context.property
+      val populatedData = Context.populatedData
+    }
+
+    "Handle Dynamic Property Linking" in new Context {
+      val newEvent = createNewEvent
+      newEvent.id must beSome
+
+      val dataField = populatedData match {
+        case (dataTable, dataField, record) =>
+          dataField
+      }
+      val dynamicPropertyLink = ApiPropertyRelationshipDynamic(
+        None, property, None, None, "test property", dataField)
+
+      val propertyLinkId = HttpRequest(
+        POST, s"/event/${newEvent.id.get}/property/dynamic/${property.id.get}" + ownerAuthParams,
+        entity = HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)
+      ) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo Created
+          }
+          responseAs[ApiGenericId]
+        }
+
+      HttpRequest(GET, s"/event/${newEvent.id.get}/property/dynamic" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo OK
+            responseAs[String] must contain("BodyWeight")
+            responseAs[String] must contain("field")
+            responseAs[String] must not contain ("record")
+          }
+        }
+
+      HttpRequest(GET, s"/event/${newEvent.id.get}/property/dynamic/${propertyLinkId.id}/values" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo OK
+            responseAs[String] must contain("testValue1")
+            responseAs[String] must contain("testValue2-1")
+            responseAs[String] must not contain ("testValue3")
+          }
+        }
+
+      HttpRequest(GET, s"/event/${newEvent.id.get}/values" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo OK
+            responseAs[String] must contain("testValue1")
+            responseAs[String] must contain("testValue2-1")
+            responseAs[String] must not contain ("testValue3")
+          }
+        }
+    }
+
+    "Handle Static Property Linking" in new Context {
+      val newEvent = createNewEvent
+      newEvent.id must beSome
+
+      val dataField = populatedData match {
+        case (dataTable, field, record) =>
+          field
+      }
+
+      val dataRecord = populatedData match {
+        case (dataTable, field, record) =>
+          record
+      }
+      val staticPropertyLink = ApiPropertyRelationshipStatic(
+        None, property, None, None, "test property", dataField, dataRecord)
+
+      val propertyLinkId = HttpRequest(
+        POST, s"/event/${newEvent.id.get}/property/static/${property.id.get}" + ownerAuthParams,
+        entity = HttpEntity(MediaTypes.`application/json`, staticPropertyLink.toJson.toString)
+      ) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            logger.debug("Static property creation resp: " + response.toString)
+            response.status should be equalTo Created
+          }
+          responseAs[ApiGenericId]
+        }
+
+      HttpRequest(GET, s"/event/${newEvent.id.get}/property/static" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo OK
+            responseAs[String] must contain("BodyWeight")
+            responseAs[String] must contain("field")
+            responseAs[String] must contain("record")
+          }
+        }
+
+      HttpRequest(GET, s"/event/${newEvent.id.get}/property/static/${propertyLinkId.id}/values" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo OK
+            responseAs[String] must contain("testValue1")
+            responseAs[String] must not contain ("testValue2-1")
+            responseAs[String] must not contain ("testValue3")
+          }
+        }
+
+      HttpRequest(GET, s"/event/${newEvent.id.get}/values" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo OK
+            responseAs[String] must contain("testValue1")
+            responseAs[String] must not contain ("testValue2-1")
+            responseAs[String] must not contain ("testValue3")
+          }
+        }
     }
   }
 }

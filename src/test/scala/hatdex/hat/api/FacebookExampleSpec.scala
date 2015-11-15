@@ -435,7 +435,7 @@ class FacebookExampleSpec extends Specification with AfterAll {
         val tsps = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "Facebook Thing Property Static")
         val tspsId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += tsps
 
-        val thingssystempropertystaticcrossref = new ThingsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findthingId, findpropertyId, findfieldId, findrecordId, relationshiptype, true, tspsId)
+        val thingssystempropertystaticcrossref = new ThingsSystempropertystaticcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), findthingId, findpropertyId, findrecordId, findfieldId, relationshiptype, true, tspsId)
 
         ThingsSystempropertystaticcrossref += thingssystempropertystaticcrossref
 
