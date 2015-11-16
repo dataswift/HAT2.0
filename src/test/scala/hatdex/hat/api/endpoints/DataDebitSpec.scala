@@ -137,31 +137,31 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
 
     //Bundle Tables
     val bundleTables = Seq(
-      BundleTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "Weekend events at home", dataTables.find(_.name equals "event").get.id),
-      BundleTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "Electricity in the kitchen", dataTables.find(_.name equals "kichenElectricity").get.id)
+      BundleContextlessTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "Weekend events at home", dataTables.find(_.name equals "event").get.id),
+      BundleContextlessTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "Electricity in the kitchen", dataTables.find(_.name equals "kichenElectricity").get.id)
     )
 
     // Bundle slices
     val slices = Seq(
-      BundleTablesliceRow(1, LocalDateTime.now(), LocalDateTime.now(),
+      BundleContextlessTableSliceRow(1, LocalDateTime.now(), LocalDateTime.now(),
         bundleTables.find(_.name equals "Weekend events at home").get.id,
         dataTables.find(_.name equals "event").get.id),
-      BundleTablesliceRow(2, LocalDateTime.now(), LocalDateTime.now(),
+      BundleContextlessTableSliceRow(2, LocalDateTime.now(), LocalDateTime.now(),
         bundleTables.find(_.name equals "Weekend events at home").get.id,
         dataTables.find(_.name equals "event").get.id)
     )
 
     // Bundle Slice conditions
     val sliceConditions = Seq(
-      BundleTablesliceconditionRow(1, LocalDateTime.now(), LocalDateTime.now(),
+      BundleContextlessTableSliceConditionRow(1, LocalDateTime.now(), LocalDateTime.now(),
         dataFields.find(_.name equals "location").get.id,
         slices(0).id,
         "equal", "event location 1"),
-      BundleTablesliceconditionRow(2, LocalDateTime.now(), LocalDateTime.now(),
+      BundleContextlessTableSliceConditionRow(2, LocalDateTime.now(), LocalDateTime.now(),
         dataFields.find(_.name equals "location").get.id,
         slices(1).id,
         "equal", "event location 2"),
-      BundleTablesliceconditionRow(3, LocalDateTime.now(), LocalDateTime.now(),
+      BundleContextlessTableSliceConditionRow(3, LocalDateTime.now(), LocalDateTime.now(),
         dataFields.find(_.name equals "startTime").get.id,
         slices(1).id,
         "equal", "event startTime 2")
@@ -174,11 +174,11 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
 
     // Bundle joins (combinations of bundle tables)
     val bundleJoins = Seq(
-      BundleJoinRow(1, LocalDateTime.now(), LocalDateTime.now(), "Weekend events at home",
+      BundleContextlessJoinRow(1, LocalDateTime.now(), LocalDateTime.now(), "Weekend events at home",
         bundleTables.find(_.name equals "Weekend events at home").get.id,
         bundles.find(_.name equals "Kitchen electricity on weekend parties").get.id,
         None, None, Some("equal")),
-      BundleJoinRow(2, LocalDateTime.now(), LocalDateTime.now(), "Electricity in the kitchen",
+      BundleContextlessJoinRow(2, LocalDateTime.now(), LocalDateTime.now(), "Electricity in the kitchen",
         bundleTables.find(_.name equals "Electricity in the kitchen").get.id,
         bundles.find(_.name equals "Kitchen electricity on weekend parties").get.id,
         None, None, Some("equal"))
@@ -194,11 +194,11 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
       // Don't _foce_ insert all data values -- IDs don't particularly matter to us
       DataValue.insertAll(dataValues: _*)
 
-      BundleTable.forceInsertAll(bundleTables: _*)
-      BundleTableslice.forceInsertAll(slices: _*)
-      BundleTableslicecondition.forceInsertAll(sliceConditions: _*)
+      BundleContextlessTable.forceInsertAll(bundleTables: _*)
+      BundleContextlessTableSlice.forceInsertAll(slices: _*)
+      BundleContextlessTableSliceCondition.forceInsertAll(sliceConditions: _*)
       BundleContextless.forceInsertAll(bundles: _*)
-      BundleJoin.forceInsertAll(bundleJoins: _*)
+      BundleContextlessJoin.forceInsertAll(bundleJoins: _*)
     }
   }
 

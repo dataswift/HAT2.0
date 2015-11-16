@@ -43,6 +43,7 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
     sealRoute(routes) ~>
     check {
       eventually {
+        logger.debug("Type create response: " + response.toString)
         response.status should be equalTo Created
         responseAs[String] must contain("PostalAddress")
         responseAs[ApiSystemType].id must beSome
@@ -91,6 +92,7 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
     sealRoute(routes) ~>
     check {
       eventually {
+        logger.debug("UOM create response: " + response.toString)
         response.status should be equalTo Created
         responseAs[String] must contain("meters")
         responseAs[ApiSystemUnitofmeasurement].id must beSome
