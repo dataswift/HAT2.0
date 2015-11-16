@@ -292,6 +292,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
 
     "Correctly respond to not found Data Debits" in {
 
+      // Incorrect paths
 
       HttpRequest(GET, s"/dataDebit/asdasd/values?access_token=${apiUserAccessToken.accessToken}") ~> sealRoute(routes) ~>
         check {
@@ -304,6 +305,28 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
         }
 
       HttpRequest(PUT, s"/dataDebit/asdasd/disable?" + ownerAuth) ~> sealRoute(routes) ~>
+        check {
+          response.status should be equalTo NotFound
+        }
+
+      val dduuid = UUID.randomUUID().toString
+
+      HttpRequest(GET, s"/dataDebit/$dduuid/values") ~> sealRoute(routes) ~>
+        check {
+          response.status should be equalTo Unauthorized
+        }
+
+      HttpRequest(GET, s"/dataDebit/$dduuid/values?access_token=${apiUserAccessToken.accessToken}") ~> sealRoute(routes) ~>
+        check {
+          response.status should be equalTo Unauthorized
+        }
+
+      HttpRequest(PUT, s"/dataDebit/$dduuid/enable?" + ownerAuth) ~> sealRoute(routes) ~>
+        check {
+          response.status should be equalTo NotFound
+        }
+
+      HttpRequest(PUT, s"/dataDebit/$dduuid/disable?" + ownerAuth) ~> sealRoute(routes) ~>
         check {
           response.status should be equalTo NotFound
         }

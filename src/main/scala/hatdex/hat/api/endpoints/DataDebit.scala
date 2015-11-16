@@ -39,10 +39,8 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
   def proposeDataDebitApi = path("propose") {
     post {
       (userPassHandler | accessTokenHandler) { implicit user: User =>
-        logger.debug(s"DataDebitService POST /dataDebit/propose authenticated")
         db.withSession { implicit session =>
           entity(as[ApiDataDebit]) { debit =>
-            logger.debug(s"DataDebitService POST /dataDebit/propose parsed")
             (debit.kind, debit.bundleContextless, debit.bundleContextual) match {
 
               case ("contextless", Some(bundle), None) =>
@@ -173,12 +171,10 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
   def listDataDebitsApi = pathEnd {
     get {
       userPassHandler { implicit user =>
-        logger.debug(s"DataDebitService GET /dataDebit authenticated")
         db.withSession { implicit session =>
           val apiDebits = listDataDebits
           session.close()
 
-          logger.debug(s"DataDebitService GET /dataDebit returning " + apiDebits.toString)
           complete {
             apiDebits
           }
