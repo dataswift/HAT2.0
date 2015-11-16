@@ -56,20 +56,20 @@ sed -e "s;%HAT_OWNER%;$HAT_OWNER;g"\
   -e "s;%HAT_PLATFORM_ID%;$HAT_PLATFORM_ID;g"\
   -e "s;%HAT_PLATFORM_NAME%;$HAT_PLATFORM_NAME;g"\
   -e "s;%HAT_PLATFORM_PASSWORD_HASH%;$HAT_PLATFORM_PASSWORD_HASH;g"\
-  $HAT_HOME/src/sql/authentication.sql.template > $HAT_HOME/src/sql/authentication.sql
+  $HAT_HOME/src/sql/boilerplate/authentication.sql.template > $HAT_HOME/src/sql/boilerplate/authentication.sql
 
 # Execute the sql script
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/authentication.sql
+psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/authentication.sql
 
 # Remove the sql file with sensitive credentials
-rm $HAT_HOME/src/sql/authentication.sql
+rm $HAT_HOME/src/sql/boilerplate/authentication.sql
 
 echo "Boilerplate setup"
-echo $HAT_HOME/src/sql/data.sql
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/data.sql
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/relationships.sql
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/properties.sql
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/collections.sql
+echo $HAT_HOME/src/sql/boilerplate/data.sql
+psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/data.sql
+psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/relationships.sql
+psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/properties.sql
+psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/collections.sql
 
 # Prepare the project to be executed in-place
 echo "Preparing the project to be executed"

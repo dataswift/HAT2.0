@@ -1224,10 +1224,10 @@ CREATE TABLE "public"."user_user" (
   "user_id" uuid NOT NULL,
   "date_created" timestamp(6) NOT NULL,
   "last_updated" timestamp(6) NOT NULL,
-  "email" varchar NOT NULL COLLATE "default",
-  "pass" varchar COLLATE "default",
-  "name" varchar NOT NULL COLLATE "default",
-  "role" varchar NOT NULL COLLATE "default",
+  "email" varchar NOT NULL,
+  "pass" varchar,
+  "name" varchar NOT NULL,
+  "role" varchar NOT NULL,
   "enabled" bool NOT NULL DEFAULT false
 );
 
