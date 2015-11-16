@@ -20,4 +20,35 @@ object DataDebitExamples {
       |    }
       |  }
     """.stripMargin
+
+  val dataDebitInvalid =    // Invalid data debit kind
+    """
+      |  {
+      |    "name": "DD Kitchen electricity on weekend parties",
+      |    "startDate": "2015-09-30T10:00:00Z",
+      |    "endDate": "2015-10-30T10:00:00Z",
+      |    "rolling": false,
+      |    "sell": true,
+      |    "price": 100.0,
+      |    "kind": "context",
+      |    "bundleContextless": {
+      |       "id": 3,
+      |       "name": "Kitchen electricity on weekend parties"
+      |    }
+      |  }
+    """.stripMargin
+
+  val dataDebitContextual =
+    """
+      |  {
+      |    "name": "DD Kitchen electricity on weekend parties",
+      |    "startDate": "2015-09-30T10:00:00Z",
+      |    "endDate": "2015-10-30T10:00:00Z",
+      |    "rolling": false,
+      |    "sell": true,
+      |    "price": 100.0,
+      |    "kind": "contextual",
+      |    "bundleContextual": "arbitrary"
+      |  }
+    """.stripMargin
 }
