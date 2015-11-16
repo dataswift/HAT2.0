@@ -41,7 +41,7 @@ case class ApiBundleTableCondition(
     operator: ComparisonOperator)
 
 object ApiBundleTableCondition {
-  def fromBundleTableSliceCondition(condition: BundleTablesliceconditionRow)(field: ApiDataField) : ApiBundleTableCondition = {
+  def fromBundleTableSliceCondition(condition: BundleContextlessTableSliceConditionRow)(field: ApiDataField) : ApiBundleTableCondition = {
     new ApiBundleTableCondition(Some(condition.id),
       Some(condition.dateCreated), Some(condition.lastUpdated),
       field, condition.value,
@@ -57,7 +57,7 @@ case class ApiBundleTableSlice(
     conditions: Seq[ApiBundleTableCondition])
 
 object ApiBundleTableSlice {
-  def fromBundleTableSlice(slice: BundleTablesliceRow)(table: ApiDataTable) : ApiBundleTableSlice = {
+  def fromBundleTableSlice(slice: BundleContextlessTableSliceRow)(table: ApiDataTable) : ApiBundleTableSlice = {
     new ApiBundleTableSlice(Some(slice.id),
       Some(slice.dateCreated), Some(slice.lastUpdated),
       table, Seq())
@@ -75,7 +75,7 @@ case class ApiBundleTable(
     data: Option[Iterable[ApiDataRecord]])     // Data is optional, only used on the outbound
 
 object ApiBundleTable {
-  def fromBundleTable(bundleTable: BundleTableRow)(table: ApiDataTable) : ApiBundleTable = {
+  def fromBundleTable(bundleTable: BundleContextlessTableRow)(table: ApiDataTable) : ApiBundleTable = {
     new ApiBundleTable(Some(bundleTable.id),
       Some(bundleTable.dateCreated), Some(bundleTable.lastUpdated),
       bundleTable.name, table, None, None)
@@ -93,7 +93,7 @@ case class ApiBundleCombination(
     operator: Option[ComparisonOperator])
 
 object ApiBundleCombination {
-  def fromBundleJoin(bundleCombination: BundleJoinRow)
+  def fromBundleJoin(bundleCombination: BundleContextlessJoinRow)
                     (bundleJoinField: Option[ApiDataField], bundleTableField: Option[ApiDataField], bundleTable: ApiBundleTable): ApiBundleCombination = {
 
     val operator = bundleCombination.operator.map(ComparisonOperators.fromString)
