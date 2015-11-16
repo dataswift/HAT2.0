@@ -14,6 +14,7 @@ echo "Copying required files"
 cp $HAT_HOME/deployment/docker-deploy-db.sh $DOCKER_DEPLOY/
 cp $HAT_HOME/src/main/resources/database.conf $DOCKER_DEPLOY/required
 cp $HAT_HOME/deployment/database.conf.template $DOCKER_DEPLOY/required
+cp $HAT_HOME/src/sql/boilerplate/* $DOCKER_DEPLOY/required
 cp $HAT_HOME/src/sql/* $DOCKER_DEPLOY/required
 
 echo "Setting up HAT access"
