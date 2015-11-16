@@ -59,10 +59,21 @@ trait DataDebitService extends BundleService {
   }
 
   def listDataDebits(implicit session: Session): Seq[ApiDataDebit] = {
-    val dataDebits = DataDebit.run
 
-    dataDebits.map { dataDebit =>
-      ApiDataDebit.fromDbModel(dataDebit)
+    // FIXME: quite sure this does not do the join correctly across both kinds of tables
+    val dataDebitsQuery = for {
+      (dd, bundleContextless) <- DataDebit leftJoin BundleContextless on (_.bundleContextlessId === _.id)
+      (dd, bundleContextual) <- DataDebit leftJoin BundleContext on (_.bundleContextId === _.id)
+    } yield (dd, bundleContextless.?, bundleContextual.?)
+
+    val dataDebits = dataDebitsQuery.run
+
+    logger.debug("Retrieved data debits: " + dataDebits.toString)
+    dataDebits.map { case (dataDebit: DataDebitRow, bundleContextless: Option[BundleContextlessRow], bundleContextual: Option[BundleContextRow]) =>
+      val dd = ApiDataDebit.fromDbModel(dataDebit)
+      val apiBundleContextless = bundleContextless.map(ApiBundleContextless.fromBundleContextless)
+      val apiBundleContextual = None
+      dd.copy(bundleContextless = apiBundleContextless, bundleContextual = apiBundleContextual)
     }
   }
 }

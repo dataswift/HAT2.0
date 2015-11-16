@@ -121,7 +121,7 @@ object ApiBundleContextless {
   }
 
   def fromBundleContextlessTables(bundleContextless: BundleContextlessRow)(tables: Option[Seq[ApiBundleCombination]]) : ApiBundleContextless = {
-    new ApiBundleContextless(Some(bundleContextless.id),
+    ApiBundleContextless(Some(bundleContextless.id),
       Some(bundleContextless.dateCreated), Some(bundleContextless.lastUpdated),
       bundleContextless.name, tables)
   }
@@ -135,6 +135,6 @@ case class ApiBundleContextlessData(
 
 object ApiBundleContextlessData {
   def fromDbModel(bundleContextless: BundleContextlessRow, dataGroups: Iterable[Map[String, ApiBundleTable]]): ApiBundleContextlessData = {
-    new ApiBundleContextlessData(bundleContextless.id, bundleContextless.name, dataGroups)
+    ApiBundleContextlessData(bundleContextless.id, bundleContextless.name, dataGroups)
   }
 }
