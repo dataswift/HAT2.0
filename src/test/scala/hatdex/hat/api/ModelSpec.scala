@@ -359,3 +359,19 @@ class ModelSpec extends Specification with BeforeAfterAll {
   }
 
 }
+
+class CleanupSpec extends Specification with AfterAll {
+  val db = Database.forConfig("devdb")
+
+  sequential
+
+  def afterAll() = {
+    db.withSession { implicit session =>
+      TestDataCleanup.cleanupAll
+    }
+  }
+
+  "Cleanup" >> {
+    true should === (true)
+  }
+}
