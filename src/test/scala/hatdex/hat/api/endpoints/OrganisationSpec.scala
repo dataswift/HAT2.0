@@ -8,8 +8,7 @@ import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
-import org.specs2.specification.BeforeAfterAll
-import org.specs2.specification.Scope
+import org.specs2.specification.{BeforeAfterAll, Scope}
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http.{HttpEntity, HttpRequest, MediaTypes}
@@ -17,12 +16,12 @@ import spray.httpx.SprayJsonSupport._
 import spray.json._
 import spray.testkit.Specs2RouteTest
 
-class LocationSpec extends Specification with Specs2RouteTest with Location with BeforeAfterAll {
+class OrganisationSpec extends Specification with Specs2RouteTest with Organisation with BeforeAfterAll {
   def actorRefFactory = system
 
   val logger: LoggingAdapter = system.log
 
-  val thingEndpoint = new Thing {
+  val locationEndpoint = new Location {
     def actorRefFactory = system
 
     val logger: LoggingAdapter = system.log
@@ -53,40 +52,42 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
 
   val ownerAuthParams = "?username=bob@gmail.com&password=pa55w0rd"
 
-  def createNewValidLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationValid)) ~>
-    sealRoute(createEntity) ~> check {
-    response.status should be equalTo Created
-    responseAs[String] must contain("home")
-    responseAs[ApiLocation]
-  }
-
-  def createSubLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationHomeStairs)) ~>
-    sealRoute(createEntity) ~> check {
-    response.status should be equalTo Created
-    responseAs[String] must contain("stairs")
-    responseAs[ApiLocation]
-  }
-
-  "LocationsService" should {
-    "Accept new locations created" in {
-      //test createEntity
-      val newLocation = createNewValidLocation
-      newLocation.id must beSome
+  def createNewValidOrg = HttpRequest(
+    POST, "/organisation" + ownerAuthParams,
+    entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.orgValid)) ~>
+    sealRoute(routes) ~>
+    check {
+      eventually {
+        response.status should be equalTo Created
+        responseAs[String] must contain("HATorg")
+      }
+      responseAs[ApiOrganisation]
     }
 
-    "Accept relationships with locations created" in {
-      val newLocation = createNewValidLocation
-      newLocation.id must beSome
+  def createOtherOrg = HttpRequest(
+    POST, "/organisation" + ownerAuthParams,
+    entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.otherOrgValid)) ~>
+    sealRoute(routes) ~>
+    check {
+      eventually {
+        response.status should be equalTo Created
+        responseAs[String] must contain("HATcontrol")
+      }
+      responseAs[ApiOrganisation]
+    }
 
-      val subLocation = createSubLocation
-      subLocation.id must beSome
+  "Organisation" should {
+    "Accept new organisations created" in {
+      //test createEntity
+      val newOrg = createNewValidOrg
+      newOrg.id must beSome
 
-      //test linkToLocation
-      HttpRequest(
-        POST,
-        s"/${newLocation.id.get}/location/${subLocation.id.get}" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
-        sealRoute(linkToLocation) ~>
+      val otherOrg = createOtherOrg
+      otherOrg.id must beSome
+
+      HttpRequest(POST, s"/organisation/${newOrg.id.get}/organisation/${otherOrg.id.get}" + ownerAuthParams,
+        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipControls)) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo Created
           responseAs[String] must contain("id")
@@ -94,22 +95,12 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
     }
 
     "Reject unsuported relationships" in {
-      val newLocation = createNewValidLocation
-      newLocation.id must beSome
+      val newOrg = createNewValidOrg
+      newOrg.id must beSome
 
       HttpRequest(
         POST,
-        s"/${newLocation.id.get}/organisation/1" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
-        sealRoute(linkToOrganisation) ~>
-        check {
-          response.status should be equalTo BadRequest
-          responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
-        }
-
-      HttpRequest(
-        POST,
-        s"/${newLocation.id.get}/person/1" + ownerAuthParams,
+        s"/${newOrg.id.get}/person/1" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(linkToPerson) ~>
         check {
@@ -119,133 +110,143 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
 
       HttpRequest(
         POST,
-        s"/${newLocation.id.get}/event/1" + ownerAuthParams,
+        s"/${newOrg.id.get}/event/1" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(linkToEvent) ~>
         check {
           response.status should be equalTo BadRequest
           responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
         }
+
+      HttpRequest(
+        POST,
+        s"/${newOrg.id.get}/thing/1" + ownerAuthParams,
+        entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
+        sealRoute(linkToThing) ~>
+        check {
+          response.status should be equalTo BadRequest
+          responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+        }
     }
 
-    "Retrieve created locations" in {
-      val newLocation = createNewValidLocation
-      newLocation.id must beSome
+    "Retrieve created organisations" in {
+      val newOrg = createNewValidOrg
+      newOrg.id must beSome
 
       HttpRequest(
         GET,
-        s"/${newLocation.id.get}" + ownerAuthParams) ~>
-        sealRoute(getApi) ~>
+        s"/organisation/${newOrg.id.get}" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK
-            responseAs[String] must contain("home")
-            responseAs[ApiLocation]
-            responseAs[String] must contain(s"${newLocation.id.get}")
+            responseAs[String] must contain("HATorg")
+            responseAs[ApiOrganisation]
+            responseAs[String] must contain(s"${newOrg.id.get}")
           }
         }
     }
 
-    "Accept retrieval of things and locations linked" in {
-      val newLocation = createNewValidLocation
-      newLocation.id must beSome
+    "Accept retrieval of things linked to organisations" in {
+      val newOrg = createNewValidOrg
+      newOrg.id must beSome
 
-      val someThing = HttpRequest(
+      val someLocation = HttpRequest(
         POST, "" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.thingValid)
+        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationValid)
       ) ~>
-        sealRoute(thingEndpoint.createEntity) ~>
+        sealRoute(locationEndpoint.createEntity) ~>
         check {
           response.status should be equalTo Created
-          responseAs[String] must contain("tv")
+          responseAs[String] must contain("home")
           responseAs[ApiThing]
         }
 
-      someThing.id must beSome
+      someLocation.id must beSome
       //test link to thing
       HttpRequest(
-        POST, s"/${newLocation.id.get}/thing/${someThing.id.get}" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)
+        POST, s"/organisation/${newOrg.id.get}/location/${someLocation.id.get}" + ownerAuthParams,
+        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipNextTo)
       ) ~>
-        sealRoute(linkToThing) ~>
+        sealRoute(routes) ~>
         check {
-          response.status should be equalTo Created //retuns BadRequest, should be Created
+          response.status should be equalTo Created
           responseAs[String] must contain("id")
         }
 
-      HttpRequest(GET, s"/${newLocation.id.get}" + ownerAuthParams) ~>
-        sealRoute(getApi) ~>
+      HttpRequest(GET, s"/organisation/${newOrg.id.get}" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK
-            responseAs[String] must contain(s"${someThing.id.get}")
-            responseAs[String] must contain(s"${someThing.name}")
+            responseAs[String] must contain(s"${someLocation.id.get}")
+            responseAs[String] must contain(s"${someLocation.name}")
           }
         }
     }
 
     "Reject bad locations and relationships" in {
-      val tmpLocation = HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationBadName)) ~>
-        sealRoute(createEntity) ~> check {
+      HttpRequest(POST, "/organisation" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.orgBadName)) ~>
+        sealRoute(routes) ~> check {
         response.status should be equalTo BadRequest
       }
 
-      HttpRequest(POST, s"/0/location/1}" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
-        sealRoute(linkToLocation) ~> check {
+      HttpRequest(POST, s"/organisation/0/location/1}" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
+        sealRoute(routes) ~> check {
         response.status should be equalTo NotFound
       }
 
-      HttpRequest(POST, s"/0/thing/0}" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
-        sealRoute(linkToThing) ~> check {
+      HttpRequest(POST, s"/organisation/0/thing/0}" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
+        sealRoute(routes) ~> check {
         response.status should be equalTo NotFound
       }
     }
 
-    "List All Entities correctly" in {
-      val newLocation = createNewValidLocation
-      newLocation.id must beSome
+    "List All Organisations correctly" in {
+      val newOrg = createNewValidOrg
+      newOrg.id must beSome
 
-      val subLocation = createSubLocation
-      subLocation.id must beSome
+      val otherOrg = createOtherOrg
+      otherOrg.id must beSome
 
-      HttpRequest(GET, "" + ownerAuthParams) ~>
-        sealRoute(getAllApi) ~>
+      HttpRequest(GET, "/organisation" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK
-            val allLocations = responseAs[List[ApiLocation]]
+            responseAs[List[ApiOrganisation]]
             val asString = responseAs[String]
-            asString must contain(s"${newLocation.id.get}")
-            asString must contain(s"${newLocation.name}")
-            asString must contain(s"${subLocation.id.get}")
-            asString must contain(s"${subLocation.name}")
+            asString must contain(s"${newOrg.id.get}")
+            asString must contain(s"${newOrg.name}")
+            asString must contain(s"${otherOrg.id.get}")
+            asString must contain(s"${otherOrg.name}")
           }
         }
     }
 
     "Accept Type annotations" in {
       //      addTypeApi
-      val newLocation = createNewValidLocation
-      newLocation.id must beSome
+      val newOrg = createNewValidOrg
+      newOrg.id must beSome
 
       val typeSpec = new TypeSpec
       val postalAddressType = typeSpec.createPostalAddressType
 
       HttpRequest(
         POST,
-        s"/${newLocation.id.get}/type/${postalAddressType.id.get}" + ownerAuthParams,
+        s"/organisation/${newOrg.id.get}/type/${postalAddressType.id.get}" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipType)
       ) ~>
-        sealRoute(addTypeApi) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo Created
         }
 
       HttpRequest(
-        POST, s"/${newLocation.id.get}/type/0" + ownerAuthParams,
+        POST, s"/organisation/${newOrg.id.get}/type/0" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipType)
       ) ~>
-        sealRoute(addTypeApi) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo BadRequest
         }
@@ -293,8 +294,8 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
       }
       */
 
-      val newLocation = createNewValidLocation
-      newLocation.id must beSome
+      val newOrg = createNewValidOrg
+      newOrg.id must beSome
 
       val dataField = populatedData match {
         case (dataTable, dataField, record) =>
@@ -304,10 +305,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         None, property, None, None, "test property", dataField)
 
       val propertyLinkId = HttpRequest(
-        POST, s"/${newLocation.id.get}/property/dynamic/${property.id.get}" + ownerAuthParams,
+        POST, s"/organisation/${newOrg.id.get}/property/dynamic/${property.id.get}" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)
       ) ~>
-        sealRoute(linkToPropertyDynamic) ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo Created
@@ -315,7 +316,7 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
           responseAs[ApiGenericId]
         }
 
-      HttpRequest(GET, s"/location/${newLocation.id.get}/property/dynamic" + ownerAuthParams) ~>
+      HttpRequest(GET, s"/organisation/${newOrg.id.get}/property/dynamic" + ownerAuthParams) ~>
         sealRoute(routes) ~>
         check {
           eventually {
@@ -326,8 +327,8 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
           }
         }
 
-      HttpRequest(GET, s"/${newLocation.id.get}/property/dynamic/${propertyLinkId.id}/values" + ownerAuthParams) ~>
-        sealRoute(getPropertyDynamicValueApi) ~>
+      HttpRequest(GET, s"/organisation/${newOrg.id.get}/property/dynamic/${propertyLinkId.id}/values" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK
@@ -337,8 +338,8 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
           }
         }
 
-      HttpRequest(GET, s"/${newLocation.id.get}/values" + ownerAuthParams) ~>
-        sealRoute(getApiValues) ~>
+      HttpRequest(GET, s"/organisation/${newOrg.id.get}/values" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK
@@ -380,8 +381,8 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
        }
        */
 
-      val newLocation = createNewValidLocation
-      newLocation.id must beSome
+      val newOrg = createNewValidOrg
+      newOrg.id must beSome
 
       val dataField = populatedData match {
         case (dataTable, dataField, record) =>
@@ -396,10 +397,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         None, property, None, None, "test property", dataField, dataRecord)
 
       val propertyLinkId = HttpRequest(
-        POST, s"/${newLocation.id.get}/property/static/${property.id.get}" + ownerAuthParams,
+        POST, s"/organisation/${newOrg.id.get}/property/static/${property.id.get}" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, staticPropertyLink.toJson.toString)
       ) ~>
-        sealRoute(linkToPropertyStatic) ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo Created
@@ -407,7 +408,7 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
           responseAs[ApiGenericId]
         }
 
-      HttpRequest(GET, s"/location/${newLocation.id.get}/property/static" + ownerAuthParams) ~>
+      HttpRequest(GET, s"/organisation/${newOrg.id.get}/property/static" + ownerAuthParams) ~>
         sealRoute(routes) ~>
         check {
           eventually {
@@ -418,8 +419,8 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
           }
         }
 
-      HttpRequest(GET, s"/${newLocation.id.get}/property/static/${propertyLinkId.id}/values" + ownerAuthParams) ~>
-        sealRoute(getPropertyStaticValueApi) ~>
+      HttpRequest(GET, s"/organisation/${newOrg.id.get}/property/static/${propertyLinkId.id}/values" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK
@@ -429,8 +430,8 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
           }
         }
 
-      HttpRequest(GET, s"/${newLocation.id.get}/values" + ownerAuthParams) ~>
-        sealRoute(getApiValues) ~>
+      HttpRequest(GET, s"/organisation/${newOrg.id.get}/values" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK

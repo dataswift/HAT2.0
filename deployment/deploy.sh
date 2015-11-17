@@ -5,7 +5,7 @@ DBUSER=${DBUSER:-$DATABASE}
 DBPASS=${DBPASS:-"pa55w0rd"}
 HAT_HOME=${HAT_HOME:-"."}
 
-export PGUSER=postgres #force the user to be postgres, to ensure permissions in following commands
+#export PGUSER=postgres #force the user to be postgres, to ensure permissions in following commands
 
 # Create the DB
 # NOSUPERUSER NOCREATEDB NOCREATEROLE
@@ -17,9 +17,9 @@ psql $DATABASE -c "ALTER USER $DBUSER WITH PASSWORD '$DBPASS';"
 
 #DBUSER wouldnt have required permissions to drop/create public schema otherwise
 echo "Handling schemas"
-psql -c 'DROP SCHEMA public CASCADE;'
-psql -c 'CREATE SCHEMA public;'
-psql -c "ALTER SCHEMA public OWNER TO $DBUSER;"
+psql $DATABASE -c 'DROP SCHEMA public CASCADE;'
+psql $DATABASE -c 'CREATE SCHEMA public;'
+psql $DATABASE -c "ALTER SCHEMA public OWNER TO $DBUSER;"
 
 echo "Setting up database"
 psql $DATABASE -c 'CREATE EXTENSION "uuid-ossp";'

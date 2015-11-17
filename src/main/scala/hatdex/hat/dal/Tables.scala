@@ -555,6 +555,9 @@ trait Tables {
     val name: Rep[String] = column[String]("name")
     /** Database column source_name SqlType(varchar) */
     val sourceName: Rep[String] = column[String]("source_name")
+
+    /** Uniqueness Index over (name,sourceName) (database name data_table_name_source) */
+    val index1 = index("data_table_name_source", (name, sourceName), unique=true)
   }
   /** Collection-like TableQuery object for table DataTable */
   lazy val DataTable = new TableQuery(tag => new DataTable(tag))
@@ -2335,6 +2338,9 @@ trait Tables {
     val name: Rep[String] = column[String]("name")
     /** Database column description SqlType(text), Default(None) */
     val description: Rep[Option[String]] = column[Option[String]]("description", O.Default(None))
+
+    /** Uniqueness Index over (name) (database name system_type_name_key) */
+    val index1 = index("system_type_name_key", name, unique=true)
   }
   /** Collection-like TableQuery object for table SystemType */
   lazy val SystemType = new TableQuery(tag => new SystemType(tag))
@@ -2383,9 +2389,9 @@ trait Tables {
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param name Database column name SqlType(varchar), Length(100,true)
+   *  @param name Database column name SqlType(varchar)
    *  @param description Database column description SqlType(text), Default(None)
-   *  @param symbol Database column symbol SqlType(varchar), Length(16,true), Default(None) */
+   *  @param symbol Database column symbol SqlType(varchar), Default(None) */
   case class SystemUnitofmeasurementRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, description: Option[String] = None, symbol: Option[String] = None)
   /** GetResult implicit for fetching SystemUnitofmeasurementRow objects using plain SQL queries */
   implicit def GetResultSystemUnitofmeasurementRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Option[String]]): GR[SystemUnitofmeasurementRow] = GR{
@@ -2404,12 +2410,15 @@ trait Tables {
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column name SqlType(varchar), Length(100,true) */
-    val name: Rep[String] = column[String]("name", O.Length(100,varying=true))
+    /** Database column name SqlType(varchar) */
+    val name: Rep[String] = column[String]("name")
     /** Database column description SqlType(text), Default(None) */
     val description: Rep[Option[String]] = column[Option[String]]("description", O.Default(None))
-    /** Database column symbol SqlType(varchar), Length(16,true), Default(None) */
-    val symbol: Rep[Option[String]] = column[Option[String]]("symbol", O.Length(16,varying=true), O.Default(None))
+    /** Database column symbol SqlType(varchar), Default(None) */
+    val symbol: Rep[Option[String]] = column[Option[String]]("symbol", O.Default(None))
+
+    /** Uniqueness Index over (name) (database name system_unitofmeasurement_name_key) */
+    val index1 = index("system_unitofmeasurement_name_key", name, unique=true)
   }
   /** Collection-like TableQuery object for table SystemUnitofmeasurement */
   lazy val SystemUnitofmeasurement = new TableQuery(tag => new SystemUnitofmeasurement(tag))
@@ -2473,12 +2482,12 @@ trait Tables {
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param thingId Database column thing_id SqlType(int4)
    *  @param systemPropertyId Database column system_property_id SqlType(int4)
-   *  @param fieldId Database column field_id SqlType(int4)
    *  @param recordId Database column record_id SqlType(int4)
+   *  @param fieldId Database column field_id SqlType(int4)
    *  @param relationshipType Database column relationship_type SqlType(varchar), Length(100,true)
    *  @param isCurrent Database column is_current SqlType(bool)
    *  @param propertyrecordId Database column propertyrecord_id SqlType(int4) */
-  case class ThingsSystempropertystaticcrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, thingId: Int, systemPropertyId: Int, fieldId: Int, recordId: Int, relationshipType: String, isCurrent: Boolean, propertyrecordId: Int)
+  case class ThingsSystempropertystaticcrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, thingId: Int, systemPropertyId: Int, recordId: Int, fieldId: Int, relationshipType: String, isCurrent: Boolean, propertyrecordId: Int)
   /** GetResult implicit for fetching ThingsSystempropertystaticcrossrefRow objects using plain SQL queries */
   implicit def GetResultThingsSystempropertystaticcrossrefRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Boolean]): GR[ThingsSystempropertystaticcrossrefRow] = GR{
     prs => import prs._
@@ -2486,9 +2495,9 @@ trait Tables {
   }
   /** Table description of table things_systempropertystaticcrossref. Objects of this class serve as prototypes for rows in queries. */
   class ThingsSystempropertystaticcrossref(_tableTag: Tag) extends Table[ThingsSystempropertystaticcrossrefRow](_tableTag, "things_systempropertystaticcrossref") {
-    def * = (id, dateCreated, lastUpdated, thingId, systemPropertyId, fieldId, recordId, relationshipType, isCurrent, propertyrecordId) <> (ThingsSystempropertystaticcrossrefRow.tupled, ThingsSystempropertystaticcrossrefRow.unapply)
+    def * = (id, dateCreated, lastUpdated, thingId, systemPropertyId, recordId, fieldId, relationshipType, isCurrent, propertyrecordId) <> (ThingsSystempropertystaticcrossrefRow.tupled, ThingsSystempropertystaticcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(thingId), Rep.Some(systemPropertyId), Rep.Some(fieldId), Rep.Some(recordId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(propertyrecordId)).shaped.<>({r=>import r._; _1.map(_=> ThingsSystempropertystaticcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get, _10.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(thingId), Rep.Some(systemPropertyId), Rep.Some(recordId), Rep.Some(fieldId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(propertyrecordId)).shaped.<>({r=>import r._; _1.map(_=> ThingsSystempropertystaticcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get, _10.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -2500,10 +2509,10 @@ trait Tables {
     val thingId: Rep[Int] = column[Int]("thing_id")
     /** Database column system_property_id SqlType(int4) */
     val systemPropertyId: Rep[Int] = column[Int]("system_property_id")
-    /** Database column field_id SqlType(int4) */
-    val fieldId: Rep[Int] = column[Int]("field_id")
     /** Database column record_id SqlType(int4) */
     val recordId: Rep[Int] = column[Int]("record_id")
+    /** Database column field_id SqlType(int4) */
+    val fieldId: Rep[Int] = column[Int]("field_id")
     /** Database column relationship_type SqlType(varchar), Length(100,true) */
     val relationshipType: Rep[String] = column[String]("relationship_type", O.Length(100,varying=true))
     /** Database column is_current SqlType(bool) */
@@ -2572,7 +2581,7 @@ trait Tables {
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param name Database column name SqlType(varchar), Length(100,true) */
+   *  @param name Database column name SqlType(varchar) */
   case class ThingsThingRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String)
   /** GetResult implicit for fetching ThingsThingRow objects using plain SQL queries */
   implicit def GetResultThingsThingRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[ThingsThingRow] = GR{
@@ -2591,8 +2600,8 @@ trait Tables {
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column name SqlType(varchar), Length(100,true) */
-    val name: Rep[String] = column[String]("name", O.Length(100,varying=true))
+    /** Database column name SqlType(varchar) */
+    val name: Rep[String] = column[String]("name")
   }
   /** Collection-like TableQuery object for table ThingsThing */
   lazy val ThingsThing = new TableQuery(tag => new ThingsThing(tag))

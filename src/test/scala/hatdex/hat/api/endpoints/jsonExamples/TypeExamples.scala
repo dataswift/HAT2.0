@@ -43,4 +43,21 @@ object TypeExamples {
       | "symbol": "m"
       |}
     """.stripMargin
+
+  val quantitativeValue =
+    """
+      | {
+      |     "name": "QuantitativeValue",
+      |     "description": "A generic quantitative value"
+      | }
+    """.stripMargin
+
+  val uomWeight =
+    """
+      |{
+      |    "name": "kilograms",
+      |    "description": "measurement of weight",
+      |    "symbol": "kg"
+      | }
+    """.stripMargin
 }

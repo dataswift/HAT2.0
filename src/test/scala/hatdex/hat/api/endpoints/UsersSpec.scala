@@ -1,16 +1,13 @@
 package hatdex.hat.api.endpoints
 
+import java.util.UUID
+
 import akka.event.LoggingAdapter
-import hatdex.hat.api.authentication.HatAuthTestHandler
-import hatdex.hat.api.endpoints.Users
 import hatdex.hat.api.endpoints.jsonExamples.UserExamples
 import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.authentication.authenticators.{UserPassHandler, AccessTokenHandler}
 import hatdex.hat.authentication.models.{AccessToken, User}
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
-import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.api.models._
 import org.joda.time.LocalDateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.specs2.mutable.Specification
@@ -19,9 +16,7 @@ import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
 import spray.httpx.SprayJsonSupport._
-import spray.json._
 import spray.testkit.Specs2RouteTest
-import java.util.UUID
 
 class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll with Users {
   def actorRefFactory = system

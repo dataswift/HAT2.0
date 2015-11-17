@@ -29,6 +29,7 @@ object HatAuthHandler {
         } yield {
             User(user.userId, user.email, None, user.name, user.role)
           }
+        session.close()
         mayBeUser
       }
     }
@@ -50,6 +51,7 @@ object HatAuthHandler {
             User(user.userId, user.email, None, user.name, user.role)
           }
 //        println("Authenticated? " + mayBeUser.toString)
+        session.close()
         mayBeUser
       }
     }
@@ -71,6 +73,7 @@ object HatAuthHandler {
             User(user.userId, user.email, None, user.name, user.role)
           }
 //        println("Authenticated? " + mayBeUser.toString)
+        session.close()
         mayBeUser
       }
     }

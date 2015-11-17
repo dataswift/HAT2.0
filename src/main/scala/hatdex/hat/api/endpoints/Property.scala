@@ -36,12 +36,13 @@ trait Property extends HttpService with PropertyService with HatServiceAuthHandl
         entity(as[ApiProperty]) { property =>
           db.withSession { implicit session =>
             val result = storeProperty(property)
+            session.close()
             complete {
               result match {
                 case Success(created) =>
                   (Created, created)
                 case Failure(e) =>
-                  (BadRequest, e.getMessage)
+                  (BadRequest, ErrorMessage("Error creating property", e.getMessage))
               }
             }
           }
@@ -55,6 +56,7 @@ trait Property extends HttpService with PropertyService with HatServiceAuthHandl
       userPassHandler { implicit user: User =>
         db.withSession { implicit session =>
           val propertyOption = getProperty(propertyId)
+          session.close()
           complete {
             propertyOption match {
               case Some(property) =>

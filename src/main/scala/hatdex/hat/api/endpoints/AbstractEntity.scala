@@ -8,6 +8,7 @@ import hatdex.hat.authentication.HatServiceAuthHandler
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
+import spray.http.MediaTypes._
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
@@ -28,22 +29,25 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
   def getApi = path(IntNumber) { (entityId: Int) =>
     get {
       userPassHandler { implicit user: User =>
-        println("Getting entity for user")
         db.withSession { implicit session =>
           implicit val getValues: Boolean = false
-          getEntity(entityId)
+          val entity = getEntity(entityId)
+          session.close()
+          entity
         }
       }
     }
   }
 
   def getAllApi = pathEnd {
-    get {
-      userPassHandler { implicit user =>
-        db.withSession { implicit session =>
-          val entities = getAllEntitiesSimple
-          session.close()
-          entities
+    respondWithMediaType(`application/json`) {
+      get {
+        userPassHandler { implicit user =>
+          db.withSession { implicit session =>
+            val entities = getAllEntitiesSimple
+            session.close()
+            entities
+          }
         }
       }
     }
@@ -55,7 +59,9 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
         println("Getting values for user")
         db.withSession { implicit session =>
           implicit val getValues: Boolean = true
-          getEntity(entityId)
+          val entity = getEntity(entityId)
+          session.close()
+          entity
         }
       }
     }
@@ -75,7 +81,7 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
         LocationsLocation.run.map(ApiLocation.fromDbModel).toJson
       case "organisation" =>
         OrganisationsOrganisation.run.map(ApiOrganisation.fromDbModel).toJson
-      case _ => Seq()
+      case _ => Seq[ApiPerson]().toJson
     }
 
     complete {
@@ -119,12 +125,14 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
 
           val result = createLinkLocation(entityId, locationId, relationship.relationshipType, recordId)
 
+          session.close()
+
           complete {
             result match {
               case Success(crossrefId) =>
                 (Created, ApiGenericId(crossrefId))
               case Failure(e) =>
-                (BadRequest, e.getMessage)
+                (BadRequest, ErrorMessage(s"Error Linking ${entityKind} to Location", e.getMessage))
             }
           }
 
@@ -141,12 +149,14 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
 
           val result = createLinkOrganisation(entityId, organisationId, relationship.relationshipType, recordId)
 
+          session.close()
+
           complete {
             result match {
               case Success(crossrefId) =>
                 (Created, ApiGenericId(crossrefId))
               case Failure(e) =>
-                (BadRequest, e.getMessage)
+                (BadRequest, ErrorMessage(s"Error Linking ${entityKind} to Organisation", e.getMessage))
             }
           }
 
@@ -163,13 +173,15 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
 
           val result = createLinkPerson(entityId, personId, relationship.relationshipType, recordId)
 
+          session.close()
+
           // Return the created crossref
           complete {
             result match {
               case Success(crossrefId) =>
                 (Created, ApiGenericId(crossrefId))
               case Failure(e) =>
-                (BadRequest, e.getMessage)
+                (BadRequest, ErrorMessage(s"Error Linking ${entityKind} to Person", e.getMessage))
             }
           }
 
@@ -186,13 +198,15 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
 
           val result = createLinkThing(entityId, thingId, relationship.relationshipType, recordId)
 
+          session.close()
+
           // Return the created crossref
           complete {
             result match {
               case Success(crossrefId) =>
                 (Created, ApiGenericId(crossrefId))
               case Failure(e) =>
-                (BadRequest, e.getMessage)
+                (BadRequest, ErrorMessage(s"Error Linking ${entityKind} to Thing", e.getMessage))
             }
           }
 
@@ -209,13 +223,15 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
 
           val result = createLinkEvent(entityId, eventId, relationship.relationshipType, recordId)
 
+          session.close()
+
           // Return the created crossref
           complete {
             result match {
               case Success(crossrefId) =>
                 (Created, ApiGenericId(crossrefId))
               case Failure(e) =>
-                (BadRequest, e.getMessage)
+                (BadRequest, ErrorMessage(s"Error Linking ${entityKind} to Event", e.getMessage))
             }
           }
 
@@ -230,7 +246,9 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
         db.withSession { implicit session: Session =>
           complete {
             implicit val getValues: Boolean = false
-            getPropertiesStatic(entityId)
+            val properties = getPropertiesStatic(entityId)
+            session.close()
+            properties
           }
         }
       }
@@ -242,7 +260,9 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
         db.withSession { implicit session: Session =>
           complete {
             implicit val getValues: Boolean = false
-            getPropertiesDynamic(entityId)
+            val properties = getPropertiesDynamic(entityId)
+            session.close()
+            properties
           }
         }
       }
@@ -254,7 +274,9 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
         db.withSession { implicit session: Session =>
           complete {
             implicit val getValues: Boolean = true
-            getPropertiesStatic(entityId)
+            val properties = getPropertiesStatic(entityId)
+            session.close()
+            properties
           }
         }
       }
@@ -266,7 +288,9 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
         db.withSession { implicit session: Session =>
           complete {
             implicit val getValues: Boolean = true
-            getPropertiesDynamic(entityId)
+            val properties = getPropertiesDynamic(entityId)
+            session.close()
+            properties
           }
         }
       }
@@ -274,12 +298,14 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
 
   // staticproperty as a way of differentiating between a property that is linked statically 
   // and the propertyRelatonship link
-  def getPropertyStaticValueApi = path(IntNumber / "staticproperty" / IntNumber / "values") {
+  def getPropertyStaticValueApi = path(IntNumber / "property" / "static" / IntNumber / "values") {
     (entityId: Int, propertyRelationshipId: Int) =>
       get {
         db.withSession { implicit session: Session =>
           complete {
-            getPropertyStaticValues(entityId, propertyRelationshipId)
+            val propertyValues = getPropertyStaticValues(entityId, propertyRelationshipId)
+            session.close()
+            propertyValues
           }
         }
       }
@@ -287,12 +313,14 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
 
   // dynamicproperty as a way of differentiating between a property that is linked dynamically 
   // and the propertyRelatonship link
-  def getPropertyDynamicValueApi = path(IntNumber / "dynamicproperty" / IntNumber / "values") {
+  def getPropertyDynamicValueApi = path(IntNumber / "property" / "dynamic" / IntNumber / "values") {
     (entityId: Int, propertyRelationshipId: Int) =>
       get {
         db.withSession { implicit session: Session =>
           complete {
-            getPropertyDynamicValues(entityId, propertyRelationshipId)
+            val propertyValues = getPropertyDynamicValues(entityId, propertyRelationshipId)
+            session.close()
+            propertyValues
           }
         }
       }
@@ -306,13 +334,13 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
       entity(as[ApiRelationship]) { relationship =>
         db.withSession { implicit session =>
           val result = addEntityType(entityId, typeId, relationship)
-
+          session.close()
           complete {
             result match {
               case Success(crossrefId) =>
                 (Created, ApiGenericId(crossrefId))
               case Failure(e) =>
-                (BadRequest, e.getMessage)
+                (BadRequest, ErrorMessage(s"Error Adding Type to ${entityKind} ${entityId}", e.getMessage))
             }
           }
         }
@@ -333,7 +361,9 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
               val propertyRecordId = createPropertyRecord(
                 s"$entityKind/$entityId/property/static/$propertyId:${relationship.relationshipType}($fieldId,$recordId,${relationship.relationshipType}")
 
-              createPropertyLinkStatic(entityId, propertyId, recordId, fieldId, relationship.relationshipType, propertyRecordId)
+              val propertyLink = createPropertyLinkStatic(entityId, propertyId, recordId, fieldId, relationship.relationshipType, propertyRecordId)
+              session.close()
+              propertyLink
             }
           case (None, _) =>
             Failure(new IllegalArgumentException("Property relationship must have an existing Data Field with ID"))
@@ -346,7 +376,7 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
             case Success(crossrefId) =>
               (Created, ApiGenericId(crossrefId))
             case Failure(e) =>
-              (BadRequest, e.getMessage)
+              (BadRequest, ErrorMessage("Error Linking Property Statically", e.getMessage))
           }
         }
 
@@ -367,7 +397,9 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
                 s"""$entityKind/$entityId/property/dynamic/$propertyId:${relationship.relationshipType}
                    |($fieldId,${relationship.relationshipType})""".stripMargin)
 
-              createPropertyLinkDynamic(entityId, propertyId, fieldId, relationship.relationshipType, propertyRecordId)
+              val propertyLink = createPropertyLinkDynamic(entityId, propertyId, fieldId, relationship.relationshipType, propertyRecordId)
+              session.close()
+              propertyLink
             }
           case None =>
             Failure(new IllegalArgumentException("Property relationship must have an existing Data Field with ID"))
@@ -378,7 +410,7 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
             case Success(crossrefId) =>
               (Created, ApiGenericId(crossrefId))
             case Failure(e) =>
-              (BadRequest, e.getMessage)
+              (BadRequest, ErrorMessage("Error Linking Property Dynamically", e.getMessage))
           }
         }
       }

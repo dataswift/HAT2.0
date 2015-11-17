@@ -58,13 +58,13 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
         entity(as[ApiDataTable]) { table =>
           db.withSession { implicit session =>
             val tableStructure = createTable(table)
-
+            session.close()
             complete {
               tableStructure match {
                 case Success(structure) =>
                   (Created, structure)
                 case Failure(e) =>
-                  (BadRequest, e.getMessage)
+                  (BadRequest, ErrorMessage("Error creating Table", e.getMessage))
               }
             }
           }
@@ -83,13 +83,13 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
         entity(as[ApiRelationship]) { relationship =>
           db.withSession { implicit session =>
             val inserted = linkTables(parentId, childId, relationship)
-
+            session.close()
             complete {
               inserted match {
                 case Success(id) =>
                   ApiGenericId(id)
                 case Failure(e) =>
-                  (BadRequest, e.getMessage)
+                  (BadRequest, ErrorMessage(s"Error linking Tables ${parentId} and ${childId}", e.getMessage))
               }
             }
           }
@@ -107,8 +107,8 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
       (userPassHandler | accessTokenHandler) { implicit user: User =>
         db.withSession { implicit session =>
           val structure = getTableStructure(tableId)
+          session.close()
           complete {
-            session.close()
             structure
           }
         }
@@ -123,8 +123,8 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
         parameters('name, 'source) { (name: String, source: String) =>
           db.withSession { implicit session =>
             val table = findTable(name, source)
+            session.close()
             complete {
-              session.close()
               table
             }
           }
@@ -145,7 +145,7 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
               case Some(tableValues) =>
                 tableValues
               case None =>
-                (NotFound, s"Table $tableId not found")
+                (NotFound, ErrorMessage("NotFound", s"Table $tableId not found"))
             }
           }
         }
@@ -163,12 +163,13 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
         entity(as[ApiDataField]) { field =>
           db.withSession { implicit session =>
             val insertedField = createField(field)
+            session.close()
             complete {
               insertedField match {
                 case Success(field) =>
                   (Created, field)
                 case Failure(e) =>
-                  (BadRequest, e.getMessage)
+                  (BadRequest, ErrorMessage("Error creating Field", e.getMessage))
               }
             }
           }
@@ -185,12 +186,14 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
       logger.debug(s"GET /field/$fieldId")
       (userPassHandler | accessTokenHandler) { implicit user: User =>
         db.withSession { implicit session =>
+          val dataField = retrieveDataFieldId(fieldId)
+          session.close()
           complete {
-            retrieveDataFieldId(fieldId) match {
+             dataField match {
               case Some(field) =>
                 field
               case None =>
-                (NotFound, "Data field $fieldId not found")
+                (NotFound, ErrorMessage("Field Not Found", s"Data field $fieldId not found"))
             }
           }
         }
@@ -207,12 +210,14 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
       logger.debug(s"GET /field/$fieldId/values")
       userPassHandler { implicit user: User =>
         db.withSession { implicit session =>
+          val fieldValues = getFieldValues(fieldId)
+          session.close()
           complete {
-            getFieldValues(fieldId) match {
+             fieldValues match {
               case Some(field) =>
                 field
               case None =>
-                (NotFound, s"Data field $fieldId not found")
+                (NotFound, ErrorMessage("Field Not Found", s"Data field $fieldId not found"))
             }
           }
         }
@@ -232,12 +237,13 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
           db.withSession { implicit session =>
             val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), record.name)
             val insertedRecord = Try((DataRecord returning DataRecord) += newRecord)
+            session.close()
             complete {
               insertedRecord match {
                 case Success(record) =>
                   (Created, ApiDataRecord.fromDataRecord(record)(None) )
                 case Failure(e) =>
-                  (BadRequest, e.getMessage)
+                  (BadRequest, ErrorMessage("Error creating Record", e.getMessage))
               }
 
             }
@@ -256,13 +262,13 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
       (userPassHandler | accessTokenHandler) { implicit user: User =>
         db.withSession { implicit session =>
           val record = DataRecord.filter(_.id === recordId).run.headOption
-
+          session.close()
           complete {
             record match {
               case Some(dataRecord) =>
                 ApiDataRecord.fromDataRecord(dataRecord)(None)
               case None =>
-                (NotFound, s"Data Record $recordId not found")
+                (NotFound, ErrorMessage("Record Not Found", s"Data Record $recordId not found"))
             }
           }
         }
@@ -327,12 +333,13 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
               Some(ApiDataRecord.fromDataRecord(record)(Some(recordData)))
           }
 
+          session.close()
           complete {
             apiRecord match {
               case Some(dataRecord) =>
                 dataRecord
               case None =>
-                (NotFound, s"Data Record $recordId not found")
+                (NotFound, ErrorMessage("Record Not Found", s"Data Record $recordId not found"))
             }
           }
         }
@@ -353,13 +360,13 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
           db.withSession { implicit session =>
             val maybeApiValues = values.map(x => createValue(x, None, Some(recordId)))
             val apiValues = Utils.flatten(maybeApiValues)
-
+            session.close()
             complete {
               apiValues match {
                 case Success(response) =>
                   (Created, response)
                 case Failure(e) =>
-                  (BadRequest, e.getMessage)
+                  (BadRequest, ErrorMessage("Error storing Record values", e.getMessage))
               }
             }
           }
@@ -385,7 +392,7 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
                 case Success(insertedValue) =>
                   (Created, insertedValue)
                 case Failure(e) =>
-                  (BadRequest, e.getMessage)
+                  (BadRequest, ErrorMessage("Error storing value", e.getMessage))
               }
 
             }
@@ -414,14 +421,13 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
               ApiDataValue.fromDataValue(value, Some(field), Some(record))
             }
           }
-
+          session.close()
           complete {
-            session.close()
             apiValue match {
               case Some(response) =>
                 response
               case None =>
-                (NotFound, s"Data value $valueId not found")
+                (NotFound, ErrorMessage("Value Not Found", s"Data value $valueId not found"))
             }
           }
         }
@@ -460,9 +466,10 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
       userPassHandler { implicit user =>
         logger.debug("GET /sources")
         db.withSession { implicit session =>
+          val dataSources = getDataSources()
+          session.close()
           complete {
-            session.close()
-            getDataSources()
+            dataSources
           }
         }
       }

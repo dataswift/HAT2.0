@@ -22,8 +22,9 @@ before_script:
   - cp src/main/resources/database.conf codegen/src/main/resources/database.conf
 
 script:
+   - sbt clean
    - sbt ++$TRAVIS_SCALA_VERSION compile test:compile
-   - sbt coverage test
+   - sbt coverage test -Dconfig.file=src/main/resources/application.test.conf
 
 after_success:
   - sbt coveralls

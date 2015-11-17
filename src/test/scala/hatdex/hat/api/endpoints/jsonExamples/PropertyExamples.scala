@@ -8,13 +8,11 @@ object PropertyExamples {
       | "description": "Body weight of a person",
       | "propertyType": {
       |     "name": "QuantitativeValue",
-      |     "id": 49
       | },
       | "unitOfMeasurement": {
       |    "name": "kilograms",
       |    "description": "measurement of weight",
       |    "symbol": "kg",
-      |    "id": 1
       | }
       |}
     """.stripMargin

@@ -90,7 +90,8 @@ lazy val core = (project in file(".")).
       (runner in Compile).value.run("hatdex.hat.dal.CustomizedCodeGenerator", (dependencyClasspath in Compile).value.files, Array(outputDir, pkg), streams.value.log)
       val fname = outputDir + "/" + pkg.replace('.', '/') + "/Tables.scala"
       Seq(file(fname))
-    }
+    },
+    scoverage.ScoverageSbtPlugin.ScoverageKeys.coverageExcludedFiles := "Tables"
   ).
   dependsOn("codegen").
   settings (

@@ -1,7 +1,7 @@
 package hatdex.hat.api
 
 import hatdex.hat.dal.Tables._
-import org.specs2.specification.{BeforeAfterAll, AfterAll}
+import org.specs2.specification.BeforeAfterAll
 
 //import Tables._
 //import Tables.profile.simple._
@@ -327,7 +327,7 @@ class ModelSpec extends Specification with BeforeAfterAll {
         // Thing Property Static crossref
         val tsps = new SystemPropertyrecordRow(0, LocalDateTime.now(), LocalDateTime.now(), "ThingPropertyStatic")
         val tspsId = (SystemPropertyrecord returning SystemPropertyrecord.map(_.id)) += tsps
-        val thingssystempropertystaticcrossrefRow = new ThingsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findthingId, findpropertyId, findfieldId, findrecordId, relationshiptype, true, tspsId)
+        val thingssystempropertystaticcrossrefRow = new ThingsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), findthingId, findpropertyId, findrecordId, findfieldId, relationshiptype, true, tspsId)
         val thingssystempropertystaticcrossrefId = (ThingsSystempropertystaticcrossref returning ThingsSystempropertystaticcrossref.map(_.id)) += thingssystempropertystaticcrossrefRow
 
         // Thing Property Dynamic crossref
@@ -352,10 +352,7 @@ class ModelSpec extends Specification with BeforeAfterAll {
   def afterAll() = {
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
-      TestFixtures.prepareEverything
-      TestDataCleanup.cleanupAll
     }
-    db.close
   }
 
 }

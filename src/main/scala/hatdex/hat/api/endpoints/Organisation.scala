@@ -26,7 +26,6 @@ trait Organisation extends OrganisationsService with AbstractEntity {
           getAllApi ~
           linkToLocation ~
           linkToOrganisation ~
-          linkToThing ~
           linkToPropertyStatic ~
           linkToPropertyDynamic ~
           addTypeApi ~
