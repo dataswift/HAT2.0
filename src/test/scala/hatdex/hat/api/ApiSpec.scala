@@ -36,11 +36,11 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
     def actorRefFactory = system
 
     val logger: LoggingAdapter = system.log
+
+    override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
+
+    override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
   }
-
-  override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
-
-  override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
 
   val testRoute = handleRejections(jsonRejectionHandler) {
     dataEndpoint.routes

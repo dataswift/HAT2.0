@@ -22,7 +22,7 @@ import spray.httpx.marshalling
 import spray.routing.directives.LogEntry
 import spray.routing.{HttpService, MalformedRequestContentRejection, Rejected, RejectionHandler}
 
-trait Api extends HttpService with Cors with HatServiceAuthHandler {
+trait Api extends HttpService with Cors {
   val logger: LoggingAdapter
 
   // The HttpService trait defines only one abstract member, which
