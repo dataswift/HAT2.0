@@ -7,6 +7,12 @@ object DataExamples {
       | "source": "fibaro"
     }""".stripMargin
 
+  val malformedTable =
+    """{
+      | "nam": "kitchen",
+      | "source": "fibaro"
+    }""".stripMargin
+
   val tableKitchenElectricity =
     """{
       "name": "kitchenElectricity",
