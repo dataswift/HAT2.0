@@ -7,7 +7,7 @@ import spray.http.StatusCodes._
 import spray.http._
 import spray.testkit.Specs2RouteTest
 
-class ContexualBundleServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with ContextBundleService {
+class ContexualBundleServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with BundleContextService {
   def actorRefFactory = system
 
   // Prepare the data to create test bundles on
