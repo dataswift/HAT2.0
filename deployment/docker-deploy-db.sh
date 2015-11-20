@@ -11,9 +11,10 @@ export PGUSER=postgres
 
 # Create the DB
 # NOSUPERUSER NOCREATEDB NOCREATEROLE
-echo "Setting up database user"
-createuser -S -D -R -e $DBUSER
-createdb $DATABASE -O $DBUSER
+#echo "Setting up DB role"
+#createuser -S -D -R -e $DBUSER
+#echo "Setting up role DB"
+#createdb $DATABASE -O $DBUSER
 
 #DBUSER wouldnt have required permissions to drop/create public schema otherwise
 echo "Handling schemas"
@@ -59,3 +60,5 @@ psql $DATABASE -U$DBUSER < $HAT_HOME/data.sql
 psql $DATABASE -U$DBUSER < $HAT_HOME/relationships.sql
 psql $DATABASE -U$DBUSER < $HAT_HOME/properties.sql
 psql $DATABASE -U$DBUSER < $HAT_HOME/collections.sql
+
+env
