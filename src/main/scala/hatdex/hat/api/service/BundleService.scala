@@ -227,7 +227,7 @@ trait BundleService extends DataService {
         apiSlice.copy(conditions = conditions)
       }
     }
-    seqOption(result)
+    Utils.seqOption(result)
   }
 
   protected[api] def storeCondition(bundleTableSlice: ApiBundleTableSlice)

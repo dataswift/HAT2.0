@@ -63,6 +63,16 @@ object JsonProtocol extends DefaultJsonProtocol with UuidMarshalling with DateTi
 
   implicit val apiBundleContextlessData = jsonFormat3(ApiBundleContextlessData.apply)
 
+  implicit val apiBundleContextProperty =
+    jsonFormat8(ApiBundleContextPropertySelection.apply)
+  implicit val apiBundleContextEntity =
+    jsonFormat7(ApiBundleContextEntitySelection.apply)
+  implicit val apiBundleContext: RootJsonFormat[ApiBundleContext] =
+    rootFormat(lazyFormat(jsonFormat6(ApiBundleContext.apply)))
+  implicit val apiBundleContextData: RootJsonFormat[ApiBundleContextData] =
+    rootFormat(lazyFormat(jsonFormat2(ApiBundleContextData.apply)))
+
+
   implicit val apiDataDebit = jsonFormat12(ApiDataDebit.apply)
   implicit val apiDataDebitOut = jsonFormat12(ApiDataDebitOut.apply)
 

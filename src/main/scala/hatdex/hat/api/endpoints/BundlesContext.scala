@@ -4,7 +4,7 @@ import akka.event.LoggingAdapter
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
-import hatdex.hat.api.service.BundleService
+import hatdex.hat.api.service.{BundleContextService, BundleService}
 import hatdex.hat.authentication.HatServiceAuthHandler
 import hatdex.hat.authentication.models.User
 import spray.http.StatusCodes._
@@ -14,7 +14,7 @@ import spray.routing._
 import scala.util.{Failure, Success}
 
 // this trait defines our service behavior independently from the service actor
-trait BundlesContext extends HttpService with BundleService with HatServiceAuthHandler {
+trait BundlesContext extends HttpService with BundleContextService with HatServiceAuthHandler {
 
   val db = DatabaseInfo.db
 
@@ -23,14 +23,10 @@ trait BundlesContext extends HttpService with BundleService with HatServiceAuthH
   val routes = {
     pathPrefix("bundles" / "context") {
       createBundleContext ~
-        getBundleTable ~
-        createBundleConext ~
         getBundleContext ~
         getBundleContextValues ~
-        getEntitySelection ~
-        getEntitySelectionValues ~
-        getBundlePropertyRecordCrossRef ~
-        getBundlrePropertyRecordCrossRefValues
+        addEntitySelectionApi ~
+        addPropertySelectionApi
     }
   }
 
@@ -39,7 +35,7 @@ trait BundlesContext extends HttpService with BundleService with HatServiceAuthH
   /*
    * Creates a bundle table as per POST'ed data, including table information and its slicing conditions
    */
-  def createBundleContext = path("context") {
+  def createBundleContext = pathEnd {
     post {
       entity(as[ApiBundleContext]) { bundleContext =>
         db.withSession { implicit session =>
@@ -61,55 +57,42 @@ trait BundlesContext extends HttpService with BundleService with HatServiceAuthH
   /*
    * Retrieves bundle table structure by ID
    */
-  def getBundleContext = path("context" / IntNumber) {
-    (bundleContextId: Int) =>
-      get {
-        db.withSession { implicit session =>
-          val bundleContext = getBundleContextById(bundleContextId)
-          complete {
-            bundleContext match {
-              case Some(table) =>
-                table
-              case None =>
-                (NotFound, s"Bundle Table ${bundleTableId} not found")
-            }
-          }
+  def getBundleContext = path(IntNumber) { (bundleContextId: Int) =>
+    get {
+      db.withSession { implicit session =>
+        val maybeBundleContext = getBundleContextById(bundleContextId)
+        session.close()
+        complete {
+          (NotImplemented, s"Data retrieval for Conext bundles not yet implemented")
+//          maybeBundleContext match {
+//            case Some(bundleContext) =>
+//              bundleContext
+//            case None =>
+//              (NotFound, s"Bundle ${bundleContextId} not found or empty")
+//          }
         }
       }
+    }
   }
 
   /*
    * Retrieves bundle table data
    */
-  def getBundleContextValues = path("context" / IntNumber / "values") {
-    (bundleTableId: Int) =>
-      get {
-        complete {
-          (NotImplemented, s"Data retrieval for Conext bundles not yet implemented")
-        }
+  def getBundleContextValues = path(IntNumber / "values") { (bundleContextId: Int) =>
+    get {
+      val maybeBundleData = db.withSession { implicit session =>
+        val bundleData = getBundleContextData(bundleContextId)
+        session.close()
+        bundleData
       }
-  }
-
-
-  /*
-   * Creates a new virtual table for storing arbitrary incoming data
-   */
-  def createBundleContext = path("context") {
-    post {
-      entity(as[ApiBundleContext]) { bundle =>
-        db.withSession { implicit session =>
-          val result = storeBundleContext(bundle)
-
-          complete {
-            result match {
-              case Success(storedBundle) =>
-                (Created, storedBundle)
-              case Failure(e) =>
-                (BadRequest, e.getMessage)
-            }
-          }
-
-        }
+      complete {
+        (NotImplemented, s"Data retrieval for Conext bundles not yet implemented")
+//        maybeBundleData match {
+//          case Some(bundleData) =>
+//            bundleData
+//          case None =>
+//            (NotFound, s"Bundle ${bundleContextId} not found or empty")
+//        }
       }
     }
   }
@@ -117,66 +100,43 @@ trait BundlesContext extends HttpService with BundleService with HatServiceAuthH
   /*
    * Retrieves Conext bundle structure by ID
    */
-  def getEntitySelection = path("selection" / IntNumber) {
-    (entityselectionId: Int) =>
-      get {
+  def addEntitySelectionApi = path(IntNumber / "entitySelection") { (bundleId: Int) =>
+    post {
+      entity(as[ApiBundleContextEntitySelection]) { entitySelection =>
         db.withSession { implicit session =>
-          val entityselection = getEntitySelectionById(entityselectionId)
+          val maybeInsertedSelection = storeBundleContextEntitySelection(bundleId, entitySelection)
+          session.close()
 
           complete {
-            bundle match {
-              case Some(foundentityselection) =>
-                foundentityselection
-              case None =>
-                (NotFound, s"Context Bundle $bundleId not found")
+            maybeInsertedSelection match {
+              case Success(insertedSelection) =>
+                (Created, insertedSelection)
+              case Failure(e) =>
+                (BadRequest, ErrorMessage("Could not add Entity Selection", e.getMessage))
             }
           }
         }
       }
+    }
   }
 
-  /*
-   * Retrieves Conext bundle data
-   */
-  def getEntitySelectionValues = path("selection" / IntNumber / "values") {
-    (entityselectionId: Int) =>
-      get {
-        complete {
-          (NotImplemented, s"Data retrieval for Conext bundles not yet implemented")
-        }
-      }
-  }
-
-  /*
-   * Retrieves Conext bundle structure by ID
-   */
-  def getBundlePropertyRecordCrossRef = path("selection" / IntNumber) {
-    (bundlepropertyrecordcrossrefId: Int) =>
-      get {
+  def addPropertySelectionApi = path(IntNumber / "entitySelection" / IntNumber / "propertySelection") { (bundleId: Int, entitySelectionId: Int) =>
+    post {
+      entity(as[ApiBundleContextPropertySelection]) { propertySelection =>
         db.withSession { implicit session =>
-          val bundlepropertyrecordcrossref = bundlepropertyrecordcrossrefById(bundlepropertyrecordcrossrefId)
+          val maybeInsertedSelection = storeBundlePropertySelection(bundleId, entitySelectionId, propertySelection)
+          session.close()
 
           complete {
-            bundle match {
-              case Some(foundbundlepropertyrecordcrossref) =>
-                foundbundlepropertyrecordcrossref
-              case None =>
-                (NotFound, s"Context Bundle $bundleId not found")
+            maybeInsertedSelection match {
+              case Success(insertedSelection) =>
+                (Created, insertedSelection)
+              case Failure(e) =>
+                (BadRequest, ErrorMessage("Could not add Property Selection", e.getMessage))
             }
           }
         }
       }
-  }
-
-  /*
-   * Retrieves Conext bundle data
-   */
-  def getBundlePropertyRecordCrossRefValues = path("selection" / IntNumber / "values") {
-    (bundlepropertyrecordcrossrefId: Int) =>
-      get {
-        complete {
-          (NotImplemented, s"Data retrieval for Conext bundles not yet implemented")
-        }
-      }
+    }
   }
 }

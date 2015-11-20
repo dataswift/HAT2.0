@@ -11,7 +11,7 @@ import org.joda.time.LocalDateTime
 
 import scala.util.Try
 
-trait DataDebitService extends BundleService {
+trait DataDebitService extends BundleService with BundleContextService {
   val logger: LoggingAdapter
 
   def storeContextlessDataDebit(debit: ApiDataDebit, bundle: ApiBundleContextless)
@@ -32,6 +32,26 @@ trait DataDebitService extends BundleService {
       responseDebit.copy(bundleContextless = Some(bundle))
     }
   }
+
+  def storeContextDataDebit(debit: ApiDataDebit, bundle: ApiBundleContext)
+                           (implicit session: Session, user: User): Try[ApiDataDebit] = {
+    val dataDebitKey = UUID.randomUUID()
+    val newDebit = DataDebitRow(dataDebitKey, LocalDateTime.now(), LocalDateTime.now(), debit.name,
+      debit.startDate, debit.endDate, debit.rolling, debit.sell, debit.price,
+      enabled = false, "owner", user.userId.toString,
+      None,
+      bundle.id,
+      "context"
+    )
+
+    val maybeCreatedDebit = Try((DataDebit returning DataDebit) += newDebit)
+
+    maybeCreatedDebit map { createdDebit =>
+      val responseDebit = ApiDataDebit.fromDbModel(createdDebit)
+      responseDebit.copy(bundleContextual = Some(bundle))
+    }
+  }
+
 
   def enableDataDebit(debit: DataDebitRow)(implicit session: Session): Try[Int] = {
     Try(

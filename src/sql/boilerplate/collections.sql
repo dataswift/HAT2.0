@@ -155,13 +155,13 @@ VALUES (2, now(), now(), 1, 4, 4, TRUE, 8);
 --
 
 INSERT INTO people_systempropertydynamiccrossref
-VALUES (1, now(), now(), 1, 1, 323, '', TRUE, 1);
+VALUES (1, now(), now(), 1, 1, 2, '', TRUE, 1);
 INSERT INTO people_systempropertydynamiccrossref
-VALUES (2, now(), now(), 1, 2, 49, 'given name', TRUE, 2);
+VALUES (2, now(), now(), 1, 2, 1, 'given name', TRUE, 2);
 INSERT INTO people_systempropertydynamiccrossref
-VALUES (3, now(), now(), 4, 2, 328, 'given name', TRUE, 3);
+VALUES (3, now(), now(), 4, 2, 8, 'given name', TRUE, 3);
 INSERT INTO people_systempropertydynamiccrossref
-VALUES (4, now(), now(), 1, 3, 324, '', TRUE, 4);
+VALUES (4, now(), now(), 1, 3, 3, '', TRUE, 4);
 
 
 INSERT INTO things_thingpersoncrossref
