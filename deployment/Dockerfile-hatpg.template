@@ -16,13 +16,20 @@ ENV HAT_PLATFORM_ID=%HAT_PLATFORM_ID%
 ENV HAT_PLATFORM_NAME=%HAT_PLATFORM_NAME%
 ENV HAT_PLATFORM_PASSWORD_HASH=%HAT_PLATFORM_PASSWORD_HASH%
 
+#Required by the postgres container (docker-entrypoint.sh)
+#Also sets up authMethod=md5
+#Check : https://github.com/docker-library/postgres/blob/ed23320582f4ec5b0e5e35c99d98966dacbc6ed8/9.4/docker-entrypoint.sh
+ENV POSTGRES_PASSWORD=%DBPASS%
+ENV POSTGRES_USER=%DBUSER%
+ENV POSTGRES_DB=%DBPASS%
+
 #Get HAT files.
 RUN mkdir /opt/hat
 ADD required /opt/hat
 
 #Create DB user and pass (slightly hackish)
-RUN  useradd %DBUSER%
-RUN echo %DBUSER%:%DBPASS% | chpasswd
+#RUN  useradd %DBUSER%
+#RUN echo %DBUSER%:%DBPASS% | chpasswd
 
 #This will initialize the database
 ADD docker-deploy-db.sh /docker-entrypoint-initdb.d/

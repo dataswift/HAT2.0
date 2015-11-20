@@ -47,7 +47,7 @@ echo "Building db docker image: docker-hat-postgres"
 docker build -t docker-hat-postgres .
 
 echo "Creating docker-hat-postgres run script"
-echo "docker run docker-hat-postgres" > $DOCKER_DEPLOY/run-db.sh
+echo "docker run -d --name hat-postgres-$HAT_OWNER_NAME docker-hat-postgres" > $DOCKER_DEPLOY/run-db.sh
 
 if [ ! -f "$HAT_HOME/target/docker/Dockerfile" ]; then
     echo "Missing $HAT_HOME/target/docker/Dockerfile" 
@@ -63,16 +63,23 @@ mv $DOCKER_DEPLOY/Dockerfile $DOCKER_DEPLOY/Dockerfile-hatpg
 cp $HAT_HOME/target/docker/stage/Dockerfile $DOCKER_DEPLOY/
 docker build -t docker-hat .
 
+docker stop $(docker ps -a -q)
+docker rm $(docker ps -a -q)
+
 cd $DOCKER_DEPLOY
 echo "Creating docker-hat run script"
-echo "docker run docker-hat" > $DOCKER_DEPLOY/run-hat.sh
+#-d = background ; --name
+echo "docker run -d --name hat-$HAT_OWNER_NAME docker-hat" > $DOCKER_DEPLOY/run-hat.sh
 #sudo chmod +x run-hat.sh
 
 echo "Launching docker-hat-postgres..."
-. $DOCKER_DEPLOY/run-db.sh &
+docker run -d --name hat-postgres-$HAT_OWNER_NAME docker-hat-postgres
 
 echo "Launching docker-hat container..."
-. $DOCKER_DEPLOY/run-hat.sh &
+docker run -d --name hat-$HAT_OWNER_NAME --link hat-postgres-$HAT_OWNER_NAME docker-hat
 
-#echo "docker ps"
-#docker ps
+echo "The hat-$HAT_OWNER_NAME is linked to:"
+docker inspect -f "{{ .HostConfig.Links }}" hat-$HAT_OWNER_NAME
+
+echo "Running processes:"
+docker ps
