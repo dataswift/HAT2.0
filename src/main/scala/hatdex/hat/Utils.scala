@@ -18,4 +18,15 @@ object Utils {
     else
       Some(seq)
   }
+
+  def reverseOptionTry[T](a: Option[Try[T]]): Try[Option[T]] = {
+    a match {
+      case None =>
+        Success(None)
+      case Some(Success(b)) =>
+        Success(Some(b))
+      case Some(Failure(e)) =>
+        Failure(e)
+    }
+  }
 }
