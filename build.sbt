@@ -91,7 +91,8 @@ lazy val core = (project in file(".")).
       val fname = outputDir + "/" + pkg.replace('.', '/') + "/Tables.scala"
       Seq(file(fname))
     },
-    scoverage.ScoverageSbtPlugin.ScoverageKeys.coverageExcludedPackages := "hatdex.hat.dal"
+    scoverage.ScoverageSbtPlugin.ScoverageKeys.coverageExcludedPackages := "hatdex.hat.dal",
+    publishArtifact in (Compile, packageDoc) := false
   ).
   dependsOn("codegen").
   settings (
