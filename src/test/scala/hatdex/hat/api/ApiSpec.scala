@@ -13,16 +13,14 @@ import akka.actor.ActorRefFactory
 import akka.event.LoggingAdapter
 import hatdex.hat.api.authentication.HatAuthTestHandler
 import hatdex.hat.api.endpoints.jsonExamples.DataExamples
-import hatdex.hat.api.endpoints.{Thing, Data}
+import hatdex.hat.api.endpoints._
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models.{ApiDataTable, ErrorMessage}
 import hatdex.hat.authentication.authenticators.{UserPassHandler, AccessTokenHandler}
 import org.specs2.mutable.Specification
-import spray.http.HttpHeaders._
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
-import spray.routing.HttpService
 import spray.testkit.Specs2RouteTest
 import spray.httpx.SprayJsonSupport._
 
@@ -32,18 +30,31 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
 
   val logger: LoggingAdapter = system.log
 
-  val dataEndpoint = new Data {
+  trait LoggingHttpService {
     def actorRefFactory = system
 
     val logger: LoggingAdapter = system.log
+  }
 
+  val helloService = new Hello with LoggingHttpService
+  val apiDataService = new Data with LoggingHttpService {
     override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
 
     override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
   }
+  val apiBundleService = new Bundles with LoggingHttpService
+  val dataDebitService = new DataDebit with LoggingHttpService
+  val apiPropertyService = new Property with LoggingHttpService
+  val eventsService = new Event with LoggingHttpService
+  val locationsService = new Location with LoggingHttpService
+  val peopleService = new Person with LoggingHttpService
+  val thingsService = new Thing with LoggingHttpService
+  val organisationsService = new Organisation with LoggingHttpService
+  val userService = new Users with LoggingHttpService
+  val typeService = new Type with LoggingHttpService
 
   val testRoute = handleRejections(jsonRejectionHandler) {
-    dataEndpoint.routes
+    apiDataService.routes
   }
 
   val ownerAuthParams = "?username=bob@gmail.com&password=pa55w0rd"
