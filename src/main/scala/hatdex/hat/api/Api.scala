@@ -80,7 +80,7 @@ trait Api extends HttpService with Cors {
   }
 
   // Concatenate all the handled routes
-  val routes = logRequestResponse(requestMethodAndResponseStatusAsInfo _) {
+  val routes = //logRequestResponse(requestMethodAndResponseStatusAsInfo _) {
     cors {
       handleRejections(jsonRejectionHandler) {
         helloService.routes ~
@@ -97,6 +97,6 @@ trait Api extends HttpService with Cors {
           dataDebitService.routes
       }
     }
-  }
+//  }
 
 }

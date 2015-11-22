@@ -331,4 +331,21 @@ trait DataService {
       ApiDataField.fromDataField(dataField)
     }
   }
+
+  def storeRecordValues(recordValues: ApiRecordValues)(implicit session: Session): Try[ApiRecordValues] = {
+    val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), recordValues.record.name)
+    val maybeRecord = Try((DataRecord returning DataRecord) += newRecord)
+
+    maybeRecord flatMap { insertedRecord =>
+      val record = ApiDataRecord.fromDataRecord(insertedRecord)(None)
+      val insertedValues = recordValues.values map { value =>
+        createValue(value, None, record.id)
+      }
+
+      val maybeValues = Utils.flatten(insertedValues)
+      maybeValues.map { values =>
+        ApiRecordValues(record, values)
+      }
+    }
+  }
 }
