@@ -46,7 +46,7 @@ trait BundlesContext extends HttpService with BundleContextService with HatServi
               case Success(storedBundleContext) =>
                 (Created, storedBundleContext)
               case Failure(e) =>
-                (BadRequest, e.getMessage)
+                (BadRequest, ErrorMessage("Could not create Contextual Bundle", e.getMessage))
             }
           }
         }
@@ -63,13 +63,12 @@ trait BundlesContext extends HttpService with BundleContextService with HatServi
         val maybeBundleContext = getBundleContextById(bundleContextId)
         session.close()
         complete {
-          (NotImplemented, s"Data retrieval for Conext bundles not yet implemented")
-//          maybeBundleContext match {
-//            case Some(bundleContext) =>
-//              bundleContext
-//            case None =>
-//              (NotFound, s"Bundle ${bundleContextId} not found or empty")
-//          }
+          maybeBundleContext match {
+            case Some(bundleContext) =>
+              bundleContext
+            case None =>
+              (NotFound, ErrorMessage("Bundle Not Found", s"Bundle ${bundleContextId} not found or empty"))
+          }
         }
       }
     }
@@ -86,13 +85,12 @@ trait BundlesContext extends HttpService with BundleContextService with HatServi
         bundleData
       }
       complete {
-        (NotImplemented, s"Data retrieval for Conext bundles not yet implemented")
-//        maybeBundleData match {
-//          case Some(bundleData) =>
-//            bundleData
-//          case None =>
-//            (NotFound, s"Bundle ${bundleContextId} not found or empty")
-//        }
+        maybeBundleData match {
+          case Some(bundleData) =>
+            bundleData
+          case None =>
+            (NotFound, ErrorMessage("Bundle Not Found", s"Bundle ${bundleContextId} not found or empty"))
+        }
       }
     }
   }
@@ -124,7 +122,7 @@ trait BundlesContext extends HttpService with BundleContextService with HatServi
     post {
       entity(as[ApiBundleContextPropertySelection]) { propertySelection =>
         db.withSession { implicit session =>
-          val maybeInsertedSelection = storeBundlePropertySelection(bundleId, entitySelectionId, propertySelection)
+          val maybeInsertedSelection = storeBundlePropertySelection(entitySelectionId, propertySelection)
           session.close()
 
           complete {
