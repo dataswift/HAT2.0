@@ -12,6 +12,8 @@ object JsonProtocol extends DefaultJsonProtocol with UuidMarshalling with DateTi
   implicit val virtualTableFormat: RootJsonFormat[ApiDataTable] = rootFormat(lazyFormat(jsonFormat7(ApiDataTable.apply)))
   implicit val apiDataRecord = jsonFormat5(ApiDataRecord.apply)
 
+  implicit val apiRecordValues = jsonFormat2(ApiRecordValues.apply)
+
   // Any id (used for crossreferences)
   implicit val apiGenericId = jsonFormat1(ApiGenericId.apply)
 

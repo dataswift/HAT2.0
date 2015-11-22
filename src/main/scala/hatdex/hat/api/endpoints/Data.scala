@@ -39,6 +39,7 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
         linkTableToTableApi ~
         createFieldApi ~
         createRecordApi ~
+        createRecordValuesApi ~
         createValueApi ~
         storeValueListApi
     }
@@ -211,7 +212,7 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
           val fieldValues = getFieldValues(fieldId)
           session.close()
           complete {
-             fieldValues match {
+            fieldValues match {
               case Some(field) =>
                 field
               case None =>
@@ -229,21 +230,60 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
   def createRecordApi = path("record") {
     post {
       (userPassHandler | accessTokenHandler) { implicit user: User =>
-        logger.debug("POST /record authenticated")
         entity(as[ApiDataRecord]) { record =>
-          logger.debug("POST /record parsed")
           db.withSession { implicit session =>
             val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), record.name)
             val insertedRecord = Try((DataRecord returning DataRecord) += newRecord)
             session.close()
             complete {
               insertedRecord match {
-                case Success(record) =>
-                  (Created, ApiDataRecord.fromDataRecord(record)(None) )
+                case Success(apiRecord) =>
+                  (Created, ApiDataRecord.fromDataRecord(apiRecord)(None) )
                 case Failure(e) =>
                   (BadRequest, ErrorMessage("Error creating Record", e.getMessage))
               }
 
+            }
+          }
+        }
+        }
+    }
+  }
+
+  def createRecordValuesApi = path("record" / "values") {
+    post {
+      (userPassHandler | accessTokenHandler) { implicit user: User =>
+        // the more complicated case of putting in data and record for creation of both together
+        entity(as[ApiRecordValues]) { recordValues =>
+          db.withSession { implicit session =>
+            val maybeRecordValues = storeRecordValues(recordValues)
+            session.close()
+
+            complete {
+              maybeRecordValues match {
+                case Success(recordValues) =>
+                  (Created, recordValues)
+                case Failure(e) =>
+                  (BadRequest, ErrorMessage("Error creating Record with Values", e.getMessage))
+              }
+            }
+          }
+        } ~
+        entity(as[Seq[ApiRecordValues]]) { recordValueList =>
+          db.withSession { implicit session =>
+            val listInsertedValues = recordValueList map { recordValues =>
+              storeRecordValues(recordValues)
+            }
+            val maybeList = Utils.flatten(listInsertedValues)
+            session.close()
+
+            complete {
+              maybeList match {
+                case Success(list) =>
+                  (Created, list)
+                case Failure(e) =>
+                  (BadRequest, ErrorMessage("Error creating a list of Records with Values", e.getMessage))
+              }
             }
           }
         }
