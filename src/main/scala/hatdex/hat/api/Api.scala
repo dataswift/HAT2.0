@@ -21,36 +21,24 @@ import spray.httpx.SprayJsonSupport._
 import spray.httpx.marshalling
 import spray.routing.directives.LogEntry
 import spray.routing.{HttpService, MalformedRequestContentRejection, Rejected, RejectionHandler}
+import spray.util.LoggingContext
 
 trait Api extends HttpService with Cors {
-  val logger: LoggingAdapter
-
-  // The HttpService trait defines only one abstract member, which
-  // connects the services environment to the enclosing actor or test.
-  // We also want logging, hence the abstract logger member is included
-  // in HAT services as well
-  val log = logger
-  val context = actorRefFactory
-
-  trait LoggingHttpService {
-    def actorRefFactory: ActorRefFactory = context
-
-    val logger: LoggingAdapter = log
-  }
+  implicit def actorRefFactory: ActorRefFactory
 
   // Initialise all the service the actor handles
-  val helloService = new Hello with LoggingHttpService
-  val apiDataService = new Data with LoggingHttpService
-  val apiBundleService = new Bundles with LoggingHttpService
-  val dataDebitService = new DataDebit with LoggingHttpService
-  val apiPropertyService = new Property with LoggingHttpService
-  val eventsService = new Event with LoggingHttpService
-  val locationsService = new Location with LoggingHttpService
-  val peopleService = new Person with LoggingHttpService
-  val thingsService = new Thing with LoggingHttpService
-  val organisationsService = new Organisation with LoggingHttpService
-  val userService = new Users with LoggingHttpService
-  val typeService = new Type with LoggingHttpService
+  def helloService: Hello
+  def apiDataService: Data
+  def apiBundleService: Bundles
+  def dataDebitService: DataDebit
+  def apiPropertyService: Property
+  def eventsService:Event
+  def locationsService:Location
+  def peopleService: Person
+  def thingsService: Thing
+  def organisationsService: Organisation
+  def userService:Users
+  def typeService: Type
 
   // logs request method, uri and response status at debug level
   def requestMethodAndResponseStatusAsInfo(req: HttpRequest): Any => Option[LogEntry] = {
@@ -80,23 +68,22 @@ trait Api extends HttpService with Cors {
   }
 
   // Concatenate all the handled routes
-  val routes = //logRequestResponse(requestMethodAndResponseStatusAsInfo _) {
-    cors {
-      handleRejections(jsonRejectionHandler) {
-        helloService.routes ~
-          apiDataService.routes ~
-          apiPropertyService.routes ~
-          apiBundleService.routes ~
-          eventsService.routes ~
-          locationsService.routes ~
-          peopleService.routes ~
-          thingsService.routes ~
-          organisationsService.routes ~
-          userService.routes ~
-          typeService.routes ~
-          dataDebitService.routes
-      }
+  def routes = cors {
+    handleRejections(jsonRejectionHandler) {
+      helloService.routes ~
+        apiDataService.routes ~
+        apiPropertyService.routes ~
+        apiBundleService.routes ~
+        eventsService.routes ~
+        locationsService.routes ~
+        peopleService.routes ~
+        thingsService.routes ~
+        organisationsService.routes ~
+        userService.routes ~
+        typeService.routes ~
+        dataDebitService.routes
     }
-//  }
+  }
+
 
 }
