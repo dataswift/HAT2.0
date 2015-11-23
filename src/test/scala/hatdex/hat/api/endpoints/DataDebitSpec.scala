@@ -67,51 +67,51 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
     )
 
     val dataValues = Seq(
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1", 
-        dataFields.find(_.name equals "timestamp").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1",
+        dataFields.find(_.name equals "timestamp").get.id,
         dataRecords.find(_.name equals "kitchen record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 1", 
-        dataFields.find(_.name equals "value").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 1",
+        dataFields.find(_.name equals "value").get.id,
         dataRecords.find(_.name equals "kitchen record 1").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 2", 
-        dataFields.find(_.name equals "timestamp").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 2",
+        dataFields.find(_.name equals "timestamp").get.id,
         dataRecords.find(_.name equals "kitchen record 2").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 2", 
-        dataFields.find(_.name equals "value").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 2",
+        dataFields.find(_.name equals "value").get.id,
         dataRecords.find(_.name equals "kitchen record 2").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 3", 
-        dataFields.find(_.name equals "timestamp").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 3",
+        dataFields.find(_.name equals "timestamp").get.id,
         dataRecords.find(_.name equals "kitchen record 3").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 3", 
-        dataFields.find(_.name equals "value").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 3",
+        dataFields.find(_.name equals "value").get.id,
         dataRecords.find(_.name equals "kitchen record 3").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 1", 
-        dataFields.find(_.name equals "name").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 1",
+        dataFields.find(_.name equals "name").get.id,
         dataRecords.find(_.name equals "event record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 1", 
-        dataFields.find(_.name equals "location").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 1",
+        dataFields.find(_.name equals "location").get.id,
         dataRecords.find(_.name equals "event record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 1", 
-        dataFields.find(_.name equals "startTime").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 1",
+        dataFields.find(_.name equals "startTime").get.id,
         dataRecords.find(_.name equals "event record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 1", 
-        dataFields.find(_.name equals "endTime").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 1",
+        dataFields.find(_.name equals "endTime").get.id,
         dataRecords.find(_.name equals "event record 1").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 2", 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 2",
         dataFields.find(_.name equals "name").get.id, dataRecords.find(_.name equals "event record 2").get.id),
       new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 2",
         dataFields.find(_.name equals "location").get.id, dataRecords.find(_.name equals "event record 2").get.id),
@@ -215,29 +215,29 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
         val dataDebit = HttpRequest(POST, "/propose?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitExample)) ~>
           proposeDataDebitApi ~> check {
           val responseString = responseAs[String]
-          responseString must contain("key")
+          responseString must contain("dataDebitKey")
           responseAs[ApiDataDebit]
         }
 
-        HttpRequest(GET, s"/${dataDebit.key.get}/values?"+ownerAuth) ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
+        HttpRequest(GET, s"/${dataDebit.dataDebitKey.get}/values?"+ownerAuth) ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
           response.status should be equalTo Forbidden
         }
 
         dataDebit
       }
 
-      dataDebit.key must beSome
+      dataDebit.dataDebitKey must beSome
 
       val t = {
         implicit val user:User = ownerUser
-        HttpRequest(PUT, s"/${dataDebit.key.get}/enable?"+ownerAuth) ~> sealRoute(enableDataDebitApi) ~> check {
+        HttpRequest(PUT, s"/${dataDebit.dataDebitKey.get}/enable?"+ownerAuth) ~> sealRoute(enableDataDebitApi) ~> check {
           response.status should be equalTo OK
         }
       }
-      
+
       val result = {
         implicit val user:User = apiUser
-        HttpRequest(GET, s"/${dataDebit.key.get}/values?"+ownerAuth) ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
+        HttpRequest(GET, s"/${dataDebit.dataDebitKey.get}/values?"+ownerAuth) ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
           response.status should be equalTo OK
           responseAs[ApiDataDebitOut]
         }
@@ -246,4 +246,3 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
     }
   }
 }
-

@@ -14,6 +14,8 @@ trait DataService {
 
   val logger: LoggingAdapter
 
+
+
   def getTableValues(tableId: Int)(implicit session: Session): Option[Iterable[ApiDataRecord]] = {
     val valuesQuery = DataValue
     getTableValues(tableId, valuesQuery)
@@ -267,6 +269,35 @@ trait DataService {
     val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name === name).run.headOption
     dbDataTable map { table =>
       ApiDataTable.fromDataTable(table)(None)(None)
+    }
+  }
+
+  // Noggin
+  def findTablesLike(name: String, source: String)(implicit session: Session): Seq[ApiDataTable] = {
+    val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name like "%"+name+"%").run
+    dbDataTable map { table =>
+      ApiDataTable.fromDataTable(table)(None)(None)
+    }
+  }
+
+  // Noggin
+  def findTablesNotLike(name: String, source: String)(implicit session: Session): Seq[ApiDataTable] = {
+    val dbDataTable = DataTable.filter(_.sourceName === source).filterNot(_.name like "%"+name+"%").run
+    dbDataTable map { table =>
+      ApiDataTable.fromDataTable(table)(None)(None)
+    }
+  }
+
+  // Noggin
+  def findValue(recordId: Int, tableName: String, tableSource: String, fieldName: String, fieldValue: String)(implicit session: Session): Option[ApiDataValue] = {
+    val dataValueQuery = DataValue.filter(dataValue => dataValue.recordId === recordId).filter(dataValue => dataValue.value === fieldValue).flatMap(dataValue =>
+        DataField.filter(dataField => dataField.id === dataValue.fieldId).filter(dataField => dataField.name === fieldName).flatMap(dataField =>
+          DataTable.filter(dataTable => dataTable.name === tableName).filter(dataTable => dataTable.sourceName === tableSource).filter(dataTable => dataTable.id === dataField.tableIdFk).map(dataTable => (dataValue.id, dataValue.dateCreated, dataValue.lastUpdated, dataValue.value))
+        )
+    ).run.headOption
+
+    dataValueQuery map { result =>
+      new ApiDataValue(Some(result._1), Some(result._2), Some(result._3), result._4, None, None)
     }
   }
 
