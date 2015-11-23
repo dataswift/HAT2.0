@@ -37,6 +37,7 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
     val helloService = new Hello with LoggingHttpService
     val apiDataService = new Data with LoggingHttpService
     val apiBundleService = new Bundles with LoggingHttpService
+    val apiBundlesContextService = new BundlesContext with LoggingHttpService
     val dataDebitService = new DataDebit with LoggingHttpService
     val apiPropertyService = new Property with LoggingHttpService
     val eventsService = new Event with LoggingHttpService
