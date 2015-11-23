@@ -115,16 +115,28 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
     }
   }
 
-  def findTableApi = path("table" / "search") {
+  def findTableApi = path("table") {
     get {
       (userPassHandler | accessTokenHandler) { implicit user: User =>
         logger.debug("GET /table/search")
-        parameters('name, 'source) { (name: String, source: String) =>
+        parameters('name.?, 'source.?) { (name: Option[String], source: Option[String]) =>
           db.withSession { implicit session =>
-            val table = findTable(name, source)
+            val maybeTable = (name, source) match {
+              case (Some(tableName), Some(tableSource)) =>
+                Some(findTable(tableName, tableSource))
+              case _ =>
+                None
+            }
+
             session.close()
+
             complete {
-              table
+              maybeTable match {
+                case Some(table) =>
+                  table
+                case None =>
+                  (NotFound, ErrorMessage("Table not found", s"Table with name=$name and source=$source was not found"))
+              }
             }
           }
         }
