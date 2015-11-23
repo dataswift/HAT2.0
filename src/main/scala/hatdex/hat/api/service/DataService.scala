@@ -272,6 +272,23 @@ trait DataService {
     }
   }
 
+  // Noggin
+  def findTablesLike(name: String, source: String)(implicit session: Session): Seq[ApiDataTable] = {
+    val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name like "%"+name+"%").run
+    dbDataTable map { table =>
+      ApiDataTable.fromDataTable(table)(None)(None)
+    }
+  }
+
+  // Noggin
+  def findTablesNotLike(name: String, source: String)(implicit session: Session): Seq[ApiDataTable] = {
+    val dbDataTable = DataTable.filter(_.sourceName === source).filterNot(_.name like "%"+name+"%").run
+    dbDataTable map { table =>
+      ApiDataTable.fromDataTable(table)(None)(None)
+    }
+  }
+
+  // Noggin
   def findValue(recordId: Int, tableName: String, tableSource: String, fieldName: String, fieldValue: String)(implicit session: Session): Option[ApiDataValue] = {
     val dataValueQuery = DataValue.filter(dataValue => dataValue.recordId === recordId).filter(dataValue => dataValue.value === fieldValue).flatMap(dataValue =>
         DataField.filter(dataField => dataField.id === dataValue.fieldId).filter(dataField => dataField.name === fieldName).flatMap(dataField =>

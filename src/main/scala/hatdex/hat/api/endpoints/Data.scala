@@ -30,6 +30,8 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
         getFieldValuesApi ~
         getTableApi ~
         findTableApi ~
+        findTablesLikeApi ~
+        findTablesNotLikeApi ~
         getTableValuesApi ~
         getRecordApi ~
         getRecordByNameApi ~
@@ -123,6 +125,40 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
         parameters('name, 'source) { (name: String, source: String) =>
           db.withSession { implicit session =>
             val table = findTable(name, source)
+            session.close()
+            complete {
+              table
+            }
+          }
+        }
+      }
+    }
+  }
+
+  def findTablesLikeApi = path("tables" / "search" / "like") {
+    get {
+      (userPassHandler | accessTokenHandler) { implicit user: User =>
+        logger.debug("GET /table/search/like")
+        parameters('name, 'source) { (name: String, source: String) =>
+          db.withSession { implicit session =>
+            val table = findTablesLike(name, source)
+            session.close()
+            complete {
+              table
+            }
+          }
+        }
+      }
+    }
+  }
+
+  def findTablesNotLikeApi = path("tables" / "search" / "not_like") {
+    get {
+      (userPassHandler | accessTokenHandler) { implicit user: User =>
+        logger.debug("GET /table/search/not_like")
+        parameters('name, 'source) { (name: String, source: String) =>
+          db.withSession { implicit session =>
+            val table = findTablesNotLike(name, source)
             session.close()
             complete {
               table
