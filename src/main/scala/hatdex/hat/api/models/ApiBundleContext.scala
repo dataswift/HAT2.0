@@ -55,13 +55,3 @@ object ApiBundleContext {
     ApiBundleContext(Some(bundle.id), Some(bundle.dateCreated), Some(bundle.lastUpdated), bundle.name, None, None)
   }
 }
-
-case class ApiBundleContextData(
-    id: Int,
-    name: String)
-
-object ApiBundleContextData {
-  def fromDbModel(bundle: BundleContextRow): ApiBundleContextData = {
-    ApiBundleContextData(bundle.id, bundle.name)
-  }
-}
