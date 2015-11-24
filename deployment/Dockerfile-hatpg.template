@@ -23,13 +23,9 @@ ENV POSTGRES_PASSWORD=%DBPASS%
 ENV POSTGRES_USER=%DBUSER%
 ENV POSTGRES_DB=%DBPASS%
 
-#Get HAT files.
+#Get HAT files sql files.
 RUN mkdir /opt/hat
 ADD required /opt/hat
-
-#Create DB user and pass (slightly hackish)
-#RUN  useradd %DBUSER%
-#RUN echo %DBUSER%:%DBPASS% | chpasswd
 
 #This will initialize the database
 ADD docker-deploy-db.sh /docker-entrypoint-initdb.d/
