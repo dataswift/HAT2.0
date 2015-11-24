@@ -12,8 +12,11 @@ mkdir $DOCKER_DEPLOY/required
 
 echo "Copying required files"
 cp $HAT_HOME/deployment/docker-deploy-db.sh $DOCKER_DEPLOY/
+#TODO: remove the lines below, just put the file there directly
 sed -e "s;%DATABASE%;$DATABASE;g" -e "s;%DBUSER%;$DBUSER;g" -e "s;%DBPASS%;$DBPASS;g" -e "s;%SERVERNAME%;hat-postgres-$HAT_OWNER_NAME;g" $HAT_HOME/deployment/database.conf.template > $DOCKER_DEPLOY/required/database.conf
 cp $HAT_HOME/src/sql/* $DOCKER_DEPLOY/required
+cp  $HAT_HOME/deployment/docker-entrypoint.sh $DOCKER_DEPLOY/
+
 
 echo "Setting up HAT access"
 HAT_OWNER='bob@gmail.com'
@@ -26,7 +29,7 @@ HAT_PLATFORM_NAME=${HAT_PLATFORM_NAME:-'hatdex'}
 HAT_PLATFORM_PASSWORD_HASH=${HAT_PLATFORM_PASSWORD_HASH:-'$2a$04$oL2CXTHzB..OekL1z8Vijus3RkHQjSsbkAYOiA5Rj.7.6GA7a4qAq'}
 
 echo "Generating PG Dockerfile"
-cat Dockerfile-hatpg.template | sed -e "s/%DATABASE%/$DATABASE/g"\
+cat Dockerfile-pg.template | sed -e "s/%DATABASE%/$DATABASE/g"\
 	-e "s/%DBUSER%/$DBUSER/g"\
 	-e "s/%DBPASS%/$DBPASS/g"\
 	-e "s/%HAT_OWNER%/$HAT_OWNER/g"\
@@ -54,7 +57,7 @@ if [ ! -f "$HAT_HOME/target/docker/Dockerfile" ]; then
     exit
 fi
 
-echo "Building hat docker image: docker-hat-postgres"
+echo "Building hat docker image:"
 #sbt -sbt-dir $HAT_HOME docker:stage
 cp -r $HAT_HOME/target/docker/stage/opt $DOCKER_DEPLOY/
 #Save current postgres docker image
@@ -67,8 +70,8 @@ cat ../Dockerfile-hat.template >> $DOCKER_DEPLOY/Dockerfile
 
 docker build -t docker-hat .
 
-#docker stop $(docker ps -a -q)
-#docker rm $(docker ps -a -q)
+docker stop $(docker ps -a -q)
+docker rm $(docker ps -a -q)
 
 cd $DOCKER_DEPLOY
 echo "Creating docker-hat run script"
@@ -76,27 +79,14 @@ echo "Creating docker-hat run script"
 echo "docker run -d --name hat-$HAT_OWNER_NAME docker-hat" > $DOCKER_DEPLOY/run-hat.sh
 #sudo chmod +x run-hat.sh
 
-echo "Launching docker-hat-postgres..."
-docker run -d --name hat-postgres-$HAT_OWNER_NAME docker-hat-postgres
+# echo "Launching docker-hat-postgres..."
+# docker run -d --name hat-postgres-$HAT_OWNER_NAME docker-hat-postgres
 
-echo "Launching docker-hat container..."
-docker run -d --name hat-$HAT_OWNER_NAME --link hat-postgres-$HAT_OWNER_NAME -p 3000:8080 docker-hat
-
-echo "The hat-$HAT_OWNER_NAME is linked to:"
-docker inspect -f "{{ .HostConfig.Links }}" hat-$HAT_OWNER_NAME
-
-echo "The hat-$HAT_OWNER_NAME IP is:"
-docker inspect --format '{{ .NetworkSettings.IPAddress }}' hat-$HAT_OWNER_NAME
-
-echo "The hat-postgres-$HAT_OWNER_NAME IP is:"
-pg=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' hat-postgres-$HAT_OWNER_NAME)
-echo $pg
+# echo "Launching docker-hat container..."
+# docker run -d --name hat-$HAT_OWNER_NAME --link hat-postgres-$HAT_OWNER_NAME -p 3000:8080 docker-hat
 
 #Test postgres
 #psql -h 172.17.0.2 -p 5432 -d hat20 -U hat20 --password
-
-echo "Running processes:"
-docker ps
 
 # sleep 60
 
@@ -106,3 +96,47 @@ docker ps
 # PGPASSWORD=$DBPASS psql -h $pg -p 5432 -d $DATABASE -U $DBUSER < $HAT_HOME/src/sql/relationships.sql
 # PGPASSWORD=$DBPASS psql -h $pg -p 5432 -d $DATABASE -U $DBUSER < $HAT_HOME/src/sql/properties.sql
 # PGPASSWORD=$DBPASS psql -h $pg -p 5432 -d $DATABASE -U $DBUSER < $HAT_HOME/src/sql/collections.sql
+
+port=3001
+
+for name in jorge nichola junior; do
+
+  docker run\
+    -e "DATABASE=$name"\
+    -e "DBUSER=$name"\
+    -e "DBPASS=$name"\
+    -e "POSTGRES_PASSWORD=$name"\
+    -e "POSTGRES_USER=$name"\
+    -e "POSTGRES_DB=$name"\
+    -e "HAT_OWNER=$name@gmail.com"\
+    -e "HAT_OWNER_NAME=$name"\
+    -e "HAT_OWNER_PASSWORD=$name"\
+    -d --name hat-postgres-$name docker-hat-postgres
+
+  docker run\
+    -e "DATABASE=$name"\
+    -e "DBUSER=$name"\
+    -e "DBPASS=$name"\
+    -e "POSTGRES_PASSWORD=$name"\
+    -e "POSTGRES_USER=$name"\
+    -e "POSTGRES_DB=$name"\
+    -e "HAT_OWNER=$name@gmail.com"\
+    -e "HAT_OWNER_NAME=$name"\
+    -e "HAT_OWNER_PASSWORD=$name"\
+    -d --name hat-$name --link hat-postgres-$name -p $port:8080 docker-hat
+
+	echo "The hat-$name is linked to:"
+	docker inspect -f "{{ .HostConfig.Links }}" hat-$name
+
+	echo "The hat-$name IP is:"
+	docker inspect --format '{{ .NetworkSettings.IPAddress }}' hat-$name
+
+	#echo "The hat-postgres-$name IP is:"
+	#pg=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' hat-postgres-$name)
+	#echo $pg
+
+  port=$((port+1))
+done 
+
+echo "Running processes:"
+docker ps
