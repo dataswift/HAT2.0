@@ -2,9 +2,13 @@
 
 DATABASE=${DATABASE:-"hat20"}
 DBUSER=${DBUSER:-$DATABASE}
-DBPASS=${DBPASS:-"h20"}
+DBPASS=${DBPASS:-"hat20"}
 #In case we are not executing the deploy from the repo (e.g., in container)
 HAT_HOME=${HAT_HOME:-".."}
+
+export POSTGRES_PASSWORD=$DBPASS
+export POSTGRES_USER=$DBUSER
+export POSTGRES_DB=$DATABASE
 
 #Useful when in docker container mode
 export PGUSER=postgres
