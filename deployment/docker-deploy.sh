@@ -12,9 +12,7 @@ mkdir $DOCKER_DEPLOY/required
 
 echo "Copying required files"
 cp $HAT_HOME/deployment/docker-deploy-db.sh $DOCKER_DEPLOY/
-cp $HAT_HOME/src/main/resources/database.conf $DOCKER_DEPLOY/required
-cp $HAT_HOME/deployment/database.conf.template $DOCKER_DEPLOY/required
-cp $HAT_HOME/src/sql/boilerplate/* $DOCKER_DEPLOY/required
+sed -e "s;%DATABASE%;$DATABASE;g" -e "s;%DBUSER%;$DBUSER;g" -e "s;%DBPASS%;$DBPASS;g" -e "s;%SERVERNAME%;hat-postgres-$HAT_OWNER_NAME;g" $HAT_HOME/deployment/database.conf.template > $DOCKER_DEPLOY/required/database.conf
 cp $HAT_HOME/src/sql/* $DOCKER_DEPLOY/required
 
 echo "Setting up HAT access"
@@ -27,7 +25,7 @@ HAT_PLATFORM_ID=${HAT_PLATFORM_ID:-47dffdfd-55e8-4575-836c-151e30bb5a50}
 HAT_PLATFORM_NAME=${HAT_PLATFORM_NAME:-'hatdex'}
 HAT_PLATFORM_PASSWORD_HASH=${HAT_PLATFORM_PASSWORD_HASH:-'$2a$04$oL2CXTHzB..OekL1z8Vijus3RkHQjSsbkAYOiA5Rj.7.6GA7a4qAq'}
 
-echo "Generating Dockerfile"
+echo "Generating PG Dockerfile"
 cat Dockerfile-hatpg.template | sed -e "s/%DATABASE%/$DATABASE/g"\
 	-e "s/%DBUSER%/$DBUSER/g"\
 	-e "s/%DBPASS%/$DBPASS/g"\
@@ -59,12 +57,18 @@ fi
 echo "Building hat docker image: docker-hat-postgres"
 #sbt -sbt-dir $HAT_HOME docker:stage
 cp -r $HAT_HOME/target/docker/stage/opt $DOCKER_DEPLOY/
+#Save current postgres docker image
 mv $DOCKER_DEPLOY/Dockerfile $DOCKER_DEPLOY/Dockerfile-hatpg
-cp $HAT_HOME/target/docker/stage/Dockerfile $DOCKER_DEPLOY/
+
+touch $DOCKER_DEPLOY/Dockerfile
+echo "#Do not modify this file. Use Dockerfile-hat.template instead." > $DOCKER_DEPLOY/Dockerfile
+cat ../Dockerfile-hat.template >> $DOCKER_DEPLOY/Dockerfile
+#cp $HAT_HOME/target/docker/stage/Dockerfile $DOCKER_DEPLOY/
+
 docker build -t docker-hat .
 
-docker stop $(docker ps -a -q)
-docker rm $(docker ps -a -q)
+#docker stop $(docker ps -a -q)
+#docker rm $(docker ps -a -q)
 
 cd $DOCKER_DEPLOY
 echo "Creating docker-hat run script"
@@ -76,10 +80,29 @@ echo "Launching docker-hat-postgres..."
 docker run -d --name hat-postgres-$HAT_OWNER_NAME docker-hat-postgres
 
 echo "Launching docker-hat container..."
-docker run -d --name hat-$HAT_OWNER_NAME --link hat-postgres-$HAT_OWNER_NAME docker-hat
+docker run -d --name hat-$HAT_OWNER_NAME --link hat-postgres-$HAT_OWNER_NAME -p 3000:8080 docker-hat
 
 echo "The hat-$HAT_OWNER_NAME is linked to:"
 docker inspect -f "{{ .HostConfig.Links }}" hat-$HAT_OWNER_NAME
 
+echo "The hat-$HAT_OWNER_NAME IP is:"
+docker inspect --format '{{ .NetworkSettings.IPAddress }}' hat-$HAT_OWNER_NAME
+
+echo "The hat-postgres-$HAT_OWNER_NAME IP is:"
+pg=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' hat-postgres-$HAT_OWNER_NAME)
+echo $pg
+
+#Test postgres
+#psql -h 172.17.0.2 -p 5432 -d hat20 -U hat20 --password
+
 echo "Running processes:"
 docker ps
+
+# sleep 60
+
+# echo "Boilerplate setup"
+# echo "PGPASSWORD=$DBPASS psql -h $pg -p 5432 -d $DATABASE -U $DBUSER"
+# PGPASSWORD=$DBPASS psql -h $pg -p 5432 -d $DATABASE -U $DBUSER < $HAT_HOME/src/sql/data.sql
+# PGPASSWORD=$DBPASS psql -h $pg -p 5432 -d $DATABASE -U $DBUSER < $HAT_HOME/src/sql/relationships.sql
+# PGPASSWORD=$DBPASS psql -h $pg -p 5432 -d $DATABASE -U $DBUSER < $HAT_HOME/src/sql/properties.sql
+# PGPASSWORD=$DBPASS psql -h $pg -p 5432 -d $DATABASE -U $DBUSER < $HAT_HOME/src/sql/collections.sql

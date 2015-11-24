@@ -4,6 +4,7 @@ devdb = {
     databaseName = "%DATABASE%"
     user = "%DBUSER%"
     password = "%DBPASS%"
+    serverName = "%SERVERNAME%"
   }
   numThreads = 3
 }
