@@ -11,8 +11,6 @@ HAT_HOME=${HAT_HOME:-".."}
 export POSTGRES_PASSWORD=$DBPASS
 export POSTGRES_USER=$DBUSER
 export POSTGRES_DB=$DATABASE
-
-#Useful when in docker container mode
 export PGUSER=postgres
 
 # Create the DB
@@ -35,10 +33,10 @@ psql $DATABASE -U$DBUSER < $HAT_HOME/HAT-V2.0.sql
 
 # Setup HAT access
 echo "Setting up HAT access"
-HAT_OWNER='bob@gmail.com'
-HAT_OWNER_ID=5974832d-2dc1-4f49-adf1-c6d8bc790274
-HAT_OWNER_NAME='Bob'
-HAT_OWNER_PASSWORD='pa55w0rd'
+HAT_OWNER=${HAT_OWNER:-'bob@gmail.com'}
+HAT_OWNER_ID=${HAT_OWNER_ID:-5974832d-2dc1-4f49-adf1-c6d8bc790274}
+HAT_OWNER_NAME=${HAT_OWNER_NAME:-'Bob'}
+HAT_OWNER_PASSWORD=${HAT_OWNER_PASSWORD:-'pa55w0rd'}
 
 HAT_PLATFORM=${HAT_PLATFORM:-'hatdex.org'}
 HAT_PLATFORM_ID=${HAT_PLATFORM_ID:-47dffdfd-55e8-4575-836c-151e30bb5a50}

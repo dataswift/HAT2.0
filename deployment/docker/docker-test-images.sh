@@ -29,11 +29,12 @@ for name in jorge nichola junior; do
     -e "HAT_OWNER_PASSWORD=$name"\
     -d --name hat-$name --link hat-postgres-$name -p $port:8080 4knahs/hat
 
-   echo "The hat-$name is linked to:"
+   echo -n "The hat-$name is linked to:"
    docker inspect -f "{{ .HostConfig.Links }}" hat-$name
 
-   echo "The hat-$name IP is:"
-   docker inspect --format '{{ .NetworkSettings.IPAddress }}' hat-$name
+   echo -n "The hat-$name IP is:"
+   ip=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' hat-$name)
+   echo "$ip:$port"
    #echo "The hat-postgres-$name IP is:"
    #pg=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' hat-postgres-$name)
    #echo $pg
@@ -43,5 +44,3 @@ done
 
 echo "Running processes:"
 docker ps
-
-docker inspect --format '{{ .NetworkSettings.IPAddress }}' $(docker ps -a -q)

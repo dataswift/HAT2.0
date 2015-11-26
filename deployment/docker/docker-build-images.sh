@@ -47,7 +47,7 @@ cat $DOCKER/Dockerfile-pg.template | sed -e "s/%DATABASE%/$DATABASE/g"\
 cd $DOCKER_DEPLOY
 
 echo "Building db docker image: docker-hat-postgres"
-docker build -t docker-hat-postgres .
+docker build -t 4knahs/hat-postgres .
 
 echo "Creating docker-hat-postgres run script"
 echo "docker run -d --name hat-postgres-$HAT_OWNER_NAME docker-hat-postgres" > $DOCKER_DEPLOY/run-db.sh
@@ -70,7 +70,7 @@ echo "#Do not modify this file. Use Dockerfile-hat.template instead." > $DOCKER_
 cat $DOCKER/Dockerfile-hat.template >> $DOCKER_DEPLOY/Dockerfile
 #cp $HAT_HOME/target/docker/stage/Dockerfile $DOCKER_DEPLOY/
 
-docker build -t docker-hat .
+docker build -t 4knahs/hat .
 
 # #Test postgres
 # #psql -h 172.17.0.2 -p 5432 -d hat20 -U hat20 --password
