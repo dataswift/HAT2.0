@@ -3,7 +3,7 @@
 DATABASE=${DATABASE:-"hat20"}
 DBUSER=${DBUSER:-$DATABASE}
 DBPASS=${DBPASS:-""}
-HAT_HOME=${HAT_HOME:-".."}
+HAT_HOME=${HAT_HOME:-"."}
 
 export PGUSER=postgres
 
