@@ -56,7 +56,6 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
   def getApiValues = path(IntNumber / "values") { (entityId: Int) =>
     get {
       userPassHandler { implicit user: User =>
-        println("Getting values for user")
         db.withSession { implicit session =>
           implicit val getValues: Boolean = true
           val entity = getEntity(entityId)
@@ -246,7 +245,7 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
         db.withSession { implicit session: Session =>
           complete {
             implicit val getValues: Boolean = false
-            val properties = getPropertiesStatic(entityId)
+            val properties = getPropertiesStatic(entityId, None)
             session.close()
             properties
           }
@@ -260,7 +259,7 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
         db.withSession { implicit session: Session =>
           complete {
             implicit val getValues: Boolean = false
-            val properties = getPropertiesDynamic(entityId)
+            val properties = getPropertiesDynamic(entityId, None)
             session.close()
             properties
           }
@@ -274,7 +273,7 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
         db.withSession { implicit session: Session =>
           complete {
             implicit val getValues: Boolean = true
-            val properties = getPropertiesStatic(entityId)
+            val properties = getPropertiesStatic(entityId, None)
             session.close()
             properties
           }
@@ -288,7 +287,7 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
         db.withSession { implicit session: Session =>
           complete {
             implicit val getValues: Boolean = true
-            val properties = getPropertiesDynamic(entityId)
+            val properties = getPropertiesDynamic(entityId, None)
             session.close()
             properties
           }
