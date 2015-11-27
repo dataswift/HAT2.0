@@ -669,7 +669,7 @@ ON public.events_eventlocationcrossref USING BTREE
 ( location_id );
 
 CREATE TABLE public.entity (
-  id              INTEGER      NOT NULL DEFAULT nextval('public.entity_id_seq'),
+  id              INTEGER      NOT NULL,
   date_created    TIMESTAMP    NOT NULL,
   last_updated    TIMESTAMP    NOT NULL,
   name            VARCHAR(100) NOT NULL,

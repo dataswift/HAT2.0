@@ -40,6 +40,30 @@ object BundleContextExamples {
       |}
     """.stripMargin
 
+  val entityBundlePerson =
+    """
+      |{
+      |  "name": "emptyBundleTest6-1",
+      |  "entities": [
+      |   {
+      |     "entityName": "HATperson"
+      |   }
+      |  ]
+      |}
+    """.stripMargin
+
+  val entityBundleAllPeople =
+    """
+      |{
+      |  "name": "emptyBundleTest7-1",
+      |  "entities": [
+      |   {
+      |     "entityKind": "person"
+      |   }
+      |  ]
+      |}
+    """.stripMargin
+
   val entitiesBundleKindName =
     """
       |{

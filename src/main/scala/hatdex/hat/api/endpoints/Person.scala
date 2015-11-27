@@ -47,12 +47,16 @@ trait Person extends PeopleService with AbstractEntity {
       db.withSession { implicit session =>
         val personspersonRow = new PeoplePersonRow(0, LocalDateTime.now(), LocalDateTime.now(), person.name, person.personId)
         val result = Try((PeoplePerson returning PeoplePerson) += personspersonRow)
+        val entity = result map { createdPerson =>
+          val newEntity = new EntityRow(createdPerson.id, LocalDateTime.now(), LocalDateTime.now(), createdPerson.name, "person", None, None, None, None, Some(createdPerson.id))
+          val entityCreated = Try(Entity += newEntity)
+          logger.debug("Creating new entity for person:" + entityCreated)
+        }
         session.close()
+
         complete {
           result match {
             case Success(createdPerson) =>
-              val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdPerson.name, "person", None, None, None, None, Some(createdPerson.id))
-              Try(Entity += newEntity)
               (Created, ApiPerson.fromDbModel(createdPerson))
             case Failure(e) =>
               (BadRequest, e.getMessage)

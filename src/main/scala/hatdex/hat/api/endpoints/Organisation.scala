@@ -44,12 +44,15 @@ trait Organisation extends OrganisationsService with AbstractEntity {
       db.withSession { implicit session =>
         val organisationsorganisationRow = new OrganisationsOrganisationRow(0, LocalDateTime.now(), LocalDateTime.now(), organisation.name)
         val result = Try((OrganisationsOrganisation returning OrganisationsOrganisation) += organisationsorganisationRow)
+        val entity = result map { createdOrganisation =>
+          val newEntity = new EntityRow(createdOrganisation.id, LocalDateTime.now(), LocalDateTime.now(), createdOrganisation.name, "organisation", None, None, None, Some(createdOrganisation.id), None)
+          val entityCreated = Try(Entity += newEntity)
+          logger.debug("Creating new entity for organisation:" + entityCreated)
+        }
 
         complete {
           result match {
             case Success(createdOrganisation) =>
-              val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdOrganisation.name, "organisation", None, None, None, Some(createdOrganisation.id), None)
-              Try(Entity += newEntity)
               (Created, ApiOrganisation.fromDbModel(createdOrganisation))
             case Failure(e) =>
               (BadRequest, e.getMessage)

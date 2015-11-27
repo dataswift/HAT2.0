@@ -3,7 +3,7 @@ package hatdex.hat.api.endpoints
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.api.endpoints.jsonExamples.{BundleContextExamples, BundleExamples}
+import hatdex.hat.api.endpoints.jsonExamples.{EntityExamples, BundleContextExamples, BundleExamples}
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
@@ -11,7 +11,7 @@ import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
-import org.specs2.specification.BeforeAfterAll
+import org.specs2.specification.{Scope, BeforeAfterAll}
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
@@ -95,9 +95,9 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         check {
           response.status should be equalTo Created
           val resp = responseAs[String]
-          resp must contain ("emptyBundleTest1")
-          resp must contain ("emptyBundleTest2")
-          resp must contain ("emptyBundleTest3")
+          resp must contain("emptyBundleTest1")
+          resp must contain("emptyBundleTest2")
+          resp must contain("emptyBundleTest3")
           responseAs[ApiBundleContext]
         }
 
@@ -110,9 +110,9 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         check {
           response.status should be equalTo OK
           val resp = responseAs[String]
-          resp must contain ("emptyBundleTest1")
-          resp must contain ("emptyBundleTest2")
-          resp must contain ("emptyBundleTest3")
+          resp must contain("emptyBundleTest1")
+          resp must contain("emptyBundleTest2")
+          resp must contain("emptyBundleTest3")
           responseAs[ApiBundleContext].id must beSome
         }
 
@@ -127,8 +127,8 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         check {
           response.status should be equalTo Created
           val resp = responseAs[String]
-          resp must contain ("emptyBundleTest2-1")
-          resp must contain ("sunrise")
+          resp must contain("emptyBundleTest2-1")
+          resp must contain("sunrise")
           responseAs[ApiBundleContext]
         }
 
@@ -141,8 +141,8 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         check {
           response.status should be equalTo OK
           val resp = responseAs[String]
-          resp must contain ("emptyBundleTest2-1")
-          resp must contain ("sunrise")
+          resp must contain("emptyBundleTest2-1")
+          resp must contain("sunrise")
           responseAs[ApiBundleContext].id must beSome
         }
 
@@ -154,8 +154,8 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         check {
           response.status should be equalTo Created
           val resp = responseAs[String]
-          resp must contain ("emptyBundleTest3-1")
-          resp must contain ("person")
+          resp must contain("emptyBundleTest3-1")
+          resp must contain("person")
           responseAs[ApiBundleContext]
         }
 
@@ -168,8 +168,8 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         check {
           response.status should be equalTo OK
           val resp = responseAs[String]
-          resp must contain ("emptyBundleTest3-1")
-          resp must contain ("person")
+          resp must contain("emptyBundleTest3-1")
+          resp must contain("person")
           responseAs[ApiBundleContext].id must beSome
         }
 
@@ -181,9 +181,9 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         check {
           response.status should be equalTo Created
           val resp = responseAs[String]
-          resp must contain ("emptyBundleTest4-1")
-          resp must contain ("person")
-          resp must contain ("sunrise")
+          resp must contain("emptyBundleTest4-1")
+          resp must contain("person")
+          resp must contain("sunrise")
           responseAs[ApiBundleContext]
         }
 
@@ -196,9 +196,9 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         check {
           response.status should be equalTo OK
           val resp = responseAs[String]
-          resp must contain ("emptyBundleTest4-1")
-          resp must contain ("person")
-          resp must contain ("sunrise")
+          resp must contain("emptyBundleTest4-1")
+          resp must contain("person")
+          resp must contain("sunrise")
           responseAs[ApiBundleContext].id must beSome
         }
     }
@@ -212,12 +212,12 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         check {
           response.status should be equalTo Created
           val resp = responseAs[String]
-          resp must contain ("emptyBundleTest5-1")
-          resp must contain ("person")
-          resp must contain ("dynamic")
-          resp must contain ("BodyWeight")
-          resp must contain ("QuantitativeValue")
-          resp must contain ("kilograms")
+          resp must contain("emptyBundleTest5-1")
+          resp must contain("person")
+          resp must contain("dynamic")
+          resp must contain("BodyWeight")
+          resp must contain("QuantitativeValue")
+          resp must contain("kilograms")
           responseAs[ApiBundleContext]
         }
 
@@ -230,13 +230,123 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         check {
           response.status should be equalTo OK
           val resp = responseAs[String]
-          resp must contain ("emptyBundleTest5-1")
-          resp must contain ("person")
-          resp must contain ("dynamic")
-          resp must contain ("BodyWeight")
-          resp must contain ("QuantitativeValue")
-          resp must contain ("kilograms")
+          resp must contain("emptyBundleTest5-1")
+          resp must contain("person")
+          resp must contain("dynamic")
+          resp must contain("BodyWeight")
+          resp must contain("QuantitativeValue")
+          resp must contain("kilograms")
           responseAs[ApiBundleContext].id must beSome
+        }
+    }
+
+    object Context {
+      val propertySpec = new PropertySpec()
+      val property = propertySpec.createWeightProperty
+      val dataSpec = new DataSpec()
+      dataSpec.createBasicTables
+      val populatedData = dataSpec.populateDataReusable
+
+      val personSpec = new PersonSpec()
+
+      val newPerson = personSpec.createNewPerson
+      newPerson.id must beSome
+
+      val dataField = populatedData match {
+        case (dataTable, dataField, record) =>
+          dataField
+      }
+      val dynamicPropertyLink = ApiPropertyRelationshipDynamic(
+        None, property, None, None, "test property", dataField)
+
+      val propertyLinkId = HttpRequest(
+        POST, s"/person/${newPerson.id.get}/property/dynamic/${property.id.get}" + appendParams(parameters),
+        entity = HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)
+      ) ~>
+        sealRoute(personSpec.routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo Created
+          }
+          responseAs[ApiGenericId]
+        }
+
+      val personValues = HttpRequest(GET, s"/person/${newPerson.id.get}/values" + appendParams(parameters)) ~>
+        sealRoute(personSpec.routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo OK
+            responseAs[String] must contain("testValue1")
+            responseAs[String] must contain("testValue2-1")
+            responseAs[String] must not contain ("testValue3")
+          }
+        }
+    }
+
+    class Context extends Scope {
+      val property = Context.property
+      val populatedData = Context.populatedData
+    }
+
+    "Retrieve entity-connected data without property filtering for a named entity" in new Context {
+      val bundle = HttpRequest(POST,
+        "/bundles/context" + appendParams(parameters),
+        entity = HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundlePerson)
+      ) ~>
+        routes ~>
+        check {
+          response.status should be equalTo Created
+          val resp = responseAs[String]
+          resp must contain("emptyBundleTest6-1")
+          resp must contain("HATperson")
+          responseAs[ApiBundleContext]
+        }
+
+      bundle.id must beSome
+
+      HttpRequest(GET,
+        s"/bundles/context/${bundle.id.get}/values" + appendParams(parameters)
+      ) ~>
+        routes ~>
+        check {
+          response.status should be equalTo OK
+          val resp = responseAs[String]
+          responseAs[Seq[ApiEntity]] must not have size (0)
+          resp must contain("HATperson")
+          resp must contain("testValue1")
+          resp must contain("testValue2-1")
+          resp must not contain ("testValue3")
+        }
+    }
+
+    "Retrieve entity-connected data without property filtering for all entities of a kind" in new Context {
+      val bundle = HttpRequest(POST,
+        "/bundles/context" + appendParams(parameters),
+        entity = HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundleAllPeople)
+      ) ~>
+        routes ~>
+        check {
+          response.status should be equalTo Created
+          val resp = responseAs[String]
+          resp must contain("emptyBundleTest7-1")
+          resp must contain("person")
+          responseAs[ApiBundleContext]
+        }
+
+      bundle.id must beSome
+
+      HttpRequest(GET,
+        s"/bundles/context/${bundle.id.get}/values" + appendParams(parameters)
+      ) ~>
+        routes ~>
+        check {
+          response.status should be equalTo OK
+          val resp = responseAs[String]
+          responseAs[Seq[ApiEntity]] must not have size (0)
+          resp must contain("HATperson")
+          resp must contain("testValue1")
+          resp must contain("testValue2-1")
+          resp must not contain ("testValue3")
         }
     }
   }

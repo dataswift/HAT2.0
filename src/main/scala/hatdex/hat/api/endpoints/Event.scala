@@ -50,12 +50,15 @@ trait Event extends EventsService with AbstractEntity {
       db.withSession { implicit session =>
         val eventseventRow = new EventsEventRow(0, LocalDateTime.now(), LocalDateTime.now(), event.name)
         val result = Try((EventsEvent returning EventsEvent) += eventseventRow)
+        val entity = result map { createdEvent =>
+          val newEntity = new EntityRow(createdEvent.id, LocalDateTime.now(), LocalDateTime.now(), createdEvent.name, "event", None, None, Some(createdEvent.id), None, None)
+          val entityCreated = Try(Entity += newEntity)
+          logger.debug("Creating new entity for event:" + entityCreated)
+        }
 
         complete {
           result match {
             case Success(createdEvent) =>
-              val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdEvent.name, "event", None, None, Some(createdEvent.id), None, None)
-              Try(Entity += newEntity)
               (Created, ApiEvent.fromDbModel(createdEvent))
             case Failure(e) =>
               (BadRequest, e.getMessage)
