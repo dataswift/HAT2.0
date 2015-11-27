@@ -11,8 +11,11 @@ import org.joda.time.LocalDateTime
 
 import scala.util.Try
 
-trait DataDebitService extends BundleService with BundleContextService {
+trait DataDebitService {
   val logger: LoggingAdapter
+
+  val bundlesService: BundleService
+  val bundleContextService: BundleContextService
 
   def storeContextlessDataDebit(debit: ApiDataDebit, bundle: ApiBundleContextless)
                                (implicit session: Session, user: User): Try[ApiDataDebit] = {
@@ -74,7 +77,7 @@ trait DataDebitService extends BundleService with BundleContextService {
   }
 
   def retrieveDataDebiValues(debit: DataDebitRow, bundleId: Int)(implicit session: Session): ApiDataDebitOut = {
-    val bundleValues = getBundleContextlessValues(bundleId)
+    val bundleValues = bundlesService.getBundleContextlessValues(bundleId)
     ApiDataDebitOut.fromDbModel(debit, bundleValues, None)
   }
 

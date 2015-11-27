@@ -16,6 +16,12 @@ trait BundleContextService {
 
   val logger: LoggingAdapter
 
+  def eventsService: EventsService
+  def peopleService: PeopleService
+  def thingsService: ThingsService
+  def locationsService: LocationsService
+  def organisationsService: OrganisationsService
+
   /*
    * Stores bundle table provided from the incoming API call
    */
@@ -31,15 +37,22 @@ trait BundleContextService {
         Utils.flatten(entitiesMaybeInserted)
       }
 
-      val entities = Utils.reverseOptionTry(entitiesInserted)
+      logger.debug("Inserted entity selectors " + entitiesInserted + " for " + bundle)
 
+      val entities = Utils.reverseOptionTry(entitiesInserted)
+      logger.debug("For stored bundle " + bundle)
       val bundlesInserted = bundleContext.bundles.map { bundles =>
+        logger.debug("Handle subbundles " + bundles)
         val maybeSubBundles = Utils.flatten(bundles.map(storeBundleContext))
+        logger.debug("Inserted subbundles " + maybeSubBundles)
 
         maybeSubBundles map { subBundles =>
           subBundles map { b =>
+            logger.debug("Linking " + b)
             val relRow = BundleContextToBundleCrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), bundle.id, b.id.getOrElse(0))
-            BundleContextToBundleCrossref += relRow
+            val inserted = Try(BundleContextToBundleCrossref += relRow)
+            logger.debug("Linked " + inserted)
+            inserted
           }
         }
 
@@ -65,45 +78,49 @@ trait BundleContextService {
     val bundles = getBundleList(bundleContextId)
 
     logger.debug("Constructing a tree for all bundles: " + bundles.toString)
-    buildBundleTree(bundles.find(_._1.id.contains(bundleContextId)).map(_._1), bundles)
+    val result = buildBundleTree(bundles.find(_._1.id.contains(bundleContextId)).map(_._1), bundles)
+    logger.debug("Full bundle tree: " + result + " -- " + bundles.find(_._1.id.contains(bundleContextId)) + " for " + bundleContextId)
+    result
   }
 
   protected def getBundleContextData(bundleContextId: Int)(implicit session: Session): Seq[ApiEntity] = {
-//    val bundles = getBundleList(bundleContextId).map(_._1)
-//
-//    val results = bundles map { bundle =>
-//      bundle.entities map { entities =>
-//        entities map { entity =>
-//          val matchingEntity = (entity.entityId, entity.entityKind, entity.entityName) match {
-//            case (Some(entityId), _, _) =>
-//              Entity.filter(_.id == entityId)
-//
-//            case (None, Some(entityKind), Some(entityName)) =>
-//              Entity.filter(_.kind == entityKind).filter(_.name == entityName)
-//          }
-//
-//          val joined = matchingEntity.joinLeft(EventsEvent).on(_.id === _.id)
-//            .joinLeft(PeoplePerson).on(_._1.id === _.id)
-//            .joinLeft(ThingsThing).on(_._1._1.id === _.id)
-//            .joinLeft(LocationsLocation).on(_._1._1._1.id === _.id)
-//            .joinLeft(OrganisationsOrganisation).on(_._1._1._1._1.id === _.id)
-//            .take(1).run.headOption
-//          joined map {
-//            case (((((abstractEntity, event), person), thing), location), organisation) =>
-//              (abstractEntity, event, person, thing, location, organisation)
-//          }
-//
-//          entity.properties map { properties =>
-//            properties map { property =>
-//              property.
-//
-//            }
-//          }
-//        }
-//      }
-//    }
-//
-//    results
+    val bundles = getBundleList(bundleContextId).map(_._1)
+    val results = bundles map { bundle =>
+      bundle.entities map { entities =>
+        val allEntities = entities flatMap { entitySelection =>
+          val matchingEntity = (entitySelection.entityId, entitySelection.entityKind, entitySelection.entityName) match {
+            case (Some(entityId), _, _) =>
+              Entity.filter(_.id === entityId)
+            case (None, Some(kind), Some(entityName)) =>
+              Entity.filter(_.kind === kind).filter(_.name === entityName)
+            case _ =>
+              Entity.filter(_.id === 0)
+          }
+          val maybeStoredEntity = matchingEntity.take(1).run.headOption
+          implicit val getValues = true
+          val entityValues = maybeStoredEntity flatMap { storedEntity =>
+            storedEntity.kind match {
+              case "event" =>
+                Some(ApiEntity("event", eventsService.getEvent(storedEntity.id), None, None, None, None))
+              case "person" =>
+                Some(ApiEntity("person", None, peopleService.getPerson(storedEntity.id), None, None, None))
+              case "thing" =>
+                Some(ApiEntity("thing", None, None, None, thingsService.getThing(storedEntity.id), None))
+              case "location" =>
+                Some(ApiEntity("location", None, None, locationsService.getLocation(storedEntity.id), None, None))
+              case "organisation" =>
+                Some(ApiEntity("organisation", None, None, None, None, organisationsService.getOrganisation(storedEntity.id)))
+              case _ =>
+                None
+            }
+          }
+          entityValues
+        }
+        allEntities
+      }
+    }
+
+    results.flatten.flatten
   }
 
   def retrieveDataDebitContextualValues(debit: DataDebitRow, bundleId: Int)(implicit session: Session): Seq[ApiEntity] = {
@@ -154,8 +171,8 @@ trait BundleContextService {
 
     val entityQueries = connectedBundles map { bundle =>
       for {
-        e <- BundleContextEntitySelection.filter(_.bundleContextId === bundle._1.id)
-        p <- BundleContextPropertySelection.filter(_.bundleContextEntitySelectionId === e.id)
+        (e, p) <- BundleContextEntitySelection.filter(_.bundleContextId === bundle._1.id) joinLeft BundleContextPropertySelection
+
       } yield (e, p)
     }
 
@@ -170,9 +187,9 @@ trait BundleContextService {
         val retrievedEntities = bundleEntityProperties.groupBy(_._1)
           .map { case (entitySelection, propertySelections) =>
             val apiPropertySelections = propertySelections.map(_._2)
-              .map(ApiBundleContextPropertySelection.fromDbModel)
+              .flatMap(x => x.map(ApiBundleContextPropertySelection.fromDbModel))
             ApiBundleContextEntitySelection.fromDbModel(entitySelection)
-              .copy(properties = Some(apiPropertySelections))
+              .copy(properties = Utils.seqOption(apiPropertySelections))
           }
 
         (bundleId, retrievedEntities)
@@ -198,7 +215,7 @@ trait BundleContextService {
           SELECT b.id, b.date_created, b.last_updated, b.name, b2b.bundle_parent FROM bundle_context b
        	  LEFT JOIN bundle_context_to_bundle_crossref b2b
        	    ON b.id = b2b.bundle_child
-           WHERE b.id = 1
+           WHERE b.id = ${bundleContextId}
           UNION ALL
             SELECT b.id, b.date_created, b.last_updated, b.name, b2b.bundle_parent
             FROM recursive_bundle_context r_b, bundle_context b
@@ -212,6 +229,7 @@ trait BundleContextService {
 
   private def buildBundleTree(rootBundle: Option[ApiBundleContext], bundles: Iterable[(ApiBundleContext, Int)]): Option[ApiBundleContext]= {
     rootBundle map { bundle =>
+      logger.debug("Building recursively for " + bundle)
       val childBundles = bundles.filter(x => bundle.id.contains(x._2))
       val assembledChildBundles = childBundles flatMap { cBundle =>
         buildBundleTree(Some(cBundle._1), bundles)

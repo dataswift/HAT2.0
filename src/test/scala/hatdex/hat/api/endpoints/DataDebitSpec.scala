@@ -4,7 +4,8 @@ import java.util.UUID
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.api.authentication.HatAuthTestHandler
+import hatdex.hat.api.service._
+import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.api.endpoints.jsonExamples.DataDebitExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
@@ -32,6 +33,19 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
   val apiUser:User = User(UUID.randomUUID(), "alice@gmail.com", Some(BCrypt.hashpw("dr0w55ap", BCrypt.gensalt())), "Test User", "dataDebit")
   val ownerUser: User = User(UUID.randomUUID, "bob@gmail.com", Some(BCrypt.hashpw("pa55w0rd", BCrypt.gensalt())), "Test User", "owner")
 
+  trait LoggingHttpService {
+    def actorRefFactory = system
+    val logger = system.log
+  }
+
+  val bundlesService = new Bundles with LoggingHttpService
+  val bundleContextService = new BundlesContext with LoggingHttpService {
+    val eventsService = new Event with LoggingHttpService
+    val locationsService = new Location with LoggingHttpService
+    val peopleService = new Person with LoggingHttpService
+    val thingsService = new Thing with LoggingHttpService
+    val organisationsService = new Organisation with LoggingHttpService
+  }
   import JsonProtocol._
 
   val ownerAuth = "username=bob@gmail.com&password=pa55w0rd"

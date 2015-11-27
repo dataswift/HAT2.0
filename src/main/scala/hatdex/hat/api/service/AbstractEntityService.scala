@@ -30,7 +30,7 @@ trait AbstractEntityService {
   protected def createLinkEvent(entityId: Int, eventId: Int, relationshipType: String, recordId: Int)
                                (implicit session: Session): Try[Int]
 
-  protected def getEvent(eventID: Int)(implicit session: Session, getValues: Boolean): Option[ApiEvent] = {
+  protected[api] def getEvent(eventID: Int)(implicit session: Session, getValues: Boolean): Option[ApiEvent] = {
     var event = EventsEvent.filter(_.id === eventID).run.headOption
     logger.debug(s"For ${entityKind} get Event ${eventID}")
     event.map { e =>
@@ -48,7 +48,7 @@ trait AbstractEntityService {
     }
   }
 
-  protected def getLocation(locationID: Int)(implicit session: Session, getValues: Boolean): Option[ApiLocation] = {
+  protected[api] def getLocation(locationID: Int)(implicit session: Session, getValues: Boolean): Option[ApiLocation] = {
     var location = LocationsLocation.filter(_.id === locationID).run.headOption
     logger.debug(s"For ${entityKind} get Location ${locationID}")
     location.map { l =>
@@ -64,7 +64,7 @@ trait AbstractEntityService {
     }
   }
 
-  protected def getOrganisation(organisationId: Int)(implicit session: Session, getValues: Boolean): Option[ApiOrganisation] = {
+  protected[api] def getOrganisation(organisationId: Int)(implicit session: Session, getValues: Boolean): Option[ApiOrganisation] = {
     var organisation = OrganisationsOrganisation.filter(_.id === organisationId).run.headOption
     logger.debug(s"For ${entityKind} get Organisation ${organisationId}")
     organisation.map { e =>
@@ -80,7 +80,7 @@ trait AbstractEntityService {
     }
   }
 
-  protected def getPerson(personId: Int)(implicit session: Session, getValues: Boolean): Option[ApiPerson] = {
+  protected[api] def getPerson(personId: Int)(implicit session: Session, getValues: Boolean): Option[ApiPerson] = {
     var maybePerson = PeoplePerson.filter(_.id === personId).run.headOption
     logger.debug(s"For ${entityKind} get Person ${personId}")
     maybePerson.map { person =>
@@ -97,7 +97,7 @@ trait AbstractEntityService {
     }
   }
 
-  protected def getThing(thingId: Int)(implicit session: Session, getValues: Boolean): Option[ApiThing] = {
+  protected[api] def getThing(thingId: Int)(implicit session: Session, getValues: Boolean): Option[ApiThing] = {
     var thing = ThingsThing.filter(_.id === thingId).run.headOption
     logger.debug(s"For ${entityKind} get Thing ${thingId}")
 
