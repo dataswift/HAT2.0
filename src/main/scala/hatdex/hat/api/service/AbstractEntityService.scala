@@ -30,86 +30,155 @@ trait AbstractEntityService {
   protected def createLinkEvent(entityId: Int, eventId: Int, relationshipType: String, recordId: Int)
                                (implicit session: Session): Try[Int]
 
-  protected[api] def getEvent(eventID: Int)(implicit session: Session, getValues: Boolean): Option[ApiEvent] = {
+  protected[api] def getEvent(eventID: Int, recursive: Boolean = false)(implicit session: Session, getValues: Boolean): Option[ApiEvent] = {
     var event = EventsEvent.filter(_.id === eventID).run.headOption
     logger.debug(s"For ${entityKind} get Event ${eventID}")
     event.map { e =>
-      new ApiEvent(
-        Some(e.id),
-        e.name,
-        seqOption(getPropertiesStatic(e.id)),
-        seqOption(getPropertiesDynamic(e.id)),
-        seqOption(getEvents(e.id)),
-        seqOption(getLocations(e.id)),
-        seqOption(getPeople(e.id)),
-        seqOption(getThings(e.id)),
-        seqOption(getOrganisations(e.id))
-      )
+      recursive match {
+        case true =>
+          new ApiEvent(
+            Some(e.id),
+            e.name,
+            seqOption(getPropertiesStatic(e.id)),
+            seqOption(getPropertiesDynamic(e.id)),
+            seqOption(getEvents(e.id)),
+            seqOption(getLocations(e.id)),
+            seqOption(getPeople(e.id)),
+            seqOption(getThings(e.id)),
+            seqOption(getOrganisations(e.id))
+          )
+        case false =>
+          new ApiEvent(
+            Some(e.id),
+            e.name,
+            seqOption(getPropertiesStatic(e.id)),
+            seqOption(getPropertiesDynamic(e.id)),
+            None,
+            None,
+            None,
+            None,
+            None
+          )
+      }
+
     }
   }
 
-  protected[api] def getLocation(locationID: Int)(implicit session: Session, getValues: Boolean): Option[ApiLocation] = {
+  protected[api] def getLocation(locationID: Int, recursive: Boolean = false)(implicit session: Session, getValues: Boolean): Option[ApiLocation] = {
     var location = LocationsLocation.filter(_.id === locationID).run.headOption
     logger.debug(s"For ${entityKind} get Location ${locationID}")
     location.map { l =>
-      new ApiLocation(
-        Some(l.id),
-        l.name,
-        seqOption(getPropertiesStatic(l.id)),
-        seqOption(getPropertiesDynamic(l.id)),
-        seqOption(getLocations(l.id)),
-        //        None,
-        seqOption(getThings(l.id))
-      )
+      recursive match {
+        case true =>
+          new ApiLocation(
+            Some(l.id),
+            l.name,
+            seqOption(getPropertiesStatic(l.id)),
+            seqOption(getPropertiesDynamic(l.id)),
+            seqOption(getLocations(l.id)),
+            seqOption(getThings(l.id))
+          )
+        case false =>
+          new ApiLocation(
+            Some(l.id),
+            l.name,
+            seqOption(getPropertiesStatic(l.id)),
+            seqOption(getPropertiesDynamic(l.id)),
+            None,
+            None
+          )
+      }
     }
   }
 
-  protected[api] def getOrganisation(organisationId: Int)(implicit session: Session, getValues: Boolean): Option[ApiOrganisation] = {
+  protected[api] def getOrganisation(organisationId: Int, recursive: Boolean = false)(implicit session: Session, getValues: Boolean): Option[ApiOrganisation] = {
     var organisation = OrganisationsOrganisation.filter(_.id === organisationId).run.headOption
     logger.debug(s"For ${entityKind} get Organisation ${organisationId}")
     organisation.map { e =>
-      new ApiOrganisation(
-        Some(e.id),
-        e.name,
-        seqOption(getPropertiesStatic(e.id)),
-        seqOption(getPropertiesDynamic(e.id)),
-        seqOption(getOrganisations(e.id)),
-        seqOption(getLocations(e.id)),
-        seqOption(getThings(e.id))
-      )
+      recursive match {
+        case true =>
+          new ApiOrganisation(
+            Some(e.id),
+            e.name,
+            seqOption(getPropertiesStatic(e.id)),
+            seqOption(getPropertiesDynamic(e.id)),
+            seqOption(getOrganisations(e.id)),
+            seqOption(getLocations(e.id)),
+            seqOption(getThings(e.id))
+          )
+        case false =>
+          new ApiOrganisation(
+            Some(e.id),
+            e.name,
+            seqOption(getPropertiesStatic(e.id)),
+            seqOption(getPropertiesDynamic(e.id)),
+            None,
+            None,
+            None
+          )
+      }
+
     }
   }
 
-  protected[api] def getPerson(personId: Int)(implicit session: Session, getValues: Boolean): Option[ApiPerson] = {
+  protected[api] def getPerson(personId: Int, recursive: Boolean = false)(implicit session: Session, getValues: Boolean): Option[ApiPerson] = {
     var maybePerson = PeoplePerson.filter(_.id === personId).run.headOption
     logger.debug(s"For ${entityKind} get Person ${personId}")
     maybePerson.map { person =>
-      new ApiPerson(
-        Some(person.id),
-        person.name,
-        person.personId,
-        seqOption(getPropertiesStatic(person.id)),
-        seqOption(getPropertiesDynamic(person.id)),
-        seqOption(getPeople(person.id)),
-        seqOption(getLocations(person.id)),
-        seqOption(getOrganisations(person.id))
-      )
+      recursive match {
+        case true =>
+          new ApiPerson(
+            Some(person.id),
+            person.name,
+            person.personId,
+            seqOption(getPropertiesStatic(person.id)),
+            seqOption(getPropertiesDynamic(person.id)),
+            seqOption(getPeople(person.id)),
+            seqOption(getLocations(person.id)),
+            seqOption(getOrganisations(person.id))
+          )
+        case false =>
+          new ApiPerson(
+            Some(person.id),
+            person.name,
+            person.personId,
+            seqOption(getPropertiesStatic(person.id)),
+            seqOption(getPropertiesDynamic(person.id)),
+            None,
+            None,
+            None
+          )
+      }
+
     }
   }
 
-  protected[api] def getThing(thingId: Int)(implicit session: Session, getValues: Boolean): Option[ApiThing] = {
+  protected[api] def getThing(thingId: Int, recursive: Boolean = false)(implicit session: Session, getValues: Boolean): Option[ApiThing] = {
     var thing = ThingsThing.filter(_.id === thingId).run.headOption
     logger.debug(s"For ${entityKind} get Thing ${thingId}")
 
     thing.map { e =>
-      new ApiThing(
-        Some(e.id),
-        e.name,
-        seqOption(getPropertiesStatic(e.id)),
-        seqOption(getPropertiesDynamic(e.id)),
-        seqOption(getThings(e.id)),
-        seqOption(getPeople(e.id))
-      )
+      recursive match {
+        case true =>
+          new ApiThing(
+            Some(e.id),
+            e.name,
+            seqOption(getPropertiesStatic(e.id)),
+            seqOption(getPropertiesDynamic(e.id)),
+            seqOption(getThings(e.id)),
+            seqOption(getPeople(e.id))
+          )
+        case false =>
+          new ApiThing(
+            Some(e.id),
+            e.name,
+            seqOption(getPropertiesStatic(e.id)),
+            seqOption(getPropertiesDynamic(e.id)),
+            None,
+            None
+          )
+      }
+
     }
   }
 

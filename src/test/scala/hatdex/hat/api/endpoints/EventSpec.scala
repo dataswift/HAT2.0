@@ -125,10 +125,10 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       ownerPerson.id must beSome
 
       HttpRequest(
-        POST, s"/${newEvent.id.get}/person/${ownerPerson.id.get}" + ownerAuthParams,
+        POST, s"/event/${newEvent.id.get}/person/${ownerPerson.id.get}" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipOwnedBy)
       ) ~>
-        sealRoute(linkToPerson) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo Created
           responseAs[String] must contain("id")
@@ -149,10 +149,10 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       activeThing.id must beSome
 
       HttpRequest(
-        POST, s"/${newEvent.id.get}/thing/${activeThing.id.get}" + ownerAuthParams,
+        POST, s"/event/${newEvent.id.get}/thing/${activeThing.id.get}" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipActiveAt)
       ) ~>
-        sealRoute(linkToThing) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo Created
           responseAs[String] must contain("id")
@@ -160,11 +160,13 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
 
       // Linking event to Location
 
+      logger.debug("Creating location to link to event")
       val atLocation = HttpRequest(
-        POST, "" + ownerAuthParams,
+        POST, "/location" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationValid)) ~>
-        sealRoute(locationEndpoint.createEntity) ~>
+        sealRoute(locationEndpoint.routes) ~>
         check {
+          logger.debug("Location created: " + response)
           response.status should be equalTo Created
           responseAs[String] must contain("home")
           responseAs[ApiLocation]
@@ -173,11 +175,12 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       atLocation.id must beSome
 
       HttpRequest(
-        POST, s"/${newEvent.id.get}/location/${atLocation.id.get}" + ownerAuthParams,
+        POST, s"/event/${newEvent.id.get}/location/${atLocation.id.get}" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipHappensAt)
       ) ~>
-        sealRoute(linkToLocation) ~>
+        sealRoute(routes) ~>
         check {
+          logger.debug("event location link response: " + response)
           response.status should be equalTo Created
           responseAs[String] must contain("id")
         }
@@ -197,10 +200,10 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       sponsoredByOrganisation.id must beSome
 
       HttpRequest(
-        POST, s"/${newEvent.id.get}/organisation/${sponsoredByOrganisation.id.get}" + ownerAuthParams,
+        POST, s"/event/${newEvent.id.get}/organisation/${sponsoredByOrganisation.id.get}" + ownerAuthParams,
         entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipHappensAt)
       ) ~>
-        sealRoute(linkToOrganisation) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo Created
           responseAs[String] must contain("id")
@@ -208,7 +211,7 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
 
 
       HttpRequest(
-        GET, s"/${newEvent.id.get}" + ownerAuthParams) ~> sealRoute(getApi) ~>
+        GET, s"/event/${newEvent.id.get}" + ownerAuthParams) ~> sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK
@@ -229,8 +232,8 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       newEvent.id must beSome
 
       HttpRequest(
-        GET, s"/${newEvent.id.get}" + ownerAuthParams) ~>
-        sealRoute(getApi) ~>
+        GET, s"/event/${newEvent.id.get}" + ownerAuthParams) ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK

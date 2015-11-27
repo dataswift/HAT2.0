@@ -91,11 +91,11 @@ trait AbstractEntity extends HttpService with AbstractEntityService with HatServ
 
   private def getEntity(entityId: Int)(implicit session: Session, getValues: Boolean) = {
     val result = entityKind match {
-      case "person" => getPerson(entityId)
-      case "thing" => getThing(entityId)
-      case "event" => getEvent(entityId)
-      case "location" => getLocation(entityId)
-      case "organisation" => getOrganisation(entityId)
+      case "person" => getPerson(entityId, recursive = true)
+      case "thing" => getThing(entityId, recursive = true)
+      case "event" => getEvent(entityId, recursive = true)
+      case "location" => getLocation(entityId, recursive = true)
+      case "organisation" => getOrganisation(entityId, recursive = true)
       case _ => None
     }
 
