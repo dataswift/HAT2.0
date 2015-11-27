@@ -707,12 +707,12 @@ trait Tables {
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param eventId Database column event_id SqlType(int4)
    *  @param locationId Database column location_id SqlType(int4)
+   *  @param eventId Database column event_id SqlType(int4)
    *  @param relationshipType Database column relationship_type SqlType(varchar), Length(100,true)
    *  @param isCurrent Database column is_current SqlType(bool)
    *  @param relationshiprecordId Database column relationshiprecord_id SqlType(int4) */
-  case class EventsEventlocationcrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, eventId: Int, locationId: Int, relationshipType: String, isCurrent: Boolean, relationshiprecordId: Int)
+  case class EventsEventlocationcrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, locationId: Int, eventId: Int, relationshipType: String, isCurrent: Boolean, relationshiprecordId: Int)
   /** GetResult implicit for fetching EventsEventlocationcrossrefRow objects using plain SQL queries */
   implicit def GetResultEventsEventlocationcrossrefRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Boolean]): GR[EventsEventlocationcrossrefRow] = GR{
     prs => import prs._
@@ -720,9 +720,9 @@ trait Tables {
   }
   /** Table description of table events_eventlocationcrossref. Objects of this class serve as prototypes for rows in queries. */
   class EventsEventlocationcrossref(_tableTag: Tag) extends Table[EventsEventlocationcrossrefRow](_tableTag, "events_eventlocationcrossref") {
-    def * = (id, dateCreated, lastUpdated, eventId, locationId, relationshipType, isCurrent, relationshiprecordId) <> (EventsEventlocationcrossrefRow.tupled, EventsEventlocationcrossrefRow.unapply)
+    def * = (id, dateCreated, lastUpdated, locationId, eventId, relationshipType, isCurrent, relationshiprecordId) <> (EventsEventlocationcrossrefRow.tupled, EventsEventlocationcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(eventId), Rep.Some(locationId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> EventsEventlocationcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(locationId), Rep.Some(eventId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> EventsEventlocationcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -730,10 +730,10 @@ trait Tables {
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column event_id SqlType(int4) */
-    val eventId: Rep[Int] = column[Int]("event_id")
     /** Database column location_id SqlType(int4) */
     val locationId: Rep[Int] = column[Int]("location_id")
+    /** Database column event_id SqlType(int4) */
+    val eventId: Rep[Int] = column[Int]("event_id")
     /** Database column relationship_type SqlType(varchar), Length(100,true) */
     val relationshipType: Rep[String] = column[String]("relationship_type", O.Length(100,varying=true))
     /** Database column is_current SqlType(bool) */
