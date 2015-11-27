@@ -85,12 +85,7 @@ trait BundlesContext extends HttpService with BundleContextService with HatServi
         bundleData
       }
       complete {
-        maybeBundleData match {
-          case Some(bundleData) =>
-            bundleData
-          case None =>
-            (NotFound, ErrorMessage("Bundle Not Found", s"Bundle ${bundleContextId} not found or empty"))
-        }
+        maybeBundleData
       }
     }
   }

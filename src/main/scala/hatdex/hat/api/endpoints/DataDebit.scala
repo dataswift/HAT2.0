@@ -157,7 +157,7 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
                   case ("contextual", None, Some(bundleId)) =>
                     complete {
                       db.withSession { implicit session =>
-                        val values = retrieveDataDebitContextualValues(debit, bundleId)
+                        val values = bundleContextService.retrieveDataDebitContextualValues(debit, bundleId)
                         session.close()
                         values
                       }

@@ -334,7 +334,7 @@ trait Tables {
   lazy val BundleContextPropertySelection = new TableQuery(tag => new BundleContextPropertySelection(tag))
 
   /** Entity class storing rows of table BundleContextToBundleCrossref
-   *  @param id Database column id SqlType(int4), PrimaryKey
+   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param bundleParent Database column bundle_parent SqlType(int4)
@@ -351,8 +351,8 @@ trait Tables {
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(bundleParent), Rep.Some(bundleChild)).shaped.<>({r=>import r._; _1.map(_=> BundleContextToBundleCrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column id SqlType(int4), PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.PrimaryKey)
+    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
+    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
     /** Database column date_created SqlType(timestamp) */
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
@@ -361,11 +361,6 @@ trait Tables {
     val bundleParent: Rep[Int] = column[Int]("bundle_parent")
     /** Database column bundle_child SqlType(int4) */
     val bundleChild: Rep[Int] = column[Int]("bundle_child")
-
-    /** Foreign key referencing BundleContext (database name bundle_context_bundle_bundletobundlecrossref_fk) */
-    lazy val bundleContextFk1 = foreignKey("bundle_context_bundle_bundletobundlecrossref_fk", bundleParent, BundleContext)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing BundleContext (database name bundle_context_bundle_bundletobundlecrossref_fk1) */
-    lazy val bundleContextFk2 = foreignKey("bundle_context_bundle_bundletobundlecrossref_fk1", bundleChild, BundleContext)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
   }
   /** Collection-like TableQuery object for table BundleContextToBundleCrossref */
   lazy val BundleContextToBundleCrossref = new TableQuery(tag => new BundleContextToBundleCrossref(tag))

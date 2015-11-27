@@ -1149,14 +1149,18 @@ CREATE TABLE public.bundle_context (
 
 ALTER SEQUENCE public.bundle_context_id_seq OWNED BY public.bundle_context.id;
 
+CREATE SEQUENCE public.bundle_context_to_bundle_crossref_seq;
+
 CREATE TABLE public.bundle_context_to_bundle_crossref (
-  id INTEGER NOT NULL,
+  id INTEGER NOT NULL DEFAULT nextval('public.bundle_context_to_bundle_crossref_seq'),
   date_created TIMESTAMP NOT NULL,
   last_updated TIMESTAMP NOT NULL,
   bundle_parent INTEGER NOT NULL,
   bundle_child INTEGER NOT NULL,
   CONSTRAINT bundle_context_to_bundle_crossref_pk PRIMARY KEY (id)
 );
+
+ALTER SEQUENCE public.bundle_context_to_bundle_crossref_seq OWNED BY public.bundle_context_to_bundle_crossref.id;
 
 CREATE SEQUENCE public.bundle_context_entity_selection_id_seq;
 
