@@ -44,12 +44,15 @@ trait Thing extends ThingsService with AbstractEntity {
       db.withSession { implicit session =>
         val thingsthingRow = new ThingsThingRow(0, LocalDateTime.now(), LocalDateTime.now(), thing.name)
         val result = Try((ThingsThing returning ThingsThing) += thingsthingRow)
+        val entity = result map { createdThing =>
+          val newEntity = new EntityRow(createdThing.id, LocalDateTime.now(), LocalDateTime.now(), createdThing.name, "thing", None, Some(createdThing.id), None, None, None)
+          val entityCreated = Try(Entity += newEntity)
+          logger.debug("Creating new entity for thing:" + entityCreated)
+        }
 
         complete {
           result match {
             case Success(createdThing) =>
-              val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdThing.name, "thing", None, Some(createdThing.id), None, None, None)
-              Try(Entity += newEntity)
               (Created, ApiThing.fromDbModel(createdThing))
             case Failure(e) =>
               (BadRequest, e.getMessage)
