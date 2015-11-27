@@ -1,7 +1,7 @@
 package hatdex.hat.api.endpoints
 
 import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.authentication.authenticators.{UserPassHandler, AccessTokenHandler}
+import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
 import spray.http.StatusCodes._
 import spray.testkit.Specs2RouteTest

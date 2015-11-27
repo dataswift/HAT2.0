@@ -2,20 +2,19 @@ package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.api.endpoints.jsonExamples.{DataExamples, EntityExamples}
+import hatdex.hat.api.endpoints.jsonExamples.EntityExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
+import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
-import org.specs2.specification.{Scope, BeforeAfterAll}
+import org.specs2.specification.{BeforeAfterAll, Scope}
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http.{HttpEntity, HttpRequest, MediaTypes}
 import spray.httpx.SprayJsonSupport._
 import spray.json._
 import spray.testkit.Specs2RouteTest
-import scala.util.{Try, Success, Failure}
 
 class EventSpec extends Specification with Specs2RouteTest with Event with BeforeAfterAll {
   def actorRefFactory = system

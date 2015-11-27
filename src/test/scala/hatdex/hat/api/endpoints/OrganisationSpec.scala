@@ -2,10 +2,10 @@ package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.api.endpoints.jsonExamples.{DataExamples, EntityExamples}
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
+import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
 import org.specs2.specification.{BeforeAfterAll, Scope}

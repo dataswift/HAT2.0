@@ -9,15 +9,14 @@
 
 package hatdex.hat.api
 
-import akka.actor.ActorRefFactory
 import akka.event.LoggingAdapter
+import hatdex.hat.api.endpoints._
+import hatdex.hat.api.endpoints.jsonExamples.DataExamples
+import hatdex.hat.api.json.JsonProtocol
+import hatdex.hat.api.models.ErrorMessage
 import hatdex.hat.api.service._
 import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.api.endpoints.jsonExamples.DataExamples
-import hatdex.hat.api.endpoints._
-import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.api.models.{ApiDataTable, ErrorMessage}
-import hatdex.hat.authentication.authenticators.{UserPassHandler, AccessTokenHandler}
+import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
@@ -30,6 +29,8 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
   def actorRefFactory = system // Connect the service API to the test ActorSystem
 
   val logger: LoggingAdapter = system.log
+
+  import JsonProtocol._
 
   trait LoggingHttpService {
     def actorRefFactory = system
@@ -70,8 +71,6 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
   }
 
   val ownerAuthParams = "?username=bob@gmail.com&password=pa55w0rd"
-
-  import JsonProtocol._
 
   sequential
 

@@ -4,11 +4,10 @@ import java.util.UUID
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.api.service._
-import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.api.endpoints.jsonExamples.DataDebitExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
+import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
@@ -20,12 +19,14 @@ import org.specs2.specification.BeforeAfterAll
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
-import spray.httpx.SprayJsonSupport._
 import spray.testkit.Specs2RouteTest
+import spray.httpx.SprayJsonSupport._
 
 class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterAll with DataDebit {
   def actorRefFactory = system
   val logger: LoggingAdapter = system.log
+
+  import JsonProtocol._
 
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
@@ -46,7 +47,6 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
     val thingsService = new Thing with LoggingHttpService
     val organisationsService = new Organisation with LoggingHttpService
   }
-  import JsonProtocol._
 
   val ownerAuth = "username=bob@gmail.com&password=pa55w0rd"
 

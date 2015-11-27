@@ -2,10 +2,10 @@ package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.api.endpoints.jsonExamples.BundleExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
+import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
@@ -15,9 +15,9 @@ import org.specs2.specification.BeforeAfterAll
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
-import spray.httpx.SprayJsonSupport._
 import spray.json._
 import spray.testkit.Specs2RouteTest
+import spray.httpx.SprayJsonSupport._
 
 class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll with Bundles {
   def actorRefFactory = system
@@ -25,10 +25,10 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
 
   val ownerAuth = "username=bob@gmail.com&password=pa55w0rd"
 
+  import JsonProtocol._
+
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
-
-  import JsonProtocol._
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
@@ -280,8 +280,6 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
       )))
 
       val bundleJson: String = completeBundle.toJson.toString
-
-      import JsonProtocol._
       val bundleId = HttpRequest(POST, "?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
         createBundleContextless ~> check {
         response.status should be equalTo Created
