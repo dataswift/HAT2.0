@@ -15,12 +15,13 @@ import org.specs2.specification.BeforeAfterAll
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
-import spray.httpx.SprayJsonSupport._
 import spray.testkit.Specs2RouteTest
+import spray.httpx.SprayJsonSupport._
 
 class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll with Users {
   def actorRefFactory = system
   val logger: LoggingAdapter = system.log
+  import JsonProtocol._
 
   def beforeAll() = {
     val validUsers = Seq(
@@ -54,8 +55,6 @@ class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll w
       UserAccessToken.forceInsertAll(validAccessTokens: _*)
     }
   }
-
-  import JsonProtocol._
 
   // Clean up all data
   def afterAll() = {

@@ -2,23 +2,19 @@ package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.api.endpoints.jsonExamples.{EntityExamples, BundleContextExamples, BundleExamples}
+import hatdex.hat.api.endpoints.jsonExamples.BundleContextExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
+import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
-import hatdex.hat.dal.SlickPostgresDriver.simple._
-import hatdex.hat.dal.Tables._
-import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
-import org.specs2.specification.{Scope, BeforeAfterAll}
+import org.specs2.specification.{BeforeAfterAll, Scope}
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
+import spray.httpx.SprayJsonSupport._
 import spray.json._
 import spray.testkit.Specs2RouteTest
-import spray.httpx.SprayJsonSupport._
-import scala.util.{Failure, Success}
 
 class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeAfterAll with BundlesContext {
   def actorRefFactory = system

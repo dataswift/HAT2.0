@@ -2,18 +2,18 @@ package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.api.endpoints.jsonExamples.TypeExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models.{ApiSystemType, ApiSystemUnitofmeasurement, ErrorMessage}
+import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http.{HttpEntity, HttpRequest, MediaTypes}
-import spray.httpx.SprayJsonSupport._
 import spray.testkit.Specs2RouteTest
+import spray.httpx.SprayJsonSupport._
 
 class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeAfterAll {
   def actorRefFactory = system
@@ -24,11 +24,11 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
 
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
 
-  import JsonProtocol._
-
   def beforeAll() = {
 
   }
+
+  import JsonProtocol._
 
   // Clean up all data
   def afterAll() = {
