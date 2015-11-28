@@ -50,7 +50,7 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
                 complete {
                   maybeCreatedDebit match {
                     case Success(createdDebit) =>
-                      createdDebit
+                      (Created, createdDebit)
                     case Failure(e) =>
                       (BadRequest, ErrorMessage("Request to create a contextless data debit is malformed", e.getMessage))
                   }
@@ -63,7 +63,7 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
                 complete {
                   maybeCreatedDebit match {
                     case Success(createdDebit) =>
-                      createdDebit
+                      (Created, createdDebit)
                     case Failure(e) =>
                       (BadRequest, ErrorMessage("Request to create a contextual data debit is malformed", e.getMessage))
                   }
@@ -72,7 +72,7 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
               case _ =>
                 session.close()
                 complete {
-                  (BadRequest, ErrorMessage("Request to create a data debit is malformed", ""))
+                  (BadRequest, ErrorMessage("Request to create a data debit is malformed", "Data debit must be for contextual or contextless data and have associated bundle defined"))
                 }
             }
           }
@@ -144,6 +144,7 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
           authorize(DataDebitAuthorization.hasPermissionAccessDataDebit(dataDebit)) {
             dataDebit match {
               case Some(debit) =>
+                logger.debug("Retrieved data debit: " + debit)
                 (debit.kind, debit.bundleContextlessId, debit.bundleContextId) match {
                   case ("contextless", Some(bundleId), None) =>
                     complete {

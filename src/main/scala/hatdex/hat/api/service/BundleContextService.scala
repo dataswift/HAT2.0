@@ -25,7 +25,7 @@ trait BundleContextService {
   /*
    * Stores bundle table provided from the incoming API call
    */
-  protected def storeBundleContext(bundleContext: ApiBundleContext)(implicit session: Session): Try[ApiBundleContext] = {
+  protected[api] def storeBundleContext(bundleContext: ApiBundleContext)(implicit session: Session): Try[ApiBundleContext] = {
     val bundleRow = BundleContextRow(0, LocalDateTime.now(), LocalDateTime.now(), bundleContext.name)
     val maybeBundle = Try((BundleContext returning BundleContext) += bundleRow)
 
@@ -73,7 +73,7 @@ trait BundleContextService {
     }
   }
 
-  protected def getBundleContextById(bundleContextId: Int)(implicit session: Session): Option[ApiBundleContext] = {
+  protected[api] def getBundleContextById(bundleContextId: Int)(implicit session: Session): Option[ApiBundleContext] = {
 //    logger.debug(s"Retrieving bundle ID ${bundleContextId}")
     val bundles = getBundleList(bundleContextId)
 
@@ -83,7 +83,7 @@ trait BundleContextService {
     result
   }
 
-  protected def getBundleContextData(bundleContextId: Int)(implicit session: Session): Seq[ApiEntity] = {
+  protected[api] def getBundleContextData(bundleContextId: Int)(implicit session: Session): Seq[ApiEntity] = {
     val bundles = getBundleList(bundleContextId).map(_._1)
     val results = bundles map { bundle =>
       bundle.entities map { entities =>

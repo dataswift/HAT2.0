@@ -78,7 +78,7 @@ class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll w
       val platformCredentials = "?access_token=34b7299d-16a0-4884-ad3f-7999d2cd8d3c"
       val user = HttpRequest(POST, "/user" + platformCredentials, entity = HttpEntity(MediaTypes.`application/json`, UserExamples.userExample)) ~>
         sealRoute(createApiUserAccount) ~> check {
-        response.status should be equalTo OK
+        response.status should be equalTo Created
         responseAs[String] must contain("apiclient")
         responseAs[User]
       }
@@ -134,7 +134,7 @@ class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll w
       val platformCredentials = "?access_token=34b7299d-16a0-4884-ad3f-7999d2cd8d3c"
       val user = HttpRequest(POST, "/user" + platformCredentials, entity = HttpEntity(MediaTypes.`application/json`, UserExamples.userExample)) ~>
         sealRoute(createApiUserAccount) ~> check {
-        response.status should be equalTo OK
+        response.status should be equalTo Created
         responseAs[String] must contain("apiclient")
         responseAs[User]
       }

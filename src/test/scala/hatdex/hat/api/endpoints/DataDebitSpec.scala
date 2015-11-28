@@ -15,27 +15,37 @@ import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.specs2.mutable.Specification
-import org.specs2.specification.BeforeAfterAll
+import org.specs2.specification.{BeforeAfterAll, Scope}
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
+import spray.json._
 import spray.testkit.Specs2RouteTest
 import spray.httpx.SprayJsonSupport._
 
 class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterAll with DataDebit {
   def actorRefFactory = system
+
   val logger: LoggingAdapter = system.log
 
   import JsonProtocol._
 
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
+
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
 
-  val apiUser:User = User(UUID.randomUUID(), "alice@gmail.com", Some(BCrypt.hashpw("dr0w55ap", BCrypt.gensalt())), "Test User", "dataDebit")
-  val ownerUser: User = User(UUID.randomUUID, "bob@gmail.com", Some(BCrypt.hashpw("pa55w0rd", BCrypt.gensalt())), "Test User", "owner")
+  val apiUser: User = User(UUID.randomUUID(), "alice@gmail.com", Some(BCrypt.hashpw("dr0w55ap", BCrypt.gensalt())), "Test User", "dataDebit")
+  val parameters = Map("username" -> "bob@gmail.com", "password" -> "pa55w0rd")
+
+  def appendParams(parameters: Map[String, String]): String = {
+    parameters.foldLeft[String]("?") { case (params, (key, value)) =>
+      s"$params$key=$value&"
+    }
+  }
 
   trait LoggingHttpService {
     def actorRefFactory = system
+
     val logger = system.log
   }
 
@@ -47,8 +57,6 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
     val thingsService = new Thing with LoggingHttpService
     val organisationsService = new Organisation with LoggingHttpService
   }
-
-  val ownerAuth = "username=bob@gmail.com&password=pa55w0rd"
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
@@ -81,51 +89,51 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
     )
 
     val dataValues = Seq(
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1", 
-        dataFields.find(_.name equals "timestamp").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1",
+        dataFields.find(_.name equals "timestamp").get.id,
         dataRecords.find(_.name equals "kitchen record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 1", 
-        dataFields.find(_.name equals "value").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 1",
+        dataFields.find(_.name equals "value").get.id,
         dataRecords.find(_.name equals "kitchen record 1").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 2", 
-        dataFields.find(_.name equals "timestamp").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 2",
+        dataFields.find(_.name equals "timestamp").get.id,
         dataRecords.find(_.name equals "kitchen record 2").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 2", 
-        dataFields.find(_.name equals "value").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 2",
+        dataFields.find(_.name equals "value").get.id,
         dataRecords.find(_.name equals "kitchen record 2").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 3", 
-        dataFields.find(_.name equals "timestamp").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 3",
+        dataFields.find(_.name equals "timestamp").get.id,
         dataRecords.find(_.name equals "kitchen record 3").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 3", 
-        dataFields.find(_.name equals "value").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 3",
+        dataFields.find(_.name equals "value").get.id,
         dataRecords.find(_.name equals "kitchen record 3").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 1", 
-        dataFields.find(_.name equals "name").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 1",
+        dataFields.find(_.name equals "name").get.id,
         dataRecords.find(_.name equals "event record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 1", 
-        dataFields.find(_.name equals "location").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 1",
+        dataFields.find(_.name equals "location").get.id,
         dataRecords.find(_.name equals "event record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 1", 
-        dataFields.find(_.name equals "startTime").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 1",
+        dataFields.find(_.name equals "startTime").get.id,
         dataRecords.find(_.name equals "event record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 1", 
-        dataFields.find(_.name equals "endTime").get.id, 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 1",
+        dataFields.find(_.name equals "endTime").get.id,
         dataRecords.find(_.name equals "event record 1").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 2", 
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 2",
         dataFields.find(_.name equals "name").get.id, dataRecords.find(_.name equals "event record 2").get.id),
       new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 2",
         dataFields.find(_.name equals "location").get.id, dataRecords.find(_.name equals "event record 2").get.id),
@@ -222,18 +230,22 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
   sequential
 
   "Data Debit Service" should {
-    "Accept a Data Debit proposal" in {
+    "Accept a contextless Data Debit proposal" in {
 
       val dataDebit = {
-        implicit val user:User = apiUser
-        val dataDebit = HttpRequest(POST, "/propose?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitExample)) ~>
-          proposeDataDebitApi ~> check {
-          val responseString = responseAs[String]
-          responseString must contain("key")
-          responseAs[ApiDataDebit]
-        }
+        val dataDebit = HttpRequest(POST,
+          "/dataDebit/propose" + appendParams(parameters),
+          entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitExample)
+        ) ~>
+          sealRoute(routes) ~>
+          check {
+            response.status should be equalTo Created
+            val responseString = responseAs[String]
+            responseString must contain("key")
+            responseAs[ApiDataDebit]
+          }
 
-        HttpRequest(GET, s"/${dataDebit.key.get}/values?"+ownerAuth) ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
+        HttpRequest(GET, s"/${dataDebit.key.get}/values" + appendParams(parameters)) ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
           response.status should be equalTo Forbidden
         }
 
@@ -243,20 +255,123 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
       dataDebit.key must beSome
 
       val t = {
-        implicit val user:User = ownerUser
-        HttpRequest(PUT, s"/${dataDebit.key.get}/enable?"+ownerAuth) ~> sealRoute(enableDataDebitApi) ~> check {
-          response.status should be equalTo OK
-        }
+        HttpRequest(PUT,
+          s"/dataDebit/${dataDebit.key.get}/enable" + appendParams(parameters)
+        ) ~>
+          sealRoute(routes) ~>
+          check {
+            response.status should be equalTo OK
+          }
       }
-      
+
       val result = {
-        implicit val user:User = apiUser
-        HttpRequest(GET, s"/${dataDebit.key.get}/values?"+ownerAuth) ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
-          response.status should be equalTo OK
-          responseAs[ApiDataDebitOut]
-        }
+        HttpRequest(GET,
+          s"/dataDebit/${dataDebit.key.get}/values" + appendParams(parameters)
+        ) ~>
+          sealRoute(routes) ~>
+          check {
+            response.status should be equalTo OK
+            responseAs[ApiDataDebitOut]
+          }
       }
       result.bundleContextless must beSome
+    }
+
+    object Context {
+      val propertySpec = new PropertySpec()
+      val property = propertySpec.createWeightProperty
+      val dataSpec = new DataSpec()
+      dataSpec.createBasicTables
+      val populatedData = dataSpec.populateDataReusable
+
+      val personSpec = new PersonSpec()
+
+      val newPerson = personSpec.createNewPerson
+      newPerson.id must beSome
+
+      val dataField = populatedData match {
+        case (dataTable, dataField, record) =>
+          dataField
+      }
+      val dynamicPropertyLink = ApiPropertyRelationshipDynamic(
+        None, property, None, None, "test property", dataField)
+
+      val propertyLinkId = HttpRequest(
+        POST, s"/person/${newPerson.id.get}/property/dynamic/${property.id.get}" + appendParams(parameters),
+        entity = HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)
+      ) ~>
+        sealRoute(personSpec.routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo Created
+          }
+          responseAs[ApiGenericId]
+        }
+
+      val personValues = HttpRequest(GET, s"/person/${newPerson.id.get}/values" + appendParams(parameters)) ~>
+        sealRoute(personSpec.routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo OK
+            responseAs[String] must contain("testValue1")
+            responseAs[String] must contain("testValue2-1")
+            responseAs[String] must not contain ("testValue3")
+          }
+        }
+    }
+
+    class Context extends Scope {
+      val property = Context.property
+      val populatedData = Context.populatedData
+    }
+
+    "Accept a contextual Data Debit proposal" in new Context {
+
+      val dataDebit = {
+        val dataDebit = HttpRequest(POST,
+          "/dataDebit/propose" + appendParams(parameters),
+          entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitContextual)
+        ) ~>
+          sealRoute(routes) ~>
+          check {
+            response.status should be equalTo Created
+            val responseString = responseAs[String]
+            responseString must contain("key")
+            responseAs[ApiDataDebit]
+          }
+
+        HttpRequest(GET, s"/${dataDebit.key.get}/values" + appendParams(parameters)) ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
+          response.status should be equalTo Forbidden
+        }
+
+        dataDebit
+      }
+
+      dataDebit.key must beSome
+
+      val t = {
+        HttpRequest(PUT,
+          s"/dataDebit/${dataDebit.key.get}/enable" + appendParams(parameters)
+        ) ~>
+          sealRoute(routes) ~>
+          check {
+            response.status should be equalTo OK
+          }
+      }
+
+
+      HttpRequest(GET,
+        s"/dataDebit/${dataDebit.key.get}/values" + appendParams(parameters)
+      ) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo OK
+          val resp = responseAs[String]
+          resp must contain("HATperson")
+          resp must contain("testValue1")
+          resp must contain("testValue2-1")
+          responseAs[Seq[ApiEntity]]
+        }
     }
   }
 }
