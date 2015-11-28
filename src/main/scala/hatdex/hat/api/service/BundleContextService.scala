@@ -221,6 +221,7 @@ trait BundleContextService {
         r.nextString)
     )
 
+    // FIXME: keep an eye on future releases of Slick to avoid embedding SQL:
     sql"""
        WITH RECURSIVE recursive_bundle_context(id, date_created, last_updated, name, bundle_parent) AS (
           SELECT b.id, b.date_created, b.last_updated, b.name, b2b.bundle_parent FROM bundle_context b
