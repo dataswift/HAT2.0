@@ -61,9 +61,9 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
   // Prepare the data to create test bundles on
   def beforeAll() = {
     val dataTables = Seq(
-      new DataTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "kitchen", "Fibaro"),
-      new DataTableRow(3, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", "Fibaro"),
-      new DataTableRow(4, LocalDateTime.now(), LocalDateTime.now(), "event", "Facebook")
+      new DataTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "dd_kitchen", "dd_Fibaro"),
+      new DataTableRow(3, LocalDateTime.now(), LocalDateTime.now(), "dd_kichenElectricity", "dd_Fibaro"),
+      new DataTableRow(4, LocalDateTime.now(), LocalDateTime.now(), "dd_event", "dd_Facebook")
     )
 
     val dataTableCrossrefs = Seq(
@@ -154,18 +154,18 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
 
     //Bundle Tables
     val bundleTables = Seq(
-      BundleContextlessTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "Weekend events at home", dataTables.find(_.name equals "event").get.id),
-      BundleContextlessTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "Electricity in the kitchen", dataTables.find(_.name equals "kichenElectricity").get.id)
+      BundleContextlessTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "Weekend events at home", dataTables.find(_.name equals "dd_event").get.id),
+      BundleContextlessTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "Electricity in the kitchen", dataTables.find(_.name equals "dd_kichenElectricity").get.id)
     )
 
     // Bundle slices
     val slices = Seq(
       BundleContextlessTableSliceRow(1, LocalDateTime.now(), LocalDateTime.now(),
         bundleTables.find(_.name equals "Weekend events at home").get.id,
-        dataTables.find(_.name equals "event").get.id),
+        dataTables.find(_.name equals "dd_event").get.id),
       BundleContextlessTableSliceRow(2, LocalDateTime.now(), LocalDateTime.now(),
         bundleTables.find(_.name equals "Weekend events at home").get.id,
-        dataTables.find(_.name equals "event").get.id)
+        dataTables.find(_.name equals "dd_event").get.id)
     )
 
     // Bundle Slice conditions
