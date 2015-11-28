@@ -30,7 +30,7 @@ trait AbstractEntityService {
   protected def createLinkEvent(entityId: Int, eventId: Int, relationshipType: String, recordId: Int)
                                (implicit session: Session): Try[Int]
 
-  protected[api] def getEvent(eventID: Int, recursive: Boolean = false)(implicit session: Session, getValues: Boolean): Option[ApiEvent] = {
+  protected[api] def getEvent(eventID: Int, recursive: Boolean = false, propertySelectors: Option[Seq[ApiBundleContextPropertySelection]] = None)(implicit session: Session, getValues: Boolean): Option[ApiEvent] = {
     var event = EventsEvent.filter(_.id === eventID).run.headOption
     logger.debug(s"For ${entityKind} get Event ${eventID}")
     event.map { e =>
@@ -41,8 +41,8 @@ trait AbstractEntityService {
           new ApiEvent(
             Some(e.id),
             e.name,
-            seqOption(getPropertiesStatic(e.id, None)),
-            seqOption(getPropertiesDynamic(e.id, None)),
+            seqOption(getPropertiesStatic(e.id, propertySelectors)),
+            seqOption(getPropertiesDynamic(e.id, propertySelectors)),
             seqOption(getEvents(e.id)),
             seqOption(getLocations(e.id)),
             seqOption(getPeople(e.id)),
@@ -53,8 +53,8 @@ trait AbstractEntityService {
           new ApiEvent(
             Some(e.id),
             e.name,
-            seqOption(getPropertiesStatic(e.id, None)),
-            seqOption(getPropertiesDynamic(e.id, None)),
+            seqOption(getPropertiesStatic(e.id, propertySelectors)),
+            seqOption(getPropertiesDynamic(e.id, propertySelectors)),
             None,
             None,
             None,
@@ -66,28 +66,7 @@ trait AbstractEntityService {
     }
   }
 
-  protected[api] def getEventShallow(eventID: Int, recursive: Boolean = false, propertySelectors: Option[Seq[ApiBundleContextPropertySelection]] = None)(implicit session: Session, getValues: Boolean): Option[ApiEvent] = {
-    var event = EventsEvent.filter(_.id === eventID).run.headOption
-    logger.debug(s"For ${entityKind} get Event ${eventID}")
-    event.map { e =>
-      // Deal with selecting which entity links to show later
-      // We have a list of property selectors (Some), which is empty matching no properties
-      val recursivePropertySelectors = Some(Seq[ApiBundleContextPropertySelection]())
-      new ApiEvent(
-        Some(e.id),
-        e.name,
-        seqOption(getPropertiesStatic(e.id, propertySelectors)),
-        seqOption(getPropertiesDynamic(e.id, propertySelectors)),
-        None,
-        None,
-        None,
-        None,
-        None
-      )
-    }
-  }
-
-  protected[api] def getLocation(locationID: Int, recursive: Boolean = false)(implicit session: Session, getValues: Boolean): Option[ApiLocation] = {
+  protected[api] def getLocation(locationID: Int, recursive: Boolean = false, propertySelectors: Option[Seq[ApiBundleContextPropertySelection]] = None)(implicit session: Session, getValues: Boolean): Option[ApiLocation] = {
     var location = LocationsLocation.filter(_.id === locationID).run.headOption
     logger.debug(s"For ${entityKind} get Location ${locationID}")
     location.map { l =>
@@ -96,8 +75,8 @@ trait AbstractEntityService {
           new ApiLocation(
             Some(l.id),
             l.name,
-            seqOption(getPropertiesStatic(l.id, None)),
-            seqOption(getPropertiesDynamic(l.id, None)),
+            seqOption(getPropertiesStatic(l.id, propertySelectors)),
+            seqOption(getPropertiesDynamic(l.id, propertySelectors)),
             seqOption(getLocations(l.id)),
             seqOption(getThings(l.id))
           )
@@ -105,8 +84,8 @@ trait AbstractEntityService {
           new ApiLocation(
             Some(l.id),
             l.name,
-            seqOption(getPropertiesStatic(l.id, None)),
-            seqOption(getPropertiesDynamic(l.id, None)),
+            seqOption(getPropertiesStatic(l.id, propertySelectors)),
+            seqOption(getPropertiesDynamic(l.id, propertySelectors)),
             None,
             None
           )
@@ -114,7 +93,7 @@ trait AbstractEntityService {
     }
   }
 
-  protected[api] def getOrganisation(organisationId: Int, recursive: Boolean = false)(implicit session: Session, getValues: Boolean): Option[ApiOrganisation] = {
+  protected[api] def getOrganisation(organisationId: Int, recursive: Boolean = false, propertySelectors: Option[Seq[ApiBundleContextPropertySelection]] = None)(implicit session: Session, getValues: Boolean): Option[ApiOrganisation] = {
     var organisation = OrganisationsOrganisation.filter(_.id === organisationId).run.headOption
     logger.debug(s"For ${entityKind} get Organisation ${organisationId}")
     organisation.map { e =>
@@ -123,8 +102,8 @@ trait AbstractEntityService {
           new ApiOrganisation(
             Some(e.id),
             e.name,
-            seqOption(getPropertiesStatic(e.id, None)),
-            seqOption(getPropertiesDynamic(e.id, None)),
+            seqOption(getPropertiesStatic(e.id, propertySelectors)),
+            seqOption(getPropertiesDynamic(e.id, propertySelectors)),
             seqOption(getOrganisations(e.id)),
             seqOption(getLocations(e.id)),
             seqOption(getThings(e.id))
@@ -133,8 +112,8 @@ trait AbstractEntityService {
           new ApiOrganisation(
             Some(e.id),
             e.name,
-            seqOption(getPropertiesStatic(e.id, None)),
-            seqOption(getPropertiesDynamic(e.id, None)),
+            seqOption(getPropertiesStatic(e.id, propertySelectors)),
+            seqOption(getPropertiesDynamic(e.id, propertySelectors)),
             None,
             None,
             None
@@ -144,7 +123,7 @@ trait AbstractEntityService {
     }
   }
 
-  protected[api] def getPerson(personId: Int, recursive: Boolean = false)(implicit session: Session, getValues: Boolean): Option[ApiPerson] = {
+  protected[api] def getPerson(personId: Int, recursive: Boolean = false, propertySelectors: Option[Seq[ApiBundleContextPropertySelection]] = None)(implicit session: Session, getValues: Boolean): Option[ApiPerson] = {
     var maybePerson = PeoplePerson.filter(_.id === personId).run.headOption
     logger.debug(s"For ${entityKind} get Person ${personId}")
     maybePerson.map { person =>
@@ -154,8 +133,8 @@ trait AbstractEntityService {
             Some(person.id),
             person.name,
             person.personId,
-            seqOption(getPropertiesStatic(person.id, None)),
-            seqOption(getPropertiesDynamic(person.id, None)),
+            seqOption(getPropertiesStatic(person.id, propertySelectors)),
+            seqOption(getPropertiesDynamic(person.id, propertySelectors)),
             seqOption(getPeople(person.id)),
             seqOption(getLocations(person.id)),
             seqOption(getOrganisations(person.id))
@@ -165,8 +144,8 @@ trait AbstractEntityService {
             Some(person.id),
             person.name,
             person.personId,
-            seqOption(getPropertiesStatic(person.id, None)),
-            seqOption(getPropertiesDynamic(person.id, None)),
+            seqOption(getPropertiesStatic(person.id, propertySelectors)),
+            seqOption(getPropertiesDynamic(person.id, propertySelectors)),
             None,
             None,
             None
@@ -176,7 +155,7 @@ trait AbstractEntityService {
     }
   }
 
-  protected[api] def getThing(thingId: Int, recursive: Boolean = false)(implicit session: Session, getValues: Boolean): Option[ApiThing] = {
+  protected[api] def getThing(thingId: Int, recursive: Boolean = false, propertySelectors: Option[Seq[ApiBundleContextPropertySelection]] = None)(implicit session: Session, getValues: Boolean): Option[ApiThing] = {
     var thing = ThingsThing.filter(_.id === thingId).run.headOption
     logger.debug(s"For ${entityKind} get Thing ${thingId}")
 
@@ -186,8 +165,8 @@ trait AbstractEntityService {
           new ApiThing(
             Some(e.id),
             e.name,
-            seqOption(getPropertiesStatic(e.id, None)),
-            seqOption(getPropertiesDynamic(e.id, None)),
+            seqOption(getPropertiesStatic(e.id, propertySelectors)),
+            seqOption(getPropertiesDynamic(e.id, propertySelectors)),
             seqOption(getThings(e.id)),
             seqOption(getPeople(e.id))
           )
@@ -195,8 +174,8 @@ trait AbstractEntityService {
           new ApiThing(
             Some(e.id),
             e.name,
-            seqOption(getPropertiesStatic(e.id, None)),
-            seqOption(getPropertiesDynamic(e.id, None)),
+            seqOption(getPropertiesStatic(e.id, propertySelectors)),
+            seqOption(getPropertiesDynamic(e.id, propertySelectors)),
             None,
             None
           )

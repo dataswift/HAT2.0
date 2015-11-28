@@ -4,6 +4,7 @@ import hatdex.hat.api.models._
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
+import spray.json.pimpAny
 
 import scala.util.{Failure, Try}
 
@@ -199,9 +200,24 @@ trait PeopleService extends AbstractEntityService with PropertyService {
         val queries = selectors map { selector =>
           for {
             crossref <- crossrefQuery
-            property <- crossref.systemPropertyFk if selector.propertyName.isEmpty || selector.propertyName == Some(property.name)
-            propertyType <- property.systemTypeFk if selector.propertyType.isEmpty || selector.propertyType == Some(propertyType.name)
-            propertyUom <- property.systemUnitofmeasurementFk if selector.propertyUnitofmeasurement.isEmpty || selector.propertyUnitofmeasurement == Some(propertyUom.name)
+            property <- selector.propertyName match {
+              case None =>
+                crossref.systemPropertyFk
+              case Some(propertyName) =>
+                crossref.systemPropertyFk.filter(_.name === propertyName)
+            }
+            propertyType <- selector.propertyType match {
+              case None =>
+                property.systemTypeFk
+              case Some(propertyTypeName) =>
+                property.systemTypeFk.filter(_.name === propertyTypeName)
+            }
+            propertyUom <- selector.propertyUnitofmeasurement match {
+              case None =>
+                property.systemUnitofmeasurementFk
+              case Some(propertyUomName) =>
+                property.systemUnitofmeasurementFk.filter(_.name === propertyUomName)
+            }
             field <- crossref.dataFieldFk
             record <- crossref.dataRecordFk
           } yield (crossref, property, propertyType, propertyUom, field, record)
@@ -234,15 +250,33 @@ trait PeopleService extends AbstractEntityService with PropertyService {
   private def getPropertiesDynamicQuery(crossrefQuery: Query[PeopleSystempropertydynamiccrossref, PeopleSystempropertydynamiccrossrefRow, Seq],
                                         propertySelectors: Option[Seq[ApiBundleContextPropertySelection]])
                                        (implicit session: Session): Seq[ApiPropertyRelationshipDynamic] = {
-
+    import spray.httpx.SprayJsonSupport._
+    import hatdex.hat.api.json.JsonProtocol
+    import JsonProtocol._
     val dataQuery = propertySelectors match {
       case Some(selectors) =>
         val queries = selectors map { selector =>
+//          logger.debug("Finding dynamic properties matching selector " + selector.toJson.toString)
           for {
             crossref <- crossrefQuery
-            property <- crossref.systemPropertyFk if selector.propertyName.isEmpty || selector.propertyName == Some(property.name)
-            propertyType <- property.systemTypeFk if selector.propertyType.isEmpty || selector.propertyType == Some(propertyType.name)
-            propertyUom <- property.systemUnitofmeasurementFk if selector.propertyUnitofmeasurement.isEmpty || selector.propertyUnitofmeasurement == Some(propertyUom.name)
+            property <- selector.propertyName match {
+              case None =>
+                crossref.systemPropertyFk
+              case Some(propertyName) =>
+                crossref.systemPropertyFk.filter(_.name === propertyName)
+            }
+            propertyType <- selector.propertyType match {
+              case None =>
+                property.systemTypeFk
+              case Some(propertyTypeName) =>
+                property.systemTypeFk.filter(_.name === propertyTypeName)
+            }
+            propertyUom <- selector.propertyUnitofmeasurement match {
+              case None =>
+                property.systemUnitofmeasurementFk
+              case Some(propertyUomName) =>
+                property.systemUnitofmeasurementFk.filter(_.name === propertyUomName)
+            }
             field <- crossref.dataFieldFk
           } yield (crossref, property, propertyType, propertyUom, field)
         }
@@ -262,6 +296,8 @@ trait PeopleService extends AbstractEntityService with PropertyService {
     }
 
     val data = dataQuery.run
+
+//    logger.debug("All matching dynamic properties: " + data)
 
     data.map {
       case (crossref: PeopleSystempropertydynamiccrossrefRow, property: SystemPropertyRow, propertyType: SystemTypeRow,

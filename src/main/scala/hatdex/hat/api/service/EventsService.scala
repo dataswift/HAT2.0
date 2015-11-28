@@ -198,9 +198,24 @@ trait EventsService extends AbstractEntityService with PropertyService {
         val queries = selectors map { selector =>
           for {
             crossref <- crossrefQuery
-            property <- crossref.systemPropertyFk if selector.propertyName.isEmpty || selector.propertyName == Some(property.name)
-            propertyType <- property.systemTypeFk if selector.propertyType.isEmpty || selector.propertyType == Some(propertyType.name)
-            propertyUom <- property.systemUnitofmeasurementFk if selector.propertyUnitofmeasurement.isEmpty || selector.propertyUnitofmeasurement == Some(propertyUom.name)
+            property <- selector.propertyName match {
+              case None =>
+                crossref.systemPropertyFk
+              case Some(propertyName) =>
+                crossref.systemPropertyFk.filter(_.name === propertyName)
+            }
+            propertyType <- selector.propertyType match {
+              case None =>
+                property.systemTypeFk
+              case Some(propertyTypeName) =>
+                property.systemTypeFk.filter(_.name === propertyTypeName)
+            }
+            propertyUom <- selector.propertyUnitofmeasurement match {
+              case None =>
+                property.systemUnitofmeasurementFk
+              case Some(propertyUomName) =>
+                property.systemUnitofmeasurementFk.filter(_.name === propertyUomName)
+            }
             field <- crossref.dataFieldFk
             record <- crossref.dataRecordFk
           } yield (crossref, property, propertyType, propertyUom, field, record)
@@ -239,9 +254,24 @@ trait EventsService extends AbstractEntityService with PropertyService {
         val queries = selectors map { selector =>
           for {
             crossref <- crossrefQuery
-            property <- crossref.systemPropertyFk if selector.propertyName.isEmpty || selector.propertyName == Some(property.name)
-            propertyType <- property.systemTypeFk if selector.propertyType.isEmpty || selector.propertyType == Some(propertyType.name)
-            propertyUom <- property.systemUnitofmeasurementFk if selector.propertyUnitofmeasurement.isEmpty || selector.propertyUnitofmeasurement == Some(propertyUom.name)
+            property <- selector.propertyName match {
+              case None =>
+                crossref.systemPropertyFk
+              case Some(propertyName) =>
+                crossref.systemPropertyFk.filter(_.name === propertyName)
+            }
+            propertyType <- selector.propertyType match {
+              case None =>
+                property.systemTypeFk
+              case Some(propertyTypeName) =>
+                property.systemTypeFk.filter(_.name === propertyTypeName)
+            }
+            propertyUom <- selector.propertyUnitofmeasurement match {
+              case None =>
+                property.systemUnitofmeasurementFk
+              case Some(propertyUomName) =>
+                property.systemUnitofmeasurementFk.filter(_.name === propertyUomName)
+            }
             field <- crossref.dataFieldFk
           } yield (crossref, property, propertyType, propertyUom, field)
         }
