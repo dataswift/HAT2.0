@@ -21,8 +21,6 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
 
   val logger: LoggingAdapter = system.log
 
-  val ownerAuth = "username=bob@gmail.com&password=pa55w0rd"
-
   val parameters = Map("username" -> "bob@gmail.com", "password" -> "pa55w0rd")
 
   def appendParams(parameters: Map[String, String]): String = {
@@ -326,6 +324,68 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
           val resp = responseAs[String]
           resp must contain("emptyBundleTest7-1")
           resp must contain("person")
+          responseAs[ApiBundleContext]
+        }
+
+      bundle.id must beSome
+
+      HttpRequest(GET,
+        s"/bundles/context/${bundle.id.get}/values" + appendParams(parameters)
+      ) ~>
+        routes ~>
+        check {
+          response.status should be equalTo OK
+          val resp = responseAs[String]
+          responseAs[Seq[ApiEntity]] must not have size (0)
+          resp must contain("HATperson")
+          resp must contain("testValue1")
+          resp must contain("testValue2-1")
+          resp must not contain ("testValue3")
+        }
+    }
+
+    "Not retrieve data from an entity with list of not matching properties" in new Context {
+      val bundle = HttpRequest(POST,
+        "/bundles/context" + appendParams(parameters),
+        entity = HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundlePersonNoProps)
+      ) ~>
+        routes ~>
+        check {
+          response.status should be equalTo Created
+          val resp = responseAs[String]
+          resp must contain("emptyBundleTest8-1")
+          resp must contain("HATperson")
+          responseAs[ApiBundleContext]
+        }
+
+      bundle.id must beSome
+
+      HttpRequest(GET,
+        s"/bundles/context/${bundle.id.get}/values" + appendParams(parameters)
+      ) ~>
+        routes ~>
+        check {
+          response.status should be equalTo OK
+          val resp = responseAs[String]
+          responseAs[Seq[ApiEntity]] must not have size (0)
+          resp must contain("HATperson")
+          resp must not contain("testValue1")
+          resp must not contain("testValue2-1")
+          resp must not contain ("testValue3")
+        }
+    }
+
+    "Retrieve data from an entity with a specific named property" in new Context {
+      val bundle = HttpRequest(POST,
+        "/bundles/context" + appendParams(parameters),
+        entity = HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundlePersonProps)
+      ) ~>
+        routes ~>
+        check {
+          response.status should be equalTo Created
+          val resp = responseAs[String]
+          resp must contain("emptyBundleTest9-1")
+          resp must contain("HATperson")
           responseAs[ApiBundleContext]
         }
 

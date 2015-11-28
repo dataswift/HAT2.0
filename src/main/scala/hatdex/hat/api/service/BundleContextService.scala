@@ -111,15 +111,15 @@ trait BundleContextService {
           val entityValues = maybeStoredEntities map { storedEntity =>
             storedEntity.kind match {
               case "event" =>
-                Some(ApiEntity("event", eventsService.getEvent(storedEntity.id), None, None, None, None))
+                Some(ApiEntity("event", eventsService.getEvent(storedEntity.id, recursive = false, propertySelectors = entitySelection.properties), None, None, None, None))
               case "person" =>
-                Some(ApiEntity("person", None, peopleService.getPerson(storedEntity.id), None, None, None))
+                Some(ApiEntity("person", None, peopleService.getPerson(storedEntity.id, recursive = false, propertySelectors = entitySelection.properties), None, None, None))
               case "thing" =>
-                Some(ApiEntity("thing", None, None, None, thingsService.getThing(storedEntity.id), None))
+                Some(ApiEntity("thing", None, None, None, thingsService.getThing(storedEntity.id, recursive = false, propertySelectors = entitySelection.properties), None))
               case "location" =>
-                Some(ApiEntity("location", None, None, locationsService.getLocation(storedEntity.id), None, None))
+                Some(ApiEntity("location", None, None, locationsService.getLocation(storedEntity.id, recursive = false, propertySelectors = entitySelection.properties), None, None))
               case "organisation" =>
-                Some(ApiEntity("organisation", None, None, None, None, organisationsService.getOrganisation(storedEntity.id)))
+                Some(ApiEntity("organisation", None, None, None, None, organisationsService.getOrganisation(storedEntity.id, recursive = false, propertySelectors = entitySelection.properties)))
               case _ =>
                 None
             }

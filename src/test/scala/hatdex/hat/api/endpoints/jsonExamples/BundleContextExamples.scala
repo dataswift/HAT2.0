@@ -52,6 +52,42 @@ object BundleContextExamples {
       |}
     """.stripMargin
 
+  val entityBundlePersonNoProps =
+    """
+      |{
+      |  "name": "emptyBundleTest8-1",
+      |  "entities": [
+      |   {
+      |     "entityName": "HATperson",
+      |     "properties": [
+      |       {
+      |         "propertyName": "non-exitent property"
+      |       }
+      |     ]
+      |   }
+      |  ]
+      |}
+    """.stripMargin
+
+  val entityBundlePersonProps =
+    """
+      |{
+      |  "name": "emptyBundleTest9-1",
+      |  "entities": [
+      |   {
+      |     "entityName": "HATperson",
+      |     "properties": [
+      |       {
+      |         "propertyName": "BodyWeight"
+      |       }
+      |     ]
+      |   }
+      |  ]
+      |}
+    """.stripMargin
+
+
+
   val entityBundleAllPeople =
     """
       |{
