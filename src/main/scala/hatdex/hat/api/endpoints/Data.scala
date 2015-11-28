@@ -119,23 +119,35 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
     get {
       (userPassHandler | accessTokenHandler) { implicit user: User =>
         logger.debug("GET /table")
-        parameters('name.?, 'source.?) { (name: Option[String], source: Option[String]) =>
+        parameters('name.?, 'namelike.?, 'nameunlike.?, 'source.?) {
+          (name: Option[String], nameLike: Option[String], nameUnlike: Option[String], source: Option[String]) =>
           db.withSession { implicit session =>
-            val maybeTable = (name, source) match {
-              case (Some(tableName), Some(tableSource)) =>
-                Some(findTable(tableName, tableSource))
+            val tables = (name, nameLike, nameUnlike, source) match {
+              case (Some(tableName), _, _, Some(tableSource)) =>
+                findTable(tableName, tableSource)
+              case (None, Some(tableName), _, Some(tableSource)) =>
+                findTablesLike(tableName, tableSource)
+              case (None, None, Some(tableName), Some(tableSource)) =>
+                findTablesNotLike(tableName, tableSource)
               case _ =>
-                None
+                Seq[ApiDataTable]()
             }
 
             session.close()
 
+            val maybeTables = Utils.seqOption(tables)
+
             complete {
-              maybeTable match {
-                case Some(table) =>
-                  table
+              maybeTables match {
+                case Some(tables) =>
+                  if (tables.size > 1) {
+                    tables
+                  }
+                  else {
+                    tables.headOption
+                  }
                 case None =>
-                  (NotFound, ErrorMessage("Table not found", s"Table with name=$name and source=$source was not found"))
+                  (NotFound, ErrorMessage("Table not found", s"Table with name=$name (namelike=$nameLike, nameUnlike=$nameUnlike) and source=$source was not found"))
               }
             }
           }
