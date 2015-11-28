@@ -1,6 +1,7 @@
 package hatdex.hat.api.service
 
 import akka.event.LoggingAdapter
+import hatdex.hat.Utils
 import hatdex.hat.api.models._
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
@@ -134,7 +135,7 @@ trait BundleService extends DataService {
           val apiSlices = bundleTable.slices map { tableSlices =>
             val slices = tableSlices.map(storeBundleSlice)
             // Flattens to a simple Try with list if slices or returns the first error that occurred
-            flatten(slices)
+            Utils.flatten(slices)
           }
 
           apiSlices match {
@@ -196,7 +197,7 @@ trait BundleService extends DataService {
           // If all conditions have been inserted successfully,
           // Return the complete ApiBundleTableSlice object;
           // Otherwise, the first error that occurred
-          flatten(conditions) map { apiConditions =>
+          Utils.flatten(conditions) map { apiConditions =>
             insertedApiBundleTableSlice.copy(conditions = apiConditions)
           }
         }
@@ -226,7 +227,7 @@ trait BundleService extends DataService {
         apiSlice.copy(conditions = conditions)
       }
     }
-    seqOption(result)
+    Utils.seqOption(result)
   }
 
   protected[api] def storeCondition(bundleTableSlice: ApiBundleTableSlice)
@@ -275,7 +276,7 @@ trait BundleService extends DataService {
           val storedCombinations = tables map { combination =>
             storeBundleCombination(combination)(bundleApi)
           }
-          flatten(storedCombinations) map { apiCombinations =>
+          Utils.flatten(storedCombinations) map { apiCombinations =>
             bundleApi.copy(tables = Some(apiCombinations))
           }
         case None =>
@@ -346,21 +347,5 @@ trait BundleService extends DataService {
       case _ =>
         Failure(new IllegalArgumentException(s"Bundle Table ${combination.bundleTable.id} to create a bundle combination on (bundle ${bundle.id}) not found"))
     }
-  }
-
-  protected def flatten[T](xs: Seq[Try[T]]): Try[Seq[T]] = {
-    val (ss: Seq[Success[T]]@unchecked, fs: Seq[Failure[T]]@unchecked) =
-      xs.partition(_.isSuccess)
-
-    if (fs.isEmpty) Success(ss map (_.get))
-    else Failure[Seq[T]](fs(0).exception) // Only keep the first failure
-  }
-
-  // Utility function to return None for empty sequences
-  private def seqOption[T](seq: Seq[T]): Option[Seq[T]] = {
-    if (seq.isEmpty)
-      None
-    else
-      Some(seq)
   }
 }

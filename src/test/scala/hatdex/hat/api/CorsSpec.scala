@@ -2,12 +2,11 @@ package hatdex.hat.api
 
 import akka.event.LoggingAdapter
 import org.specs2.mutable.Specification
-import org.specs2.specification.BeforeAfterAll
-import spray.http._
-import spray.http.StatusCodes._
-import spray.routing.HttpService
-import spray.testkit.{Specs2RouteTest, ScalatestRouteTest}
 import spray.http.HttpHeaders._
+import spray.http.StatusCodes._
+import spray.http._
+import spray.routing.HttpService
+import spray.testkit.Specs2RouteTest
 
 
 class CorsSpec extends Specification with Specs2RouteTest with HttpService with Cors {

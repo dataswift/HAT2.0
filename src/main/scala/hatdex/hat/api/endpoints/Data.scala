@@ -118,7 +118,7 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
   def findTableApi = path("table") {
     get {
       (userPassHandler | accessTokenHandler) { implicit user: User =>
-        logger.debug("GET /table/search")
+        logger.debug("GET /table")
         parameters('name.?, 'source.?) { (name: Option[String], source: Option[String]) =>
           db.withSession { implicit session =>
             val maybeTable = (name, source) match {

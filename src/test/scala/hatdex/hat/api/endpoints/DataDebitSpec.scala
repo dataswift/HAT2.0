@@ -4,12 +4,12 @@ import java.util.UUID
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.api.authentication.{TestData, HatAuthTestHandler}
 import hatdex.hat.api.endpoints.jsonExamples.DataDebitExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
+import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
-import hatdex.hat.authentication.models.{AccessToken, User}
+import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
@@ -19,27 +19,36 @@ import org.specs2.specification.BeforeAfterAll
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
-import spray.httpx.SprayJsonSupport._
 import spray.testkit.Specs2RouteTest
+import spray.httpx.SprayJsonSupport._
 
-class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterAll with DataDebit with TestData {
+class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterAll with DataDebit {
   def actorRefFactory = system
-
   val logger: LoggingAdapter = system.log
-
-  override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
-
-  override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
-
-  val apiUser: User = validUsers.find(_.email eq "alice@gmail.com").get
-  val apiUserAccessToken: AccessToken = validAccessTokens.find(_.userId eq apiUser.userId).get
-  val anotherApiUser: User = validUsers.find(_.email eq "carol@gmail.com").get
-  val anotherApiUserAccessToken: AccessToken = validAccessTokens.find(_.userId eq anotherApiUser.userId).get
-  val ownerUser: User = validUsers.find(_.email eq "bob@gmail.com").get
 
   import JsonProtocol._
 
-  val ownerAuth = s"username=${ownerUser.email}&password=pa55w0rd"
+  override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
+  override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
+
+  val apiUser:User = User(UUID.randomUUID(), "alice@gmail.com", Some(BCrypt.hashpw("dr0w55ap", BCrypt.gensalt())), "Test User", "dataDebit")
+  val ownerUser: User = User(UUID.randomUUID, "bob@gmail.com", Some(BCrypt.hashpw("pa55w0rd", BCrypt.gensalt())), "Test User", "owner")
+
+  trait LoggingHttpService {
+    def actorRefFactory = system
+    val logger = system.log
+  }
+
+  val bundlesService = new Bundles with LoggingHttpService
+  val bundleContextService = new BundlesContext with LoggingHttpService {
+    val eventsService = new Event with LoggingHttpService
+    val locationsService = new Location with LoggingHttpService
+    val peopleService = new Person with LoggingHttpService
+    val thingsService = new Thing with LoggingHttpService
+    val organisationsService = new Organisation with LoggingHttpService
+  }
+
+  val ownerAuth = "username=bob@gmail.com&password=pa55w0rd"
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
@@ -72,51 +81,51 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
     )
 
     val dataValues = Seq(
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1",
-        dataFields.find(_.name equals "timestamp").get.id,
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1", 
+        dataFields.find(_.name equals "timestamp").get.id, 
         dataRecords.find(_.name equals "kitchen record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 1",
-        dataFields.find(_.name equals "value").get.id,
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 1", 
+        dataFields.find(_.name equals "value").get.id, 
         dataRecords.find(_.name equals "kitchen record 1").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 2",
-        dataFields.find(_.name equals "timestamp").get.id,
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 2", 
+        dataFields.find(_.name equals "timestamp").get.id, 
         dataRecords.find(_.name equals "kitchen record 2").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 2",
-        dataFields.find(_.name equals "value").get.id,
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 2", 
+        dataFields.find(_.name equals "value").get.id, 
         dataRecords.find(_.name equals "kitchen record 2").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 3",
-        dataFields.find(_.name equals "timestamp").get.id,
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 3", 
+        dataFields.find(_.name equals "timestamp").get.id, 
         dataRecords.find(_.name equals "kitchen record 3").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 3",
-        dataFields.find(_.name equals "value").get.id,
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 3", 
+        dataFields.find(_.name equals "value").get.id, 
         dataRecords.find(_.name equals "kitchen record 3").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 1",
-        dataFields.find(_.name equals "name").get.id,
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 1", 
+        dataFields.find(_.name equals "name").get.id, 
         dataRecords.find(_.name equals "event record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 1",
-        dataFields.find(_.name equals "location").get.id,
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 1", 
+        dataFields.find(_.name equals "location").get.id, 
         dataRecords.find(_.name equals "event record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 1",
-        dataFields.find(_.name equals "startTime").get.id,
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 1", 
+        dataFields.find(_.name equals "startTime").get.id, 
         dataRecords.find(_.name equals "event record 1").get.id
       ),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 1",
-        dataFields.find(_.name equals "endTime").get.id,
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 1", 
+        dataFields.find(_.name equals "endTime").get.id, 
         dataRecords.find(_.name equals "event record 1").get.id
       ),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 2",
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 2", 
         dataFields.find(_.name equals "name").get.id, dataRecords.find(_.name equals "event record 2").get.id),
       new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 2",
         dataFields.find(_.name equals "location").get.id, dataRecords.find(_.name equals "event record 2").get.id),
@@ -206,8 +215,8 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
   def afterAll() = {
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
+      session.close()
     }
-    //    db.close
   }
 
   sequential
@@ -216,144 +225,38 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
     "Accept a Data Debit proposal" in {
 
       val dataDebit = {
-        val dataDebit = HttpRequest(
-          POST,
-          s"/dataDebit/propose?access_token=${apiUserAccessToken.accessToken}",
-          entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitExample)
-        ) ~>
-          sealRoute(routes) ~>
-          check {
-            val responseString = responseAs[String]
-            responseString must contain("key")
-            responseAs[ApiDataDebit]
-          }
+        implicit val user:User = apiUser
+        val dataDebit = HttpRequest(POST, "/propose?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitExample)) ~>
+          proposeDataDebitApi ~> check {
+          val responseString = responseAs[String]
+          responseString must contain("key")
+          responseAs[ApiDataDebit]
+        }
 
-        HttpRequest(GET, s"/${dataDebit.key.get}/values?" + ownerAuth) ~> sealRoute(retrieveDataDebitValuesApi) ~>
-          check {
-            response.status should be equalTo Forbidden
-          }
+        HttpRequest(GET, s"/${dataDebit.key.get}/values?"+ownerAuth) ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
+          response.status should be equalTo Forbidden
+        }
 
         dataDebit
       }
 
       dataDebit.key must beSome
 
-      HttpRequest(PUT, s"/dataDebit/${dataDebit.key.get}/enable?" + ownerAuth) ~> sealRoute(routes) ~>
-        check {
+      val t = {
+        implicit val user:User = ownerUser
+        HttpRequest(PUT, s"/${dataDebit.key.get}/enable?"+ownerAuth) ~> sealRoute(enableDataDebitApi) ~> check {
           response.status should be equalTo OK
         }
-
-
-      HttpRequest(GET, s"/dataDebit/${dataDebit.key.get}/values?access_token=${apiUserAccessToken.accessToken}") ~> sealRoute(routes) ~>
-        check {
+      }
+      
+      val result = {
+        implicit val user:User = apiUser
+        HttpRequest(GET, s"/${dataDebit.key.get}/values?"+ownerAuth) ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
           response.status should be equalTo OK
-          val result = responseAs[ApiDataDebitOut]
-          result.bundleContextless must beSome
+          responseAs[ApiDataDebitOut]
         }
-
-
-      // Should not allow other users to accedd the data debit
-      HttpRequest(GET, s"/dataDebit/${dataDebit.key.get}/values?access_token=${anotherApiUserAccessToken.accessToken}") ~> sealRoute(routes) ~>
-        check {
-          response.status should be equalTo Unauthorized
-        }
-
-
-      // Should no longer allow data access after DD is disabled
-      HttpRequest(PUT, s"/dataDebit/${dataDebit.key.get}/disable?" + ownerAuth) ~> sealRoute(routes) ~>
-        check {
-          response.status should be equalTo OK
-        }
-
-
-      HttpRequest(GET, s"/dataDebit/${dataDebit.key.get}/values?access_token=${apiUserAccessToken.accessToken}") ~> sealRoute(routes) ~>
-        check {
-          response.status should be equalTo Unauthorized
-        }
-
-      // Should not allow non-owner user to enable DD
-      HttpRequest(PUT, s"/dataDebit/${dataDebit.key.get}/enable?access_token=${apiUserAccessToken.accessToken}") ~> sealRoute(routes) ~>
-        check {
-          response.status should be equalTo Unauthorized
-        }
-
-    }
-
-    "Correctly list existing Data Debits" in {
-      HttpRequest(GET, s"/dataDebit?" + ownerAuth) ~> sealRoute(routes) ~>
-        check {
-          response.status should be equalTo OK
-          responseAs[List[ApiDataDebit]]
-          val resp = responseAs[String]
-          resp must contain("DD Kitchen electricity on weekend parties")
-          resp must contain("bundleContextless")
-        }
-    }
-
-    "Correctly respond to not found Data Debits" in {
-
-      // Incorrect paths
-
-      HttpRequest(GET, s"/dataDebit/asdasd/values?access_token=${apiUserAccessToken.accessToken}") ~> sealRoute(routes) ~>
-        check {
-          response.status should be equalTo NotFound
-        }
-
-      HttpRequest(PUT, s"/dataDebit/asdasd/enable?" + ownerAuth) ~> sealRoute(routes) ~>
-        check {
-          response.status should be equalTo NotFound
-        }
-
-      HttpRequest(PUT, s"/dataDebit/asdasd/disable?" + ownerAuth) ~> sealRoute(routes) ~>
-        check {
-          response.status should be equalTo NotFound
-        }
-
-      val dduuid = UUID.randomUUID().toString
-
-      HttpRequest(GET, s"/dataDebit/$dduuid/values") ~> sealRoute(routes) ~>
-        check {
-          response.status should be equalTo Unauthorized
-        }
-
-      HttpRequest(GET, s"/dataDebit/$dduuid/values?access_token=${apiUserAccessToken.accessToken}") ~> sealRoute(routes) ~>
-        check {
-          response.status should be equalTo Unauthorized
-        }
-
-      HttpRequest(PUT, s"/dataDebit/$dduuid/enable?" + ownerAuth) ~> sealRoute(routes) ~>
-        check {
-          response.status should be equalTo NotFound
-        }
-
-      HttpRequest(PUT, s"/dataDebit/$dduuid/disable?" + ownerAuth) ~> sealRoute(routes) ~>
-        check {
-          response.status should be equalTo NotFound
-        }
-    }
-
-    "Reject malformed Data Debits" in {
-      HttpRequest(
-        POST,
-        "/dataDebit/propose?" + ownerAuth,
-        entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitInvalid)
-      ) ~>
-        sealRoute(routes) ~>
-        check {
-          response.status should be equalTo BadRequest
-        }
-    }
-
-    "Reject Contextual Data Debits (Not yet implemented)" in {
-      HttpRequest(
-        POST,
-        "/dataDebit/propose?" + ownerAuth,
-        entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitContextual)
-      ) ~>
-        sealRoute(routes) ~>
-        check {
-          response.status should be equalTo NotImplemented
-        }
+      }
+      result.bundleContextless must beSome
     }
   }
 }

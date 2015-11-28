@@ -66,9 +66,13 @@ object TestDataCleanup {
     BundleContextlessTableSliceCondition.delete
     BundleContextlessTableSlice.delete
     BundleContextlessJoin.delete
-    BundleContextlessTable.delete
     BundleContextless.delete
+    BundleContextlessTable.delete
 
+    BundleContextPropertySelection.delete
+    BundleContextEntitySelection.delete
+    BundleContextToBundleCrossref.delete
+    BundleContext.delete
   }
 
   def cleanupSystemData(implicit session: Session) = {

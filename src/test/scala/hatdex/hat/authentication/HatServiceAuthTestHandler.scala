@@ -1,4 +1,4 @@
-package hatdex.hat.api.authentication
+package hatdex.hat.authentication
 
 import java.util.UUID
 

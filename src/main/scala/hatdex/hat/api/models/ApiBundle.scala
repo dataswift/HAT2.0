@@ -42,7 +42,7 @@ case class ApiBundleTableCondition(
 
 object ApiBundleTableCondition {
   def fromBundleTableSliceCondition(condition: BundleContextlessTableSliceConditionRow)(field: ApiDataField) : ApiBundleTableCondition = {
-    new ApiBundleTableCondition(Some(condition.id),
+    ApiBundleTableCondition(Some(condition.id),
       Some(condition.dateCreated), Some(condition.lastUpdated),
       field, condition.value,
       ComparisonOperators.fromString(condition.operator))
@@ -58,7 +58,7 @@ case class ApiBundleTableSlice(
 
 object ApiBundleTableSlice {
   def fromBundleTableSlice(slice: BundleContextlessTableSliceRow)(table: ApiDataTable) : ApiBundleTableSlice = {
-    new ApiBundleTableSlice(Some(slice.id),
+    ApiBundleTableSlice(Some(slice.id),
       Some(slice.dateCreated), Some(slice.lastUpdated),
       table, Seq())
   }
@@ -76,7 +76,7 @@ case class ApiBundleTable(
 
 object ApiBundleTable {
   def fromBundleTable(bundleTable: BundleContextlessTableRow)(table: ApiDataTable) : ApiBundleTable = {
-    new ApiBundleTable(Some(bundleTable.id),
+    ApiBundleTable(Some(bundleTable.id),
       Some(bundleTable.dateCreated), Some(bundleTable.lastUpdated),
       bundleTable.name, table, None, None)
   }
@@ -98,7 +98,7 @@ object ApiBundleCombination {
 
     val operator = bundleCombination.operator.map(ComparisonOperators.fromString)
 
-    new ApiBundleCombination(Some(bundleCombination.id),
+    ApiBundleCombination(Some(bundleCombination.id),
       Some(bundleCombination.dateCreated), Some(bundleCombination.lastUpdated),
       bundleCombination.name, bundleTable,
       bundleJoinField, bundleTableField,

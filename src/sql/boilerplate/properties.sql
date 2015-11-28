@@ -30,26 +30,29 @@ INSERT INTO system_unitofmeasurement VALUES (2, now(), now(), 'meters', 'measure
 INSERT INTO system_unitofmeasurement VALUES (3, now(), now(), 'none', 'no unit of measurement (plain text)', NULL);
 INSERT INTO system_unitofmeasurement VALUES (4, now(), now(), 'centimeters', 'measurement of height or length', 'cm');
 
-INSERT INTO system_property VALUES (1, now(), now(), 'bodyWeight', 'Body weight of a person',
-                                    (SELECT id
-                                     FROM system_type
-                                     WHERE name = 'QuantitativeValue'),
-                                    (SELECT id
-                                     FROM system_unitofmeasurement
-                                     WHERE name = 'kilograms'));
+INSERT INTO system_property
+VALUES (1, now(), now(), 'bodyWeight', 'Body weight of a person',
+        (SELECT id
+         FROM system_type
+         WHERE name = 'QuantitativeValue'),
+        (SELECT id
+         FROM system_unitofmeasurement
+         WHERE name = 'kilograms'));
 
-INSERT INTO system_property VALUES (2, now(), now(), 'name', 'Name',
-                                    (SELECT id
-                                     FROM system_type
-                                     WHERE name = 'Text'),
-                                    (SELECT id
-                                     FROM system_unitofmeasurement
-                                     WHERE name = 'none'));
+INSERT INTO system_property
+VALUES (2, now(), now(), 'name', 'Name',
+        (SELECT id
+         FROM system_type
+         WHERE name = 'Text'),
+        (SELECT id
+         FROM system_unitofmeasurement
+         WHERE name = 'none'));
 
-INSERT INTO system_property VALUES (3, now(), now(), 'height', 'Body height of a person',
-                                    (SELECT id
-                                     FROM system_type
-                                     WHERE name = 'QuantitativeValue'),
-                                    (SELECT id
-                                     FROM system_unitofmeasurement
-                                     WHERE name = 'centimeters'));
+INSERT INTO system_property
+VALUES (3, now(), now(), 'height', 'Body height of a person',
+        (SELECT id
+         FROM system_type
+         WHERE name = 'QuantitativeValue'),
+        (SELECT id
+         FROM system_unitofmeasurement
+         WHERE name = 'centimeters'));

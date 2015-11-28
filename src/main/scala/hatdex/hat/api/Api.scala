@@ -30,6 +30,7 @@ trait Api extends HttpService with Cors {
   def helloService: Hello
   def apiDataService: Data
   def apiBundleService: Bundles
+  def apiBundlesContextService: BundlesContext
   def dataDebitService: DataDebit
   def apiPropertyService: Property
   def eventsService:Event
@@ -74,6 +75,7 @@ trait Api extends HttpService with Cors {
         apiDataService.routes ~
         apiPropertyService.routes ~
         apiBundleService.routes ~
+        apiBundlesContextService.routes ~
         eventsService.routes ~
         locationsService.routes ~
         peopleService.routes ~

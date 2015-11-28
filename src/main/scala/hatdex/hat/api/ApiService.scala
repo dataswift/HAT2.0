@@ -12,6 +12,7 @@ package hatdex.hat.api
 import akka.actor.{ActorLogging, ActorRefFactory}
 import akka.event.LoggingAdapter
 import hatdex.hat.api.endpoints._
+import hatdex.hat.api.service._
 import spray.routing._
 import spray.util.LoggingContext
 
@@ -30,20 +31,32 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
     val logger = log
   }
 
-  val api = new Api {
+  val api: Api = new Api {
     implicit def actorRefFactory: ActorRefFactory = context
 
     // Initialise all the service the actor handles
     val helloService = new Hello with LoggingHttpService
     val apiDataService = new Data with LoggingHttpService
     val apiBundleService = new Bundles with LoggingHttpService
-    val dataDebitService = new DataDebit with LoggingHttpService
     val apiPropertyService = new Property with LoggingHttpService
     val eventsService = new Event with LoggingHttpService
     val locationsService = new Location with LoggingHttpService
     val peopleService = new Person with LoggingHttpService
     val thingsService = new Thing with LoggingHttpService
     val organisationsService = new Organisation with LoggingHttpService
+
+    val apiBundlesContextService = new BundlesContext with LoggingHttpService {
+      def eventsService: EventsService = ApiService.this.api.eventsService
+      def peopleService: PeopleService = ApiService.this.api.peopleService
+      def thingsService: ThingsService = ApiService.this.api.thingsService
+      def locationsService: LocationsService = ApiService.this.api.locationsService
+      def organisationsService: OrganisationsService = ApiService.this.api.organisationsService
+    }
+
+    val dataDebitService = new DataDebit with LoggingHttpService {
+      val bundlesService: BundleService = apiBundleService
+      val bundleContextService: BundleContextService = apiBundlesContextService
+    }
     val userService = new Users with LoggingHttpService
     val typeService = new Type with LoggingHttpService
   }
@@ -54,4 +67,3 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
 
   def receive = runRoute(routes)
 }
-

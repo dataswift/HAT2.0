@@ -52,14 +52,21 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
                     case Success(createdDebit) =>
                       createdDebit
                     case Failure(e) =>
-                      (BadRequest, ErrorMessage("Request to create a data debit is malformed", e.getMessage))
+                      (BadRequest, ErrorMessage("Request to create a contextless data debit is malformed", e.getMessage))
                   }
                 }
 
               case ("contextual", None, Some(bundle)) =>
+                val maybeCreatedDebit = storeContextDataDebit(debit, bundle)
                 session.close()
+
                 complete {
-                  (NotImplemented, ErrorMessage("Contextual bundles not yet implemented", ""))
+                  maybeCreatedDebit match {
+                    case Success(createdDebit) =>
+                      createdDebit
+                    case Failure(e) =>
+                      (BadRequest, ErrorMessage("Request to create a contextual data debit is malformed", e.getMessage))
+                  }
                 }
 
               case _ =>
@@ -149,7 +156,11 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
                     }
                   case ("contextual", None, Some(bundleId)) =>
                     complete {
-                      (NotImplemented, ErrorMessage("Method not yet implemented", "Contextual bundle handling not yet implemented"))
+                      db.withSession { implicit session =>
+                        val values = bundleContextService.retrieveDataDebitContextualValues(debit, bundleId)
+                        session.close()
+                        values
+                      }
                     }
                   case _ =>
                     complete {

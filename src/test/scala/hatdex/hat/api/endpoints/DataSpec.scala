@@ -2,10 +2,10 @@ package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.api.authentication.HatAuthTestHandler
 import hatdex.hat.api.endpoints.jsonExamples.DataExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
+import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
@@ -39,8 +39,8 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
   def afterAll() = {
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
+      session.close()
     }
-    //    db.close
   }
 
   sequential
@@ -70,7 +70,7 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
 
   def populateDataReusable = {
     // Create main table
-    val dataTable = HttpRequest(GET, "/table/search?name=kitchen&source=fibaro&" + ownerAuth) ~>
+    val dataTable = HttpRequest(GET, "/table?name=kitchen&source=fibaro&" + ownerAuth) ~>
       sealRoute(findTableApi) ~> check {
       response.status should be equalTo OK
       responseAs[ApiDataTable]
@@ -79,7 +79,7 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
     dataTable.id must beSome
 
     // Create sub-table
-    val dataSubtable = HttpRequest(GET, "/table/search?name=kitchenElectricity&source=fibaro&" + ownerAuth) ~>
+    val dataSubtable = HttpRequest(GET, "/table?name=kitchenElectricity&source=fibaro&" + ownerAuth) ~>
       sealRoute(findTableApi) ~> check {
       response.status should be equalTo OK
       responseAs[ApiDataTable]
@@ -278,7 +278,7 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
     }
 
     "Allow table fields to be created" in {
-      val dataTable = HttpRequest(GET, "/table/search?name=kitchenElectricity&source=fibaro&" + ownerAuth) ~>
+      val dataTable = HttpRequest(GET, "/table?name=kitchenElectricity&source=fibaro&" + ownerAuth) ~>
         sealRoute(findTableApi) ~> check {
         response.status should be equalTo OK
         responseAs[String] must contain("kitchenElectricity")

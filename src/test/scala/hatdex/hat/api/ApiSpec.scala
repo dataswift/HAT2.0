@@ -9,14 +9,14 @@
 
 package hatdex.hat.api
 
-import akka.actor.ActorRefFactory
 import akka.event.LoggingAdapter
-import hatdex.hat.api.authentication.HatAuthTestHandler
-import hatdex.hat.api.endpoints.jsonExamples.DataExamples
 import hatdex.hat.api.endpoints._
+import hatdex.hat.api.endpoints.jsonExamples.DataExamples
 import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.api.models.{ApiDataTable, ErrorMessage}
-import hatdex.hat.authentication.authenticators.{UserPassHandler, AccessTokenHandler}
+import hatdex.hat.api.models.ErrorMessage
+import hatdex.hat.api.service._
+import hatdex.hat.authentication.HatAuthTestHandler
+import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
@@ -29,6 +29,8 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
   def actorRefFactory = system // Connect the service API to the test ActorSystem
 
   val logger: LoggingAdapter = system.log
+
+  import JsonProtocol._
 
   trait LoggingHttpService {
     def actorRefFactory = system
@@ -43,13 +45,27 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
     override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
   }
   val apiBundleService = new Bundles with LoggingHttpService
-  val dataDebitService = new DataDebit with LoggingHttpService
+
   val apiPropertyService = new Property with LoggingHttpService
   val eventsService = new Event with LoggingHttpService
   val locationsService = new Location with LoggingHttpService
   val peopleService = new Person with LoggingHttpService
   val thingsService = new Thing with LoggingHttpService
   val organisationsService = new Organisation with LoggingHttpService
+
+  val apiBundlesContextService = new BundlesContext with LoggingHttpService {
+    def eventsService: EventsService = ApiSpec.this.eventsService
+    def peopleService: PeopleService = ApiSpec.this.peopleService
+    def thingsService: ThingsService = ApiSpec.this.thingsService
+    def locationsService: LocationsService = ApiSpec.this.locationsService
+    def organisationsService: OrganisationsService = ApiSpec.this.organisationsService
+  }
+
+  val dataDebitService = new DataDebit with LoggingHttpService {
+    val bundlesService: BundleService = apiBundleService
+    val bundleContextService: BundleContextService = apiBundlesContextService
+  }
+
   val userService = new Users with LoggingHttpService
   val typeService = new Type with LoggingHttpService
 
@@ -58,8 +74,6 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
   }
 
   val ownerAuthParams = "?username=bob@gmail.com&password=pa55w0rd"
-
-  import JsonProtocol._
 
   sequential
 

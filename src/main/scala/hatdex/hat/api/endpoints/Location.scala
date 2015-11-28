@@ -44,12 +44,15 @@ trait Location extends LocationsService with AbstractEntity {
       db.withSession { implicit session =>
         val locationslocationRow = new LocationsLocationRow(0, LocalDateTime.now(), LocalDateTime.now(), location.name)
         val result = Try((LocationsLocation returning LocationsLocation) += locationslocationRow)
+        val entity = result map { createdLocation =>
+          val newEntity = new EntityRow(createdLocation.id, LocalDateTime.now(), LocalDateTime.now(), createdLocation.name, entityKind, Some(createdLocation.id), None, None, None, None)
+          val entityCreated = Try(Entity += newEntity)
+          logger.debug("Creating new entity for location:" + entityCreated)
+        }
 
         complete {
           result match {
             case Success(createdLocation) =>
-              val newEntity = new EntityRow(0, LocalDateTime.now(), LocalDateTime.now(), createdLocation.name, entityKind, Some(createdLocation.id), None, None, None, None)
-              Try(Entity += newEntity)
               (Created, ApiLocation.fromDbModel(createdLocation))
             case Failure(e) =>
               (BadRequest, e.getMessage)
