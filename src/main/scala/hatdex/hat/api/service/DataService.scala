@@ -32,8 +32,8 @@ trait DataService {
 
       // Retrieve values of those fields from the database, grouping by Record ID
       val values = valuesQuery.filter(_.fieldId inSet fieldsToGet)
-         .take(10000) // FIXME: magic number for getting X records
-         .sortBy(_.recordId.desc)
+        .take(10000) // FIXME: magic number for getting X records
+        .sortBy(_.recordId.desc)
         .run
         .groupBy(_.recordId)
 
@@ -263,8 +263,22 @@ trait DataService {
     }
   }
 
-  def findTable(name: String, source: String)(implicit session: Session): Option[ApiDataTable] = {
-    val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name === name).run.headOption
+  def findTable(name: String, source: String)(implicit session: Session): Seq[ApiDataTable] = {
+    val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name === name).run
+    dbDataTable map { table =>
+      ApiDataTable.fromDataTable(table)(None)(None)
+    }
+  }
+
+  def findTablesLike(name: String, source: String)(implicit session: Session): Seq[ApiDataTable] = {
+    val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name like "%" + name + "%").run
+    dbDataTable map { table =>
+      ApiDataTable.fromDataTable(table)(None)(None)
+    }
+  }
+
+  def findTablesNotLike(name: String, source: String)(implicit session: Session): Seq[ApiDataTable] = {
+    val dbDataTable = DataTable.filter(_.sourceName === source).filterNot(_.name like "%" + name + "%").run
     dbDataTable map { table =>
       ApiDataTable.fromDataTable(table)(None)(None)
     }
