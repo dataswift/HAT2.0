@@ -9,7 +9,7 @@ import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 trait DataDebitService {
   val logger: LoggingAdapter
@@ -19,39 +19,68 @@ trait DataDebitService {
 
   def storeContextlessDataDebit(debit: ApiDataDebit, bundle: ApiBundleContextless)
                                (implicit session: Session, user: User): Try[ApiDataDebit] = {
-    val dataDebitKey = UUID.randomUUID()
-    val newDebit = DataDebitRow(dataDebitKey, LocalDateTime.now(), LocalDateTime.now(), debit.name,
-      debit.startDate, debit.endDate, debit.rolling, debit.sell, debit.price,
-      enabled = false, "owner", user.userId.toString,
-      debit.bundleContextless.flatMap(bundle => bundle.id),
-      None,
-      "contextless"
-    )
+    val contextlessBundle = bundle.id match {
+      case Some(bundleId) =>
+        bundlesService.getBundleContextlessById(bundleId) match {
+          case Some(bundle) =>
+            Success(bundle)
+          case None =>
+            Failure(new IllegalArgumentException(s"Bundle with ID $bundleId does not exist"))
+        }
+      case None =>
+        bundlesService.storeBundleContextless(bundle)
+    }
 
-    val maybeCreatedDebit = Try((DataDebit returning DataDebit) += newDebit)
+    contextlessBundle flatMap { bundle =>
+      val dataDebitKey = UUID.randomUUID()
+      val newDebit = DataDebitRow(dataDebitKey, LocalDateTime.now(), LocalDateTime.now(), debit.name,
+        debit.startDate, debit.endDate, debit.rolling, debit.sell, debit.price,
+        enabled = false, "owner", user.userId.toString,
+        debit.bundleContextless.flatMap(bundle => bundle.id),
+        None,
+        "contextless"
+      )
 
-    maybeCreatedDebit map { createdDebit =>
-      val responseDebit = ApiDataDebit.fromDbModel(createdDebit)
-      responseDebit.copy(bundleContextless = Some(bundle))
+      val maybeCreatedDebit = Try((DataDebit returning DataDebit) += newDebit)
+
+      maybeCreatedDebit map { createdDebit =>
+        val responseDebit = ApiDataDebit.fromDbModel(createdDebit)
+        responseDebit.copy(bundleContextless = Some(bundle))
+      }
     }
   }
 
   def storeContextDataDebit(debit: ApiDataDebit, bundle: ApiBundleContext)
                            (implicit session: Session, user: User): Try[ApiDataDebit] = {
-    val dataDebitKey = UUID.randomUUID()
-    val newDebit = DataDebitRow(dataDebitKey, LocalDateTime.now(), LocalDateTime.now(), debit.name,
-      debit.startDate, debit.endDate, debit.rolling, debit.sell, debit.price,
-      enabled = false, "owner", user.userId.toString,
-      None,
-      bundle.id,
-      "context"
-    )
 
-    val maybeCreatedDebit = Try((DataDebit returning DataDebit) += newDebit)
+    val contextBundle = bundle.id match {
+      case Some(bundleId) =>
+        bundleContextService.getBundleContextById(bundleId) match {
+          case Some(bundle) =>
+            Success(bundle)
+          case None =>
+            Failure(new IllegalArgumentException(s"Bundle with ID $bundleId does not exist"))
+        }
+      case None =>
+        bundleContextService.storeBundleContext(bundle)
+    }
 
-    maybeCreatedDebit map { createdDebit =>
-      val responseDebit = ApiDataDebit.fromDbModel(createdDebit)
-      responseDebit.copy(bundleContextual = Some(bundle))
+    contextBundle flatMap { bundle =>
+      val dataDebitKey = UUID.randomUUID()
+      val newDebit = DataDebitRow(dataDebitKey, LocalDateTime.now(), LocalDateTime.now(), debit.name,
+        debit.startDate, debit.endDate, debit.rolling, debit.sell, debit.price,
+        enabled = false, "owner", user.userId.toString,
+        None,
+        bundle.id,
+        "contextual"
+      )
+
+      val maybeCreatedDebit = Try((DataDebit returning DataDebit) += newDebit)
+
+      maybeCreatedDebit map { createdDebit =>
+        val responseDebit = ApiDataDebit.fromDbModel(createdDebit)
+        responseDebit.copy(bundleContextual = Some(bundle))
+      }
     }
   }
 

@@ -52,7 +52,7 @@ trait Users extends HttpService with HatServiceAuthHandler {
                     val createdUser = Try((UserUser returning UserUser) += newUserDb)
                     createdUser match {
                       case Success(userDb) =>
-                        User(userDb.userId, userDb.email, None, userDb.name, userDb.role)
+                        (Created, User(userDb.userId, userDb.email, None, userDb.name, userDb.role))
                       case Failure(e) =>
                         (BadRequest, e.getMessage)
                     }

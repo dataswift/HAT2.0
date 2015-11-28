@@ -1,8 +1,5 @@
 package hatdex.hat.api.endpoints.jsonExamples
 
-/**
- * Created by andrius on 10/10/15.
- */
 object DataDebitExamples {
   val dataDebitExample =
     """
@@ -41,14 +38,26 @@ object DataDebitExamples {
   val dataDebitContextual =
     """
       |  {
-      |    "name": "DD Kitchen electricity on weekend parties",
+      |    "name": "DD Person body weight",
       |    "startDate": "2015-09-30T10:00:00Z",
       |    "endDate": "2015-10-30T10:00:00Z",
       |    "rolling": false,
       |    "sell": true,
       |    "price": 100.0,
       |    "kind": "contextual",
-      |    "bundleContextual": "arbitrary"
+      |    "bundleContextual": {
+      |       "name": "emptyBundleTest9-1",
+      |       "entities": [
+      |         {
+      |          "entityName": "HATperson",
+      |          "properties": [
+      |            {
+      |             "propertyName": "BodyWeight"
+      |            }
+      |          ]
+      |         }
+      |       ]
+      |    }
       |  }
     """.stripMargin
 }
