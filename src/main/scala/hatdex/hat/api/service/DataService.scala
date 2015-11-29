@@ -103,10 +103,13 @@ trait DataService {
   }
 
   def createTable(table: ApiDataTable)(implicit session: Session): Try[ApiDataTable] = {
+    logger.debug("Creating new table for " + table)
     val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, table.source)
     val maybeTable = Try((DataTable returning DataTable) += newTable)
 
-    maybeTable flatMap { insertedTable =>
+    logger.debug("Table created? " + maybeTable)
+
+    val result = maybeTable flatMap { insertedTable =>
       val apiDataFields = table.fields map { fields =>
         val insertedFields = fields.map(createField(_, Some(insertedTable.id)))
         // Flattens to a simple Try with list if fields
@@ -141,6 +144,9 @@ trait DataService {
           Success(ApiDataTable.fromDataTable(insertedTable)(None)(Some(insertedSubtables)))
       }
     }
+
+    logger.debug("create table result" + result)
+    result
   }
 
   def linkTables(parentId: Int, childId: Int, relationship: ApiRelationship)(implicit session: Session): Try[Int] = {
