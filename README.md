@@ -91,27 +91,7 @@ API documentation can be found at [http://hub-of-all-things.github.io/doc/](http
 - [Environment Setup Guides](https://github.com/Hub-of-all-Things/HAT2.0/wiki/Environment-Setup)
 - [Common Problems](https://github.com/Hub-of-all-Things/HAT2.0/wiki/Common-Problems)
 - [Auto-generated Database interface for Slick](https://github.com/Hub-of-all-Things/HAT2.0/wiki/Auto-generated-Database-interface-for-Slick)
-
-### Packaging and running
-
-The code can be packaged using standard sbt commands, e.g.
-
-    sbt stage
-    
-or
-
-    sbt docker:stage
-    
-For running in respective environments
-
-The `deployment` directory provides simple scripts and configuration for running on Heroku and IBM BlueMix as well as plain Docker setup
-
-## TODO
-
-[ ] contextless bundle data ​grouping/_joins_​ (otherwise complete)
-[ ] more detailed documentation of the schema
-[ ] richer APIs for easier use by application developers
-[ ] links between entities in contextual bundles if enabled by user
+- [Packaging and Running](https://github.com/Hub-of-all-Things/HAT2.0/wiki/Packaging-and-running)
 
 ## License
 
