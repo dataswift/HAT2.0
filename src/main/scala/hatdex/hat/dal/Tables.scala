@@ -13,64 +13,26 @@ trait Tables {
   import slick.jdbc.{GetResult => GR}
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema = Array(BundleBundletobundlecrossref.schema, BundleContext.schema, BundleContextless.schema, BundleJoin.schema, BundlePropertyrecordCrossref.schema, BundlePropertyslice.schema, BundlePropertyslicecondition.schema, BundleTable.schema, BundleTableslice.schema, BundleTableslicecondition.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataValue.schema, Entity.schema, EntitySelection.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema = Array(BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessJoin.schema, BundleContextlessTable.schema, BundleContextlessTableSlice.schema, BundleContextlessTableSliceCondition.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
-
-  /** Entity class storing rows of table BundleBundletobundlecrossref
-   *  @param id Database column id SqlType(int4), PrimaryKey
-   *  @param dateCreated Database column date_created SqlType(timestamp)
-   *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param bundleOne Database column bundle_one SqlType(int4)
-   *  @param bundleTwo Database column bundle_two SqlType(int4) */
-  case class BundleBundletobundlecrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, bundleOne: Int, bundleTwo: Int)
-  /** GetResult implicit for fetching BundleBundletobundlecrossrefRow objects using plain SQL queries */
-  implicit def GetResultBundleBundletobundlecrossrefRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[BundleBundletobundlecrossrefRow] = GR{
-    prs => import prs._
-    BundleBundletobundlecrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int]))
-  }
-  /** Table description of table bundle_bundletobundlecrossref. Objects of this class serve as prototypes for rows in queries. */
-  class BundleBundletobundlecrossref(_tableTag: Tag) extends Table[BundleBundletobundlecrossrefRow](_tableTag, "bundle_bundletobundlecrossref") {
-    def * = (id, dateCreated, lastUpdated, bundleOne, bundleTwo) <> (BundleBundletobundlecrossrefRow.tupled, BundleBundletobundlecrossrefRow.unapply)
-    /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(bundleOne), Rep.Some(bundleTwo)).shaped.<>({r=>import r._; _1.map(_=> BundleBundletobundlecrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
-
-    /** Database column id SqlType(int4), PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.PrimaryKey)
-    /** Database column date_created SqlType(timestamp) */
-    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
-    /** Database column last_updated SqlType(timestamp) */
-    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column bundle_one SqlType(int4) */
-    val bundleOne: Rep[Int] = column[Int]("bundle_one")
-    /** Database column bundle_two SqlType(int4) */
-    val bundleTwo: Rep[Int] = column[Int]("bundle_two")
-
-    /** Foreign key referencing BundleContext (database name bundle_context_bundle_bundletobundlecrossref_fk) */
-    lazy val bundleContextFk1 = foreignKey("bundle_context_bundle_bundletobundlecrossref_fk", bundleOne, BundleContext)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing BundleContext (database name bundle_context_bundle_bundletobundlecrossref_fk1) */
-    lazy val bundleContextFk2 = foreignKey("bundle_context_bundle_bundletobundlecrossref_fk1", bundleTwo, BundleContext)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-  }
-  /** Collection-like TableQuery object for table BundleBundletobundlecrossref */
-  lazy val BundleBundletobundlecrossref = new TableQuery(tag => new BundleBundletobundlecrossref(tag))
 
   /** Entity class storing rows of table BundleContext
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param name Database column name SqlType(varchar)
-   *  @param entitySelectionId Database column entity_selection_id SqlType(int4) */
-  case class BundleContextRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, entitySelectionId: Int)
+   *  @param name Database column name SqlType(varchar) */
+  case class BundleContextRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String)
   /** GetResult implicit for fetching BundleContextRow objects using plain SQL queries */
   implicit def GetResultBundleContextRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[BundleContextRow] = GR{
     prs => import prs._
-    BundleContextRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int]))
+    BundleContextRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String]))
   }
   /** Table description of table bundle_context. Objects of this class serve as prototypes for rows in queries. */
   class BundleContext(_tableTag: Tag) extends Table[BundleContextRow](_tableTag, "bundle_context") {
-    def * = (id, dateCreated, lastUpdated, name, entitySelectionId) <> (BundleContextRow.tupled, BundleContextRow.unapply)
+    def * = (id, dateCreated, lastUpdated, name) <> (BundleContextRow.tupled, BundleContextRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(entitySelectionId)).shaped.<>({r=>import r._; _1.map(_=> BundleContextRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name)).shaped.<>({r=>import r._; _1.map(_=> BundleContextRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -80,14 +42,52 @@ trait Tables {
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
     /** Database column name SqlType(varchar) */
     val name: Rep[String] = column[String]("name")
-    /** Database column entity_selection_id SqlType(int4) */
-    val entitySelectionId: Rep[Int] = column[Int]("entity_selection_id")
-
-    /** Foreign key referencing EntitySelection (database name entity_selection_bundle_context_fk) */
-    lazy val entitySelectionFk = foreignKey("entity_selection_bundle_context_fk", entitySelectionId, EntitySelection)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
   }
   /** Collection-like TableQuery object for table BundleContext */
   lazy val BundleContext = new TableQuery(tag => new BundleContext(tag))
+
+  /** Entity class storing rows of table BundleContextEntitySelection
+   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
+   *  @param bundleContextId Database column bundle_context_id SqlType(int4)
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param lastUpdated Database column last_updated SqlType(timestamp)
+   *  @param entityName Database column entity_name SqlType(varchar), Length(100,true), Default(None)
+   *  @param entityId Database column entity_id SqlType(int4), Default(None)
+   *  @param entityKind Database column entity_kind SqlType(varchar), Length(100,true), Default(None) */
+  case class BundleContextEntitySelectionRow(id: Int, bundleContextId: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, entityName: Option[String] = None, entityId: Option[Int] = None, entityKind: Option[String] = None)
+  /** GetResult implicit for fetching BundleContextEntitySelectionRow objects using plain SQL queries */
+  implicit def GetResultBundleContextEntitySelectionRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[Option[String]], e3: GR[Option[Int]]): GR[BundleContextEntitySelectionRow] = GR{
+    prs => import prs._
+    BundleContextEntitySelectionRow.tupled((<<[Int], <<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<?[String], <<?[Int], <<?[String]))
+  }
+  /** Table description of table bundle_context_entity_selection. Objects of this class serve as prototypes for rows in queries. */
+  class BundleContextEntitySelection(_tableTag: Tag) extends Table[BundleContextEntitySelectionRow](_tableTag, "bundle_context_entity_selection") {
+    def * = (id, bundleContextId, dateCreated, lastUpdated, entityName, entityId, entityKind) <> (BundleContextEntitySelectionRow.tupled, BundleContextEntitySelectionRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(id), Rep.Some(bundleContextId), Rep.Some(dateCreated), Rep.Some(lastUpdated), entityName, entityId, entityKind).shaped.<>({r=>import r._; _1.map(_=> BundleContextEntitySelectionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6, _7)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
+    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
+    /** Database column bundle_context_id SqlType(int4) */
+    val bundleContextId: Rep[Int] = column[Int]("bundle_context_id")
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column last_updated SqlType(timestamp) */
+    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
+    /** Database column entity_name SqlType(varchar), Length(100,true), Default(None) */
+    val entityName: Rep[Option[String]] = column[Option[String]]("entity_name", O.Length(100,varying=true), O.Default(None))
+    /** Database column entity_id SqlType(int4), Default(None) */
+    val entityId: Rep[Option[Int]] = column[Option[Int]]("entity_id", O.Default(None))
+    /** Database column entity_kind SqlType(varchar), Length(100,true), Default(None) */
+    val entityKind: Rep[Option[String]] = column[Option[String]]("entity_kind", O.Length(100,varying=true), O.Default(None))
+
+    /** Foreign key referencing BundleContext (database name entity_selection_bundle_context_fk) */
+    lazy val bundleContextFk = foreignKey("entity_selection_bundle_context_fk", bundleContextId, BundleContext)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing Entity (database name entity_entity_selection_fk) */
+    lazy val entityFk = foreignKey("entity_entity_selection_fk", entityId, Entity)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table BundleContextEntitySelection */
+  lazy val BundleContextEntitySelection = new TableQuery(tag => new BundleContextEntitySelection(tag))
 
   /** Entity class storing rows of table BundleContextless
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
@@ -118,27 +118,27 @@ trait Tables {
   /** Collection-like TableQuery object for table BundleContextless */
   lazy val BundleContextless = new TableQuery(tag => new BundleContextless(tag))
 
-  /** Entity class storing rows of table BundleJoin
+  /** Entity class storing rows of table BundleContextlessJoin
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param name Database column name SqlType(varchar)
-   *  @param bundleTableId Database column bundle_table_id SqlType(int4)
-   *  @param bundleId Database column bundle_id SqlType(int4)
-   *  @param bundleJoinField Database column bundle_join_field SqlType(int4), Default(None)
-   *  @param bundleTableField Database column bundle_table_field SqlType(int4), Default(None)
+   *  @param bundleContextlessTableId Database column bundle_contextless_table_id SqlType(int4)
+   *  @param bundleContextlessId Database column bundle_contextless_id SqlType(int4)
+   *  @param bundleContextlessJoinField Database column bundle_contextless_join_field SqlType(int4), Default(None)
+   *  @param bundleContextlessTableField Database column bundle_contextless_table_field SqlType(int4), Default(None)
    *  @param operator Database column operator SqlType(varchar), Default(None) */
-  case class BundleJoinRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, bundleTableId: Int, bundleId: Int, bundleJoinField: Option[Int] = None, bundleTableField: Option[Int] = None, operator: Option[String] = None)
-  /** GetResult implicit for fetching BundleJoinRow objects using plain SQL queries */
-  implicit def GetResultBundleJoinRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Option[Int]], e4: GR[Option[String]]): GR[BundleJoinRow] = GR{
+  case class BundleContextlessJoinRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, bundleContextlessTableId: Int, bundleContextlessId: Int, bundleContextlessJoinField: Option[Int] = None, bundleContextlessTableField: Option[Int] = None, operator: Option[String] = None)
+  /** GetResult implicit for fetching BundleContextlessJoinRow objects using plain SQL queries */
+  implicit def GetResultBundleContextlessJoinRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Option[Int]], e4: GR[Option[String]]): GR[BundleContextlessJoinRow] = GR{
     prs => import prs._
-    BundleJoinRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int], <<[Int], <<?[Int], <<?[Int], <<?[String]))
+    BundleContextlessJoinRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int], <<[Int], <<?[Int], <<?[Int], <<?[String]))
   }
-  /** Table description of table bundle_join. Objects of this class serve as prototypes for rows in queries. */
-  class BundleJoin(_tableTag: Tag) extends Table[BundleJoinRow](_tableTag, "bundle_join") {
-    def * = (id, dateCreated, lastUpdated, name, bundleTableId, bundleId, bundleJoinField, bundleTableField, operator) <> (BundleJoinRow.tupled, BundleJoinRow.unapply)
+  /** Table description of table bundle_contextless_join. Objects of this class serve as prototypes for rows in queries. */
+  class BundleContextlessJoin(_tableTag: Tag) extends Table[BundleContextlessJoinRow](_tableTag, "bundle_contextless_join") {
+    def * = (id, dateCreated, lastUpdated, name, bundleContextlessTableId, bundleContextlessId, bundleContextlessJoinField, bundleContextlessTableField, operator) <> (BundleContextlessJoinRow.tupled, BundleContextlessJoinRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(bundleTableId), Rep.Some(bundleId), bundleJoinField, bundleTableField, operator).shaped.<>({r=>import r._; _1.map(_=> BundleJoinRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7, _8, _9)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(bundleContextlessTableId), Rep.Some(bundleContextlessId), bundleContextlessJoinField, bundleContextlessTableField, operator).shaped.<>({r=>import r._; _1.map(_=> BundleContextlessJoinRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7, _8, _9)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -148,156 +148,46 @@ trait Tables {
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
     /** Database column name SqlType(varchar) */
     val name: Rep[String] = column[String]("name")
-    /** Database column bundle_table_id SqlType(int4) */
-    val bundleTableId: Rep[Int] = column[Int]("bundle_table_id")
-    /** Database column bundle_id SqlType(int4) */
-    val bundleId: Rep[Int] = column[Int]("bundle_id")
-    /** Database column bundle_join_field SqlType(int4), Default(None) */
-    val bundleJoinField: Rep[Option[Int]] = column[Option[Int]]("bundle_join_field", O.Default(None))
-    /** Database column bundle_table_field SqlType(int4), Default(None) */
-    val bundleTableField: Rep[Option[Int]] = column[Option[Int]]("bundle_table_field", O.Default(None))
+    /** Database column bundle_contextless_table_id SqlType(int4) */
+    val bundleContextlessTableId: Rep[Int] = column[Int]("bundle_contextless_table_id")
+    /** Database column bundle_contextless_id SqlType(int4) */
+    val bundleContextlessId: Rep[Int] = column[Int]("bundle_contextless_id")
+    /** Database column bundle_contextless_join_field SqlType(int4), Default(None) */
+    val bundleContextlessJoinField: Rep[Option[Int]] = column[Option[Int]]("bundle_contextless_join_field", O.Default(None))
+    /** Database column bundle_contextless_table_field SqlType(int4), Default(None) */
+    val bundleContextlessTableField: Rep[Option[Int]] = column[Option[Int]]("bundle_contextless_table_field", O.Default(None))
     /** Database column operator SqlType(varchar), Default(None) */
     val operator: Rep[Option[String]] = column[Option[String]]("operator", O.Default(None))
 
-    /** Foreign key referencing BundleContextless (database name acontextual_bundle_bundle_join_fk) */
-    lazy val bundleContextlessFk = foreignKey("acontextual_bundle_bundle_join_fk", bundleId, BundleContextless)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing BundleTable (database name bundle_table_bundle_join_fk) */
-    lazy val bundleTableFk = foreignKey("bundle_table_bundle_join_fk", bundleTableId, BundleTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing DataField (database name data_field_bundle_join_fk) */
-    lazy val dataFieldFk3 = foreignKey("data_field_bundle_join_fk", bundleJoinField, DataField)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing DataField (database name data_field_bundle_join_fk1) */
-    lazy val dataFieldFk4 = foreignKey("data_field_bundle_join_fk1", bundleTableField, DataField)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing BundleContextless (database name bundle_contextless_bundle_contextless_join_fk) */
+    lazy val bundleContextlessFk = foreignKey("bundle_contextless_bundle_contextless_join_fk", bundleContextlessId, BundleContextless)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing BundleContextlessTable (database name bundle_contextless_table_bundle_join_fk) */
+    lazy val bundleContextlessTableFk = foreignKey("bundle_contextless_table_bundle_join_fk", bundleContextlessTableId, BundleContextlessTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing DataField (database name data_field_bundle_contextless_join_fk) */
+    lazy val dataFieldFk3 = foreignKey("data_field_bundle_contextless_join_fk", bundleContextlessJoinField, DataField)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing DataField (database name data_field_bundle_contextless_join_fk1) */
+    lazy val dataFieldFk4 = foreignKey("data_field_bundle_contextless_join_fk1", bundleContextlessTableField, DataField)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
   }
-  /** Collection-like TableQuery object for table BundleJoin */
-  lazy val BundleJoin = new TableQuery(tag => new BundleJoin(tag))
+  /** Collection-like TableQuery object for table BundleContextlessJoin */
+  lazy val BundleContextlessJoin = new TableQuery(tag => new BundleContextlessJoin(tag))
 
-  /** Entity class storing rows of table BundlePropertyrecordCrossref
-   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
-   *  @param dateCreated Database column date_created SqlType(timestamp)
-   *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param propertyrecordId Database column propertyrecord_id SqlType(int4)
-   *  @param bundleContextId Database column bundle_context_id SqlType(int4) */
-  case class BundlePropertyrecordCrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, propertyrecordId: Int, bundleContextId: Int)
-  /** GetResult implicit for fetching BundlePropertyrecordCrossrefRow objects using plain SQL queries */
-  implicit def GetResultBundlePropertyrecordCrossrefRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[BundlePropertyrecordCrossrefRow] = GR{
-    prs => import prs._
-    BundlePropertyrecordCrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int]))
-  }
-  /** Table description of table bundle_propertyrecord_crossref. Objects of this class serve as prototypes for rows in queries. */
-  class BundlePropertyrecordCrossref(_tableTag: Tag) extends Table[BundlePropertyrecordCrossrefRow](_tableTag, "bundle_propertyrecord_crossref") {
-    def * = (id, dateCreated, lastUpdated, propertyrecordId, bundleContextId) <> (BundlePropertyrecordCrossrefRow.tupled, BundlePropertyrecordCrossrefRow.unapply)
-    /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(propertyrecordId), Rep.Some(bundleContextId)).shaped.<>({r=>import r._; _1.map(_=> BundlePropertyrecordCrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
-
-    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
-    /** Database column date_created SqlType(timestamp) */
-    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
-    /** Database column last_updated SqlType(timestamp) */
-    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column propertyrecord_id SqlType(int4) */
-    val propertyrecordId: Rep[Int] = column[Int]("propertyrecord_id")
-    /** Database column bundle_context_id SqlType(int4) */
-    val bundleContextId: Rep[Int] = column[Int]("bundle_context_id")
-
-    /** Foreign key referencing BundleContext (database name bundle_context_system_propertyrecordtobundlecrrossref_fk) */
-    lazy val bundleContextFk = foreignKey("bundle_context_system_propertyrecordtobundlecrrossref_fk", bundleContextId, BundleContext)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing SystemPropertyrecord (database name system_propertyrecord_system_propertyrecordtobundlecrrossref_fk) */
-    lazy val systemPropertyrecordFk = foreignKey("system_propertyrecord_system_propertyrecordtobundlecrrossref_fk", propertyrecordId, SystemPropertyrecord)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-  }
-  /** Collection-like TableQuery object for table BundlePropertyrecordCrossref */
-  lazy val BundlePropertyrecordCrossref = new TableQuery(tag => new BundlePropertyrecordCrossref(tag))
-
-  /** Entity class storing rows of table BundlePropertyslice
-   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
-   *  @param dateCreated Database column date_created SqlType(timestamp)
-   *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param name Database column name SqlType(varchar)
-   *  @param bundlePropertyrecordCrossrefId Database column bundle_propertyrecord_crossref_id SqlType(int4) */
-  case class BundlePropertysliceRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, bundlePropertyrecordCrossrefId: Int)
-  /** GetResult implicit for fetching BundlePropertysliceRow objects using plain SQL queries */
-  implicit def GetResultBundlePropertysliceRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[BundlePropertysliceRow] = GR{
-    prs => import prs._
-    BundlePropertysliceRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int]))
-  }
-  /** Table description of table bundle_propertyslice. Objects of this class serve as prototypes for rows in queries. */
-  class BundlePropertyslice(_tableTag: Tag) extends Table[BundlePropertysliceRow](_tableTag, "bundle_propertyslice") {
-    def * = (id, dateCreated, lastUpdated, name, bundlePropertyrecordCrossrefId) <> (BundlePropertysliceRow.tupled, BundlePropertysliceRow.unapply)
-    /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(bundlePropertyrecordCrossrefId)).shaped.<>({r=>import r._; _1.map(_=> BundlePropertysliceRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
-
-    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
-    /** Database column date_created SqlType(timestamp) */
-    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
-    /** Database column last_updated SqlType(timestamp) */
-    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column name SqlType(varchar) */
-    val name: Rep[String] = column[String]("name")
-    /** Database column bundle_propertyrecord_crossref_id SqlType(int4) */
-    val bundlePropertyrecordCrossrefId: Rep[Int] = column[Int]("bundle_propertyrecord_crossref_id")
-
-    /** Foreign key referencing BundlePropertyrecordCrossref (database name bundle_propertyrecord_crossref_contextual_bundlepropertyslic823) */
-    lazy val bundlePropertyrecordCrossrefFk = foreignKey("bundle_propertyrecord_crossref_contextual_bundlepropertyslic823", bundlePropertyrecordCrossrefId, BundlePropertyrecordCrossref)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-  }
-  /** Collection-like TableQuery object for table BundlePropertyslice */
-  lazy val BundlePropertyslice = new TableQuery(tag => new BundlePropertyslice(tag))
-
-  /** Entity class storing rows of table BundlePropertyslicecondition
-   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
-   *  @param dateCreated Database column date_created SqlType(timestamp)
-   *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param propertysliceId Database column propertyslice_id SqlType(int4)
-   *  @param operator Database column operator SqlType(varchar)
-   *  @param value Database column value SqlType(varchar) */
-  case class BundlePropertysliceconditionRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, propertysliceId: Int, operator: String, value: String)
-  /** GetResult implicit for fetching BundlePropertysliceconditionRow objects using plain SQL queries */
-  implicit def GetResultBundlePropertysliceconditionRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[BundlePropertysliceconditionRow] = GR{
-    prs => import prs._
-    BundlePropertysliceconditionRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[String], <<[String]))
-  }
-  /** Table description of table bundle_propertyslicecondition. Objects of this class serve as prototypes for rows in queries. */
-  class BundlePropertyslicecondition(_tableTag: Tag) extends Table[BundlePropertysliceconditionRow](_tableTag, "bundle_propertyslicecondition") {
-    def * = (id, dateCreated, lastUpdated, propertysliceId, operator, value) <> (BundlePropertysliceconditionRow.tupled, BundlePropertysliceconditionRow.unapply)
-    /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(propertysliceId), Rep.Some(operator), Rep.Some(value)).shaped.<>({r=>import r._; _1.map(_=> BundlePropertysliceconditionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
-
-    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
-    /** Database column date_created SqlType(timestamp) */
-    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
-    /** Database column last_updated SqlType(timestamp) */
-    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column propertyslice_id SqlType(int4) */
-    val propertysliceId: Rep[Int] = column[Int]("propertyslice_id")
-    /** Database column operator SqlType(varchar) */
-    val operator: Rep[String] = column[String]("operator")
-    /** Database column value SqlType(varchar) */
-    val value: Rep[String] = column[String]("value")
-
-    /** Foreign key referencing BundlePropertyslice (database name bundle_propertyslice_bundle_propertyslicecondition_fk) */
-    lazy val bundlePropertysliceFk = foreignKey("bundle_propertyslice_bundle_propertyslicecondition_fk", propertysliceId, BundlePropertyslice)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-  }
-  /** Collection-like TableQuery object for table BundlePropertyslicecondition */
-  lazy val BundlePropertyslicecondition = new TableQuery(tag => new BundlePropertyslicecondition(tag))
-
-  /** Entity class storing rows of table BundleTable
+  /** Entity class storing rows of table BundleContextlessTable
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param name Database column name SqlType(varchar)
    *  @param dataTable Database column data_table SqlType(int4) */
-  case class BundleTableRow(id: Int, lastUpdated: org.joda.time.LocalDateTime, dateCreated: org.joda.time.LocalDateTime, name: String, dataTable: Int)
-  /** GetResult implicit for fetching BundleTableRow objects using plain SQL queries */
-  implicit def GetResultBundleTableRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[BundleTableRow] = GR{
+  case class BundleContextlessTableRow(id: Int, lastUpdated: org.joda.time.LocalDateTime, dateCreated: org.joda.time.LocalDateTime, name: String, dataTable: Int)
+  /** GetResult implicit for fetching BundleContextlessTableRow objects using plain SQL queries */
+  implicit def GetResultBundleContextlessTableRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[BundleContextlessTableRow] = GR{
     prs => import prs._
-    BundleTableRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int]))
+    BundleContextlessTableRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int]))
   }
-  /** Table description of table bundle_table. Objects of this class serve as prototypes for rows in queries. */
-  class BundleTable(_tableTag: Tag) extends Table[BundleTableRow](_tableTag, "bundle_table") {
-    def * = (id, lastUpdated, dateCreated, name, dataTable) <> (BundleTableRow.tupled, BundleTableRow.unapply)
+  /** Table description of table bundle_contextless_table. Objects of this class serve as prototypes for rows in queries. */
+  class BundleContextlessTable(_tableTag: Tag) extends Table[BundleContextlessTableRow](_tableTag, "bundle_contextless_table") {
+    def * = (id, lastUpdated, dateCreated, name, dataTable) <> (BundleContextlessTableRow.tupled, BundleContextlessTableRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(lastUpdated), Rep.Some(dateCreated), Rep.Some(name), Rep.Some(dataTable)).shaped.<>({r=>import r._; _1.map(_=> BundleTableRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(lastUpdated), Rep.Some(dateCreated), Rep.Some(name), Rep.Some(dataTable)).shaped.<>({r=>import r._; _1.map(_=> BundleContextlessTableRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -310,29 +200,29 @@ trait Tables {
     /** Database column data_table SqlType(int4) */
     val dataTable: Rep[Int] = column[Int]("data_table")
 
-    /** Foreign key referencing DataTable (database name data_table_bundle_table_fk) */
-    lazy val dataTableFk = foreignKey("data_table_bundle_table_fk", dataTable, DataTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing DataTable (database name data_table_bundle_contextless_table_fk) */
+    lazy val dataTableFk = foreignKey("data_table_bundle_contextless_table_fk", dataTable, DataTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
   }
-  /** Collection-like TableQuery object for table BundleTable */
-  lazy val BundleTable = new TableQuery(tag => new BundleTable(tag))
+  /** Collection-like TableQuery object for table BundleContextlessTable */
+  lazy val BundleContextlessTable = new TableQuery(tag => new BundleContextlessTable(tag))
 
-  /** Entity class storing rows of table BundleTableslice
+  /** Entity class storing rows of table BundleContextlessTableSlice
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param bundleTableId Database column bundle_table_id SqlType(int4)
+   *  @param bundleContextlessTableId Database column bundle_contextless_table_id SqlType(int4)
    *  @param dataTableId Database column data_table_id SqlType(int4) */
-  case class BundleTablesliceRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, bundleTableId: Int, dataTableId: Int)
-  /** GetResult implicit for fetching BundleTablesliceRow objects using plain SQL queries */
-  implicit def GetResultBundleTablesliceRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[BundleTablesliceRow] = GR{
+  case class BundleContextlessTableSliceRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, bundleContextlessTableId: Int, dataTableId: Int)
+  /** GetResult implicit for fetching BundleContextlessTableSliceRow objects using plain SQL queries */
+  implicit def GetResultBundleContextlessTableSliceRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[BundleContextlessTableSliceRow] = GR{
     prs => import prs._
-    BundleTablesliceRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int]))
+    BundleContextlessTableSliceRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int]))
   }
-  /** Table description of table bundle_tableslice. Objects of this class serve as prototypes for rows in queries. */
-  class BundleTableslice(_tableTag: Tag) extends Table[BundleTablesliceRow](_tableTag, "bundle_tableslice") {
-    def * = (id, dateCreated, lastUpdated, bundleTableId, dataTableId) <> (BundleTablesliceRow.tupled, BundleTablesliceRow.unapply)
+  /** Table description of table bundle_contextless_table_slice. Objects of this class serve as prototypes for rows in queries. */
+  class BundleContextlessTableSlice(_tableTag: Tag) extends Table[BundleContextlessTableSliceRow](_tableTag, "bundle_contextless_table_slice") {
+    def * = (id, dateCreated, lastUpdated, bundleContextlessTableId, dataTableId) <> (BundleContextlessTableSliceRow.tupled, BundleContextlessTableSliceRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(bundleTableId), Rep.Some(dataTableId)).shaped.<>({r=>import r._; _1.map(_=> BundleTablesliceRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(bundleContextlessTableId), Rep.Some(dataTableId)).shaped.<>({r=>import r._; _1.map(_=> BundleContextlessTableSliceRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -340,38 +230,38 @@ trait Tables {
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column bundle_table_id SqlType(int4) */
-    val bundleTableId: Rep[Int] = column[Int]("bundle_table_id")
+    /** Database column bundle_contextless_table_id SqlType(int4) */
+    val bundleContextlessTableId: Rep[Int] = column[Int]("bundle_contextless_table_id")
     /** Database column data_table_id SqlType(int4) */
     val dataTableId: Rep[Int] = column[Int]("data_table_id")
 
-    /** Foreign key referencing BundleTable (database name bundle_table_bundle_tableslice_fk) */
-    lazy val bundleTableFk = foreignKey("bundle_table_bundle_tableslice_fk", bundleTableId, BundleTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing DataTable (database name data_table_bundle_tableslice_fk) */
-    lazy val dataTableFk = foreignKey("data_table_bundle_tableslice_fk", dataTableId, DataTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing BundleContextlessTable (database name bundle_contextless_table_bundle_contextless_tableslice_fk) */
+    lazy val bundleContextlessTableFk = foreignKey("bundle_contextless_table_bundle_contextless_tableslice_fk", bundleContextlessTableId, BundleContextlessTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing DataTable (database name data_table_bundle_contextless_table_slice_fk) */
+    lazy val dataTableFk = foreignKey("data_table_bundle_contextless_table_slice_fk", dataTableId, DataTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
   }
-  /** Collection-like TableQuery object for table BundleTableslice */
-  lazy val BundleTableslice = new TableQuery(tag => new BundleTableslice(tag))
+  /** Collection-like TableQuery object for table BundleContextlessTableSlice */
+  lazy val BundleContextlessTableSlice = new TableQuery(tag => new BundleContextlessTableSlice(tag))
 
-  /** Entity class storing rows of table BundleTableslicecondition
+  /** Entity class storing rows of table BundleContextlessTableSliceCondition
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param fieldId Database column field_id SqlType(int4)
-   *  @param tablesliceId Database column tableslice_id SqlType(int4)
+   *  @param tableSliceId Database column table_slice_id SqlType(int4)
    *  @param operator Database column operator SqlType(varchar)
    *  @param value Database column value SqlType(varchar) */
-  case class BundleTablesliceconditionRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, fieldId: Int, tablesliceId: Int, operator: String, value: String)
-  /** GetResult implicit for fetching BundleTablesliceconditionRow objects using plain SQL queries */
-  implicit def GetResultBundleTablesliceconditionRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[BundleTablesliceconditionRow] = GR{
+  case class BundleContextlessTableSliceConditionRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, fieldId: Int, tableSliceId: Int, operator: String, value: String)
+  /** GetResult implicit for fetching BundleContextlessTableSliceConditionRow objects using plain SQL queries */
+  implicit def GetResultBundleContextlessTableSliceConditionRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[BundleContextlessTableSliceConditionRow] = GR{
     prs => import prs._
-    BundleTablesliceconditionRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[String]))
+    BundleContextlessTableSliceConditionRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[String]))
   }
-  /** Table description of table bundle_tableslicecondition. Objects of this class serve as prototypes for rows in queries. */
-  class BundleTableslicecondition(_tableTag: Tag) extends Table[BundleTablesliceconditionRow](_tableTag, "bundle_tableslicecondition") {
-    def * = (id, dateCreated, lastUpdated, fieldId, tablesliceId, operator, value) <> (BundleTablesliceconditionRow.tupled, BundleTablesliceconditionRow.unapply)
+  /** Table description of table bundle_contextless_table_slice_condition. Objects of this class serve as prototypes for rows in queries. */
+  class BundleContextlessTableSliceCondition(_tableTag: Tag) extends Table[BundleContextlessTableSliceConditionRow](_tableTag, "bundle_contextless_table_slice_condition") {
+    def * = (id, dateCreated, lastUpdated, fieldId, tableSliceId, operator, value) <> (BundleContextlessTableSliceConditionRow.tupled, BundleContextlessTableSliceConditionRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(fieldId), Rep.Some(tablesliceId), Rep.Some(operator), Rep.Some(value)).shaped.<>({r=>import r._; _1.map(_=> BundleTablesliceconditionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(fieldId), Rep.Some(tableSliceId), Rep.Some(operator), Rep.Some(value)).shaped.<>({r=>import r._; _1.map(_=> BundleContextlessTableSliceConditionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -381,20 +271,104 @@ trait Tables {
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
     /** Database column field_id SqlType(int4) */
     val fieldId: Rep[Int] = column[Int]("field_id")
-    /** Database column tableslice_id SqlType(int4) */
-    val tablesliceId: Rep[Int] = column[Int]("tableslice_id")
+    /** Database column table_slice_id SqlType(int4) */
+    val tableSliceId: Rep[Int] = column[Int]("table_slice_id")
     /** Database column operator SqlType(varchar) */
     val operator: Rep[String] = column[String]("operator")
     /** Database column value SqlType(varchar) */
     val value: Rep[String] = column[String]("value")
 
-    /** Foreign key referencing BundleTableslice (database name bundle_tableslice_bundle_tableslicecondition_fk) */
-    lazy val bundleTablesliceFk = foreignKey("bundle_tableslice_bundle_tableslicecondition_fk", tablesliceId, BundleTableslice)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing DataField (database name data_field_bundle_tableslicecondition_fk) */
-    lazy val dataFieldFk = foreignKey("data_field_bundle_tableslicecondition_fk", fieldId, DataField)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing BundleContextlessTableSlice (database name bundle_contextless_table_slice_condition_fk) */
+    lazy val bundleContextlessTableSliceFk = foreignKey("bundle_contextless_table_slice_condition_fk", tableSliceId, BundleContextlessTableSlice)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing DataField (database name data_field_bundle_contextless_table_slice_condition_fk) */
+    lazy val dataFieldFk = foreignKey("data_field_bundle_contextless_table_slice_condition_fk", fieldId, DataField)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
   }
-  /** Collection-like TableQuery object for table BundleTableslicecondition */
-  lazy val BundleTableslicecondition = new TableQuery(tag => new BundleTableslicecondition(tag))
+  /** Collection-like TableQuery object for table BundleContextlessTableSliceCondition */
+  lazy val BundleContextlessTableSliceCondition = new TableQuery(tag => new BundleContextlessTableSliceCondition(tag))
+
+  /** Entity class storing rows of table BundleContextPropertySelection
+   *  @param propertySelectionId Database column property_selection_id SqlType(serial), AutoInc, PrimaryKey
+   *  @param bundleContextEntitySelectionId Database column bundle_context_entity_selection_id SqlType(int4)
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param lastUpdated Database column last_updated SqlType(timestamp)
+   *  @param propertyRelationshipKind Database column property_relationship_kind SqlType(varchar), Length(7,true), Default(None)
+   *  @param propertyRelationshipId Database column property_relationship_id SqlType(int4), Default(None)
+   *  @param propertyName Database column property_name SqlType(varchar), Default(None)
+   *  @param propertyType Database column property_type SqlType(varchar), Default(None)
+   *  @param propertyUnitofmeasurement Database column property_unitofmeasurement SqlType(varchar), Default(None) */
+  case class BundleContextPropertySelectionRow(propertySelectionId: Int, bundleContextEntitySelectionId: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, propertyRelationshipKind: Option[String] = None, propertyRelationshipId: Option[Int] = None, propertyName: Option[String] = None, propertyType: Option[String] = None, propertyUnitofmeasurement: Option[String] = None)
+  /** GetResult implicit for fetching BundleContextPropertySelectionRow objects using plain SQL queries */
+  implicit def GetResultBundleContextPropertySelectionRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[Option[String]], e3: GR[Option[Int]]): GR[BundleContextPropertySelectionRow] = GR{
+    prs => import prs._
+    BundleContextPropertySelectionRow.tupled((<<[Int], <<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<?[String], <<?[Int], <<?[String], <<?[String], <<?[String]))
+  }
+  /** Table description of table bundle_context_property_selection. Objects of this class serve as prototypes for rows in queries. */
+  class BundleContextPropertySelection(_tableTag: Tag) extends Table[BundleContextPropertySelectionRow](_tableTag, "bundle_context_property_selection") {
+    def * = (propertySelectionId, bundleContextEntitySelectionId, dateCreated, lastUpdated, propertyRelationshipKind, propertyRelationshipId, propertyName, propertyType, propertyUnitofmeasurement) <> (BundleContextPropertySelectionRow.tupled, BundleContextPropertySelectionRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(propertySelectionId), Rep.Some(bundleContextEntitySelectionId), Rep.Some(dateCreated), Rep.Some(lastUpdated), propertyRelationshipKind, propertyRelationshipId, propertyName, propertyType, propertyUnitofmeasurement).shaped.<>({r=>import r._; _1.map(_=> BundleContextPropertySelectionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6, _7, _8, _9)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column property_selection_id SqlType(serial), AutoInc, PrimaryKey */
+    val propertySelectionId: Rep[Int] = column[Int]("property_selection_id", O.AutoInc, O.PrimaryKey)
+    /** Database column bundle_context_entity_selection_id SqlType(int4) */
+    val bundleContextEntitySelectionId: Rep[Int] = column[Int]("bundle_context_entity_selection_id")
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column last_updated SqlType(timestamp) */
+    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
+    /** Database column property_relationship_kind SqlType(varchar), Length(7,true), Default(None) */
+    val propertyRelationshipKind: Rep[Option[String]] = column[Option[String]]("property_relationship_kind", O.Length(7,varying=true), O.Default(None))
+    /** Database column property_relationship_id SqlType(int4), Default(None) */
+    val propertyRelationshipId: Rep[Option[Int]] = column[Option[Int]]("property_relationship_id", O.Default(None))
+    /** Database column property_name SqlType(varchar), Default(None) */
+    val propertyName: Rep[Option[String]] = column[Option[String]]("property_name", O.Default(None))
+    /** Database column property_type SqlType(varchar), Default(None) */
+    val propertyType: Rep[Option[String]] = column[Option[String]]("property_type", O.Default(None))
+    /** Database column property_unitofmeasurement SqlType(varchar), Default(None) */
+    val propertyUnitofmeasurement: Rep[Option[String]] = column[Option[String]]("property_unitofmeasurement", O.Default(None))
+
+    /** Foreign key referencing BundleContextEntitySelection (database name property_selection_entity_selection__fk) */
+    lazy val bundleContextEntitySelectionFk = foreignKey("property_selection_entity_selection__fk", bundleContextEntitySelectionId, BundleContextEntitySelection)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table BundleContextPropertySelection */
+  lazy val BundleContextPropertySelection = new TableQuery(tag => new BundleContextPropertySelection(tag))
+
+  /** Entity class storing rows of table BundleContextToBundleCrossref
+   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param lastUpdated Database column last_updated SqlType(timestamp)
+   *  @param bundleParent Database column bundle_parent SqlType(int4)
+   *  @param bundleChild Database column bundle_child SqlType(int4) */
+  case class BundleContextToBundleCrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, bundleParent: Int, bundleChild: Int)
+  /** GetResult implicit for fetching BundleContextToBundleCrossrefRow objects using plain SQL queries */
+  implicit def GetResultBundleContextToBundleCrossrefRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[BundleContextToBundleCrossrefRow] = GR{
+    prs => import prs._
+    BundleContextToBundleCrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int]))
+  }
+  /** Table description of table bundle_context_to_bundle_crossref. Objects of this class serve as prototypes for rows in queries. */
+  class BundleContextToBundleCrossref(_tableTag: Tag) extends Table[BundleContextToBundleCrossrefRow](_tableTag, "bundle_context_to_bundle_crossref") {
+    def * = (id, dateCreated, lastUpdated, bundleParent, bundleChild) <> (BundleContextToBundleCrossrefRow.tupled, BundleContextToBundleCrossrefRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(bundleParent), Rep.Some(bundleChild)).shaped.<>({r=>import r._; _1.map(_=> BundleContextToBundleCrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
+    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column last_updated SqlType(timestamp) */
+    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
+    /** Database column bundle_parent SqlType(int4) */
+    val bundleParent: Rep[Int] = column[Int]("bundle_parent")
+    /** Database column bundle_child SqlType(int4) */
+    val bundleChild: Rep[Int] = column[Int]("bundle_child")
+
+    /** Foreign key referencing BundleContext (database name bundle_context_bundle_bundletobundlecrossref_fk) */
+    lazy val bundleContextFk1 = foreignKey("bundle_context_bundle_bundletobundlecrossref_fk", bundleParent, BundleContext)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing BundleContext (database name bundle_context_bundle_bundletobundlecrossref_fk1) */
+    lazy val bundleContextFk2 = foreignKey("bundle_context_bundle_bundletobundlecrossref_fk1", bundleChild, BundleContext)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table BundleContextToBundleCrossref */
+  lazy val BundleContextToBundleCrossref = new TableQuery(tag => new BundleContextToBundleCrossref(tag))
 
   /** Entity class storing rows of table DataDebit
    *  @param dataDebitKey Database column data_debit_key SqlType(uuid), PrimaryKey
@@ -643,7 +617,7 @@ trait Tables {
   lazy val DataValue = new TableQuery(tag => new DataValue(tag))
 
   /** Entity class storing rows of table Entity
-   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
+   *  @param id Database column id SqlType(int4), PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param name Database column name SqlType(varchar), Length(100,true)
@@ -665,8 +639,8 @@ trait Tables {
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(kind), locationId, thingId, eventId, organisationId, personId).shaped.<>({r=>import r._; _1.map(_=> EntityRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7, _8, _9, _10)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
+    /** Database column id SqlType(int4), PrimaryKey */
+    val id: Rep[Int] = column[Int]("id", O.PrimaryKey)
     /** Database column date_created SqlType(timestamp) */
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column last_updated SqlType(timestamp) */
@@ -699,44 +673,6 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table Entity */
   lazy val Entity = new TableQuery(tag => new Entity(tag))
-
-  /** Entity class storing rows of table EntitySelection
-   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
-   *  @param dateCreated Database column date_created SqlType(timestamp)
-   *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param entityName Database column entity_name SqlType(varchar), Length(100,true)
-   *  @param entityId Database column entity_id SqlType(int4)
-   *  @param entityKind Database column entity_kind SqlType(varchar), Length(100,true) */
-  case class EntitySelectionRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, entityName: String, entityId: Int, entityKind: String)
-  /** GetResult implicit for fetching EntitySelectionRow objects using plain SQL queries */
-  implicit def GetResultEntitySelectionRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[EntitySelectionRow] = GR{
-    prs => import prs._
-    EntitySelectionRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int], <<[String]))
-  }
-  /** Table description of table entity_selection. Objects of this class serve as prototypes for rows in queries. */
-  class EntitySelection(_tableTag: Tag) extends Table[EntitySelectionRow](_tableTag, "entity_selection") {
-    def * = (id, dateCreated, lastUpdated, entityName, entityId, entityKind) <> (EntitySelectionRow.tupled, EntitySelectionRow.unapply)
-    /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(entityName), Rep.Some(entityId), Rep.Some(entityKind)).shaped.<>({r=>import r._; _1.map(_=> EntitySelectionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
-
-    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
-    /** Database column date_created SqlType(timestamp) */
-    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
-    /** Database column last_updated SqlType(timestamp) */
-    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column entity_name SqlType(varchar), Length(100,true) */
-    val entityName: Rep[String] = column[String]("entity_name", O.Length(100,varying=true))
-    /** Database column entity_id SqlType(int4) */
-    val entityId: Rep[Int] = column[Int]("entity_id")
-    /** Database column entity_kind SqlType(varchar), Length(100,true) */
-    val entityKind: Rep[String] = column[String]("entity_kind", O.Length(100,varying=true))
-
-    /** Foreign key referencing Entity (database name entity_entity_selection_fk) */
-    lazy val entityFk = foreignKey("entity_entity_selection_fk", entityId, Entity)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-  }
-  /** Collection-like TableQuery object for table EntitySelection */
-  lazy val EntitySelection = new TableQuery(tag => new EntitySelection(tag))
 
   /** Entity class storing rows of table EventsEvent
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
@@ -773,7 +709,7 @@ trait Tables {
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param locationId Database column location_id SqlType(int4)
    *  @param eventId Database column event_id SqlType(int4)
-   *  @param relationshipType Database column relationship_type SqlType(varchar)
+   *  @param relationshipType Database column relationship_type SqlType(varchar), Length(100,true)
    *  @param isCurrent Database column is_current SqlType(bool)
    *  @param relationshiprecordId Database column relationshiprecord_id SqlType(int4) */
   case class EventsEventlocationcrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, locationId: Int, eventId: Int, relationshipType: String, isCurrent: Boolean, relationshiprecordId: Int)
@@ -798,8 +734,8 @@ trait Tables {
     val locationId: Rep[Int] = column[Int]("location_id")
     /** Database column event_id SqlType(int4) */
     val eventId: Rep[Int] = column[Int]("event_id")
-    /** Database column relationship_type SqlType(varchar) */
-    val relationshipType: Rep[String] = column[String]("relationship_type")
+    /** Database column relationship_type SqlType(varchar), Length(100,true) */
+    val relationshipType: Rep[String] = column[String]("relationship_type", O.Length(100,varying=true))
     /** Database column is_current SqlType(bool) */
     val isCurrent: Rep[Boolean] = column[Boolean]("is_current")
     /** Database column relationshiprecord_id SqlType(int4) */

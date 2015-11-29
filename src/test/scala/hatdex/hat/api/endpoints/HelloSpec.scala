@@ -1,7 +1,7 @@
 package hatdex.hat.api.endpoints
 
-import hatdex.hat.api.authentication.HatAuthTestHandler
-import hatdex.hat.authentication.authenticators.{UserPassHandler, AccessTokenHandler}
+import hatdex.hat.authentication.HatAuthTestHandler
+import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
 import spray.http.StatusCodes._
 import spray.testkit.Specs2RouteTest
@@ -15,7 +15,7 @@ class HelloSpec extends Specification with Specs2RouteTest with Hello {
 
   sequential
 
-  "InboundDataService" should {
+  "Hello Service" should {
 
     "return a greeting for GET requests to the root path" in {
       Get() ~> sealRoute(routes) ~>

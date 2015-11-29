@@ -32,8 +32,8 @@ trait DataService {
 
       // Retrieve values of those fields from the database, grouping by Record ID
       val values = valuesQuery.filter(_.fieldId inSet fieldsToGet)
-         .take(10000) // FIXME: magic number for getting X records
-         .sortBy(_.recordId.desc)
+        .take(10000) // FIXME: magic number for getting X records
+        .sortBy(_.recordId.desc)
         .run
         .groupBy(_.recordId)
 
@@ -103,10 +103,13 @@ trait DataService {
   }
 
   def createTable(table: ApiDataTable)(implicit session: Session): Try[ApiDataTable] = {
+    logger.debug("Creating new table for " + table)
     val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, table.source)
     val maybeTable = Try((DataTable returning DataTable) += newTable)
 
-    maybeTable flatMap { insertedTable =>
+    logger.debug("Table created? " + maybeTable)
+
+    val result = maybeTable flatMap { insertedTable =>
       val apiDataFields = table.fields map { fields =>
         val insertedFields = fields.map(createField(_, Some(insertedTable.id)))
         // Flattens to a simple Try with list if fields
@@ -141,6 +144,9 @@ trait DataService {
           Success(ApiDataTable.fromDataTable(insertedTable)(None)(Some(insertedSubtables)))
       }
     }
+
+    logger.debug("create table result" + result)
+    result
   }
 
   def linkTables(parentId: Int, childId: Int, relationship: ApiRelationship)(implicit session: Session): Try[Int] = {
@@ -263,8 +269,22 @@ trait DataService {
     }
   }
 
-  def findTable(name: String, source: String)(implicit session: Session): Option[ApiDataTable] = {
-    val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name === name).run.headOption
+  def findTable(name: String, source: String)(implicit session: Session): Seq[ApiDataTable] = {
+    val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name === name).run
+    dbDataTable map { table =>
+      ApiDataTable.fromDataTable(table)(None)(None)
+    }
+  }
+
+  def findTablesLike(name: String, source: String)(implicit session: Session): Seq[ApiDataTable] = {
+    val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name like "%" + name + "%").run
+    dbDataTable map { table =>
+      ApiDataTable.fromDataTable(table)(None)(None)
+    }
+  }
+
+  def findTablesNotLike(name: String, source: String)(implicit session: Session): Seq[ApiDataTable] = {
+    val dbDataTable = DataTable.filter(_.sourceName === source).filterNot(_.name like "%" + name + "%").run
     dbDataTable map { table =>
       ApiDataTable.fromDataTable(table)(None)(None)
     }
@@ -329,6 +349,23 @@ trait DataService {
     val field = DataField.filter(_.id === fieldId).run.headOption
     field map { dataField =>
       ApiDataField.fromDataField(dataField)
+    }
+  }
+
+  def storeRecordValues(recordValues: ApiRecordValues)(implicit session: Session): Try[ApiRecordValues] = {
+    val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), recordValues.record.name)
+    val maybeRecord = Try((DataRecord returning DataRecord) += newRecord)
+
+    maybeRecord flatMap { insertedRecord =>
+      val record = ApiDataRecord.fromDataRecord(insertedRecord)(None)
+      val insertedValues = recordValues.values map { value =>
+        createValue(value, None, record.id)
+      }
+
+      val maybeValues = Utils.flatten(insertedValues)
+      maybeValues.map { values =>
+        ApiRecordValues(record, values)
+      }
     }
   }
 }

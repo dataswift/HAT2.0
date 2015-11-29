@@ -17,7 +17,7 @@ case class ApiDataDebit(
     price: Float,
     kind: String,
     bundleContextless: Option[ApiBundleContextless],
-    bundleContextual: Option[String])
+    bundleContextual: Option[ApiBundleContext])
 
 object ApiDataDebit {
   def fromDbModel(dataDebitRow: DataDebitRow): ApiDataDebit = {
@@ -33,18 +33,18 @@ case class ApiDataDebitOut(
     dateCreated: Option[LocalDateTime],
     lastUpdated: Option[LocalDateTime],
     name: String,
-    start_date: LocalDateTime,
-    end_date: LocalDateTime,
+    startDate: LocalDateTime,
+    endDate: LocalDateTime,
     rolling: Boolean,
     sell: Boolean,
     price: Double,
     kind: String,
     bundleContextless: Option[ApiBundleContextlessData],
-    bundleContextual: Option[String])
+    bundleContextual: Option[Seq[ApiEntity]])
 
 object ApiDataDebitOut {
   def fromDbModel(dataDebitRow: DataDebitRow, apiBundleContextlessData: Option[ApiBundleContextlessData],
-                  apiBundleContextualData: Option[String]): ApiDataDebitOut = {
+                  apiBundleContextualData: Option[Seq[ApiEntity]]): ApiDataDebitOut = {
     new ApiDataDebitOut(Some(dataDebitRow.dataDebitKey), Some(dataDebitRow.dateCreated), Some(dataDebitRow.lastUpdated),
       dataDebitRow.name, dataDebitRow.startDate, dataDebitRow.endDate, dataDebitRow.rolling, dataDebitRow.sellRent,
       dataDebitRow.price, dataDebitRow.kind, apiBundleContextlessData, apiBundleContextualData)

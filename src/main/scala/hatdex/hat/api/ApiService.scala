@@ -1,86 +1,68 @@
+/*
+ * Copyright (c) 2015.
+ *
+ * This work is licensed under the
+ * Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-nd/4.0/
+ * or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+ */
+
 package hatdex.hat.api
 
-import akka.actor.ActorLogging
-import akka.event.Logging
+import akka.actor.{ActorLogging, ActorRefFactory}
+import akka.event.LoggingAdapter
 import hatdex.hat.api.endpoints._
-import hatdex.hat.api.models.ErrorMessage
-import spray.http._
-import spray.httpx.SprayJsonSupport._
-import spray.httpx.marshalling
-import spray.json.DefaultJsonProtocol._
-import spray.routing.directives.LogEntry
-import spray.routing.{HttpServiceActor, MalformedRequestContentRejection, Rejected, RejectionHandler}
+import hatdex.hat.api.service._
+import spray.routing._
+import spray.util.LoggingContext
 
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor
 class ApiService extends HttpServiceActor with ActorLogging with Cors {
-  override def actorRefFactory = context
+  val apiLogger = LoggingContext.fromActorRefFactory
 
   // The HttpService trait defines only one abstract member, which
   // connects the services environment to the enclosing actor or test.
   // We also want logging, hence the abstract logger member is included
   // in HAT services as well
+
   trait LoggingHttpService {
     def actorRefFactory = context
     val logger = log
   }
 
-  // Initialise all the service the actor handles
-  val helloService = new Hello with LoggingHttpService
-  val apiDataService = new Data with LoggingHttpService
-  val apiBundleService = new Bundles with LoggingHttpService
-  val dataDebitService = new DataDebit with LoggingHttpService
-  val apiPropertyService = new Property with LoggingHttpService
-  val eventsService = new Event with LoggingHttpService
-  val locationsService = new Location with LoggingHttpService
-  val peopleService = new Person with LoggingHttpService
-  val thingsService = new Thing with LoggingHttpService
-  val organisationsService = new Organisation with LoggingHttpService
-  val userService = new Users with LoggingHttpService
-  val typeService = new Type with LoggingHttpService
+  val api: Api = new Api {
+    implicit def actorRefFactory: ActorRefFactory = context
 
-  // logs request method, uri and response status at debug level
-  def requestMethodAndResponseStatusAsInfo(req: HttpRequest): Any => Option[LogEntry] = {
-    case res: HttpResponse => Some(LogEntry(req.method + ":" + req.uri + ":" + res.message.status, Logging.InfoLevel))
-    case Rejected(rejections) => Some(LogEntry(req.method + ":" + req.uri + ":" + rejections.toString(), Logging.ErrorLevel)) // log rejections
-    case _ => None // other kind of responses
-  }
+    // Initialise all the service the actor handles
+    val helloService = new Hello with LoggingHttpService
+    val apiDataService = new Data with LoggingHttpService
+    val apiBundleService = new Bundles with LoggingHttpService
+    val apiPropertyService = new Property with LoggingHttpService
+    val eventsService = new Event with LoggingHttpService
+    val locationsService = new Location with LoggingHttpService
+    val peopleService = new Person with LoggingHttpService
+    val thingsService = new Thing with LoggingHttpService
+    val organisationsService = new Organisation with LoggingHttpService
 
-  // Wraps rejections in JSON to be sent back to the client
-  def jsonRejectionHandler = RejectionHandler {
-    case MalformedRequestContentRejection (msg, cause) :: Nil =>
-      implicit val errorFormat = jsonFormat2(ErrorMessage.apply)
-      complete (StatusCodes.BadRequest, ErrorMessage ("The request content was malformed", msg) )
-
-    // default case that wraps the Default error message into json
-    case x if RejectionHandler.Default.isDefinedAt (x) =>
-      ctx => RejectionHandler.Default (x) {
-        ctx.withHttpResponseMapped {
-          case resp@HttpResponse (_, HttpEntity.NonEmpty (ContentType (MediaTypes.`text/plain`, _), msg), _, _) =>
-            implicit val errorFormat = jsonFormat2(ErrorMessage.apply)
-            resp.withEntity (marshalling.marshalUnsafe (ErrorMessage (msg.asString, "") ) )
-        }
-      }
-  }
-
-  // Concatenate all the handled routes
-  val routes = logRequestResponse(requestMethodAndResponseStatusAsInfo _) {
-    cors {
-      handleRejections(jsonRejectionHandler) {
-        helloService.routes ~
-          apiDataService.routes ~
-          apiPropertyService.routes ~
-          apiBundleService.routes ~
-          eventsService.routes ~
-          locationsService.routes ~
-          peopleService.routes ~
-          thingsService.routes ~
-          organisationsService.routes ~
-          userService.routes ~
-          typeService.routes ~
-          dataDebitService.routes
-      }
+    val apiBundlesContextService = new BundlesContext with LoggingHttpService {
+      def eventsService: EventsService = ApiService.this.api.eventsService
+      def peopleService: PeopleService = ApiService.this.api.peopleService
+      def thingsService: ThingsService = ApiService.this.api.thingsService
+      def locationsService: LocationsService = ApiService.this.api.locationsService
+      def organisationsService: OrganisationsService = ApiService.this.api.organisationsService
     }
+
+    val dataDebitService = new DataDebit with LoggingHttpService {
+      val bundlesService: BundleService = apiBundleService
+      val bundleContextService: BundleContextService = apiBundlesContextService
+    }
+    val userService = new Users with LoggingHttpService
+    val typeService = new Type with LoggingHttpService
+  }
+
+  val routes = logRequestResponse(api.requestMethodAndResponseStatusAsInfo _) {
+    api.routes
   }
 
   def receive = runRoute(routes)

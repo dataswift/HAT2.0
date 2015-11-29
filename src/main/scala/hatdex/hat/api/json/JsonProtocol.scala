@@ -12,6 +12,8 @@ object JsonProtocol extends DefaultJsonProtocol with UuidMarshalling with DateTi
   implicit val virtualTableFormat: RootJsonFormat[ApiDataTable] = rootFormat(lazyFormat(jsonFormat7(ApiDataTable.apply)))
   implicit val apiDataRecord = jsonFormat5(ApiDataRecord.apply)
 
+  implicit val apiRecordValues = jsonFormat2(ApiRecordValues.apply)
+
   // Any id (used for crossreferences)
   implicit val apiGenericId = jsonFormat1(ApiGenericId.apply)
 
@@ -42,6 +44,9 @@ object JsonProtocol extends DefaultJsonProtocol with UuidMarshalling with DateTi
   implicit val apiPersonRelationship = jsonFormat2(ApiPersonRelationship.apply)
   implicit val apiThingRelationship = jsonFormat2(ApiThingRelationship.apply)
 
+  // Entity Wrapper
+  implicit val apiEntity = jsonFormat6(ApiEntity.apply)
+
   // Properties
   implicit val apiProperty = jsonFormat7(ApiProperty.apply)
 
@@ -60,6 +65,13 @@ object JsonProtocol extends DefaultJsonProtocol with UuidMarshalling with DateTi
   implicit val apiBundleContextless = jsonFormat5(ApiBundleContextless.apply)
 
   implicit val apiBundleContextlessData = jsonFormat3(ApiBundleContextlessData.apply)
+
+  implicit val apiBundleContextProperty =
+    jsonFormat8(ApiBundleContextPropertySelection.apply)
+  implicit val apiBundleContextEntity =
+    jsonFormat7(ApiBundleContextEntitySelection.apply)
+  implicit val apiBundleContext: RootJsonFormat[ApiBundleContext] =
+    rootFormat(lazyFormat(jsonFormat6(ApiBundleContext.apply)))
 
   implicit val apiDataDebit = jsonFormat12(ApiDataDebit.apply)
   implicit val apiDataDebitOut = jsonFormat12(ApiDataDebitOut.apply)

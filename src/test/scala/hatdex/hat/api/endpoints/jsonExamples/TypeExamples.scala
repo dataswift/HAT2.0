@@ -1,8 +1,5 @@
 package hatdex.hat.api.endpoints.jsonExamples
 
-/**
- * Created by andrius on 31/10/15.
- */
 object TypeExamples {
   val postalAddress =
     """

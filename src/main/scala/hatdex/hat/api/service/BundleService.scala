@@ -1,6 +1,7 @@
 package hatdex.hat.api.service
 
 import akka.event.LoggingAdapter
+import hatdex.hat.Utils
 import hatdex.hat.api.models._
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
@@ -15,7 +16,7 @@ trait BundleService extends DataService {
 
   protected[api] def getBundleTableValues(bundleTableId: Int)(implicit session: Session): Option[ApiBundleTable] = {
     val bundleDataTableQuery = for {
-      bundleTable <- BundleTable.filter(_.id === bundleTableId)
+      bundleTable <- BundleContextlessTable.filter(_.id === bundleTableId)
       dataTable <- bundleTable.dataTableFk
     } yield (bundleTable, dataTable)
 
@@ -24,7 +25,7 @@ trait BundleService extends DataService {
     maybeBundleDataTable match {
       case Success(bundleDataTable) =>
 
-        bundleDataTable map { case (bundleTable: BundleTableRow, dataTable: DataTableRow) =>
+        bundleDataTable map { case (bundleTable: BundleContextlessTableRow, dataTable: DataTableRow) =>
           val tableId = dataTable.id
           val slices = getBundleTableSlices(bundleTableId)
           val apiDataTables = slices match {
@@ -87,8 +88,8 @@ trait BundleService extends DataService {
     // TODO: include join fields
     val bundleQuery = for {
       bundle <- BundleContextless.filter(_.id === bundleId) // 1 or 0
-      combination <- BundleJoin.filter(_.bundleId === bundleId) // N for each bundle
-      table <- combination.bundleTableFk // 1 for each combination
+      combination <- BundleContextlessJoin.filter(_.bundleContextlessId === bundleId) // N for each bundle
+      table <- combination.bundleContextlessTableFk // 1 for each combination
     } yield (bundle, combination, table)
 
     val maybeBundle = Try(bundleQuery.run)
@@ -122,10 +123,10 @@ trait BundleService extends DataService {
     // Require the bundle to be based on a data table that already exists
     bundleTable.table.id match {
       case Some(tableId) =>
-        val bundleTableRow = new BundleTableRow(0, LocalDateTime.now(), LocalDateTime.now(), bundleTable.name, tableId)
+        val bundleTableRow = new BundleContextlessTableRow(0, LocalDateTime.now(), LocalDateTime.now(), bundleTable.name, tableId)
 
         // Using Try to handle errors
-        Try((BundleTable returning BundleTable) += bundleTableRow) flatMap { insertedBundleTable =>
+        Try((BundleContextlessTable returning BundleContextlessTable) += bundleTableRow) flatMap { insertedBundleTable =>
           // Convert from database format to API format
           val insertedApiBundleTable = ApiBundleTable.fromBundleTable(insertedBundleTable)(bundleTable.table)
           // A partial function to store all table slices related to this bundle table
@@ -134,7 +135,7 @@ trait BundleService extends DataService {
           val apiSlices = bundleTable.slices map { tableSlices =>
             val slices = tableSlices.map(storeBundleSlice)
             // Flattens to a simple Try with list if slices or returns the first error that occurred
-            flatten(slices)
+            Utils.flatten(slices)
           }
 
           apiSlices match {
@@ -157,7 +158,7 @@ trait BundleService extends DataService {
   protected[api] def getBundleTableById(bundleTableId: Int)(implicit session: Session): Option[ApiBundleTable] = {
     // Traversing entity graph the Slick way
     val tableQuery = for {
-      bundleTable <- BundleTable.filter(_.id === bundleTableId)
+      bundleTable <- BundleContextlessTable.filter(_.id === bundleTableId)
       dataTable <- bundleTable.dataTableFk
     } yield (bundleTable, dataTable)
 
@@ -165,7 +166,7 @@ trait BundleService extends DataService {
 
     // Map back from database types to API ones
     table map {
-      case (bundleTable: BundleTableRow, dataTable: DataTableRow) =>
+      case (bundleTable: BundleContextlessTableRow, dataTable: DataTableRow) =>
         val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
         val apiBundleTable = ApiBundleTable.fromBundleTable(bundleTable)(apiDataTable)
         val slices = apiBundleTable.id.flatMap(getBundleTableSlices)
@@ -183,11 +184,11 @@ trait BundleService extends DataService {
 
       case (slice.table.id, Some(bundleTableId), Some(sliceTableId)) =>
 
-        val sliceRow = new BundleTablesliceRow(
+        val sliceRow = new BundleContextlessTableSliceRow(
           0, LocalDateTime.now(), LocalDateTime.now(),
           bundleTableId, sliceTableId)
 
-        Try((BundleTableslice returning BundleTableslice) += sliceRow) flatMap { insertedSlice =>
+        Try((BundleContextlessTableSlice returning BundleContextlessTableSlice) += sliceRow) flatMap { insertedSlice =>
           val insertedApiBundleTableSlice = ApiBundleTableSlice.fromBundleTableSlice(insertedSlice)(slice.table)
 
           def storeSliceCondition = storeCondition(insertedApiBundleTableSlice) _
@@ -196,7 +197,7 @@ trait BundleService extends DataService {
           // If all conditions have been inserted successfully,
           // Return the complete ApiBundleTableSlice object;
           // Otherwise, the first error that occurred
-          flatten(conditions) map { apiConditions =>
+          Utils.flatten(conditions) map { apiConditions =>
             insertedApiBundleTableSlice.copy(conditions = apiConditions)
           }
         }
@@ -212,13 +213,13 @@ trait BundleService extends DataService {
 
     // Traversing entity graph the Slick way
     val slicesQuery = for {
-      slice <- BundleTableslice.filter(_.bundleTableId === bundleTableId)
+      slice <- BundleContextlessTableSlice.filter(_.bundleContextlessTableId === bundleTableId)
       dataTable <- slice.dataTableFk
     } yield (slice, dataTable)
 
     val slices = slicesQuery.run
 
-    val result = slices flatMap { case (slice: BundleTablesliceRow, dataTable: DataTableRow) =>
+    val result = slices flatMap { case (slice: BundleContextlessTableSliceRow, dataTable: DataTableRow) =>
       // Returning the Data Table information of the slice without subTables or fields
       val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
       val apiSlice = ApiBundleTableSlice.fromBundleTableSlice(slice)(apiDataTable)
@@ -226,7 +227,7 @@ trait BundleService extends DataService {
         apiSlice.copy(conditions = conditions)
       }
     }
-    seqOption(result)
+    Utils.seqOption(result)
   }
 
   protected[api] def storeCondition(bundleTableSlice: ApiBundleTableSlice)
@@ -235,11 +236,11 @@ trait BundleService extends DataService {
 
     (bundleTableSlice.table.id, condition.field.id, bundleTableSlice.id) match {
       case (condition.field.tableId, Some(fieldId), Some(sliceId)) =>
-        val conditionRow = new BundleTablesliceconditionRow(
+        val conditionRow = new BundleContextlessTableSliceConditionRow(
           0, LocalDateTime.now(), LocalDateTime.now(),
           fieldId, sliceId, condition.operator.toString, condition.value)
 
-        Try((BundleTableslicecondition returning BundleTableslicecondition) += conditionRow) map { insertedCondition =>
+        Try((BundleContextlessTableSliceCondition returning BundleContextlessTableSliceCondition) += conditionRow) map { insertedCondition =>
           ApiBundleTableCondition.fromBundleTableSliceCondition(insertedCondition)(condition.field)
         }
 
@@ -253,12 +254,12 @@ trait BundleService extends DataService {
                                        (implicit session: Session): Seq[ApiBundleTableCondition] = {
     // Traversing entity graph the Slick way
     val conditionsQuery = for {
-      c <- BundleTableslicecondition.filter(_.tablesliceId === tableSliceId)
+      c <- BundleContextlessTableSliceCondition.filter(_.tableSliceId === tableSliceId)
       f <- c.dataFieldFk
     } yield (c, f)
 
     val conditions = conditionsQuery.run
-    conditions map { case (condition: BundleTablesliceconditionRow, field: DataFieldRow) =>
+    conditions map { case (condition: BundleContextlessTableSliceConditionRow, field: DataFieldRow) =>
       val apiField = ApiDataField.fromDataField(field)
       ApiBundleTableCondition.fromBundleTableSliceCondition(condition)(apiField)
     }
@@ -268,14 +269,17 @@ trait BundleService extends DataService {
                                            (implicit session: Session): Try[ApiBundleContextless] = {
     val bundleContextlessRow = new BundleContextlessRow(0, bundle.name, LocalDateTime.now(), LocalDateTime.now())
 
-    Try((BundleContextless returning BundleContextless) += bundleContextlessRow) flatMap { insertedBundle =>
-      val bundleApi = ApiBundleContextless.fromBundleContextlessTables(insertedBundle)(bundle.tables)
-      bundleApi.tables match {
-        case Some(tables) =>
-          val storedCombinations = tables map { combination =>
+    val maybeInsertedBundle = Try((BundleContextless returning BundleContextless) += bundleContextlessRow)
+
+    maybeInsertedBundle flatMap { insertedBundle =>
+      // Empty Contextless Bundle
+      val bundleApi = ApiBundleContextless.fromBundleContextlessTables(insertedBundle)(None)
+      bundle.tables match {
+        case Some(bundleCombinations) =>
+          val storedCombinations = bundleCombinations map { combination =>
             storeBundleCombination(combination)(bundleApi)
           }
-          flatten(storedCombinations) map { apiCombinations =>
+          Utils.flatten(storedCombinations) map { apiCombinations =>
             bundleApi.copy(tables = Some(apiCombinations))
           }
         case None =>
@@ -289,22 +293,24 @@ trait BundleService extends DataService {
       // Traversing entity graph the Slick way
       // A fairly complex case with a lot of related data that needs to be retrieved for each bundle join
       val tableQuery = for {
-        join <- BundleJoin.filter(_.bundleId === bundleId)
-        bundleTable <- join.bundleTableFk
+        ((join, joinField), tableField) <- BundleContextlessJoin.filter(_.bundleContextlessId === bundleId)
+          .joinLeft(DataField)
+          .on(_.bundleContextlessJoinField === _.id)
+          .joinLeft(DataField)
+          .on(_._1.bundleContextlessTableField === _.id)
+        bundleTable <- join.bundleContextlessTableFk
         dataTable <- bundleTable.dataTableFk
-        joinField <- join.dataFieldFk3
-        tableField <- join.dataFieldFk4
       } yield (join, bundleTable, dataTable, joinField, tableField)
 
       val tables = tableQuery.run
 
       val apiTables = tables.map {
-        case (join: BundleJoinRow, bundleTable: BundleTableRow, dataTable: DataTableRow, joinField: DataFieldRow, tableField: DataFieldRow) =>
+        case (join: BundleContextlessJoinRow, bundleTable: BundleContextlessTableRow, dataTable: DataTableRow, joinField: Option[DataFieldRow], tableField: Option[DataFieldRow]) =>
           val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
           val apiTable = ApiBundleTable.fromBundleTable(bundleTable)(apiDataTable)
-          val apiJoinField = ApiDataField.fromDataField(joinField)
-          val apiTableField = ApiDataField.fromDataField(tableField)
-          ApiBundleCombination.fromBundleJoin(join)(Some(apiJoinField), Some(apiTableField), apiTable)
+          val apiJoinField = joinField.map(ApiDataField.fromDataField)
+          val apiTableField = tableField.map(ApiDataField.fromDataField)
+          ApiBundleCombination.fromBundleJoin(join)(apiJoinField, apiTableField, apiTable)
       }
 
       ApiBundleContextless.fromBundleContextlessTables(bundle)(Some(apiTables))
@@ -316,51 +322,45 @@ trait BundleService extends DataService {
                                            (bundle: ApiBundleContextless)
                                            (implicit session: Session): Try[ApiBundleCombination] = {
 
-    (combination.bundleTable.id, bundle.id) match {
+    val storedBundleTableID = combination.bundleTable.id match {
+      case Some(bundleTableId) =>
+        // Bundle Table already exists, just return it
+        Success(Some(bundleTableId))
+      case None =>
+        storeBundleTable(combination.bundleTable).map(_.id)
+    }
+
+    (storedBundleTableID, bundle.id) match {
       // Both bundle table and bundle id have to be "well defined", already with IDs
-      case (Some(bundleTableId), Some(bundleId)) =>
+      case (Success(Some(bundleTableId)), Some(bundleId)) =>
         (combination.bundleJoinField, combination.bundleTableField, combination.operator) match {
           // Either both bundleJoinField, bundleTableField and the comparison operator have to be defined
           case (Some(bundleJoinField), Some(bundleTableField), Some(comparisonOperator)) =>
-            val combinationRow = new BundleJoinRow(0, LocalDateTime.now(), LocalDateTime.now(),
+            val combinationRow = new BundleContextlessJoinRow(0, LocalDateTime.now(), LocalDateTime.now(),
               combination.name, bundleTableId, bundleId,
               bundleJoinField.id, bundleTableField.id, Some(comparisonOperator.toString))
 
-            Try((BundleJoin returning BundleJoin) += combinationRow) map { insertedCombination =>
+            Try((BundleContextlessJoin returning BundleContextlessJoin) += combinationRow) map { insertedCombination =>
               ApiBundleCombination.fromBundleJoin(insertedCombination)(Some(bundleJoinField), Some(bundleTableField), combination.bundleTable)
             }
 
           // Or none of them
           case (None, None, None) =>
-            val combinationRow = new BundleJoinRow(0, LocalDateTime.now(), LocalDateTime.now(),
+            val combinationRow = new BundleContextlessJoinRow(0, LocalDateTime.now(), LocalDateTime.now(),
               combination.name, bundleTableId, bundleId,
               None, None, None)
 
-            Try((BundleJoin returning BundleJoin) += combinationRow) map { insertedCombination =>
+            Try((BundleContextlessJoin returning BundleContextlessJoin) += combinationRow) map { insertedCombination =>
               ApiBundleCombination.fromBundleJoin(insertedCombination)(None, None, combination.bundleTable)
             }
           case _ =>
             Failure(new IllegalArgumentException("Both columns must be provided to join data on as well as the operator, or none"))
         }
 
+      case (Failure(e), _) =>
+        Failure(new IllegalArgumentException(s"Failure creating Bundle Table ${combination.bundleTable}"))
       case _ =>
         Failure(new IllegalArgumentException(s"Bundle Table ${combination.bundleTable.id} to create a bundle combination on (bundle ${bundle.id}) not found"))
     }
-  }
-
-  protected def flatten[T](xs: Seq[Try[T]]): Try[Seq[T]] = {
-    val (ss: Seq[Success[T]]@unchecked, fs: Seq[Failure[T]]@unchecked) =
-      xs.partition(_.isSuccess)
-
-    if (fs.isEmpty) Success(ss map (_.get))
-    else Failure[Seq[T]](fs(0).exception) // Only keep the first failure
-  }
-
-  // Utility function to return None for empty sequences
-  private def seqOption[T](seq: Seq[T]): Option[Seq[T]] = {
-    if (seq.isEmpty)
-      None
-    else
-      Some(seq)
   }
 }

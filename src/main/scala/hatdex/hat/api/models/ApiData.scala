@@ -90,3 +90,7 @@ object ApiDataValue {
       value.value, maybeApiField, maybeApiRecord)
   }
 }
+
+case class ApiRecordValues(
+    record: ApiDataRecord,
+    values: Seq[ApiDataValue])

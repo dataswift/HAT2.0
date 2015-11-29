@@ -28,7 +28,7 @@ trait Users extends HttpService with HatServiceAuthHandler {
   import hatdex.hat.api.json.JsonProtocol._
 
   def createApiUserAccount = path("user") {
-    accessTokenHandler { implicit systemUser: User =>
+    (userPassHandler | accessTokenHandler) { implicit systemUser: User =>
       authorize(UserAuthorization.hasPermissionCreateUser) {
         post {
           entity(as[User]) { implicit newUser =>
@@ -52,7 +52,7 @@ trait Users extends HttpService with HatServiceAuthHandler {
                     val createdUser = Try((UserUser returning UserUser) += newUserDb)
                     createdUser match {
                       case Success(userDb) =>
-                        User(userDb.userId, userDb.email, None, userDb.name, userDb.role)
+                        (Created, User(userDb.userId, userDb.email, None, userDb.name, userDb.role))
                       case Failure(e) =>
                         (BadRequest, e.getMessage)
                     }
@@ -70,7 +70,7 @@ trait Users extends HttpService with HatServiceAuthHandler {
   }
 
   def suspendUserAccount = path("user" / JavaUUID / "disable") { userId: UUID =>
-    accessTokenHandler { implicit systemUser: User =>
+    (userPassHandler | accessTokenHandler) { implicit systemUser: User =>
       authorize(UserAuthorization.hasPermissionDisableUser) {
         put {
           db.withSession { implicit session =>
@@ -93,7 +93,7 @@ trait Users extends HttpService with HatServiceAuthHandler {
   }
 
   def enableUserAccount = path("user" / JavaUUID / "enable") { userId: UUID =>
-    accessTokenHandler { implicit systemUser: User =>
+    (userPassHandler | accessTokenHandler) { implicit systemUser: User =>
       authorize(UserAuthorization.hasPermissionEnableUser) {
         put {
           db.withSession { implicit session =>

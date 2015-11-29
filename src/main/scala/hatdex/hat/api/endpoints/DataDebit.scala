@@ -28,10 +28,8 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
       proposeDataDebitApi ~
         retrieveDataDebitValuesApi ~
         listDataDebitsApi ~
-      userPassHandler { implicit user: User =>
         enableDataDebitApi ~
-          disableDataDebitApi
-      }
+        disableDataDebitApi
     }
   }
 
@@ -41,10 +39,8 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
   def proposeDataDebitApi = path("propose") {
     post {
       (userPassHandler | accessTokenHandler) { implicit user: User =>
-        logger.debug(s"DataDebitService POST /dataDebit/propose authenticated")
         db.withSession { implicit session =>
           entity(as[ApiDataDebit]) { debit =>
-            logger.debug(s"DataDebitService POST /dataDebit/propose parsed")
             (debit.kind, debit.bundleContextless, debit.bundleContextual) match {
 
               case ("contextless", Some(bundle), None) =>
@@ -54,20 +50,29 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
                 complete {
                   maybeCreatedDebit match {
                     case Success(createdDebit) =>
-                      createdDebit
+                      (Created, createdDebit)
                     case Failure(e) =>
-                      (BadRequest, ErrorMessage("Request to create a data debit is malformed", e.getMessage))
+                      (BadRequest, ErrorMessage("Request to create a contextless data debit is malformed", e.getMessage))
                   }
                 }
 
               case ("contextual", None, Some(bundle)) =>
+                val maybeCreatedDebit = storeContextDataDebit(debit, bundle)
+                session.close()
+
                 complete {
-                  (NotImplemented, ErrorMessage("Contextual bundles not yet implemented", ""))
+                  maybeCreatedDebit match {
+                    case Success(createdDebit) =>
+                      (Created, createdDebit)
+                    case Failure(e) =>
+                      (BadRequest, ErrorMessage("Request to create a contextual data debit is malformed", e.getMessage))
+                  }
                 }
 
               case _ =>
+                session.close()
                 complete {
-                  (BadRequest, ErrorMessage("Request to create a data debit is malformed", ""))
+                  (BadRequest, ErrorMessage("Request to create a data debit is malformed", "Data debit must be for contextual or contextless data and have associated bundle defined"))
                 }
             }
           }
@@ -76,52 +81,56 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
     }
   }
 
-  def enableDataDebitApi(implicit user: User) = path(JavaUUID / "enable") { dataDebitKey: UUID =>
+  def enableDataDebitApi = path(JavaUUID / "enable") { dataDebitKey: UUID =>
     put {
-      db.withSession { implicit session =>
-        val dataDebit = findDataDebitByKey(dataDebitKey)
+      userPassHandler { implicit user: User =>
+        db.withSession { implicit session =>
+          val dataDebit = findDataDebitByKey(dataDebitKey)
 
-        authorize(DataDebitAuthorization.hasPermissionModifyDataDebit(dataDebit)) {
-          val result = dataDebit map enableDataDebit
-          session.close()
+          authorize(DataDebitAuthorization.hasPermissionModifyDataDebit(dataDebit)) {
+            val result = dataDebit map enableDataDebit
+            session.close()
 
-          complete {
-            result match {
-              case None =>
-                (NotFound, ErrorMessage("DataDebit not Found", s"Data Debit $dataDebitKey not found"))
-              case Some(Success(debit)) =>
-                OK
-              case Some(Failure(e)) =>
-                (BadRequest, ErrorMessage("Error enabling DataDebit", e.getMessage))
+            complete {
+              result match {
+                case None =>
+                  (NotFound, ErrorMessage("DataDebit not Found", s"Data Debit $dataDebitKey not found"))
+                case Some(Success(debit)) =>
+                  OK
+                case Some(Failure(e)) =>
+                  (BadRequest, ErrorMessage("Error enabling DataDebit", e.getMessage))
+              }
             }
           }
-        }
 
+        }
       }
     }
   }
 
-  def disableDataDebitApi(implicit user: User) = path(JavaUUID / "disable") { dataDebitKey: UUID =>
+  def disableDataDebitApi = path(JavaUUID / "disable") { dataDebitKey: UUID =>
     put {
-      db.withSession { implicit session =>
-        val dataDebit = findDataDebitByKey(dataDebitKey)
+      userPassHandler { implicit user: User =>
+        db.withSession { implicit session =>
+          val dataDebit = findDataDebitByKey(dataDebitKey)
 
-        authorize(DataDebitAuthorization.hasPermissionModifyDataDebit(dataDebit)) {
-          val result = dataDebit map disableDataDebit
-          session.close()
-          
-          complete {
-            result match {
-              case None =>
-                (NotFound, ErrorMessage("DataDebit not Found", s"Data Debit $dataDebitKey not found"))
-              case Some(Success(debit)) =>
-                OK
-              case Some(Failure(e)) =>
-                (BadRequest, ErrorMessage("Error disabling DataDebit", e.getMessage))
+          authorize(DataDebitAuthorization.hasPermissionModifyDataDebit(dataDebit)) {
+            val result = dataDebit map disableDataDebit
+            session.close()
+
+            complete {
+              result match {
+                case None =>
+                  (NotFound, ErrorMessage("DataDebit not Found", s"Data Debit $dataDebitKey not found"))
+                case Some(Success(debit)) =>
+                  OK
+                case Some(Failure(e)) =>
+                  (BadRequest, ErrorMessage("Error disabling DataDebit", e.getMessage))
+              }
             }
           }
-        }
 
+        }
       }
     }
   }
@@ -135,17 +144,24 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
           authorize(DataDebitAuthorization.hasPermissionAccessDataDebit(dataDebit)) {
             dataDebit match {
               case Some(debit) =>
+                logger.debug("Retrieved data debit: " + debit)
                 (debit.kind, debit.bundleContextlessId, debit.bundleContextId) match {
                   case ("contextless", Some(bundleId), None) =>
                     complete {
                       // TODO: Find out why it is necessary to create a new session when working from within DataDebit
                       db.withSession { implicit session =>
-                        retrieveDataDebiValues(debit, bundleId)
+                        val values = retrieveDataDebiValues(debit, bundleId)
+                        session.close()
+                        values
                       }
                     }
                   case ("contextual", None, Some(bundleId)) =>
                     complete {
-                      (NotImplemented, ErrorMessage("Method not yet implemented", "Contextual bundle handling not yet implemented"))
+                      db.withSession { implicit session =>
+                        val values = bundleContextService.retrieveDataDebitContextualValues(debit, bundleId)
+                        session.close()
+                        values
+                      }
                     }
                   case _ =>
                     complete {
@@ -167,12 +183,10 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
   def listDataDebitsApi = pathEnd {
     get {
       userPassHandler { implicit user =>
-        logger.debug(s"DataDebitService GET /dataDebit authenticated")
         db.withSession { implicit session =>
           val apiDebits = listDataDebits
           session.close()
 
-          logger.debug(s"DataDebitService GET /dataDebit returning " + apiDebits.toString)
           complete {
             apiDebits
           }

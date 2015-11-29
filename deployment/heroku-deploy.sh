@@ -11,7 +11,7 @@ heroku addons:create heroku-postgresql:hobby-dev
 heroku pg:psql --app hatdemo < src/sql/HAT-V2.0.sql
 
 heroku pg:psql -c "CREATE EXTENSION pgcrypto;"
-pg:psql --app hatdemo < src/sql/extensions.sql
+pg:psql --app hatdemo < src/sql/boilerplate/extensions.sql
 
 # Setup HAT access
 echo "Setting up HAT access"
@@ -33,18 +33,18 @@ sed -e "s;%HAT_OWNER%;$HAT_OWNER;g"\
   -e "s;%HAT_PLATFORM_ID%;$HAT_PLATFORM_ID;g"\
   -e "s;%HAT_PLATFORM_NAME%;$HAT_PLATFORM_NAME;g"\
   -e "s;%HAT_PLATFORM_PASSWORD_HASH%;$HAT_PLATFORM_PASSWORD_HASH;g"\
-  src/sql/authentication.sql.template > src/sql/authentication.sql
+  src/sql/boilerplate/authentication.sql.template > src/sql/boilerplate/authentication.sql
 
 # Execute the sql script
-heroku pg:psql --app hatdemo < src/sql/authentication.sql
+heroku pg:psql --app hatdemo < src/sql/boilerplate/authentication.sql
 
 # Remove the sql file with sensitive credentials
-rm src/sql/authentication.sql
+rm src/sql/boilerplate/authentication.sql
 
 echo "Boilerplate setup"
-heroku pg:psql --app hatdemo < src/sql/data.sql
-heroku pg:psql --app hatdemo < src/sql/relationships.sql
-heroku pg:psql --app hatdemo < src/sql/properties.sql
-heroku pg:psql --app hatdemo < src/sql/collections.sql
+heroku pg:psql --app hatdemo < src/sql/boilerplate/data.sql
+heroku pg:psql --app hatdemo < src/sql/boilerplate/relationships.sql
+heroku pg:psql --app hatdemo < src/sql/boilerplate/properties.sql
+heroku pg:psql --app hatdemo < src/sql/boilerplate/collections.sql
 
 cp deployment/database.heroku.conf src/main/resources/database.conf
