@@ -85,7 +85,7 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
       responseAs[ApiDataTable]
     }
 
-    dataTable.id must beSome
+    dataSubtable.id must beSome
 
     // Link table with subtable
     HttpRequest(POST, s"/data/table/${dataTable.id.get}/table/${dataSubtable.id.get}" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
