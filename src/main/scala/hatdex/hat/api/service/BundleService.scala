@@ -269,11 +269,14 @@ trait BundleService extends DataService {
                                            (implicit session: Session): Try[ApiBundleContextless] = {
     val bundleContextlessRow = new BundleContextlessRow(0, bundle.name, LocalDateTime.now(), LocalDateTime.now())
 
-    Try((BundleContextless returning BundleContextless) += bundleContextlessRow) flatMap { insertedBundle =>
-      val bundleApi = ApiBundleContextless.fromBundleContextlessTables(insertedBundle)(bundle.tables)
-      bundleApi.tables match {
-        case Some(tables) =>
-          val storedCombinations = tables map { combination =>
+    val maybeInsertedBundle = Try((BundleContextless returning BundleContextless) += bundleContextlessRow)
+
+    maybeInsertedBundle flatMap { insertedBundle =>
+      // Empty Contextless Bundle
+      val bundleApi = ApiBundleContextless.fromBundleContextlessTables(insertedBundle)(None)
+      bundle.tables match {
+        case Some(bundleCombinations) =>
+          val storedCombinations = bundleCombinations map { combination =>
             storeBundleCombination(combination)(bundleApi)
           }
           Utils.flatten(storedCombinations) map { apiCombinations =>
@@ -290,22 +293,24 @@ trait BundleService extends DataService {
       // Traversing entity graph the Slick way
       // A fairly complex case with a lot of related data that needs to be retrieved for each bundle join
       val tableQuery = for {
-        join <- BundleContextlessJoin.filter(_.bundleContextlessId === bundleId)
+        ((join, joinField), tableField) <- BundleContextlessJoin.filter(_.bundleContextlessId === bundleId)
+          .joinLeft(DataField)
+          .on(_.bundleContextlessJoinField === _.id)
+          .joinLeft(DataField)
+          .on(_._1.bundleContextlessTableField === _.id)
         bundleTable <- join.bundleContextlessTableFk
         dataTable <- bundleTable.dataTableFk
-        joinField <- join.dataFieldFk3
-        tableField <- join.dataFieldFk4
       } yield (join, bundleTable, dataTable, joinField, tableField)
 
       val tables = tableQuery.run
 
       val apiTables = tables.map {
-        case (join: BundleContextlessJoinRow, bundleTable: BundleContextlessTableRow, dataTable: DataTableRow, joinField: DataFieldRow, tableField: DataFieldRow) =>
+        case (join: BundleContextlessJoinRow, bundleTable: BundleContextlessTableRow, dataTable: DataTableRow, joinField: Option[DataFieldRow], tableField: Option[DataFieldRow]) =>
           val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
           val apiTable = ApiBundleTable.fromBundleTable(bundleTable)(apiDataTable)
-          val apiJoinField = ApiDataField.fromDataField(joinField)
-          val apiTableField = ApiDataField.fromDataField(tableField)
-          ApiBundleCombination.fromBundleJoin(join)(Some(apiJoinField), Some(apiTableField), apiTable)
+          val apiJoinField = joinField.map(ApiDataField.fromDataField)
+          val apiTableField = tableField.map(ApiDataField.fromDataField)
+          ApiBundleCombination.fromBundleJoin(join)(apiJoinField, apiTableField, apiTable)
       }
 
       ApiBundleContextless.fromBundleContextlessTables(bundle)(Some(apiTables))
@@ -317,9 +322,17 @@ trait BundleService extends DataService {
                                            (bundle: ApiBundleContextless)
                                            (implicit session: Session): Try[ApiBundleCombination] = {
 
-    (combination.bundleTable.id, bundle.id) match {
+    val storedBundleTableID = combination.bundleTable.id match {
+      case Some(bundleTableId) =>
+        // Bundle Table already exists, just return it
+        Success(Some(bundleTableId))
+      case None =>
+        storeBundleTable(combination.bundleTable).map(_.id)
+    }
+
+    (storedBundleTableID, bundle.id) match {
       // Both bundle table and bundle id have to be "well defined", already with IDs
-      case (Some(bundleTableId), Some(bundleId)) =>
+      case (Success(Some(bundleTableId)), Some(bundleId)) =>
         (combination.bundleJoinField, combination.bundleTableField, combination.operator) match {
           // Either both bundleJoinField, bundleTableField and the comparison operator have to be defined
           case (Some(bundleJoinField), Some(bundleTableField), Some(comparisonOperator)) =>
@@ -344,6 +357,8 @@ trait BundleService extends DataService {
             Failure(new IllegalArgumentException("Both columns must be provided to join data on as well as the operator, or none"))
         }
 
+      case (Failure(e), _) =>
+        Failure(new IllegalArgumentException(s"Failure creating Bundle Table ${combination.bundleTable}"))
       case _ =>
         Failure(new IllegalArgumentException(s"Bundle Table ${combination.bundleTable.id} to create a bundle combination on (bundle ${bundle.id}) not found"))
     }

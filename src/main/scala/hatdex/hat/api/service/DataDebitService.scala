@@ -36,7 +36,7 @@ trait DataDebitService {
       val newDebit = DataDebitRow(dataDebitKey, LocalDateTime.now(), LocalDateTime.now(), debit.name,
         debit.startDate, debit.endDate, debit.rolling, debit.sell, debit.price,
         enabled = false, "owner", user.userId.toString,
-        debit.bundleContextless.flatMap(bundle => bundle.id),
+        bundle.id,
         None,
         "contextless"
       )
