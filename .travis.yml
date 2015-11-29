@@ -15,7 +15,6 @@ addons:
 
 before_script:
   - createuser -S -D -R -e hat20
-  - dropdb hat20
   - createdb hat20
   - psql hat20 -c 'CREATE EXTENSION "uuid-ossp";'
   - psql hat20 -Uhat20 < src/sql/HAT-V2.0.sql
