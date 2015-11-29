@@ -55,14 +55,16 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
       (userPassHandler | accessTokenHandler) { implicit user: User =>
         logger.debug("POST /table")
         entity(as[ApiDataTable]) { table =>
-          db.withSession { implicit session =>
+          db.withTransaction { implicit session =>
             val tableStructure = createTable(table)
-            session.close()
+
             complete {
               tableStructure match {
                 case Success(structure) =>
+                  session.close()
                   (Created, structure)
                 case Failure(e) =>
+                  session.rollback
                   (BadRequest, ErrorMessage("Error creating Table", e.getMessage))
               }
             }
@@ -143,9 +145,8 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
                   if (tables.size > 1) {
                     tables
                   }
-                  else {
+                  else
                     tables.headOption
-                  }
                 case None =>
                   (NotFound, ErrorMessage("Table not found", s"Table with name=$name (namelike=$nameLike, nameUnlike=$nameUnlike) and source=$source was not found"))
               }
