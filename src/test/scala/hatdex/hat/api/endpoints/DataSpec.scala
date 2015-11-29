@@ -49,8 +49,8 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
   val ownerAuthParams = "?" + ownerAuth
 
   def createBasicTables = {
-    val dataTable = HttpRequest(POST, "/table" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.tableKitchen)) ~>
-      sealRoute(createTableApi) ~> check {
+    val dataTable = HttpRequest(POST, "/data/table" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.tableKitchen)) ~>
+      sealRoute(routes) ~> check {
       logger.debug("Create table response: " + response)
       response.status should be equalTo Created
       responseAs[String] must contain("kitchen")
@@ -58,8 +58,8 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
       responseAs[ApiDataTable]
     }
 
-    val dataSubtable = HttpRequest(POST, "/table" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.tableKitchenElectricity)) ~>
-      sealRoute(createTableApi) ~> check {
+    val dataSubtable = HttpRequest(POST, "/data/table" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.tableKitchenElectricity)) ~>
+      sealRoute(routes) ~> check {
       response.status should be equalTo Created
       responseAs[String] must contain("kitchenElectricity")
       responseAs[String] must contain("fibaro")
@@ -71,8 +71,8 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
 
   def populateDataReusable = {
     // Create main table
-    val dataTable = HttpRequest(GET, "/table/search?name=kitchen&source=fibaro&" + ownerAuth) ~>
-      sealRoute(findTableApi) ~> check {
+    val dataTable = HttpRequest(GET, "/data/table?name=kitchen&source=fibaro&" + ownerAuth) ~>
+      sealRoute(routes) ~> check {
       response.status should be equalTo OK
       responseAs[ApiDataTable]
     }
@@ -80,8 +80,8 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
     dataTable.id must beSome
 
     // Create sub-table
-    val dataSubtable = HttpRequest(GET, "/table/search?name=kitchenElectricity&source=fibaro&" + ownerAuth) ~>
-      sealRoute(findTableApi) ~> check {
+    val dataSubtable = HttpRequest(GET, "/data/table?name=kitchenElectricity&source=fibaro&" + ownerAuth) ~>
+      sealRoute(routes) ~> check {
       response.status should be equalTo OK
       responseAs[ApiDataTable]
     }
@@ -89,8 +89,8 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
     dataTable.id must beSome
 
     // Link table with subtable
-    HttpRequest(POST, s"/table/${dataTable.id.get}/table/${dataSubtable.id.get}" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
-      sealRoute(linkTableToTableApi) ~> check {
+    HttpRequest(POST, s"/data/table/${dataTable.id.get}/table/${dataSubtable.id.get}" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
+      sealRoute(routes) ~> check {
       response.status should be equalTo OK
     }
 
@@ -98,32 +98,32 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
     val field = JsonParser(DataExamples.testField).convertTo[ApiDataField]
     val completeTableField = field.copy(tableId = dataTable.id)
 
-    val dataField = HttpRequest(POST, "/field" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, completeTableField.toJson.toString)) ~>
-      sealRoute(createFieldApi) ~> check {
+    val dataField = HttpRequest(POST, "/data/field" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, completeTableField.toJson.toString)) ~>
+      sealRoute(routes) ~> check {
       response.status should be equalTo Created
       responseAs[ApiDataField]
     }
     dataField.id must beSome
 
     val completeSubTableField1 = field.copy(tableId = dataSubtable.id, name = "subtableTestField1")
-    val dataSubfield1 = HttpRequest(POST, "/field" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, completeSubTableField1.toJson.toString)) ~>
-      sealRoute(createFieldApi) ~> check {
+    val dataSubfield1 = HttpRequest(POST, "/data/field" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, completeSubTableField1.toJson.toString)) ~>
+      sealRoute(routes) ~> check {
       response.status should be equalTo Created
       responseAs[ApiDataField]
     }
     dataSubfield1.id must beSome
 
     val completeSubTableField2 = field.copy(tableId = dataSubtable.id, name = "subtableTestField2")
-    val dataSubfield2 = HttpRequest(POST, "/field" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, completeSubTableField2.toJson.toString)) ~>
-      sealRoute(createFieldApi) ~> check {
+    val dataSubfield2 = HttpRequest(POST, "/data/field" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, completeSubTableField2.toJson.toString)) ~>
+      sealRoute(routes) ~> check {
       response.status should be equalTo Created
       responseAs[ApiDataField]
     }
     dataSubfield2.id must beSome
 
     // Create Data Record
-    val record = HttpRequest(POST, "/record" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.testRecord)) ~>
-      sealRoute(createRecordApi) ~> check {
+    val record = HttpRequest(POST, "/data/record" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.testRecord)) ~>
+      sealRoute(routes) ~> check {
       response.status should be equalTo Created
       responseAs[ApiDataRecord]
     }
@@ -136,14 +136,14 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
       new ApiDataValue(None, None, None, "testValue3", Some(dataSubfield2), None)
     )
 
-    HttpRequest(POST, s"/record/${record.id.get}/values" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, dataValues.toJson.toString)) ~>
-      sealRoute(storeValueListApi) ~> check {
+    HttpRequest(POST, s"/data/record/${record.id.get}/values" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, dataValues.toJson.toString)) ~>
+      sealRoute(routes) ~> check {
       response.status should be equalTo Created
     }
 
     // Create another record
-    val record2 = HttpRequest(POST, "/record" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.testRecord2)) ~>
-      sealRoute(createRecordApi) ~> check {
+    val record2 = HttpRequest(POST, "/data/record" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.testRecord2)) ~>
+      sealRoute(routes) ~> check {
       response.status should be equalTo Created
       responseAs[ApiDataRecord]
     }
