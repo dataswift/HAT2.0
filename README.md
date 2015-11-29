@@ -1,6 +1,7 @@
 ![Hub of All things](http://hubofallthings.com/wp-content/uploads/banner21.png)
 
 [![Build Status](https://travis-ci.org/Hub-of-all-Things/HAT2.0.svg?branch=master)](https://travis-ci.org/Hub-of-all-Things/HAT2.0)
+[![Coverage Status](https://coveralls.io/repos/Hub-of-all-Things/HAT2.0/badge.svg?branch=master&service=github)](https://coveralls.io/github/Hub-of-all-Things/HAT2.0?branch=master)
 
 # HAT 2.0
 

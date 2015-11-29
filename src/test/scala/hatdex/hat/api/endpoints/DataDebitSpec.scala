@@ -122,7 +122,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
     val populatedData = Context.populatedData
     val populatedTable = Context.dataTable
   }
-  
+
   sequential
 
   "Data Debit Service" should {
