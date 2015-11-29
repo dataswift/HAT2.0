@@ -51,6 +51,7 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
   def createBasicTables = {
     val dataTable = HttpRequest(POST, "/table" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, DataExamples.tableKitchen)) ~>
       sealRoute(createTableApi) ~> check {
+      logger.debug("Create table response: " + response)
       response.status should be equalTo Created
       responseAs[String] must contain("kitchen")
       responseAs[String] must contain("fibaro")
