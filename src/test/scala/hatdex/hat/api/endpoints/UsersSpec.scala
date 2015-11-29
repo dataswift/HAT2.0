@@ -67,8 +67,8 @@ class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll w
       )
       UserAccessToken.filter(_.userId inSet userIds).delete
       UserUser.filter(_.userId inSet userIds).delete
+      session.close()
     }
-//    db.close
   }
 
   sequential

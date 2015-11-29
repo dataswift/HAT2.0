@@ -66,8 +66,61 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
   def afterAll() = {
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
+      session.close()
     }
-//    db.close
+  }
+
+  object Context {
+    val propertySpec = new PropertySpec()
+    val property = propertySpec.createWeightProperty
+    val dataSpec = new DataSpec()
+    dataSpec.createBasicTables
+    val populatedData = dataSpec.populateDataReusable
+
+    val personSpec = new PersonSpec()
+
+    val newPerson = personSpec.createNewPerson
+    newPerson.id must beSome
+
+    val dataTable = populatedData match {
+      case (dataTable, dataField, record) =>
+        dataTable
+    }
+    val dataField = populatedData match {
+      case (dataTable, dataField, record) =>
+        dataField
+    }
+    val dynamicPropertyLink = ApiPropertyRelationshipDynamic(
+      None, property, None, None, "test property", dataField)
+
+    val propertyLinkId = HttpRequest(
+      POST, s"/person/${newPerson.id.get}/property/dynamic/${property.id.get}" + appendParams(parameters),
+      entity = HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)
+    ) ~>
+      sealRoute(personSpec.routes) ~>
+      check {
+        eventually {
+          response.status should be equalTo Created
+        }
+        responseAs[ApiGenericId]
+      }
+
+    val personValues = HttpRequest(GET, s"/person/${newPerson.id.get}/values" + appendParams(parameters)) ~>
+      sealRoute(personSpec.routes) ~>
+      check {
+        eventually {
+          response.status should be equalTo OK
+          responseAs[String] must contain("testValue1")
+          responseAs[String] must contain("testValue2-1")
+          responseAs[String] must not contain ("testValue3")
+        }
+      }
+  }
+
+  class Context extends Scope {
+    val property = Context.property
+    val populatedData = Context.populatedData
+    val populatedTable = Context.dataTable
   }
 
   object Context {

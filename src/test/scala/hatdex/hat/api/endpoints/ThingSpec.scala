@@ -41,6 +41,7 @@ class ThingSpec extends Specification with Specs2RouteTest with Thing with Befor
   def afterAll() = {
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
+      session.close()
     }
   }
 

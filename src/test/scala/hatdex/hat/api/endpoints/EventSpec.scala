@@ -63,8 +63,8 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
   def afterAll() = {
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
+      session.close()
     }
-    //    db.close
   }
 
   val ownerAuthParams = "?username=bob@gmail.com&password=pa55w0rd"

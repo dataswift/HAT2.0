@@ -48,6 +48,7 @@ class PersonSpec extends Specification with Specs2RouteTest with Person with Bef
   def afterAll() = {
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
+      session.close()
     }
   }
 

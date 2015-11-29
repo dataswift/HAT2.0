@@ -100,8 +100,8 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
   def afterAll() = {
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
+      session.close()
     }
-//    db.close
   }
 
   sequential

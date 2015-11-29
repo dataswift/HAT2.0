@@ -74,6 +74,7 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
   def afterAll() = {
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
+      session.close()
     }
   }
 

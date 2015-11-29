@@ -45,12 +45,14 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
     override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
   }
   val apiBundleService = new Bundles with LoggingHttpService
+
   val apiPropertyService = new Property with LoggingHttpService
   val eventsService = new Event with LoggingHttpService
   val locationsService = new Location with LoggingHttpService
   val peopleService = new Person with LoggingHttpService
   val thingsService = new Thing with LoggingHttpService
   val organisationsService = new Organisation with LoggingHttpService
+
   val apiBundlesContextService = new BundlesContext with LoggingHttpService {
     def eventsService: EventsService = ApiSpec.this.eventsService
     def peopleService: PeopleService = ApiSpec.this.peopleService
@@ -63,6 +65,7 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
     val bundlesService: BundleService = apiBundleService
     val bundleContextService: BundleContextService = apiBundlesContextService
   }
+
   val userService = new Users with LoggingHttpService
   val typeService = new Type with LoggingHttpService
 

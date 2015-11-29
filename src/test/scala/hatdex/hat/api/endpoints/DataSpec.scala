@@ -39,8 +39,8 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
   def afterAll() = {
     db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
+      session.close()
     }
-    //    db.close
   }
 
   sequential
@@ -278,7 +278,7 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
     }
 
     "Allow table fields to be created" in {
-      val dataTable = HttpRequest(GET, "/table/search?name=kitchenElectricity&source=fibaro&" + ownerAuth) ~>
+      val dataTable = HttpRequest(GET, "/table?name=kitchenElectricity&source=fibaro&" + ownerAuth) ~>
         sealRoute(findTableApi) ~> check {
         response.status should be equalTo OK
         responseAs[String] must contain("kitchenElectricity")
