@@ -297,6 +297,17 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
           response.status should be equalTo NotFound
         }
     }
+
+    "List Data Debits" in {
+      HttpRequest(GET,
+        s"/dataDebit" + appendParams(parameters)
+      ) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo OK
+          responseAs[Seq[ApiDataDebit]] must not have size (0)
+        }
+    }
   }
 }
 
