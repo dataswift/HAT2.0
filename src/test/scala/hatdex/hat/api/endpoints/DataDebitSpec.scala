@@ -216,6 +216,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
       BundleContextlessTableSliceCondition.forceInsertAll(sliceConditions: _*)
       BundleContextless.forceInsertAll(bundles: _*)
       BundleContextlessJoin.forceInsertAll(bundleJoins: _*)
+      session.close()
     }
   }
 
