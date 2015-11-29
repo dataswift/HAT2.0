@@ -156,7 +156,6 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
         ) ~>
           sealRoute(routes) ~>
           check {
-            logger.debug("Creating contextless DD response: " + response)
             response.status should be equalTo Created
             val responseString = responseAs[String]
             responseString must contain("key")
@@ -188,7 +187,6 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
         ) ~>
           sealRoute(routes) ~>
           check {
-            logger.debug("Return data debit values response: " + response)
             response.status should be equalTo OK
             responseAs[ApiDataDebitOut]
           }
@@ -242,6 +240,61 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
           resp must contain("testValue1")
           resp must contain("testValue2-1")
           responseAs[Seq[ApiEntity]]
+        }
+
+      HttpRequest(PUT,
+        s"/dataDebit/${dataDebit.key.get}/disable" + appendParams(parameters)
+      ) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo OK
+        }
+    }
+
+    "Reject malformed reuqests" in {
+      HttpRequest(POST,
+        "/dataDebit/propose" + appendParams(parameters),
+        entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitInvalid)
+      ) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo BadRequest
+        }
+
+      HttpRequest(POST,
+        "/dataDebit/propose" + appendParams(parameters),
+        entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitWrongKeyContextless)
+      ) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo BadRequest
+        }
+
+      HttpRequest(POST,
+        "/dataDebit/propose" + appendParams(parameters),
+        entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitWrongKeyContextual)
+      ) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo BadRequest
+        }
+    }
+
+    "Not enable non-existent data debits" in {
+      HttpRequest(PUT,
+        s"/dataDebit/acdacdac-2e3d-41df-a1a3-7cf6d23a8abe/enable" + appendParams(parameters)
+      ) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo NotFound
+        }
+
+      HttpRequest(PUT,
+        s"/dataDebit/acdacdac-2e3d-41df-a1a3-7cf6d23a8abe/disable" + appendParams(parameters)
+      ) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo NotFound
         }
     }
   }
