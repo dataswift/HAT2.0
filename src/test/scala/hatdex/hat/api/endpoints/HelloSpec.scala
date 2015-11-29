@@ -15,7 +15,7 @@ class HelloSpec extends Specification with Specs2RouteTest with Hello {
 
   sequential
 
-  "InboundDataService" should {
+  "Hello Service" should {
 
     "return a greeting for GET requests to the root path" in {
       Get() ~> sealRoute(routes) ~>
