@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
 
+#THIS SCRIPT SHOULD EXECUTE WITHIN THE DOCKER POSTGRES IMAGE!
+
 DATABASE=${DATABASE:-"hat20"}
 DBUSER=${DBUSER:-$DATABASE}
-DBPASS=${DBPASS:-"h20"}
+DBPASS=${DBPASS:-"hat20"}
 #In case we are not executing the deploy from the repo (e.g., in container)
 HAT_HOME=${HAT_HOME:-".."}
 
-#Useful when in docker container mode
+export POSTGRES_PASSWORD=$DBPASS
+export POSTGRES_USER=$DBUSER
+export POSTGRES_DB=$DATABASE
 export PGUSER=postgres
 
 # Create the DB
 # NOSUPERUSER NOCREATEDB NOCREATEROLE
-echo "Setting up database user"
-createuser -S -D -R -e $DBUSER
-createdb $DATABASE -O $DBUSER
+#echo "Setting up DB role"
+#createuser -S -D -R -e $DBUSER
+#echo "Setting up role DB"
+#createdb $DATABASE -O $DBUSER
 
 #DBUSER wouldnt have required permissions to drop/create public schema otherwise
 echo "Handling schemas"
@@ -28,10 +33,10 @@ psql $DATABASE -U$DBUSER < $HAT_HOME/HAT-V2.0.sql
 
 # Setup HAT access
 echo "Setting up HAT access"
-HAT_OWNER='bob@gmail.com'
-HAT_OWNER_ID=5974832d-2dc1-4f49-adf1-c6d8bc790274
-HAT_OWNER_NAME='Bob'
-HAT_OWNER_PASSWORD='pa55w0rd'
+HAT_OWNER=${HAT_OWNER:-'bob@gmail.com'}
+HAT_OWNER_ID=${HAT_OWNER_ID:-5974832d-2dc1-4f49-adf1-c6d8bc790274}
+HAT_OWNER_NAME=${HAT_OWNER_NAME:-'Bob'}
+HAT_OWNER_PASSWORD=${HAT_OWNER_PASSWORD:-'pa55w0rd'}
 
 HAT_PLATFORM=${HAT_PLATFORM:-'hatdex.org'}
 HAT_PLATFORM_ID=${HAT_PLATFORM_ID:-47dffdfd-55e8-4575-836c-151e30bb5a50}
@@ -59,3 +64,5 @@ psql $DATABASE -U$DBUSER < $HAT_HOME/data.sql
 psql $DATABASE -U$DBUSER < $HAT_HOME/relationships.sql
 psql $DATABASE -U$DBUSER < $HAT_HOME/properties.sql
 psql $DATABASE -U$DBUSER < $HAT_HOME/collections.sql
+
+env
