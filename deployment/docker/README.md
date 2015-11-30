@@ -11,3 +11,19 @@ Test both images (cautious that it stops and removes running docker images!):
 Pushes both images to their respective docker hub repositories:
 
     deployment/docker/docker-push-images.sh
+
+## Testing docker images
+
+If you want to give it a test drive just execute:
+    docker-test-images.sh
+
+It downloads the latest images from docker-hub so you dont need to build them yourself.
+It starts 3 hat and 3 hat-postgres images. All accessible on localhost with different ports.
+
+Find the corresponding port with: 
+
+    docker ps
+
+And finally test in your browser (you might need to set port, username and password accordingly):
+
+    http://127.0.0.1:3003/data/sources?username=junior@gmail.com&password=junior
