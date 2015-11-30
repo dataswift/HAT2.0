@@ -15,9 +15,11 @@ Pushes both images to their respective docker hub repositories:
 ## Testing docker images
 
 If you want to give it a test drive just execute:
+
     docker-test-images.sh
 
 It downloads the latest images from docker-hub so you dont need to build them yourself.
+
 It starts 3 hat and 3 hat-postgres images. All accessible on localhost with different ports.
 
 Find the corresponding port with: 
