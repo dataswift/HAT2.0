@@ -32,15 +32,35 @@ This HAT PDS implementation is written in Scala (2.11.6) uses the following tech
 ## Running the project
 
 
-### Database Setup
+### HAT Setup
 
-You will need to set up a PostgreSQL database with the HAT2.0 schema, configure the project to use the database, and prepare it to be executed. You can do all that by executing the following script:
+If you use docker, the official HAT can be configured with a number of environment variables and instantiated as two docker containers: one for the database and one for the core HAT:
 
-    ./deployment/deploy.sh
-    
-The provided script executes all required commands to get the project running, and can be configured through environment variables. For example, you can run:
+    name=myhat
 
-    HAT_HOME=".." DATABASE=mynewHAT DBUSER=mynewuser DBPASS=mynewpass ./deployment/deploy.sh
+    docker run\
+      -e "DATABASE=$name"\
+      -e "DBUSER=$name"\
+      -e "DBPASS=$name"\
+      -e "POSTGRES_PASSWORD=$name"\
+      -e "POSTGRES_USER=$name"\
+      -e "POSTGRES_DB=$name"\
+      -e "HAT_OWNER=$name@gmail.com"\
+      -e "HAT_OWNER_NAME=$name"\
+      -e "HAT_OWNER_PASSWORD=$name"\
+      -d --name hat-postgres-$name hubofallthings/hat-postgres
+
+    docker run\
+      -e "DATABASE=$name"\
+      -e "DBUSER=$name"\
+      -e "DBPASS=$name"\
+      -e "POSTGRES_PASSWORD=$name"\
+      -e "POSTGRES_USER=$name"\
+      -e "POSTGRES_DB=$name"\
+      -e "HAT_OWNER=$name@gmail.com"\
+      -e "HAT_OWNER_NAME=$name"\
+      -e "HAT_OWNER_PASSWORD=$name"\
+      -d --name hat-$name --link hat-postgres-$name -p $port:8080 hubofallthings/hat
 
 The following variables are available:
 
@@ -57,7 +77,7 @@ The following variables are available:
 - `HAT_PLATFORM_NAME` - HAT platform name [default: hatdex]
 - `HAT_PLATFORM_PASSWORD_HASH` - BCrypt-hashed HAT platform password for platform-management operations (application account creation only)
 
-If you do not specify those variables, take a look at the deploy.sh script to see the default values.
+If you do not wish to use Docker, you can execute the script at `deployment/deploy.sh` to run the HAT locally, using the environment variables for configuration
 
 ### Run the project!
 Execute the following command:
