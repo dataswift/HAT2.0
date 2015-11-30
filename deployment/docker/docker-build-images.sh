@@ -14,12 +14,9 @@ mkdir $DOCKER_DEPLOY/required
 
 echo "Copying required files"
 cp $DOCKER/docker-deploy-db.sh $DOCKER_DEPLOY/
-#TODO: remove the lines below, just put the file there directly
-#sed -e "s;%DATABASE%;$DATABASE;g" -e "s;%DBUSER%;$DBUSER;g" -e "s;%DBPASS%;$DBPASS;g" -e "s;%SERVERNAME%;hat-postgres-$HAT_OWNER_NAME;g" $DOCKER/database.conf.template > $DOCKER_DEPLOY/required/database.conf
 cp $DOCKER/database.conf.template $DOCKER_DEPLOY/required/database.conf
 cp $DOCKER/database.conf.template $HAT_HOME/src/main/resources/database.conf
 cp $HAT_HOME/src/main/resources/database.conf $HAT_HOME/codegen/src/main/resources/database.conf
-
 cp $HAT_HOME/src/sql/* $DOCKER_DEPLOY/required
 cp $HAT_HOME/src/sql/boilerplate/* $DOCKER_DEPLOY/required
 cp  $DOCKER/docker-entrypoint.sh $DOCKER_DEPLOY/
@@ -63,8 +60,6 @@ cd $DOCKER_DEPLOY
 echo "Building db docker image: docker-hat-postgres"
 docker build -t 4knahs/hat-postgres .
 
-echo "Building hat docker image:"
-#sbt -sbt-dir $HAT_HOME docker:stage
 cp -r $HAT_HOME/target/docker/stage/opt $DOCKER_DEPLOY/
 #Save current postgres docker image
 mv $DOCKER_DEPLOY/Dockerfile $DOCKER_DEPLOY/Dockerfile-hatpg
@@ -73,4 +68,5 @@ touch $DOCKER_DEPLOY/Dockerfile
 echo "#Do not modify this file. Use Dockerfile-hat.template instead." > $DOCKER_DEPLOY/Dockerfile
 cat $DOCKER/Dockerfile-hat.template >> $DOCKER_DEPLOY/Dockerfile
 
+echo "Building hat docker image: docker-hat"
 docker build -t 4knahs/hat .
