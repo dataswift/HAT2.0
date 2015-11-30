@@ -15,7 +15,7 @@ for name in jorge nichola junior; do
     -e "HAT_OWNER=$name@gmail.com"\
     -e "HAT_OWNER_NAME=$name"\
     -e "HAT_OWNER_PASSWORD=$name"\
-    -d --name hat-postgres-$name 4knahs/hat-postgres
+    -d --name hat-postgres-$name hubofallthings/hat-postgres
 
   docker run\
     -e "DATABASE=$name"\
@@ -27,7 +27,7 @@ for name in jorge nichola junior; do
     -e "HAT_OWNER=$name@gmail.com"\
     -e "HAT_OWNER_NAME=$name"\
     -e "HAT_OWNER_PASSWORD=$name"\
-    -d --name hat-$name --link hat-postgres-$name -p $port:8080 4knahs/hat
+    -d --name hat-$name --link hat-postgres-$name -p $port:8080 hubofallthings/hat
 
    echo -n "The hat-$name is linked to:"
    docker inspect -f "{{ .HostConfig.Links }}" hat-$name

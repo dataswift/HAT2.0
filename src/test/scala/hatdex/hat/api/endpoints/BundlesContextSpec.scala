@@ -212,7 +212,6 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
           resp must contain("dynamic")
           resp must contain("BodyWeight")
           resp must contain("QuantitativeValue")
-          resp must contain("kilograms")
           responseAs[ApiBundleContext]
         }
 
@@ -230,7 +229,6 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
           resp must contain("dynamic")
           resp must contain("BodyWeight")
           resp must contain("QuantitativeValue")
-          resp must contain("kilograms")
           responseAs[ApiBundleContext].id must beSome
         }
     }

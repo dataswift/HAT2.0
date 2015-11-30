@@ -130,12 +130,11 @@ object BundleContextExamples {
       |       {
       |         "propertyRelationshipKind": "dynamic",
       |         "propertyType": "QuantitativeValue"
-      |       },
-      |       {
-      |         "propertyRelationshipKind": "static",
-      |         "propertyUnitofmeasurement": "kilograms"
       |       }
       |     ]
+      |   },
+      |   {
+      |     "entityName": "sunrise"
       |   }
       |  ]
       |}

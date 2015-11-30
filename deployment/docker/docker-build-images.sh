@@ -58,7 +58,7 @@ fi
 cd $DOCKER_DEPLOY
 
 echo "Building db docker image: docker-hat-postgres"
-docker build -t 4knahs/hat-postgres .
+docker build -t hubofallthings/hat-postgres .
 
 cp -r $HAT_HOME/target/docker/stage/opt $DOCKER_DEPLOY/
 #Save current postgres docker image
@@ -69,4 +69,4 @@ echo "#Do not modify this file. Use Dockerfile-hat.template instead." > $DOCKER_
 cat $DOCKER/Dockerfile-hat.template >> $DOCKER_DEPLOY/Dockerfile
 
 echo "Building hat docker image: docker-hat"
-docker build -t 4knahs/hat .
+docker build -t hubofallthings/hat .
