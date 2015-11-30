@@ -4,8 +4,8 @@ DATABASE=${DATABASE:-"hat20"}
 DBUSER=${DBUSER:-$DATABASE}
 DBPASS=${DBPASS:-"hat20"}
 #tipically docker folder is in HAT2.0/deployment/docker
-HAT_HOME=${HAT_HOME:-"$PWD/../.."}
-DOCKER=${DOCKER:-"$PWD"}
+HAT_HOME=${HAT_HOME:-"$PWD"} #if executing from deployment/  : "$PWD/../.."
+DOCKER=${DOCKER:-"$PWD/deployment/docker"}
 DOCKER_DEPLOY=$DOCKER/docker-deploy
 
 echo "Creating $DOCKER_DEPLOY"
@@ -15,10 +15,14 @@ mkdir $DOCKER_DEPLOY/required
 echo "Copying required files"
 cp $DOCKER/docker-deploy-db.sh $DOCKER_DEPLOY/
 #TODO: remove the lines below, just put the file there directly
-sed -e "s;%DATABASE%;$DATABASE;g" -e "s;%DBUSER%;$DBUSER;g" -e "s;%DBPASS%;$DBPASS;g" -e "s;%SERVERNAME%;hat-postgres-$HAT_OWNER_NAME;g" $DOCKER/database.conf.template > $DOCKER_DEPLOY/required/database.conf
-cp $HAT_HOME/src/sql/* $DOCKER_DEPLOY/required
-cp  $DOCKER/docker-entrypoint.sh $DOCKER_DEPLOY/
+#sed -e "s;%DATABASE%;$DATABASE;g" -e "s;%DBUSER%;$DBUSER;g" -e "s;%DBPASS%;$DBPASS;g" -e "s;%SERVERNAME%;hat-postgres-$HAT_OWNER_NAME;g" $DOCKER/database.conf.template > $DOCKER_DEPLOY/required/database.conf
+cp $DOCKER/database.conf.template $DOCKER_DEPLOY/required/database.conf
+cp $DOCKER/database.conf.template $HAT_HOME/src/main/resources/database.conf
+cp $HAT_HOME/src/main/resources/database.conf $HAT_HOME/codegen/src/main/resources/database.conf
 
+cp $HAT_HOME/src/sql/* $DOCKER_DEPLOY/required
+cp $HAT_HOME/src/sql/boilerplate/* $DOCKER_DEPLOY/required
+cp  $DOCKER/docker-entrypoint.sh $DOCKER_DEPLOY/
 
 echo "Setting up HAT access"
 HAT_OWNER='bob@gmail.com'
@@ -44,13 +48,8 @@ cat $DOCKER/Dockerfile-pg.template | sed -e "s/%DATABASE%/$DATABASE/g"\
 	-e "s/%HAT_PLATFORM_PASSWORD_HASH%/$HAT_PLATFORM_PASSWORD_HASH/g"\
 	> $DOCKER_DEPLOY/Dockerfile
 
-cd $DOCKER_DEPLOY
-
-echo "Building db docker image: docker-hat-postgres"
-docker build -t 4knahs/hat-postgres .
-
-echo "Creating docker-hat-postgres run script"
-echo "docker run -d --name hat-postgres-$HAT_OWNER_NAME docker-hat-postgres" > $DOCKER_DEPLOY/run-db.sh
+echo "Building HAT : sbt docker:stage"
+sbt docker:stage
 
 if [ ! -f "$HAT_HOME/target/docker/Dockerfile" ]; then
     echo "Missing $HAT_HOME/target/docker/Dockerfile" 
@@ -58,6 +57,11 @@ if [ ! -f "$HAT_HOME/target/docker/Dockerfile" ]; then
     echo "Please run 'sbt docker:stage' on main folder and re-run this script to generate it."
     exit
 fi
+
+cd $DOCKER_DEPLOY
+
+echo "Building db docker image: docker-hat-postgres"
+docker build -t 4knahs/hat-postgres .
 
 echo "Building hat docker image:"
 #sbt -sbt-dir $HAT_HOME docker:stage
@@ -68,16 +72,5 @@ mv $DOCKER_DEPLOY/Dockerfile $DOCKER_DEPLOY/Dockerfile-hatpg
 touch $DOCKER_DEPLOY/Dockerfile
 echo "#Do not modify this file. Use Dockerfile-hat.template instead." > $DOCKER_DEPLOY/Dockerfile
 cat $DOCKER/Dockerfile-hat.template >> $DOCKER_DEPLOY/Dockerfile
-#cp $HAT_HOME/target/docker/stage/Dockerfile $DOCKER_DEPLOY/
 
 docker build -t 4knahs/hat .
-
-# #Test postgres
-# #psql -h 172.17.0.2 -p 5432 -d hat20 -U hat20 --password
-
-# # echo "Boilerplate setup"
-# # echo "PGPASSWORD=$DBPASS psql -h $pg -p 5432 -d $DATABASE -U $DBUSER"
-# # PGPASSWORD=$DBPASS psql -h $pg -p 5432 -d $DATABASE -U $DBUSER < $HAT_HOME/src/sql/data.sql
-# # PGPASSWORD=$DBPASS psql -h $pg -p 5432 -d $DATABASE -U $DBUSER < $HAT_HOME/src/sql/relationships.sql
-# # PGPASSWORD=$DBPASS psql -h $pg -p 5432 -d $DATABASE -U $DBUSER < $HAT_HOME/src/sql/properties.sql
-# # PGPASSWORD=$DBPASS psql -h $pg -p 5432 -d $DATABASE -U $DBUSER < $HAT_HOME/src/sql/collections.sql

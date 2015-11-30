@@ -1,5 +1,6 @@
 # vim:set ft=dockerfile:
 FROM debian:jessie
+#FROM gliderlabs/alpine:3.1
 
 # explicitly set user/group IDs
 RUN groupadd -r postgres --gid=999 && useradd -r -g postgres --uid=999 postgres
