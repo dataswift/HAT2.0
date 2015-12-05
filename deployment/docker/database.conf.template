@@ -4,7 +4,7 @@ devdb = {
     databaseName = ${?POSTGRES_DB}
     user = ${?POSTGRES_USER}
     password = ${?POSTGRES_PASSWORD}
-    serverName = hat-postgres-${?HAT_OWNER_NAME}
+    serverName = ${?POSTGRES_HOST}
   }
   numThreads = 3
 }

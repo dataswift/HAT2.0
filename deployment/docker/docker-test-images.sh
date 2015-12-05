@@ -12,6 +12,7 @@ for name in jorge nichola junior; do
     -e "POSTGRES_PASSWORD=$name"\
     -e "POSTGRES_USER=$name"\
     -e "POSTGRES_DB=$name"\
+    -e "POSTGRES_HOST=hat-postgres-$name"\
     -e "HAT_OWNER=$name@gmail.com"\
     -e "HAT_OWNER_NAME=$name"\
     -e "HAT_OWNER_PASSWORD=$name"\
@@ -24,6 +25,7 @@ for name in jorge nichola junior; do
     -e "POSTGRES_PASSWORD=$name"\
     -e "POSTGRES_USER=$name"\
     -e "POSTGRES_DB=$name"\
+    -e "POSTGRES_HOST=hat-postgres-$name"\
     -e "HAT_OWNER=$name@gmail.com"\
     -e "HAT_OWNER_NAME=$name"\
     -e "HAT_OWNER_PASSWORD=$name"\
