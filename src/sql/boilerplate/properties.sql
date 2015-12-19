@@ -30,6 +30,8 @@ INSERT INTO system_unitofmeasurement VALUES (2, now(), now(), 'meters', 'measure
 INSERT INTO system_unitofmeasurement VALUES (3, now(), now(), 'none', 'no unit of measurement (plain text)', NULL);
 INSERT INTO system_unitofmeasurement VALUES (4, now(), now(), 'centimeters', 'measurement of height or length', 'cm');
 
+ALTER SEQUENCE system_unitofmeasurement_id_seq RESTART WITH 5;
+
 INSERT INTO system_property
 VALUES (1, now(), now(), 'bodyWeight', 'Body weight of a person',
         (SELECT id
@@ -56,3 +58,5 @@ VALUES (3, now(), now(), 'height', 'Body height of a person',
         (SELECT id
          FROM system_unitofmeasurement
          WHERE name = 'centimeters'));
+
+ALTER SEQUENCE system_property_id_seq RESTART WITH 5;

@@ -6,3 +6,5 @@ VALUES (3, now(), now(), 'coach', 'A person that acts in a coaching role for a s
 INSERT INTO people_persontopersonrelationshiptype VALUES (4, now(), now(), 'colleague', 'A colleague of the person');
 
 INSERT INTO people_persontopersonrelationshiptype VALUES (5, now(), now(), 'spouse', 'A spouse of a person');
+
+ALTER SEQUENCE people_persontopersonrelationshiptype_id_seq RESTART WITH 7;
