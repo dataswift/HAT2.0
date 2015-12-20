@@ -69,8 +69,8 @@ trait Api extends HttpService with Cors {
   }
 
   // Concatenate all the handled routes
-  def routes = cors {
-    handleRejections(jsonRejectionHandler) {
+  def routes = handleRejections(jsonRejectionHandler) {
+    cors {
       helloService.routes ~
         apiDataService.routes ~
         apiPropertyService.routes ~
