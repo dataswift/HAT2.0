@@ -12,6 +12,7 @@ INSERT INTO data_table VALUES (6, now(), now(), 'Shoes', 'MyStaticRecords');
 INSERT INTO data_table VALUES (7, now(), now(), 'Family', 'MyStaticRecords');
 INSERT INTO data_table VALUES (8, now(), now(), 'Spouse', 'MyStaticRecords');
 
+SELECT setval('data_table_id_seq', (SELECT max(id)+1 from data_table), false);
 
 --
 -- Data for Name: data_field; Type: TABLE DATA; Schema: public; Owner: hat20
@@ -26,6 +27,8 @@ INSERT INTO data_field VALUES (7, now(), now(), 'Last Worn', 4);
 INSERT INTO data_field VALUES (8, now(), now(), 'Name', 8);
 INSERT INTO data_field VALUES (9, now(), now(), 'Age', 8);
 
+SELECT setval('data_field_id_seq', (SELECT max(id)+1 from data_field), false);
+
 --
 -- Data for Name: data_tabletotablecrossref; Type: TABLE DATA; Schema: public; Owner: hat20
 --
@@ -38,11 +41,15 @@ INSERT INTO data_tabletotablecrossref VALUES (5, now(), now(), 'parentChild', 3,
 INSERT INTO data_tabletotablecrossref VALUES (6, now(), now(), 'parentChild', 1, 7);
 INSERT INTO data_tabletotablecrossref VALUES (7, now(), now(), 'parentChild', 7, 8);
 
+SELECT setval('data_tabletotablecrossref_id_seq', (SELECT max(id)+1 from data_tabletotablecrossref), false);
+
 --
 -- Data for Name: data_record; Type: TABLE DATA; Schema: public; Owner: hat20
 --
 
 INSERT INTO data_record VALUES (1, now(), now(), 'Day 1');
+
+SELECT setval('data_record_id_seq', (SELECT max(id)+1 from data_record), false);
 
 --
 -- Data for Name: data_value; Type: TABLE DATA; Schema: public; Owner: hat20
@@ -54,3 +61,5 @@ INSERT INTO data_value VALUES (3, now(), now(), '92', 2, 1);
 INSERT INTO data_value VALUES (4, now(), now(), '193', 3, 1);
 INSERT INTO data_value VALUES (5, now(), now(), 'the blue ones', 5, 1);
 INSERT INTO data_value VALUES (6, now(), now(), 'Bob the Plumber', 1, 1);
+
+SELECT setval('data_value_id_seq', (SELECT max(id)+1 from data_value), false);

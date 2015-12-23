@@ -7,4 +7,4 @@ INSERT INTO people_persontopersonrelationshiptype VALUES (4, now(), now(), 'coll
 
 INSERT INTO people_persontopersonrelationshiptype VALUES (5, now(), now(), 'spouse', 'A spouse of a person');
 
-ALTER SEQUENCE people_persontopersonrelationshiptype_id_seq RESTART WITH 7;
+SELECT setval('people_persontopersonrelationshiptype_id_seq', (SELECT max(id)+1 from people_persontopersonrelationshiptype), false);

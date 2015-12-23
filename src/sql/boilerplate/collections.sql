@@ -8,7 +8,7 @@ INSERT INTO data_table
 VALUES (11, now(), now(), 'Collections', 'HyperDataBrowser');
 INSERT INTO data_table VALUES (12, now(), now(), 'Entities', 'HyperDataBrowser');
 
-ALTER SEQUENCE data_table_id_seq RESTART WITH 15;
+SELECT setval('data_table_id_seq', (SELECT max(id)+1 from data_table), false);
 
 --
 -- Data for Name: data_field; Type: TABLE DATA; Schema: public; Owner: hat20
@@ -22,7 +22,7 @@ INSERT INTO data_field VALUES (14, now(), now(), 'name', 12);
 INSERT INTO data_field VALUES (15, now(), now(), 'entity_id', 12);
 INSERT INTO data_field VALUES (16, now(), now(), 'collection_id', 12);
 
-ALTER SEQUENCE data_field_id_seq RESTART WITH 20;
+SELECT setval('data_field_id_seq', (SELECT max(id)+1 from data_field), false);
 
 --
 -- Data for Name: data_record; Type: TABLE DATA; Schema: public; Owner: hat20
@@ -41,7 +41,7 @@ INSERT INTO data_record VALUES (129, now(), now(), 'Me');
 INSERT INTO data_record
 VALUES (8, now(), now(), 'Collection Home[person,location,event,thing]');
 
-ALTER SEQUENCE data_record_id_seq RESTART WITH 20;
+SELECT setval('data_record_id_seq', (SELECT max(id)+1 from data_record), false);
 
 --
 -- Data for Name: data_tabletotablecrossref; Type: TABLE DATA; Schema: public; Owner: hat20
@@ -52,7 +52,7 @@ VALUES (9, now(), now(), 'parent child', 10, 11);
 INSERT INTO data_tabletotablecrossref
 VALUES (10, now(), now(), 'parent child', 10, 12);
 
-ALTER SEQUENCE data_tabletotablecrossref_id_seq RESTART WITH 12;
+SELECT setval('data_tabletotablecrossref_id_seq', (SELECT max(id)+1 from data_tabletotablecrossref), false);
 
 --
 -- Data for Name: data_value; Type: TABLE DATA; Schema: public; Owner: hat20
@@ -84,7 +84,7 @@ INSERT INTO data_value VALUES (31, now(), now(), 'Home', 10, 8);
 INSERT INTO data_value VALUES (32, now(), now(), 'person,location,event,thing', 11, 8);
 INSERT INTO data_value VALUES (33, now(), now(), '2255103', 12, 8);
 
-ALTER SEQUENCE data_value_id_seq RESTART WITH 35;
+SELECT setval('data_value_id_seq', (SELECT max(id)+1 from data_value), false);
 
 --
 -- Data for Name: system_propertyrecord; Type: TABLE DATA; Schema: public; Owner: hat20
@@ -97,7 +97,7 @@ INSERT INTO system_propertyrecord VALUES (2, now(), now(), 'person/1/property/dy
 INSERT INTO system_propertyrecord VALUES (4, now(), now(), 'person/1/property/dynamic/3:
 (324,)');
 
-ALTER SEQUENCE system_propertyrecord_id_seq RESTART WITH 5;
+SELECT setval('system_propertyrecord_id_seq', (SELECT max(id)+1 from system_propertyrecord), false);
 
 --
 -- Data for Name: system_relationshiprecord; Type: TABLE DATA; Schema: public; Owner: hat20
@@ -122,7 +122,7 @@ INSERT INTO system_relationshiprecord VALUES
 INSERT INTO system_relationshiprecord
 VALUES (9, now(), now(), 'location/2/thing/3:LocatedIn');
 
-ALTER SEQUENCE system_relationshiprecord_id_seq RESTART WITH 15;
+SELECT setval('system_relationshiprecord_id_seq', (SELECT max(id)+1 from system_relationshiprecord), false);
 
 --
 -- Data for Name: people_person; Type: TABLE DATA; Schema: public; Owner: hat20
@@ -143,7 +143,7 @@ INSERT INTO things_thing VALUES (3, now(), now(), 'Phone');
 
 INSERT INTO locations_location VALUES (2, now(), now(), 'My Location');
 
-ALTER SEQUENCE entity_id_seq RESTART WITH 5;
+SELECT setval('entity_id_seq', (SELECT max(id)+1 from system_relationshiprecord), false);
 
 --
 -- Data for Name: people_personlocationcrossref; Type: TABLE DATA; Schema: public; Owner: hat20
@@ -152,7 +152,7 @@ ALTER SEQUENCE entity_id_seq RESTART WITH 5;
 INSERT INTO people_personlocationcrossref
 VALUES (4, now(), now(), 2, 1, 'GPSLocation', TRUE, 4);
 
-ALTER SEQUENCE people_personlocationcrossref_id_seq RESTART WITH 5;
+SELECT setval('people_personlocationcrossref_id_seq', (SELECT max(id)+1 from people_personlocationcrossref), false);
 
 --
 -- Data for Name: people_persontopersoncrossref; Type: TABLE DATA; Schema: public; Owner: hat20
@@ -161,7 +161,7 @@ ALTER SEQUENCE people_personlocationcrossref_id_seq RESTART WITH 5;
 INSERT INTO people_persontopersoncrossref
 VALUES (2, now(), now(), 1, 4, 4, TRUE, 8);
 
-ALTER SEQUENCE people_persontopersoncrossref_id_seq RESTART WITH 5;
+SELECT setval('people_persontopersoncrossref_id_seq', (SELECT max(id)+1 from people_persontopersoncrossref), false);
 
 --
 -- Data for Name: people_systempropertydynamiccrossref; Type: TABLE DATA; Schema: public; Owner: hat20
@@ -176,12 +176,12 @@ VALUES (3, now(), now(), 4, 2, 8, 'given name', TRUE, 3);
 INSERT INTO people_systempropertydynamiccrossref
 VALUES (4, now(), now(), 1, 3, 3, '', TRUE, 4);
 
-ALTER SEQUENCE people_systempropertydynamiccrossref_id_seq RESTART WITH 5;
+SELECT setval('people_systempropertydynamiccrossref_id_seq', (SELECT max(id)+1 from people_systempropertydynamiccrossref), false);
 
 INSERT INTO things_thingpersoncrossref
 VALUES (2, now(), now(), 1, 3, 'owns', TRUE, 6);
 
-ALTER SEQUENCE things_thingpersoncrossref_id_seq RESTART WITH 5;
+SELECT setval('things_thingpersoncrossref_id_seq', (SELECT max(id)+1 from things_thingpersoncrossref), false);
 
 --
 -- Data for Name: locations_locationthingcrossref; Type: TABLE DATA; Schema: public; Owner: hat20
@@ -190,4 +190,4 @@ ALTER SEQUENCE things_thingpersoncrossref_id_seq RESTART WITH 5;
 INSERT INTO locations_locationthingcrossref
 VALUES (1, now(), now(), 3, 2, 'LocatedIn', TRUE, 9);
 
-ALTER SEQUENCE locations_locationthingcrossref_id_seq RESTART WITH 5;
+SELECT setval('locations_locationthingcrossref_id_seq', (SELECT max(id)+1 from locations_locationthingcrossref), false);
