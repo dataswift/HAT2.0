@@ -7,6 +7,9 @@ import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 
+import collection.mutable.{ HashMap, MultiMap }
+import scala.collection.mutable
+import scala.collection.immutable
 import scala.util.{Failure, Success, Try}
 
 // this trait defines our service behavior independently from the service actor
@@ -47,7 +50,10 @@ trait DataService {
 
       // Convert the retrieved structure into a sequence of maps from field ID to values
       val dataRecords = values map { case (recordId, recordValues) =>
-        val fieldValueMap = Map(recordValues map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
+        val fieldValueMap = new mutable.HashMap[Int, mutable.Set[ApiDataValue]] with mutable.MultiMap[Int, ApiDataValue]
+        recordValues foreach { value =>
+          fieldValueMap.addBinding(value.fieldId, ApiDataValue.fromDataValue(value))
+        }
         val mappedValues = filler(fieldValueMap)
         records(recordId).copy(tables = Some(Seq(mappedValues)))
       }
@@ -197,13 +203,14 @@ trait DataService {
     }
   }
 
-  def fillStructures(tables: Seq[ApiDataTable])(values: Map[Int, ApiDataValue]): Seq[ApiDataTable] = {
+  def fillStructures(tables: Seq[ApiDataTable])(values: HashMap[Int, mutable.Set[ApiDataValue]] with MultiMap[Int, ApiDataValue]): Seq[ApiDataTable] = {
     tables map { table =>
       fillStructure(table)(values)
     }
   }
 
-  def fillStructure(table: ApiDataTable)(values: Map[Int, ApiDataValue]): ApiDataTable = {
+  def fillStructure(table: ApiDataTable)(values: HashMap[Int, mutable.Set[ApiDataValue]] with MultiMap[Int, ApiDataValue]): ApiDataTable = {
+    logger.debug("Filling structure " + table.id + " with values " + values)
     val filledFields = table.fields map { fields =>
       // For each field, insert values
       fields map { field: ApiDataField =>
@@ -211,8 +218,8 @@ trait DataService {
           // If a given field has an ID (all fields should)
           case Some(fieldId) =>
             // Get the value from the map to be added to the field
-            val fieldValue = values get fieldId map { value: ApiDataValue =>
-              Seq(value)
+            val fieldValue = values get fieldId map { matchingFieldValue =>
+              matchingFieldValue.toSeq
             }
             // Create a new field with only the values updated
             field.copy(values = fieldValue)

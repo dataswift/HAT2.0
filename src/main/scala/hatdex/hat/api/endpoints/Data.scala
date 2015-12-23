@@ -15,6 +15,8 @@ import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
 
+import scala.collection.mutable
+import scala.collection.mutable.Set
 import scala.util.{Failure, Success, Try}
 
 // this trait defines our service behavior independently from the service actor
@@ -362,7 +364,11 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
               None
             case _ =>
               val values = result.map(_._1._1)
-              val valueMap = Map(values map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
+//              val valueMap = Map(values map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
+              val valueMap = new mutable.HashMap[Int, Set[ApiDataValue]] with mutable.MultiMap[Int, ApiDataValue]
+              values foreach { value =>
+                valueMap.addBinding(value.fieldId, ApiDataValue.fromDataValue(value))
+              }
               val recordData = fillStructures(structures)(valueMap)
 
               // Retrieve and prepare the record itself
