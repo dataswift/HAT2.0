@@ -5,7 +5,7 @@ INSERT INTO "public"."user_user" VALUES
     '%HAT_OWNER_ID%',
     now(), now(),
     '%HAT_OWNER%',
-    crypt('%HAT_OWNER_PASSWORD%', gen_salt('bf', 8)),
+    '%HAT_OWNER_PASSWORD%',
     '%HAT_OWNER_NAME%',
     'owner',
     't'
