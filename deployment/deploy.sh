@@ -38,7 +38,7 @@ cp $HAT_HOME/src/main/resources/database.conf $HAT_HOME/codegen/src/main/resourc
 
 # Setup HAT access
 echo "Setting up HAT access"
-HAT_OWNER=${HAT_OWNER:-'bob@gmail.com'}
+HAT_OWNER=${HAT_OWNER:-'bobtheplumber'}
 HAT_OWNER_ID=${HAT_OWNER_ID:-5974832d-2dc1-4f49-adf1-c6d8bc790274}
 HAT_OWNER_NAME=${HAT_OWNER_NAME:-'Bob'}
 HAT_OWNER_PASSWORD=${HAT_OWNER_PASSWORD:-'$2a$08$vXWZ7MvO0IJu/LvZoMGj3udxKFKTx7a9weDA11zz7wvfIB8qI9JrC'}    # by default hash for pa55w0rd
