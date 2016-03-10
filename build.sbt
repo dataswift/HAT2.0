@@ -40,7 +40,8 @@ lazy val commonSettings = Seq(
     "ch.qos.logback" % "logback-classic" % logbackV,
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe" % "config" % "1.3.0",
-    "com.zaxxer" % "HikariCP" % "2.3.8"
+    "com.zaxxer" % "HikariCP" % "2.3.8",
+    "com.typesafe.akka" % "akka-http-core_2.11" % "2.4.2"
   )
 )
 

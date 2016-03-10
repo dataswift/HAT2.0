@@ -102,6 +102,16 @@ The testsuite uses the [Specs2](https://etorreborre.github.io/specs2/) framework
 
 *WARNING*: the tests completely clean the contents of the database you are connected to, multiple times. *DO NOT RUN on production database.*
 
+### Remote HAT Testing
+
+For various purposes from performance testing to stress testing, to deployed HAT Api verification we have also included a testsuite for testing remote HATs using normal HTTP calls.
+
+To run it, use
+
+  sbt "testOnly hatdex.hat.api.external.RemoteApiSpec" -Dhost="HOST" -Dusername="USERNAME" -Dpassword="PASSWORD"
+
+with the appropriate parameters
+
 ### API
 
 API documentation can be found at [http://hub-of-all-things.github.io/doc/](http://hub-of-all-things.github.io/doc/) 
