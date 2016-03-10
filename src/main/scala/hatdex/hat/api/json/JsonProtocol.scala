@@ -4,7 +4,7 @@ import hatdex.hat.api.models._
 import hatdex.hat.authentication.models.{User, AccessToken}
 import spray.json._
 
-object JsonProtocol extends DefaultJsonProtocol with UuidMarshalling with DateTimeMarshalling with ComparisonOperatorMarshalling {
+trait HatJsonProtocol extends DefaultJsonProtocol with UuidMarshalling with DateTimeMarshalling with ComparisonOperatorMarshalling {
   // Data
   implicit val apiDataValueFormat: RootJsonFormat[ApiDataValue] = rootFormat(lazyFormat(jsonFormat6(ApiDataValue.apply)))
   implicit val dataFieldformat = jsonFormat6(ApiDataField.apply)
@@ -82,3 +82,5 @@ object JsonProtocol extends DefaultJsonProtocol with UuidMarshalling with DateTi
 
   implicit val apiError = jsonFormat2(ErrorMessage.apply)
 }
+
+object JsonProtocol extends HatJsonProtocol

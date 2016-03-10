@@ -8,7 +8,7 @@ name := """The HAT"""
 organization := """org.hatex"""
 version := "2.0-SNAPSHOT"
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 
 parallelExecution in Test := false
 
@@ -18,7 +18,7 @@ scalacOptions in (Compile, doc) ++= Seq("-unchecked", /*"-deprecation", */ "-imp
 
 logLevel := Level.Info
 
-val akkaV = "2.3.9"
+val akkaV = "2.4.2"
 val sprayV = "1.3.3"
 val specs2V = "3.3"
 val slf4jV = "1.7.10"
@@ -41,7 +41,10 @@ lazy val commonSettings = Seq(
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe" % "config" % "1.3.0",
     "com.zaxxer" % "HikariCP" % "2.3.8",
-    "com.typesafe.akka" % "akka-http-core_2.11" % "2.4.2"
+    "com.typesafe.akka" %% "akka-http-core" % akkaV,
+    "com.typesafe.akka" %% "akka-http-scala-experimental" % "1.0-RC2",
+    "com.typesafe.akka" %% "akka-http-spray-json-experimental" % akkaV,
+    "de.heikoseeberger" %% "akka-http-circe" % "1.5.2"
   )
 )
 
