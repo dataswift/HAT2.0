@@ -21,30 +21,31 @@ logLevel := Level.Info
 val akkaV = "2.4.2"
 val sprayV = "1.3.3"
 val specs2V = "3.3"
-val slf4jV = "1.7.10"
+val slf4jV = "1.7.18"
 val logbackV = "1.1.2"
+val slickV = "3.0.0"
+val slick_pgV = "0.9.0"
 
 lazy val commonSettings = Seq(
   scalaVersion := "2.11.6",
   libraryDependencies ++= Seq(
-    "com.typesafe.slick" %% "slick" % "3.0.0",
-    "com.github.tminglei" % "slick-pg_core_2.11" % "0.9.0",
-    "com.github.tminglei" %% "slick-pg" % "0.9.0",
+    "com.typesafe.slick" %% "slick" % slickV,
+    "com.github.tminglei" % "slick-pg_core_2.11" % slick_pgV,
+    "com.github.tminglei" %% "slick-pg" % slick_pgV,
     "com.github.tminglei" %% "slick-pg_joda-time" % "0.6.5.3",
     "com.github.tminglei" %% "slick-pg_jts" % "0.6.5.3",
-    "joda-time" % "joda-time" % "2.7",
-    "org.joda" % "joda-convert" % "1.7",
+    "joda-time" % "joda-time" % "2.9.2",
+    "org.joda" % "joda-convert" % "1.8",
     "com.vividsolutions" % "jts" % "1.13",
     "org.slf4j" % "slf4j-api" % slf4jV,
     "ch.qos.logback" % "logback-core" % logbackV,
     "ch.qos.logback" % "logback-classic" % logbackV,
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe" % "config" % "1.3.0",
-    "com.zaxxer" % "HikariCP" % "2.3.8",
+    "com.zaxxer" % "HikariCP" % "2.4.4",
     "com.typesafe.akka" %% "akka-http-core" % akkaV,
-    "com.typesafe.akka" %% "akka-http-scala-experimental" % "1.0-RC2",
-    "com.typesafe.akka" %% "akka-http-spray-json-experimental" % akkaV,
-    "de.heikoseeberger" %% "akka-http-circe" % "1.5.2"
+    "com.typesafe.akka" %% "akka-stream" % akkaV,
+    "com.typesafe.akka" %% "akka-http-spray-json-experimental" % akkaV
   )
 )
 
@@ -56,7 +57,7 @@ lazy val codegen = (project in file("codegen")).
   settings(
     name := "codegen",
     libraryDependencies ++= List(
-      "com.typesafe.slick" %% "slick-codegen" % "3.0.0"
+      "com.typesafe.slick" %% "slick-codegen" % slickV
     ),
     gentables := {
       val main = Project("root", file("."))

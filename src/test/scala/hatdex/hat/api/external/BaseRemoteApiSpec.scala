@@ -17,7 +17,7 @@ trait BaseRemoteApiSpec extends Specification with CommandLineArguments {
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
   implicit val callRetries = Retry(2)
-  implicit val callTimeout = Timeout(2 seconds)
+  implicit val callTimeout = Timeout(5 seconds)
 
   implicit class MatherWithImplicitValues[A](m: Matcher[A]) {
     def awaitWithTimeout(implicit r: Retry, t: Timeout) = {
