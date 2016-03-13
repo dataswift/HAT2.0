@@ -1,4 +1,4 @@
-package hatdex.hat.api.external
+package hatdex.hat.api.remote
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
