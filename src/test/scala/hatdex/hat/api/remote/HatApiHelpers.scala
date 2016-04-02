@@ -15,9 +15,6 @@ import spray.json._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-/**
-  * Created by andrius on 13/03/2016.
-  */
 class HatApiHelpers(logger: LoggingAdapter, hatAddress: String, ownerAuthParams: Map[String, String]) {
   implicit val system = ActorSystem()
   implicit val materializer: Materializer = ActorMaterializer()
