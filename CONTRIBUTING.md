@@ -41,13 +41,13 @@ We do require contributors to sign contributions using the sign-off feature of t
 #### Header for new files
 If you are creating any new file, please attach the following notices to the program to the start of each source file. 
 
-     ```Copyright (C) <year> <name of author|name of company>```   
+```Copyright (C) <year> <name of author|name of company>```
+    
+```SPDX-License-Identifier: AGPL-3.0```
 
-     ```SPDX-License-Identifier: AGPL-3.0```
-
-     ```This file is part of the Hub of All Things (HAT) project. HAT is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3 of the License. HAT is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.```
-   
-     ```This is a file submitted under the HAT Project - https://github.com/Hub-of-all-Things```
+```This file is part of the Hub of All Things (HAT) project. HAT is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3 of the License. HAT is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program. If not, see <http://www.gnu.org/licenses/>.```
+    
+```This is a file submitted under the HAT Project - https://github.com/Hub-of-all-Things```
 
 ###Pull Request Pro Tips
 * Fork the repository and clone it locally. Connect your local to the original ‘upstream’ repository by adding it as a remote. Pull in changes from ‘upstream’ often so that you stay up to date so that when you submit your pull request, merge conflicts will be less likely. See more detailed instructionshere.
