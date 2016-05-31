@@ -58,21 +58,29 @@ sed -e "s;%HAT_OWNER%;$HAT_OWNER;g"\
   -e "s;%HAT_PLATFORM_PASSWORD_HASH%;$HAT_PLATFORM_PASSWORD_HASH;g"\
   $HAT_HOME/src/sql/boilerplate/authentication.sql.template > $HAT_HOME/src/sql/boilerplate/authentication.sql
 
+
+export jdbcurl="jdbc:postgresql://localhost/$DATABASE"
+export dbuser=$DBUSER
+export dbpass=$DBPASS
+
+export TASK="create"
+CONTEXT="structuresonly,data,testdata"
+bash applyEvolutions.sh
 # Execute the sql script
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/authentication.sql
+#psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/authentication.sql
 
 # Remove the sql file with sensitive credentials
-rm $HAT_HOME/src/sql/boilerplate/authentication.sql
+#rm $HAT_HOME/src/sql/boilerplate/authentication.sql
 
-echo "Boilerplate setup"
-echo $HAT_HOME/src/sql/boilerplate/data.sql
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/data.sql
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/relationships.sql
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/properties.sql
-psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/collections.sql
+#echo "Boilerplate setup"
+#echo $HAT_HOME/src/sql/boilerplate/data.sql
+#psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/data.sql
+#psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/relationships.sql
+#psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/properties.sql
+#psql $DATABASE -U$DBUSER < $HAT_HOME/src/sql/boilerplate/collections.sql
 
 # Prepare the project to be executed in-place
 echo "Preparing the project to be executed"
 #sbt clean
 #sbt compile
-sbt stage
+#sbt stage

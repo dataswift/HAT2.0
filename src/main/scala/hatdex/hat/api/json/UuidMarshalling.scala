@@ -4,9 +4,6 @@ import java.util.UUID
 
 import spray.json._
 
-/**
- * Created by andrius on 10/10/15.
- */
 trait UuidMarshalling {
   implicit object UuidJsonFormat extends JsonFormat[UUID] {
     def write(x: UUID) = JsString(x toString ())
