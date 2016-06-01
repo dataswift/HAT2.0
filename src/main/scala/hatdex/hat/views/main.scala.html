@@ -1,0 +1,69 @@
+@(title: String, navbarContent: Html = Html(""), styles: Html = Html(""), scripts: Html = Html(""), modals: Html = Html(""))(content: Html)
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>@title</title>
+        <link rel="shortcut icon" type="image/png" href="/assets/images/favicon.png">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+        <link rel="stylesheet" media="screen" href="/assets/stylesheets/main.css">
+        @styles
+    </head>
+    <body>
+        <header>
+            <nav class="navbar navbar-default">
+                <div class="container-fluid">
+                        <!-- Brand and toggle get grouped for better mobile display -->
+                    <div class="navbar-header">
+                        <a class="navbar-brand navbar-brand-main" href="/">HAT</a>
+                        <a class="navbar-brand" href="https://rumpel.hubofallthings.com">Rumpel</a>
+                        <a class="navbar-brand" href="https://marketsquare.hubofallthings.net">MarketSquare</a>
+                    </div>
+
+                    <div class="nav navbar-nav navbar-right">
+                        <form class="navbar-form">
+                            <div class="form-group">
+                                <label class="sr-only" for="exampleInputEmail3">Email address</label>
+                                <input type="email" class="form-control" id="exampleInputEmail3" placeholder="HAT Name">
+                            </div>
+                            <div class="form-group">
+                                <label class="sr-only" for="exampleInputPassword3">Password</label>
+                                <input type="password" class="form-control" id="exampleInputPassword3" placeholder="Password">
+                            </div>
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox"> Remember me
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-red">Sign in</button>
+                        </form>
+                    </div>
+
+                </div>
+            </nav>
+
+        </header>
+
+        <div class="container-fluid content">
+            @content
+        </div>
+
+        <footer>
+            <p>
+                This is the public facing placeholder front page of a HAT user registered with HATDeX. HAT users would
+                be able to replace this page with any information they wish to broadcast (e.g. personal website, a blog,
+                a storefront, a video channel, art, video or media created by the user, etc.). The information on these
+                pages are part of the HAT that the user has designated to be public.
+            </p>
+            <p>
+                Copyright &copy; HATDeX Ltd 2016. All Rights Reserved.
+            </p>
+            <div class="certified">
+                <img src="/assets/images/certified.png" alt="HATDeX Certified" />
+            </div>
+        </footer>
+        @modals
+        @scripts
+    </body>
+
+</html>

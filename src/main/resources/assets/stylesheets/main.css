@@ -1,0 +1,167 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+@media (max-width: 377px) {
+    body {
+        font-size: 10px;
+    }
+}
+
+@media (min-width: 377px) and (max-width: 480px) {
+    body {
+        font-size: 10px;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    body {
+        font-size: 10px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 992px) {
+    body {
+        font-size: 10px;
+    }
+}
+
+@media (min-width: 993px) and (max-width: 1200px) {
+    body {
+        font-size: 11px;
+    }
+}
+
+@media (min-width: 1201px) {
+    body {
+        font-size: 13px;
+    }
+}
+
+.container-fluid.content {
+    min-height: 80vh;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('/assets/images/hat_foundation.jpg');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    color: white;
+    padding-top: 10em;
+    padding-bottom: 10em;
+}
+
+.profile p {
+    font-size: 1.6em;
+}
+
+.profile h1 {
+    margin-top: 0;
+}
+
+.profile-private {
+    text-align: center;
+}
+
+.profile-private h1 {
+    font-size: 4em;
+}
+
+.profile-img {
+    background: white;
+    padding: 1em;
+}
+
+.btn-primary {
+    background-color: white;
+    color: #842600;
+    font-weight: 700;
+    border-color: white;
+}
+
+.btn-primary:hover {
+    color: #842600;
+    background-color: white;
+    border-color: #842600;
+    opacity: 0.6;
+}
+
+.btn-red {
+    color: white;
+    font-weight: 700;
+    border-color: #b83333;
+    background-color: #b83333;
+}
+
+.btn-red:hover {
+    color: white;
+    background-color: #842600;
+}
+
+.navbar {
+    margin-bottom: 0;
+    padding-left: 2em;
+    padding-right: 2em;
+}
+
+.navbar .navbar-brand {
+    font-size: 2em;
+}
+
+.navbar .navbar-brand.navbar-brand-main {
+    font-weight: 900;
+}
+
+.navbar-default, footer {
+    background-image: url("/assets/images/concrete_wall_2.png");
+    background-repeat: repeat;
+}
+
+.navbar-form .form-control {
+    font-size: 1.1em;
+}
+
+.btn {
+    font-size: 1em;
+}
+
+h1 {
+    font-size: 3em;
+}
+
+h2 {
+    font-size: 2.5em;
+}
+
+h3 {
+    font-size: 1.6em;
+}
+
+footer {
+    position: relative;
+    text-align: center;
+    font-size: 1em;
+    padding: 2em;
+    color: #333232;
+    padding-right: 10em;
+    padding-left: 10em;
+    min-height: 10em;
+}
+
+@media (min-width: 769px) {
+    footer {
+        padding-right: 20em;
+        padding-left: 20em;
+    }
+}
+
+footer .certified {
+    position: absolute;
+    bottom: 2em;
+    right: 2em;
+}
+
+footer .certified img {
+    width: 6em;
+    height: auto;
+}

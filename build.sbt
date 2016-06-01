@@ -1,6 +1,4 @@
-import NativePackagerKeys._
-import com.typesafe.sbt.SbtNativePackager._
-import sbt.Keys._
+
 
 enablePlugins(JavaAppPackaging)
 
@@ -73,19 +71,19 @@ lazy val codegen = (project in file("codegen")).
     cleanFiles <+= baseDirectory { base => base / "../src/main/scala/hatdex/hat/dal/" }
   )
 
-lazy val core = (project in file(".")).
-  settings(commonSettings: _*).
-  settings(
+lazy val core = (project in file("."))
+  .settings(commonSettings: _*)
+  .settings(
     name := "root",
     libraryDependencies ++= List(
-      "io.spray"            %%  "spray-can"     % sprayV,
-      "io.spray"            %%  "spray-routing-shapeless2" % sprayV,
-      "com.typesafe.akka"   %%  "akka-actor"    % akkaV,
-      "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test",
-      "io.spray"      %%  "spray-testkit" % sprayV  % "test",
-      "org.specs2" % "specs2-core_2.11" % specs2V  % "test",
+      "io.spray" %% "spray-can" % sprayV,
+      "io.spray" %% "spray-routing-shapeless2" % sprayV,
+      "com.typesafe.akka" %% "akka-actor" % akkaV,
+      "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
+      "io.spray" %% "spray-testkit" % sprayV % "test",
+      "org.specs2" % "specs2-core_2.11" % specs2V % "test",
       "org.specs2" % "specs2_2.11" % specs2V % "test",
-      "io.spray" %%  "spray-json" % "1.3.2",
+      "io.spray" %% "spray-json" % "1.3.2",
       "org.mindrot" % "jbcrypt" % "0.3m"
     ),
     gentables := {
@@ -98,12 +96,18 @@ lazy val core = (project in file(".")).
       Seq(file(fname))
     },
     scoverage.ScoverageSbtPlugin.ScoverageKeys.coverageExcludedPackages := "hatdex.hat.dal",
-    publishArtifact in (Compile, packageDoc) := false
-  ).
-  dependsOn("codegen").
-  settings (
-    aggregate in update := false
+    publishArtifact in(Compile, packageDoc) := false
   )
+  .dependsOn("codegen")
+  .enablePlugins(SbtTwirl)
+  .settings(
+    aggregate in update := false,
+    sourceDirectories in(Compile, TwirlKeys.compileTemplates) := (unmanagedSourceDirectories in Compile).value
+  )
+
+
+
+//sourceDirectories in (Compile, TwirlKeys.compileTemplates) := (unmanagedSourceDirectories in Compile).value
 
 resolvers ++= Seq(
   "scalaz.bintray" at "http://dl.bintray.com/scalaz/releases",
