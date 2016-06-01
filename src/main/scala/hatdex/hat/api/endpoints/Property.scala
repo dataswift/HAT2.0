@@ -11,13 +11,12 @@ import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
 
-import scala.util.{Failure, Success}
-
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{ Failure, Success, Try }
 
 // this trait defines our service behavior independently from the service actor
 trait Property extends HttpService with PropertyService with HatServiceAuthHandler {
-
-  val db = DatabaseInfo.db
   val logger: LoggingAdapter
 
   val routes = {
@@ -34,17 +33,9 @@ trait Property extends HttpService with PropertyService with HatServiceAuthHandl
     post {
       userPassHandler { implicit user: User =>
         entity(as[ApiProperty]) { property =>
-          db.withSession { implicit session =>
-            val result = storeProperty(property)
-            session.close()
-            complete {
-              result match {
-                case Success(created) =>
-                  (Created, created)
-                case Failure(e) =>
-                  (BadRequest, ErrorMessage("Error creating property", e.getMessage))
-              }
-            }
+          onComplete(storeProperty(property)) {
+            case Success(created) => complete((Created, created))
+            case Failure(e)       => complete((BadRequest, ErrorMessage("Error creating property", e.getMessage)))
           }
         }
       }
@@ -54,17 +45,10 @@ trait Property extends HttpService with PropertyService with HatServiceAuthHandl
   def getPropertyApi = path(IntNumber) { (propertyId: Int) =>
     get {
       userPassHandler { implicit user: User =>
-        db.withSession { implicit session =>
-          val propertyOption = getProperty(propertyId)
-          session.close()
-          complete {
-            propertyOption match {
-              case Some(property) =>
-                property
-              case None =>
-                (NotFound, s"Property $propertyId not found")
-            }
-          }
+        onComplete(getProperty(propertyId)) {
+          case Success(Some(property)) => complete((OK, property))
+          case Success(None)           => complete((NotFound, s"Property $propertyId not found"))
+          case Failure(e)              => complete((InternalServerError, ErrorMessage("Error fetching property", e.getMessage)))
         }
       }
     }
@@ -74,12 +58,9 @@ trait Property extends HttpService with PropertyService with HatServiceAuthHandl
     get {
       userPassHandler { implicit user: User =>
         parameters('name.?) { (maybePropertyName: Option[String]) =>
-          db.withSession { implicit session =>
-            complete {
-              val properties = getProperties(maybePropertyName)
-              session.close()
-              properties
-            }
+          onComplete(getProperties(maybePropertyName)) {
+            case Success(properties) => complete((OK, properties))
+            case Failure(e)          => complete((InternalServerError, ErrorMessage("Error fetching property", e.getMessage)))
           }
         }
       }

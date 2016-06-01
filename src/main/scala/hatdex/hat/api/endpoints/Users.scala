@@ -9,7 +9,7 @@ import hatdex.hat.authentication.HatServiceAuthHandler
 import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.{ AccessToken, User }
 import hatdex.hat.dal.SlickPostgresDriver.api._
-import hatdex.hat.dalNew.Tables._
+import hatdex.hat.dal.Tables._
 
 import org.joda.time.LocalDateTime
 import spray.http.StatusCode
@@ -42,13 +42,15 @@ trait Users extends HttpService with HatServiceAuthHandler {
         post {
           entity(as[User]) { implicit newUser =>
             // Only two types of users can be created via the api
-            val maybeUserRole = newUser.role match {
-              case "dataDebit"  => Some("dataDebit")
-              case "dataCredit" => Some("dataCredit")
-              case _            => None
+            val maybeUserRole = Future {
+              newUser.role match {
+                case "dataDebit"  => Some("dataDebit")
+                case "dataCredit" => Some("dataCredit")
+                case _            => None
+              }
             }
 
-            val fUser = maybeUserRole match {
+            val fUser = maybeUserRole flatMap {
               case Some(userRole) =>
                 val newUserDb = UserUserRow(newUser.userId, LocalDateTime.now(), LocalDateTime.now(),
                   newUser.email, newUser.pass, // The password is assumed to come in hashed, hence stored as is!
@@ -65,13 +67,11 @@ trait Users extends HttpService with HatServiceAuthHandler {
             }
 
             onComplete(fUser) {
-              case Success((statusCode: StatusCode, value)) => complete((statusCode, value))
-              case Failure(e: ApiError)                     => complete((e.statusCode, e.message))
-              case Failure(e)                               => complete((InternalServerError, ErrorMessage("Error while creating user", "Unknown error occurred")))
+              case Success((statusCode, value)) => complete((statusCode, value))
+              case Failure(e: ApiError)         => complete((e.statusCode, e.message))
+              case Failure(e)                   => complete((InternalServerError, ErrorMessage("Error while creating user", "Unknown error occurred")))
             }
-
           }
-
         }
       }
     }
@@ -132,9 +132,9 @@ trait Users extends HttpService with HatServiceAuthHandler {
         }
 
         onComplete(response) {
-          case Success((statusCode: StatusCode, value)) => complete((statusCode, value))
-          case Failure(e: ApiError)                     => complete((e.statusCode, e.message))
-          case Failure(e)                               => complete((InternalServerError, ErrorMessage("Error while retrieving access token", "Unknown error occurred")))
+          case Success((statusCode, value)) => complete((statusCode, value))
+          case Failure(e: ApiError)         => complete((e.statusCode, e.message))
+          case Failure(e)                   => complete((InternalServerError, ErrorMessage("Error while retrieving access token", "Unknown error occurred")))
         }
       }
     }

@@ -6,15 +6,19 @@ import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.HatServiceAuthHandler
 import hatdex.hat.authentication.models.User
-import hatdex.hat.dal.SlickPostgresDriver.simple._
+import spray.http.StatusCode
+
+//import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
 
-import scala.util.{Failure, Success, Try}
-
+import scala.util.{ Failure, Success, Try }
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 // this trait defines our service behavior independently from the service actor
 trait Type extends HttpService with HatServiceAuthHandler {
@@ -39,22 +43,22 @@ trait Type extends HttpService with HatServiceAuthHandler {
     post {
       userPassHandler { implicit user: User =>
         entity(as[ApiSystemType]) { systemType =>
-          db.withSession { implicit session =>
-            val typeRow = new SystemTypeRow(0, LocalDateTime.now(), LocalDateTime.now(), systemType.name, systemType.description)
-            val typeMaybeInserted = Try((SystemType returning SystemType) += typeRow)
-            session.close()
-            complete {
-              typeMaybeInserted match {
-                case Success(typeInserted) =>
-                  (Created, ApiSystemType.fromDbModel(typeInserted))
-                case Failure(e) =>
-                  (BadRequest, ErrorMessage("Error creating Type", e.getMessage))
-              }
-            }
+          val typeRow = new SystemTypeRow(0, LocalDateTime.now(), LocalDateTime.now(), systemType.name, systemType.description)
+          val typeMaybeInserted = db.run {
+            ((SystemType returning SystemType) += typeRow).asTry
           }
 
-        }
+          val typeResponse = typeMaybeInserted map {
+            case Success(typeInserted) => (Created, ApiSystemType.fromDbModel(typeInserted))
+            case Failure(e)            => throw ApiError(BadRequest, ErrorMessage("Error when creating type", e.getMessage))
+          }
 
+          onComplete(typeResponse) {
+            case Success((statusCode: StatusCode, value)) => complete((statusCode, value))
+            case Failure(e: ApiError)                     => complete((e.statusCode, e.message))
+            case Failure(e)                               => complete((InternalServerError, ErrorMessage("Error while creating type", "Unknown error occurred")))
+          }
+        }
       }
     }
   }
@@ -63,21 +67,19 @@ trait Type extends HttpService with HatServiceAuthHandler {
     post {
       userPassHandler { implicit user: User =>
         entity(as[ApiRelationship]) { relationship =>
-          db.withSession { implicit session =>
-            val crossref = new SystemTypetotypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), typeId, toTypeId, relationship.relationshipType)
-            val maybeCrossrefId = Try((SystemTypetotypecrossref returning SystemTypetotypecrossref.map(_.id)) += crossref)
-            session.close()
-            complete {
-              maybeCrossrefId match {
-                case Success(crossrefId) =>
-                  (Created, ApiGenericId(crossrefId))
-                case Failure(e) =>
-                  (BadRequest, ErrorMessage("Error linking Types", e.getMessage))
-              }
+          val crossref = new SystemTypetotypecrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(), typeId, toTypeId, relationship.relationshipType)
+          val maybeCrossrefId = db.run(((SystemTypetotypecrossref returning SystemTypetotypecrossref.map(_.id)) += crossref).asTry)
 
-            }
+          val typeResponse = maybeCrossrefId map {
+            case Success(crossrefId) => (Created, ApiGenericId(crossrefId))
+            case Failure(e)          => throw ApiError(BadRequest, ErrorMessage("Error linking Types", e.getMessage))
           }
 
+          onComplete(typeResponse) {
+            case Success((statusCode: StatusCode, value)) => complete((statusCode, value))
+            case Failure(e: ApiError)                     => complete((e.statusCode, e.message))
+            case Failure(e)                               => complete((InternalServerError, ErrorMessage("Error while linking types", "Unknown error occurred")))
+          }
         }
       }
     }
@@ -87,21 +89,17 @@ trait Type extends HttpService with HatServiceAuthHandler {
     get {
       userPassHandler { implicit user =>
         parameters('name.?) { (maybeTypeName: Option[String]) =>
-          db.withSession { implicit session =>
-            val typesQuery = SystemType
-            val typesNamed = maybeTypeName match {
-              case Some(typeName) =>
-                typesQuery.filter(_.name === typeName)
-              case None =>
-                typesQuery
-            }
+          val typesQuery = SystemType
+          val typesNamed = maybeTypeName match {
+            case Some(typeName) => typesQuery.filter(_.name === typeName)
+            case None           => typesQuery
+          }
 
-            val types = typesNamed.run
-
-            session.close()
-            complete {
-              types.map(ApiSystemType.fromDbModel)
-            }
+          val fTypes = db.run(typesNamed.result)
+          val apiTypes = fTypes.map(_.map(ApiSystemType.fromDbModel))
+          onComplete(apiTypes) {
+            case Success(types) => complete(types)
+            case Failure(e)     => complete((InternalServerError, ErrorMessage("Error while fetching types", "Unknown error")))
           }
         }
       }
@@ -112,20 +110,21 @@ trait Type extends HttpService with HatServiceAuthHandler {
     post {
       userPassHandler { implicit user: User =>
         entity(as[ApiSystemUnitofmeasurement]) { systemUom =>
-          db.withSession { implicit session =>
-            val uomRow = new SystemUnitofmeasurementRow(0, LocalDateTime.now(), LocalDateTime.now(), systemUom.name, systemUom.description, systemUom.symbol)
-            val uomMaybeInserted = Try((SystemUnitofmeasurement returning SystemUnitofmeasurement) += uomRow)
-            session.close()
-            complete(
-              uomMaybeInserted match {
-                case Success(uomInserted) =>
-                  (Created, ApiSystemUnitofmeasurement.fromDbModel(uomInserted))
-                case Failure(e) =>
-                  (BadRequest, ErrorMessage("Error creating Unit of Measurement", e.getMessage))
-              }
-            )
+          val uomRow = new SystemUnitofmeasurementRow(0, LocalDateTime.now(), LocalDateTime.now(), systemUom.name, systemUom.description, systemUom.symbol)
+          val uomMaybeInserted = db.run {
+            ((SystemUnitofmeasurement returning SystemUnitofmeasurement) += uomRow).asTry
           }
 
+          val uomResponse = uomMaybeInserted map {
+            case Success(uomInserted) => (Created, ApiSystemUnitofmeasurement.fromDbModel(uomInserted))
+            case Failure(e)           => throw ApiError(BadRequest, ErrorMessage("Error creating Unit of Measurement", e.getMessage))
+          }
+
+          onComplete(uomResponse) {
+            case Success((statusCode: StatusCode, value)) => complete((statusCode, value))
+            case Failure(e: ApiError)                     => complete((e.statusCode, e.message))
+            case Failure(e)                               => complete((InternalServerError, ErrorMessage("Error while creating Unit of Measurement", "Unknown error occurred")))
+          }
         }
       }
     }
@@ -135,19 +134,17 @@ trait Type extends HttpService with HatServiceAuthHandler {
     get {
       userPassHandler { implicit user =>
         parameters('name.?) { (maybeUomName: Option[String]) =>
-          db.withSession { implicit session =>
-            val uomsQuery = SystemUnitofmeasurement
-            val uomsNamed = maybeUomName match {
-              case Some(uomName) =>
-                uomsQuery.filter(_.name === uomName)
-              case None =>
-                uomsQuery
-            }
-            val uoms = uomsNamed.run
-            session.close()
-            complete {
-              uoms.map(ApiSystemUnitofmeasurement.fromDbModel)
-            }
+          val uomsQuery = SystemUnitofmeasurement
+          val uomsNamed = maybeUomName match {
+            case Some(uomName) => uomsQuery.filter(_.name === uomName)
+            case None          => uomsQuery
+          }
+          val uoms = db.run(uomsNamed.result)
+            .map(_.map(ApiSystemUnitofmeasurement.fromDbModel))
+
+          onComplete(uoms) {
+            case Success(uoms) => complete(uoms)
+            case Failure(e)    => complete((InternalServerError, ErrorMessage("Error while fetching Units of Measurement", "Unknown error")))
           }
         }
       }
