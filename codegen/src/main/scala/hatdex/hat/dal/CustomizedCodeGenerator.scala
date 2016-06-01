@@ -18,8 +18,9 @@ import slick.driver.JdbcDriver.api._
 object CustomizedCodeGenerator{
 
   def main(args: Array[String]) : Unit = {
-    println( "Running Customized Generator" )
+    println( " [CODEGEN] Running Customized Generator" )
     codegenFuture.onSuccess { case codegen =>
+      println (s" [CODEGEN] success - write to file ${args(0)}, package ${args(1)}")
       val writefileFuture = codegen.writeToFile(
         "hatdex.hat.dal.SlickPostgresDriver",
         args(0),
@@ -38,7 +39,9 @@ object CustomizedCodeGenerator{
 
   val db = Database.forConfig("devdb")
 
-  val modelAction = PostgresDriver.createModel( Some(PostgresDriver.defaultTables) )
+  val excluded = Seq("databasechangelog", "databasechangeloglock")
+
+  val modelAction = PostgresDriver.createModel( Some(PostgresDriver.defaultTables.map(_.filterNot(t => excluded contains t.name.name))) )
   val modelFuture = db.run(modelAction)
 
   val codegenFuture = modelFuture.map(model => new SourceCodeGenerator(model){

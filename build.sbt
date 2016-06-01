@@ -30,6 +30,7 @@ lazy val commonSettings = Seq(
   scalaVersion := "2.11.6",
   libraryDependencies ++= Seq(
     "com.typesafe.slick" %% "slick" % slickV,
+    "org.postgresql" % "postgresql" % "9.4-1206-jdbc4",
     "com.github.tminglei" % "slick-pg_core_2.11" % slick_pgV,
     "com.github.tminglei" %% "slick-pg" % slick_pgV,
     "com.github.tminglei" %% "slick-pg_joda-time" % "0.6.5.3",
@@ -71,6 +72,25 @@ lazy val codegen = (project in file("codegen")).
     },
     cleanFiles <+= baseDirectory { base => base / "../src/main/scala/hatdex/hat/dal/" }
   )
+
+//slick <<= slickCodeGenTask
+//
+//sourceGenerators in Compile <+= slickCodeGenTask
+//
+//lazy val slick = TaskKey[Seq[File]]("gen-tables")
+//lazy val slickCodeGenTask = (sourceManaged, dependencyClasspath in Compile, runner in Compile, streams) map { (dir, cp, r, s) =>
+//  val main = Project("root", file("."))
+//  val outputDir = (main.base.getAbsoluteFile / "src/main/scala").getPath
+//  val username = "hat20"
+//  val password = "pa55w0rd"
+//  val url = "jdbc:postgresql://localhost/hat20"
+//  val jdbcDriver = "org.postgresql.Driver"
+//  val slickDriver = "slick.driver.PostgresDriver"
+//  val pkg = "hatdex.hat.dalNew"
+//  toError(r.run("hatdex.hat.dal.CustomizedCodeGenerator", cp.files, Array(outputDir, pkg, slickDriver, jdbcDriver, url, username, password), s.log))
+//  val fname = outputDir + "/" + pkg.replace('.', '/') + "/Tables.scala"
+//  Seq(file(fname))
+//}
 
 lazy val core = (project in file(".")).
   settings(commonSettings: _*).
