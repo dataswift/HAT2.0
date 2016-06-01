@@ -24,7 +24,7 @@ val specs2V = "3.3"
 val slf4jV = "1.7.18"
 val logbackV = "1.1.2"
 val slickV = "3.0.0"
-val slick_pgV = "0.9.0"
+val slick_pgV = "0.9.2"
 
 lazy val commonSettings = Seq(
   scalaVersion := "2.11.6",

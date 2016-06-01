@@ -81,6 +81,7 @@ trait HatJsonProtocol extends DefaultJsonProtocol with UuidMarshalling with Date
   implicit val apiAccessTokenFormat = jsonFormat2(AccessToken.apply)
 
   implicit val apiError = jsonFormat2(ErrorMessage.apply)
+  implicit val apiSuccess = jsonFormat1(SuccessResponse.apply)
 }
 
 object JsonProtocol extends HatJsonProtocol

@@ -4,27 +4,23 @@ import java.util.UUID
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.DatabaseInfo
-import hatdex.hat.api.models.{ApiError, ErrorMessage}
+import hatdex.hat.api.models.{ SuccessResponse, ApiError, ErrorMessage }
 import hatdex.hat.authentication.HatServiceAuthHandler
 import hatdex.hat.authentication.authorization.UserAuthorization
-import hatdex.hat.authentication.models.{AccessToken, User}
-import hatdex.hat.api.json.JsonProtocol
-import spray.http.StatusCode
-
-import scala.concurrent.Future
-
-//import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.authentication.models.{ AccessToken, User }
+import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dalNew.Tables._
+
 import org.joda.time.LocalDateTime
+import spray.http.StatusCode
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
-import spray.routing.HttpService
 import spray.routing._
-import hatdex.hat.dal.SlickPostgresDriver.api._
-import scala.concurrent.ExecutionContext.Implicits.global
 import spray.json._
 
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{ Failure, Success, Try }
 
 trait Users extends HttpService with HatServiceAuthHandler {
 
@@ -45,42 +41,36 @@ trait Users extends HttpService with HatServiceAuthHandler {
       authorize(UserAuthorization.hasPermissionCreateUser) {
         post {
           entity(as[User]) { implicit newUser =>
-              // Only two types of users can be created via the api
-              val maybeUserRole = newUser.role match {
-                case "dataDebit" =>
-                  Some("dataDebit")
-                case "dataCredit" =>
-                  Some("dataCredit")
-                case _ =>
-                  None
-              }
+            // Only two types of users can be created via the api
+            val maybeUserRole = newUser.role match {
+              case "dataDebit"  => Some("dataDebit")
+              case "dataCredit" => Some("dataCredit")
+              case _            => None
+            }
 
-              val fUser = maybeUserRole match {
-                case Some(userRole) =>
-                  val newUserDb = UserUserRow(newUser.userId, LocalDateTime.now(), LocalDateTime.now(),
-                    newUser.email, newUser.pass, // The password is assumed to come in hashed, hence stored as is!
-                    newUser.name, userRole, enabled = true)
-                    val createdUser = db.run {
-                      ((UserUser returning UserUser) += newUserDb).asTry
-                    }
+            val fUser = maybeUserRole match {
+              case Some(userRole) =>
+                val newUserDb = UserUserRow(newUser.userId, LocalDateTime.now(), LocalDateTime.now(),
+                  newUser.email, newUser.pass, // The password is assumed to come in hashed, hence stored as is!
+                  newUser.name, userRole, enabled = true)
+                val createdUser = db.run {
+                  ((UserUser returning UserUser) += newUserDb).asTry
+                }
 
-                    createdUser map {
-                      case Success(userDb) =>
-                        (Created, User(userDb.userId, userDb.email, None, userDb.name, userDb.role))
-                      case Failure(e) =>
-                        throw ApiError(BadRequest, ErrorMessage("Error when creating user", e.getMessage))
-                    }
-                case None =>
-                  throw ApiError(Unauthorized, ErrorMessage("You do not have access to this resource", "Only HAT owner and platform provider can create new users"))
-              }
+                createdUser map {
+                  case Success(userDb) => (Created, User(userDb.userId, userDb.email, None, userDb.name, userDb.role))
+                  case Failure(e)      => throw ApiError(BadRequest, ErrorMessage("Error when creating user", e.getMessage))
+                }
+              case None => throw ApiError(Unauthorized, ErrorMessage("Invalid User Role", "Only HAT dataDebit and dataCredit roles can be created via this API"))
+            }
 
             onComplete(fUser) {
               case Success((statusCode: StatusCode, value)) => complete((statusCode, value))
-              case Failure(e : ApiError) => complete((e.statusCode, e.message))
-              case Failure(e) => complete((InternalServerError, ErrorMessage("Error while creating user", "Unknown error occurred")))
+              case Failure(e: ApiError)                     => complete((e.statusCode, e.message))
+              case Failure(e)                               => complete((InternalServerError, ErrorMessage("Error while creating user", "Unknown error occurred")))
             }
 
-            }
+          }
 
         }
       }
@@ -91,21 +81,14 @@ trait Users extends HttpService with HatServiceAuthHandler {
     (userPassHandler | accessTokenHandler) { implicit systemUser: User =>
       authorize(UserAuthorization.hasPermissionDisableUser) {
         put {
+          val temp = UserUser.filter(_.userId === userId)
+            .map(u => (u.enabled)) //            .map(u => (u.enabled, u.lastUpdated))
+            .update((false)) //.update((false, LocalDateTime.now()))
 
-            complete {
-              Try {
-                val temp = UserUser.filter(_.userId === userId)
-                  .map(dd => (dd.enabled))
-                  .update((false))
-                db.run(temp)
-              } match {
-                case Success(_) =>
-                  OK
-                case Failure(e) =>
-                  (BadRequest, e.getMessage)
-              }
-            }
-
+          onComplete(db.run(temp.asTry)) {
+            case Success(_) => complete((OK, SuccessResponse("Account suspended")))
+            case Failure(e) => complete((BadRequest, ErrorMessage("Error suspending account", "Not Suspended")))
+          }
         }
       }
     }
@@ -117,22 +100,14 @@ trait Users extends HttpService with HatServiceAuthHandler {
       authorize(UserAuthorization.hasPermissionEnableUser) {
         logger.debug(s"User $systemUser authorized to enable $userId")
         put {
-            complete {
-              Try {
-                db.run(
-                  UserUser.filter(_.userId === userId)
-                  .map(dd => (dd.enabled))
-                  .update((true))
-                )
-              } match {
-                case Success(_) =>
-                  OK
-                case Failure(e) =>
-                  logger.debug(s"Error while updating user: ${e}")
-                  (BadRequest, e.getMessage)
-              }
-            }
+          val temp = UserUser.filter(_.userId === userId)
+            .map(u => (u.enabled)) //            .map(u => (u.enabled, u.lastUpdated))
+            .update((true)) //.update((false, LocalDateTime.now()))
 
+          onComplete(db.run(temp.asTry)) {
+            case Success(_) => complete((OK, SuccessResponse("Account enabled")))
+            case Failure(e) => complete((BadRequest, ErrorMessage("Error enabling account", "Not Enabled")))
+          }
         }
       }
     }
@@ -146,7 +121,7 @@ trait Users extends HttpService with HatServiceAuthHandler {
 
         val response = maybeToken flatMap {
           case Some(token) =>
-            Future( (OK, AccessToken(token.accessToken, token.userId)) )
+            Future((OK, AccessToken(token.accessToken, token.userId)))
 
           case None =>
             val newAccessToken = UserAccessTokenRow(UUID.randomUUID().toString, user.userId)
@@ -158,8 +133,8 @@ trait Users extends HttpService with HatServiceAuthHandler {
 
         onComplete(response) {
           case Success((statusCode: StatusCode, value)) => complete((statusCode, value))
-          case Failure(e : ApiError) => complete((e.statusCode, e.message))
-          case Failure(e) => complete((InternalServerError, ErrorMessage("Error while retrieving access token", "Unknown error occurred")))
+          case Failure(e: ApiError)                     => complete((e.statusCode, e.message))
+          case Failure(e)                               => complete((InternalServerError, ErrorMessage("Error while retrieving access token", "Unknown error occurred")))
         }
       }
     }
