@@ -23,6 +23,7 @@ val slf4jV = "1.7.18"
 val logbackV = "1.1.2"
 val slickV = "3.0.0"
 val slick_pgV = "0.9.2"
+val jwtV = "4.18"
 
 lazy val commonSettings = Seq(
   scalaVersion := "2.11.6",
@@ -84,7 +85,9 @@ lazy val core = (project in file("."))
       "org.specs2" % "specs2-core_2.11" % specs2V % "test",
       "org.specs2" % "specs2_2.11" % specs2V % "test",
       "io.spray" %% "spray-json" % "1.3.2",
-      "org.mindrot" % "jbcrypt" % "0.3m"
+      "org.mindrot" % "jbcrypt" % "0.3m",
+      "com.nimbusds" % "nimbus-jose-jwt" % jwtV,
+      "org.bouncycastle" % "bcprov-jdk16" % "1.46"
     ),
     gentables := {
       val main = Project("root", file("."))
@@ -111,5 +114,6 @@ lazy val core = (project in file("."))
 
 resolvers ++= Seq(
   "scalaz.bintray" at "http://dl.bintray.com/scalaz/releases",
-  "scoverage-bintray" at "https://dl.bintray.com/sksamuel/sbt-plugins/"
+  "scoverage-bintray" at "https://dl.bintray.com/sksamuel/sbt-plugins/",
+  "Atlassian Releases" at "https://maven.atlassian.com/public/"
 )

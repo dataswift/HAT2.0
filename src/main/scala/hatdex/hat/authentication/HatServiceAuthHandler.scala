@@ -12,6 +12,6 @@ trait HatServiceAuthHandler {
   ).apply()
 
   def userPassApiHandler = UserPassHandler.UserPassAuthenticator(
-    authenticator = HatAuthHandler.UserPassApiHandler.authenticator
+    authenticator = HatAuthHandler.UserPassHandler.authenticator
   ).apply()
 }

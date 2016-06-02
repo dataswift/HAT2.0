@@ -5,13 +5,13 @@ import java.util.UUID
 import akka.event.LoggingAdapter
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.models.{ SuccessResponse, ApiError, ErrorMessage }
-import hatdex.hat.authentication.HatServiceAuthHandler
+import hatdex.hat.authentication.{JwtTokenHandler, HatServiceAuthHandler}
 import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.{ AccessToken, User }
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 
-import org.joda.time.LocalDateTime
+import org.joda.time.{ LocalDateTime }
 import spray.http.StatusCode
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
@@ -22,7 +22,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{ Failure, Success, Try }
 
-trait Users extends HttpService with HatServiceAuthHandler {
+trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler {
 
   val db = DatabaseInfo.db
 
@@ -117,26 +117,20 @@ trait Users extends HttpService with HatServiceAuthHandler {
     // Any password-authenticated user (not only owner)
     userPassApiHandler { implicit user: User =>
       get {
-        val maybeToken = db.run(UserAccessToken.filter(_.userId === user.userId).take(1).result).map(_.headOption)
-
-        val response = maybeToken flatMap {
-          case Some(token) =>
-            Future((OK, AccessToken(token.accessToken, token.userId)))
-
-          case None =>
-            val newAccessToken = UserAccessTokenRow(UUID.randomUUID().toString, user.userId)
-            db.run((UserAccessToken += newAccessToken).asTry) map {
-              case Success(_) => (OK, AccessToken(newAccessToken.accessToken, user.userId))
-              case Failure(e) => throw ApiError(InternalServerError, ErrorMessage("Error while creating access_token, please try again later", e.getMessage))
-            }
-        }
+        val response = fetchOrGenerateToken(user)
 
         onComplete(response) {
-          case Success((statusCode, value)) => complete((statusCode, value))
-          case Failure(e: ApiError)         => complete((e.statusCode, e.message))
-          case Failure(e)                   => complete((InternalServerError, ErrorMessage("Error while retrieving access token", "Unknown error occurred")))
+          case Success(value)       => complete((OK, value))
+          case Failure(e: ApiError) =>
+            logger.error(s"API Error while fetching Access Token: ${e.getMessage}")
+            complete((e.statusCode, e.message))
+          case Failure(e)           =>
+            logger.error(s"Unexpected Error while fetching Access Token: ${e.getMessage}")
+            complete((InternalServerError, ErrorMessage("Error while retrieving access token", "Unknown error occurred")))
         }
       }
     }
   }
 }
+
+

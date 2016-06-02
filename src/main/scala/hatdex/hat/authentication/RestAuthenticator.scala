@@ -19,18 +19,24 @@ trait RestAuthenticator[U] extends ContextAuthenticator[U] {
 
   val keys: List[String]
 
-  val extractor: ParamExtractor = (ctx: RequestContext) => ctx.request.uri.query.toMap
+  val extractor: ParamExtractor = {
+    (ctx: RequestContext) => {
+      ctx.request.cookies.map(c => c.name -> c.content).toMap ++  // Include cookies as parameters
+        ctx.request.uri.query.toMap ++                            // as well as query parameters
+        ctx.request.headers.map(h => h.name -> h.value).toMap     // and headers, in increasing importance
+    }
+  }
 
   val authenticator: Map[String, String] => Future[Option[U]]
 
   def getChallengeHeaders(httpRequest: HttpRequest): List[HttpHeader] = Nil
 
   def apply(ctx: RequestContext): Future[Authentication[U]] = {
-    val queryParameters = extractor(ctx)
-    authenticator(queryParameters) map {
+    val parameters = extractor(ctx)
+    authenticator(parameters) map {
       case Some(entity) ⇒ Right(entity)
       case None ⇒
-        val cause = if (queryParameters.isEmpty) CredentialsMissing else CredentialsRejected
+        val cause = if (parameters.isEmpty) CredentialsMissing else CredentialsRejected
         Left(AuthenticationFailedRejection(cause, getChallengeHeaders(ctx.request)))
     }
   }
