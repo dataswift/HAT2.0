@@ -3,6 +3,7 @@ package hatdex.hat.api.endpoints
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.api.service.PeopleService
+import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
@@ -10,8 +11,7 @@ import org.joda.time.LocalDateTime
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 
-import scala.util.{Failure, Success, Try}
-
+import scala.util.{ Failure, Success, Try }
 
 // this trait defines our service behavior independently from the service actor
 trait Person extends PeopleService with AbstractEntity {
@@ -19,23 +19,25 @@ trait Person extends PeopleService with AbstractEntity {
 
   val routes = {
     pathPrefix(entityKind) {
-      userPassHandler { implicit user: User =>
-        createApi ~
-          getApi ~
-          getApiValues ~
-          getAllApi ~
-          createPersonRelationshipType ~
-          getPersonRelationshipTypes ~
-          linkToPerson ~
-          linkToLocation ~
-          linkToOrganisation ~
-          linkToPropertyStatic ~
-          linkToPropertyDynamic ~
-          addTypeApi ~
-          getPropertiesStaticApi ~
-          getPropertiesDynamicApi ~
-          getPropertyStaticValueApi ~
-          getPropertyDynamicValueApi
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner")) {
+          createApi ~
+            getApi ~
+            getApiValues ~
+            getAllApi ~
+            createPersonRelationshipType ~
+            getPersonRelationshipTypes ~
+            linkToPerson ~
+            linkToLocation ~
+            linkToOrganisation ~
+            linkToPropertyStatic ~
+            linkToPropertyDynamic ~
+            addTypeApi ~
+            getPropertiesStaticApi ~
+            getPropertiesDynamicApi ~
+            getPropertyStaticValueApi ~
+            getPropertyDynamicValueApi
+        }
       }
     }
   }
@@ -50,7 +52,7 @@ trait Person extends PeopleService with AbstractEntity {
         val entity = result map { createdPerson =>
           val newEntity = new EntityRow(createdPerson.id, LocalDateTime.now(), LocalDateTime.now(), createdPerson.name, "person", None, None, None, None, Some(createdPerson.id))
           val entityCreated = Try(Entity += newEntity)
-          logger.debug("Creating new entity for person:" + entityCreated)
+          logger.debug("Creating new entity for person:"+entityCreated)
         }
         session.close()
 

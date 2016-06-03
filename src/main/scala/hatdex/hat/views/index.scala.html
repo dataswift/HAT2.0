@@ -1,3 +1,4 @@
+@(parameters: Map[String, String])
 @main("Welcome to the HAT") {
     <div class="row profile">
         <div class="col-xs-4 col-sm-3 col-md-2 col-md-offset-1">
@@ -5,7 +6,7 @@
         </div>
         <div class="col-xs-8 col-sm-9 col-md-8">
             <h1>
-                Name
+                @parameters.getOrElse("hatName", "")
             </h1>
             <h3>
                 About:
@@ -26,7 +27,7 @@
     </div>
     <div class="row">
         <div class="col-xs-4 col-sm-3 col-md-2 col-md-offset-1">
-            <a role="button" class="btn btn-primary">www.yourdomain.com</a>
+            <a role="button" class="btn btn-primary">@parameters.getOrElse("hatAddress", "")</a>
         </div>
         <div class="col-xs-8 col-sm-9 col-md-8">
             <a role="button" class="btn btn-primary">Twitter</a>

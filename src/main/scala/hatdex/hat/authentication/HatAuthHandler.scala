@@ -29,9 +29,10 @@ object HatAuthHandler {
           println(s"[AuthHandler] maybe token: $token")
           val userQuery = UserAccessToken.filter(_.accessToken === token).flatMap(_.userUserFk).filter(_.enabled === true).take(1)
           val matchingUsers = DatabaseInfo.db.run(userQuery.result)
+          val maybeRole = getTokenAccessScope(token)
           matchingUsers.map { users =>
             users.headOption
-              .map(user => User(user.userId, user.email, None, user.name, user.role))
+              .map(user => User(user.userId, user.email, None, user.name, maybeRole.getOrElse("")))
           }
         case Some(_) =>
           // Invalid token

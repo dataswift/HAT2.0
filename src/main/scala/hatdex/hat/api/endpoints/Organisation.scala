@@ -4,6 +4,7 @@ import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.api.service.OrganisationsService
 import hatdex.hat.authentication.models.User
+import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
@@ -19,20 +20,22 @@ trait Organisation extends OrganisationsService with AbstractEntity {
 
   val routes = {
     pathPrefix(entityKind) {
-      userPassHandler { implicit user: User =>
-        createApi ~
-          getApi ~
-          getApiValues ~
-          getAllApi ~
-          linkToLocation ~
-          linkToOrganisation ~
-          linkToPropertyStatic ~
-          linkToPropertyDynamic ~
-          addTypeApi ~
-          getPropertiesStaticApi ~
-          getPropertiesDynamicApi ~
-          getPropertyStaticValueApi ~
-          getPropertyDynamicValueApi
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner")) {
+          createApi ~
+            getApi ~
+            getApiValues ~
+            getAllApi ~
+            linkToLocation ~
+            linkToOrganisation ~
+            linkToPropertyStatic ~
+            linkToPropertyDynamic ~
+            addTypeApi ~
+            getPropertiesStaticApi ~
+            getPropertiesDynamicApi ~
+            getPropertyStaticValueApi ~
+            getPropertyDynamicValueApi
+        }
       }
     }
   }

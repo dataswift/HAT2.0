@@ -3,6 +3,7 @@ package hatdex.hat.api.endpoints
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.api.service.ThingsService
+import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
@@ -21,20 +22,22 @@ trait Thing extends ThingsService with AbstractEntity {
 
   val routes = {
     pathPrefix(entityKind) {
-      userPassHandler { implicit user: User =>
-        createApi ~
-          getApi ~
-          getApiValues ~
-          getAllApi ~
-          linkToPerson ~
-          linkToThing ~
-          linkToPropertyStatic ~
-          linkToPropertyDynamic ~
-          addTypeApi ~
-          getPropertiesStaticApi ~
-          getPropertiesDynamicApi ~
-          getPropertyStaticValueApi ~
-          getPropertyDynamicValueApi
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner")) {
+          createApi ~
+            getApi ~
+            getApiValues ~
+            getAllApi ~
+            linkToPerson ~
+            linkToThing ~
+            linkToPropertyStatic ~
+            linkToPropertyDynamic ~
+            addTypeApi ~
+            getPropertiesStaticApi ~
+            getPropertiesDynamicApi ~
+            getPropertyStaticValueApi ~
+            getPropertyDynamicValueApi
+        }
       }
     }
   }

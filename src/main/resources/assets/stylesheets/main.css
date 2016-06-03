@@ -121,6 +121,10 @@ body {
     font-size: 1.1em;
 }
 
+.navbar-btn {
+    float: left;
+}
+
 .btn {
     font-size: 1em;
 }

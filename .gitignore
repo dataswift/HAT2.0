@@ -13,3 +13,4 @@ target/
 /src/main/resources/database.conf
 *.back
 /deployment/docker-deploy
+*.pem

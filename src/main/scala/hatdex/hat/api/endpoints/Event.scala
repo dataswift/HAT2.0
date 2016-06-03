@@ -3,6 +3,7 @@ package hatdex.hat.api.endpoints
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.api.service.EventsService
+import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
@@ -21,23 +22,25 @@ trait Event extends EventsService with AbstractEntity {
 
   val routes = {
     pathPrefix(entityKind) {
-      userPassHandler { implicit user: User =>
-        createApi ~
-          getApi ~
-          getApiValues ~
-          getAllApi ~
-          linkToLocation ~
-          linkToOrganisation ~
-          linkToPerson ~
-          linkToThing ~
-          linkToEvent ~
-          linkToPropertyStatic ~
-          linkToPropertyDynamic ~
-          addTypeApi ~
-          getPropertiesStaticApi ~
-          getPropertiesDynamicApi ~
-          getPropertyStaticValueApi ~
-          getPropertyDynamicValueApi
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner")) {
+          createApi ~
+            getApi ~
+            getApiValues ~
+            getAllApi ~
+            linkToLocation ~
+            linkToOrganisation ~
+            linkToPerson ~
+            linkToThing ~
+            linkToEvent ~
+            linkToPropertyStatic ~
+            linkToPropertyDynamic ~
+            addTypeApi ~
+            getPropertiesStaticApi ~
+            getPropertiesDynamicApi ~
+            getPropertyStaticValueApi ~
+            getPropertyDynamicValueApi
+        }
       }
     }
   }

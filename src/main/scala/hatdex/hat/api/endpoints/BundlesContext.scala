@@ -4,14 +4,15 @@ import akka.event.LoggingAdapter
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
-import hatdex.hat.api.service.{BundleContextService, BundleService}
+import hatdex.hat.api.service.{ BundleContextService, BundleService }
 import hatdex.hat.authentication.HatServiceAuthHandler
+import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.User
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
 
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 
 // this trait defines our service behavior independently from the service actor
 trait BundlesContext extends HttpService with BundleContextService with HatServiceAuthHandler {
@@ -37,17 +38,17 @@ trait BundlesContext extends HttpService with BundleContextService with HatServi
    */
   def createBundleContext = pathEnd {
     post {
-      userPassHandler { implicit user: User =>
-        entity(as[ApiBundleContext]) { bundleContext =>
-          db.withSession { implicit session =>
-            val result = storeBundleContext(bundleContext)
-
-            complete {
-              result match {
-                case Success(storedBundleContext) =>
-                  (Created, storedBundleContext)
-                case Failure(e) =>
-                  (BadRequest, ErrorMessage("Could not create Contextual Bundle", e.getMessage))
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner")) {
+          entity(as[ApiBundleContext]) { bundleContext =>
+            db.withSession { implicit session =>
+              val result = storeBundleContext(bundleContext)
+              session.close()
+              complete {
+                result match {
+                  case Success(storedBundleContext) => (Created, storedBundleContext)
+                  case Failure(e)                   => (BadRequest, ErrorMessage("Could not create Contextual Bundle", e.getMessage))
+                }
               }
             }
           }
@@ -61,16 +62,16 @@ trait BundlesContext extends HttpService with BundleContextService with HatServi
    */
   def getBundleContext = path(IntNumber) { (bundleContextId: Int) =>
     get {
-      userPassHandler { implicit user: User =>
-        db.withSession { implicit session =>
-          val maybeBundleContext = getBundleContextById(bundleContextId)
-          session.close()
-          complete {
-            maybeBundleContext match {
-              case Some(bundleContext) =>
-                bundleContext
-              case None =>
-                (NotFound, ErrorMessage("Bundle Not Found", s"Bundle ${bundleContextId} not found or empty"))
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner")) {
+          db.withSession { implicit session =>
+            val maybeBundleContext = getBundleContextById(bundleContextId)
+            session.close()
+            complete {
+              maybeBundleContext match {
+                case Some(bundleContext) => bundleContext
+                case None                => (NotFound, ErrorMessage("Bundle Not Found", s"Bundle ${bundleContextId} not found or empty"))
+              }
             }
           }
         }
@@ -83,14 +84,16 @@ trait BundlesContext extends HttpService with BundleContextService with HatServi
    */
   def getBundleContextValues = path(IntNumber / "values") { (bundleContextId: Int) =>
     get {
-      userPassHandler { implicit user: User =>
-        val maybeBundleData = db.withSession { implicit session =>
-          val bundleData = getBundleContextData(bundleContextId)
-          session.close()
-          bundleData
-        }
-        complete {
-          maybeBundleData
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner")) {
+          val maybeBundleData = db.withSession { implicit session =>
+            val bundleData = getBundleContextData(bundleContextId)
+            session.close()
+            bundleData
+          }
+          complete {
+            maybeBundleData
+          }
         }
       }
     }
@@ -101,18 +104,18 @@ trait BundlesContext extends HttpService with BundleContextService with HatServi
    */
   def addEntitySelectionApi = path(IntNumber / "entitySelection") { (bundleId: Int) =>
     post {
-      userPassHandler { implicit user: User =>
-        entity(as[ApiBundleContextEntitySelection]) { entitySelection =>
-          db.withSession { implicit session =>
-            val maybeInsertedSelection = storeBundleContextEntitySelection(bundleId, entitySelection)
-            session.close()
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner")) {
+          entity(as[ApiBundleContextEntitySelection]) { entitySelection =>
+            db.withSession { implicit session =>
+              val maybeInsertedSelection = storeBundleContextEntitySelection(bundleId, entitySelection)
+              session.close()
 
-            complete {
-              maybeInsertedSelection match {
-                case Success(insertedSelection) =>
-                  (Created, insertedSelection)
-                case Failure(e) =>
-                  (BadRequest, ErrorMessage("Could not add Entity Selection", e.getMessage))
+              complete {
+                maybeInsertedSelection match {
+                  case Success(insertedSelection) => (Created, insertedSelection)
+                  case Failure(e)                 => (BadRequest, ErrorMessage("Could not add Entity Selection", e.getMessage))
+                }
               }
             }
           }
@@ -123,18 +126,18 @@ trait BundlesContext extends HttpService with BundleContextService with HatServi
 
   def addPropertySelectionApi = path(IntNumber / "entitySelection" / IntNumber / "propertySelection") { (bundleId: Int, entitySelectionId: Int) =>
     post {
-      userPassHandler { implicit user: User =>
-        entity(as[ApiBundleContextPropertySelection]) { propertySelection =>
-          db.withSession { implicit session =>
-            val maybeInsertedSelection = storeBundlePropertySelection(entitySelectionId, propertySelection)
-            session.close()
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner")) {
+          entity(as[ApiBundleContextPropertySelection]) { propertySelection =>
+            db.withSession { implicit session =>
+              val maybeInsertedSelection = storeBundlePropertySelection(entitySelectionId, propertySelection)
+              session.close()
 
-            complete {
-              maybeInsertedSelection match {
-                case Success(insertedSelection) =>
-                  (Created, insertedSelection)
-                case Failure(e) =>
-                  (BadRequest, ErrorMessage("Could not add Property Selection", e.getMessage))
+              complete {
+                maybeInsertedSelection match {
+                  case Success(insertedSelection) => (Created, insertedSelection)
+                  case Failure(e)                 => (BadRequest, ErrorMessage("Could not add Property Selection", e.getMessage))
+                }
               }
             }
           }

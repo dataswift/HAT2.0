@@ -5,7 +5,7 @@ import java.util.UUID
 import akka.event.LoggingAdapter
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.models.{ SuccessResponse, ApiError, ErrorMessage }
-import hatdex.hat.authentication.{JwtTokenHandler, HatServiceAuthHandler}
+import hatdex.hat.authentication.{ JwtTokenHandler, HatServiceAuthHandler }
 import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.{ AccessToken, User }
 import hatdex.hat.dal.SlickPostgresDriver.api._
@@ -37,8 +37,8 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
   import hatdex.hat.api.json.JsonProtocol._
 
   def createApiUserAccount = path("user") {
-    (userPassHandler | accessTokenHandler) { implicit systemUser: User =>
-      authorize(UserAuthorization.hasPermissionCreateUser) {
+    accessTokenHandler { implicit systemUser: User =>
+      authorize(UserAuthorization.withRole("owner", "platform")) {
         post {
           entity(as[User]) { implicit newUser =>
             // Only two types of users can be created via the api
@@ -78,8 +78,8 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
   }
 
   def suspendUserAccount = path("user" / JavaUUID / "disable") { userId: UUID =>
-    (userPassHandler | accessTokenHandler) { implicit systemUser: User =>
-      authorize(UserAuthorization.hasPermissionDisableUser) {
+    accessTokenHandler { implicit systemUser: User =>
+      authorize(UserAuthorization.withRole("owner", "platform")) {
         put {
           val temp = UserUser.filter(_.userId === userId)
             .map(u => (u.enabled)) //            .map(u => (u.enabled, u.lastUpdated))
@@ -95,10 +95,8 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
   }
 
   def enableUserAccount = path("user" / JavaUUID / "enable") { userId: UUID =>
-    (userPassHandler | accessTokenHandler) { implicit systemUser: User =>
-      logger.debug(s"User $systemUser trying to enable $userId")
-      authorize(UserAuthorization.hasPermissionEnableUser) {
-        logger.debug(s"User $systemUser authorized to enable $userId")
+    accessTokenHandler { implicit systemUser: User =>
+      authorize(UserAuthorization.withRole("owner", "platform")) {
         put {
           val temp = UserUser.filter(_.userId === userId)
             .map(u => (u.enabled)) //            .map(u => (u.enabled, u.lastUpdated))
@@ -115,16 +113,15 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
 
   def getAccessToken = path("access_token") {
     // Any password-authenticated user (not only owner)
-    userPassApiHandler { implicit user: User =>
+    userPassHandler { implicit user: User =>
       get {
-        val response = fetchOrGenerateToken(user)
-
+        val response = fetchOrGenerateToken(user, accessScope = user.role)
         onComplete(response) {
-          case Success(value)       => complete((OK, value))
+          case Success(value) => complete((OK, value))
           case Failure(e: ApiError) =>
             logger.error(s"API Error while fetching Access Token: ${e.getMessage}")
             complete((e.statusCode, e.message))
-          case Failure(e)           =>
+          case Failure(e) =>
             logger.error(s"Unexpected Error while fetching Access Token: ${e.getMessage}")
             complete((InternalServerError, ErrorMessage("Error while retrieving access token", "Unknown error occurred")))
         }
@@ -132,5 +129,4 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
     }
   }
 }
-
 
