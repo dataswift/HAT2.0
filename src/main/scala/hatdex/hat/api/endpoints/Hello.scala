@@ -47,7 +47,7 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
           val fUser = UserPassHandler.authenticator(params)
           val fToken = fUser.flatMap { maybeUser =>
             // Fetch Access token if user has authenticated
-            val maybeFutureToken = maybeUser.map(user => fetchOrGenerateToken(user, accessScope = "owner", validity = validity))
+            val maybeFutureToken = maybeUser.map(user => fetchOrGenerateToken(user, issuer, accessScope = user.role, validity = validity))
             // Transform option of future to future of option
             maybeFutureToken.map { futureToken =>
               futureToken.map { token =>
@@ -109,10 +109,10 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
 
         val serviceCredentials = services.map { service =>
           val token = if (service.browser == false) {
-            fetchOrGenerateToken(user, accessScope = "validate")
+            fetchOrGenerateToken(user, resource = service.url, accessScope = "validate")
           }
           else {
-            fetchOrGenerateToken(user, accessScope = user.role)
+            fetchOrGenerateToken(user, resource = service.url, accessScope = user.role)
           }
           token.map { accessToken =>
             (service, accessToken)

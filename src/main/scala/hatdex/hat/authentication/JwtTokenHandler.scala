@@ -11,8 +11,8 @@ import com.nimbusds.jose.{ JWSAlgorithm, JWSHeader, JWSSigner, JWSVerifier }
 import com.nimbusds.jwt.{ JWTClaimsSet, SignedJWT }
 import com.typesafe.config.ConfigFactory
 import hatdex.hat.api.DatabaseInfo
-import hatdex.hat.api.models.{ErrorMessage, ApiError}
-import hatdex.hat.authentication.models.{User, AccessToken}
+import hatdex.hat.api.models.{ ErrorMessage, ApiError }
+import hatdex.hat.authentication.models.{ User, AccessToken }
 import hatdex.hat.dal.Tables._
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import org.bouncycastle.openssl.PEMReader
@@ -20,7 +20,7 @@ import org.joda.time.DateTime
 import spray.http.StatusCodes._
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.joda.time.Duration
 import org.joda.time.Duration._
@@ -28,7 +28,7 @@ import org.joda.time.Duration._
 trait JwtTokenHandler {
   val conf = ConfigFactory.load()
   Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider())
-  val issuer = "hat"
+  val issuer = conf.getString("hat.name") + conf.getString("hat.domain")
   val subject = "hat"
 
   lazy val publicKey: RSAPublicKey = {
@@ -44,15 +44,25 @@ trait JwtTokenHandler {
     keyPair.getPrivate
   }
 
-  def fetchOrGenerateToken(user: User, accessScope: String = "validate", validity: Duration = standardMinutes(5)): Future[AccessToken] = {
-    val maybeToken = DatabaseInfo.db.run(UserAccessToken.filter(_.userId === user.userId).take(1).result).map(_.headOption)
+  def fetchOrGenerateToken(
+    user: User,
+    resource: String,
+    accessScope: String = "validate",
+    validity: Duration = standardMinutes(5)): Future[AccessToken] = {
+    val tokenQuery = UserAccessToken.filter(_.userId === user.userId)
+      .filter(_.resource === resource)
+      .filter(_.scope === accessScope)
+      .take(1)
+    val maybeToken = DatabaseInfo.db.run(tokenQuery.result).map(_.headOption)
 
     maybeToken flatMap {
-      case Some(token) if validateJwtToken(token.accessToken) && getTokenAccessScope(token.accessToken).contains(accessScope) =>
+      case Some(token) if validateJwtToken(token.accessToken) =>
         Future(AccessToken(token.accessToken, token.userId))
 
       case _ =>
-        val newAccessToken = UserAccessTokenRow(getJwtToken(user.userId, accessScope, validity), user.userId)
+        val newAccessToken = UserAccessTokenRow(
+          getJwtToken(user.userId, resource, accessScope, validity),
+          user.userId, accessScope, resource)
         DatabaseInfo.db.run((UserAccessToken += newAccessToken).asTry) map {
           case Success(_) => AccessToken(newAccessToken.accessToken, user.userId)
           case Failure(e) => throw ApiError(InternalServerError, ErrorMessage("Error while creating access_token, please try again later", e.getMessage))
@@ -60,7 +70,7 @@ trait JwtTokenHandler {
     }
   }
 
-  def getJwtToken(userId: UUID, accessScope: String, validity: Duration): String = {
+  private def getJwtToken(userId: UUID, resource: String, accessScope: String, validity: Duration): String = {
     val issuedAt = new DateTime()
     val expiresAt = issuedAt.plus(validity)
 
@@ -71,6 +81,7 @@ trait JwtTokenHandler {
     builder.subject(subject)
       .issuer(issuer)
       .expirationTime(expiresAt.toDate)
+      .claim("resource", resource)
       .claim("accessScope", accessScope)
     val claimsSet = builder.build()
 
@@ -98,6 +109,15 @@ trait JwtTokenHandler {
     signed && fresh && rightIssuer && subjectMatches
   }
 
+  def verifyResource(token: String, resource: String): Boolean = {
+    val signedJWT = SignedJWT.parse(token)
+    val verifier: JWSVerifier = new RSASSAVerifier(publicKey)
+    val claimSet = signedJWT.getJWTClaimsSet
+    val signed = signedJWT.verify(verifier)
+    val resourceMatches = Option(claimSet.getClaim("resource")).exists(r => r == resource)
+    signed && resourceMatches
+  }
+
   def getTokenAccessScope(token: String): Option[String] = {
     val signedJWT = SignedJWT.parse(token)
     val verifier: JWSVerifier = new RSASSAVerifier(publicKey)
@@ -106,7 +126,8 @@ trait JwtTokenHandler {
     val signed = signedJWT.verify(verifier)
     if (signed) {
       Option(claimSet.getClaim("accessScope").asInstanceOf[String])
-    } else {
+    }
+    else {
       None
     }
   }

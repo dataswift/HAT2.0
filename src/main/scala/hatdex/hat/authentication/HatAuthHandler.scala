@@ -1,5 +1,6 @@
 package hatdex.hat.authentication
 
+import com.typesafe.config.ConfigFactory
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.authentication.models.{AccessToken, User}
 import org.mindrot.jbcrypt.BCrypt
@@ -25,7 +26,7 @@ object HatAuthHandler {
       }
 
       mayBeToken flatMap {
-        case Some(token: String) if validateJwtToken(token) =>
+        case Some(token: String) if validateJwtToken(token) && verifyResource(token, issuer) =>
           println(s"[AuthHandler] maybe token: $token")
           val userQuery = UserAccessToken.filter(_.accessToken === token).flatMap(_.userUserFk).filter(_.enabled === true).take(1)
           val matchingUsers = DatabaseInfo.db.run(userQuery.result)

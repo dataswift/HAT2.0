@@ -2640,23 +2640,29 @@ trait Tables {
 
   /** Entity class storing rows of table UserAccessToken
    *  @param accessToken Database column access_token SqlType(varchar), PrimaryKey
-   *  @param userId Database column user_id SqlType(uuid) */
-  case class UserAccessTokenRow(accessToken: String, userId: java.util.UUID)
+   *  @param userId Database column user_id SqlType(uuid)
+   *  @param scope Database column scope SqlType(varchar), Default()
+   *  @param resource Database column resource SqlType(varchar), Default() */
+  case class UserAccessTokenRow(accessToken: String, userId: java.util.UUID, scope: String = "", resource: String = "")
   /** GetResult implicit for fetching UserAccessTokenRow objects using plain SQL queries */
   implicit def GetResultUserAccessTokenRow(implicit e0: GR[String], e1: GR[java.util.UUID]): GR[UserAccessTokenRow] = GR{
     prs => import prs._
-    UserAccessTokenRow.tupled((<<[String], <<[java.util.UUID]))
+    UserAccessTokenRow.tupled((<<[String], <<[java.util.UUID], <<[String], <<[String]))
   }
   /** Table description of table user_access_token. Objects of this class serve as prototypes for rows in queries. */
   class UserAccessToken(_tableTag: Tag) extends Table[UserAccessTokenRow](_tableTag, Some("hat"), "user_access_token") {
-    def * = (accessToken, userId) <> (UserAccessTokenRow.tupled, UserAccessTokenRow.unapply)
+    def * = (accessToken, userId, scope, resource) <> (UserAccessTokenRow.tupled, UserAccessTokenRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(accessToken), Rep.Some(userId)).shaped.<>({r=>import r._; _1.map(_=> UserAccessTokenRow.tupled((_1.get, _2.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(accessToken), Rep.Some(userId), Rep.Some(scope), Rep.Some(resource)).shaped.<>({r=>import r._; _1.map(_=> UserAccessTokenRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column access_token SqlType(varchar), PrimaryKey */
     val accessToken: Rep[String] = column[String]("access_token", O.PrimaryKey)
     /** Database column user_id SqlType(uuid) */
     val userId: Rep[java.util.UUID] = column[java.util.UUID]("user_id")
+    /** Database column scope SqlType(varchar), Default() */
+    val scope: Rep[String] = column[String]("scope", O.Default(""))
+    /** Database column resource SqlType(varchar), Default() */
+    val resource: Rep[String] = column[String]("resource", O.Default(""))
 
     /** Foreign key referencing UserUser (database name user_fk) */
     lazy val userUserFk = foreignKey("user_fk", userId, UserUser)(r => r.userId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)

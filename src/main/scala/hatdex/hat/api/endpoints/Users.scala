@@ -115,7 +115,7 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
     // Any password-authenticated user (not only owner)
     userPassHandler { implicit user: User =>
       get {
-        val response = fetchOrGenerateToken(user, accessScope = user.role)
+        val response = fetchOrGenerateToken(user, issuer, accessScope = user.role)
         onComplete(response) {
           case Success(value) => complete((OK, value))
           case Failure(e: ApiError) =>
