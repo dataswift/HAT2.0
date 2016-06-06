@@ -1,6 +1,7 @@
 package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
+import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.endpoints.jsonExamples.PropertyExamples
 import hatdex.hat.api.json.JsonProtocol
@@ -31,7 +32,7 @@ class PropertySpec extends Specification with Specs2RouteTest with Property with
 
   // Clean up all data
   def afterAll() = {
-    db.withSession { implicit session =>
+    DatabaseInfo.db.withSession { implicit session =>
       TestDataCleanup.cleanupAll
       session.close()
     }

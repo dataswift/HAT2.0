@@ -20,7 +20,7 @@ import org.joda.time.DateTime
 import spray.http.StatusCodes._
 
 import scala.concurrent.Future
-import scala.util.{ Failure, Success }
+import scala.util.{Try, Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.joda.time.Duration
 import org.joda.time.Duration._
@@ -28,7 +28,7 @@ import org.joda.time.Duration._
 trait JwtTokenHandler {
   val conf = ConfigFactory.load()
   Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider())
-  val issuer = conf.getString("hat.name") + conf.getString("hat.domain")
+  val issuer = s"${conf.getString("hat.name")}.${conf.getString("hat.domain")}"
   val subject = "hat"
 
   lazy val publicKey: RSAPublicKey = {
@@ -96,17 +96,22 @@ trait JwtTokenHandler {
   }
 
   def validateJwtToken(token: String): Boolean = {
-    val signedJWT = SignedJWT.parse(token)
-    val verifier: JWSVerifier = new RSASSAVerifier(publicKey)
-    val claimSet = signedJWT.getJWTClaimsSet
+    val maybeSignedJWT = Try(SignedJWT.parse(token))
 
-    val signed = signedJWT.verify(verifier)
-    val fresh = claimSet.getExpirationTime.after(DateTime.now().toDate)
-    println(s"Fresh? ${claimSet.getExpirationTime}, ${DateTime.now().toDate}, ${claimSet.getExpirationTime.before(DateTime.now().toDate)}")
-    val rightIssuer = claimSet.getIssuer == issuer
-    val subjectMatches = claimSet.getSubject == subject
+    maybeSignedJWT.map { signedJWT =>
+      val verifier: JWSVerifier = new RSASSAVerifier(publicKey)
+      val claimSet = signedJWT.getJWTClaimsSet
 
-    signed && fresh && rightIssuer && subjectMatches
+      val signed = signedJWT.verify(verifier)
+
+      val fresh = claimSet.getExpirationTime.after(DateTime.now().toDate)
+      val rightIssuer = claimSet.getIssuer == issuer
+      val subjectMatches = claimSet.getSubject == subject
+
+      signed && fresh && rightIssuer && subjectMatches
+    } getOrElse  {
+      false
+    }
   }
 
   def verifyResource(token: String, resource: String): Boolean = {

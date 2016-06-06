@@ -1,5 +1,6 @@
 package hatdex.hat.api.endpoints
 
+import akka.event.LoggingAdapter
 import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
@@ -8,6 +9,8 @@ import spray.testkit.Specs2RouteTest
 
 class HelloSpec extends Specification with Specs2RouteTest with Hello {
   def actorRefFactory = system
+
+  val logger: LoggingAdapter = system.log
 
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
 

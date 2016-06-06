@@ -16,7 +16,7 @@ object HatAuthTestHandler extends TestData {
 
     private def authFunction(params: Map[String, String]) = Future {
       //      println ("### Running test access_token authenticator")
-      val mayBeToken = params.get("access_token")
+      val mayBeToken = params.get("X-Auth-Token")
       mayBeToken flatMap { token =>
         validAccessTokens.find(_.accessToken equals token).map(_.userId) flatMap { userId =>
           validUsers.find(_.userId equals userId)
