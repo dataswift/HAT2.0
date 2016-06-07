@@ -33,7 +33,7 @@ trait Property extends HttpService with PropertyService with HatServiceAuthHandl
   def createProperty = pathEnd {
     post {
       accessTokenHandler { implicit user: User =>
-        authorize(UserAuthorization.withRole("owner")) {
+        authorize(UserAuthorization.withRole("owner", "platform")) {
           entity(as[ApiProperty]) { property =>
             onComplete(storeProperty(property)) {
               case Success(created) => complete((Created, created))
@@ -48,7 +48,7 @@ trait Property extends HttpService with PropertyService with HatServiceAuthHandl
   def getPropertyApi = path(IntNumber) { (propertyId: Int) =>
     get {
       accessTokenHandler { implicit user: User =>
-        authorize(UserAuthorization.withRole("owner")) {
+        authorize(UserAuthorization.withRole("owner", "platform", "dataDebit", "dataCredit")) {
           onComplete(getProperty(propertyId)) {
             case Success(Some(property)) => complete((OK, property))
             case Success(None) => complete((NotFound, s"Property $propertyId not found"))
@@ -62,7 +62,7 @@ trait Property extends HttpService with PropertyService with HatServiceAuthHandl
   def getPropertiesApi = pathEnd {
     get {
       accessTokenHandler { implicit user: User =>
-        authorize(UserAuthorization.withRole("owner")) {
+        authorize(UserAuthorization.withRole("owner", "platform", "dataDebit", "dataCredit")) {
           parameters('name.?) { (maybePropertyName: Option[String]) =>
             onComplete(getProperties(maybePropertyName)) {
               case Success(properties) => complete((OK, properties))
