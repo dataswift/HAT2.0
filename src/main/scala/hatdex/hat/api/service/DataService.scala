@@ -5,12 +5,15 @@ import hatdex.hat.Utils
 import hatdex.hat.api.models.{ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _}
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
+import hatdex.hat.api.models._
 import org.joda.time.LocalDateTime
 
 import collection.mutable.{ HashMap, MultiMap }
 import scala.collection.mutable
 import scala.collection.immutable
 import scala.util.{Failure, Success, Try}
+import slick.jdbc.GetResult
+import slick.jdbc.StaticQuery.interpolation
 
 // this trait defines our service behavior independently from the service actor
 trait DataService {
@@ -203,13 +206,13 @@ trait DataService {
     }
   }
 
-  def fillStructures(tables: Seq[ApiDataTable])(values: HashMap[Int, mutable.Set[ApiDataValue]] with MultiMap[Int, ApiDataValue]): Seq[ApiDataTable] = {
+  def fillStructures(tables: Seq[ApiDataTable])(values: mutable.HashMap[Int, mutable.Set[ApiDataValue]] with mutable.MultiMap[Int, ApiDataValue]): Seq[ApiDataTable] = {
     tables map { table =>
       fillStructure(table)(values)
     }
   }
 
-  def fillStructure(table: ApiDataTable)(values: HashMap[Int, mutable.Set[ApiDataValue]] with MultiMap[Int, ApiDataValue]): ApiDataTable = {
+  def fillStructure(table: ApiDataTable)(values: mutable.HashMap[Int, mutable.Set[ApiDataValue]] with mutable.MultiMap[Int, ApiDataValue]): ApiDataTable = {
     logger.debug("Filling structure " + table.id + " with values " + values)
     val filledFields = table.fields map { fields =>
       // For each field, insert values
@@ -229,7 +232,7 @@ trait DataService {
       }
     }
 
-    var filledSubtables = table.subTables map { subtables =>
+    val filledSubtables = table.subTables map { subtables =>
       subtables map { subtable: ApiDataTable =>
         fillStructure(subtable)(values)
       }
@@ -312,22 +315,86 @@ trait DataService {
    * Recursively construct nested DataTable records with associated fields and sub-tables
    */
   def getTableStructure(tableId: Int)(implicit session: Session): Option[ApiDataTable] = {
-
-    val someTable = DataTable.filter(_.id === tableId).run.headOption
-
-    someTable map { table =>
-      val fields = DataField.filter(_.tableIdFk === tableId).run
-      val apiFields = fields.map(ApiDataField.fromDataField)
-
-      val subtables = DataTabletotablecrossref.filter(_.table1 === tableId).map(_.table2).run
-      val apiTables = subtables.map { subtableId =>
-        // Every subtable with a linked ID exists, no need to handle Option
-        getTableStructure(subtableId).get
-      }
-
-      ApiDataTable.fromDataTable(table)(Some(apiFields))(Some(apiTables))
+    logger.debug(s"Get sturcture for $tableId")
+    val tablesWithParents = getTablesRecursively(tableId).map { case (table, parentId) =>
+      (ApiDataTable.fromDataTable(table)(None)(None), parentId)
     }
 
+    logger.debug(s"Got tables: $tablesWithParents")
+    val tableIds = tablesWithParents.flatMap(_._1.id).toSet
+    val fields = DataField.filter(_.tableIdFk inSet tableIds)
+      .run
+      .map(ApiDataField.fromDataField)
+
+    val rootTable = tablesWithParents.headOption.map(_._1)
+
+    logger.debug(s"Starting with root table $rootTable")
+    rootTable map { table =>
+      buildTableStructure(table, fields, tablesWithParents)
+    }
+  }
+
+  private def buildTableStructure(table: ApiDataTable, fields: Seq[ApiDataField], dataTables: Seq[(ApiDataTable, Option[Int])]): ApiDataTable = {
+    val tableFields = {
+      val tFields = fields.filter(_.tableId == table.id)
+      if (tFields.isEmpty) {
+        None
+      } else {
+        Some(tFields)
+      }
+    }
+    val subtables = dataTables.filter(tablePair => table.id == tablePair._2)
+    val apiTables = subtables.map { apiTable =>
+      // Every subtable with a linked ID exists, no need to handle Option
+      buildTableStructure(apiTable._1, fields, dataTables)
+    }
+    val someApiTables = if (apiTables.isEmpty) {
+      None
+    } else {
+      Some(apiTables)
+    }
+    table.copy(fields = tableFields, subTables = someApiTables)
+  }
+
+  private def getTablesRecursively(tableId: Int)(implicit session: Session): Seq[(DataTableRow, Option[Int])] = {
+    implicit val getTableResult = GetResult(r =>
+      DataTableRow(r.nextInt,
+        new LocalDateTime(r.nextTimestamp),
+        new LocalDateTime(r.nextTimestamp),
+        r.nextString,
+        r.nextString
+      )
+    )
+
+    sql"""
+      WITH RECURSIVE recursive_table(id, date_created, last_updated, name, source_name, table1) AS (
+        SELECT
+          b.id,
+          b.date_created,
+          b.last_updated,
+          b.name,
+          b.source_name,
+          b2b.table1
+        FROM hat.data_table b
+          LEFT JOIN hat.data_tabletotablecrossref b2b
+            ON b.id = b2b.table2
+        WHERE b.id = $tableId
+        UNION ALL
+        SELECT
+          b.id,
+          b.date_created,
+          b.last_updated,
+          b.name,
+          b.source_name,
+          b2b.table1
+        FROM recursive_table r_b, hat.data_table b
+          LEFT JOIN hat.data_tabletotablecrossref b2b
+            ON b.id = b2b.table2
+        WHERE b2b.table1 = r_b.id
+      )
+      SELECT *
+      FROM recursive_table
+       """.as[(DataTableRow, Option[Int])].list
   }
 
   private def getStructureFields(structure: ApiDataTable): Set[Int] = {

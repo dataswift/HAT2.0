@@ -41,13 +41,6 @@ trait Api extends HttpService with Cors {
   def userService:Users
   def typeService: Type
 
-  // logs request method, uri and response status at debug level
-  def requestMethodAndResponseStatusAsInfo(req: HttpRequest): Any => Option[LogEntry] = {
-    case res: HttpResponse => Some(LogEntry(req.method + ":" + req.uri + ":" + res.message.status, Logging.InfoLevel))
-    case Rejected(rejections) => Some(LogEntry(req.method + ":" + req.uri + ":" + rejections.toString(), Logging.ErrorLevel)) // log rejections
-    case _ => None // other kind of responses
-  }
-
   // Wraps rejections in JSON to be sent back to the client
 
   import JsonProtocol._

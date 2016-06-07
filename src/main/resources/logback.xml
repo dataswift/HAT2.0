@@ -4,7 +4,7 @@
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <target>System.out</target>
         <encoder>
-            <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] [%thread] %logger{1} - %msg%n</pattern>
+            <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] %logger{1} - %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -21,12 +21,24 @@
             <appender-ref ref="logFileOutput"/>
         </logger>-->
 
-    <logger name="akka" level="DEBUG">
+    <logger name="akka" level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="FILE"/>
+    </root>
+
+    <logger name="API-Access" LEVEL="INFO">
         <appender-ref ref="CONSOLE"/>
     </logger>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
     </root>
+
+    <logger name="scala.slick.session" LEVEL="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
 
 </configuration>

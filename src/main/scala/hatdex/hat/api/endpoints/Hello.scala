@@ -27,6 +27,7 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
         (accessTokenHandler) { implicit user: User =>
           myhat
         } ~ complete {
+          logger.info("HAT accessed")
           val parameters: Map[String, String] = Map(
             "hatName" -> conf.getString("hat.name"),
             "hatDomain" -> conf.getString("hat.domain"),
@@ -125,7 +126,7 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
               hatdex.hat.views.html.authenticated(user, credentials)
             }
           case Failure(e) =>
-            logger.error(s"Error resolving access tokens for auth page: ${e.getMessage}")
+            logger.warning(s"Error resolving access tokens for auth page: ${e.getMessage}")
             complete {
               hatdex.hat.views.html.authenticated(user, Seq())
             }

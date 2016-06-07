@@ -1,6 +1,6 @@
 package hatdex.hat.api.endpoints
 
-import akka.event.LoggingAdapter
+import akka.event.{Logging, LoggingAdapter}
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.endpoints.jsonExamples.DataExamples
 import hatdex.hat.api.json.JsonProtocol
@@ -22,7 +22,7 @@ import scala.concurrent.duration._
 class DataSpec extends Specification with Specs2RouteTest with Data with BeforeAfterAll {
   def actorRefFactory = system
 
-  val logger: LoggingAdapter = system.log
+  val logger: LoggingAdapter = Logging.getLogger(system, "API-Access")
 
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
 
@@ -186,10 +186,10 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
       new ApiDataValue(None, None, None, "testValue2-3", Some(dataSubfield2), Some(record2)))
 
     dataValues2 map { dataValue =>
-      HttpRequest(POST, "/value")
+      HttpRequest(POST, "/data/value")
         .withHeaders(ownerAuthHeader)
         .withEntity(HttpEntity(MediaTypes.`application/json`, dataValue.toJson.toString)) ~>
-        sealRoute(createValueApi) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo Created
         }
@@ -279,10 +279,10 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
     }
 
     "Accept new nested tables" in {
-      val dataTable = HttpRequest(POST, "/table")
+      val dataTable = HttpRequest(POST, "/data/table")
         .withHeaders(ownerAuthHeader)
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.nestedTableKitchen)) ~>
-        sealRoute(createTableApi) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo Created
           val responseString = responseAs[String]
@@ -294,9 +294,9 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
         }
       dataTable.id must beSome
 
-      HttpRequest(GET, s"/table/${dataTable.id.get}")
+      HttpRequest(GET, s"/data/table/${dataTable.id.get}")
         .withHeaders(ownerAuthHeader) ~>
-        sealRoute(getTableApi) ~>
+        sealRoute(routes) ~>
         check {
           val responseString = responseAs[String]
           responseString must contain("largeKitchen")
@@ -307,19 +307,19 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
     }
 
     "Reject incorrect table linking" in {
-      HttpRequest(POST, s"/table/0/table/1")
+      HttpRequest(POST, s"/data/table/0/table/1")
         .withHeaders(ownerAuthHeader)
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
-        sealRoute(linkTableToTableApi) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo BadRequest
         }
     }
 
     "Allow table fields to be created" in {
-      val dataTable = HttpRequest(GET, "/table?name=kitchenElectricity&source=fibaro&")
+      val dataTable = HttpRequest(GET, "/data/table?name=kitchenElectricity&source=fibaro&")
         .withHeaders(ownerAuthHeader) ~>
-        sealRoute(findTableApi) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo OK
           responseAs[String] must contain("kitchenElectricity")
@@ -332,17 +332,17 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
       val field = JsonParser(DataExamples.testField).convertTo[ApiDataField]
       val completeField = field.copy(tableId = dataTable.id)
 
-      HttpRequest(POST, "/field")
+      HttpRequest(POST, "/data/field")
         .withHeaders(ownerAuthHeader)
         .withEntity(HttpEntity(MediaTypes.`application/json`, completeField.toJson.toString)) ~>
-        sealRoute(createFieldApi) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo Created
         }
 
-      HttpRequest(GET, s"/table/${dataTable.id.get}")
+      HttpRequest(GET, s"/data/table/${dataTable.id.get}")
         .withHeaders(ownerAuthHeader) ~>
-        sealRoute(getTableApi) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo OK
           responseAs[String] must contain("kitchen")
@@ -352,10 +352,10 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
     }
 
     "Reject fields to non-existing tables" in {
-      HttpRequest(POST, "/field")
+      HttpRequest(POST, "/data/field")
         .withHeaders(ownerAuthHeader)
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.testField)) ~>
-        sealRoute(createFieldApi) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo BadRequest
         }
@@ -365,9 +365,9 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
       populateDataReusable match {
         case (dataTable, dataField, record) =>
           // Make sure that the right data elements are contained in the different kinds of responses
-          HttpRequest(GET, s"/record/${record.id.get}/values")
+          HttpRequest(GET, s"/data/record/${record.id.get}/values")
             .withHeaders(ownerAuthHeader) ~>
-            sealRoute(getRecordValuesApi) ~>
+            sealRoute(routes) ~>
             check {
               response.status should be equalTo OK
               responseAs[String] must contain("testValue1")
@@ -377,9 +377,9 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
               responseAs[String] must contain("testRecord 1")
             }
 
-          HttpRequest(GET, s"/field/${dataField.id.get}/values")
+          HttpRequest(GET, s"/data/field/${dataField.id.get}/values")
             .withHeaders(ownerAuthHeader) ~>
-            sealRoute(getFieldValuesApi) ~>
+            sealRoute(routes) ~>
             check {
               response.status should be equalTo OK
               responseAs[String] must contain("testValue1")
@@ -387,9 +387,9 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
               responseAs[String] must not contain ("testValue3")
             }
 
-          HttpRequest(GET, s"/table/${dataTable.id.get}/values")
+          HttpRequest(GET, s"/data/table/${dataTable.id.get}/values")
             .withHeaders(ownerAuthHeader) ~>
-            sealRoute(getTableValuesApi) ~>
+            sealRoute(routes) ~>
             check {
               response.status should be equalTo OK
               responseAs[String] must contain("testValue1")

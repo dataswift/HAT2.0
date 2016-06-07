@@ -10,16 +10,25 @@
 package hatdex.hat.api
 
 import akka.actor.{ActorLogging, ActorRefFactory}
-import akka.event.LoggingAdapter
+import akka.event.{Logging, LoggingAdapter}
 import hatdex.hat.api.endpoints._
 import hatdex.hat.api.service._
+import spray.http.{HttpResponse, HttpRequest}
 import spray.routing._
+import spray.routing.directives.{LogEntry, LoggingMagnet}
 import spray.util.LoggingContext
 
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor
 class ApiService extends HttpServiceActor with ActorLogging with Cors {
-  val apiLogger = LoggingContext.fromActorRefFactory
+  implicit val apiLogger = Logging.getLogger(context.system, "API-Access")
+
+  // logs request method, uri and response status at debug level
+  def requestMethodAndResponseStatusAsInfo(req: HttpRequest): Any => Option[LogEntry] = {
+    case res: HttpResponse => Some(LogEntry(req.method + ":" + req.uri + ":" + res.message.status, Logging.InfoLevel))
+    case Rejected(rejections) => Some(LogEntry(req.method + ":" + req.uri + ":" + rejections.toString(), Logging.ErrorLevel)) // log rejections
+    case _ => None // other kind of responses
+  }
 
   // The HttpService trait defines only one abstract member, which
   // connects the services environment to the enclosing actor or test.
@@ -28,7 +37,7 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
 
   trait LoggingHttpService {
     def actorRefFactory = context
-    val logger = log
+    val logger = apiLogger
   }
 
   val api: Api = new Api {
@@ -61,7 +70,9 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
     val typeService = new Type with LoggingHttpService
   }
 
-  val routes = logRequestResponse(api.requestMethodAndResponseStatusAsInfo _) {
+//  val logRequestResponseStatus = (LoggingMagnet(api.printRequestMethod))
+
+  val routes = logRequestResponse(requestMethodAndResponseStatusAsInfo _) {
     api.routes
   }
 
