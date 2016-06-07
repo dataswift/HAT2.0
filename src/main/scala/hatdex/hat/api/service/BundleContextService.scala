@@ -224,14 +224,14 @@ trait BundleContextService {
     // FIXME: keep an eye on future releases of Slick to avoid embedding SQL:
     sql"""
        WITH RECURSIVE recursive_bundle_context(id, date_created, last_updated, name, bundle_parent) AS (
-          SELECT b.id, b.date_created, b.last_updated, b.name, b2b.bundle_parent FROM bundle_context b
-       	  LEFT JOIN bundle_context_to_bundle_crossref b2b
+          SELECT b.id, b.date_created, b.last_updated, b.name, b2b.bundle_parent FROM hat.bundle_context b
+       	  LEFT JOIN hat.bundle_context_to_bundle_crossref b2b
        	    ON b.id = b2b.bundle_child
            WHERE b.id = ${bundleContextId}
           UNION ALL
             SELECT b.id, b.date_created, b.last_updated, b.name, b2b.bundle_parent
-            FROM recursive_bundle_context r_b, bundle_context b
-       	    LEFT JOIN bundle_context_to_bundle_crossref b2b
+            FROM recursive_bundle_context r_b, hat.bundle_context b
+       	    LEFT JOIN hat.bundle_context_to_bundle_crossref b2b
        	      ON b.id = b2b.bundle_child
               WHERE b2b.bundle_parent = r_b.id
        )

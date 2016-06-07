@@ -4,18 +4,19 @@ import java.util.UUID
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.api.endpoints.jsonExamples.{BundleExamples, DataDebitExamples}
+import hatdex.hat.api.endpoints.jsonExamples.{ BundleExamples, DataDebitExamples }
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
+import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.specs2.mutable.Specification
-import org.specs2.specification.{BeforeAfterAll, Scope}
+import org.specs2.specification.{ BeforeAfterAll, Scope }
+import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
@@ -32,16 +33,12 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
 
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
 
-  override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
-
   val apiUser: User = User(UUID.randomUUID(), "alice@gmail.com", Some(BCrypt.hashpw("dr0w55ap", BCrypt.gensalt())), "Test User", "dataDebit")
-  val parameters = Map("username" -> "bob@gmail.com", "password" -> "pa55w0rd")
 
-  def appendParams(parameters: Map[String, String]): String = {
-    parameters.foldLeft[String]("?") { case (params, (key, value)) =>
-      s"$params$key=$value&"
-    }
-  }
+  val ownerAuthToken = HatAuthTestHandler.validUsers.find(_.role == "owner").map(_.userId).flatMap { ownerId =>
+    HatAuthTestHandler.validAccessTokens.find(_.userId == ownerId).map(_.accessToken)
+  } getOrElse ("")
+  val ownerAuthHeader = RawHeader("X-Auth-Token", ownerAuthToken)
 
   trait LoggingHttpService {
     def actorRefFactory = system
@@ -93,10 +90,9 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
     val dynamicPropertyLink = ApiPropertyRelationshipDynamic(
       None, property, None, None, "test property", dataField)
 
-    val propertyLinkId = HttpRequest(
-      POST, s"/person/${newPerson.id.get}/property/dynamic/${property.id.get}" + appendParams(parameters),
-      entity = HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)
-    ) ~>
+    val propertyLinkId = HttpRequest(POST, s"/person/${newPerson.id.get}/property/dynamic/${property.id.get}")
+      .withHeaders(ownerAuthHeader)
+      .withEntity(HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)) ~>
       sealRoute(personSpec.routes) ~>
       check {
         eventually {
@@ -105,7 +101,8 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
         responseAs[ApiGenericId]
       }
 
-    val personValues = HttpRequest(GET, s"/person/${newPerson.id.get}/values" + appendParams(parameters)) ~>
+    val personValues = HttpRequest(GET, s"/person/${newPerson.id.get}/values")
+      .withHeaders(ownerAuthHeader) ~>
       sealRoute(personSpec.routes) ~>
       check {
         eventually {
@@ -150,10 +147,9 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
       val dataDebitData = JsonParser(DataDebitExamples.dataDebitExample).convertTo[ApiDataDebit]
 
       val dataDebit = {
-        val dataDebit = HttpRequest(POST,
-          "/dataDebit/propose" + appendParams(parameters),
-          entity = HttpEntity(MediaTypes.`application/json`, dataDebitData.copy(bundleContextless = Some(bundleData)).toJson.toString)
-        ) ~>
+        val dataDebit = HttpRequest(POST, "/dataDebit/propose")
+          .withHeaders(ownerAuthHeader)
+          .withEntity(HttpEntity(MediaTypes.`application/json`, dataDebitData.copy(bundleContextless = Some(bundleData)).toJson.toString)) ~>
           sealRoute(routes) ~>
           check {
             response.status should be equalTo Created
@@ -162,9 +158,12 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
             responseAs[ApiDataDebit]
           }
 
-        HttpRequest(GET, s"/${dataDebit.key.get}/values" + appendParams(parameters)) ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
-          response.status should be equalTo Forbidden
-        }
+        HttpRequest(GET, s"/${dataDebit.key.get}/values")
+          .withHeaders(ownerAuthHeader) ~>
+          sealRoute(retrieveDataDebitValuesApi) ~>
+          check {
+            response.status should be equalTo Forbidden
+          }
 
         dataDebit
       }
@@ -172,9 +171,8 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
       dataDebit.key must beSome
 
       val t = {
-        HttpRequest(PUT,
-          s"/dataDebit/${dataDebit.key.get}/enable" + appendParams(parameters)
-        ) ~>
+        HttpRequest(PUT, s"/dataDebit/${dataDebit.key.get}/enable")
+          .withHeaders(ownerAuthHeader) ~>
           sealRoute(routes) ~>
           check {
             response.status should be equalTo OK
@@ -182,9 +180,8 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
       }
 
       val result = {
-        HttpRequest(GET,
-          s"/dataDebit/${dataDebit.key.get}/values" + appendParams(parameters)
-        ) ~>
+        HttpRequest(GET, s"/dataDebit/${dataDebit.key.get}/values")
+          .withHeaders(ownerAuthHeader) ~>
           sealRoute(routes) ~>
           check {
             response.status should be equalTo OK
@@ -197,10 +194,9 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
     "Accept a contextual Data Debit proposal" in new Context {
 
       val dataDebit = {
-        val dataDebit = HttpRequest(POST,
-          "/dataDebit/propose" + appendParams(parameters),
-          entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitContextual)
-        ) ~>
+        val dataDebit = HttpRequest(POST, "/dataDebit/propose")
+          .withHeaders(ownerAuthHeader)
+          .withEntity(HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitContextual)) ~>
           sealRoute(routes) ~>
           check {
             response.status should be equalTo Created
@@ -209,9 +205,12 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
             responseAs[ApiDataDebit]
           }
 
-        HttpRequest(GET, s"/${dataDebit.key.get}/values" + appendParams(parameters)) ~> sealRoute(retrieveDataDebitValuesApi) ~> check {
-          response.status should be equalTo Forbidden
-        }
+        HttpRequest(GET, s"/${dataDebit.key.get}/values")
+          .withHeaders(ownerAuthHeader) ~>
+          sealRoute(retrieveDataDebitValuesApi) ~>
+          check {
+            response.status should be equalTo Forbidden
+          }
 
         dataDebit
       }
@@ -219,19 +218,16 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
       dataDebit.key must beSome
 
       val t = {
-        HttpRequest(PUT,
-          s"/dataDebit/${dataDebit.key.get}/enable" + appendParams(parameters)
-        ) ~>
+        HttpRequest(PUT, s"/dataDebit/${dataDebit.key.get}/enable")
+          .withHeaders(ownerAuthHeader) ~>
           sealRoute(routes) ~>
           check {
             response.status should be equalTo OK
           }
       }
 
-
-      HttpRequest(GET,
-        s"/dataDebit/${dataDebit.key.get}/values" + appendParams(parameters)
-      ) ~>
+      HttpRequest(GET, s"/dataDebit/${dataDebit.key.get}/values")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
           response.status should be equalTo OK
@@ -242,9 +238,8 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
           responseAs[Seq[ApiEntity]]
         }
 
-      HttpRequest(PUT,
-        s"/dataDebit/${dataDebit.key.get}/disable" + appendParams(parameters)
-      ) ~>
+      HttpRequest(PUT, s"/dataDebit/${dataDebit.key.get}/disable")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
           response.status should be equalTo OK
@@ -252,28 +247,25 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
     }
 
     "Reject malformed reuqests" in {
-      HttpRequest(POST,
-        "/dataDebit/propose" + appendParams(parameters),
-        entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitInvalid)
-      ) ~>
+      HttpRequest(POST, "/dataDebit/propose")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitInvalid)) ~>
         sealRoute(routes) ~>
         check {
           response.status should be equalTo BadRequest
         }
 
-      HttpRequest(POST,
-        "/dataDebit/propose" + appendParams(parameters),
-        entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitWrongKeyContextless)
-      ) ~>
+      HttpRequest(POST, "/dataDebit/propose")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitWrongKeyContextless)) ~>
         sealRoute(routes) ~>
         check {
           response.status should be equalTo BadRequest
         }
 
-      HttpRequest(POST,
-        "/dataDebit/propose" + appendParams(parameters),
-        entity = HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitWrongKeyContextual)
-      ) ~>
+      HttpRequest(POST, "/dataDebit/propose")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitWrongKeyContextual)) ~>
         sealRoute(routes) ~>
         check {
           response.status should be equalTo BadRequest
@@ -281,17 +273,15 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
     }
 
     "Not enable non-existent data debits" in {
-      HttpRequest(PUT,
-        s"/dataDebit/acdacdac-2e3d-41df-a1a3-7cf6d23a8abe/enable" + appendParams(parameters)
-      ) ~>
+      HttpRequest(PUT, s"/dataDebit/acdacdac-2e3d-41df-a1a3-7cf6d23a8abe/enable")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
           response.status should be equalTo NotFound
         }
 
-      HttpRequest(PUT,
-        s"/dataDebit/acdacdac-2e3d-41df-a1a3-7cf6d23a8abe/disable" + appendParams(parameters)
-      ) ~>
+      HttpRequest(PUT, s"/dataDebit/acdacdac-2e3d-41df-a1a3-7cf6d23a8abe/disable")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
           response.status should be equalTo NotFound
@@ -299,13 +289,12 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
     }
 
     "List Data Debits" in {
-      HttpRequest(GET,
-        s"/dataDebit" + appendParams(parameters)
-      ) ~>
+      HttpRequest(GET, s"/dataDebit")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
           response.status should be equalTo OK
-          responseAs[Seq[ApiDataDebit]] must not have size (0)
+          responseAs[Seq[ApiDataDebit]] must not have size(0)
         }
     }
   }

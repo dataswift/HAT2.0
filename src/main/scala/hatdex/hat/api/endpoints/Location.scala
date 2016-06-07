@@ -28,6 +28,9 @@ trait Location extends LocationsService with AbstractEntity {
             getAllApi ~
             linkToLocation ~
             linkToThing ~
+            linkToPerson ~
+            linkToOrganisation ~
+            linkToEvent ~
             linkToPropertyStatic ~
             linkToPropertyDynamic ~
             getPropertiesStaticApi ~

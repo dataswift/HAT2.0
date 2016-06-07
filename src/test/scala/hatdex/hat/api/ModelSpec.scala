@@ -21,7 +21,7 @@ class ModelSpec extends Specification with BeforeAfterAll {
   "Core Tables" should {
     "be created" in {
 
-      val getTables = MTable.getTables(None, Some("public"), None, None).map { ts =>
+      val getTables = MTable.getTables(None, Some("hat"), None, None).map { ts =>
         ts.map { t =>
           t.name.name
         }

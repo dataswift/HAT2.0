@@ -6,12 +6,13 @@ import hatdex.hat.api.endpoints.jsonExamples.BundleExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
+import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
+import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
@@ -23,7 +24,10 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
   def actorRefFactory = system
   val logger: LoggingAdapter = system.log
 
-  val ownerAuth = "username=bob@gmail.com&password=pa55w0rd"
+  val ownerAuthToken = HatAuthTestHandler.validUsers.find(_.role == "owner").map(_.userId).flatMap { ownerId =>
+    HatAuthTestHandler.validAccessTokens.find(_.userId == ownerId).map(_.accessToken)
+  } getOrElse ("")
+  val ownerAuthHeader = RawHeader("X-Auth-Token", ownerAuthToken)
 
   import JsonProtocol._
 
@@ -35,12 +39,10 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
     val dataTableRows = Seq(
       new DataTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "kitchen", "Fibaro"),
       new DataTableRow(3, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", "Fibaro"),
-      new DataTableRow(4, LocalDateTime.now(), LocalDateTime.now(), "event", "Facebook")
-    )
+      new DataTableRow(4, LocalDateTime.now(), LocalDateTime.now(), "event", "Facebook"))
 
     val dataTableCrossrefs = Seq(
-      new DataTabletotablecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), "contains", 2, 3)
-    )
+      new DataTabletotablecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), "contains", 2, 3))
 
     val dataFieldRows = Seq(
       new DataFieldRow(10, LocalDateTime.now(), LocalDateTime.now(), "timestamp", 3),
@@ -48,8 +50,7 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
       new DataFieldRow(12, LocalDateTime.now(), LocalDateTime.now(), "name", 4),
       new DataFieldRow(13, LocalDateTime.now(), LocalDateTime.now(), "location", 4),
       new DataFieldRow(14, LocalDateTime.now(), LocalDateTime.now(), "startTime", 4),
-      new DataFieldRow(15, LocalDateTime.now(), LocalDateTime.now(), "endTime", 4)
-    )
+      new DataFieldRow(15, LocalDateTime.now(), LocalDateTime.now(), "endTime", 4))
 
     val dataRecordRows = Seq(
       new DataRecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "kitchen record 1"),
@@ -57,8 +58,7 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
       new DataRecordRow(3, LocalDateTime.now(), LocalDateTime.now(), "kitchen record 3"),
       new DataRecordRow(4, LocalDateTime.now(), LocalDateTime.now(), "event record 1"),
       new DataRecordRow(5, LocalDateTime.now(), LocalDateTime.now(), "event record 2"),
-      new DataRecordRow(6, LocalDateTime.now(), LocalDateTime.now(), "event record 3")
-    )
+      new DataRecordRow(6, LocalDateTime.now(), LocalDateTime.now(), "event record 3"))
 
     val dataValues = Seq(
       new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1", 10, 1),
@@ -83,8 +83,7 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
       new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 3", 12, 6),
       new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 3", 13, 6),
       new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 3", 14, 6),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 3", 15, 6)
-    )
+      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 3", 15, 6))
 
     db.withSession { implicit session =>
       DataTable.forceInsertAll(dataTableRows: _*)
@@ -108,106 +107,136 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
 
   "Contextless Bundle Service for Tables" should {
     "Reject a bundle on table without specified id" in {
-      HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenWrong)) ~>
-        createBundleTable ~> check {
-        response.status should be equalTo BadRequest
-      }
+      HttpRequest(POST, "/bundles/contextless/table")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenWrong)) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo BadRequest
+        }
     }
 
     "create a simple Bundle Table with no filters on data" in {
-      HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
-        createBundleTable ~> check {
-        response.status should be equalTo Created
-        responseAs[String] must contain("Electricity in the kitchen")
-      }
+      HttpRequest(POST, "/bundles/contextless/table")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo Created
+          responseAs[String] must contain("Electricity in the kitchen")
+        }
     }
 
     "create a simple Bundle Table with multiple filters" in {
-      HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
-        createBundleTable ~> check {
-        response.status should be equalTo Created
-        responseAs[String] must contain("Weekend events at home")
-      }
+      HttpRequest(POST, "/bundles/contextless/table")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo Created
+          responseAs[String] must contain("Weekend events at home")
+        }
     }
 
     "Create and retrieve a bundle by ID" in {
-      val bundleId = HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
-        createBundleTable ~> check {
-        responseAs[ApiBundleTable].id
-      }
+      val bundleId = HttpRequest(POST, "/bundles/contextless/table")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+        sealRoute(routes) ~>
+        check {
+          responseAs[ApiBundleTable].id
+        }
 
       bundleId must beSome
 
-      val url = s"/table/${bundleId.get}?"+ownerAuth
-      HttpRequest(GET, url) ~>
-        getBundleTable ~> check {
-        response.status should be equalTo OK
-        responseAs[String] must contain("Weekend events at home")
-      }
+      val url = s"/bundles/contextless/table/${bundleId.get}"
+      HttpRequest(GET, url)
+        .withHeaders(ownerAuthHeader) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo OK
+          responseAs[String] must contain("Weekend events at home")
+        }
     }
-    
+
     "Bundle without filters should contain all data of linked table only" in {
-      val bundleTableKitchen = HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchen)) ~>
-        createBundleTable ~> check {
-        responseAs[ApiBundleTable]
-      }
+      val bundleTableKitchen = HttpRequest(POST, "/bundles/contextless/table")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchen)) ~>
+        sealRoute(routes) ~>
+        check {
+          responseAs[ApiBundleTable]
+        }
       bundleTableKitchen.id must beSome
 
-      HttpRequest(GET, s"/table/${bundleTableKitchen.id.get}/values?"+ownerAuth) ~>
-        getBundleTableValuesApi ~> check {
-        response.status should be equalTo OK
-        val responseString = responseAs[String]
-        responseString must contain("kitchen")
-        responseString must contain("kitchen record 1")
-        responseString must contain("kitchen record 2")
-        responseString must not contain("event record 1")
+      HttpRequest(GET, s"/bundles/contextless/table/${bundleTableKitchen.id.get}/values")
+        .withHeaders(ownerAuthHeader) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo OK
+          val responseString = responseAs[String]
+          responseString must contain("kitchen")
+          responseString must contain("kitchen record 1")
+          responseString must contain("kitchen record 2")
+          responseString must not contain ("event record 1")
 
-        responseString must contain("kitchen time 1")
-        responseString must contain("kitchen value 1")
-        responseString must contain("kitchen value 2")
-        responseString must contain("kitchen value 3")
-        responseString must not contain("event name 1")
-      }
+          responseString must contain("kitchen time 1")
+          responseString must contain("kitchen value 1")
+          responseString must contain("kitchen value 2")
+          responseString must contain("kitchen value 3")
+          responseString must not contain ("event name 1")
+        }
     }
 
     "create a Bundle Table with multiple filters and correctly retrieve data" in {
-      val bundleTable = HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
-        createBundleTable ~> check {
-        response.status should be equalTo Created
-        responseAs[String] must contain("Weekend events at home")
-        responseAs[ApiBundleTable]
-      }
+      val bundleTable = HttpRequest(POST, "/bundles/contextless/table")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo Created
+          responseAs[String] must contain("Weekend events at home")
+          responseAs[ApiBundleTable]
+        }
 
       bundleTable.id must beSome
 
-      HttpRequest(GET, s"/table/${bundleTable.id.get}/values?"+ownerAuth) ~>
-        getBundleTableValuesApi ~> check {
-        response.status should be equalTo OK
+      HttpRequest(GET, s"/bundles/contextless/table/${bundleTable.id.get}/values")
+        .withHeaders(ownerAuthHeader) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo OK
 
-        val responseString = responseAs[String]
+          val responseString = responseAs[String]
 
-        responseString must contain("event")
-        responseString must contain("event record 1")
-        responseString must contain("event record 2")
-        responseString must not contain("event record 3")
-        responseString must not contain("kitchen record 1")
-      }
+          responseString must contain("event")
+          responseString must contain("event record 1")
+          responseString must contain("event record 2")
+          responseString must not contain ("event record 3")
+          responseString must not contain ("kitchen record 1")
+        }
     }
   }
 
   "Contextless Bundle Service for Joins" should {
     "Create and combine required bundles without join conditions" in {
 
-      val bundleWeekendEvents = HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
-        createBundleTable ~> check {
-        responseAs[ApiBundleTable]
-      }
+      val bundleWeekendEvents = HttpRequest(POST, "/bundles/contextless/table")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+        sealRoute(routes) ~>
+        check {
+          responseAs[ApiBundleTable]
+        }
       bundleWeekendEvents.id must beSome
 
-      val bundleTableKitchen = HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
-        createBundleTable ~> check {
-        responseAs[ApiBundleTable]
-      }
+      val bundleTableKitchen = HttpRequest(POST, "/bundles/contextless/table")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
+        sealRoute(routes) ~>
+        check {
+          responseAs[ApiBundleTable]
+        }
       bundleTableKitchen.id must beSome
 
       val bundle = JsonParser(BundleExamples.bundleContextlessNoJoin).convertTo[ApiBundleContextless]
@@ -216,54 +245,62 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
 
       val completeBundle = bundle.copy(tables = Some(Seq(
         bundle.tables.get(0).copy(
-          bundleTable = bundle.tables.get(0).bundleTable.copy(id = bundleWeekendEvents.id)
-        ),
+          bundleTable = bundle.tables.get(0).bundleTable.copy(id = bundleWeekendEvents.id)),
         bundle.tables.get(1).copy(
-          bundleTable = bundle.tables.get(1).bundleTable.copy(id = bundleTableKitchen.id)
-        )
-      )))
+          bundleTable = bundle.tables.get(1).bundleTable.copy(id = bundleTableKitchen.id)))))
 
       val bundleJson: String = completeBundle.toJson.toString
-      val cBundle = HttpRequest(POST, "?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
-        createBundleContextless ~> check {
-        response.status should be equalTo Created
-        responseAs[ApiBundleContextless]
-      }
+      val cBundle = HttpRequest(POST, "/bundles/contextless")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo Created
+          responseAs[ApiBundleContextless]
+        }
 
-      HttpRequest(GET, s"/${cBundle.id.get}/values?"+ownerAuth) ~>
-        getBundleContextlessValuesApi ~> check {
-        response.status should be equalTo OK
+      HttpRequest(GET, s"/bundles/contextless/${cBundle.id.get}/values")
+        .withHeaders(ownerAuthHeader) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo OK
 
-        val responseString = responseAs[String]
+          val responseString = responseAs[String]
 
-        responseString must contain("dataGroups")
-        responseString must contain("event record 1")
-        responseString must contain("event record 2")
-        responseString must not contain("event record 3")
+          responseString must contain("dataGroups")
+          responseString must contain("event record 1")
+          responseString must contain("event record 2")
+          responseString must not contain ("event record 3")
 
-        responseString must contain("kitchen record 1")
-        responseString must contain("kitchen record 2")
-        responseString must contain("kitchen record 3")
+          responseString must contain("kitchen record 1")
+          responseString must contain("kitchen record 2")
+          responseString must contain("kitchen record 3")
 
-        responseString must contain("kitchen value 1")
-        responseString must contain("event name 1")
-        responseString must contain("event location 1")
-      }
+          responseString must contain("kitchen value 1")
+          responseString must contain("event name 1")
+          responseString must contain("event location 1")
+        }
 
     }
 
     "Create and combine required bundles with join conditions" in {
 
-      val bundleWeekendEvents = HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
-        createBundleTable ~> check {
-        responseAs[ApiBundleTable]
-      }
+      val bundleWeekendEvents = HttpRequest(POST, "/bundles/contextless/table")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleWeekendEvents)) ~>
+        sealRoute(routes) ~>
+        check {
+          responseAs[ApiBundleTable]
+        }
       bundleWeekendEvents.id must beSome
 
-      val bundleTableKitchen = HttpRequest(POST, "/table?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
-        createBundleTable ~> check {
-        responseAs[ApiBundleTable]
-      }
+      val bundleTableKitchen = HttpRequest(POST, "/bundles/contextless/table")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleExamples.bundleTableKitchenElectricity)) ~>
+        sealRoute(routes) ~>
+        check {
+          responseAs[ApiBundleTable]
+        }
       bundleTableKitchen.id must beSome
 
       val bundle = JsonParser(BundleExamples.bundleContextlessJoin).convertTo[ApiBundleContextless]
@@ -272,41 +309,43 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
 
       val completeBundle = bundle.copy(tables = Some(Seq(
         bundle.tables.get(0).copy(
-          bundleTable = bundle.tables.get(0).bundleTable.copy(id = bundleWeekendEvents.id)
-        ),
+          bundleTable = bundle.tables.get(0).bundleTable.copy(id = bundleWeekendEvents.id)),
         bundle.tables.get(1).copy(
-          bundleTable = bundle.tables.get(1).bundleTable.copy(id = bundleTableKitchen.id)
-        )
-      )))
+          bundleTable = bundle.tables.get(1).bundleTable.copy(id = bundleTableKitchen.id)))))
 
       val bundleJson: String = completeBundle.toJson.toString
-      val bundleId = HttpRequest(POST, "?"+ownerAuth, entity = HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
-        createBundleContextless ~> check {
-        response.status should be equalTo Created
-        responseAs[String] must contain(""""operator": "equal"""")
-        responseAs[String] must contain(""""name": "startTime"""")
-        responseAs[ApiBundleContextless].id
-      }
+      val bundleId = HttpRequest(POST, "/bundles/contextless")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, bundleJson)) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo Created
+          responseAs[String] must contain(""""operator": "equal"""")
+          responseAs[String] must contain(""""name": "startTime"""")
+          responseAs[ApiBundleContextless].id
+        }
 
       bundleId must beSome
 
-      HttpRequest(GET, s"/${bundleId.get}?"+ownerAuth) ~>
-        getBundleContextless ~> check {
-        response.status should be equalTo OK
-        responseAs[String] must contain(""""operator": "equal"""")
-        responseAs[String] must contain(""""name": "startTime"""")
-      }
+      HttpRequest(GET, s"/bundles/contextless/${bundleId.get}")
+        .withHeaders(ownerAuthHeader) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo OK
+          responseAs[String] must contain(""""operator": "equal"""")
+          responseAs[String] must contain(""""name": "startTime"""")
+        }
     }
 
     "Return correct error code for bundle that doesn't exist" in {
-      HttpRequest(GET, "/0?"+ownerAuth) ~>
-        getBundleContextless ~> check {
-        response.status should be equalTo NotFound
-      }
+      HttpRequest(GET, "/bundles/contextless/0")
+        .withHeaders(ownerAuthHeader) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo NotFound
+        }
     }
-
 
   }
 }
-
 

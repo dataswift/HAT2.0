@@ -6,12 +6,13 @@ import hatdex.hat.api.endpoints.jsonExamples.EntityExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
+import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
 import org.specs2.mutable.Specification
-import org.specs2.specification.{BeforeAfterAll, Scope}
+import org.specs2.specification.{ BeforeAfterAll, Scope }
+import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
-import spray.http.{HttpEntity, HttpRequest, MediaTypes}
+import spray.http.{ HttpEntity, HttpRequest, MediaTypes }
 import spray.httpx.SprayJsonSupport._
 import spray.json._
 import spray.testkit.Specs2RouteTest
@@ -23,35 +24,29 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
 
   val personEndpoint = new Person {
     def actorRefFactory = system
-
+    override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
     val logger: LoggingAdapter = system.log
   }
 
   val thingEndpoint = new Thing {
     def actorRefFactory = system
-
+    override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
     val logger: LoggingAdapter = system.log
   }
 
   val organisationEndpoint = new Organisation {
     def actorRefFactory = system
-
+    override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
     val logger: LoggingAdapter = system.log
   }
 
   val locationEndpoint = new Location {
     def actorRefFactory = system
-
     val logger: LoggingAdapter = system.log
-
     override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
-
-    override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
   }
 
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
-
-  override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
 
   import JsonProtocol._
 
@@ -67,12 +62,15 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
     }
   }
 
-  val ownerAuthParams = "?username=bob@gmail.com&password=pa55w0rd"
+  val ownerAuthToken = HatAuthTestHandler.validUsers.find(_.role == "owner").map(_.userId).flatMap { ownerId =>
+    HatAuthTestHandler.validAccessTokens.find(_.userId == ownerId).map(_.accessToken)
+  } getOrElse ("")
+  val ownerAuthHeader = RawHeader("X-Auth-Token", ownerAuthToken)
 
-  def createNewEvent = HttpRequest(
-    POST, "" + ownerAuthParams,
-    entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.eventValid)) ~>
-    sealRoute(createEntity) ~>
+  def createNewEvent = HttpRequest(POST, "/event")
+    .withHeaders(ownerAuthHeader)
+    .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.eventValid)) ~>
+    sealRoute(routes) ~>
     check {
       eventually {
         response.status should be equalTo Created
@@ -81,10 +79,10 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       responseAs[ApiEvent]
     }
 
-  def createOtherEvent = HttpRequest(
-    POST, "" + ownerAuthParams,
-    entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.otherEventValid)) ~>
-    sealRoute(createEntity) ~>
+  def createOtherEvent = HttpRequest(POST, "/event")
+    .withHeaders(ownerAuthHeader)
+    .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.otherEventValid)) ~>
+    sealRoute(routes) ~>
     check {
       response.status should be equalTo Created
       responseAs[String] must contain("breakfast")
@@ -101,9 +99,10 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       otherEvent.id must beSome
 
       //test linkToEvent
-      HttpRequest(POST, s"/${newEvent.id.get}/event/${otherEvent.id.get}" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipDuring)) ~>
-        sealRoute(linkToEvent) ~>
+      HttpRequest(POST, s"/event/${newEvent.id.get}/event/${otherEvent.id.get}")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipDuring)) ~>
+        sealRoute(routes) ~>
         check {
           response.status should be equalTo Created
           responseAs[String] must contain("id")
@@ -116,10 +115,10 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       newEvent.id must beSome
 
       // Linking event to Person
-      val ownerPerson = HttpRequest(
-        POST, "" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.personValid)) ~>
-        sealRoute(personEndpoint.createEntity) ~>
+      val ownerPerson = HttpRequest(POST, "/person")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.personValid)) ~>
+        sealRoute(personEndpoint.routes) ~>
         check {
           response.status should be equalTo Created
           responseAs[String] must contain("HATperson")
@@ -128,10 +127,9 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
 
       ownerPerson.id must beSome
 
-      HttpRequest(
-        POST, s"/event/${newEvent.id.get}/person/${ownerPerson.id.get}" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipOwnedBy)
-      ) ~>
+      HttpRequest(POST, s"/event/${newEvent.id.get}/person/${ownerPerson.id.get}")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipOwnedBy)) ~>
         sealRoute(routes) ~>
         check {
           response.status should be equalTo Created
@@ -140,10 +138,10 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
 
       // Linking event to Thing
 
-      val activeThing = HttpRequest(
-        POST, "" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.thingValid)) ~>
-        sealRoute(thingEndpoint.createEntity) ~>
+      val activeThing = HttpRequest(POST, "/thing")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.thingValid)) ~>
+        sealRoute(thingEndpoint.routes) ~>
         check {
           response.status should be equalTo Created
           responseAs[String] must contain("tv")
@@ -152,10 +150,9 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
 
       activeThing.id must beSome
 
-      HttpRequest(
-        POST, s"/event/${newEvent.id.get}/thing/${activeThing.id.get}" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipActiveAt)
-      ) ~>
+      HttpRequest(POST, s"/event/${newEvent.id.get}/thing/${activeThing.id.get}")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipActiveAt)) ~>
         sealRoute(routes) ~>
         check {
           response.status should be equalTo Created
@@ -165,12 +162,12 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       // Linking event to Location
 
       logger.debug("Creating location to link to event")
-      val atLocation = HttpRequest(
-        POST, "/location" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.locationValid)) ~>
+      val atLocation = HttpRequest(POST, "/location")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.locationValid)) ~>
         sealRoute(locationEndpoint.routes) ~>
         check {
-          logger.debug("Location created: " + response)
+          logger.debug("Location created: "+response)
           response.status should be equalTo Created
           responseAs[String] must contain("home")
           responseAs[ApiLocation]
@@ -178,23 +175,22 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
 
       atLocation.id must beSome
 
-      HttpRequest(
-        POST, s"/event/${newEvent.id.get}/location/${atLocation.id.get}" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipHappensAt)
-      ) ~>
+      HttpRequest(POST, s"/event/${newEvent.id.get}/location/${atLocation.id.get}")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipHappensAt)) ~>
         sealRoute(routes) ~>
         check {
-          logger.debug("event location link response: " + response)
+          logger.debug("event location link response: "+response)
           response.status should be equalTo Created
           responseAs[String] must contain("id")
         }
 
       // Linking event to Organisation
 
-      val sponsoredByOrganisation = HttpRequest(
-        POST, "" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.orgValid)) ~>
-        sealRoute(organisationEndpoint.createEntity) ~>
+      val sponsoredByOrganisation = HttpRequest(POST, "/organisation")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.orgValid)) ~>
+        sealRoute(organisationEndpoint.routes) ~>
         check {
           response.status should be equalTo Created
           responseAs[String] must contain("HATorg")
@@ -203,19 +199,18 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
 
       sponsoredByOrganisation.id must beSome
 
-      HttpRequest(
-        POST, s"/event/${newEvent.id.get}/organisation/${sponsoredByOrganisation.id.get}" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipHappensAt)
-      ) ~>
+      HttpRequest(POST, s"/event/${newEvent.id.get}/organisation/${sponsoredByOrganisation.id.get}")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipHappensAt)) ~>
         sealRoute(routes) ~>
         check {
           response.status should be equalTo Created
           responseAs[String] must contain("id")
         }
 
-
-      HttpRequest(
-        GET, s"/event/${newEvent.id.get}" + ownerAuthParams) ~> sealRoute(routes) ~>
+      HttpRequest(GET, s"/event/${newEvent.id.get}")
+        .withHeaders(ownerAuthHeader) ~>
+        sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK
@@ -235,8 +230,8 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       val newEvent = createNewEvent
       newEvent.id must beSome
 
-      HttpRequest(
-        GET, s"/event/${newEvent.id.get}" + ownerAuthParams) ~>
+      HttpRequest(GET, s"/event/${newEvent.id.get}")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
           eventually {
@@ -249,20 +244,36 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
     }
 
     "Reject bad events and relationships" in {
-      HttpRequest(POST, "" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.eventBadName)) ~>
-        sealRoute(createEntity) ~> check {
-        response.status should be equalTo BadRequest
-      }
+      HttpRequest(POST, "/event")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.eventBadName)) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo BadRequest
+          }
+        }
 
-      HttpRequest(POST, s"/0/event/1}" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipNextTo)) ~>
-        sealRoute(linkToEvent) ~> check {
-        response.status should be equalTo NotFound
-      }
+      HttpRequest(POST, s"/event/0/person/0")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipNextTo)) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo BadRequest
+          }
+        }
 
-      HttpRequest(POST, s"/0/person/0}" + ownerAuthParams, entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipNextTo)) ~>
-        sealRoute(linkToEvent) ~> check {
-        response.status should be equalTo NotFound
-      }
+      HttpRequest(POST, s"/event/0/event/1")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipNextTo)) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            response.status should be equalTo BadRequest
+          }
+        }
+
     }
 
     "Reject unsuported relationships" in {
@@ -276,7 +287,8 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       val otherEvent = createOtherEvent
       otherEvent.id must beSome
 
-      HttpRequest(GET, "/event" + ownerAuthParams) ~>
+      HttpRequest(GET, "/event")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
           eventually {
@@ -296,24 +308,20 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       val newEvent = createNewEvent
       newEvent.id must beSome
 
-
       val typeSpec = new TypeSpec
       val postalAddressType = typeSpec.createPostalAddressType
 
-      HttpRequest(
-        POST,
-        s"/event/${newEvent.id.get}/type/${postalAddressType.id.get}" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipType)
-      ) ~>
+      HttpRequest(POST, s"/event/${newEvent.id.get}/type/${postalAddressType.id.get}")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipType)) ~>
         sealRoute(routes) ~>
         check {
           response.status should be equalTo Created
         }
 
-      HttpRequest(
-        POST, s"/event/${newEvent.id.get}/type/0" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipType)
-      ) ~>
+      HttpRequest(POST, s"/event/${newEvent.id.get}/type/0")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipType)) ~>
         sealRoute(routes) ~>
         check {
           response.status should be equalTo BadRequest
@@ -345,10 +353,9 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       val dynamicPropertyLink = ApiPropertyRelationshipDynamic(
         None, property, None, None, "test property", dataField)
 
-      val propertyLinkId = HttpRequest(
-        POST, s"/event/${newEvent.id.get}/property/dynamic/${property.id.get}" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)
-      ) ~>
+      val propertyLinkId = HttpRequest(POST, s"/event/${newEvent.id.get}/property/dynamic/${property.id.get}")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)) ~>
         sealRoute(routes) ~>
         check {
           eventually {
@@ -357,7 +364,8 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
           responseAs[ApiGenericId]
         }
 
-      HttpRequest(GET, s"/event/${newEvent.id.get}/property/dynamic" + ownerAuthParams) ~>
+      HttpRequest(GET, s"/event/${newEvent.id.get}/property/dynamic")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
           eventually {
@@ -368,7 +376,8 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
           }
         }
 
-      HttpRequest(GET, s"/event/${newEvent.id.get}/property/dynamic/${propertyLinkId.id}/values" + ownerAuthParams) ~>
+      HttpRequest(GET, s"/event/${newEvent.id.get}/property/dynamic/${propertyLinkId.id}/values")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
           eventually {
@@ -379,7 +388,8 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
           }
         }
 
-      HttpRequest(GET, s"/event/${newEvent.id.get}/values" + ownerAuthParams) ~>
+      HttpRequest(GET, s"/event/${newEvent.id.get}/values")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
           eventually {
@@ -407,20 +417,20 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       val staticPropertyLink = ApiPropertyRelationshipStatic(
         None, property, None, None, "test property", dataField, dataRecord)
 
-      val propertyLinkId = HttpRequest(
-        POST, s"/event/${newEvent.id.get}/property/static/${property.id.get}" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, staticPropertyLink.toJson.toString)
-      ) ~>
+      val propertyLinkId = HttpRequest(POST, s"/event/${newEvent.id.get}/property/static/${property.id.get}")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, staticPropertyLink.toJson.toString)) ~>
         sealRoute(routes) ~>
         check {
           eventually {
-            logger.debug("Static property creation resp: " + response.toString)
+            logger.debug("Static property creation resp: "+response.toString)
             response.status should be equalTo Created
           }
           responseAs[ApiGenericId]
         }
 
-      HttpRequest(GET, s"/event/${newEvent.id.get}/property/static" + ownerAuthParams) ~>
+      HttpRequest(GET, s"/event/${newEvent.id.get}/property/static")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
           eventually {
@@ -431,7 +441,8 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
           }
         }
 
-      HttpRequest(GET, s"/event/${newEvent.id.get}/property/static/${propertyLinkId.id}/values" + ownerAuthParams) ~>
+      HttpRequest(GET, s"/event/${newEvent.id.get}/property/static/${propertyLinkId.id}/values")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
           eventually {
@@ -442,7 +453,8 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
           }
         }
 
-      HttpRequest(GET, s"/event/${newEvent.id.get}/values" + ownerAuthParams) ~>
+      HttpRequest(GET, s"/event/${newEvent.id.get}/values")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
           eventually {

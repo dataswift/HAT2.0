@@ -4,6 +4,7 @@ import akka.event.LoggingAdapter
 import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
+import spray.http.HttpHeaders.RawHeader
 import spray.http.StatusCodes._
 import spray.testkit.Specs2RouteTest
 
@@ -16,6 +17,11 @@ class HelloSpec extends Specification with Specs2RouteTest with Hello {
 
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
 
+  val ownerAuthToken = HatAuthTestHandler.validUsers.find(_.role == "owner").map(_.userId).flatMap { ownerId =>
+    HatAuthTestHandler.validAccessTokens.find(_.userId == ownerId).map(_.accessToken)
+  } getOrElse ("")
+  val ownerAuthHeader = RawHeader("X-Auth-Token", ownerAuthToken)
+
   sequential
 
   "Hello Service" should {
@@ -23,7 +29,7 @@ class HelloSpec extends Specification with Specs2RouteTest with Hello {
     "return a greeting for GET requests to the root path" in {
       Get() ~> sealRoute(routes) ~>
         check {
-          responseAs[String] must contain("Hello HAT 2.0")
+          responseAs[String] must contain("Welcome to the HAT")
         }
     }
 
@@ -37,7 +43,8 @@ class HelloSpec extends Specification with Specs2RouteTest with Hello {
     }
 
     "disallow GET requests to hat path with incorrect credentials" in {
-      Get("/hat?username=bob@gmail.com&password=asdasd") ~>
+      Get("/hat")
+        .withHeaders(RawHeader("X-Auth-Token", "asdasd")) ~>
         sealRoute(routes) ~>
         check {
           eventually {
@@ -47,11 +54,11 @@ class HelloSpec extends Specification with Specs2RouteTest with Hello {
     }
 
     "accept access_token authenticated GET requests to hat path" in {
-      Get("/hat?access_token=df4545665drgdfg") ~> sealRoute(routes) ~>
+      Get("/hat").withHeaders(ownerAuthHeader) ~> sealRoute(routes) ~>
         check {
           eventually {
             response.status should be equalTo OK
-            responseAs[String] must contain("Welcome to your Hub of All Things")
+            responseAs[String] must contain("Please choose a service you wish to use")
           }
         }
     }
@@ -67,7 +74,7 @@ class HelloSpec extends Specification with Specs2RouteTest with Hello {
       Put() ~> sealRoute(routes) ~>
         check {
           response.status should be equalTo MethodNotAllowed
-          responseAs[String] === "HTTP method not allowed, supported methods: GET"
+          responseAs[String] must contain("HTTP method not allowed")
         }
     }
   }

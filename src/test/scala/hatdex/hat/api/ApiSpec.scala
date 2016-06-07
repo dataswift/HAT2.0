@@ -18,6 +18,7 @@ import hatdex.hat.api.service._
 import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
+import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
@@ -73,7 +74,10 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
     apiDataService.routes
   }
 
-  val ownerAuthParams = "?username=bob@gmail.com&password=pa55w0rd"
+  val ownerAuthToken = HatAuthTestHandler.validUsers.find(_.role == "owner").map(_.userId).flatMap { ownerId =>
+    HatAuthTestHandler.validAccessTokens.find(_.userId == ownerId).map(_.accessToken)
+  } getOrElse ("")
+  val ownerAuthHeader = RawHeader("X-Auth-Token", ownerAuthToken)
 
   sequential
 
@@ -93,10 +97,9 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
     }
 
     "respond with correctly formatted error message for bad request" in {
-      HttpRequest(
-        POST,
-        "/data/table" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, DataExamples.malformedTable)
+      HttpRequest(POST, "/data/table")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.malformedTable)
       ) ~>
         sealRoute(testRoute) ~>
         check {

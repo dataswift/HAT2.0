@@ -30,6 +30,9 @@ trait Thing extends ThingsService with AbstractEntity {
             getAllApi ~
             linkToPerson ~
             linkToThing ~
+            linkToEvent ~
+            linkToOrganisation ~
+            linkToLocation ~
             linkToPropertyStatic ~
             linkToPropertyDynamic ~
             addTypeApi ~

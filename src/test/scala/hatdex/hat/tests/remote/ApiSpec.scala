@@ -7,7 +7,7 @@
  * or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
  */
 
-package hatdex.hat.api.remote
+package hatdex.hat.tests.remote
 
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.Http
@@ -26,6 +26,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration._
+
+import org.specs2.mutable._
+import org.specs2.runner._
 
 class ApiSpec extends BaseRemoteApiSpec {
   val logger: LoggingAdapter = system.log
@@ -56,6 +59,7 @@ class ApiSpec extends BaseRemoteApiSpec {
         responseFuture.map(_.entity.toString) must contain("Welcome to your Hub of All Things").awaitWithTimeout
       }
     }
+    section("REMOTE")
 
     "Data APIs for table creation" should {
       sequential
@@ -135,6 +139,7 @@ class ApiSpec extends BaseRemoteApiSpec {
         structureWithFieldsFuture.map(_.fields.get) must contain((t: ApiDataField) => t.name must beEqualTo("tableTestField")).atLeastOnce.awaitWithTimeout
       }
     }
+    section("REMOTE")
 
     "Batch Data APIs for table creation" should {
       sequential
@@ -247,6 +252,8 @@ class ApiSpec extends BaseRemoteApiSpec {
         valuesFuture.map(_.length) must beEqualTo(testIterations).awaitFor((testIterations + 1) * interval)
       }
     }
+    section("REMOTE")
   }
+  section("REMOTE")
 }
 

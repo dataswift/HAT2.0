@@ -72,6 +72,25 @@ lazy val codegen = (project in file("codegen")).
     cleanFiles <+= baseDirectory { base => base / "../src/main/scala/hatdex/hat/dal/" }
   )
 
+//slick <<= slickCodeGenTask
+//
+//sourceGenerators in Compile <+= slickCodeGenTask
+//
+//lazy val slick = TaskKey[Seq[File]]("gen-tables")
+//lazy val slickCodeGenTask = (sourceManaged, dependencyClasspath in Compile, runner in Compile, streams) map { (dir, cp, r, s) =>
+//    val main = Project("root", file("."))
+//    val outputDir = (main.base.getAbsoluteFile / "src/main/scala").getPath
+//    val username = "hat20"
+//    val password = "pa55w0rd"
+//    val url = "jdbc:postgresql://localhost/hat20"
+//    val jdbcDriver = "org.postgresql.Driver"
+//    val slickDriver = "slick.driver.PostgresDriver"
+//    val pkg = "hatdex.hat.dal"
+//    toError(r.run("hatdex.hat.dal.CustomizedCodeGenerator", cp.files, Array(outputDir, pkg, slickDriver, jdbcDriver, url, username, password), s.log))
+//    val fname = outputDir + "/" + pkg.replace('.', '/') + "/Tables.scala"
+//    Seq(file(fname))
+//  }
+
 lazy val core = (project in file("."))
   .settings(commonSettings: _*)
   .settings(
@@ -105,7 +124,8 @@ lazy val core = (project in file("."))
   .enablePlugins(SbtTwirl)
   .settings(
     aggregate in update := false,
-    sourceDirectories in(Compile, TwirlKeys.compileTemplates) := (unmanagedSourceDirectories in Compile).value
+    sourceDirectories in(Compile, TwirlKeys.compileTemplates) := (unmanagedSourceDirectories in Compile).value,
+    testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "exclude", "REMOTE")
   )
 
 

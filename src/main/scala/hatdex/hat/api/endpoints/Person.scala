@@ -30,6 +30,8 @@ trait Person extends PeopleService with AbstractEntity {
             linkToPerson ~
             linkToLocation ~
             linkToOrganisation ~
+            linkToThing ~
+            linkToEvent ~
             linkToPropertyStatic ~
             linkToPropertyDynamic ~
             addTypeApi ~

@@ -1,4 +1,4 @@
-package hatdex.hat.api.remote
+package hatdex.hat.tests.remote
 
 import akka.actor.ActorSystem
 import akka.event.LoggingAdapter

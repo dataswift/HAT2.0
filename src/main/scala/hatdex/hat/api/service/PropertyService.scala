@@ -70,9 +70,9 @@ trait PropertyService extends DataService {
            case Failure(e) => throw new RuntimeException("Error while inserting new property")
          }
        case (Some(typeId), None) =>
-         throw new IllegalArgumentException("Property must have an existing Type with ID")
+         Future { throw new IllegalArgumentException("Property must have an existing Type with ID") }
        case (None, _) =>
-         throw new IllegalArgumentException("Property must have an existing Unit of Measurement with ID")
+         Future { throw new IllegalArgumentException("Property must have an existing Unit of Measurement with ID") }
      }
    }
 
