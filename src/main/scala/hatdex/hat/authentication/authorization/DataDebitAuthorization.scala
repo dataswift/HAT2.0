@@ -9,7 +9,10 @@ object DataDebitAuthorization {
   def hasPermissionAccessDataDebit(dataDebit: Option[DataDebitRow])(implicit user: User): Boolean = {
     dataDebit match {
       case Some(debit) =>
-        (debit.recipientId equals user.userId.toString) && debit.enabled && debit.endDate.isBefore(LocalDateTime.now())
+        (debit.recipientId equals user.userId.toString) &&
+          debit.enabled &&
+          debit.endDate.isBefore(LocalDateTime.now()) &&
+          debit.startDate.isAfter(LocalDateTime.now())
       case None =>
         false
     }

@@ -208,7 +208,6 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
           response.status should be equalTo OK
 
           val responseString = responseAs[String]
-
           responseString must contain("event")
           responseString must contain("event record 1")
           responseString must contain("event record 2")

@@ -33,6 +33,10 @@
         <appender-ref ref="CONSOLE"/>
     </logger>
 
+    <logger name="tests" LEVEL="DEBUG">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
     </root>

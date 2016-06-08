@@ -95,7 +95,7 @@ trait BundleService extends DataService {
     val maybeBundle = Try(bundleQuery.run)
     maybeBundle match {
       case Success(bundle) =>
-        // Only one or no contextless bundles
+        // Only one or no contextless bundles matching a given ID
         val contextlessBundle = bundle.headOption.map(_._1)
 
         contextlessBundle map { cBundle =>
@@ -105,7 +105,7 @@ trait BundleService extends DataService {
           }
 
           // TODO: rearrange data as per join fields
-          val dataGroups = Iterable(bundleData)
+          val dataGroups = Seq(bundleData)
 
           ApiBundleContextlessData.fromDbModel(cBundle, dataGroups)
         }

@@ -1,10 +1,11 @@
 package hatdex.hat
 
-import scala.util.{Failure, Success, Try}
+import scala.collection.immutable.HashMap
+import scala.util.{ Failure, Success, Try }
 
 object Utils {
   def flatten[T](xs: Seq[Try[T]]): Try[Seq[T]] = {
-    val (ss: Seq[Success[T]]@unchecked, fs: Seq[Failure[T]]@unchecked) =
+    val (ss: Seq[Success[T]] @unchecked, fs: Seq[Failure[T]] @unchecked) =
       xs.partition(_.isSuccess)
 
     if (fs.isEmpty) Success(ss map (_.get))
@@ -29,4 +30,9 @@ object Utils {
         Failure(e)
     }
   }
+
+  def mergeMap[A, B](ms: Seq[HashMap[A, B]])(f: (B, B) => B): HashMap[A, B] =
+    (HashMap[A, B]() /: (for (m <- ms; kv <- m) yield kv)) { (a, kv) =>
+      a + (if (a.contains(kv._1)) kv._1 -> f(a(kv._1), kv._2) else kv)
+    }
 }

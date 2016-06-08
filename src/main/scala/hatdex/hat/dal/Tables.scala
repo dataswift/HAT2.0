@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{GetResult => GR}
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema = Array(BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessJoin.schema, BundleContextlessTable.schema, BundleContextlessTableSlice.schema, BundleContextlessTableSliceCondition.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema = Array(BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessJoin.schema, BundleContextlessTable.schema, BundleContextlessTableSlice.schema, BundleContextlessTableSliceCondition.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -2066,6 +2066,186 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table PeopleSystemtypecrossref */
   lazy val PeopleSystemtypecrossref = new TableQuery(tag => new PeopleSystemtypecrossref(tag))
+
+  /** Entity class storing rows of table StatsDataDebitClessBundleRecords
+   *  @param recordId Database column record_id SqlType(serial), AutoInc, PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param bundleContextlessId Database column bundle_contextless_id SqlType(int4)
+   *  @param dataDebitOperation Database column data_debit_operation SqlType(int4)
+   *  @param recordCount Database column record_count SqlType(int4), Default(0) */
+  case class StatsDataDebitClessBundleRecordsRow(recordId: Int, dateCreated: org.joda.time.LocalDateTime, bundleContextlessId: Int, dataDebitOperation: Int, recordCount: Int = 0)
+  /** GetResult implicit for fetching StatsDataDebitClessBundleRecordsRow objects using plain SQL queries */
+  implicit def GetResultStatsDataDebitClessBundleRecordsRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[StatsDataDebitClessBundleRecordsRow] = GR{
+    prs => import prs._
+    StatsDataDebitClessBundleRecordsRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int]))
+  }
+  /** Table description of table stats_data_debit_cless_bundle_records. Objects of this class serve as prototypes for rows in queries. */
+  class StatsDataDebitClessBundleRecords(_tableTag: Tag) extends Table[StatsDataDebitClessBundleRecordsRow](_tableTag, Some("hat"), "stats_data_debit_cless_bundle_records") {
+    def * = (recordId, dateCreated, bundleContextlessId, dataDebitOperation, recordCount) <> (StatsDataDebitClessBundleRecordsRow.tupled, StatsDataDebitClessBundleRecordsRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(recordId), Rep.Some(dateCreated), Rep.Some(bundleContextlessId), Rep.Some(dataDebitOperation), Rep.Some(recordCount)).shaped.<>({r=>import r._; _1.map(_=> StatsDataDebitClessBundleRecordsRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column record_id SqlType(serial), AutoInc, PrimaryKey */
+    val recordId: Rep[Int] = column[Int]("record_id", O.AutoInc, O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column bundle_contextless_id SqlType(int4) */
+    val bundleContextlessId: Rep[Int] = column[Int]("bundle_contextless_id")
+    /** Database column data_debit_operation SqlType(int4) */
+    val dataDebitOperation: Rep[Int] = column[Int]("data_debit_operation")
+    /** Database column record_count SqlType(int4), Default(0) */
+    val recordCount: Rep[Int] = column[Int]("record_count", O.Default(0))
+
+    /** Foreign key referencing BundleContextlessTable (database name stats_data_debit_cless_bundle_record_bundle_contextless_id_fkey) */
+    lazy val bundleContextlessTableFk = foreignKey("stats_data_debit_cless_bundle_record_bundle_contextless_id_fkey", bundleContextlessId, BundleContextlessTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing StatsDataDebitOperation (database name stats_data_debit_cless_bundle_records_data_debit_operation_fkey) */
+    lazy val statsDataDebitOperationFk = foreignKey("stats_data_debit_cless_bundle_records_data_debit_operation_fkey", dataDebitOperation, StatsDataDebitOperation)(r => r.recordId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table StatsDataDebitClessBundleRecords */
+  lazy val StatsDataDebitClessBundleRecords = new TableQuery(tag => new StatsDataDebitClessBundleRecords(tag))
+
+  /** Entity class storing rows of table StatsDataDebitDataFieldAccess
+   *  @param recordId Database column record_id SqlType(serial), AutoInc, PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param fieldId Database column field_id SqlType(int4)
+   *  @param dataDebitOperation Database column data_debit_operation SqlType(int4)
+   *  @param valueCount Database column value_count SqlType(int4), Default(0) */
+  case class StatsDataDebitDataFieldAccessRow(recordId: Int, dateCreated: org.joda.time.LocalDateTime, fieldId: Int, dataDebitOperation: Int, valueCount: Int = 0)
+  /** GetResult implicit for fetching StatsDataDebitDataFieldAccessRow objects using plain SQL queries */
+  implicit def GetResultStatsDataDebitDataFieldAccessRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[StatsDataDebitDataFieldAccessRow] = GR{
+    prs => import prs._
+    StatsDataDebitDataFieldAccessRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int]))
+  }
+  /** Table description of table stats_data_debit_data_field_access. Objects of this class serve as prototypes for rows in queries. */
+  class StatsDataDebitDataFieldAccess(_tableTag: Tag) extends Table[StatsDataDebitDataFieldAccessRow](_tableTag, Some("hat"), "stats_data_debit_data_field_access") {
+    def * = (recordId, dateCreated, fieldId, dataDebitOperation, valueCount) <> (StatsDataDebitDataFieldAccessRow.tupled, StatsDataDebitDataFieldAccessRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(recordId), Rep.Some(dateCreated), Rep.Some(fieldId), Rep.Some(dataDebitOperation), Rep.Some(valueCount)).shaped.<>({r=>import r._; _1.map(_=> StatsDataDebitDataFieldAccessRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column record_id SqlType(serial), AutoInc, PrimaryKey */
+    val recordId: Rep[Int] = column[Int]("record_id", O.AutoInc, O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column field_id SqlType(int4) */
+    val fieldId: Rep[Int] = column[Int]("field_id")
+    /** Database column data_debit_operation SqlType(int4) */
+    val dataDebitOperation: Rep[Int] = column[Int]("data_debit_operation")
+    /** Database column value_count SqlType(int4), Default(0) */
+    val valueCount: Rep[Int] = column[Int]("value_count", O.Default(0))
+
+    /** Foreign key referencing DataField (database name stats_data_debit_data_field_access_field_id_fkey) */
+    lazy val dataFieldFk = foreignKey("stats_data_debit_data_field_access_field_id_fkey", fieldId, DataField)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing StatsDataDebitOperation (database name stats_data_debit_data_field_access_data_debit_operation_fkey) */
+    lazy val statsDataDebitOperationFk = foreignKey("stats_data_debit_data_field_access_data_debit_operation_fkey", dataDebitOperation, StatsDataDebitOperation)(r => r.recordId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table StatsDataDebitDataFieldAccess */
+  lazy val StatsDataDebitDataFieldAccess = new TableQuery(tag => new StatsDataDebitDataFieldAccess(tag))
+
+  /** Entity class storing rows of table StatsDataDebitDataTableAccess
+   *  @param recordId Database column record_id SqlType(serial), AutoInc, PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param tableId Database column table_id SqlType(int4)
+   *  @param dataDebitOperation Database column data_debit_operation SqlType(int4)
+   *  @param valueCount Database column value_count SqlType(int4), Default(0) */
+  case class StatsDataDebitDataTableAccessRow(recordId: Int, dateCreated: org.joda.time.LocalDateTime, tableId: Int, dataDebitOperation: Int, valueCount: Int = 0)
+  /** GetResult implicit for fetching StatsDataDebitDataTableAccessRow objects using plain SQL queries */
+  implicit def GetResultStatsDataDebitDataTableAccessRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[StatsDataDebitDataTableAccessRow] = GR{
+    prs => import prs._
+    StatsDataDebitDataTableAccessRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int]))
+  }
+  /** Table description of table stats_data_debit_data_table_access. Objects of this class serve as prototypes for rows in queries. */
+  class StatsDataDebitDataTableAccess(_tableTag: Tag) extends Table[StatsDataDebitDataTableAccessRow](_tableTag, Some("hat"), "stats_data_debit_data_table_access") {
+    def * = (recordId, dateCreated, tableId, dataDebitOperation, valueCount) <> (StatsDataDebitDataTableAccessRow.tupled, StatsDataDebitDataTableAccessRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(recordId), Rep.Some(dateCreated), Rep.Some(tableId), Rep.Some(dataDebitOperation), Rep.Some(valueCount)).shaped.<>({r=>import r._; _1.map(_=> StatsDataDebitDataTableAccessRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column record_id SqlType(serial), AutoInc, PrimaryKey */
+    val recordId: Rep[Int] = column[Int]("record_id", O.AutoInc, O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column table_id SqlType(int4) */
+    val tableId: Rep[Int] = column[Int]("table_id")
+    /** Database column data_debit_operation SqlType(int4) */
+    val dataDebitOperation: Rep[Int] = column[Int]("data_debit_operation")
+    /** Database column value_count SqlType(int4), Default(0) */
+    val valueCount: Rep[Int] = column[Int]("value_count", O.Default(0))
+
+    /** Foreign key referencing DataTable (database name stats_data_debit_data_table_access_table_id_fkey) */
+    lazy val dataTableFk = foreignKey("stats_data_debit_data_table_access_table_id_fkey", tableId, DataTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing StatsDataDebitOperation (database name stats_data_debit_data_table_access_data_debit_operation_fkey) */
+    lazy val statsDataDebitOperationFk = foreignKey("stats_data_debit_data_table_access_data_debit_operation_fkey", dataDebitOperation, StatsDataDebitOperation)(r => r.recordId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table StatsDataDebitDataTableAccess */
+  lazy val StatsDataDebitDataTableAccess = new TableQuery(tag => new StatsDataDebitDataTableAccess(tag))
+
+  /** Entity class storing rows of table StatsDataDebitOperation
+   *  @param recordId Database column record_id SqlType(serial), AutoInc, PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param dataDebit Database column data_debit SqlType(uuid)
+   *  @param hatUser Database column hat_user SqlType(uuid)
+   *  @param operation Database column operation SqlType(varchar) */
+  case class StatsDataDebitOperationRow(recordId: Int, dateCreated: org.joda.time.LocalDateTime, dataDebit: java.util.UUID, hatUser: java.util.UUID, operation: String)
+  /** GetResult implicit for fetching StatsDataDebitOperationRow objects using plain SQL queries */
+  implicit def GetResultStatsDataDebitOperationRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[java.util.UUID], e3: GR[String]): GR[StatsDataDebitOperationRow] = GR{
+    prs => import prs._
+    StatsDataDebitOperationRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[java.util.UUID], <<[java.util.UUID], <<[String]))
+  }
+  /** Table description of table stats_data_debit_operation. Objects of this class serve as prototypes for rows in queries. */
+  class StatsDataDebitOperation(_tableTag: Tag) extends Table[StatsDataDebitOperationRow](_tableTag, Some("hat"), "stats_data_debit_operation") {
+    def * = (recordId, dateCreated, dataDebit, hatUser, operation) <> (StatsDataDebitOperationRow.tupled, StatsDataDebitOperationRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(recordId), Rep.Some(dateCreated), Rep.Some(dataDebit), Rep.Some(hatUser), Rep.Some(operation)).shaped.<>({r=>import r._; _1.map(_=> StatsDataDebitOperationRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column record_id SqlType(serial), AutoInc, PrimaryKey */
+    val recordId: Rep[Int] = column[Int]("record_id", O.AutoInc, O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column data_debit SqlType(uuid) */
+    val dataDebit: Rep[java.util.UUID] = column[java.util.UUID]("data_debit")
+    /** Database column hat_user SqlType(uuid) */
+    val hatUser: Rep[java.util.UUID] = column[java.util.UUID]("hat_user")
+    /** Database column operation SqlType(varchar) */
+    val operation: Rep[String] = column[String]("operation")
+
+    /** Foreign key referencing DataDebit (database name stats_data_debit_operation_data_debit_fkey) */
+    lazy val dataDebitFk = foreignKey("stats_data_debit_operation_data_debit_fkey", dataDebit, DataDebit)(r => r.dataDebitKey, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing UserUser (database name stats_data_debit_operation_hat_user_fkey) */
+    lazy val userUserFk = foreignKey("stats_data_debit_operation_hat_user_fkey", hatUser, UserUser)(r => r.userId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table StatsDataDebitOperation */
+  lazy val StatsDataDebitOperation = new TableQuery(tag => new StatsDataDebitOperation(tag))
+
+  /** Entity class storing rows of table StatsDataDebitRecordCount
+   *  @param recordId Database column record_id SqlType(serial), AutoInc, PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param dataDebitOperation Database column data_debit_operation SqlType(int4)
+   *  @param recordCount Database column record_count SqlType(int4), Default(0) */
+  case class StatsDataDebitRecordCountRow(recordId: Int, dateCreated: org.joda.time.LocalDateTime, dataDebitOperation: Int, recordCount: Int = 0)
+  /** GetResult implicit for fetching StatsDataDebitRecordCountRow objects using plain SQL queries */
+  implicit def GetResultStatsDataDebitRecordCountRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[StatsDataDebitRecordCountRow] = GR{
+    prs => import prs._
+    StatsDataDebitRecordCountRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int]))
+  }
+  /** Table description of table stats_data_debit_record_count. Objects of this class serve as prototypes for rows in queries. */
+  class StatsDataDebitRecordCount(_tableTag: Tag) extends Table[StatsDataDebitRecordCountRow](_tableTag, Some("hat"), "stats_data_debit_record_count") {
+    def * = (recordId, dateCreated, dataDebitOperation, recordCount) <> (StatsDataDebitRecordCountRow.tupled, StatsDataDebitRecordCountRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(recordId), Rep.Some(dateCreated), Rep.Some(dataDebitOperation), Rep.Some(recordCount)).shaped.<>({r=>import r._; _1.map(_=> StatsDataDebitRecordCountRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column record_id SqlType(serial), AutoInc, PrimaryKey */
+    val recordId: Rep[Int] = column[Int]("record_id", O.AutoInc, O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column data_debit_operation SqlType(int4) */
+    val dataDebitOperation: Rep[Int] = column[Int]("data_debit_operation")
+    /** Database column record_count SqlType(int4), Default(0) */
+    val recordCount: Rep[Int] = column[Int]("record_count", O.Default(0))
+
+    /** Foreign key referencing StatsDataDebitOperation (database name stats_data_debit_record_count_data_debit_operation_fkey) */
+    lazy val statsDataDebitOperationFk = foreignKey("stats_data_debit_record_count_data_debit_operation_fkey", dataDebitOperation, StatsDataDebitOperation)(r => r.recordId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table StatsDataDebitRecordCount */
+  lazy val StatsDataDebitRecordCount = new TableQuery(tag => new StatsDataDebitRecordCount(tag))
 
   /** Entity class storing rows of table SystemEventlog
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey

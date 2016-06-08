@@ -20,13 +20,13 @@ trait DataService {
 
   val logger: LoggingAdapter
 
-  def getTableValues(tableId: Int)(implicit session: Session): Option[Iterable[ApiDataRecord]] = {
+  def getTableValues(tableId: Int)(implicit session: Session): Option[Seq[ApiDataRecord]] = {
     val valuesQuery = DataValue
     getTableValues(tableId, valuesQuery)
   }
 
   def getTableValues(tableId: Int, valuesQuery: Query[DataValue, DataValueRow, Seq])
-                    (implicit session: Session): Option[Iterable[ApiDataRecord]] = {
+                    (implicit session: Session): Option[Seq[ApiDataRecord]] = {
     val someStructure = getTableStructure(tableId)
 
     someStructure map { structure =>
@@ -61,7 +61,7 @@ trait DataService {
         records(recordId).copy(tables = Some(Seq(mappedValues)))
       }
 
-      dataRecords.toList.sortWith((a, b) =>
+      dataRecords.toSeq.sortWith((a, b) =>
         a.lastUpdated
           .getOrElse(LocalDateTime.now())
           .isAfter(

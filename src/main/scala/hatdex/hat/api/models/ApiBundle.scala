@@ -72,7 +72,7 @@ case class ApiBundleTable(
     name: String,
     table: ApiDataTable,                      // Used to tag which table is bundled
     slices: Option[Seq[ApiBundleTableSlice]],
-    data: Option[Iterable[ApiDataRecord]])     // Data is optional, only used on the outbound
+    data: Option[Seq[ApiDataRecord]])     // Data is optional, only used on the outbound
 
 object ApiBundleTable {
   def fromBundleTable(bundleTable: BundleContextlessTableRow)(table: ApiDataTable) : ApiBundleTable = {
@@ -131,10 +131,10 @@ object ApiBundleContextless {
 case class ApiBundleContextlessData(
     id: Int,
     name: String,
-    dataGroups: Iterable[Map[String, ApiBundleTable]])
+    dataGroups: Seq[Map[String, ApiBundleTable]])
 
 object ApiBundleContextlessData {
-  def fromDbModel(bundleContextless: BundleContextlessRow, dataGroups: Iterable[Map[String, ApiBundleTable]]): ApiBundleContextlessData = {
+  def fromDbModel(bundleContextless: BundleContextlessRow, dataGroups: Seq[Map[String, ApiBundleTable]]): ApiBundleContextlessData = {
     ApiBundleContextlessData(bundleContextless.id, bundleContextless.name, dataGroups)
   }
 }

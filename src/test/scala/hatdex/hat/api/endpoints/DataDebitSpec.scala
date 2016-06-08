@@ -185,6 +185,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
           sealRoute(routes) ~>
           check {
             response.status should be equalTo OK
+            println(s"Data Debit Out: ${responseAs[String]}")
             responseAs[ApiDataDebitOut]
           }
       }

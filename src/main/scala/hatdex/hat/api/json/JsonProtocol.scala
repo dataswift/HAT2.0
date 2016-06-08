@@ -1,6 +1,7 @@
 package hatdex.hat.api.json
 
 import hatdex.hat.api.models._
+import hatdex.hat.api.models.stats.{DataDebitStats, DataTableStats, DataFieldStats}
 import hatdex.hat.authentication.models.{User, AccessToken}
 import spray.json._
 
@@ -82,6 +83,13 @@ trait HatJsonProtocol extends DefaultJsonProtocol with UuidMarshalling with Date
 
   implicit val apiError = jsonFormat2(ErrorMessage.apply)
   implicit val apiSuccess = jsonFormat1(SuccessResponse.apply)
+
+  // Stats
+  implicit val fieldStatsFormat = jsonFormat4(DataFieldStats.apply)
+  // Need to go via "lazyFormat" for recursive types
+  implicit val tableStatsFormat: RootJsonFormat[DataTableStats] = rootFormat(lazyFormat(jsonFormat5(DataTableStats.apply)))
+
+  implicit val dataDebitStatsFormat = jsonFormat4(DataDebitStats.apply)
 }
 
 object JsonProtocol extends HatJsonProtocol

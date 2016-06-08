@@ -174,4 +174,145 @@ object BundleExamples {
       |     ]
       |   }
     """.stripMargin
+
+  val bundleValuesExample =
+    """
+      |{
+      |  "name": "Weekend events at home",
+      |  "lastUpdated": "2016-06-08T11:02:53+01:00",
+      |  "data": [{
+      |    "name": "event record 2",
+      |    "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |    "id": 5,
+      |    "dateCreated": "2016-06-08T11:02:50+01:00",
+      |    "tables": [{
+      |      "name": "event",
+      |      "source": "Facebook",
+      |      "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |      "id": 4,
+      |      "dateCreated": "2016-06-08T11:02:50+01:00",
+      |      "fields": [{
+      |        "name": "name",
+      |        "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |        "id": 12,
+      |        "dateCreated": "2016-06-08T11:02:50+01:00",
+      |        "tableId": 4,
+      |        "values": [{
+      |          "id": 392,
+      |          "dateCreated": "2016-06-08T11:02:50+01:00",
+      |          "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |          "value": "event name 2"
+      |        }]
+      |      }, {
+      |        "name": "location",
+      |        "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |        "id": 13,
+      |        "dateCreated": "2016-06-08T11:02:50+01:00",
+      |        "tableId": 4,
+      |        "values": [{
+      |          "id": 393,
+      |          "dateCreated": "2016-06-08T11:02:50+01:00",
+      |          "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |          "value": "event location 2"
+      |        }]
+      |      }, {
+      |        "name": "startTime",
+      |        "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |        "id": 14,
+      |        "dateCreated": "2016-06-08T11:02:50+01:00",
+      |        "tableId": 4,
+      |        "values": [{
+      |          "id": 394,
+      |          "dateCreated": "2016-06-08T11:02:50+01:00",
+      |          "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |          "value": "event startTime 2"
+      |        }]
+      |      }, {
+      |        "name": "endTime",
+      |        "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |        "id": 15,
+      |        "dateCreated": "2016-06-08T11:02:50+01:00",
+      |        "tableId": 4,
+      |        "values": [{
+      |          "id": 395,
+      |          "dateCreated": "2016-06-08T11:02:50+01:00",
+      |          "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |          "value": "event endTime 2"
+      |        }]
+      |      }]
+      |    }]
+      |  }, {
+      |    "name": "event record 1",
+      |    "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |    "id": 4,
+      |    "dateCreated": "2016-06-08T11:02:50+01:00",
+      |    "tables": [{
+      |      "name": "event",
+      |      "source": "Facebook",
+      |      "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |      "id": 4,
+      |      "dateCreated": "2016-06-08T11:02:50+01:00",
+      |      "fields": [{
+      |        "name": "name",
+      |        "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |        "id": 12,
+      |        "dateCreated": "2016-06-08T11:02:50+01:00",
+      |        "tableId": 4,
+      |        "values": [{
+      |          "id": 388,
+      |          "dateCreated": "2016-06-08T11:02:50+01:00",
+      |          "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |          "value": "event name 1"
+      |        }]
+      |      }, {
+      |        "name": "location",
+      |        "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |        "id": 13,
+      |        "dateCreated": "2016-06-08T11:02:50+01:00",
+      |        "tableId": 4,
+      |        "values": [{
+      |          "id": 389,
+      |          "dateCreated": "2016-06-08T11:02:50+01:00",
+      |          "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |          "value": "event location 1"
+      |        }]
+      |      }, {
+      |        "name": "startTime",
+      |        "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |        "id": 14,
+      |        "dateCreated": "2016-06-08T11:02:50+01:00",
+      |        "tableId": 4,
+      |        "values": [{
+      |          "id": 390,
+      |          "dateCreated": "2016-06-08T11:02:50+01:00",
+      |          "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |          "value": "event startTime 1"
+      |        }]
+      |      }, {
+      |        "name": "endTime",
+      |        "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |        "id": 15,
+      |        "dateCreated": "2016-06-08T11:02:50+01:00",
+      |        "tableId": 4,
+      |        "values": [{
+      |          "id": 391,
+      |          "dateCreated": "2016-06-08T11:02:50+01:00",
+      |          "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |          "value": "event endTime 1"
+      |        }]
+      |      }]
+      |    }]
+      |  }],
+      |  "id": 15,
+      |  "dateCreated": "2016-06-08T11:02:53+01:00",
+      |  "table": {
+      |    "name": "event",
+      |    "source": "Facebook",
+      |    "lastUpdated": "2016-06-08T11:02:50+01:00",
+      |    "id": 4,
+      |    "dateCreated": "2016-06-08T11:02:50+01:00"
+      |  }
+      |}
+      |
+    """.stripMargin
 }
