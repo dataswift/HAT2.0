@@ -397,7 +397,7 @@ trait DataService {
        """.as[(DataTableRow, Option[Int])].list
   }
 
-  private def getStructureFields(structure: ApiDataTable): Set[Int] = {
+  protected[api] def getStructureFields(structure: ApiDataTable): Set[Int] = {
     val fieldSet = structure.fields match {
       case Some(fields) =>
         fields.flatMap(_.id).toSet

@@ -1,5 +1,7 @@
 package hatdex.hat.authentication.authorization
 
+import org.joda.time.LocalDateTime
+
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.Tables.DataDebitRow
 
@@ -7,7 +9,7 @@ object DataDebitAuthorization {
   def hasPermissionAccessDataDebit(dataDebit: Option[DataDebitRow])(implicit user: User): Boolean = {
     dataDebit match {
       case Some(debit) =>
-        (debit.recipientId equals user.userId.toString) && debit.enabled
+        (debit.recipientId equals user.userId.toString) && debit.enabled && debit.endDate.isBefore(LocalDateTime.now())
       case None =>
         false
     }
