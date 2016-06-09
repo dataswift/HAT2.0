@@ -6,7 +6,7 @@ object DataDebitExamples {
       |  {
       |    "name": "DD Kitchen electricity on weekend parties",
       |    "startDate": "2015-09-30T10:00:00Z",
-      |    "endDate": "2015-10-30T10:00:00Z",
+      |    "endDate": "2025-10-30T10:00:00Z",
       |    "rolling": false,
       |    "sell": true,
       |    "price": 100.0,
@@ -23,7 +23,7 @@ object DataDebitExamples {
       |  {
       |    "name": "DD Kitchen electricity on weekend parties",
       |    "startDate": "2015-09-30T10:00:00Z",
-      |    "endDate": "2015-10-30T10:00:00Z",
+      |    "endDate": "2025-10-30T10:00:00Z",
       |    "rolling": false,
       |    "sell": true,
       |    "price": 100.0,
@@ -40,7 +40,7 @@ object DataDebitExamples {
       |  {
       |    "name": "DD Person body weight",
       |    "startDate": "2015-09-30T10:00:00Z",
-      |    "endDate": "2015-10-30T10:00:00Z",
+      |    "endDate": "2025-10-30T10:00:00Z",
       |    "rolling": false,
       |    "sell": true,
       |    "price": 100.0,
@@ -66,7 +66,7 @@ object DataDebitExamples {
       |  {
       |    "name": "DD Person body weight",
       |    "startDate": "2015-09-30T10:00:00Z",
-      |    "endDate": "2015-10-30T10:00:00Z",
+      |    "endDate": "2025-10-30T10:00:00Z",
       |    "rolling": false,
       |    "sell": true,
       |    "price": 100.0,
@@ -92,7 +92,7 @@ object DataDebitExamples {
       |  {
       |    "name": "DD Person body weight",
       |    "startDate": "2015-09-30T10:00:00Z",
-      |    "endDate": "2015-10-30T10:00:00Z",
+      |    "endDate": "2025-10-30T10:00:00Z",
       |    "rolling": false,
       |    "sell": true,
       |    "price": 100.0,
@@ -109,7 +109,7 @@ object DataDebitExamples {
       |{
       |  "rolling": false,
       |  "name": "DD Kitchen electricity on weekend parties",
-      |  "endDate": "2015-10-30T10:00:00Z",
+      |  "endDate": "2025-10-30T10:00:00Z",
       |  "lastUpdated": "2016-06-08T13:52:46+01:00",
       |  "price": 100.0,
       |  "key": "2c366edd-5677-48fd-918a-e6705e879747",

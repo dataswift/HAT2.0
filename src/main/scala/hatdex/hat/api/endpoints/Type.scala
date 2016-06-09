@@ -51,6 +51,14 @@ trait Type extends HttpService with HatServiceAuthHandler {
           val typeRow = new SystemTypeRow(0, LocalDateTime.now(), LocalDateTime.now(), systemType.name, systemType.description)
           val typeMaybeInserted = db.run {
             ((SystemType returning SystemType) += typeRow).asTry
+          } flatMap {
+            case Success(typeInserted) => Future { Success(typeInserted) }
+            case Failure(e) =>
+              db.run {
+                SystemType.filter(_.name === typeRow.name).take(1).result
+              } map { types =>
+                Try { types.headOption.get }
+              }
           }
 
           val typeResponse = typeMaybeInserted map {
@@ -119,6 +127,14 @@ trait Type extends HttpService with HatServiceAuthHandler {
         val uomRow = new SystemUnitofmeasurementRow(0, LocalDateTime.now(), LocalDateTime.now(), systemUom.name, systemUom.description, systemUom.symbol)
         val uomMaybeInserted = db.run {
           ((SystemUnitofmeasurement returning SystemUnitofmeasurement) += uomRow).asTry
+        } flatMap {
+          case Success(uomInserted) => Future { Success(uomInserted) }
+          case Failure(e) =>
+            db.run {
+              SystemUnitofmeasurement.filter(_.name === uomRow.name).take(1).result
+            } map { uoms =>
+              Try { uoms.headOption.get }
+            }
         }
 
         val uomResponse = uomMaybeInserted map {

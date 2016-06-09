@@ -89,7 +89,7 @@ trait HatJsonProtocol extends DefaultJsonProtocol with UuidMarshalling with Date
   // Need to go via "lazyFormat" for recursive types
   implicit val tableStatsFormat: RootJsonFormat[DataTableStats] = rootFormat(lazyFormat(jsonFormat5(DataTableStats.apply)))
 
-  implicit val dataDebitStatsFormat = jsonFormat4(DataDebitStats.apply)
+  implicit val dataDebitStatsFormat = jsonFormat6(DataDebitStats.apply)
 }
 
 object JsonProtocol extends HatJsonProtocol

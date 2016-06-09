@@ -17,6 +17,7 @@ import spray.http.{HttpResponse, HttpRequest}
 import spray.routing._
 import spray.routing.directives.{LogEntry, LoggingMagnet}
 import spray.util.LoggingContext
+import org.slf4j.Logger
 
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor
@@ -36,7 +37,7 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
   // in HAT services as well
 
   trait LoggingHttpService {
-    def actorRefFactory = context
+    def actorRefFactory: ActorRefFactory = context
     val logger = apiLogger
   }
 

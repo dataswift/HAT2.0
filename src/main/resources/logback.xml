@@ -16,33 +16,40 @@
         </encoder>
     </appender>
 
+    <appender name="ASYNCFILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE" />
+    </appender>
+
+    <appender name="ASYNCCONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="CONSOLE" />
+    </appender>
+
     <!-- if you want to dump different packages to different files, here's where you do it
             <logger name="com.onuspride" level="DEBUG" additivity="false">
             <appender-ref ref="logFileOutput"/>
         </logger>-->
 
     <logger name="akka" level="INFO">
-        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
     <root level="INFO">
-        <appender-ref ref="FILE"/>
+        <appender-ref ref="ASYNCFILE"/>
     </root>
 
     <logger name="API-Access" LEVEL="INFO">
-        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
     <logger name="tests" LEVEL="DEBUG">
-        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
     <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
     </root>
 
     <logger name="scala.slick.session" LEVEL="INFO">
-        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
 </configuration>

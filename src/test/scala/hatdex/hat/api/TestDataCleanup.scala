@@ -92,10 +92,19 @@ object TestDataCleanup {
     DataTable.delete
   }
 
+  def cleanupStats(implicit session: Session) = {
+    StatsDataDebitClessBundleRecords.delete
+    StatsDataDebitDataFieldAccess.delete
+    StatsDataDebitDataTableAccess.delete
+    StatsDataDebitRecordCount.delete
+    StatsDataDebitOperation.delete
+  }
+
   def cleanupAll(implicit session: Session) = {
     cleanupPropertyCrossrefs
     cleanupEntityCrossrefs
     cleanupEntities
+    cleanupStats
     cleanupDataDebits
     cleanupBundles
     cleanupSystemData

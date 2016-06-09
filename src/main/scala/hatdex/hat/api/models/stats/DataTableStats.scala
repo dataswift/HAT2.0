@@ -3,6 +3,7 @@ package hatdex.hat.api.models.stats
 import java.util.UUID
 
 import hatdex.hat.api.models.ApiDataDebit
+import hatdex.hat.authentication.models.User
 import org.joda.time.LocalDateTime
 
 case class DataTableStats(
@@ -22,5 +23,7 @@ case class DataDebitStats(
   dataDebit: ApiDataDebit,
   operation: String,
   time: LocalDateTime,
-  dataTableStats: Option[Seq[DataTableStats]]
+  user: User,
+  dataTableStats: Option[Seq[DataTableStats]],
+  logEntry: String
 )

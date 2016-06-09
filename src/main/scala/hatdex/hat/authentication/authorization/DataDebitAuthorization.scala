@@ -11,8 +11,8 @@ object DataDebitAuthorization {
       case Some(debit) =>
         (debit.recipientId equals user.userId.toString) &&
           debit.enabled &&
-          debit.endDate.isBefore(LocalDateTime.now()) &&
-          debit.startDate.isAfter(LocalDateTime.now())
+          debit.endDate.isAfter(LocalDateTime.now()) &&
+          debit.startDate.isBefore(LocalDateTime.now())
       case None =>
         false
     }

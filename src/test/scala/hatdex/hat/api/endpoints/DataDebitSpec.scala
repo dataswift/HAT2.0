@@ -2,12 +2,13 @@ package hatdex.hat.api.endpoints
 
 import java.util.UUID
 
+import akka.actor.{ActorSystem, ActorRefFactory}
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.endpoints.jsonExamples.{ BundleExamples, DataDebitExamples }
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
-import hatdex.hat.authentication.HatAuthTestHandler
+import hatdex.hat.authentication.{TestAuthCredentials, HatAuthTestHandler}
 import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
@@ -24,36 +25,17 @@ import spray.json._
 import spray.testkit.Specs2RouteTest
 import spray.httpx.SprayJsonSupport._
 
-class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterAll with DataDebit {
+class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterAll with DataDebit with DataDebitRequiredServices with TestAuthCredentials {
   def actorRefFactory = system
-
   val logger: LoggingAdapter = system.log
-
+  override lazy val testLogger = logger
   import JsonProtocol._
 
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
 
   val apiUser: User = User(UUID.randomUUID(), "alice@gmail.com", Some(BCrypt.hashpw("dr0w55ap", BCrypt.gensalt())), "Test User", "dataDebit")
 
-  val ownerAuthToken = HatAuthTestHandler.validUsers.find(_.role == "owner").map(_.userId).flatMap { ownerId =>
-    HatAuthTestHandler.validAccessTokens.find(_.userId == ownerId).map(_.accessToken)
-  } getOrElse ("")
-  val ownerAuthHeader = RawHeader("X-Auth-Token", ownerAuthToken)
 
-  trait LoggingHttpService {
-    def actorRefFactory = system
-
-    val logger = system.log
-  }
-
-  val bundlesService = new Bundles with LoggingHttpService
-  val bundleContextService = new BundlesContext with LoggingHttpService {
-    val eventsService = new Event with LoggingHttpService
-    val locationsService = new Location with LoggingHttpService
-    val peopleService = new Person with LoggingHttpService
-    val thingsService = new Thing with LoggingHttpService
-    val organisationsService = new Organisation with LoggingHttpService
-  }
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
@@ -67,51 +49,9 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
     }
   }
 
-  object Context {
-    val propertySpec = new PropertySpec()
-    val property = propertySpec.createWeightProperty
-    val dataSpec = new DataSpec()
-    dataSpec.createBasicTables
-    val populatedData = dataSpec.populateDataReusable
-
-    val personSpec = new PersonSpec()
-
-    val newPerson = personSpec.createNewPerson
-    newPerson.id must beSome
-
-    val dataTable = populatedData match {
-      case (dataTable, dataField, record) =>
-        dataTable
-    }
-    val dataField = populatedData match {
-      case (dataTable, dataField, record) =>
-        dataField
-    }
-    val dynamicPropertyLink = ApiPropertyRelationshipDynamic(
-      None, property, None, None, "test property", dataField)
-
-    val propertyLinkId = HttpRequest(POST, s"/person/${newPerson.id.get}/property/dynamic/${property.id.get}")
-      .withHeaders(ownerAuthHeader)
-      .withEntity(HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)) ~>
-      sealRoute(personSpec.routes) ~>
-      check {
-        eventually {
-          response.status should be equalTo Created
-        }
-        responseAs[ApiGenericId]
-      }
-
-    val personValues = HttpRequest(GET, s"/person/${newPerson.id.get}/values")
-      .withHeaders(ownerAuthHeader) ~>
-      sealRoute(personSpec.routes) ~>
-      check {
-        eventually {
-          response.status should be equalTo OK
-          responseAs[String] must contain("testValue1")
-          responseAs[String] must contain("testValue2-1")
-          responseAs[String] must not contain ("testValue3")
-        }
-      }
+  object Context extends DataDebitContextualContext with DataDebitRequiredServices {
+    def actorRefFactory = system
+    val logger: LoggingAdapter = testLogger
   }
 
   class Context extends Scope {
@@ -158,9 +98,9 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
             responseAs[ApiDataDebit]
           }
 
-        HttpRequest(GET, s"/${dataDebit.key.get}/values")
+        HttpRequest(GET, s"/dataDebit/${dataDebit.key.get}/values")
           .withHeaders(ownerAuthHeader) ~>
-          sealRoute(retrieveDataDebitValuesApi) ~>
+          sealRoute(routes) ~>
           check {
             response.status should be equalTo Forbidden
           }
@@ -185,7 +125,6 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
           sealRoute(routes) ~>
           check {
             response.status should be equalTo OK
-            println(s"Data Debit Out: ${responseAs[String]}")
             responseAs[ApiDataDebitOut]
           }
       }
@@ -301,3 +240,77 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
   }
 }
 
+trait DataDebitContext extends Specification with Specs2RouteTest with DataDebit with TestAuthCredentials {
+  import JsonProtocol._
+
+  val propertySpec = new PropertySpec()
+  val property = propertySpec.createWeightProperty
+  val dataSpec = new DataSpec()
+  dataSpec.createBasicTables
+  val populatedData = dataSpec.populateDataReusable
+
+  val personSpec = new PersonSpec()
+
+  val newPerson = personSpec.createNewPerson
+  newPerson.id must beSome
+
+  val dataTable = populatedData match {
+    case (dataTable, dataField, record) =>
+      dataTable
+  }
+  val dataField = populatedData match {
+    case (dataTable, dataField, record) =>
+      dataField
+  }
+}
+
+trait DataDebitContextualContext extends DataDebitContext {
+  import JsonProtocol._
+
+  val dynamicPropertyLink = ApiPropertyRelationshipDynamic(
+    None, property, None, None, "test property", dataField)
+
+  val propertyLinkId = HttpRequest(POST, s"/person/${newPerson.id.get}/property/dynamic/${property.id.get}")
+    .withHeaders(ownerAuthHeader)
+    .withEntity(HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)) ~>
+    sealRoute(personSpec.routes) ~>
+    check {
+      eventually {
+        response.status should be equalTo Created
+      }
+      responseAs[ApiGenericId]
+    }
+
+  val personValues = HttpRequest(GET, s"/person/${newPerson.id.get}/values")
+    .withHeaders(ownerAuthHeader) ~>
+    sealRoute(personSpec.routes) ~>
+    check {
+      eventually {
+        response.status should be equalTo OK
+        responseAs[String] must contain("testValue1")
+        responseAs[String] must contain("testValue2-1")
+        responseAs[String] must not contain ("testValue3")
+      }
+    }
+}
+
+trait DataDebitRequiredServices {
+  def actorRefFactory: ActorRefFactory
+  val logger: LoggingAdapter
+  lazy val testLogger = logger
+  val system: ActorSystem
+
+  trait LoggingHttpService {
+    def actorRefFactory = system
+    lazy val logger = testLogger
+  }
+
+  val bundlesService = new Bundles with LoggingHttpService
+  val bundleContextService = new BundlesContext with LoggingHttpService {
+    val eventsService = new Event with LoggingHttpService
+    val locationsService = new Location with LoggingHttpService
+    val peopleService = new Person with LoggingHttpService
+    val thingsService = new Thing with LoggingHttpService
+    val organisationsService = new Organisation with LoggingHttpService
+  }
+}

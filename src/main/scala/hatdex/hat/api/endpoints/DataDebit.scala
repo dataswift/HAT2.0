@@ -2,6 +2,7 @@ package hatdex.hat.api.endpoints
 
 import java.util.UUID
 
+import akka.actor.{ ActorRefFactory, ActorContext }
 import akka.event.LoggingAdapter
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.json.JsonProtocol
@@ -13,6 +14,7 @@ import hatdex.hat.authentication.models.User
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.util.{ Failure, Success }
 
@@ -22,6 +24,7 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
   val db = DatabaseInfo.db
 
   val logger: LoggingAdapter
+  def actorRefFactory: ActorRefFactory
 
   val routes = {
     pathPrefix("dataDebit") {
@@ -50,7 +53,11 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
                   complete {
                     maybeCreatedDebit match {
                       case Success(createdDebit) =>
-                        recordDataDebitOperation(createdDebit, user, DataDebitOperations.Create(), "Contextless Data Debit created")
+                        val recordResponse = recordDataDebitOperation(createdDebit, user, DataDebitOperations.Create(), "Contextless Data Debit created") recover {
+                          case e =>
+                            logger.error(s"Error while recording data debit operation: ${e.getMessage}")
+                        }
+                        logger.info("Responding for successfully created DD")
                         (Created, createdDebit)
                       case Failure(e) =>
                         (BadRequest, ErrorMessage("Request to create a contextless data debit is malformed", e.getMessage))
@@ -64,7 +71,10 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
                   complete {
                     maybeCreatedDebit match {
                       case Success(createdDebit) =>
-                        recordDataDebitOperation(createdDebit, user, DataDebitOperations.Create(), "Contextual Data Debit created")
+                        val recordResponse = recordDataDebitOperation(createdDebit, user, DataDebitOperations.Create(), "Contextual Data Debit created") recover {
+                          case e =>
+                            logger.error(s"Error while recording data debit operation: ${e.getMessage}")
+                        }
                         (Created, createdDebit)
                       case Failure(e) =>
                         (BadRequest, ErrorMessage("Request to create a contextual data debit is malformed", e.getMessage))
@@ -95,7 +105,10 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
               val result = dataDebit map enableDataDebit
               session.close()
               dataDebit.map { dd =>
-                recordDataDebitOperation(ApiDataDebit.fromDbModel(dd), user, DataDebitOperations.Enable(), "Data Debit enabled")
+                val recordResponse = recordDataDebitOperation(ApiDataDebit.fromDbModel(dd), user, DataDebitOperations.Enable(), "Data Debit enabled") recover {
+                  case e =>
+                    logger.error(s"Error while recording data debit operation: ${e.getMessage}")
+                }
               }
 
               complete {
@@ -128,7 +141,10 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
               session.close()
 
               dataDebit.map { dd =>
-                recordDataDebitOperation(ApiDataDebit.fromDbModel(dd), user, DataDebitOperations.Disable(), "Data Debit disabled")
+                val recordResponse = recordDataDebitOperation(ApiDataDebit.fromDbModel(dd), user, DataDebitOperations.Disable(), "Data Debit disabled") recover {
+                  case e =>
+                    logger.error(s"Error while recording data debit operation: ${e.getMessage}")
+                }
               }
 
               complete {
@@ -159,7 +175,6 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
         }
 
         val apiDataDebit = dataDebit.map(ApiDataDebit.fromDbModel)
-
         authorize(DataDebitAuthorization.hasPermissionAccessDataDebit(dataDebit)) {
           dataDebit match {
             case Some(debit) =>
@@ -170,7 +185,10 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
                     // TODO: Find out why it is necessary to create a new session when working from within DataDebit
                     db.withSession { implicit session =>
                       val values = retrieveDataDebiValues(debit, bundleId)
-                      apiDataDebit.map(dd => recordDataDebitRetrieval(dd, values, user, "Contextless Data Debit Retrieved"))
+                      val recordResponse = apiDataDebit.map(dd => recordDataDebitRetrieval(dd, values, user, "Contextless Data Debit Retrieved") recover {
+                        case e =>
+                          logger.error(s"Error while recording data debit operation: ${e.getMessage}")
+                      })
                       session.close()
                       values
                     }
@@ -179,7 +197,10 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
                   complete {
                     db.withSession { implicit session =>
                       val values = bundleContextService.retrieveDataDebitContextualValues(debit, bundleId)
-                      apiDataDebit.map(dd => recordDataDebitRetrieval(dd, values, user, "Contextual Data Debit Retrieved"))
+                      val recordResponse = apiDataDebit.map(dd => recordDataDebitRetrieval(dd, values, user, "Contextual Data Debit Retrieved") recover {
+                        case e =>
+                          logger.error(s"Error while recording data debit operation: ${e.getMessage}")
+                      })
                       session.close()
                       values
                     }

@@ -1,5 +1,6 @@
 package hatdex.hat.api.endpoints
 
+import akka.actor.{ActorRefFactory, ActorContext}
 import akka.event.LoggingAdapter
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.models._
@@ -23,6 +24,7 @@ import scala.util.{Failure, Success}
 trait Stats extends HttpService with HatServiceAuthHandler with DataService {
 
   val logger: LoggingAdapter
+  def actorRefFactory: ActorRefFactory
 
   val db = DatabaseInfo.db
 

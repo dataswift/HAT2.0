@@ -1,5 +1,6 @@
 package hatdex.hat.api.service
 
+import akka.actor.{ ActorRefFactory, ActorContext }
 import akka.event.{ Logging, LoggingAdapter }
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.models._
@@ -20,17 +21,32 @@ import scala.util.{ Failure, Success }
 
 trait StatsService {
 
+  val logger: LoggingAdapter
+  def actorRefFactory: ActorRefFactory
+
+  val statsActor = actorRefFactory.actorSelection("/user/stats-service-supervisor/hatdex.marketplace.stats-service")
+
   def recordDataDebitOperation(
     dd: ApiDataDebit,
     user: User,
     operationType: DataDebitOperations.DataDebitOperation,
     logEntry: String): Future[Int] = {
+    logger.debug(s"Record Data Debit operation: ${dd.key}, ${operationType.toString} by ${user.name}")
+
     val ddOperation = StatsDataDebitOperationRow(0, LocalDateTime.now(), dd.key.get, user.userId, operationType.toString)
+    val ddUser = user.copy(pass = None)
+
     DatabaseInfo.db.run {
-      StatsDataDebitOperation += ddOperation
-    } andThen {
-      case _ =>
-        DataDebitStats(dd, operationType.toString, ddOperation.dateCreated, None)
+      (StatsDataDebitOperation returning StatsDataDebitOperation.map(_.recordId)) += ddOperation
+    } map {
+      case recordId =>
+        val stats = DataDebitStats(dd, operationType.toString, ddOperation.dateCreated, ddUser, None, logEntry)
+        logger.debug(s"Data Debit operation recorded, sending stats to actor $stats")
+        statsActor ! stats
+        recordId
+    } recover { case e =>
+      logger.error(s"Error while saving data debit statistics: ${e.getMessage}")
+      throw e
     }
   }
 
@@ -40,11 +56,12 @@ trait StatsService {
     user: User,
     logEntry: String): Future[Unit] = {
     val ddOperation = StatsDataDebitOperationRow(0, LocalDateTime.now(), dd.key.get, user.userId, DataDebitOperations.GetValues().toString)
+    val ddUser = user.copy(pass = None)
     val fOperation = DatabaseInfo.db.run {
       (StatsDataDebitOperation returning StatsDataDebitOperation) += ddOperation
     } andThen {
       case _ =>
-        DataDebitStats(dd, ddOperation.operation, ddOperation.dateCreated, None)
+        statsActor ! DataDebitStats(dd, ddOperation.operation, ddOperation.dateCreated, ddUser, None, logEntry)
     }
     fOperation.map { o =>
       ()
@@ -57,13 +74,14 @@ trait StatsService {
     user: User,
     logEntry: String): Future[Unit] = {
     val ddOperation = StatsDataDebitOperationRow(0, LocalDateTime.now(), dd.key.get, user.userId, DataDebitOperations.GetValues().toString)
+    val ddUser = user.copy(pass = None)
     values.bundleContextless.map { bundle =>
       val (totalBundleRecords, bundleTableStats, tableValueStats, fieldValueStats) = getBundleStats(bundle)
       storeBundleStats(ddOperation, totalBundleRecords, bundleTableStats, tableValueStats, fieldValueStats)
         .andThen {
           case _ =>
             val stats = convertBundleStats(tableValueStats, fieldValueStats)
-            DataDebitStats(dd, ddOperation.operation, ddOperation.dateCreated, Some(stats))
+            statsActor ! DataDebitStats(dd, ddOperation.operation, ddOperation.dateCreated, ddUser, Some(stats), logEntry)
         }
     } getOrElse {
       // Not contextless bundle info, do nothing
