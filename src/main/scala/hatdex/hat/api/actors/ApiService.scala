@@ -1,23 +1,13 @@
-/*
- * Copyright (c) 2015.
- *
- * This work is licensed under the
- * Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.
- * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-nd/4.0/
- * or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
- */
-
-package hatdex.hat.api
+package hatdex.hat.api.actors
 
 import akka.actor.{ActorLogging, ActorRefFactory}
-import akka.event.{Logging, LoggingAdapter}
+import akka.event.Logging
 import hatdex.hat.api.endpoints._
 import hatdex.hat.api.service._
-import spray.http.{HttpResponse, HttpRequest}
+import hatdex.hat.api.{Api, Cors}
+import spray.http.{HttpRequest, HttpResponse}
 import spray.routing._
-import spray.routing.directives.{LogEntry, LoggingMagnet}
-import spray.util.LoggingContext
-import org.slf4j.Logger
+import spray.routing.directives.LogEntry
 
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor

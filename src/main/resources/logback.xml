@@ -41,6 +41,10 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
+    <logger name="Stats" LEVEL="INFO">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
     <logger name="tests" LEVEL="DEBUG">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>

@@ -7,6 +7,7 @@ import akka.io.Tcp.Bound
 import akka.pattern.{ BackoffSupervisor, Backoff }
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
+import hatdex.hat.api.actors.{StatsReporter, ApiService}
 import spray.can.Http
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -29,6 +30,18 @@ object Boot extends App {
       ))
 
   system.actorOf(supervisor, name = "dalapi-service-supervisor")
+
+  val statsReporterSuerpvisor = BackoffSupervisor.props(
+    Backoff.onStop(
+      StatsReporter.props,
+      childName = "hatdex.marketplace.stats-service",
+      minBackoff = 3.seconds,
+      maxBackoff = 30.seconds,
+      randomFactor = 0.2 // adds 20% "noise" to vary the intervals slightly
+    )
+  )
+
+  system.actorOf(statsReporterSuerpvisor, name = "stats-service-supervisor")
 
   implicit val timeout = Timeout(5.seconds)
 
