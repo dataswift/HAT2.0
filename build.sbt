@@ -16,7 +16,7 @@ scalacOptions in (Compile, doc) ++= Seq("-unchecked", /*"-deprecation", */ "-imp
 
 logLevel := Level.Info
 
-val akkaV = "2.4.2"
+val akkaV = "2.4.7"
 val sprayV = "1.3.3"
 val specs2V = "3.3"
 val slf4jV = "1.7.18"

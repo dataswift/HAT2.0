@@ -1,11 +1,12 @@
 package hatdex.hat.api.endpoints
 
+import akka.actor.ActorRefFactory
 import akka.event.LoggingAdapter
 import hatdex.hat.Utils
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models.{ ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _ }
-import hatdex.hat.api.service.DataService
+import hatdex.hat.api.service.{ StatsService, DataService }
 import hatdex.hat.authentication.HatServiceAuthHandler
 import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.User
@@ -21,11 +22,12 @@ import scala.collection.mutable.Set
 import scala.util.{ Failure, Success, Try }
 
 // this trait defines our service behavior independently from the service actor
-trait Data extends HttpService with DataService with HatServiceAuthHandler {
+trait Data extends HttpService with DataService with StatsService with HatServiceAuthHandler {
   //  import hatdex.hat.authentication.HatServiceAuthHandler._
 
   val logger: LoggingAdapter
   val db = DatabaseInfo.db
+  def actorRefFactory: ActorRefFactory
 
   val routes = {
     pathPrefix("data") {
@@ -282,8 +284,11 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
 
               complete {
                 maybeRecordValues match {
-                  case Success(recordValues) => (Created, recordValues)
-                  case Failure(e)            => (BadRequest, ErrorMessage("Error creating Record with Values", e.getMessage))
+                  case Success(recordValues) =>
+                    recordDataInbound(Seq(recordValues), user, "Single Data Record Values set posted")
+                    (Created, recordValues)
+                  case Failure(e) =>
+                    (BadRequest, ErrorMessage("Error creating Record with Values", e.getMessage))
                 }
               }
             }
@@ -296,8 +301,11 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
 
                 complete {
                   maybeList match {
-                    case Success(list) => (Created, list)
-                    case Failure(e)    => (BadRequest, ErrorMessage("Error creating a list of Records with Values", e.getMessage))
+                    case Success(list) =>
+                      recordDataInbound(list, user, "Single Data Record Values set posted")
+                      (Created, list)
+                    case Failure(e) =>
+                      (BadRequest, ErrorMessage("Error creating a list of Records with Values", e.getMessage))
                   }
                 }
               }
@@ -397,8 +405,11 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
               session.close()
               complete {
                 apiValues match {
-                  case Success(response) => (Created, response)
-                  case Failure(e)        => (BadRequest, ErrorMessage("Error storing Record values", e.getMessage))
+                  case Success(response) =>
+                    recordDataValuesInbound(response, user, s"Data Values posted for record $recordId")
+                    (Created, response)
+                  case Failure(e) =>
+                    (BadRequest, ErrorMessage("Error storing Record values", e.getMessage))
                 }
               }
             }
@@ -423,8 +434,11 @@ trait Data extends HttpService with DataService with HatServiceAuthHandler {
               complete {
                 session.close()
                 inserted match {
-                  case Success(insertedValue) => (Created, insertedValue)
-                  case Failure(e)             => (BadRequest, ErrorMessage("Error storing value", e.getMessage))
+                  case Success(insertedValue) =>
+                    recordDataValuesInbound(Seq(insertedValue), user, s"Single data value posted")
+                    (Created, insertedValue)
+                  case Failure(e) =>
+                    (BadRequest, ErrorMessage("Error storing value", e.getMessage))
                 }
 
               }

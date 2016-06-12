@@ -19,11 +19,28 @@ case class DataFieldStats(
   tableSource: String,
   valueCount: Int)
 
+sealed abstract class DataStats(
+  statsType: String,
+  time: LocalDateTime,
+  dataTableStats: Option[Seq[DataTableStats]],
+  logEntry: String)
+
 case class DataDebitStats(
   dataDebit: ApiDataDebit,
   operation: String,
   time: LocalDateTime,
   user: User,
   dataTableStats: Option[Seq[DataTableStats]],
-  logEntry: String
-)
+  logEntry: String) extends DataStats("datadebit", time, dataTableStats, logEntry)
+
+case class DataCreditStats(
+  operation: String,
+  time: LocalDateTime,
+  user: User,
+  dataTableStats: Option[Seq[DataTableStats]],
+  logEntry: String) extends DataStats("datacredit", time, dataTableStats, logEntry)
+
+case class DataStorageStats(
+  time: LocalDateTime,
+  dataTableStats: Seq[DataTableStats],
+  logEntry: String) extends DataStats("storage", time, Some(dataTableStats), logEntry)

@@ -1,8 +1,8 @@
 package hatdex.hat.api.json
 
 import hatdex.hat.api.models._
-import hatdex.hat.api.models.stats.{DataDebitStats, DataTableStats, DataFieldStats}
-import hatdex.hat.authentication.models.{User, AccessToken}
+import hatdex.hat.api.models.stats._
+import hatdex.hat.authentication.models.{ User, AccessToken }
 import spray.json._
 
 trait HatJsonProtocol extends DefaultJsonProtocol with UuidMarshalling with DateTimeMarshalling with ComparisonOperatorMarshalling {
@@ -24,7 +24,6 @@ trait HatJsonProtocol extends DefaultJsonProtocol with UuidMarshalling with Date
 
   // Events
   implicit val apiEvent: RootJsonFormat[ApiEvent] = rootFormat(lazyFormat(jsonFormat9(ApiEvent.apply)))
-
 
   // Locations
   implicit val apiLocation: RootJsonFormat[ApiLocation] = rootFormat(lazyFormat(jsonFormat6(ApiLocation.apply)))
@@ -90,6 +89,34 @@ trait HatJsonProtocol extends DefaultJsonProtocol with UuidMarshalling with Date
   implicit val tableStatsFormat: RootJsonFormat[DataTableStats] = rootFormat(lazyFormat(jsonFormat5(DataTableStats.apply)))
 
   implicit val dataDebitStatsFormat = jsonFormat6(DataDebitStats.apply)
+  implicit val dataCreditStatsFormat = jsonFormat5(DataCreditStats.apply)
+  implicit val dataStorageStatsFormat = jsonFormat3(DataStorageStats.apply)
+
+  // serialising/deserialising between json and sealed case class
+  implicit object dataStatsFormat extends JsonFormat[DataStats] {
+    def write(obj: DataStats) = {
+      obj match {
+        case dd: DataDebitStats => dd.toJson
+        case dc: DataCreditStats => dc.toJson
+        case ds: DataStorageStats => ds.toJson
+      }
+    }
+
+    def read(json: JsValue): DataStats = {
+      json.asJsObject.getFields("operation") match {
+        case Seq(JsString("datadebit")) =>
+          json.convertTo[DataDebitStats]
+        case Seq(JsString("datacredit")) =>
+          json.convertTo[DataCreditStats]
+        case _ =>
+          error(json)
+      }
+    }
+
+    def error(v: Any): DataStats = {
+      deserializationError(f"'$v' is not a valid statistics object")
+    }
+  }
 }
 
 object JsonProtocol extends HatJsonProtocol

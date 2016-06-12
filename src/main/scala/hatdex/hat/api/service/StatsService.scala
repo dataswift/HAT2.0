@@ -4,7 +4,7 @@ import akka.actor.{ ActorRefFactory, ActorContext }
 import akka.event.{ Logging, LoggingAdapter }
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.models._
-import hatdex.hat.api.models.stats.{ DataDebitStats, DataTableStats, DataFieldStats }
+import hatdex.hat.api.models.stats.{ DataCreditStats, DataDebitStats, DataTableStats, DataFieldStats }
 
 import scala.collection.immutable.HashMap
 
@@ -44,9 +44,10 @@ trait StatsService {
         logger.debug(s"Data Debit operation recorded, sending stats to actor $stats")
         statsActor ! stats
         recordId
-    } recover { case e =>
-      logger.error(s"Error while saving data debit statistics: ${e.getMessage}")
-      throw e
+    } recover {
+      case e =>
+        logger.error(s"Error while saving data debit statistics: ${e.getMessage}")
+        throw e
     }
   }
 
@@ -86,6 +87,46 @@ trait StatsService {
     } getOrElse {
       // Not contextless bundle info, do nothing
       Future {}
+    }
+  }
+
+  def recordDataInbound(records: Seq[ApiRecordValues], user: User, logEntry: String): Future[Unit] = {
+    val userInfo = user.copy(pass = None)
+    val allFields = records.flatMap(_.values.flatMap(_.field))
+    getFieldsetStats(allFields) map { stats =>
+      statsActor ! DataCreditStats("Data Record Inbound", LocalDateTime.now(), userInfo, Some(stats), logEntry)
+    }
+  }
+
+  def recordDataValuesInbound(values: Seq[ApiDataValue], user: User, logEntry: String): Future[Unit] = {
+    val userInfo = user.copy(pass = None)
+    val allFields = values.flatMap(_.field)
+    getFieldsetStats(allFields) map { stats =>
+      statsActor ! DataCreditStats("Data Values Inbound", LocalDateTime.now(), userInfo, Some(stats), logEntry)
+    }
+  }
+
+  private def getFieldsetStats(fields: Seq[ApiDataField]): Future[Seq[DataTableStats]] = {
+    val fieldCounts = fields.groupBy(f => f.copy(id = f.id, tableId = f.tableId, name = f.name, values = None))
+      .mapValues(_.size)
+
+    val tablesOfInterest = fieldCounts.keySet.map(_.tableId.getOrElse(0))
+    DatabaseInfo.db.run {
+      // Find tables of interest
+      DataTable.filter(_.id inSet tablesOfInterest).result
+    } map { tablesFetched =>
+      tablesFetched map { dataTable =>
+        // For each table, take the fields that are part of the table
+        val tableFields = fieldCounts.filter(_._1.tableId.contains(dataTable.id))
+          .map {
+            case (field, count) =>
+              // Construct field stats
+              DataFieldStats(field.name, dataTable.name, dataTable.sourceName, count)
+          }
+          .toSeq
+        // Construct table stats from a sequence of field stats
+        DataTableStats(dataTable.name, dataTable.sourceName, tableFields, None, tableFields.map(_.valueCount).sum)
+      }
     }
   }
 
