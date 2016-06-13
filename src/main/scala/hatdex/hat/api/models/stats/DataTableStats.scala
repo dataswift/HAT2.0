@@ -26,6 +26,7 @@ sealed abstract class DataStats(
   logEntry: String)
 
 case class DataDebitStats(
+  statsType: String = "datadebit",
   dataDebit: ApiDataDebit,
   operation: String,
   time: LocalDateTime,
@@ -34,6 +35,7 @@ case class DataDebitStats(
   logEntry: String) extends DataStats("datadebit", time, dataTableStats, logEntry)
 
 case class DataCreditStats(
+  statsType: String = "datacredit",
   operation: String,
   time: LocalDateTime,
   user: User,
@@ -41,6 +43,7 @@ case class DataCreditStats(
   logEntry: String) extends DataStats("datacredit", time, dataTableStats, logEntry)
 
 case class DataStorageStats(
+  statsType: String = "storage",
   time: LocalDateTime,
   dataTableStats: Seq[DataTableStats],
   logEntry: String) extends DataStats("storage", time, Some(dataTableStats), logEntry)

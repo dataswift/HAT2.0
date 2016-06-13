@@ -159,7 +159,10 @@ class StatsReporter extends Actor with ActorLogging with JwtTokenHandler {
     }
 
     dataTableStats map { stats =>
-      DataStorageStats(LocalDateTime.now(), stats.toSeq, "Data Storage Statistics")
+      DataStorageStats("storage", LocalDateTime.now(), stats.toSeq, "Data Storage Statistics")
+    } recover { case e =>
+      logger.warning(s"Error occurred while collecting storage statistics: ${e.getMessage}")
+        throw e
     }
   }
 }

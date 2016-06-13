@@ -121,8 +121,19 @@ trait BundleService extends DataService {
    */
   protected[api] def storeBundleTable(bundleTable: ApiBundleTable)(implicit session: Session): Try[ApiBundleTable] = {
     // Require the bundle to be based on a data table that already exists
-    bundleTable.table.id match {
-      case Some(tableId) =>
+    val maybeTableId = bundleTable.table.id map { tableId =>
+      Success(tableId)
+    } getOrElse {
+      Try {
+        DataTable.filter(_.name === bundleTable.table.name)
+          .filter(_.sourceName === bundleTable.table.source)
+          .map(_.id)
+          .first
+          .run
+      }
+    }
+    maybeTableId match {
+      case Success(tableId) =>
         val bundleTableRow = new BundleContextlessTableRow(0, LocalDateTime.now(), LocalDateTime.now(), bundleTable.name, tableId)
 
         // Using Try to handle errors
@@ -149,8 +160,8 @@ trait BundleService extends DataService {
           }
 
         }
-      case None =>
-        Failure(new IllegalArgumentException("Table provided for bundling must contain ID"))
+      case Failure(e) =>
+        Failure(new IllegalArgumentException("Table provided for bundling must exit"))
     }
 
   }

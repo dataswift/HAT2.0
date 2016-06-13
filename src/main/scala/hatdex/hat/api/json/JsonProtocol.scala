@@ -88,9 +88,9 @@ trait HatJsonProtocol extends DefaultJsonProtocol with UuidMarshalling with Date
   // Need to go via "lazyFormat" for recursive types
   implicit val tableStatsFormat: RootJsonFormat[DataTableStats] = rootFormat(lazyFormat(jsonFormat5(DataTableStats.apply)))
 
-  implicit val dataDebitStatsFormat = jsonFormat6(DataDebitStats.apply)
-  implicit val dataCreditStatsFormat = jsonFormat5(DataCreditStats.apply)
-  implicit val dataStorageStatsFormat = jsonFormat3(DataStorageStats.apply)
+  implicit val dataDebitStatsFormat = jsonFormat7(DataDebitStats.apply)
+  implicit val dataCreditStatsFormat = jsonFormat6(DataCreditStats.apply)
+  implicit val dataStorageStatsFormat = jsonFormat4(DataStorageStats.apply)
 
   // serialising/deserialising between json and sealed case class
   implicit object dataStatsFormat extends JsonFormat[DataStats] {
@@ -108,6 +108,8 @@ trait HatJsonProtocol extends DefaultJsonProtocol with UuidMarshalling with Date
           json.convertTo[DataDebitStats]
         case Seq(JsString("datacredit")) =>
           json.convertTo[DataCreditStats]
+        case Seq(JsString("storage")) =>
+          json.convertTo[DataStorageStats]
         case _ =>
           error(json)
       }

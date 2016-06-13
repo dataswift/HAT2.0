@@ -40,7 +40,7 @@ trait StatsService {
       (StatsDataDebitOperation returning StatsDataDebitOperation.map(_.recordId)) += ddOperation
     } map {
       case recordId =>
-        val stats = DataDebitStats(dd, operationType.toString, ddOperation.dateCreated, ddUser, None, logEntry)
+        val stats = DataDebitStats("datadebit", dd, operationType.toString, ddOperation.dateCreated, ddUser, None, logEntry)
         logger.debug(s"Data Debit operation recorded, sending stats to actor $stats")
         statsActor ! stats
         recordId
@@ -62,7 +62,7 @@ trait StatsService {
       (StatsDataDebitOperation returning StatsDataDebitOperation) += ddOperation
     } andThen {
       case _ =>
-        statsActor ! DataDebitStats(dd, ddOperation.operation, ddOperation.dateCreated, ddUser, None, logEntry)
+        statsActor ! DataDebitStats("datadebit", dd, ddOperation.operation, ddOperation.dateCreated, ddUser, None, logEntry)
     }
     fOperation.map { o =>
       ()
@@ -82,7 +82,7 @@ trait StatsService {
         .andThen {
           case _ =>
             val stats = convertBundleStats(tableValueStats, fieldValueStats)
-            statsActor ! DataDebitStats(dd, ddOperation.operation, ddOperation.dateCreated, ddUser, Some(stats), logEntry)
+            statsActor ! DataDebitStats("datadebit", dd, ddOperation.operation, ddOperation.dateCreated, ddUser, Some(stats), logEntry)
         }
     } getOrElse {
       // Not contextless bundle info, do nothing
@@ -94,7 +94,7 @@ trait StatsService {
     val userInfo = user.copy(pass = None)
     val allFields = records.flatMap(_.values.flatMap(_.field))
     getFieldsetStats(allFields) map { stats =>
-      statsActor ! DataCreditStats("Data Record Inbound", LocalDateTime.now(), userInfo, Some(stats), logEntry)
+      statsActor ! DataCreditStats("datacredit", "Data Record Inbound", LocalDateTime.now(), userInfo, Some(stats), logEntry)
     }
   }
 
@@ -102,7 +102,7 @@ trait StatsService {
     val userInfo = user.copy(pass = None)
     val allFields = values.flatMap(_.field)
     getFieldsetStats(allFields) map { stats =>
-      statsActor ! DataCreditStats("Data Values Inbound", LocalDateTime.now(), userInfo, Some(stats), logEntry)
+      statsActor ! DataCreditStats("datacredit", "Data Values Inbound", LocalDateTime.now(), userInfo, Some(stats), logEntry)
     }
   }
 
