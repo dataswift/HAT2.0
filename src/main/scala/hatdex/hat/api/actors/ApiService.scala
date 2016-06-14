@@ -1,6 +1,6 @@
 package hatdex.hat.api.actors
 
-import akka.actor.{ActorLogging, ActorRefFactory}
+import akka.actor._
 import akka.event.Logging
 import hatdex.hat.api.endpoints._
 import hatdex.hat.api.service._
@@ -13,6 +13,14 @@ import spray.routing.directives.LogEntry
 // we want to be able to test it independently, without having to spin up an actor
 class ApiService extends HttpServiceActor with ActorLogging with Cors {
   implicit val apiLogger = Logging.getLogger(context.system, "API-Access")
+
+  val smtpConfig = SmtpConfig(conf.getBoolean("mail.smtp.tls"),
+    conf.getBoolean("mail.smtp.ssl"),
+    conf.getInt("mail.smtp.port"),
+    conf.getString("mail.smtp.host"),
+    conf.getString("mail.smtp.username"),
+    conf.getString("mail.smtp.password"))
+  val apiEmailService = new EmailService(context, smtpConfig)
 
   // logs request method, uri and response status at debug level
   def requestMethodAndResponseStatusAsInfo(req: HttpRequest): Any => Option[LogEntry] = {
@@ -35,7 +43,9 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
     implicit def actorRefFactory: ActorRefFactory = context
 
     // Initialise all the service the actor handles
-    val helloService = new Hello with LoggingHttpService
+    val helloService = new Hello with LoggingHttpService {
+      val emailService = apiEmailService
+    }
     val apiDataService = new Data with LoggingHttpService
     val apiBundleService = new Bundles with LoggingHttpService
     val apiPropertyService = new Property with LoggingHttpService

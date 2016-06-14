@@ -106,7 +106,8 @@ lazy val core = (project in file("."))
       "io.spray" %% "spray-json" % "1.3.2",
       "org.mindrot" % "jbcrypt" % "0.3m",
       "com.nimbusds" % "nimbus-jose-jwt" % jwtV,
-      "org.bouncycastle" % "bcprov-jdk16" % "1.46"
+      "org.bouncycastle" % "bcprov-jdk16" % "1.46",
+      "org.apache.commons" % "commons-email" % "1.4"
     ),
     gentables := {
       val main = Project("root", file("."))

@@ -119,8 +119,14 @@ trait JwtTokenHandler {
     val verifier: JWSVerifier = new RSASSAVerifier(publicKey)
     val claimSet = signedJWT.getJWTClaimsSet
     val signed = signedJWT.verify(verifier)
-    val resourceMatches = Option(claimSet.getClaim("resource")).exists(r => r == resource)
+    val resourceMatches = Option(claimSet.getClaim("resource")).contains(resource)
     signed && resourceMatches
+  }
+
+  def verifyAccessScope(token: String, accessScope: String): Boolean = {
+    val signedJWT = SignedJWT.parse(token)
+    val claimSet = signedJWT.getJWTClaimsSet
+    Option(claimSet.getClaim("accessScope")).contains(accessScope)
   }
 
   def getTokenAccessScope(token: String): Option[String] = {

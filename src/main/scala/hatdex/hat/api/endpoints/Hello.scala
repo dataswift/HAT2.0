@@ -3,6 +3,7 @@ package hatdex.hat.api.endpoints
 import akka.event.LoggingAdapter
 import com.typesafe.config.ConfigFactory
 import hatdex.hat.api.DatabaseInfo
+import hatdex.hat.api.actors.{ EmailMessage, EmailService }
 import hatdex.hat.api.models.HatService
 import hatdex.hat.authentication.HatAuthHandler.UserPassHandler
 import hatdex.hat.authentication.authorization.UserAuthorization
@@ -20,10 +21,22 @@ import hatdex.hat.dal.Tables.UserUser
 import scala.util.{ Failure, Success, Try }
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler {
-  val routes = home ~ authHat ~ logout ~ getPublicKey ~ assets ~ passwordChange
+  val routes = {
+    home ~
+      authHat ~
+      logout ~
+      getPublicKey ~
+      assets ~
+      passwordChange ~
+      resetPassword ~
+      resetPasswordConfirm
+  }
+
   val logger: LoggingAdapter
+  val emailService: EmailService
 
   def home = path("") {
     get {
@@ -75,13 +88,13 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
               }
             case Success(_) =>
               deleteCookie("X-Auth-Token") {
-                complete("Invalid Credentials!")
+                complete(hatdex.hat.views.html.simpleMessage("Invalid Credentials!"))
               }
             case Failure(e) =>
               deleteCookie("X-Auth-Token") {
                 complete {
                   logger.error(s"Error while authenticating: ${e.getMessage}")
-                  "Error while authenticating"
+                  hatdex.hat.views.html.simpleMessage("Error while authenticating")
                 }
               }
           }
@@ -148,16 +161,99 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
               hatdex.hat.views.html.passwordChange(user, Seq(), false)
             }
           } ~ post {
-              formField('oldPassword.as[String], 'newPassword.as[String], 'confirmPassword.as[String]) {
-                case (oldPassword, newPassword, confirmPassword) =>
+            formField('oldPassword.as[String], 'newPassword.as[String], 'confirmPassword.as[String]) {
+              case (oldPassword, newPassword, confirmPassword) =>
+                if (newPassword != confirmPassword) {
+                  complete {
+                    hatdex.hat.views.html.passwordChange(user, Seq("Passwords do not match"))
+                  }
+                }
+                else if (!BCrypt.checkpw(oldPassword, user.pass.getOrElse(""))) {
+                  complete {
+                    hatdex.hat.views.html.passwordChange(user, Seq("Old password incorrect"))
+                  }
+                }
+                else {
+                  val passwordHash = BCrypt.hashpw(newPassword, BCrypt.gensalt())
+                  val tryPasswordChange = DatabaseInfo.db.run {
+                    UserUser.filter(_.userId === user.userId)
+                      .map(user => user.pass)
+                      .update(Some(passwordHash))
+                      .asTry
+                  }
+                  onComplete(tryPasswordChange) {
+                    case Success(change) => complete(hatdex.hat.views.html.passwordChange(user, Seq(), true))
+                    case Failure(e)      => complete(hatdex.hat.views.html.passwordChange(user, Seq("An error occurred while changing your password, please try again"), false))
+                  }
+                }
+            }
+
+          }
+        }
+      }
+    }
+  }
+
+  def resetPassword = path("passwordreset") {
+    respondWithMediaType(`text/html`) {
+      get {
+        complete {
+          hatdex.hat.views.html.passwordReset()
+        }
+      } ~ post {
+        formField('email.as[String]) {
+          case email =>
+            val configuredEmail = conf.getString("hat.email")
+            if (email == configuredEmail) {
+              val fUser = DatabaseInfo.db.run {
+                UserUser.filter(_.role === "owner").filter(_.enabled === true).take(1).result.headOption
+              }
+
+              fUser map { maybeUser =>
+                maybeUser.map(User.fromDbModel) map { user =>
+                  fetchOrGenerateToken(user, issuer, accessScope = "passwordReset", validity = standardHours(1)) map { token =>
+                    val protocol = if (conf.getBoolean("hat.tls")) {
+                      "https://"
+                    }
+                    else {
+                      "http://"
+                    }
+                    val resetLink = s"$protocol$issuer/passwordreset/confirm?X-Auth-Token=${token.accessToken}"
+                    val message = EmailMessage("HAT - reset your password",
+                      configuredEmail, // to
+                      s"${conf.getString("hat.name")}@${conf.getString("hat.domain")}", // from
+                      hatdex.hat.views.txt.emailPasswordReset.render(user, resetLink).toString(),
+                      hatdex.hat.views.html.emailPasswordReset.render(user, resetLink).toString(),
+                      1 minute, 5)
+                    emailService.send(message)
+                  }
+                }
+              }
+
+            }
+            complete {
+              hatdex.hat.views.html.simpleMessage("If the email you have entered is correct, you will shortly receive an email with password reset instructions")
+            }
+        }
+      }
+    }
+  }
+  def resetPasswordConfirm = path("passwordreset" / "confirm") {
+    accessTokenHandler { implicit user: User =>
+      logger.info(s"Logged in user $user")
+      authorize(UserAuthorization.withRole("passwordReset")) {
+        parameterMap {
+          case parameters =>
+            get {
+              complete {
+                hatdex.hat.views.html.passwordResetConfirm(user, Seq(), token = parameters.get("X-Auth-Token").getOrElse(""))
+              }
+            } ~ post {
+              formField('newPassword.as[String], 'confirmPassword.as[String]) {
+                case (newPassword, confirmPassword) =>
                   if (newPassword != confirmPassword) {
                     complete {
-                      hatdex.hat.views.html.passwordChange(user, Seq("Passwords do not match"))
-                    }
-                  }
-                  else if (!BCrypt.checkpw(oldPassword, user.pass.getOrElse(""))) {
-                    complete {
-                      hatdex.hat.views.html.passwordChange(user, Seq("Old password incorrect"))
+                      hatdex.hat.views.html.passwordResetConfirm(user, Seq("Passwords do not match"), token = parameters.get("X-Auth-Token").getOrElse(""))
                     }
                   }
                   else {
@@ -169,13 +265,12 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
                         .asTry
                     }
                     onComplete(tryPasswordChange) {
-                      case Success(change) => complete(hatdex.hat.views.html.passwordChange(user, Seq(), true))
-                      case Failure(e) => complete(hatdex.hat.views.html.passwordChange(user, Seq("An error occurred while changing your password, please try again"), false))
+                      case Success(change) => complete(hatdex.hat.views.html.passwordResetConfirm(user, Seq(), true, token = parameters.get("X-Auth-Token").get))
+                      case Failure(e)      => complete(hatdex.hat.views.html.passwordResetConfirm(user, Seq("An error occurred while changing your password, please try again"), false, token = parameters.get("X-Auth-Token").get))
                     }
                   }
               }
-
-          }
+            }
         }
       }
     }
