@@ -110,7 +110,7 @@ trait BundleService extends DataService {
           ApiBundleContextlessData.fromDbModel(cBundle, dataGroups)
         }
       case Failure(e) =>
-        print(s"Error getting bundle: ${e.getMessage}\n")
+        logger.error(s"Error getting bundle: ${e.getMessage}\n")
         e.printStackTrace()
         None
     }
@@ -122,14 +122,17 @@ trait BundleService extends DataService {
   protected[api] def storeBundleTable(bundleTable: ApiBundleTable)(implicit session: Session): Try[ApiBundleTable] = {
     // Require the bundle to be based on a data table that already exists
     val maybeTableId = bundleTable.table.id map { tableId =>
+      logger.debug("Using table ID provided in the bundle table")
       Success(tableId)
     } getOrElse {
+      logger.debug(s"Trying to find data table provided in the bundle table: ${bundleTable.table}")
       Try {
-        DataTable.filter(_.name === bundleTable.table.name)
+        val matchingTables = DataTable.filter(_.name === bundleTable.table.name)
           .filter(_.sourceName === bundleTable.table.source)
           .map(_.id)
-          .first
           .run
+        logger.debug(s"Found matching tables: ${matchingTables}")
+        matchingTables.head
       }
     }
     maybeTableId match {
@@ -161,6 +164,7 @@ trait BundleService extends DataService {
 
         }
       case Failure(e) =>
+        logger.debug("Table provided for bundling must exist")
         Failure(new IllegalArgumentException("Table provided for bundling must exit"))
     }
 
