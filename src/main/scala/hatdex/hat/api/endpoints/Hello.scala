@@ -2,23 +2,27 @@ package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
 import com.typesafe.config.ConfigFactory
+import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.models.HatService
 import hatdex.hat.authentication.HatAuthHandler.UserPassHandler
 import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.{ JwtTokenHandler, HatServiceAuthHandler }
 import hatdex.hat.authentication.models.User
+import hatdex.hat.dal.SlickPostgresDriver.api._
+import org.mindrot.jbcrypt.BCrypt
 import spray.http.{ StatusCodes, HttpCookie }
 import spray.http.MediaTypes._
 import spray.routing.HttpService
 import spray.httpx.PlayTwirlSupport._
 import org.joda.time.Duration._
+import hatdex.hat.dal.Tables.UserUser
 
 import scala.util.{ Failure, Success, Try }
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler {
-  val routes = home ~ authHat ~ logout ~ getPublicKey ~ assets
+  val routes = home ~ authHat ~ logout ~ getPublicKey ~ assets ~ passwordChange
   val logger: LoggingAdapter
 
   def home = path("") {
@@ -130,6 +134,48 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
             complete {
               hatdex.hat.views.html.authenticated(user, Seq())
             }
+        }
+      }
+    }
+  }
+
+  def passwordChange = path("password") {
+    accessTokenHandler { implicit user: User =>
+      authorize(UserAuthorization.withRole("owner")) {
+        respondWithMediaType(`text/html`) {
+          get {
+            complete {
+              hatdex.hat.views.html.passwordChange(user, Seq(), false)
+            }
+          } ~ post {
+              formField('oldPassword.as[String], 'newPassword.as[String], 'confirmPassword.as[String]) {
+                case (oldPassword, newPassword, confirmPassword) =>
+                  if (newPassword != confirmPassword) {
+                    complete {
+                      hatdex.hat.views.html.passwordChange(user, Seq("Passwords do not match"))
+                    }
+                  }
+                  else if (!BCrypt.checkpw(oldPassword, user.pass.getOrElse(""))) {
+                    complete {
+                      hatdex.hat.views.html.passwordChange(user, Seq("Old password incorrect"))
+                    }
+                  }
+                  else {
+                    val passwordHash = BCrypt.hashpw(newPassword, BCrypt.gensalt())
+                    val tryPasswordChange = DatabaseInfo.db.run {
+                      UserUser.filter(_.userId === user.userId)
+                        .map(user => user.pass)
+                        .update(Some(passwordHash))
+                        .asTry
+                    }
+                    onComplete(tryPasswordChange) {
+                      case Success(change) => complete(hatdex.hat.views.html.passwordChange(user, Seq(), true))
+                      case Failure(e) => complete(hatdex.hat.views.html.passwordChange(user, Seq("An error occurred while changing your password, please try again"), false))
+                    }
+                  }
+              }
+
+          }
         }
       }
     }
