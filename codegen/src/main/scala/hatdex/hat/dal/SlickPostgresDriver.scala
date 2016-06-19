@@ -20,7 +20,9 @@ with PgPostGISSupport {
   with RangeImplicits
   with HStoreImplicits
   with SearchImplicits
-  with PostGISImplicits
+  with PostGISImplicits {
+    implicit val intListTypeMapper = new SimpleArrayJdbcType[Int]("integer").to(_.toList)
+  }
 
   trait SimpleQLPlus extends SimpleQL
   with ImplicitsPlus

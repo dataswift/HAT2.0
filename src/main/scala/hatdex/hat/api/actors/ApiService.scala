@@ -20,7 +20,7 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
     conf.getString("mail.smtp.host"),
     conf.getString("mail.smtp.username"),
     conf.getString("mail.smtp.password"))
-  val apiEmailService = new EmailService(context, smtpConfig)
+  val apiEmailService = new EmailService(context.system, smtpConfig)
 
   // logs request method, uri and response status at debug level
   def requestMethodAndResponseStatusAsInfo(req: HttpRequest): Any => Option[LogEntry] = {

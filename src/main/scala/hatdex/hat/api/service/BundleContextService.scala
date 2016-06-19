@@ -178,7 +178,7 @@ trait BundleContextService {
 
   private def getBundleList(bundleContextId: Int)(implicit session: Session) = {
     val connectedBundles = getConnectedBundles(bundleContextId)
-
+    logger.debug(s"Retrieved connected bundles: $connectedBundles")
     val entityQueries = connectedBundles map { bundle =>
       for {
         (e, p) <- BundleContextEntitySelection.filter(_.bundleContextId === bundle._1.id)
@@ -207,46 +207,27 @@ trait BundleContextService {
       }
 
     connectedBundles map { bundle =>
-      val entitySelections = bundleEntities.get(bundle._1.id)
-      val apiBundle = ApiBundleContext.fromDbModel(bundle._1)
+      val entitySelections = bundle._1.id.flatMap(bundleEntities.get)
+      val apiBundle = bundle._1
       (apiBundle.copy(entities = entitySelections.map(_.toSeq)), bundle._2)
     }
   }
 
-  private def getConnectedBundles(bundleContextId: Int)(implicit session: Session): Seq[(BundleContextRow, Int)] = {
-    implicit val getBundlesResult = GetResult(r =>
-      BundleContextRow(r.nextInt,
-        new LocalDateTime(r.nextTimestamp),
-        new LocalDateTime(r.nextTimestamp),
-        r.nextString)
-    )
-
-    // FIXME: keep an eye on future releases of Slick to avoid embedding SQL:
-    sql"""
-       WITH RECURSIVE recursive_bundle_context(id, date_created, last_updated, name, bundle_parent) AS (
-          SELECT b.id, b.date_created, b.last_updated, b.name, b2b.bundle_parent FROM hat.bundle_context b
-       	  LEFT JOIN hat.bundle_context_to_bundle_crossref b2b
-       	    ON b.id = b2b.bundle_child
-           WHERE b.id = ${bundleContextId}
-          UNION ALL
-            SELECT b.id, b.date_created, b.last_updated, b.name, b2b.bundle_parent
-            FROM recursive_bundle_context r_b, hat.bundle_context b
-       	    LEFT JOIN hat.bundle_context_to_bundle_crossref b2b
-       	      ON b.id = b2b.bundle_child
-              WHERE b2b.bundle_parent = r_b.id
-       )
-       SELECT * FROM recursive_bundle_context
-      """.as[(BundleContextRow, Int)].list
+  private def getConnectedBundles(bundleContextId: Int)(implicit session: Session): Seq[(ApiBundleContext, Option[Int])] = {
+    val bundles = BundleContextTree.filter(_.rootBundle === bundleContextId).run
+    bundles map { bundle =>
+      (ApiBundleContext.fromNestedBundle(bundle), bundle.bundleParent)
+    }
   }
 
-  private def buildBundleTree(rootBundle: Option[ApiBundleContext], bundles: Iterable[(ApiBundleContext, Int)]): Option[ApiBundleContext]= {
-    rootBundle map { bundle =>
-//      logger.debug("Building recursively for " + bundle)
-      val childBundles = bundles.filter(x => bundle.id.contains(x._2))
+  private def buildBundleTree(rootBundle: Option[ApiBundleContext], bundles: Iterable[(ApiBundleContext, Option[Int])]): Option[ApiBundleContext]= {
+    rootBundle map { root =>
+      logger.debug(s"Building recursively for $root from $bundles")
+      val childBundles = bundles.filter(x => root.id == x._2)
       val assembledChildBundles = childBundles flatMap { cBundle =>
         buildBundleTree(Some(cBundle._1), bundles)
       }
-      bundle.copy(bundles = Utils.seqOption(assembledChildBundles.toSeq))
+      root.copy(bundles = Utils.seqOption(assembledChildBundles.toSeq))
     }
   }
 }

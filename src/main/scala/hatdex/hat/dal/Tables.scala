@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{GetResult => GR}
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema = Array(BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessJoin.schema, BundleContextlessTable.schema, BundleContextlessTableSlice.schema, BundleContextlessTableSliceCondition.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema = Array(BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessJoin.schema, BundleContextlessTable.schema, BundleContextlessTableSlice.schema, BundleContextlessTableSliceCondition.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -370,6 +370,42 @@ trait Tables {
   /** Collection-like TableQuery object for table BundleContextToBundleCrossref */
   lazy val BundleContextToBundleCrossref = new TableQuery(tag => new BundleContextToBundleCrossref(tag))
 
+  /** Entity class storing rows of table BundleContextTree
+   *  @param id Database column id SqlType(int4), Default(None)
+   *  @param dateCreated Database column date_created SqlType(timestamp), Default(None)
+   *  @param lastUpdated Database column last_updated SqlType(timestamp), Default(None)
+   *  @param name Database column name SqlType(varchar), Default(None)
+   *  @param bundleParent Database column bundle_parent SqlType(int4), Default(None)
+   *  @param path Database column path SqlType(_int4), Length(10,false), Default(None)
+   *  @param rootBundle Database column root_bundle SqlType(int4), Default(None) */
+  case class BundleContextTreeRow(id: Option[Int] = None, dateCreated: Option[org.joda.time.LocalDateTime] = None, lastUpdated: Option[org.joda.time.LocalDateTime] = None, name: Option[String] = None, bundleParent: Option[Int] = None, path: Option[String] = None, rootBundle: Option[Int] = None)
+  /** GetResult implicit for fetching BundleContextTreeRow objects using plain SQL queries */
+  implicit def GetResultBundleContextTreeRow(implicit e0: GR[Option[Int]], e1: GR[Option[org.joda.time.LocalDateTime]], e2: GR[Option[String]]): GR[BundleContextTreeRow] = GR{
+    prs => import prs._
+    BundleContextTreeRow.tupled((<<?[Int], <<?[org.joda.time.LocalDateTime], <<?[org.joda.time.LocalDateTime], <<?[String], <<?[Int], <<?[String], <<?[Int]))
+  }
+  /** Table description of table bundle_context_tree. Objects of this class serve as prototypes for rows in queries. */
+  class BundleContextTree(_tableTag: Tag) extends Table[BundleContextTreeRow](_tableTag, Some("hat"), "bundle_context_tree") {
+    def * = (id, dateCreated, lastUpdated, name, bundleParent, path, rootBundle) <> (BundleContextTreeRow.tupled, BundleContextTreeRow.unapply)
+
+    /** Database column id SqlType(int4), Default(None) */
+    val id: Rep[Option[Int]] = column[Option[Int]]("id", O.Default(None))
+    /** Database column date_created SqlType(timestamp), Default(None) */
+    val dateCreated: Rep[Option[org.joda.time.LocalDateTime]] = column[Option[org.joda.time.LocalDateTime]]("date_created", O.Default(None))
+    /** Database column last_updated SqlType(timestamp), Default(None) */
+    val lastUpdated: Rep[Option[org.joda.time.LocalDateTime]] = column[Option[org.joda.time.LocalDateTime]]("last_updated", O.Default(None))
+    /** Database column name SqlType(varchar), Default(None) */
+    val name: Rep[Option[String]] = column[Option[String]]("name", O.Default(None))
+    /** Database column bundle_parent SqlType(int4), Default(None) */
+    val bundleParent: Rep[Option[Int]] = column[Option[Int]]("bundle_parent", O.Default(None))
+    /** Database column path SqlType(_int4), Length(10,false), Default(None) */
+    val path: Rep[Option[String]] = column[Option[String]]("path", O.Length(10,varying=false), O.Default(None))
+    /** Database column root_bundle SqlType(int4), Default(None) */
+    val rootBundle: Rep[Option[Int]] = column[Option[Int]]("root_bundle", O.Default(None))
+  }
+  /** Collection-like TableQuery object for table BundleContextTree */
+  lazy val BundleContextTree = new TableQuery(tag => new BundleContextTree(tag))
+
   /** Entity class storing rows of table DataDebit
    *  @param dataDebitKey Database column data_debit_key SqlType(uuid), PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
@@ -575,6 +611,45 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table DataTabletotablecrossref */
   lazy val DataTabletotablecrossref = new TableQuery(tag => new DataTabletotablecrossref(tag))
+
+  /** Entity class storing rows of table DataTableTree
+   *  @param id Database column id SqlType(int4), Default(None)
+   *  @param dateCreated Database column date_created SqlType(timestamp), Default(None)
+   *  @param lastUpdated Database column last_updated SqlType(timestamp), Default(None)
+   *  @param name Database column name SqlType(varchar), Default(None)
+   *  @param sourceName Database column source_name SqlType(varchar), Default(None)
+   *  @param table1 Database column table1 SqlType(int4), Default(None)
+   *  @param path Database column path SqlType(_int4), Length(10,false), Default(None)
+   *  @param rootTable Database column root_table SqlType(int4), Default(None) */
+  case class DataTableTreeRow(id: Option[Int] = None, dateCreated: Option[org.joda.time.LocalDateTime] = None, lastUpdated: Option[org.joda.time.LocalDateTime] = None, name: Option[String] = None, sourceName: Option[String] = None, table1: Option[Int] = None, path: Option[String] = None, rootTable: Option[Int] = None)
+  /** GetResult implicit for fetching DataTableTreeRow objects using plain SQL queries */
+  implicit def GetResultDataTableTreeRow(implicit e0: GR[Option[Int]], e1: GR[Option[org.joda.time.LocalDateTime]], e2: GR[Option[String]]): GR[DataTableTreeRow] = GR{
+    prs => import prs._
+    DataTableTreeRow.tupled((<<?[Int], <<?[org.joda.time.LocalDateTime], <<?[org.joda.time.LocalDateTime], <<?[String], <<?[String], <<?[Int], <<?[String], <<?[Int]))
+  }
+  /** Table description of table data_table_tree. Objects of this class serve as prototypes for rows in queries. */
+  class DataTableTree(_tableTag: Tag) extends Table[DataTableTreeRow](_tableTag, Some("hat"), "data_table_tree") {
+    def * = (id, dateCreated, lastUpdated, name, sourceName, table1, path, rootTable) <> (DataTableTreeRow.tupled, DataTableTreeRow.unapply)
+
+    /** Database column id SqlType(int4), Default(None) */
+    val id: Rep[Option[Int]] = column[Option[Int]]("id", O.Default(None))
+    /** Database column date_created SqlType(timestamp), Default(None) */
+    val dateCreated: Rep[Option[org.joda.time.LocalDateTime]] = column[Option[org.joda.time.LocalDateTime]]("date_created", O.Default(None))
+    /** Database column last_updated SqlType(timestamp), Default(None) */
+    val lastUpdated: Rep[Option[org.joda.time.LocalDateTime]] = column[Option[org.joda.time.LocalDateTime]]("last_updated", O.Default(None))
+    /** Database column name SqlType(varchar), Default(None) */
+    val name: Rep[Option[String]] = column[Option[String]]("name", O.Default(None))
+    /** Database column source_name SqlType(varchar), Default(None) */
+    val sourceName: Rep[Option[String]] = column[Option[String]]("source_name", O.Default(None))
+    /** Database column table1 SqlType(int4), Default(None) */
+    val table1: Rep[Option[Int]] = column[Option[Int]]("table1", O.Default(None))
+    /** Database column path SqlType(_int4), Length(10,false), Default(None) */
+    val path: Rep[Option[String]] = column[Option[String]]("path", O.Length(10,varying=false), O.Default(None))
+    /** Database column root_table SqlType(int4), Default(None) */
+    val rootTable: Rep[Option[Int]] = column[Option[Int]]("root_table", O.Default(None))
+  }
+  /** Collection-like TableQuery object for table DataTableTree */
+  lazy val DataTableTree = new TableQuery(tag => new DataTableTree(tag))
 
   /** Entity class storing rows of table DataValue
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey

@@ -67,9 +67,9 @@ case class EmailSend(
 /**
  * Email service
  */
-class EmailService(context: ActorContext, smtpConfig: SmtpConfig) {
+class EmailService(actorSystem: ActorSystem, smtpConfig: SmtpConfig) {
   def props: Props = Props[EmailServiceWorker]
-  val emailServiceActor = context.system.actorOf(Props[EmailServiceActor], name = "emailService")
+  val emailServiceActor = actorSystem.actorOf(Props[EmailServiceActor], name = "emailService")
 
   /**
    * public interface to send out emails that dispatch the message to the listening actors

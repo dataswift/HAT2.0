@@ -1,6 +1,7 @@
 package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
+import hatdex.hat.api.actors.{EmailService, SmtpConfig}
 import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
@@ -16,6 +17,16 @@ class HelloSpec extends Specification with Specs2RouteTest with Hello {
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
 
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
+
+  val smtpConfig = SmtpConfig(conf.getBoolean("mail.smtp.tls"),
+    conf.getBoolean("mail.smtp.ssl"),
+    conf.getInt("mail.smtp.port"),
+    conf.getString("mail.smtp.host"),
+    conf.getString("mail.smtp.username"),
+    conf.getString("mail.smtp.password"))
+  val apiEmailService = new EmailService(system, smtpConfig)
+
+  val emailService = apiEmailService
 
   val ownerAuthToken = HatAuthTestHandler.validUsers.find(_.role == "owner").map(_.userId).flatMap { ownerId =>
     HatAuthTestHandler.validAccessTokens.find(_.userId == ownerId).map(_.accessToken)

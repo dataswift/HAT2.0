@@ -85,11 +85,13 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         .withEntity(HttpEntity(MediaTypes.`application/json`, BundleContextExamples.emptyBundle)) ~>
         routes ~>
         check {
-          response.status should be equalTo Created
-          val resp = responseAs[String]
-          resp must contain("emptyBundleTest1")
-          resp must contain("emptyBundleTest2")
-          resp must contain("emptyBundleTest3")
+          eventually {
+            response.status should be equalTo Created
+            val resp = responseAs[String]
+            resp must contain("emptyBundleTest1")
+            resp must contain("emptyBundleTest2")
+            resp must contain("emptyBundleTest3")
+          }
           responseAs[ApiBundleContext]
         }
 

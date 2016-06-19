@@ -10,6 +10,7 @@
 package hatdex.hat.api
 
 import akka.event.LoggingAdapter
+import hatdex.hat.api.actors.{EmailService, SmtpConfig}
 import hatdex.hat.api.endpoints._
 import hatdex.hat.api.endpoints.jsonExamples.DataExamples
 import hatdex.hat.api.json.JsonProtocol
@@ -39,7 +40,17 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
     val logger: LoggingAdapter = system.log
   }
 
-  val helloService = new Hello with LoggingHttpService
+  val smtpConfig = SmtpConfig(conf.getBoolean("mail.smtp.tls"),
+    conf.getBoolean("mail.smtp.ssl"),
+    conf.getInt("mail.smtp.port"),
+    conf.getString("mail.smtp.host"),
+    conf.getString("mail.smtp.username"),
+    conf.getString("mail.smtp.password"))
+  val apiEmailService = new EmailService(system, smtpConfig)
+
+  val helloService = new Hello with LoggingHttpService {
+    val emailService = apiEmailService
+  }
   val apiDataService = new Data with LoggingHttpService {
     override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
 

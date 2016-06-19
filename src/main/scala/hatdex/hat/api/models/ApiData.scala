@@ -1,6 +1,6 @@
 package hatdex.hat.api.models
 
-import hatdex.hat.dal.Tables.{ DataFieldRow, DataRecordRow, DataTableRow, DataValueRow }
+import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 
 case class ApiDataField(
@@ -51,6 +51,17 @@ object ApiDataTable {
       Some(table.lastUpdated),
       table.name,
       table.sourceName,
+      fields,
+      subTables)
+  }
+
+  def fromNestedTable(table: DataTableTreeRow)(fields: Option[Seq[ApiDataField]])(subTables: Option[Seq[ApiDataTable]]) = {
+    new ApiDataTable(
+      table.id,
+      table.dateCreated,
+      table.lastUpdated,
+      table.name.getOrElse(""),
+      table.sourceName.getOrElse(""),
       fields,
       subTables)
   }

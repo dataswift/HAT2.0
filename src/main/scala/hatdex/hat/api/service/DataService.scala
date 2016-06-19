@@ -316,9 +316,7 @@ trait DataService {
    */
   def getTableStructure(tableId: Int)(implicit session: Session): Option[ApiDataTable] = {
     logger.debug(s"Get sturcture for $tableId")
-    val tablesWithParents = getTablesRecursively(tableId).map { case (table, parentId) =>
-      (ApiDataTable.fromDataTable(table)(None)(None), parentId)
-    }
+    val tablesWithParents = getTablesRecursively(tableId)
 
     logger.debug(s"Got tables: $tablesWithParents")
     val tableIds = tablesWithParents.flatMap(_._1.id).toSet
@@ -356,45 +354,11 @@ trait DataService {
     table.copy(fields = tableFields, subTables = someApiTables)
   }
 
-  private def getTablesRecursively(tableId: Int)(implicit session: Session): Seq[(DataTableRow, Option[Int])] = {
-    implicit val getTableResult = GetResult(r =>
-      DataTableRow(r.nextInt,
-        new LocalDateTime(r.nextTimestamp),
-        new LocalDateTime(r.nextTimestamp),
-        r.nextString,
-        r.nextString
-      )
-    )
-
-    sql"""
-      WITH RECURSIVE recursive_table(id, date_created, last_updated, name, source_name, table1) AS (
-        SELECT
-          b.id,
-          b.date_created,
-          b.last_updated,
-          b.name,
-          b.source_name,
-          b2b.table1
-        FROM hat.data_table b
-          LEFT JOIN hat.data_tabletotablecrossref b2b
-            ON b.id = b2b.table2
-        WHERE b.id = $tableId
-        UNION ALL
-        SELECT
-          b.id,
-          b.date_created,
-          b.last_updated,
-          b.name,
-          b.source_name,
-          b2b.table1
-        FROM recursive_table r_b, hat.data_table b
-          LEFT JOIN hat.data_tabletotablecrossref b2b
-            ON b.id = b2b.table2
-        WHERE b2b.table1 = r_b.id
-      )
-      SELECT *
-      FROM recursive_table
-       """.as[(DataTableRow, Option[Int])].list
+  private def getTablesRecursively(tableId: Int)(implicit session: Session): Seq[(ApiDataTable, Option[Int])] = {
+    val tables = DataTableTree.filter(_.rootTable === tableId).run
+    tables map { table =>
+      (ApiDataTable.fromNestedTable(table)(None)(None), table.table1)
+    }
   }
 
   protected[api] def getStructureFields(structure: ApiDataTable): Set[Int] = {

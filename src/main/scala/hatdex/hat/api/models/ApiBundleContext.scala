@@ -54,4 +54,7 @@ object ApiBundleContext {
   def fromDbModel(bundle: BundleContextRow): ApiBundleContext = {
     ApiBundleContext(Some(bundle.id), Some(bundle.dateCreated), Some(bundle.lastUpdated), bundle.name, None, None)
   }
+  def fromNestedBundle(bundle: BundleContextTreeRow): ApiBundleContext = {
+    ApiBundleContext(bundle.id, bundle.dateCreated, bundle.lastUpdated, bundle.name.getOrElse(""), None, None)
+  }
 }

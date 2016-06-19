@@ -3,6 +3,7 @@ package hatdex.hat.dal
 //import autodal.Config._
 import slick.codegen.SourceCodeGenerator
 import slick.driver.PostgresDriver
+import slick.jdbc.meta.MTable
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -41,7 +42,9 @@ object CustomizedCodeGenerator{
 
   val excluded = Seq("databasechangelog", "databasechangeloglock")
 
-  val modelAction = PostgresDriver.createModel( Some(PostgresDriver.defaultTables.map(_.filterNot(t => excluded contains t.name.name))) )
+  val tablesAndViews = MTable.getTables(None, None, None, Some(Seq("TABLE", "VIEW"))) //TABLE, and VIEW represent metadata, i.e. get database objects which are tables and views
+    .map(_.filterNot(t => excluded contains t.name.name))
+  val modelAction = PostgresDriver.createModel( Some(tablesAndViews) )
   val modelFuture = db.run(modelAction)
 
   val codegenFuture = modelFuture.map(model => new SourceCodeGenerator(model){
