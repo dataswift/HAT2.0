@@ -30,7 +30,7 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
 
   val routes = {
     pathPrefix("users") {
-      createApiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount
+      createApiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount ~ validateAccessToken
     }
   }
 
@@ -125,6 +125,14 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
             logger.error(s"Unexpected Error while fetching Access Token: ${e.getMessage}")
             complete((InternalServerError, ErrorMessage("Error while retrieving access token", "Unknown error occurred")))
         }
+      }
+    }
+  }
+
+  def validateAccessToken = path("access_token" / "validate") {
+    accessTokenHandler { implicit systemUser: User =>
+      get {
+        complete((OK, SuccessResponse("Authenticated")))
       }
     }
   }
