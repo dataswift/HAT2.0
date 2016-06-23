@@ -130,8 +130,8 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
   }
 
   def validateAccessToken = path("access_token" / "validate") {
-    accessTokenHandler { implicit systemUser: User =>
-      get {
+    get {
+      accessTokenHandler { implicit systemUser: User =>
         complete((OK, SuccessResponse("Authenticated")))
       }
     }
