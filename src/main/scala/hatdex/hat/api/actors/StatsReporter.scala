@@ -43,10 +43,9 @@ class StatsReporter extends Actor with ActorLogging with JwtTokenHandler {
   val retryLimit = conf.getInt("exchange.retryLimit")
   val retryTime = conf.getDuration("exchange.retryTime")
   val statsBatchSize = conf.getInt("exchange.batchSize")
-  val storageStatsPeriod = conf.getDuration("exchange.storage.collectionPeriod")
 
   implicit val system = context.system
-  val badSslConfig = AkkaSSLConfig()
+  val defaultSsslConfig = AkkaSSLConfig()
 
   lazy val platformUser: Future[User] = {
     val userQuery = UserUser.filter(_.role === "platform").filter(_.enabled === true).take(1)
@@ -60,8 +59,6 @@ class StatsReporter extends Actor with ActorLogging with JwtTokenHandler {
 
   val reportingScheudle = context.system.scheduler
     .schedule(0 millis, FiniteDuration(retryTime.toMillis, "millis"), self, PostStats())
-  val storedDatacollectionSchedule = context.system.scheduler
-    .schedule(10 seconds, FiniteDuration(storageStatsPeriod.toMillis, "millis"), self, ComputeStorageStats(None))
 
   def receive: Receive = {
     case stats: DataDebitStats =>
@@ -71,8 +68,6 @@ class StatsReporter extends Actor with ActorLogging with JwtTokenHandler {
     case stats: DataStorageStats =>
       logger.info(s"Data storage stats computed: $stats")
       statsQueue += StatsMessageQueued(LocalDateTime.now(), 0, stats)
-    case ComputeStorageStats(tableId) =>
-      computeDataStorage(tableId) pipeTo sender
     case PostStats() =>
       logger.info(s"Trying to post stats")
       postStats()
@@ -89,7 +84,7 @@ class StatsReporter extends Actor with ActorLogging with JwtTokenHandler {
 
     fToken map { authToken =>
       val statsExpired = statsQueue.dequeueAll(_.retries >= retryLimit)
-      if (statsExpired.length > 0) {
+      if (statsExpired.nonEmpty) {
         logger.warning(s"Stats reporting expired for ${statsExpired.length} stats: ${statsExpired.map(_.message).mkString("\n")}")
       }
 
@@ -116,53 +111,6 @@ class StatsReporter extends Actor with ActorLogging with JwtTokenHandler {
           }
         }
       }
-    }
-  }
-
-  def computeDataStorage(tableId: Option[Int] = None): Future[DataStorageStats] = {
-    val fieldRecordCounts = DataValue.groupBy(v => v.fieldId)
-      .map { case (fieldId, values) =>
-        (fieldId, values.map(_.recordId).countDistinct)
-      }
-
-    val fields = if (tableId.isDefined) {
-      fieldRecordCounts.filter(_._1 === tableId.get)
-    }
-    else {
-      fieldRecordCounts
-    }
-
-    val dataTableStats = DatabaseInfo.db.run {
-      fields.result
-    } flatMap { results =>
-      val fieldsOfInterest = Map(results: _*)
-
-      val tableFields = for {
-        field <- DataField.filter(_.id inSet fieldsOfInterest.keys)
-        table <- field.dataTableFk
-      } yield (field, table)
-
-      DatabaseInfo.db.run {
-        tableFields.result
-      } map { results =>
-        results map { case (field: DataFieldRow, table: DataTableRow) =>
-          val dfStats = DataFieldStats(field.name, table.name, table.sourceName, fieldsOfInterest.getOrElse(field.id, 0))
-          val dtStats = DataTableStats(table.name, table.sourceName, Seq(), None, 0)
-          (dtStats, dfStats)
-        }
-      }
-    } map { statsSequence =>
-      statsSequence.groupBy(_._1).map {
-        case (table, fields) => // Aggregate counts by table, 1 level deep
-          table.copy(fields = fields.map(_._2), valueCount = fields.map(_._2.valueCount).sum)
-      }
-    }
-
-    dataTableStats map { stats =>
-      DataStorageStats("storage", LocalDateTime.now(), stats.toSeq, "Data Storage Statistics")
-    } recover { case e =>
-      logger.warning(s"Error occurred while collecting storage statistics: ${e.getMessage}")
-        throw e
     }
   }
 }
