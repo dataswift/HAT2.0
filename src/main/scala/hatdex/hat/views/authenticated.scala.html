@@ -1,6 +1,6 @@
 @import hatdex.hat.api.models.HatService
 @import hatdex.hat.authentication.models.{AccessToken, User}
-@(user: User, services: Seq[(HatService, AccessToken)])
+@(user: User, services: Seq[HatService])
 
 @main(s"HAT - Welcome back ${user.name}", Some(user)) {
     <div class="row">
@@ -11,8 +11,8 @@
 
     <div class="row text-center">
         <div class="col-sm-@((12 - services.length * 4)/2) col-md-@((12 - services.length * 2)/2)">&nbsp;</div>
-        @services.map { case (service, token) =>
-        <a href="@service.url@service.authUrl?token=@token.accessToken">
+        @services.map { case service =>
+        <a href="@service.url@service.authUrl">
             <div class="col-xs-6 col-sm-4 col-md-2">
                 <div class="thumbnail">
                     <img src="@service.logoUrl" alt="@service.title" class="img img-responsive img-rounded profile-img" />
