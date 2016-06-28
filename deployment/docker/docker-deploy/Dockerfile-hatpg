@@ -56,7 +56,7 @@ CMD ["postgres"]
 ENV HAT_HOME=/opt/hat
 ENV DATABASE=hat20
 ENV DBUSER=hat20
-ENV DBPASS=hat20
+ENV DBPASS=pa55w0rd
 
 ENV HAT_OWNER=bob@gmail.com
 ENV HAT_OWNER_ID=5974832d-2dc1-4f49-adf1-c6d8bc790274
@@ -71,9 +71,9 @@ ENV HAT_PLATFORM_PASSWORD_HASH=$2a$04$oL2CXTHzB..OekL1z8Vijus3RkHQjSsbkAYOiA5Rj.
 #Required by the postgres container (docker-entrypoint.sh)
 #Also sets up authMethod=md5
 #Check : https://github.com/docker-library/postgres/blob/ed23320582f4ec5b0e5e35c99d98966dacbc6ed8/9.4/docker-entrypoint.sh
-ENV POSTGRES_PASSWORD=hat20
+ENV POSTGRES_PASSWORD=pa55w0rd
 ENV POSTGRES_USER=hat20
-ENV POSTGRES_DB=hat20
+ENV POSTGRES_DB=pa55w0rd
 
 #Get HAT files sql files.
 RUN mkdir /opt/hat
