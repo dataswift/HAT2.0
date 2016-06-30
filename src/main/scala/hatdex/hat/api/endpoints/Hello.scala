@@ -123,14 +123,14 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
       get {
         val services = Seq(
           HatService("MarketSquare", "", "/assets/images/marketsquare_logo.jpg", "https://marketsquare.hubofallthings.net", "/authenticate/hat?token=", browser = false),
-          HatService("Rumpel", "", "/assets/images/rumpel_logo.jpg", "https://rumpel.hubofallthings.com", "/users/authenticate/", browser = true))
+          HatService("Rumpel", "", "/assets/images/rumpel_logo.jpg", "https://rumpel.hubofallthings.net", "/users/authenticate/", browser = true))
 
         val serviceCredentials = services.map { service =>
           val token = if (service.browser == false) {
             fetchOrGenerateToken(user, resource = service.url, accessScope = "validate", validity = standardDays(1))
           }
           else {
-            fetchOrGenerateToken(user, resource = service.url, accessScope = user.role)
+            fetchOrGenerateToken(user, issuer)
           }
           token.map { accessToken =>
             service.copy(authUrl = service.authUrl + accessToken.accessToken)
