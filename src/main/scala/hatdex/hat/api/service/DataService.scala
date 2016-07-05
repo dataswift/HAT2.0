@@ -20,12 +20,22 @@ trait DataService {
 
   val logger: LoggingAdapter
 
-  def getTableValues(tableId: Int)(implicit session: Session): Option[Seq[ApiDataRecord]] = {
+  def getTableValues(tableId: Int, maybeLimit: Option[Int] = None, maybeStartTime: Option[LocalDateTime] = None, maybeEndTime: Option[LocalDateTime] = None)(implicit session: Session): Option[Seq[ApiDataRecord]] = {
     val valuesQuery = DataValue
-    getTableValues(tableId, valuesQuery)
+    val filteredByStart = maybeStartTime.map { startTime =>
+      valuesQuery.filter(_.dateCreated >= startTime)
+    } getOrElse {
+      valuesQuery
+    }
+    val filteredByEnd = maybeEndTime.map { endTime =>
+      filteredByStart.filter(_.dateCreated <= endTime)
+    } getOrElse {
+      filteredByStart
+    }
+    getTableValues(tableId, filteredByEnd, maybeLimit)
   }
 
-  def getTableValues(tableId: Int, valuesQuery: Query[DataValue, DataValueRow, Seq])
+  def getTableValues(tableId: Int, valuesQuery: Query[DataValue, DataValueRow, Seq], maybeLimit: Option[Int])
                     (implicit session: Session): Option[Seq[ApiDataRecord]] = {
     val someStructure = getTableStructure(tableId)
 
@@ -36,32 +46,42 @@ trait DataService {
       // Get all data fields of interest according to the data structure
       val fieldsToGet = getStructureFields(structure)
 
+      val assumedMaxValuesPerRecord = 30
       // Retrieve values of those fields from the database, grouping by Record ID
       val values = valuesQuery.filter(_.fieldId inSet fieldsToGet)
-        .take(10000) // FIXME: magic number for getting X records
         .sortBy(_.recordId.desc)
+        .take(maybeLimit.getOrElse(10000)*30)
         .run
         .groupBy(_.recordId)
 
       // Retrieve matching data records and transform to ApiDataRecord format
       val records: Map[Int, ApiDataRecord] = DataRecord.filter(_.id inSet values.keySet)
+        .sortBy(_.id.desc)
+        .take(maybeLimit.getOrElse(10000))
         .run
         .groupBy(_.id)
-        .map { case (recordId, records) =>
-          (recordId, ApiDataRecord.fromDataRecord(records.head)(None))
+        .map { case (recordId, groupedRecord) =>
+          (recordId, ApiDataRecord.fromDataRecord(groupedRecord.head)(None))
         }
 
       // Convert the retrieved structure into a sequence of maps from field ID to values
       val dataRecords = values map { case (recordId, recordValues) =>
+        // Each field can have a list of values associated with it
         val fieldValueMap = new mutable.HashMap[Int, mutable.Set[ApiDataValue]] with mutable.MultiMap[Int, ApiDataValue]
+        // Values are grouped by record id
         recordValues foreach { value =>
           fieldValueMap.addBinding(value.fieldId, ApiDataValue.fromDataValue(value))
         }
+        // Fills reconstructed data structure with grouped field values
         val mappedValues = filler(fieldValueMap)
-        records(recordId).copy(tables = Some(Seq(mappedValues)))
+        if (records.contains(recordId)) {
+          Some(records(recordId).copy(tables = Some(Seq(mappedValues))))
+        } else {
+          None
+        }
       }
 
-      dataRecords.toSeq.sortWith((a, b) =>
+      dataRecords.flatten.toSeq.sortWith((a, b) =>
         a.lastUpdated
           .getOrElse(LocalDateTime.now())
           .isAfter(

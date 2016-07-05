@@ -70,7 +70,7 @@ trait BundleService extends DataService {
               // Query that takes only the records of interest
               val values = DataValue.filter(_.recordId in records)
 
-              getTableValues(tableId, values)
+              getTableValues(tableId, values, None)
           }
 
           val emptyBundleTable = ApiBundleTable.fromBundleTable(bundleTable)(ApiDataTable.fromDataTable(dataTable)(None)(None))

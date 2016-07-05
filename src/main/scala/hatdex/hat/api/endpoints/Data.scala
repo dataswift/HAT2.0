@@ -13,6 +13,7 @@ import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
+import org.joda.time.DateTime
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
@@ -160,15 +161,20 @@ trait Data extends HttpService with DataService with StatsService with HatServic
       logger.debug(s"GET /table/$tableId/values")
       accessTokenHandler { implicit user: User =>
         authorize(UserAuthorization.withRole("owner")) {
-          db.withSession { implicit session =>
-            val someTableValues = getTableValues(tableId)
-            session.close()
-            complete {
-              someTableValues match {
-                case Some(tableValues) => tableValues
-                case None              => (NotFound, ErrorMessage("NotFound", s"Table $tableId not found"))
+          parameters('limit.as[Option[Int]], 'starttime.as[Option[Int]], 'endtime.as[Option[Int]]) {
+            (maybeLimit: Option[Int], maybeStartTimestamp: Option[Int], maybeEndTimestamp: Option[Int]) =>
+              db.withSession { implicit session =>
+                val maybeStartTime = maybeStartTimestamp.map(t => new DateTime(t * 1000L).toLocalDateTime)
+                val maybeEndTime = maybeEndTimestamp.map(t => new DateTime(t * 1000L).toLocalDateTime)
+                val someTableValues = getTableValues(tableId, maybeLimit, maybeStartTime, maybeEndTime)
+                session.close()
+                complete {
+                  someTableValues match {
+                    case Some(tableValues) => tableValues
+                    case None => (NotFound, ErrorMessage("NotFound", s"Table $tableId not found"))
+                  }
+                }
               }
-            }
           }
         }
       }

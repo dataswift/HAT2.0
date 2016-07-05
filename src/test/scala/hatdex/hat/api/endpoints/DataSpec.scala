@@ -264,17 +264,17 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
             .withHeaders(ownerAuthHeader)
             .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
             sealRoute(routes) ~> check {
-              response.status should be equalTo OK
-            }
+            response.status should be equalTo OK
+          }
 
           HttpRequest(GET, s"/data/table/${dataTable.id.get}")
             .withHeaders(ownerAuthHeader) ~>
             sealRoute(routes) ~> check {
-              response.status should be equalTo OK
-              responseAs[String] must contain("kitchen")
-              responseAs[String] must contain("subTables")
-              responseAs[String] must contain("kitchenElectricity")
-            }
+            response.status should be equalTo OK
+            responseAs[String] must contain("kitchen")
+            responseAs[String] must contain("subTables")
+            responseAs[String] must contain("kitchenElectricity")
+          }
       }
     }
 
@@ -400,6 +400,32 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
               responseAs[String] must contain("testValue2-3")
               responseAs[String] must contain("testRecord 1")
               responseAs[String] must contain("testRecord 2")
+            }
+      }
+    }
+    
+    "Correctly limit number of records returned" in {
+      populateDataReusable match {
+        case (dataTable, dataField, record) =>
+          HttpRequest(GET, s"/data/table/${dataTable.id.get}/values?limit=3")
+            .withHeaders(ownerAuthHeader) ~>
+            sealRoute(routes) ~>
+            check {
+              response.status should be equalTo OK
+              responseAs[String] must not contain ("testValue1")
+              responseAs[String] must not contain ("testValue2")
+              responseAs[String] must not contain ("testValue3")
+              responseAs[String] must not contain ("testValue2-1")
+              responseAs[String] must not contain ("testValue2-2")
+              responseAs[String] must not contain ("testValue2-3")
+              responseAs[String] must not contain ("testRecord 1")
+              responseAs[String] must not contain ("testRecord 2")
+              responseAs[String] must contain("testRecord 4")
+              responseAs[String] must contain("testRecord 5")
+              responseAs[String] must contain("testRecord 6")
+              responseAs[String] must contain("testValue4-2")
+              responseAs[String] must contain("testValue5-3")
+              responseAs[String] must contain("testValue6-1")
             }
       }
     }
