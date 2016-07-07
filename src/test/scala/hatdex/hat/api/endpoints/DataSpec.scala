@@ -403,7 +403,7 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
             }
       }
     }
-    
+
     "Correctly limit number of records returned" in {
       populateDataReusable match {
         case (dataTable, dataField, record) =>
