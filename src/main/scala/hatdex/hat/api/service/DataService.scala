@@ -74,6 +74,7 @@ trait DataService {
         }
         // Fills reconstructed data structure with grouped field values
         val mappedValues = filler(fieldValueMap)
+
         if (records.contains(recordId)) {
           Some(records(recordId).copy(tables = Some(Seq(mappedValues))))
         } else {
@@ -352,7 +353,7 @@ trait DataService {
     }
   }
 
-  private def buildTableStructure(table: ApiDataTable, fields: Seq[ApiDataField], dataTables: Seq[(ApiDataTable, Option[Int])]): ApiDataTable = {
+  protected[service] def buildTableStructure(table: ApiDataTable, fields: Seq[ApiDataField], dataTables: Seq[(ApiDataTable, Option[Int])]): ApiDataTable = {
     val tableFields = {
       val tFields = fields.filter(_.tableId == table.id)
       if (tFields.isEmpty) {

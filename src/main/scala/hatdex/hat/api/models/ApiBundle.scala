@@ -32,86 +32,16 @@ object ComparisonOperators {
 //    dateGreaterThan, dateLessThan, dateWeekdayGreaterThan, dateWeekdayLessThan, dateHourGreaterThan, dateHourLessThan)
 }
 
-case class ApiBundleTableCondition(
-    id: Option[Int],
-    dateCreated: Option[LocalDateTime],
-    lastUpdated: Option[LocalDateTime],
-    field: ApiDataField,
-    value: String,
-    operator: ComparisonOperator)
-
-object ApiBundleTableCondition {
-  def fromBundleTableSliceCondition(condition: BundleContextlessTableSliceConditionRow)(field: ApiDataField) : ApiBundleTableCondition = {
-    ApiBundleTableCondition(Some(condition.id),
-      Some(condition.dateCreated), Some(condition.lastUpdated),
-      field, condition.value,
-      ComparisonOperators.fromString(condition.operator))
-  }
-}
-
-case class ApiBundleTableSlice(
-    id: Option[Int],
-    dateCreated: Option[LocalDateTime],
-    lastUpdated: Option[LocalDateTime],
-    table: ApiDataTable,
-    conditions: Seq[ApiBundleTableCondition])
-
-object ApiBundleTableSlice {
-  def fromBundleTableSlice(slice: BundleContextlessTableSliceRow)(table: ApiDataTable) : ApiBundleTableSlice = {
-    ApiBundleTableSlice(Some(slice.id),
-      Some(slice.dateCreated), Some(slice.lastUpdated),
-      table, Seq())
-  }
-}
-
-
-case class ApiBundleTable(
-    id: Option[Int],
-    dateCreated: Option[LocalDateTime],
-    lastUpdated: Option[LocalDateTime],
-    name: String,
-    table: ApiDataTable,                      // Used to tag which table is bundled
-    slices: Option[Seq[ApiBundleTableSlice]],
-    data: Option[Seq[ApiDataRecord]])     // Data is optional, only used on the outbound
-
-object ApiBundleTable {
-  def fromBundleTable(bundleTable: BundleContextlessTableRow)(table: ApiDataTable) : ApiBundleTable = {
-    ApiBundleTable(Some(bundleTable.id),
-      Some(bundleTable.dateCreated), Some(bundleTable.lastUpdated),
-      bundleTable.name, table, None, None)
-  }
-}
-
-case class ApiBundleCombination(
-    id: Option[Int],
-    dateCreated: Option[LocalDateTime],
-    lastUpdated: Option[LocalDateTime],
-    name: String,
-    bundleTable: ApiBundleTable,
-    bundleJoinField: Option[ApiDataField],
-    bundleTableField: Option[ApiDataField],
-    operator: Option[ComparisonOperator])
-
-object ApiBundleCombination {
-  def fromBundleJoin(bundleCombination: BundleContextlessJoinRow)
-                    (bundleJoinField: Option[ApiDataField], bundleTableField: Option[ApiDataField], bundleTable: ApiBundleTable): ApiBundleCombination = {
-
-    val operator = bundleCombination.operator.map(ComparisonOperators.fromString)
-
-    ApiBundleCombination(Some(bundleCombination.id),
-      Some(bundleCombination.dateCreated), Some(bundleCombination.lastUpdated),
-      bundleCombination.name, bundleTable,
-      bundleJoinField, bundleTableField,
-      operator)
-  }
-}
+case class ApiBundleDataSourceField(name: String, description: String, fields: Option[List[ApiBundleDataSourceField]])
+case class ApiBundleDataSourceDataset(name: String, description: String, fields: List[ApiBundleDataSourceField])
+case class ApiBundleDataSourceStructure(source: String, datasets: List[ApiBundleDataSourceDataset])
 
 case class ApiBundleContextless(
-    id: Option[Int],
-    dateCreated: Option[LocalDateTime],
-    lastUpdated: Option[LocalDateTime],
-    name: String,
-    tables: Option[Seq[ApiBundleCombination]])
+  id: Option[Int],
+  dateCreated: Option[LocalDateTime],
+  lastUpdated: Option[LocalDateTime],
+  name: String,
+  sources: Option[Seq[ApiBundleDataSourceStructure]])
 
 object ApiBundleContextless {
   def fromBundleContextless(bundleContextless: BundleContextlessRow) : ApiBundleContextless = {
@@ -120,21 +50,25 @@ object ApiBundleContextless {
       bundleContextless.name, None)
   }
 
-  def fromBundleContextlessTables(bundleContextless: BundleContextlessRow)(tables: Option[Seq[ApiBundleCombination]]) : ApiBundleContextless = {
+  def fromBundleContextlessSources(bundleContextless: BundleContextlessRow)(sources: Option[Seq[ApiBundleDataSourceStructure]]) : ApiBundleContextless = {
     ApiBundleContextless(Some(bundleContextless.id),
       Some(bundleContextless.dateCreated), Some(bundleContextless.lastUpdated),
-      bundleContextless.name, tables)
+      bundleContextless.name, sources)
   }
 }
 
+case class ApiBundleContextlessDatasetData(
+  name: String,
+  table: ApiDataTable, // Used to tag which table is bundled
+  data: Option[Seq[ApiDataRecord]]) // Data is optional, only used on the outbound
 
 case class ApiBundleContextlessData(
-    id: Int,
-    name: String,
-    dataGroups: Seq[Map[String, ApiBundleTable]])
+  id: Int,
+  name: String,
+  dataGroups: Map[String, Seq[ApiBundleContextlessDatasetData]])
 
 object ApiBundleContextlessData {
-  def fromDbModel(bundleContextless: BundleContextlessRow, dataGroups: Seq[Map[String, ApiBundleTable]]): ApiBundleContextlessData = {
+  def fromDbModel(bundleContextless: BundleContextlessRow, dataGroups: Map[String, Seq[ApiBundleContextlessDatasetData]]): ApiBundleContextlessData = {
     ApiBundleContextlessData(bundleContextless.id, bundleContextless.name, dataGroups)
   }
 }

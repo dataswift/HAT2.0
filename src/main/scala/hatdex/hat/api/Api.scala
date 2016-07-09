@@ -67,7 +67,7 @@ trait Api extends HttpService with Cors {
       helloService.routes ~
         apiDataService.routes ~
         apiPropertyService.routes ~
-        apiBundleService.routes ~
+//        apiBundleService.routes ~
         apiBundlesContextService.routes ~
         eventsService.routes ~
         locationsService.routes ~

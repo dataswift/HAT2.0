@@ -63,11 +63,8 @@ object TestDataCleanup {
   }
 
   def cleanupBundles(implicit session: Session) = {
-    BundleContextlessTableSliceCondition.delete
-    BundleContextlessTableSlice.delete
-    BundleContextlessJoin.delete
+    BundleContextlessDataSourceDataset.delete
     BundleContextless.delete
-    BundleContextlessTable.delete
 
     BundleContextPropertySelection.delete
     BundleContextEntitySelection.delete

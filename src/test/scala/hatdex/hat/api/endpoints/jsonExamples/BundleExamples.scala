@@ -1,9 +1,105 @@
 package hatdex.hat.api.endpoints.jsonExamples
 
-/**
- * Created by andrius on 10/10/15.
- */
 object BundleExamples {
+  val fullbundle =
+    """
+      |{
+      |    "name": "test bundle with full data",
+      |    "sources": [{
+      |        "source": "Fibaro",
+      |        "datasets": [{
+      |            "name": "kitchen",
+      |            "description": "Fibaro sensors from the kitchen",
+      |            "fields": [
+      |                {
+      |                    "name": "kichenElectricity",
+      |                    "description": "electricity in the kitchen",
+      |                    "fields": [
+      |                        {"name": "timestamp", "description": "Timestamp of the data record", "fields": []},
+      |                        {"name": "value", "description": "Instantaneouse use", "fields": []}
+      |                    ]
+      |                }
+      |            ]
+      |        }]
+      |    }, {
+      |        "source": "Facebook",
+      |        "datasets": [{
+      |            "name": "event",
+      |            "description": "Your Social network Events",
+      |            "fields": [
+      |                {"name": "name", "description": "Event Name", "fields": []},
+      |                {"name": "location", "description": "Location", "fields": []},
+      |                {"name": "startTime", "description": "Start Time", "fields": []},
+      |                {"name": "endTime", "description": "End time", "fields": []}
+      |            ]
+      |        }]
+      |    }]
+      |}
+    """.stripMargin
+
+  val fieldSelectionsBundle =
+    """
+      |{
+      |    "name": "test bundle with full data",
+      |    "sources": [{
+      |        "source": "Fibaro",
+      |        "datasets": [{
+      |            "name": "kitchen",
+      |            "description": "Fibaro sensors from the kitchen",
+      |            "fields": [
+      |                {
+      |                    "name": "kichenElectricity",
+      |                    "description": "electricity in the kitchen",
+      |                    "fields": [
+      |                        {"name": "value", "description": "Instantaneouse use", "fields": []}
+      |                    ]
+      |                }
+      |            ]
+      |        }]
+      |    }, {
+      |        "source": "Facebook",
+      |        "datasets": [{
+      |            "name": "event",
+      |            "description": "Your Social network Events",
+      |            "fields": [
+      |                {"name": "name", "description": "Event Name", "fields": []}
+      |            ]
+      |        }]
+      |    }]
+      |}
+    """.stripMargin
+
+  val fieldlessDataset =
+    """
+      |{
+      |    "name": "test bundle with full data",
+      |    "sources": [{
+      |        "source": "Fibaro",
+      |        "datasets": [{
+      |            "name": "kitchen",
+      |            "description": "Fibaro sensors from the kitchen",
+      |            "fields": [
+      |                {
+      |                    "name": "kichenElectricity",
+      |                    "description": "electricity in the kitchen",
+      |                    "fields": [
+      |                        {"name": "value", "description": "Instantaneouse use", "fields": []}
+      |                    ]
+      |                }
+      |            ]
+      |        }]
+      |    }, {
+      |        "source": "Facebook",
+      |        "datasets": [{
+      |            "name": "event",
+      |            "description": "Your Social network Events",
+      |            "fields": [ ]
+      |        }]
+      |    }]
+      |}
+    """.stripMargin
+
+
   val bundleTableKitchenWrong =
     """
       |  {
@@ -15,165 +111,7 @@ object BundleExamples {
       |  }
     """.stripMargin
 
-  val bundleTableKitchen =
-    """
-      |  {
-      |    "name": "Everything kitchen",
-      |    "table": {
-      |      "id": 2,
-      |      "name": "kitchen",
-      |      "source": "fibaro"
-      |    }
-      |  }
-    """.stripMargin
 
-  val bundleTableKitchenElectricity =
-    """
-      |  {
-      |    "name": "Electricity in the kitchen",
-      |    "table": {
-      |      "id": 3,
-      |      "name": "kichenElectricity",
-      |      "source": "fibaro"
-      |    }
-      |  }
-    """.stripMargin
-
-  val bundleWeekendEvents =
-    """
-      |  {
-      |    "name": "Weekend events at home",
-      |    "table": {
-      |      "id": 4,
-      |      "name": "event",
-      |      "source": "Facebook"
-      |    },
-      |    "slices": [
-      |      {
-      |        "table": {
-      |          "id": 4,
-      |          "name": "event",
-      |          "source": "Facebook"
-      |        },
-      |        "conditions": [
-      |          {
-      |            "field": {
-      |              "id": 13,
-      |              "tableId": 4,
-      |              "name": "location"
-      |            },
-      |            "value": "event location 1",
-      |            "operator": "equal"
-      |          }
-      |        ]
-      |      },
-      |      {
-      |        "table": {
-      |          "id": 4,
-      |          "name": "event",
-      |          "source": "Facebook"
-      |        },
-      |        "conditions": [
-      |          {
-      |            "field": {
-      |              "id": 13,
-      |              "tableId": 4,
-      |              "name": "location"
-      |            },
-      |            "value": "event location 2",
-      |            "operator": "equal"
-      |          },
-      |          {
-      |            "field": {
-      |              "id": 14,
-      |              "tableId": 4,
-      |              "name": "startTime"
-      |            },
-      |            "value": "event startTime 2",
-      |            "operator": "equal"
-      |          }
-      |        ]
-      |      }
-      |    ]
-      |  }
-    """.stripMargin
-
-  val bundleContextlessNoJoin =
-  """
-    |   {
-    |     "name": "Kitchen electricity on weekend parties",
-    |     "tables": [
-    |       {
-    |         "name": "Weekend events at home Combination",
-    |         "bundleTable": {
-    |           "id": 0,
-    |           "name": "Weekend events at home",
-    |           "table": {
-    |             "id": 4,
-    |             "name": "event",
-    |             "source": "Facebook"
-    |           }
-    |         }
-    |       },
-    |       {
-    |         "name": "Electricity in the kitchen Combination",
-    |         "bundleTable": {
-    |           "id": 0,
-    |           "name": "Electricity in the kitchen",
-    |           "table": {
-    |             "id": 3,
-    |             "name": "kichenElectricity",
-    |             "source": "fibaro"
-    |           }
-    |         }
-    |       }
-    |     ]
-    |   }
-  """.stripMargin
-
-  val bundleContextlessJoin =
-    """
-      |   {
-      |     "name": "Kitchen electricity on weekend parties",
-      |     "tables": [
-      |       {
-      |         "name": "Weekend events at home",
-      |         "bundleTable": {
-      |           "id": 0,
-      |           "name": "Weekend events at home",
-      |           "table": {
-      |             "id": 4,
-      |             "name": "event",
-      |             "source": "Facebook"
-      |           }
-      |         }
-      |       },
-      |       {
-      |         "name": "Electricity in the kitchen",
-      |         "bundleTable": {
-      |           "id": 0,
-      |           "name": "Electricity in the kitchen",
-      |           "table": {
-      |             "id": 3,
-      |             "name": "kichenElectricity",
-      |             "source": "fibaro"
-      |           }
-      |         },
-      |         "bundleJoinField": {
-      |           "id": 14,
-      |           "tableId": 4,
-      |           "name": "startTime"
-      |         },
-      |         "bundleTableField": {
-      |           "id": 10,
-      |           "tableId": 3,
-      |           "name": "timestamp"
-      |         },
-      |         "operator": "equal"
-      |       }
-      |     ]
-      |   }
-    """.stripMargin
 
   val bundleValuesExample =
     """

@@ -34,6 +34,7 @@ lazy val commonSettings = Seq(
     "com.github.tminglei" %% "slick-pg" % slick_pgV,
     "com.github.tminglei" %% "slick-pg_joda-time" % "0.6.5.3",
     "com.github.tminglei" %% "slick-pg_jts" % "0.6.5.3",
+    "com.github.tminglei" % "slick-pg_spray-json_2.11" % "0.6.5.3",
     "joda-time" % "joda-time" % "2.9.2",
     "org.joda" % "joda-convert" % "1.8",
     "com.vividsolutions" % "jts" % "1.13",

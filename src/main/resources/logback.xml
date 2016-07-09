@@ -49,7 +49,7 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <root level="INFO">
+    <root level="DEBUG">
     </root>
 
     <logger name="scala.slick.session" LEVEL="INFO">

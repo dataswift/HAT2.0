@@ -43,7 +43,9 @@ case class ApiDataDebitOut(
   bundleContextual: Option[Seq[ApiEntity]])
 
 object ApiDataDebitOut {
-  def fromDbModel(dataDebitRow: DataDebitRow, apiBundleContextlessData: Option[ApiBundleContextlessData],
+  def fromDbModel(
+    dataDebitRow: DataDebitRow,
+    apiBundleContextlessData: Option[ApiBundleContextlessData],
     apiBundleContextualData: Option[Seq[ApiEntity]]): ApiDataDebitOut = {
     new ApiDataDebitOut(Some(dataDebitRow.dataDebitKey), Some(dataDebitRow.dateCreated), Some(dataDebitRow.lastUpdated),
       dataDebitRow.name, dataDebitRow.startDate, dataDebitRow.endDate, dataDebitRow.rolling, dataDebitRow.sellRent,

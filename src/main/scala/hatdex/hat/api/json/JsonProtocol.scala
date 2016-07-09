@@ -58,12 +58,12 @@ trait HatJsonProtocol extends DefaultJsonProtocol with UuidMarshalling with Date
   implicit val apiPropertyRelationshipDynamic = jsonFormat6(ApiPropertyRelationshipDynamic.apply)
 
   // Bundles
-  implicit val apiBundleTableCondition = jsonFormat6(ApiBundleTableCondition.apply)
-  implicit val apiBundleTableSlice = jsonFormat5(ApiBundleTableSlice.apply)
-  implicit val apiBundleTable = jsonFormat7(ApiBundleTable.apply)
-  implicit val apiBundleCombination = jsonFormat8(ApiBundleCombination.apply)
+  implicit val apiBundleDataSourceField: RootJsonFormat[ApiBundleDataSourceField] = rootFormat(lazyFormat(jsonFormat3(ApiBundleDataSourceField.apply)))
+  implicit val apiBundleDataSourceDataset = jsonFormat3(ApiBundleDataSourceDataset.apply)
+  implicit val apiBundleDataSourceStructure = jsonFormat2(ApiBundleDataSourceStructure.apply)
   implicit val apiBundleContextless = jsonFormat5(ApiBundleContextless.apply)
 
+  implicit val apiBundleSourceDataset = jsonFormat3(ApiBundleContextlessDatasetData.apply)
   implicit val apiBundleContextlessData = jsonFormat3(ApiBundleContextlessData.apply)
 
   implicit val apiBundleContextProperty =
