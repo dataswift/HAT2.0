@@ -69,7 +69,6 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
       case Success(createdDebit) =>
         val recordResponse = recordDataDebitOperation(createdDebit, user, DataDebitOperations.Create(), "Contextless Data Debit created")
           .recover { case e => logger.error(s"Error while recording data debit operation: ${e.getMessage}") }
-        logger.info("Responding for successfully created DD")
         complete((Created, createdDebit))
       case Failure(e) =>
         complete((BadRequest, ErrorMessage("Request to create a contextless data debit is malformed", e.getMessage)))

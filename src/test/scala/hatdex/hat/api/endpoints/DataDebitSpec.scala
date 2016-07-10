@@ -116,6 +116,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
             responseAs[ApiDataDebitOut].bundleContextless must beSome
 
             val responseString = responseAs[String]
+            //logger.info(s"RESPONSE $responseString")
             responseString must contain("dataGroups")
             responseString must contain("event record 1")
             responseString must contain("event record 2")

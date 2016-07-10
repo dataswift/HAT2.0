@@ -110,319 +110,401 @@ object DataDebitExamples {
       |  "rolling": false,
       |  "name": "DD Kitchen electricity on weekend parties",
       |  "endDate": "2025-10-30T10:00:00Z",
-      |  "lastUpdated": "2016-06-08T13:52:46+01:00",
+      |  "lastUpdated": "2016-07-10T17:49:56+01:00",
       |  "price": 100.0,
-      |  "key": "2c366edd-5677-48fd-918a-e6705e879747",
-      |  "dateCreated": "2016-06-08T13:52:46+01:00",
+      |  "key": "1d99018a-bb90-4e27-87ad-3c5efae1ed29",
+      |  "dateCreated": "2016-07-10T17:49:56+01:00",
       |  "bundleContextless": {
-      |    "id": 6,
-      |    "name": "Kitchen electricity",
-      |    "dataGroups": [{
-      |      "Electricity in the kitchen": {
-      |        "name": "Electricity in the kitchen",
-      |        "lastUpdated": "2016-06-08T13:52:46+01:00",
+      |    "id": 26,
+      |    "name": "test bundle with full data",
+      |    "dataGroups": {
+      |      "Facebook": [{
+      |        "name": "event",
+      |        "table": {
+      |          "name": "event",
+      |          "source": "Facebook",
+      |          "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |          "id": 4,
+      |          "dateCreated": "2016-07-10T17:49:54+01:00",
+      |          "fields": [{
+      |            "name": "name",
+      |            "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |            "id": 12,
+      |            "dateCreated": "2016-07-10T17:49:54+01:00",
+      |            "tableId": 4
+      |          }, {
+      |            "name": "location",
+      |            "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |            "id": 13,
+      |            "dateCreated": "2016-07-10T17:49:54+01:00",
+      |            "tableId": 4
+      |          }, {
+      |            "name": "startTime",
+      |            "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |            "id": 14,
+      |            "dateCreated": "2016-07-10T17:49:54+01:00",
+      |            "tableId": 4
+      |          }, {
+      |            "name": "endTime",
+      |            "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |            "id": 15,
+      |            "dateCreated": "2016-07-10T17:49:54+01:00",
+      |            "tableId": 4
+      |          }]
+      |        },
       |        "data": [{
-      |          "name": "testRecord 6",
-      |          "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |          "id": 239,
-      |          "dateCreated": "2016-06-08T13:52:45+01:00",
+      |          "name": "event record 2",
+      |          "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |          "id": 5,
+      |          "dateCreated": "2016-07-10T17:49:54+01:00",
       |          "tables": [{
-      |            "name": "kitchen",
-      |            "source": "fibaro",
-      |            "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |            "subTables": [{
-      |              "name": "kitchenElectricity",
-      |              "source": "fibaro",
-      |              "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |              "id": 83,
-      |              "dateCreated": "2016-06-08T13:52:45+01:00",
-      |              "fields": [{
-      |                "name": "subtableTestField1",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "id": 187,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "tableId": 83,
-      |                "values": [{
-      |                  "id": 413,
-      |                  "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                  "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                  "value": "testValue6-2"
-      |                }]
-      |              }, {
-      |                "name": "subtableTestField2",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "id": 188,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "tableId": 83,
-      |                "values": [{
-      |                  "id": 414,
-      |                  "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                  "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                  "value": "testValue6-3"
-      |                }]
-      |              }]
-      |            }],
-      |            "id": 82,
-      |            "dateCreated": "2016-06-08T13:52:45+01:00",
+      |            "name": "event",
+      |            "source": "Facebook",
+      |            "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |            "id": 4,
+      |            "dateCreated": "2016-07-10T17:49:54+01:00",
       |            "fields": [{
-      |              "name": "tableTestField",
-      |              "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |              "id": 186,
-      |              "dateCreated": "2016-06-08T13:52:45+01:00",
-      |              "tableId": 82,
+      |              "name": "name",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 12,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "tableId": 4,
       |              "values": [{
-      |                "id": 412,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "value": "testValue6-1"
+      |                "id": 317,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "value": "event name 2"
+      |              }]
+      |            }, {
+      |              "name": "location",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 13,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "tableId": 4,
+      |              "values": [{
+      |                "id": 318,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "value": "event location 2"
+      |              }]
+      |            }, {
+      |              "name": "startTime",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 14,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "tableId": 4,
+      |              "values": [{
+      |                "id": 319,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "value": "event startTime 2"
+      |              }]
+      |            }, {
+      |              "name": "endTime",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 15,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "tableId": 4,
+      |              "values": [{
+      |                "id": 320,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "value": "event endTime 2"
       |              }]
       |            }]
       |          }]
       |        }, {
-      |          "name": "testRecord 5",
-      |          "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |          "id": 238,
-      |          "dateCreated": "2016-06-08T13:52:45+01:00",
+      |          "name": "event record 3",
+      |          "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |          "id": 6,
+      |          "dateCreated": "2016-07-10T17:49:54+01:00",
       |          "tables": [{
-      |            "name": "kitchen",
-      |            "source": "fibaro",
-      |            "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |            "subTables": [{
-      |              "name": "kitchenElectricity",
-      |              "source": "fibaro",
-      |              "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |              "id": 83,
-      |              "dateCreated": "2016-06-08T13:52:45+01:00",
-      |              "fields": [{
-      |                "name": "subtableTestField1",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "id": 187,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "tableId": 83,
-      |                "values": [{
-      |                  "id": 410,
-      |                  "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                  "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                  "value": "testValue5-2"
-      |                }]
-      |              }, {
-      |                "name": "subtableTestField2",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "id": 188,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "tableId": 83,
-      |                "values": [{
-      |                  "id": 411,
-      |                  "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                  "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                  "value": "testValue5-3"
-      |                }]
-      |              }]
-      |            }],
-      |            "id": 82,
-      |            "dateCreated": "2016-06-08T13:52:45+01:00",
+      |            "name": "event",
+      |            "source": "Facebook",
+      |            "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |            "id": 4,
+      |            "dateCreated": "2016-07-10T17:49:54+01:00",
       |            "fields": [{
-      |              "name": "tableTestField",
-      |              "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |              "id": 186,
-      |              "dateCreated": "2016-06-08T13:52:45+01:00",
-      |              "tableId": 82,
+      |              "name": "name",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 12,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "tableId": 4,
       |              "values": [{
-      |                "id": 409,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "value": "testValue5-1"
+      |                "id": 321,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "value": "event name 3"
+      |              }]
+      |            }, {
+      |              "name": "location",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 13,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "tableId": 4,
+      |              "values": [{
+      |                "id": 322,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "value": "event location 3"
+      |              }]
+      |            }, {
+      |              "name": "startTime",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 14,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "tableId": 4,
+      |              "values": [{
+      |                "id": 323,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "value": "event startTime 3"
+      |              }]
+      |            }, {
+      |              "name": "endTime",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 15,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "tableId": 4,
+      |              "values": [{
+      |                "id": 324,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "value": "event endTime 3"
       |              }]
       |            }]
       |          }]
       |        }, {
-      |          "name": "testRecord 4",
-      |          "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |          "id": 237,
-      |          "dateCreated": "2016-06-08T13:52:45+01:00",
+      |          "name": "event record 1",
+      |          "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |          "id": 4,
+      |          "dateCreated": "2016-07-10T17:49:54+01:00",
       |          "tables": [{
-      |            "name": "kitchen",
-      |            "source": "fibaro",
-      |            "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |            "subTables": [{
-      |              "name": "kitchenElectricity",
-      |              "source": "fibaro",
-      |              "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |              "id": 83,
-      |              "dateCreated": "2016-06-08T13:52:45+01:00",
-      |              "fields": [{
-      |                "name": "subtableTestField1",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "id": 187,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "tableId": 83,
-      |                "values": [{
-      |                  "id": 407,
-      |                  "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                  "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                  "value": "testValue4-2"
-      |                }]
-      |              }, {
-      |                "name": "subtableTestField2",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "id": 188,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "tableId": 83,
-      |                "values": [{
-      |                  "id": 408,
-      |                  "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                  "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                  "value": "testValue4-3"
-      |                }]
-      |              }]
-      |            }],
-      |            "id": 82,
-      |            "dateCreated": "2016-06-08T13:52:45+01:00",
+      |            "name": "event",
+      |            "source": "Facebook",
+      |            "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |            "id": 4,
+      |            "dateCreated": "2016-07-10T17:49:54+01:00",
       |            "fields": [{
-      |              "name": "tableTestField",
-      |              "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |              "id": 186,
-      |              "dateCreated": "2016-06-08T13:52:45+01:00",
-      |              "tableId": 82,
+      |              "name": "name",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 12,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "tableId": 4,
       |              "values": [{
-      |                "id": 406,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "value": "testValue4-1"
+      |                "id": 313,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "value": "event name 1"
+      |              }]
+      |            }, {
+      |              "name": "location",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 13,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "tableId": 4,
+      |              "values": [{
+      |                "id": 314,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "value": "event location 1"
+      |              }]
+      |            }, {
+      |              "name": "startTime",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 14,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "tableId": 4,
+      |              "values": [{
+      |                "id": 315,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "value": "event startTime 1"
+      |              }]
+      |            }, {
+      |              "name": "endTime",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 15,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "tableId": 4,
+      |              "values": [{
+      |                "id": 316,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "value": "event endTime 1"
       |              }]
       |            }]
       |          }]
-      |        }, {
-      |          "name": "testRecord 2",
-      |          "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |          "id": 236,
-      |          "dateCreated": "2016-06-08T13:52:45+01:00",
-      |          "tables": [{
-      |            "name": "kitchen",
-      |            "source": "fibaro",
-      |            "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |            "subTables": [{
-      |              "name": "kitchenElectricity",
-      |              "source": "fibaro",
-      |              "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |              "id": 83,
-      |              "dateCreated": "2016-06-08T13:52:45+01:00",
-      |              "fields": [{
-      |                "name": "subtableTestField1",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "id": 187,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "tableId": 83,
-      |                "values": [{
-      |                  "id": 404,
-      |                  "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                  "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                  "value": "testValue2-2"
-      |                }]
-      |              }, {
-      |                "name": "subtableTestField2",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "id": 188,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "tableId": 83,
-      |                "values": [{
-      |                  "id": 405,
-      |                  "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                  "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                  "value": "testValue2-3"
-      |                }]
-      |              }]
-      |            }],
-      |            "id": 82,
-      |            "dateCreated": "2016-06-08T13:52:45+01:00",
-      |            "fields": [{
-      |              "name": "tableTestField",
-      |              "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |              "id": 186,
-      |              "dateCreated": "2016-06-08T13:52:45+01:00",
-      |              "tableId": 82,
-      |              "values": [{
-      |                "id": 403,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "value": "testValue2-1"
-      |              }]
-      |            }]
-      |          }]
-      |        }, {
-      |          "name": "testRecord 1",
-      |          "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |          "id": 235,
-      |          "dateCreated": "2016-06-08T13:52:45+01:00",
-      |          "tables": [{
-      |            "name": "kitchen",
-      |            "source": "fibaro",
-      |            "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |            "subTables": [{
-      |              "name": "kitchenElectricity",
-      |              "source": "fibaro",
-      |              "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |              "id": 83,
-      |              "dateCreated": "2016-06-08T13:52:45+01:00",
-      |              "fields": [{
-      |                "name": "subtableTestField1",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "id": 187,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "tableId": 83,
-      |                "values": [{
-      |                  "id": 401,
-      |                  "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                  "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                  "value": "testValue2"
-      |                }]
-      |              }, {
-      |                "name": "subtableTestField2",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "id": 188,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "tableId": 83,
-      |                "values": [{
-      |                  "id": 402,
-      |                  "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                  "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                  "value": "testValue3"
-      |                }]
-      |              }]
-      |            }],
-      |            "id": 82,
-      |            "dateCreated": "2016-06-08T13:52:45+01:00",
-      |            "fields": [{
-      |              "name": "tableTestField",
-      |              "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |              "id": 186,
-      |              "dateCreated": "2016-06-08T13:52:45+01:00",
-      |              "tableId": 82,
-      |              "values": [{
-      |                "id": 400,
-      |                "dateCreated": "2016-06-08T13:52:45+01:00",
-      |                "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |                "value": "testValue1"
-      |              }]
-      |            }]
-      |          }]
-      |        }],
-      |        "id": 20,
-      |        "dateCreated": "2016-06-08T13:52:46+01:00",
+      |        }]
+      |      }],
+      |      "Fibaro": [{
+      |        "name": "kitchen",
       |        "table": {
       |          "name": "kitchen",
-      |          "source": "fibaro",
-      |          "lastUpdated": "2016-06-08T13:52:45+01:00",
-      |          "id": 82,
-      |          "dateCreated": "2016-06-08T13:52:45+01:00"
-      |        }
-      |      }
-      |    }]
+      |          "source": "Fibaro",
+      |          "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |          "subTables": [{
+      |            "name": "kichenElectricity",
+      |            "source": "Fibaro",
+      |            "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |            "id": 3,
+      |            "dateCreated": "2016-07-10T17:49:54+01:00",
+      |            "fields": [{
+      |              "name": "timestamp",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 10,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "tableId": 3
+      |            }, {
+      |              "name": "value",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 11,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "tableId": 3
+      |            }]
+      |          }],
+      |          "id": 2,
+      |          "dateCreated": "2016-07-10T17:49:54+01:00"
+      |        },
+      |        "data": [{
+      |          "name": "kitchen record 2",
+      |          "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |          "id": 2,
+      |          "dateCreated": "2016-07-10T17:49:54+01:00",
+      |          "tables": [{
+      |            "name": "kitchen",
+      |            "source": "Fibaro",
+      |            "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |            "subTables": [{
+      |              "name": "kichenElectricity",
+      |              "source": "Fibaro",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 3,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "fields": [{
+      |                "name": "timestamp",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "id": 10,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "tableId": 3,
+      |                "values": [{
+      |                  "id": 309,
+      |                  "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                  "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                  "value": "kitchen time 2"
+      |                }]
+      |              }, {
+      |                "name": "value",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "id": 11,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "tableId": 3,
+      |                "values": [{
+      |                  "id": 310,
+      |                  "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                  "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                  "value": "kitchen value 2"
+      |                }]
+      |              }]
+      |            }],
+      |            "id": 2,
+      |            "dateCreated": "2016-07-10T17:49:54+01:00"
+      |          }]
+      |        }, {
+      |          "name": "kitchen record 1",
+      |          "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |          "id": 1,
+      |          "dateCreated": "2016-07-10T17:49:54+01:00",
+      |          "tables": [{
+      |            "name": "kitchen",
+      |            "source": "Fibaro",
+      |            "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |            "subTables": [{
+      |              "name": "kichenElectricity",
+      |              "source": "Fibaro",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 3,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "fields": [{
+      |                "name": "timestamp",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "id": 10,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "tableId": 3,
+      |                "values": [{
+      |                  "id": 307,
+      |                  "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                  "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                  "value": "kitchen time 1"
+      |                }]
+      |              }, {
+      |                "name": "value",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "id": 11,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "tableId": 3,
+      |                "values": [{
+      |                  "id": 308,
+      |                  "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                  "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                  "value": "kitchen value 1"
+      |                }]
+      |              }]
+      |            }],
+      |            "id": 2,
+      |            "dateCreated": "2016-07-10T17:49:54+01:00"
+      |          }]
+      |        }, {
+      |          "name": "kitchen record 3",
+      |          "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |          "id": 3,
+      |          "dateCreated": "2016-07-10T17:49:54+01:00",
+      |          "tables": [{
+      |            "name": "kitchen",
+      |            "source": "Fibaro",
+      |            "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |            "subTables": [{
+      |              "name": "kichenElectricity",
+      |              "source": "Fibaro",
+      |              "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |              "id": 3,
+      |              "dateCreated": "2016-07-10T17:49:54+01:00",
+      |              "fields": [{
+      |                "name": "timestamp",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "id": 10,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "tableId": 3,
+      |                "values": [{
+      |                  "id": 311,
+      |                  "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                  "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                  "value": "kitchen time 3"
+      |                }]
+      |              }, {
+      |                "name": "value",
+      |                "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                "id": 11,
+      |                "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                "tableId": 3,
+      |                "values": [{
+      |                  "id": 312,
+      |                  "dateCreated": "2016-07-10T17:49:54+01:00",
+      |                  "lastUpdated": "2016-07-10T17:49:54+01:00",
+      |                  "value": "kitchen value 3"
+      |                }]
+      |              }]
+      |            }],
+      |            "id": 2,
+      |            "dateCreated": "2016-07-10T17:49:54+01:00"
+      |          }]
+      |        }]
+      |      }]
+      |    }
       |  },
       |  "kind": "contextless",
       |  "startDate": "2015-09-30T10:00:00+01:00",
       |  "sell": true
       |}
-      |
     """.stripMargin
 }

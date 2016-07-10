@@ -2,21 +2,21 @@ package hatdex.hat.api.service
 
 import java.util.UUID
 
-import akka.actor.{ActorSystem, ActorRefFactory, ActorContext}
+import akka.actor.{ ActorSystem, ActorRefFactory, ActorContext }
 import akka.event.{ Logging, LoggingAdapter }
-import hatdex.hat.api.{DatabaseInfo, TestDataCleanup}
+import hatdex.hat.api.{ DatabaseInfo, TestDataCleanup }
 import hatdex.hat.api.endpoints._
-import hatdex.hat.api.endpoints.jsonExamples.DataDebitExamples
+import hatdex.hat.api.endpoints.jsonExamples.{ BundleExamples, DataDebitExamples }
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.authenticators.AccessTokenHandler
-import hatdex.hat.authentication.{TestAuthCredentials, HatAuthTestHandler}
+import hatdex.hat.authentication.{ TestAuthCredentials, HatAuthTestHandler }
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.specs2.mutable.Specification
-import org.specs2.specification.{BeforeAfterAll, Scope}
+import org.specs2.specification.{ BeforeAfterAll, Scope }
 import spray.http.HttpRequest
 import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._
@@ -65,146 +65,121 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
       }
     }
 
-//    val contextlessBundle =
-//      s"""
-//         |{
-//         |    "name": "Kitchen electricity",
-//         |    "tables": [{
-//         |        "name": "Electricity in the kitchen",
-//         |        "bundleTable": {
-//         |            "name": "Electricity in the kitchen",
-//         |            "table": {
-//         |                "name": "kitchen",
-//         |                "source": "Fibaro",
-//         |                "id": ${dataTable.id.get}
-//         |            }
-//         |        }
-//         |    }]
-//         |}
-//        """.stripMargin
-//
-//    val bundleData = JsonParser(contextlessBundle).convertTo[ApiBundleContextless]
-//    val dataDebitData = JsonParser(DataDebitExamples.dataDebitExample).convertTo[ApiDataDebit]
-//
-//    val dataDebit = {
-//      HttpRequest(POST, "/dataDebit/propose")
-//        .withHeaders(ownerAuthHeader)
-//        .withEntity(HttpEntity(MediaTypes.`application/json`, dataDebitData.copy(bundleContextless = Some(bundleData)).toJson.toString)) ~>
-//        sealRoute(routes) ~>
-//        check {
-//          response.status should be equalTo Created
-//          val responseString = responseAs[String]
-//          responseString must contain("key")
-//          responseAs[ApiDataDebit]
-//        }
-//    }
-//
-//    dataDebit.key must beSome
-//
-//    HttpRequest(PUT, s"/dataDebit/${dataDebit.key.get}/enable")
-//      .withHeaders(ownerAuthHeader) ~>
-//      sealRoute(routes) ~>
-//      check {
-//        response.status should be equalTo OK
-//      }
-//  }
-//
-//  class Context extends Scope {
-//    val property = DataDebitContext.property
-//    val populatedData = DataDebitContext.populatedData
-//    val populatedTable = DataDebitContext.dataTable
-//    val dataDebit = DataDebitContext.dataDebit
-//  }
-//
-////  object StatsServiceSpecContext extends StatsServiceContext with DataDebitRequiredServices {
-////    def actorRefFactory: ActorRefFactory = system
-////    override val logger: LoggingAdapter = Logging.getLogger(system, "tests")
-////    logger.info("Stats Service context object created")
-////  }
-////
-////  class StatsServiceSpecContext extends Scope {
-////    val dataDebit = StatsServiceSpecContext.dataDebit
-////  }
-//
-//  import JsonProtocol._
-//
-//  sequential
-//
-//  "Stats Service computations" should {
-//    val valuesString = hatdex.hat.api.endpoints.jsonExamples.DataDebitExamples.dataDebitContextlessValues
-//    val data = JsonParser(valuesString).convertTo[ApiDataDebitOut]
-//
-//    "Corrently compute data debit bundle record count" in {
-//      data.bundleContextless must beSome
-//      val bundleContextless = data.bundleContextless.get
-//      val firstBundleTable = bundleContextless.dataGroups.head.values.head
-//      getBundleTableRecordCount(firstBundleTable)._2 must be equalTo (5)
-//    }
-//
-//    "Correctly compute table value counts" in {
-//      data.bundleContextless must beSome
-//      val bundleContextless = data.bundleContextless.get
-//      val firstBundleTable = bundleContextless.dataGroups.head.values.head
-//      val stats = getTableValueCounts(firstBundleTable)
-//
-//      // Must have extracted the right number of tables
-//      stats.keys.toSeq.length must be equalTo (2)
-//
-//      val electricityTableStats = stats.find(_._1.name == "kitchenElectricity")
-//      electricityTableStats must beSome
-//      electricityTableStats.get._2 must be equalTo (10)
-//
-//      val kitchenTableStats = stats.find(_._1.name == "kitchen")
-//      kitchenTableStats must beSome
-//      kitchenTableStats.get._2 must be equalTo (15)
-//    }
-//
-//    "Correctly compute field value counts" in {
-//      data.bundleContextless must beSome
-//      val bundleContextless = data.bundleContextless.get
-//      val firstBundleTable = bundleContextless.dataGroups.head.values.head
-//      val stats = getFieldValueCounts(firstBundleTable)
-//      stats map { stat =>
-//        stat._2 must be equalTo (5)
-//      }
-//      stats.keys.toSeq.length must be equalTo (3)
-//    }
-//
-//    "Correctly compute overall data bundle stats" in {
-//      data.bundleContextless must beSome
-//      val bundleContextless = data.bundleContextless.get
-//      val (totalBundleRecords, bundleTableStats, tableValueStats, fieldValueStats) = getBundleStats(bundleContextless)
-//
-//      totalBundleRecords must be equalTo (5)
-//    }
-//  }
-//
-//  "Data Stats reporting" should {
-//    val valuesString = hatdex.hat.api.endpoints.jsonExamples.DataDebitExamples.dataDebitContextlessValues
-//    val data = JsonParser(valuesString).convertTo[ApiDataDebitOut]
-//    "Correctly convert stats" in {
-//      data.bundleContextless must beSome
-//      val bundleContextless = data.bundleContextless.get
-//      val (totalBundleRecords, bundleTableStats, tableValueStats, fieldValueStats) = getBundleStats(bundleContextless)
-//
-//      val stats = convertBundleStats(tableValueStats, fieldValueStats)
-//      stats.length must beEqualTo(2)
-//    }
-//
-//    "Store data in a database" in new Context {
-//
-//      HatAuthTestHandler.validUsers.find(_.role == "owner") map { user =>
-//
-//        val ddOperationResult = recordDataDebitOperation(dataDebit, user, DataDebitOperations.Create(), "Test operation")
-//
-//        eventually {
-//          ddOperationResult map { result =>
-//            logger.info(s"ddOperationResult: $result")
-//          }
-//
-//          ddOperationResult must be isSuccess
-//        }
-//      } must beSome
-//    }
+    val contextlessBundle = BundleExamples.fullbundle
+
+    val bundleData = JsonParser(contextlessBundle).convertTo[ApiBundleContextless]
+    val dataDebitData = JsonParser(DataDebitExamples.dataDebitExample).convertTo[ApiDataDebit]
+
+    val dataDebit = {
+      HttpRequest(POST, "/dataDebit/propose")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, dataDebitData.copy(bundleContextless = Some(bundleData)).toJson.toString)) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo Created
+          val responseString = responseAs[String]
+          responseString must contain("key")
+          responseAs[ApiDataDebit]
+        }
+    }
+
+    dataDebit.key must beSome
+
+    HttpRequest(PUT, s"/dataDebit/${dataDebit.key.get}/enable")
+      .withHeaders(ownerAuthHeader) ~>
+      sealRoute(routes) ~>
+      check {
+        response.status should be equalTo OK
+      }
+  }
+
+  class Context extends Scope {
+    val property = DataDebitContext.property
+    val populatedData = DataDebitContext.populatedData
+    val populatedTable = DataDebitContext.dataTable
+    val dataDebit = DataDebitContext.dataDebit
+  }
+
+  //  object StatsServiceSpecContext extends StatsServiceContext with DataDebitRequiredServices {
+  //    def actorRefFactory: ActorRefFactory = system
+  //    override val logger: LoggingAdapter = Logging.getLogger(system, "tests")
+  //    logger.info("Stats Service context object created")
+  //  }
+  //
+  //  class StatsServiceSpecContext extends Scope {
+  //    val dataDebit = StatsServiceSpecContext.dataDebit
+  //  }
+
+  import JsonProtocol._
+
+  sequential
+
+  "Stats Service computations" should {
+    val valuesString = hatdex.hat.api.endpoints.jsonExamples.DataDebitExamples.dataDebitContextlessValues
+    val data = JsonParser(valuesString).convertTo[ApiDataDebitOut]
+
+    "Correctly compute table value counts" in {
+      data.bundleContextless must beSome
+      val bundleContextless = data.bundleContextless.get
+      val firstDataset = bundleContextless.dataGroups.head._2.head
+      val stats = getTableValueCounts(firstDataset)
+      // Must have extracted the right number of tables
+      stats.keys.toSeq.length must be equalTo (1)
+      stats.values.toSeq.head must be equalTo (12)
+    }
+
+    "Correctly compute field value counts" in {
+      data.bundleContextless must beSome
+      val bundleContextless = data.bundleContextless.get
+      val firstDataset = bundleContextless.dataGroups.head._2.head
+      val stats = getFieldValueCounts(firstDataset)
+      stats map { stat =>
+        stat._2 must be equalTo (3)
+      }
+      stats.keys.toSeq.length must be equalTo (4)
+    }
+
+    "Correctly compute overall data bundle stats" in {
+      data.bundleContextless must beSome
+      val bundleContextless = data.bundleContextless.get
+      val (totalBundleRecords, tableValueStats, fieldValueStats) = getBundleStats(bundleContextless)
+      logger.info(s"Table value stats: ${tableValueStats.mkString("\n")}")
+
+      val electricityTableStats = tableValueStats.find(_._1.name == "kichenElectricity")
+      electricityTableStats must beSome
+      electricityTableStats.get._2 must be equalTo (6)
+
+      val kitchenTableStats = tableValueStats.find(_._1.name == "kitchen")
+      kitchenTableStats must beSome
+      kitchenTableStats.get._2 must be equalTo (6)
+
+      totalBundleRecords must be equalTo (6)
+    }
+  }
+
+  "Data Stats reporting" should {
+    val valuesString = hatdex.hat.api.endpoints.jsonExamples.DataDebitExamples.dataDebitContextlessValues
+    val data = JsonParser(valuesString).convertTo[ApiDataDebitOut]
+    "Correctly convert stats" in {
+      data.bundleContextless must beSome
+      val bundleContextless = data.bundleContextless.get
+      val (totalBundleRecords, tableValueStats, fieldValueStats) = getBundleStats(bundleContextless)
+
+      val stats = convertBundleStats(tableValueStats, fieldValueStats)
+      stats.length must beEqualTo(3)
+    }
+
+    "Store data in a database" in new Context {
+      HatAuthTestHandler.validUsers.find(_.role == "owner") map { user =>
+        val ddOperationResult = recordDataDebitOperation(dataDebit, user, DataDebitOperations.Create(), "Test operation")
+
+        eventually {
+          ddOperationResult map { result =>
+            logger.info(s"ddOperationResult: $result")
+          }
+          ddOperationResult must be isSuccess
+        }
+      } must beSome
+    }
   }
 }

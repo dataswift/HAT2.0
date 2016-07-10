@@ -31,7 +31,7 @@ object Utils {
     }
   }
 
-  def mergeMap[A, B](ms: Seq[HashMap[A, B]])(f: (B, B) => B): HashMap[A, B] =
+  def mergeMap[A, B](ms: Iterable[HashMap[A, B]])(f: (B, B) => B): HashMap[A, B] =
     (HashMap[A, B]() /: (for (m <- ms; kv <- m) yield kv)) { (a, kv) =>
       a + (if (a.contains(kv._1)) kv._1 -> f(a(kv._1), kv._2) else kv)
     }
