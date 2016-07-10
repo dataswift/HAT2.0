@@ -21,7 +21,7 @@
 package hatdex.hat.api.json
 
 import org.joda.time.LocalDateTime
-import org.joda.time.format.ISODateTimeFormat
+import org.joda.time.format.{ISODateTimeFormat, DateTimeFormatterBuilder, DateTimeParser}
 import spray.json._
 
 /**
@@ -30,7 +30,23 @@ import spray.json._
 trait DateTimeMarshalling {
   implicit object DateTimeFormat extends RootJsonFormat[LocalDateTime] {
 
-    val formatter = ISODateTimeFormat.dateTimeNoMillis
+    ISODateTimeFormat.dateTime()
+//    val formatter = new DateTimeFormatterBuilder()
+//      .appendOptional(ISODateTimeFormat.dateTime.getParser)
+//      .appendOptional(ISODateTimeFormat.localDateOptionalTimeParser().getParser)
+//      .appendOptional(ISODateTimeFormat.dateTimeNoMillis().getParser)
+//      .toFormatter
+
+    import collection.JavaConverters._
+    val parsers = Array(
+      ISODateTimeFormat.dateTime.getParser,
+      ISODateTimeFormat.localDateOptionalTimeParser().getParser,
+      ISODateTimeFormat.dateTimeNoMillis().getParser
+    )
+
+    val formatter = new DateTimeFormatterBuilder().append( ISODateTimeFormat.dateTimeNoMillis().getPrinter, parsers).toFormatter();
+
+//    val printFormatter = ISODateTimeFormat.dateTimeNoMillis()
 
     def write(obj: LocalDateTime): JsValue = {
       JsString(formatter.print(obj.toDateTime))

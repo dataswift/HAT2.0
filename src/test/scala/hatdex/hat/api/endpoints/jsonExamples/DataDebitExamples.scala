@@ -26,7 +26,7 @@ object DataDebitExamples {
     """
       |  {
       |    "name": "DD Kitchen electricity on weekend parties",
-      |    "startDate": "2015-09-30T10:00:00Z",
+      |    "startDate": "2016-06-24T00:00:00.000",
       |    "endDate": "2025-10-30T10:00:00Z",
       |    "rolling": false,
       |    "sell": true,
