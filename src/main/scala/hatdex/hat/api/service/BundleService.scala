@@ -18,7 +18,6 @@
  * Public License along with this program. If not, see
  * <http://www.gnu.org/licenses/>.
  */
-
 package hatdex.hat.api.service
 
 import akka.actor.ActorRefFactory
