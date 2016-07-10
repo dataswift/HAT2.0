@@ -69,11 +69,11 @@ trait StatsService {
     }
   }
 
-  def recordDataDebitRetrieval(
-    dd: ApiDataDebit,
+  def recordDataDebitRetrieval(dd: ApiDataDebit,
     values: ApiDataDebitOut,
     user: User,
     logEntry: String): Future[Unit] = {
+
     val ddOperation = StatsDataDebitOperationRow(0, LocalDateTime.now(), dd.key.get, user.userId, DataDebitOperations.GetValues().toString)
     val ddUser = user.copy(pass = None)
     values.bundleContextless.map { bundle =>
@@ -147,31 +147,31 @@ trait StatsService {
   def getBundleStats(bundle: ApiBundleContextlessData): (Int, HashMap[ApiDataTable, Int], HashMap[ApiDataField, Int]) = {
     // FIXME: implement
     (0, HashMap[ApiDataTable, Int](), HashMap[ApiDataField, Int]())
-//    val groupStats = bundle.dataGroups.flatMap { group => // Only one group until Joins come in
-//      group.map {
-//        case (groupName: String, bundleTable: ApiBundleTable) =>
-//          val bundleTableRecords = getBundleTableRecordCount(bundleTable)
-//          val aggregateTableValueCounts = getTableValueCounts(bundleTable)
-//          val aggregateFieldValueCounts = getFieldValueCounts(bundleTable)
-//
-//          (bundleTableRecords, aggregateTableValueCounts, aggregateFieldValueCounts)
-//      }
-//    }
-//    val bundleTableRecordCounts = groupStats.map(_._1)
-//    val tableValueCounts = groupStats.map(_._2)
-//    val fieldValueCounts = groupStats.map(_._3)
-//
-//    val bundleTableStats = bundleTableRecordCounts.groupBy(_._1).map {
-//      case (bundleTable, aggBundleTableCounts) =>
-//        bundleTable -> aggBundleTableCounts.map(_._2).sum
-//    }
-//
-//    val tableValueStats = Utils.mergeMap(tableValueCounts)((v1, v2) => v1 + v2)
-//    val fieldValueStats = Utils.mergeMap(fieldValueCounts)((v1, v2) => v1 + v2)
-//
-//    val totalBundleRecords = bundleTableStats.values.sum
-//
-//    (totalBundleRecords, tableValueStats, fieldValueStats)
+    //    val groupStats = bundle.dataGroups.flatMap { group => // Only one group until Joins come in
+    //      group.map {
+    //        case (groupName: String, bundleTable: ApiBundleTable) =>
+    //          val bundleTableRecords = getBundleTableRecordCount(bundleTable)
+    //          val aggregateTableValueCounts = getTableValueCounts(bundleTable)
+    //          val aggregateFieldValueCounts = getFieldValueCounts(bundleTable)
+    //
+    //          (bundleTableRecords, aggregateTableValueCounts, aggregateFieldValueCounts)
+    //      }
+    //    }
+    //    val bundleTableRecordCounts = groupStats.map(_._1)
+    //    val tableValueCounts = groupStats.map(_._2)
+    //    val fieldValueCounts = groupStats.map(_._3)
+    //
+    //    val bundleTableStats = bundleTableRecordCounts.groupBy(_._1).map {
+    //      case (bundleTable, aggBundleTableCounts) =>
+    //        bundleTable -> aggBundleTableCounts.map(_._2).sum
+    //    }
+    //
+    //    val tableValueStats = Utils.mergeMap(tableValueCounts)((v1, v2) => v1 + v2)
+    //    val fieldValueStats = Utils.mergeMap(fieldValueCounts)((v1, v2) => v1 + v2)
+    //
+    //    val totalBundleRecords = bundleTableStats.values.sum
+    //
+    //    (totalBundleRecords, tableValueStats, fieldValueStats)
   }
 
   def storeBundleStats(
@@ -179,64 +179,66 @@ trait StatsService {
     totalBundleRecords: Int,
     tableValueStats: HashMap[ApiDataTable, Int],
     fieldValueStats: HashMap[ApiDataField, Int]): Future[Unit] = {
-    throw new RuntimeException("Store Bundle stats not implemented")
+    Future {
+      throw new RuntimeException("Store Bundle stats not implemented")
+    }
 
-//    val fOperation = DatabaseInfo.db.run {
-//      (StatsDataDebitOperation returning StatsDataDebitOperation) += ddOperation
-//    }
-//    val fStatements = fOperation.map { o =>
-//      val dbTableStatsInsert = StatsDataDebitDataTableAccess ++=
-//        tableValueStats map {
-//          case (table, valueCount) =>
-//            StatsDataDebitDataTableAccessRow(0, o.dateCreated, table.id.get, o.recordId, valueCount)
-//        }
-//
-//      val dbFieldStatsInsert = StatsDataDebitDataFieldAccess ++=
-//        fieldValueStats map {
-//          case (field, valueCount) =>
-//            StatsDataDebitDataFieldAccessRow(0, o.dateCreated, field.id.get, o.recordId, valueCount)
-//        }
-//
-//      val ddRecordCountInsert = StatsDataDebitRecordCount +=
-//        StatsDataDebitRecordCountRow(0, o.dateCreated, o.recordId, totalBundleRecords)
-//
-//      val dbBundleTableStatsInsert = StatsDataDebitClessBundleRecords ++=
-//        bundleTableStats map {
-//          case (bundleTable, recordCount) =>
-//            StatsDataDebitClessBundleRecordsRow(0, o.dateCreated, bundleTable.id.get, o.recordId, recordCount)
-//        }
-//
-//      DBIO.seq(
-//        dbTableStatsInsert,
-//        dbFieldStatsInsert,
-//        dbBundleTableStatsInsert,
-//        ddRecordCountInsert)
-//    }
-//
-//    fStatements.flatMap { statements =>
-//      DatabaseInfo.db.run(statements)
-//    }
+    //    val fOperation = DatabaseInfo.db.run {
+    //      (StatsDataDebitOperation returning StatsDataDebitOperation) += ddOperation
+    //    }
+    //    val fStatements = fOperation.map { o =>
+    //      val dbTableStatsInsert = StatsDataDebitDataTableAccess ++=
+    //        tableValueStats map {
+    //          case (table, valueCount) =>
+    //            StatsDataDebitDataTableAccessRow(0, o.dateCreated, table.id.get, o.recordId, valueCount)
+    //        }
+    //
+    //      val dbFieldStatsInsert = StatsDataDebitDataFieldAccess ++=
+    //        fieldValueStats map {
+    //          case (field, valueCount) =>
+    //            StatsDataDebitDataFieldAccessRow(0, o.dateCreated, field.id.get, o.recordId, valueCount)
+    //        }
+    //
+    //      val ddRecordCountInsert = StatsDataDebitRecordCount +=
+    //        StatsDataDebitRecordCountRow(0, o.dateCreated, o.recordId, totalBundleRecords)
+    //
+    //      val dbBundleTableStatsInsert = StatsDataDebitClessBundleRecords ++=
+    //        bundleTableStats map {
+    //          case (bundleTable, recordCount) =>
+    //            StatsDataDebitClessBundleRecordsRow(0, o.dateCreated, bundleTable.id.get, o.recordId, recordCount)
+    //        }
+    //
+    //      DBIO.seq(
+    //        dbTableStatsInsert,
+    //        dbFieldStatsInsert,
+    //        dbBundleTableStatsInsert,
+    //        ddRecordCountInsert)
+    //    }
+    //
+    //    fStatements.flatMap { statements =>
+    //      DatabaseInfo.db.run(statements)
+    //    }
   }
 
-//  def getBundleTableRecordCount(bundleTable: ApiBundleTable) = {
-//    (bundleTable, bundleTable.data.map(data => data.length).getOrElse(0))
-//  }
+  //  def getBundleTableRecordCount(bundleTable: ApiBundleTable) = {
+  //    (bundleTable, bundleTable.data.map(data => data.length).getOrElse(0))
+  //  }
 
-//  def getTableValueCounts(bundleTable: ApiBundleTable): HashMap[ApiDataTable, Int] = {
-//    // Each group consists of a sequence of data records
-//    val tableValueCounts = bundleTable.data.getOrElse(Seq()).flatMap { record: ApiDataRecord =>
-//      record.tables.getOrElse(Seq()).map(countTableValues)
-//    }
-//    Utils.mergeMap(tableValueCounts)((v1, v2) => v1 + v2)
-//  }
+  //  def getTableValueCounts(bundleTable: ApiBundleTable): HashMap[ApiDataTable, Int] = {
+  //    // Each group consists of a sequence of data records
+  //    val tableValueCounts = bundleTable.data.getOrElse(Seq()).flatMap { record: ApiDataRecord =>
+  //      record.tables.getOrElse(Seq()).map(countTableValues)
+  //    }
+  //    Utils.mergeMap(tableValueCounts)((v1, v2) => v1 + v2)
+  //  }
 
-//  def getFieldValueCounts(bundleTable: ApiBundleTable): HashMap[ApiDataField, Int] = {
-//    // We also want to know what Data Attributes were retrieved, and how many items each of them contained
-//    val fieldValueCounts = bundleTable.data.getOrElse(Seq()).flatMap { record: ApiDataRecord =>
-//      record.tables.getOrElse(Seq()).map(countFieldValues)
-//    }
-//    Utils.mergeMap(fieldValueCounts)((v1, v2) => v1 + v2)
-//  }
+  //  def getFieldValueCounts(bundleTable: ApiBundleTable): HashMap[ApiDataField, Int] = {
+  //    // We also want to know what Data Attributes were retrieved, and how many items each of them contained
+  //    val fieldValueCounts = bundleTable.data.getOrElse(Seq()).flatMap { record: ApiDataRecord =>
+  //      record.tables.getOrElse(Seq()).map(countFieldValues)
+  //    }
+  //    Utils.mergeMap(fieldValueCounts)((v1, v2) => v1 + v2)
+  //  }
 
   private def countTableValues(dataTable: ApiDataTable): HashMap[ApiDataTable, Int] = {
     val valueCount = countFieldValues(dataTable).values.sum

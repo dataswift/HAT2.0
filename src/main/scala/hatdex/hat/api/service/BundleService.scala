@@ -141,7 +141,11 @@ trait BundleService extends DataService {
       DatabaseInfo.db.run {
         requestedTableFieldsQuery.result
       } map { tableFields =>
-        val sourceDatasetTable = tableFields.headOption.map(_._1).map(t => ApiDataTable.fromDataTable(t)(None)(None)).get
+        // logger.info(s"Found table fields: $tableFields")
+        val sourceDatasetTable = tableFields
+          .headOption.map(_._1)
+          .map(t => ApiDataTable.fromDataTable(t)(None)(None))
+          .getOrElse(throw new IllegalArgumentException("None of the selected fields exist"))
         val dataFields = tableFields.map(_._2).map(f => ApiDataField.fromDataField(f))
         (source, dataset, sourceDatasetTable, dataFields)
       }

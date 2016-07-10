@@ -33,8 +33,6 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
 
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
 
-  val apiUser: User = User(UUID.randomUUID(), "alice@gmail.com", Some(BCrypt.hashpw("dr0w55ap", BCrypt.gensalt())), "Test User", "dataDebit")
-
   // Prepare the data to create test bundles on
   def beforeAll() = {
     db.withSession { implicit session =>
@@ -67,44 +65,32 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
   "Data Debit Service" should {
     "Accept a contextless Data Debit proposal" in new Context {
 
-      val contextlessBundle =
-        s"""
-          |{
-          |    "name": "Kitchen electricity",
-          |    "tables": [{
-          |        "name": "Electricity in the kitchen",
-          |        "bundleTable": {
-          |            "name": "Electricity in the kitchen",
-          |            "table": {
-          |                "name": "kitchen",
-          |                "source": "Fibaro",
-          |                "id": ${populatedTable.id.get}
-          |            }
-          |        }
-          |    }]
-          |}
-        """.stripMargin
+      val contextlessBundle = BundleExamples.fullbundle
 
       val bundleData = JsonParser(contextlessBundle).convertTo[ApiBundleContextless]
       val dataDebitData = JsonParser(DataDebitExamples.dataDebitExample).convertTo[ApiDataDebit]
 
       val dataDebit = {
         val dataDebit = HttpRequest(POST, "/dataDebit/propose")
-          .withHeaders(ownerAuthHeader)
+          .withHeaders(dataDebitAuthHeader)
           .withEntity(HttpEntity(MediaTypes.`application/json`, dataDebitData.copy(bundleContextless = Some(bundleData)).toJson.toString)) ~>
           sealRoute(routes) ~>
           check {
-            response.status should be equalTo Created
-            val responseString = responseAs[String]
-            responseString must contain("key")
+            eventually {
+              response.status should be equalTo Created
+              val responseString = responseAs[String]
+              responseString must contain("key")
+            }
             responseAs[ApiDataDebit]
           }
 
         HttpRequest(GET, s"/dataDebit/${dataDebit.key.get}/values")
-          .withHeaders(ownerAuthHeader) ~>
+          .withHeaders(dataDebitAuthHeader) ~>
           sealRoute(routes) ~>
           check {
-            response.status should be equalTo Forbidden
+            eventually {
+              response.status should be equalTo Forbidden
+            }
           }
 
         dataDebit
@@ -116,40 +102,59 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
         .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo OK
+          eventually {
+            response.status should be equalTo OK
+          }
         }
 
-      val result = {
-        HttpRequest(GET, s"/dataDebit/${dataDebit.key.get}/values")
-          .withHeaders(ownerAuthHeader) ~>
-          sealRoute(routes) ~>
-          check {
+      HttpRequest(GET, s"/dataDebit/${dataDebit.key.get}/values")
+        .withHeaders(dataDebitAuthHeader) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
             response.status should be equalTo OK
-            responseAs[ApiDataDebitOut]
+            responseAs[ApiDataDebitOut].bundleContextless must beSome
+
+            val responseString = responseAs[String]
+            responseString must contain("dataGroups")
+            responseString must contain("event record 1")
+            responseString must contain("event record 2")
+            responseString must contain("event record 3")
+
+            responseString must contain("kitchen record 1")
+            responseString must contain("kitchen record 2")
+            responseString must contain("kitchen record 3")
+
+            responseString must contain("kitchen value 1")
+            responseString must contain("event name 1")
+            responseString must contain("event location 1")
           }
-      }
-      result.bundleContextless must beSome
+        }
     }
 
     "Accept a contextual Data Debit proposal" in new Context {
 
       val dataDebit = {
         val dataDebit = HttpRequest(POST, "/dataDebit/propose")
-          .withHeaders(ownerAuthHeader)
+          .withHeaders(dataDebitAuthHeader)
           .withEntity(HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitContextual)) ~>
           sealRoute(routes) ~>
           check {
-            response.status should be equalTo Created
-            val responseString = responseAs[String]
-            responseString must contain("key")
+            eventually {
+              response.status should be equalTo Created
+              val responseString = responseAs[String]
+              responseString must contain("key")
+            }
             responseAs[ApiDataDebit]
           }
 
         HttpRequest(GET, s"/${dataDebit.key.get}/values")
-          .withHeaders(ownerAuthHeader) ~>
+          .withHeaders(dataDebitAuthHeader) ~>
           sealRoute(retrieveDataDebitValuesApi) ~>
           check {
-            response.status should be equalTo Forbidden
+            eventually {
+              response.status should be equalTo Forbidden
+            }
           }
 
         dataDebit
@@ -162,19 +167,23 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
           .withHeaders(ownerAuthHeader) ~>
           sealRoute(routes) ~>
           check {
-            response.status should be equalTo OK
+            eventually {
+              response.status should be equalTo OK
+            }
           }
       }
 
       HttpRequest(GET, s"/dataDebit/${dataDebit.key.get}/values")
-        .withHeaders(ownerAuthHeader) ~>
+        .withHeaders(dataDebitAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo OK
-          val resp = responseAs[String]
-          resp must contain("HATperson")
-          resp must contain("testValue1")
-          resp must contain("testValue2-1")
+          eventually {
+            response.status should be equalTo OK
+            val resp = responseAs[String]
+            resp must contain("HATperson")
+            resp must contain("testValue1")
+            resp must contain("testValue2-1")
+          }
           responseAs[Seq[ApiEntity]]
         }
 
@@ -182,173 +191,31 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
         .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo OK
-        }
-    }
-
-    "Accept a contextless Data Debit proposal" in new Context {
-
-      val contextlessBundle =
-        s"""
-           |{
-           |    "name": "Kitchen electricity",
-           |    "tables": [{
-           |        "name": "Electricity in the kitchen",
-           |        "bundleTable": {
-           |            "name": "Electricity in the kitchen",
-           |            "table": {
-           |                "name": "kitchen",
-           |                "source": "Fibaro",
-           |                "id": ${populatedTable.id.get}
-           |            }
-           |        }
-           |    }]
-           |}
-        """.stripMargin
-
-      val bundleData = JsonParser(contextlessBundle).convertTo[ApiBundleContextless]
-      val dataDebitData = JsonParser(DataDebitExamples.dataDebitExample).convertTo[ApiDataDebit]
-
-      val dataDebit = {
-        val dataDebit = HttpRequest(POST, "/dataDebit/propose")
-          .withHeaders(ownerAuthHeader)
-          .withEntity(HttpEntity(MediaTypes.`application/json`, dataDebitData.copy(bundleContextless = Some(bundleData)).toJson.toString)) ~>
-          sealRoute(routes) ~>
-          check {
-            response.status should be equalTo Created
-            val responseString = responseAs[String]
-            responseString must contain("key")
-            responseAs[ApiDataDebit]
-          }
-
-        HttpRequest(GET, s"/dataDebit/${dataDebit.key.get}/values")
-          .withHeaders(ownerAuthHeader) ~>
-          sealRoute(routes) ~>
-          check {
-            response.status should be equalTo Forbidden
-          }
-
-        dataDebit
-      }
-
-      dataDebit.key must beSome
-
-      val t = {
-        HttpRequest(PUT, s"/dataDebit/${dataDebit.key.get}/enable")
-          .withHeaders(ownerAuthHeader) ~>
-          sealRoute(routes) ~>
-          check {
+          eventually {
             response.status should be equalTo OK
           }
-      }
-
-      val result = {
-        HttpRequest(GET, s"/dataDebit/${dataDebit.key.get}/values")
-          .withHeaders(ownerAuthHeader) ~>
-          sealRoute(routes) ~>
-          check {
-            response.status should be equalTo OK
-            responseAs[ApiDataDebitOut]
-          }
-      }
-      result.bundleContextless must beSome
+        }
     }
 
-    "Accept a contextless Data Debit proposal without table IDs set" in new Context {
-      val contextlessBundle =
-        s"""
-           |{
-           |    "name": "Kitchen electricity",
-           |    "tables": [{
-           |        "name": "Electricity in the kitchen",
-           |        "bundleTable": {
-           |            "name": "Electricity in the kitchen",
-           |            "table": {
-           |                "name": "kitchen",
-           |                "source": "fibaro"
-           |            }
-           |        }
-           |    }]
-           |}
-        """.stripMargin
+    "Reject a contextless Data Debit proposal with incorrect bundle definition" in new Context {
+      val contextlessBundle = BundleExamples.fieldlessDataset
 
       val bundleData = JsonParser(contextlessBundle).convertTo[ApiBundleContextless]
       val dataDebitData = JsonParser(DataDebitExamples.dataDebitExample).convertTo[ApiDataDebit]
 
-      val dataDebit = {
-        HttpRequest(POST, "/dataDebit/propose")
-          .withHeaders(ownerAuthHeader)
-          .withEntity(HttpEntity(MediaTypes.`application/json`, dataDebitData.copy(bundleContextless = Some(bundleData)).toJson.toString)) ~>
-          sealRoute(routes) ~>
-          check {
-            val body = responseAs[String]
-//            logger.info(s"dd proposal response: $body")
-            response.status should be equalTo Created
-            val responseString = responseAs[String]
-            responseString must contain("key")
-            responseAs[ApiDataDebit]
-          }
-      }
-
-      dataDebit.key must beSome
-
-      HttpRequest(PUT, s"/dataDebit/${dataDebit.key.get}/enable")
-        .withHeaders(ownerAuthHeader) ~>
-        sealRoute(routes) ~>
-        check {
-          response.status should be equalTo OK
-        }
-
-      HttpRequest(GET, s"/dataDebit/${dataDebit.key.get}/values")
-        .withHeaders(ownerAuthHeader) ~>
-        sealRoute(routes) ~>
-        check {
-          response.status should be equalTo OK
-          val resp = responseAs[String]
-          resp must contain("testValue5-2")
-          resp must contain("testValue5-3")
-          resp must contain("testValue5-1")
-          resp must contain("testValue1")
-          resp must contain("testValue2")
-          resp must contain("testValue3")
-        }
-    }
-
-    "Reject a contextless Data Debit proposal with tables that do not exist" in new Context {
-      val contextlessBundle =
-        s"""
-           |{
-           |    "name": "Inexistent Kitchen electricity",
-           |    "tables": [{
-           |        "name": "Inexistent Electricity in the kitchen",
-           |        "bundleTable": {
-           |            "name": "Inexistent Electricity in the kitchen",
-           |            "table": {
-           |                "name": "kitchen",
-           |                "source": "fibarooo"
-           |            }
-           |        }
-           |    }]
-           |}
-        """.stripMargin
-
-      val bundleData = JsonParser(contextlessBundle).convertTo[ApiBundleContextless]
-      val dataDebitData = JsonParser(DataDebitExamples.dataDebitExample).convertTo[ApiDataDebit]
-
-      val dataDebit = {
-        HttpRequest(POST, "/dataDebit/propose")
-          .withHeaders(ownerAuthHeader)
-          .withEntity(HttpEntity(MediaTypes.`application/json`, dataDebitData.copy(bundleContextless = Some(bundleData)).toJson.toString)) ~>
-          sealRoute(routes) ~>
-          check {
-            response.status should be equalTo BadRequest
-          }
-      }
-    }
-
-    "Reject malformed reuqests" in {
       HttpRequest(POST, "/dataDebit/propose")
-        .withHeaders(ownerAuthHeader)
+        .withHeaders(dataDebitAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, dataDebitData.copy(bundleContextless = Some(bundleData)).toJson.toString)) ~>
+        sealRoute(routes) ~>
+        check {
+          response.status should be equalTo BadRequest
+        }
+
+    }
+
+    "Reject malformed reuqests" in new Context {
+      HttpRequest(POST, "/dataDebit/propose")
+        .withHeaders(dataDebitAuthHeader)
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitInvalid)) ~>
         sealRoute(routes) ~>
         check {
@@ -356,7 +223,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
         }
 
       HttpRequest(POST, "/dataDebit/propose")
-        .withHeaders(ownerAuthHeader)
+        .withHeaders(dataDebitAuthHeader)
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitWrongKeyContextless)) ~>
         sealRoute(routes) ~>
         check {
@@ -364,7 +231,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
         }
 
       HttpRequest(POST, "/dataDebit/propose")
-        .withHeaders(ownerAuthHeader)
+        .withHeaders(dataDebitAuthHeader)
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataDebitExamples.dataDebitWrongKeyContextual)) ~>
         sealRoute(routes) ~>
         check {
@@ -422,6 +289,9 @@ trait DataDebitContext extends Specification with Specs2RouteTest with DataDebit
     case (dataTable, dataField, record) =>
       dataField
   }
+
+  val bundlesSpec = new BundlesSpec()
+  val moreData = bundlesSpec.populateData()
 }
 
 trait DataDebitContextualContext extends DataDebitContext {

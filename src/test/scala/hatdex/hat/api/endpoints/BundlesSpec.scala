@@ -35,7 +35,7 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
 
   // Prepare the data to create test bundles on
-  def beforeAll() = {
+  def populateData() = {
     val dataTableRows = Seq(
       new DataTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "kitchen", "Fibaro"),
       new DataTableRow(3, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", "Fibaro"),
@@ -93,6 +93,10 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
       // Don't _foce_ insert all data values -- IDs don't particularly matter to us
       DataValue.insertAll(dataValues: _*)
     }
+  }
+
+  def beforeAll() = {
+    populateData()
   }
 
   // Clean up all data
