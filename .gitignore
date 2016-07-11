@@ -14,3 +14,4 @@ target/
 *.back
 /deployment/docker-deploy
 *.pem
+deployment/docker/docker-deploy
