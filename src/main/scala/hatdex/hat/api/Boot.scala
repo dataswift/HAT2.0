@@ -27,7 +27,7 @@ import akka.io.Tcp.Bound
 import akka.pattern.{ BackoffSupervisor, Backoff }
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
-import hatdex.hat.api.actors.{StatsReporter, ApiService}
+import hatdex.hat.api.actors.{ StatsReporter, ApiService }
 import spray.can.Http
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -41,7 +41,7 @@ object Boot extends App {
   val dalapiServiceProps = Props[ApiService]
 
   val supervisor = BackoffSupervisor.props(
-    Backoff.onStop(
+    Backoff.onFailure(
       dalapiServiceProps,
       childName = "hatdex.hat.dalapi-service",
       minBackoff = 3.seconds,
@@ -55,11 +55,10 @@ object Boot extends App {
     Backoff.onStop(
       StatsReporter.props,
       childName = "hatdex.marketplace.stats-service",
-      minBackoff = 3.seconds,
-      maxBackoff = 30.seconds,
+      minBackoff = 10.seconds,
+      maxBackoff = 60.seconds,
       randomFactor = 0.2 // adds 20% "noise" to vary the intervals slightly
-    )
-  )
+      ))
 
   system.actorOf(statsReporterSuerpvisor, name = "stats-service-supervisor")
 
@@ -75,9 +74,10 @@ object Boot extends App {
   val port = conf.getInt("applicationPort")
   val host = conf.getString("applicationHost")
 
-  system.actorSelection("user/dalapi-service-supervisor/hatdex.hat.dalapi-service") resolveOne() map { service =>
+  system.actorSelection("user/dalapi-service-supervisor/hatdex.hat.dalapi-service") resolveOne () map { service =>
     IO(Http).tell(Http.Bind(service, host, port), ioListener)
-  } recover { case e =>
-    system.log.error(s"dalapi-service actor could not be resolved: ${e.getMessage}")
+  } recover {
+    case e =>
+      system.log.error(s"dalapi-service actor could not be resolved: ${e.getMessage}")
   }
 }

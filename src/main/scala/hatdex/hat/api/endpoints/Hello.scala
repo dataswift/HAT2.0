@@ -20,30 +20,35 @@
  */
 package hatdex.hat.api.endpoints
 
+import akka.actor.ActorRefFactory
 import akka.event.LoggingAdapter
-import com.typesafe.config.ConfigFactory
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.actors.{ EmailMessage, EmailService }
+import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models.HatService
+import hatdex.hat.api.service.BundleService
 import hatdex.hat.authentication.HatAuthHandler.UserPassHandler
 import hatdex.hat.authentication.authorization.UserAuthorization
-import hatdex.hat.authentication.{ JwtTokenHandler, HatServiceAuthHandler }
 import hatdex.hat.authentication.models.User
+import hatdex.hat.authentication.{ HatServiceAuthHandler, JwtTokenHandler }
 import hatdex.hat.dal.SlickPostgresDriver.api._
-import org.mindrot.jbcrypt.BCrypt
-import spray.http.{ StatusCodes, HttpCookie }
-import spray.http.MediaTypes._
-import spray.routing.HttpService
-import spray.httpx.PlayTwirlSupport._
-import org.joda.time.Duration._
 import hatdex.hat.dal.Tables.UserUser
+import org.joda.time.Duration._
+import org.joda.time.LocalDateTime
+import org.mindrot.jbcrypt.BCrypt
+import spray.http.MediaTypes._
+import spray.http.{ HttpCookie, StatusCodes }
+import spray.json._
+import spray.httpx.SprayJsonSupport._
+import spray.httpx.PlayTwirlSupport._
+import spray.routing.HttpService
 
-import scala.util.{ Failure, Success, Try }
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.{ Failure, Success }
 
-trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler {
+trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler with BundleService {
   val routes = {
     home ~
       authHat ~
@@ -55,21 +60,23 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
       resetPasswordConfirm
   }
 
+  implicit def actorRefFactory: ActorRefFactory
   val logger: LoggingAdapter
   val emailService: EmailService
 
-  def home = path("") {
+  import JsonProtocol._
+
+  def home = pathEndOrSingleSlash {
     get {
       respondWithMediaType(`text/html`) {
-        (accessTokenHandler) { implicit user: User =>
+        accessTokenHandler { implicit user: User =>
           myhat
-        } ~ complete {
-          logger.info("HAT accessed")
-          val parameters: Map[String, String] = Map(
-            "hatName" -> conf.getString("hat.name"),
-            "hatDomain" -> conf.getString("hat.domain"),
-            "hatAddress" -> s"${conf.getString("hat.name")}.${conf.getString("hat.domain")}")
-          hatdex.hat.views.html.index(parameters)
+        } ~ {
+          onComplete(getPublicProfile) {
+            case Success((true, publicFields)) => complete { hatdex.hat.views.html.index(formatProfile(publicFields.toSeq)) }
+            case Success((false, _))           => complete { logger.info("Private profile!"); hatdex.hat.views.html.indexPrivate() }
+            case Failure(e)                    => complete { logger.info(s"Failure getting table: ${e.getMessage}"); hatdex.hat.views.html.indexPrivate() }
+          }
         }
       }
     } ~ post {
@@ -77,10 +84,10 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
         case (username, password, remember) =>
           val params = Map[String, String]("username" -> username, "password" -> password)
           val validity = if (remember.contains("remember")) {
-            standardDays(1)
+            standardDays(7)
           }
           else {
-            standardMinutes(15)
+            standardMinutes(60)
           }
           val fUser = UserPassHandler.authenticator(params)
           val fToken = fUser.flatMap { maybeUser =>
@@ -260,7 +267,7 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
   }
   def resetPasswordConfirm = path("passwordreset" / "confirm") {
     accessTokenHandler { implicit user: User =>
-      logger.info(s"Logged in user $user")
+      // logger.info(s"Logged in user $user")
       authorize(UserAuthorization.withRole("passwordReset")) {
         parameterMap {
           case parameters =>
@@ -309,5 +316,136 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
   def assets = pathPrefix("assets") {
     getFromResourceDirectory("assets")
   }
-}
 
+  case class ProfileField(name: String, values: Map[String, String], fieldPublic: Boolean)
+
+  private def getPublicProfile: Future[(Boolean, Iterable[ProfileField])] = {
+    val eventualMaybeProfileTable = sourceDatasetTables(Seq(("rumpel", "profile")), None).map(_.head)
+    val eventualMaybeFacebookTable = sourceDatasetTables(Seq(("facebook", "profile_picture")), None).map(_.head)
+    val eventualProfileRecord = eventualMaybeProfileTable flatMap { profileTable =>
+      val fieldset = getStructureFields(profileTable)
+
+      val startTime = LocalDateTime.now().minusDays(365)
+      val endTime = LocalDateTime.now()
+      val eventualValues = fieldsetValues(fieldset, startTime, endTime)
+      eventualValues.map(values => getValueRecords(values, Seq(profileTable)))
+        .map { records => records.headOption }
+        .map(_.flatMap(_.tables.flatMap(_.headOption)))
+    }
+
+    val eventualProfilePicture = eventualMaybeFacebookTable flatMap { table =>
+      val fieldset = getStructureFields(table)
+
+      val startTime = LocalDateTime.now().minusDays(365)
+      val endTime = LocalDateTime.now()
+      val eventualValues = fieldsetValues(fieldset, startTime, endTime)
+      eventualValues.map(values => getValueRecords(values, Seq(table)))
+        .map { records => records.headOption }
+        .map { record => record.flatMap(_.tables.flatMap(_.headOption)) }
+    }
+
+    val eventualProfilePictureField = eventualProfilePicture.map(_.get) map { valueTable =>
+      val flattenedValues = flattenTableValues(valueTable)
+      ProfileField("fb_profile_picture", Map("url" -> flattenedValues.getOrElse("url", "").toString), true)
+    }
+
+    for {
+      profilePictureField <- eventualProfilePictureField
+      valueTable <- eventualProfileRecord.map(_.get)
+    } yield {
+      val flattenedValues = flattenTableValues(valueTable)
+      val publicProfile = flattenedValues.get("private").contains("false")
+      val profileFields = flattenedValues.collect {
+        case ("fb_profile_photo", m: Map[String, String]) =>
+          val publicField = m.get("private").contains("false")
+          profilePictureField
+        case (fieldName, m: Map[String, String]) =>
+          val publicField = m.get("private").contains("false")
+          ProfileField(fieldName, m - "private", publicField)
+      }
+
+      (publicProfile, profileFields.filter(_.fieldPublic))
+    }
+  }
+
+  private def formatProfile(profileFields: Seq[ProfileField]): Map[String, Map[String, String]] = {
+    val hatParameters: Map[String, String] = Map(
+      "hatName" -> conf.getString("hat.name"),
+      "hatDomain" -> conf.getString("hat.domain"),
+      "hatAddress" -> s"${conf.getString("hat.name")}.${conf.getString("hat.domain")}")
+
+    val links = Map(profileFields collect {
+      // links
+      case ProfileField("facebook", values, true) => "Facebook" -> values.getOrElse("link", "")
+      case ProfileField("website", values, true)  => "Web" -> values.getOrElse("link", "")
+      case ProfileField("youtube", values, true)  => "Youtube" -> values.getOrElse("link", "")
+      case ProfileField("linkedin", values, true) => "LinkedIn" -> values.getOrElse("link", "")
+      case ProfileField("google", values, true)   => "Google" -> values.getOrElse("link", "")
+      case ProfileField("blog", values, true)     => "Blog" -> values.getOrElse("link", "")
+      case ProfileField("twitter", values, true)  => "Twitter" -> values.getOrElse("link", "")
+    }: _*).filterNot(_._2 == "")
+
+    val contact = Map(profileFields collect {
+      // contact
+      case ProfileField("primary_email", values, true)     => "primary_email" -> values.getOrElse("value", "")
+      case ProfileField("alternative_email", values, true) => "alternative_email" -> values.getOrElse("value", "")
+      case ProfileField("mobile", values, true)            => "mobile" -> values.getOrElse("no", "")
+      case ProfileField("home_phone", values, true)        => "home_phone" -> values.getOrElse("no", "")
+    }: _*).filterNot(_._2 == "")
+
+    val personal = Map(profileFields collect {
+      case ProfileField("fb_profile_picture", values, true) => "profile_picture" -> values.getOrElse("url", "")
+      // address
+      case ProfileField("address_global", values, true) => "address_global" -> {
+        values.getOrElse("city", "")+" "+
+          values.getOrElse("county", "")+" "+
+          values.getOrElse("country", "")
+      }
+      case ProfileField("address_details", values, true) => "address_details" -> {
+        values.getOrElse("address_details", "")
+      }
+
+      case ProfileField("personal", values, true) =>
+        "personal" -> {
+          val title = values.get("title").map(_+" ").getOrElse("")
+          val preferredName = values.get("preferred_name").map(_+" ").getOrElse("")
+          val firstName = values.get("first_name").map { n =>
+            if (preferredName != "" && preferredName != n+" ") { s"($n) " }
+            else if (preferredName == "") { s"$n " }
+            else { "" }
+          }.getOrElse("")
+          val middleName = values.get("middle_name").map(_+" ").getOrElse("")
+          val lastName = values.getOrElse("last_name", "")
+          s"$title$preferredName$firstName$middleName$lastName"
+        }
+
+      case ProfileField("emergency_contact", values, true) =>
+        "emergency_contact" -> {
+          values.getOrElse("first_name", "")+" "+
+            values.getOrElse("last_name", "")+" "+
+            values.getOrElse("relationship", "")+" "+
+            ": "+values.getOrElse("mobile", "")+" "
+        }
+      case ProfileField("gender", values, true) => "gender" -> values.getOrElse("type", "")
+
+      case ProfileField("nick", values, true)   => "nick" -> values.getOrElse("type", "")
+      case ProfileField("age", values, true)    => "age" -> values.getOrElse("group", "")
+      case ProfileField("birth", values, true)  => "brithDate" -> values.getOrElse("date", "")
+    }: _*).filterNot(_._2 == "")
+
+    val about = Map[String, String](
+      "title" -> profileFields.find(_.name == "about").map(_.values.getOrElse("title", "")).getOrElse(""),
+      "body" -> profileFields.find(_.name == "about").map(_.values.getOrElse("body", "")).getOrElse(""))
+
+    //    val profile = hatParameters ++ profileParameters.filterNot(_._2 == "")
+
+    val profile = Map(
+      "hat" -> hatParameters,
+      "links" -> links,
+      "contact" -> contact,
+      "profile" -> personal,
+      "about" -> about).filterNot(_._2.isEmpty)
+
+    profile
+  }
+}

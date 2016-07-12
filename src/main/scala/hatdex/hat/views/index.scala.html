@@ -1,23 +1,38 @@
-@(parameters: Map[String, String])
-@main("Welcome to the HAT") {
+@(parameters: Map[String, Map[String, String]])
+@main("Welcome to the HAT", hatName = parameters.get("hat").flatMap(_.get("hatName"))) {
     <div class="row profile">
         <div class="col-xs-4 col-sm-3 col-md-2 col-md-offset-1">
-            <img src="/assets/images/certified.png" alt="HAT" class="img img-responsive img-rounded profile-img" />
+            @if(parameters.get("profile").isDefined) {
+                @parameters.get("profile").map { profile =>
+                    <img src="@profile.get("profile_picture").getOrElse("/assets/images/certified.png")" alt="HAT" class="img img-responsive img-rounded profile-img" />
+                    <h3>@profile("personal")</h3>
+                @profile.get("nick").map { v => <h4>Nick: @v</h4> }
+                @profile.get("age").map { v => <h4>Age: @v</h4> }
+                @profile.get("birthDate").map { v => <h4>Birth Date: @v</h4> }
+                @profile.get("gender").map { v => <h4>Gender: @v</h4> }
+
+                @profile.get("address_global").map { v => <h4>@v</h4> }
+                }
+            } else {
+                <img src="/assets/images/certified.png" alt="HAT" class="img img-responsive img-rounded profile-img" />
+            }
+            @parameters.get("contact").map { profile =>
+                <h3>Contact:</h3>
+                @profile.get("primary_email").map { v => <h4>e: @v</h4> }
+                @profile.get("alternative_email").map { v => <h4>e: @v</h4> }
+                @profile.get("mobile").map { v => <h4>Mobile: @v</h4> }
+                @profile.get("home_phone").map { v => <h4>Phone: @v</h4> }
+            }
         </div>
         <div class="col-xs-8 col-sm-9 col-md-8">
-            <h1>
-                @parameters.getOrElse("hatName", "")
-            </h1>
-            <h3>
-                About:
-            </h3>
-            <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-                labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
-                laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in
-                voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat
-                non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-            </p>
+            @parameters.get("about").map { about =>
+                <h1>
+                    @about("title")
+                </h1>
+                <p>
+                @about("body")
+                </p>
+            }
         </div>
     </div>
     <div class="row">
@@ -27,13 +42,14 @@
     </div>
     <div class="row">
         <div class="col-xs-4 col-sm-3 col-md-2 col-md-offset-1">
-            <a role="button" class="btn btn-primary">@parameters.getOrElse("hatAddress", "")</a>
+            <a role="button" class="btn btn-primary">@parameters.get("hat").map(_.getOrElse("hatAddress", ""))</a>
         </div>
         <div class="col-xs-8 col-sm-9 col-md-8">
-            <a role="button" class="btn btn-primary">Twitter</a>
-            <a role="button" class="btn btn-primary">LinkedIn</a>
-            <a role="button" class="btn btn-primary">Facebook</a>
-            <a role="button" class="btn btn-primary">MarketSquare</a>
+        @parameters.get("links").map { links =>
+            @links.map { case (key, value) =>
+            <a role="button" class="btn btn-primary" href="@value">@key</a>
+            }
+        }
         </div>
     </div>
 }

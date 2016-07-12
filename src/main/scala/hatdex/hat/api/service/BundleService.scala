@@ -209,43 +209,35 @@ trait BundleService extends DataService {
         (retrievedBundle, fieldsOfInterest)
       }
     }
-
   }
 
-  protected[api] def getBundleContextlessValues(
-    bundleId: Int,
-    maybeLimit: Option[Int],
-    startTime: LocalDateTime,
-    endTime: LocalDateTime): Future[ApiBundleContextlessData] = {
-
-    val eventualSourceTables = for {
-      bundle <- getBundleContextlessWithDatasets(bundleId).map(_.get)
-      sourceTables <- getSourceTables(bundle._1.sources.get)
-    } yield (bundle._1, bundle._2, sourceTables)
-
-    val eventualValues = eventualSourceTables.flatMap { case (_, fieldset, _) =>
-      val valueQuery = for {
-        value <- DataValue.filter(_.fieldId inSet fieldset)
-          .filter(v => v.dateCreated <= endTime && v.dateCreated >= startTime)
-        record <- value.dataRecordFk//.sortBy(_.id.desc).take(maybeLimit.getOrElse(1000))
-        field <- value.dataFieldFk
-      } yield (record, field, value)
-
-      DatabaseInfo.db.run(valueQuery.result)
-    }
-
-    val eventualValueRecords = for {
-      dbValues <- eventualValues
-      (bundle, _, tables) <- eventualSourceTables
+  protected[api] def getBundleContextlessValues(bundleId: Int, maybeLimit: Option[Int],
+    startTime: LocalDateTime, endTime: LocalDateTime): Future[ApiBundleContextlessData] = {
+    for {
+      (bundle, fieldset) <- getBundleContextlessWithDatasets(bundleId).map(_.get)
+      sourceTables <- getSourceTables(bundle.sources.get)
+      values <- fieldsetValues(fieldset, startTime, endTime)
     } yield {
+      val valueRecords = getValueRecords(values, sourceTables)
+      val dataGroups = recordsDatasetGrouped(sourceTables, valueRecords)
+      ApiBundleContextlessData(bundle.id.get, bundle.name, dataGroups)
+    }
+  }
+
+  protected[api] def getValueRecords(
+    dbValues: Seq[(DataRecordRow, DataFieldRow, DataValueRow)],
+    tables: Seq[ApiDataTable]): Seq[ApiDataRecord] = {
+
       // Group values by record
       val byRecord = dbValues.groupBy(_._1)
 
-      byRecord flatMap {
+      val records = byRecord flatMap {
         case (record, recordValues: Seq[(DataRecordRow, DataFieldRow, DataValueRow)]) =>
           val fieldValues = recordValues.map { case (r, f, v) => (f, v) }
             .groupBy(_._1.id) // Group values by field
             .map { case (k, v) => (k, v.unzip._2.map(ApiDataValue.fromDataValue)) }
+
+          // logger.info(s"Field values: ${fieldValues.mkString("\n")}")
 
           val filledRecords = tables.flatMap {
             case table => // if recordValueTables.contains(table.id.get) =>
@@ -258,14 +250,17 @@ trait BundleService extends DataService {
                 None
               }
           }
+          // logger.info(s"Filled records: ${filledRecords}")
           filledRecords
       }
-    }
 
-    for {
-      (bundle, _, tables) <- eventualSourceTables
-      valueRecords <- eventualValueRecords
-    } yield {
+    records.toSeq.sortBy(- _.id.getOrElse(0))
+  }
+
+  protected[api] def recordsDatasetGrouped(
+    tables: Seq[ApiDataTable],
+    valueRecords: Iterable[ApiDataRecord]): Map[String, Seq[ApiBundleContextlessDatasetData]] = {
+
       val datasets = tables.map { table =>
         val recordsWithTable = valueRecords.filter { record =>
           record.tables
@@ -276,9 +271,19 @@ trait BundleService extends DataService {
 
         (table.source, ApiBundleContextlessDatasetData(table.name, table, Some(recordsWithTable.toSeq)))
       }
-      val dataGroups = datasets.groupBy(_._1).map { case (k, v) => (k, v.unzip._2) }
-      ApiBundleContextlessData(bundle.id.get, bundle.name, dataGroups)
-    }
+      datasets.groupBy(_._1).map { case (k, v) => (k, v.unzip._2) }
+
+  }
+
+  protected[api] def fieldsetValues(fieldset: Set[Int], startTime: LocalDateTime, endTime: LocalDateTime) = {
+    val valueQuery = for {
+      value <- DataValue.filter(_.fieldId inSet fieldset)
+        .filter(v => v.dateCreated <= endTime && v.dateCreated >= startTime)
+      record <- value.dataRecordFk
+      field <- value.dataFieldFk
+    } yield (record, field, value)
+
+    DatabaseInfo.db.run(valueQuery.sortBy(_._1.id desc).result)
   }
 
   def fillStructure(table: ApiDataTable)(values: Map[Int, Seq[ApiDataValue]]): ApiDataTable = {
@@ -309,27 +314,41 @@ trait BundleService extends DataService {
 
   private def getSourceTables(sources: Seq[ApiBundleDataSourceStructure]): Future[Seq[ApiDataTable]] = {
     val fieldsRequested = sourceStructureFieldsRequested(sources)
+    val sourceDatasets = sources flatMap { source =>
+      source.datasets.map { dataset =>
+        (source.source, dataset.name)
+      }
+    }
+    sourceDatasetTables(sourceDatasets, Some(fieldsRequested))
+  }
+
+  protected[api] def sourceDatasetTables(sourceDatasets: Seq[(String, String)], maybeFieldsRequested: Option[Seq[FieldRequested]]): Future[Seq[ApiDataTable]] = {
     // Get All Data Table trees matchinf source and name
-    val dataTableTrees = sources.flatMap { sourceStructure =>
-      sourceStructure.datasets.map { dataset =>
+    val dataTableTrees = sourceDatasets.map { case (source, dataset) =>
         for {
-          rootTable <- DataTableTree.filter(_.sourceName === sourceStructure.source).filter(_.name === dataset.name)
+          rootTable <- DataTableTree.filter(_.sourceName === source).filter(_.name === dataset)
           tree <- DataTableTree.filter(_.rootTable === rootTable.id)
         } yield tree
-      }
     } reduceLeft { (q, tree) =>
       q ++ tree
     }
 
     // For fields extracted from Data Source Structure, find all matching fields in the database
     // Each table is uniquely identified by (sourceName, tableName), and fields are within them
-    val requestedTableFieldsQuery = fieldsRequested.map { fReq =>
+    val requestedTableFieldsQuery = maybeFieldsRequested map { fieldsRequested =>
+      fieldsRequested.map { fReq =>
+        for {
+          t <- DataTable.filter(table => table.sourceName === fReq.sourceName && table.name === fReq.tableName)
+          f <- DataField.filter(field => field.name === fReq.fieldName && field.tableIdFk === t.id)
+        } yield f
+      } reduceLeft { (q, field) =>
+        q ++ field
+      }
+    } getOrElse {
       for {
-        t <- DataTable.filter(table => table.sourceName === fReq.sourceName && table.name === fReq.tableName)
-        f <- DataField.filter(field => field.name === fReq.fieldName && field.tableIdFk === t.id)
+        t <- dataTableTrees
+        f <- DataField.filter(field => field.tableIdFk === t.id)
       } yield f
-    } reduceLeft { (q, field) =>
-      q ++ field
     }
 
     // Another round of field filtering to only get those within the returned trees
@@ -342,7 +361,7 @@ trait BundleService extends DataService {
       val tablesWithParents = treeFields.map(_._1)                                    // Get the trees
         .map(tree => (ApiDataTable.fromNestedTable(tree)(None)(None), tree.table1))   // Use the API data model for each tree
         .distinct                                                                     // Take only distinct trees (duplicates returned with each field
-      val fields = treeFields.map(_._2)
+    val fields = treeFields.map(_._2)
         .map(ApiDataField.fromDataField)
         .distinct
       val rootTables = tablesWithParents.filter(_._2.isEmpty).map(_._1)

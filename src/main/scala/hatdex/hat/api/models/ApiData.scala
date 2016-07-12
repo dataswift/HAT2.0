@@ -99,7 +99,7 @@ object ApiDataValue {
   // Can construct the value object with only value info (e.g. outbound, when part of record and field anyway)
   def fromDataValue(value: DataValueRow): ApiDataValue = {
     ApiDataValue(
-      Some(value.id), Some(value.dateCreated), Some(value.lastUpdated),
+      Some(value.id), Some(value.dateCreated), None,
       value.value, None, None)
   }
   // Or construct the value object with value, field and record info (e.g. inbound, when determining where to insert)
@@ -107,12 +107,12 @@ object ApiDataValue {
     val maybeApiRecord = maybeRecord map { record =>
       ApiDataRecord.fromDataRecord(record)(None)
     }
-    ApiDataValue(Some(value.id), Some(value.dateCreated), Some(value.lastUpdated),
+    ApiDataValue(Some(value.id), Some(value.dateCreated), None,
       value.value, maybeField.map(ApiDataField.fromDataField), maybeApiRecord)
   }
 
   def fromDataValueApi(value: DataValueRow, maybeApiField: Option[ApiDataField], maybeApiRecord: Option[ApiDataRecord]): ApiDataValue = {
-    ApiDataValue(Some(value.id), Some(value.dateCreated), Some(value.lastUpdated),
+    ApiDataValue(Some(value.id), Some(value.dateCreated), None,
       value.value, maybeApiField, maybeApiRecord)
   }
 }

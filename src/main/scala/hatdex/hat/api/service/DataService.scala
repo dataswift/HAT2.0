@@ -22,11 +22,13 @@ package hatdex.hat.api.service
 
 import akka.event.LoggingAdapter
 import hatdex.hat.Utils
+import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models.{ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _}
 import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.Tables._
 import hatdex.hat.api.models._
 import org.joda.time.LocalDateTime
+import spray.json._
 
 import collection.mutable.{ HashMap, MultiMap }
 import scala.collection.mutable
@@ -254,7 +256,7 @@ trait DataService {
   }
 
   def fillStructure(table: ApiDataTable)(values: mutable.HashMap[Int, mutable.Set[ApiDataValue]] with mutable.MultiMap[Int, ApiDataValue]): ApiDataTable = {
-    logger.debug("Filling structure " + table.id + " with values " + values)
+    // logger.debug("Filling structure " + table.id + " with values " + values)
     val filledFields = table.fields map { fields =>
       // For each field, insert values
       fields map { field: ApiDataField =>
@@ -446,5 +448,29 @@ trait DataService {
         ApiRecordValues(record, values)
       }
     }
+  }
+
+  def flattenTableValues(dataTable: ApiDataTable): Map[String, Any] = {
+    val fieldObjects = dataTable.fields.map { fields =>
+      Map[String, Any](
+        fields flatMap { field =>
+        val maybeValues = field.values match {
+          case Some(values) if values.isEmpty => None
+          case Some(values) if values.length == 1 => Some(values.head.value)
+          case Some(values) => Some(values.map(_.value))
+          case None => None
+        }
+        maybeValues.map { values => field.name -> values }
+      }: _*
+      )
+    }
+
+    val subtableObjects = dataTable.subTables.map { subtables =>
+      Map[String, Any](subtables map { subtable =>
+        subtable.name -> flattenTableValues(subtable)
+      }: _*)
+    }
+
+    fieldObjects.getOrElse(Map()) ++ subtableObjects.getOrElse(Map())
   }
 }
