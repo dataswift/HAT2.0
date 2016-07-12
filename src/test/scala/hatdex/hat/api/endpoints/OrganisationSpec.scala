@@ -127,6 +127,7 @@ class OrganisationSpec extends Specification with Specs2RouteTest with Organisat
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(linkToPerson) ~>
         check {
+          logger.info(s"Link org person response: ${responseAs[String]}")
           response.status should be equalTo BadRequest
           responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
         }

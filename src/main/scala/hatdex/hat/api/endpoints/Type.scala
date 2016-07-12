@@ -29,7 +29,6 @@ import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.User
 import spray.http.StatusCode
 
-//import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime

@@ -20,19 +20,21 @@
  */
 package hatdex.hat.api.endpoints
 
+import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.api.service.OrganisationsService
 import hatdex.hat.authentication.models.User
 import hatdex.hat.authentication.authorization.UserAuthorization
-import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 
-import scala.util.{Failure, Success, Try}
-
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.util.{ Failure, Success, Try }
 
 // this trait defines our service behavior independently from the service actor
 trait Organisation extends OrganisationsService with AbstractEntity {
@@ -64,25 +66,19 @@ trait Organisation extends OrganisationsService with AbstractEntity {
 
   def createEntity = pathEnd {
     entity(as[ApiOrganisation]) { organisation =>
-      db.withSession { implicit session =>
-        val organisationsorganisationRow = new OrganisationsOrganisationRow(0, LocalDateTime.now(), LocalDateTime.now(), organisation.name)
-        val result = Try((OrganisationsOrganisation returning OrganisationsOrganisation) += organisationsorganisationRow)
-        val entity = result map { createdOrganisation =>
-          val newEntity = new EntityRow(createdOrganisation.id, LocalDateTime.now(), LocalDateTime.now(), createdOrganisation.name, "organisation", None, None, None, Some(createdOrganisation.id), None)
-          val entityCreated = Try(Entity += newEntity)
-          logger.debug("Creating new entity for organisation:" + entityCreated)
-        }
-
-        complete {
-          result match {
-            case Success(createdOrganisation) =>
-              (Created, ApiOrganisation.fromDbModel(createdOrganisation))
-            case Failure(e) =>
-              (BadRequest, e.getMessage)
-          }
-        }
+      onComplete(createOrganisation(organisation.name)) {
+        case Success(created) => complete((Created, created))
+        case Failure(e)       => complete((BadRequest, ErrorMessage("Bad Request", e.getMessage)))
       }
     }
+  }
+
+  def createOrganisation(name: String): Future[ApiOrganisation] = {
+    val q = for {
+      organisation <- (OrganisationsOrganisation returning OrganisationsOrganisation) += OrganisationsOrganisationRow(0, LocalDateTime.now(), LocalDateTime.now(), name)
+      entity <- Entity += EntityRow(organisation.id, LocalDateTime.now(), LocalDateTime.now(), organisation.name, entityKind, None, None, None, Some(organisation.id), None)
+    } yield organisation
+    DatabaseInfo.db.run(q).map(ApiOrganisation.fromDbModel)
   }
 }
 

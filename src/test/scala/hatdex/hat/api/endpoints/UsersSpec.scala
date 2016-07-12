@@ -24,10 +24,11 @@ package hatdex.hat.api.endpoints
 import java.util.UUID
 
 import akka.event.LoggingAdapter
+import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.endpoints.jsonExamples.UserExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.authentication.models.{ AccessToken, User }
-import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import org.mindrot.jbcrypt.BCrypt
@@ -72,9 +73,7 @@ class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll w
         "platform@platform.com", Some(BCrypt.hashpw("p4ssWOrD", BCrypt.gensalt())),
         "Platform User", "platform", enabled = true))
 
-    db.withSession { implicit session =>
-      UserUser.forceInsertAll(validUsers: _*)
-    }
+    DatabaseInfo.db.run(UserUser.forceInsertAll(validUsers))
 
     validAccessTokens = Future.sequence {
       validUsers.map { user => fetchOrGenerateToken(User.fromDbModel(user), "hat.hubofallthings.net", user.role) }
@@ -95,16 +94,15 @@ class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll w
 
   // Clean up all data
   def afterAll() = {
-    db.withSession { implicit session =>
-      val userIds = Seq(
-        UUID.fromString("17380a13-16c3-49f7-968b-30df0eefbe0f"),
-        UUID.fromString("dd15948d-18ef-4062-a3c0-33f21b3cffd1"),
-        UUID.fromString("6096eba1-0e9e-4607-9dfd-072bfa106bf4"),
-        UUID.fromString("bae66f37-8421-4932-9755-ed7ffa865e0f"))
-      UserAccessToken.filter(_.userId inSet userIds).delete
-      UserUser.filter(_.userId inSet userIds).delete
-      session.close()
-    }
+    val userIds = Seq(
+      UUID.fromString("17380a13-16c3-49f7-968b-30df0eefbe0f"),
+      UUID.fromString("dd15948d-18ef-4062-a3c0-33f21b3cffd1"),
+      UUID.fromString("6096eba1-0e9e-4607-9dfd-072bfa106bf4"),
+      UUID.fromString("bae66f37-8421-4932-9755-ed7ffa865e0f"))
+    DatabaseInfo.db.run(
+      DBIO.seq(
+        UserAccessToken.filter(_.userId inSet userIds).delete,
+        UserUser.filter(_.userId inSet userIds).delete))
   }
 
   import JsonProtocol._
@@ -124,9 +122,10 @@ class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll w
           responseAs[User]
         }
       //Cleanup right away
-      db.withSession { implicit session =>
-        UserAccessToken.filter(_.userId === user.userId).delete
-        UserUser.filter(_.userId === user.userId).delete
+      DatabaseInfo.db.run {
+        DBIO.seq(
+          UserAccessToken.filter(_.userId === user.userId).delete,
+          UserUser.filter(_.userId === user.userId).delete)
       }
       user.role must be equalTo "dataDebit"
     }
@@ -198,9 +197,10 @@ class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll w
         }
 
       //Cleanup right away
-      db.withSession { implicit session =>
-        UserAccessToken.filter(_.userId === user.userId).delete
-        UserUser.filter(_.userId === user.userId).delete
+      DatabaseInfo.db.run {
+        DBIO.seq(
+          UserAccessToken.filter(_.userId === user.userId).delete,
+          UserUser.filter(_.userId === user.userId).delete)
       }
 
       user.role must be equalTo "dataDebit"

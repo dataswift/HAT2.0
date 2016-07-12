@@ -21,358 +21,409 @@
 package hatdex.hat.api.service
 
 import akka.event.LoggingAdapter
-import hatdex.hat.Utils
+import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.api.models.{ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _}
-import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.api.models.{ ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _ }
+import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import hatdex.hat.api.models._
 import org.joda.time.LocalDateTime
 import spray.json._
 
-import collection.mutable.{ HashMap, MultiMap }
-import scala.collection.mutable
-import scala.collection.immutable
-import scala.util.{Failure, Success, Try}
-import slick.jdbc.GetResult
-import slick.jdbc.StaticQuery.interpolation
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 // this trait defines our service behavior independently from the service actor
 trait DataService {
 
   val logger: LoggingAdapter
 
-  def getTableValues(tableId: Int, maybeLimit: Option[Int] = None, maybeStartTime: Option[LocalDateTime] = None, maybeEndTime: Option[LocalDateTime] = None)(implicit session: Session): Option[Seq[ApiDataRecord]] = {
+  def getTableValues(tableId: Int, maybeLimit: Option[Int] = None, maybeStartTime: Option[LocalDateTime] = None, maybeEndTime: Option[LocalDateTime] = None): Future[Seq[ApiDataRecord]] = {
     val valuesQuery = DataValue
-    val filteredByStart = maybeStartTime.map { startTime =>
-      valuesQuery.filter(_.dateCreated >= startTime)
-    } getOrElse {
-      valuesQuery
-    }
-    val filteredByEnd = maybeEndTime.map { endTime =>
-      filteredByStart.filter(_.dateCreated <= endTime)
-    } getOrElse {
-      filteredByStart
-    }
-    getTableValues(tableId, filteredByEnd, maybeLimit)
-  }
+    val startTime = maybeStartTime.getOrElse(LocalDateTime.now().minusDays(7))
+    val endTime = maybeEndTime.getOrElse(LocalDateTime.now())
 
-  def getTableValues(tableId: Int, valuesQuery: Query[DataValue, DataValueRow, Seq], maybeLimit: Option[Int])
-                    (implicit session: Session): Option[Seq[ApiDataRecord]] = {
-    val someStructure = getTableStructure(tableId)
+    // Get All Data Table trees matchinf source and name
+    val dataTableTreesQuery = for {
+      rootTable <- DataTableTree.filter(_.id === tableId)
+      tree <- DataTableTree.filter(_.rootTable === rootTable.id)
+    } yield tree
 
-    someStructure map { structure =>
-      // Partially applied function to fill the data into table structure
-      def filler = fillStructure(structure) _
+    val eventualTables = buildDataTreeStructures(dataTableTreesQuery, Set(tableId))
 
-      // Get all data fields of interest according to the data structure
-      val fieldsToGet = getStructureFields(structure)
-
-      val assumedMaxValuesPerRecord = 30
-      // Retrieve values of those fields from the database, grouping by Record ID
-      val values = valuesQuery.filter(_.fieldId inSet fieldsToGet)
-        .sortBy(_.recordId.desc)
-        .take(maybeLimit.getOrElse(10000)*30)
-        .run
-        .groupBy(_.recordId)
-
-      // Retrieve matching data records and transform to ApiDataRecord format
-      val records: Map[Int, ApiDataRecord] = DataRecord.filter(_.id inSet values.keySet)
-        .sortBy(_.id.desc)
-        .take(maybeLimit.getOrElse(10000))
-        .run
-        .groupBy(_.id)
-        .map { case (recordId, groupedRecord) =>
-          (recordId, ApiDataRecord.fromDataRecord(groupedRecord.head)(None))
-        }
-
-      // Convert the retrieved structure into a sequence of maps from field ID to values
-      val dataRecords = values map { case (recordId, recordValues) =>
-        // Each field can have a list of values associated with it
-        val fieldValueMap = new mutable.HashMap[Int, mutable.Set[ApiDataValue]] with mutable.MultiMap[Int, ApiDataValue]
-        // Values are grouped by record id
-        recordValues foreach { value =>
-          fieldValueMap.addBinding(value.fieldId, ApiDataValue.fromDataValue(value))
-        }
-        // Fills reconstructed data structure with grouped field values
-        val mappedValues = filler(fieldValueMap)
-
-        if (records.contains(recordId)) {
-          Some(records(recordId).copy(tables = Some(Seq(mappedValues))))
-        } else {
-          None
-        }
-      }
-
-      dataRecords.flatten.toSeq.sortWith((a, b) =>
-        a.lastUpdated
-          .getOrElse(LocalDateTime.now())
-          .isAfter(
-            b.lastUpdated.getOrElse(LocalDateTime.now())
-          )
-      )
+    eventualTables flatMap { tables =>
+      val fieldset = tables.map(getStructureFields).reduce((acc, fields) => acc ++ fields)
+      val eventualValues = fieldsetValues(fieldset, startTime, endTime)
+      val eventualValueRecords = eventualValues.map(values => getValueRecords(values, tables))
+      eventualValueRecords.map(r => r.take(maybeLimit.getOrElse(r.length)))
     }
   }
 
-
-  def createValue(value: ApiDataValue, maybeFieldId: Option[Int], maybeRecordId: Option[Int])(implicit session: Session): Try[ApiDataValue] = {
+  def createValue(value: ApiDataValue, maybeFieldId: Option[Int], maybeRecordId: Option[Int]): Future[ApiDataValue] = {
     // find field ID either from the function parameter or from within the value structure
-    val someFieldId = (maybeFieldId, value.field) match {
-      case (Some(id), _) =>
-        Some(id)
-      case (None, Some(ApiDataField(Some(id), _, _, _, _, _))) =>
-        Some(id)
-      case _ =>
-        None
-    }
+    val someFieldId = maybeFieldId.orElse(value.field.flatMap(_.id))
 
     // find record ID either from the function parameter or from within the value structure
-    val someRecordId = (maybeRecordId, value.record) match {
-      case (Some(id), _) =>
-        Some(id)
-      case (None, Some(ApiDataRecord(Some(id), _, _, _, _))) =>
-        Some(id)
-      case _ =>
-        None
+    val someRecordId = maybeRecordId.orElse(value.record.flatMap(_.id))
+
+    val eventuallyInsertedValue = (someFieldId, someRecordId) match {
+      case (Some(fieldId), Some(recordId)) => DatabaseInfo.db.run { (DataValue returning DataValue) += DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, fieldId, recordId) }
+      case (None, _)                       => Future.failed(new IllegalArgumentException("Correct field must be set for value to be inserted into"))
+      case (_, None)                       => Future.failed(new IllegalArgumentException("Correct record must be set for value to be inserted as part of"))
     }
 
-
-    val maybeNewValue = (someFieldId, someRecordId) match {
-      case (Some(fieldId), Some(recordId)) =>
-        Success(DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, fieldId, recordId))
-      case (None, _) =>
-        Failure(new IllegalArgumentException("Correct field must be set for value to be inserted into"))
-      case (_, None) =>
-        Failure(new IllegalArgumentException("Correct record must be set for value to be inserted as part of"))
-    }
-    val insertedValue = maybeNewValue flatMap { newValue =>
-      Try((DataValue returning DataValue) += newValue)
-    }
-
-    insertedValue map { inserted =>
+    eventuallyInsertedValue map { inserted =>
       ApiDataValue.fromDataValueApi(inserted, value.field, value.record)
     }
   }
 
-  def createTable(table: ApiDataTable)(implicit session: Session): Try[ApiDataTable] = {
-    logger.debug("Creating new table for " + table)
+  def createTable(table: ApiDataTable): Future[ApiDataTable] = {
+    logger.debug("Creating new table for "+table)
     val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, table.source)
-    val maybeTable = Try((DataTable returning DataTable) += newTable)
-
-    logger.debug("Table created? " + maybeTable)
-
-    val result = maybeTable flatMap { insertedTable =>
-      val apiDataFields = table.fields map { fields =>
-        val insertedFields = fields.map(createField(_, Some(insertedTable.id)))
-        // Flattens to a simple Try with list if fields
-        // or returns the first error that occurred
-        Utils.flatten(insertedFields)
-      }
-
-      val apiSubtables = table.subTables map { subtables =>
-        val insertedSubtables = subtables.map(createTable)
-        val maybeSubtables = Utils.flatten(insertedSubtables)
-        val links = maybeSubtables map { tables =>
-          // Link the table to all its subtables
-          tables.map(x => Try(linkTables(insertedTable.id, x.id.get, ApiRelationship("parent child"))))
-        }
-        maybeSubtables
-      }
-
-      (apiDataFields, apiSubtables) match {
-        case (None, None) =>
-          Success(ApiDataTable.fromDataTable(insertedTable)(None)(None))
-        // If field insertion failed at any point, return that error
-        case (Some(Failure(e)), _) =>
-          Failure(e)
-        // If subtable insertion failed at any point, return that error
-        case (_, Some(Failure(e))) =>
-          Failure(e)
-        case (Some(Success(insertedFields)), Some(Success(insertedSubtables))) =>
-          Success(ApiDataTable.fromDataTable(insertedTable)(Some(insertedFields))(Some(insertedSubtables)))
-        case (Some(Success(insertedFields)), None) =>
-          Success(ApiDataTable.fromDataTable(insertedTable)(Some(insertedFields))(None))
-        case (None, Some(Success(insertedSubtables))) =>
-          Success(ApiDataTable.fromDataTable(insertedTable)(None)(Some(insertedSubtables)))
-      }
+    for {
+      insertedTable <- DatabaseInfo.db.run((DataTable returning DataTable) += newTable)
+      apiDataFields <- Future.sequence(table.fields.getOrElse(Seq()).map(createField(_, Some(insertedTable.id))))
+      apiSubtables <- Future.sequence(table.subTables.getOrElse(Seq()).map(createTable))
+      links <- Future.sequence(apiSubtables.map(x => linkTables(insertedTable.id, x.id.get, ApiRelationship("parent child"))))
+    } yield {
+      ApiDataTable.fromDataTable(insertedTable)(Some(apiDataFields))(Some(apiSubtables))
     }
-
-    logger.debug("create table result" + result)
-    result
   }
 
-  def linkTables(parentId: Int, childId: Int, relationship: ApiRelationship)(implicit session: Session): Try[Int] = {
-    val dataTableToTableCrossRefRow = new DataTabletotablecrossrefRow(
-      1, LocalDateTime.now(), LocalDateTime.now(),
-      relationship.relationshipType, parentId, childId
-    )
-    Try((DataTabletotablecrossref returning DataTabletotablecrossref.map(_.id)) += dataTableToTableCrossRefRow)
+  def linkTables(parentId: Int, childId: Int, relationship: ApiRelationship): Future[Int] = {
+    val dataTableToTableCrossRefRow = new DataTabletotablecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+      relationship.relationshipType, parentId, childId)
+    DatabaseInfo.db.run((DataTabletotablecrossref returning DataTabletotablecrossref.map(_.id)) += dataTableToTableCrossRefRow)
   }
 
-
-  def createField(field: ApiDataField, maybeTableId: Option[Int] = None)(implicit session: Session): Try[ApiDataField] = {
-    val maybeNewField = (maybeTableId, field.tableId) match {
-      case (Some(tableId), _) =>
-        Success(DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.name, tableId))
-      case (_, Some(tableId)) =>
-        Success(DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.name, tableId))
-      case (None, None) =>
-        Failure(new IllegalArgumentException("Table ID for field being inserted must be set"))
+  def createField(field: ApiDataField, maybeTableId: Option[Int] = None): Future[ApiDataField] = {
+    val eventuallyNewField = maybeTableId.orElse(field.tableId) map { tableId =>
+      DatabaseInfo.db.run((DataField returning DataField) += DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.name, tableId))
+    } getOrElse {
+      Future.failed(new IllegalArgumentException("Table ID for field being inserted must be set"))
     }
 
-    val maybeField = maybeNewField flatMap { newField =>
-      Try((DataField returning DataField) += newField)
-    }
-    val temp = maybeField map { field =>
+    eventuallyNewField map { field =>
       ApiDataField.fromDataField(field)
     }
-
-    temp
   }
 
-
-  def getFieldValues(fieldId: Int)(implicit session: Session): Option[ApiDataField] = {
-    val apiFieldOption = retrieveDataFieldId(fieldId)
-    apiFieldOption map { apiField =>
-      val values = DataValue.filter(_.fieldId === fieldId).sortBy(_.lastUpdated.desc).run
-      val apiDataValues = values.map(ApiDataValue.fromDataValue)
-      apiField.copy(values = Some(apiDataValues))
+  def getFieldValues(fieldId: Int): Future[Option[ApiDataField]] = {
+    for {
+      maybeField <- retrieveDataFieldId(fieldId)
+      maybeValues <- maybeField.map { field =>
+        DatabaseInfo.db.run {
+          DataValue.filter(_.fieldId === fieldId)
+            .sortBy(_.lastUpdated.desc)
+            .result
+        } map (v => Some(v))
+      } getOrElse { Future.successful(None) }
+    } yield {
+      val apiDataValues = maybeValues.map { values =>
+        values.map(ApiDataValue.fromDataValue)
+      }
+      maybeField.map(_.copy(values = apiDataValues))
     }
   }
 
-  def getFieldRecordValue(fieldId: Int, recordId: Int)(implicit session: Session): Option[ApiDataField] = {
-    val apiFieldOption = retrieveDataFieldId(fieldId)
-    apiFieldOption map { apiField =>
-      val values = DataValue.filter(_.fieldId === fieldId).filter(_.recordId === recordId).run
-      val apiDataValues = values.map(ApiDataValue.fromDataValue)
-      apiField.copy(values = Some(apiDataValues))
+  /*
+   * Private function finding data field by ID
+   */
+  def retrieveDataFieldId(fieldId: Int): Future[Option[ApiDataField]] = {
+    val eventualField = DatabaseInfo.db.run(DataField.filter(_.id === fieldId).take(1).result).map(_.headOption)
+    eventualField.map(_.map(ApiDataField.fromDataField))
+  }
+
+  def getFieldRecordValue(fieldId: Int, recordId: Int): Future[Option[ApiDataField]] = {
+    for {
+      maybeField <- retrieveDataFieldId(fieldId)
+      maybeValues <- maybeField.map { field =>
+        DatabaseInfo.db.run {
+          DataValue.filter(_.fieldId === fieldId)
+            .filter(_.recordId === recordId)
+            .sortBy(_.lastUpdated.desc)
+            .result
+        } map (v => Some(v))
+      } getOrElse { Future.successful(None) }
+    } yield {
+      val apiDataValues = maybeValues.map { values =>
+        values.map(ApiDataValue.fromDataValue)
+      }
+      maybeField.map(_.copy(values = apiDataValues))
     }
   }
 
-  def fillStructures(tables: Seq[ApiDataTable])(values: mutable.HashMap[Int, mutable.Set[ApiDataValue]] with mutable.MultiMap[Int, ApiDataValue]): Seq[ApiDataTable] = {
-    tables map { table =>
-      fillStructure(table)(values)
+  def createRecord(record: ApiDataRecord): Future[ApiDataRecord] = {
+    val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), record.name)
+    DatabaseInfo.db.run {
+      (DataRecord returning DataRecord) += newRecord
+    } map { record =>
+      ApiDataRecord.fromDataRecord(record)(None)
     }
   }
 
-  def fillStructure(table: ApiDataTable)(values: mutable.HashMap[Int, mutable.Set[ApiDataValue]] with mutable.MultiMap[Int, ApiDataValue]): ApiDataTable = {
-    // logger.debug("Filling structure " + table.id + " with values " + values)
+  def findTable(name: String, source: String): Future[Seq[ApiDataTable]] = {
+    DatabaseInfo.db.run {
+      DataTable.filter(_.sourceName === source).filter(_.name === name).result
+    } map { tables =>
+      tables.map(ApiDataTable.fromDataTable(_)(None)(None))
+    }
+  }
+
+  def findTablesLike(name: String, source: String): Future[Seq[ApiDataTable]] = {
+    DatabaseInfo.db.run {
+      DataTable.filter(_.sourceName === source).filter(_.name like "%"+name+"%").result
+    } map { tables =>
+      tables.map(ApiDataTable.fromDataTable(_)(None)(None))
+    }
+  }
+
+  def findTablesNotLike(name: String, source: String): Future[Seq[ApiDataTable]] = {
+    DatabaseInfo.db.run {
+      DataTable.filter(_.sourceName === source).filterNot(_.name like "%"+name+"%").result
+    } map { tables =>
+      tables.map(ApiDataTable.fromDataTable(_)(None)(None))
+    }
+  }
+
+  /*
+   * Get all "Sources" of data - root tables of each data tree
+   */
+  def getDataSources(): Future[Seq[ApiDataTable]] = {
+    val rootTablesQuery = for {
+      trees <- DataTableTree.filter(_.table1.isEmpty)
+    } yield trees
+
+    val eventualTrees = DatabaseInfo.db.run(rootTablesQuery.result)
+
+    eventualTrees.map { trees =>
+      trees map { tree =>
+        ApiDataTable.fromNestedTable(tree)(None)(None)
+      }
+    }
+  }
+
+  /*
+   *  Construct nested DataTable records with associated fields and sub-tables
+   */
+  def getTableStructure(tableId: Int): Future[Option[ApiDataTable]] = {
+    val dataTableTrees = for {
+      tree <- DataTableTree.filter(_.rootTable === tableId)
+    } yield tree
+
+    buildDataTreeStructures(dataTableTrees, Set(tableId)).map(_.headOption)
+  }
+
+  protected[api] def buildDataTreeStructures(dataTableTrees: Query[DataTableTree, DataTableTreeRow, Seq], roots: Set[Int] = Set()): Future[Seq[ApiDataTable]] = {
+    // Another round of field filtering to only get those within the returned trees
+    val treeFieldQuery = for {
+      (tree, maybeField) <- dataTableTrees joinLeft DataField
+    } yield (tree, maybeField)
+
+    DatabaseInfo.db.run(treeFieldQuery.result).map { treeFields =>
+      val tablesWithParents = treeFields.map(_._1) // Get the trees
+        .map(tree => (ApiDataTable.fromNestedTable(tree)(None)(None), tree.table1)) // Use the API data model for each tree
+        .distinct // Take only distinct trees (duplicates returned with each field
+
+      val fields = treeFields.flatMap(_._2)
+        .map(ApiDataField.fromDataField)
+        .distinct
+
+      val rootTables = if (roots.nonEmpty) {
+        tablesWithParents.filter(t => roots.contains(t._1.id.get)).map(_._1)
+      } else {
+        tablesWithParents.filter(_._2.isEmpty).map(_._1)
+      }
+
+      rootTables map { table =>
+        buildTableStructure(table, fields, tablesWithParents)
+      }
+    }
+  }
+
+  /*
+   * Stores a set of values for a data record as a single batch operation
+   */
+  def storeRecordValues(recordValues: Seq[ApiRecordValues]): Future[Seq[ApiRecordValues]] = {
+    val records = recordValues map { valueRecord =>
+      val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), valueRecord.record.name)
+      val maybeRecord = DatabaseInfo.db.run((DataRecord returning DataRecord) += newRecord)
+
+      maybeRecord flatMap { insertedRecord =>
+        val record = ApiDataRecord.fromDataRecord(insertedRecord)(None)
+        val valueRows = valueRecord.values map { value =>
+          DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.field.get.id.get, record.id.get)
+        }
+        val insertedValues = DatabaseInfo.db.run {
+          (DataValue returning DataValue) ++= valueRows
+        }
+
+        val maybeValues = insertedValues
+        maybeValues.map { values =>
+          val apiValues = values.map(ApiDataValue.fromDataValue)
+          ApiRecordValues(record, apiValues)
+        }
+      }
+    }
+
+    Future.sequence(records)
+  }
+
+  /*
+   * Reformats API Data table with values to a format where field/subtable name is an object key and values or subtables are the values
+   */
+  def flattenTableValues(dataTable: ApiDataTable): Map[String, Any] = {
+    val fieldObjects = dataTable.fields.map { fields =>
+      Map[String, Any](
+        fields flatMap { field =>
+          val maybeValues = field.values match {
+            case Some(values) if values.isEmpty     => None
+            case Some(values) if values.length == 1 => Some(values.head.value)
+            case Some(values)                       => Some(values.map(_.value))
+            case None                               => None
+          }
+          maybeValues.map { values => field.name -> values }
+        }: _*)
+    }
+
+    val subtableObjects = dataTable.subTables.map { subtables =>
+      Map[String, Any](subtables map { subtable =>
+        subtable.name -> flattenTableValues(subtable)
+      }: _*)
+    }
+
+    fieldObjects.getOrElse(Map()) ++ subtableObjects.getOrElse(Map())
+  }
+
+  /*
+   * Fills ApiDataTable with values grouped by field ID
+   */
+  def fillStructure(table: ApiDataTable)(values: Map[Int, Seq[ApiDataValue]]): ApiDataTable = {
     val filledFields = table.fields map { fields =>
       // For each field, insert values
-      fields map { field: ApiDataField =>
-        field.id match {
-          // If a given field has an ID (all fields should)
-          case Some(fieldId) =>
-            // Get the value from the map to be added to the field
-            val fieldValue = values get fieldId map { matchingFieldValue =>
-              matchingFieldValue.toSeq
-            }
-            // Create a new field with only the values updated
-            field.copy(values = fieldValue)
-          case None =>
-            field
-        }
+      fields flatMap {
+        case ApiDataField(Some(fieldId), dateCreated, lastUpdated, tableId, fieldName, maybeValues) =>
+          val fieldValues = values.get(fieldId)
+          fieldValues.map { fValues => ApiDataField(Some(fieldId), dateCreated, lastUpdated, tableId, fieldName, values.get(fieldId)) } // Create a new field with only the values updated
       }
     }
 
     val filledSubtables = table.subTables map { subtables =>
-      subtables map { subtable: ApiDataTable =>
+      val filled = subtables map { subtable: ApiDataTable =>
         fillStructure(subtable)(values)
       }
+      val nonEmpty = filled.filter { t =>
+        (t.fields.nonEmpty && t.fields.get.nonEmpty) || (t.subTables.nonEmpty && t.subTables.get.nonEmpty)
+      }
+      nonEmpty
     }
+
     table.copy(fields = filledFields, subTables = filledSubtables)
   }
 
-  def getStructures(tables: Seq[ApiDataTable])(implicit session: Session): Seq[ApiDataTable] = {
-    // Get all root tables from the given ApiDataTables
-    val roots = tables.map { table =>
-      table.id match {
-        case Some(id) =>
-          getRootTables(id)
-        case None =>
-          Set[Int]()
+  protected[api] def getValueRecords(
+    dbValues: Seq[(DataRecordRow, DataFieldRow, DataValueRow)],
+    tables: Seq[ApiDataTable]): Seq[ApiDataRecord] = {
+
+    // Group values by record
+    val byRecord = dbValues.groupBy(_._1)
+
+    val records = byRecord flatMap {
+      case (record, recordValues: Seq[(DataRecordRow, DataFieldRow, DataValueRow)]) =>
+        val fieldValues = recordValues.map { case (r, f, v) => (f, v) }
+          .groupBy(_._1.id) // Group values by field
+          .map { case (k, v) => (k, v.unzip._2.map(ApiDataValue.fromDataValue)) }
+
+        val filledRecords = tables.flatMap {
+          case table => // if recordValueTables.contains(table.id.get) =>
+            val filledValues = fillStructure(table)(fieldValues)
+            if (filledValues.fields.isDefined && filledValues.fields.get.nonEmpty ||
+              filledValues.subTables.isDefined && filledValues.subTables.get.nonEmpty) {
+              // Keep records separate for each root table
+              Some(ApiDataRecord.fromDataRecord(record)(Some(Seq(filledValues))))
+            }
+            else {
+              None
+            }
+        }
+        filledRecords
+    }
+
+    records.toSeq.sortBy(-_.id.getOrElse(0))
+  }
+
+  protected[api] def getStructureFields(structure: ApiDataTable): Set[Int] = {
+    val fieldSet = structure.fields.map(_.flatMap(_.id).toSet).getOrElse(Set[Int]())
+
+    structure.subTables
+      .map { subtables =>
+        subtables.map(getStructureFields)
+          .fold(fieldSet)((fieldset, subtableFieldset) => fieldset ++ subtableFieldset)
       }
-    }
-
-    // Get the set of "root" tables to build data trees from
-    val rootSet = roots.foldLeft(Set[Int]())((roots, parents) => roots ++ parents)
-
-    // Construct table structures from the root
-    rootSet.toSeq.flatMap { root =>
-      getTableStructure(root)
-    }
+      .getOrElse(fieldSet)
   }
 
   /*
-   * Get IDs of all (Database) DataTables, using the DataTabletotablecrossref
+   * Fetches values from database matching a set of fields and falling within a time range
    */
-  private def getRootTables(tableId: Int)(implicit session: Session): Set[Int] = {
-    val parents = DataTabletotablecrossref.filter(_.table2 === tableId).map(_.table1).run
-    // If a table doesn't have any parents, it is a root
-    if (parents.isEmpty) {
-      Set(tableId)
-    }
-    else {
-      // Get all roots recursively
-      val parentSets = parents map { parentId =>
-        getRootTables(parentId)
+  protected[api] def fieldsetValues(fieldset: Set[Int], startTime: LocalDateTime, endTime: LocalDateTime): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
+    val valueQuery = fieldset map { fieldId =>
+      for {
+        value <- DataValue.filter(_.fieldId === fieldId)
+          .filter(v => v.dateCreated <= endTime && v.dateCreated >= startTime)
+        field <- value.dataFieldFk
+        record <- DataRecord.filter(_.id === value.recordId)
+      } yield (record, field, value)
+    } reduce ( (q, vq) => q ++ vq )
+
+    DatabaseInfo.db.run(valueQuery.sortBy(_._1.id.desc).result)
+  }
+
+  def recordValues(recordId: Int): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
+    val valueQuery = for {
+      value <- DataValue
+      record <- value.dataRecordFk.filter(_.id === recordId)
+      field <- value.dataFieldFk
+    } yield (record, field, value)
+
+    DatabaseInfo.db.run(valueQuery.sortBy(_._1.id.desc).result)
+  }
+
+  def getValue(id: Int): Future[Option[ApiDataValue]] = {
+    val valueQuery = for {
+      value <- DataValue.filter(_.id === id)
+      record <- value.dataRecordFk
+      field <- value.dataFieldFk
+    } yield (record, field, value)
+
+    val eventualValues = DatabaseInfo.db.run(valueQuery.sortBy(_._1.id.desc).result)
+
+    eventualValues map { values =>
+      values.headOption map { case (record: DataRecordRow, field: DataFieldRow, value: DataValueRow) =>
+        ApiDataValue.fromDataValue(value, Some(field), Some(record))
       }
-      // Fold them into a single set with no repetitions
-      parentSets.foldLeft(Set[Int]())((roots, parents) => roots ++ parents)
     }
   }
 
-  def findTable(name: String, source: String)(implicit session: Session): Seq[ApiDataTable] = {
-    val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name === name).run
-    dbDataTable map { table =>
-      ApiDataTable.fromDataTable(table)(None)(None)
+  def getRecordValues(recordId: Int): Future[Option[ApiDataRecord]] = {
+    val eventualValues = recordValues(recordId)
+    val eventualFielset = eventualValues.map { recordValues =>
+      recordValues.unzip3._2.map(_.id).toSet
     }
-  }
 
-  def findTablesLike(name: String, source: String)(implicit session: Session): Seq[ApiDataTable] = {
-    val dbDataTable = DataTable.filter(_.sourceName === source).filter(_.name like "%" + name + "%").run
-    dbDataTable map { table =>
-      ApiDataTable.fromDataTable(table)(None)(None)
+    val eventualTables = eventualFielset flatMap { case fieldset: Set[Int] =>
+      val dataTableTreesQuery = for {
+        field <- DataField.filter(_.id inSet fieldset)
+        tree <- DataTableTree.filter(_.id === field.tableIdFk)
+      } yield tree
+
+      buildDataTreeStructures(dataTableTreesQuery)
     }
-  }
 
-  def findTablesNotLike(name: String, source: String)(implicit session: Session): Seq[ApiDataTable] = {
-    val dbDataTable = DataTable.filter(_.sourceName === source).filterNot(_.name like "%" + name + "%").run
-    dbDataTable map { table =>
-      ApiDataTable.fromDataTable(table)(None)(None)
-    }
-  }
-
-  def getDataSources()(implicit session: Session): Seq[ApiDataTable] = {
-    val childTablesQuery = DataTabletotablecrossref.map(_.table2)
-    val rootTablesQuery = DataTable.filterNot(_.id in childTablesQuery)
-
-    val rootTables = rootTablesQuery.run
-
-    rootTables.map { dataTable =>
-      ApiDataTable.fromDataTable(dataTable)(None)(None)
-    }
-  }
-
-  /*
-   * Recursively construct nested DataTable records with associated fields and sub-tables
-   */
-  def getTableStructure(tableId: Int)(implicit session: Session): Option[ApiDataTable] = {
-    logger.debug(s"Get sturcture for $tableId")
-    val tablesWithParents = getTablesRecursively(tableId)
-
-    logger.debug(s"Got tables: $tablesWithParents")
-    val tableIds = tablesWithParents.flatMap(_._1.id).toSet
-    val fields = DataField.filter(_.tableIdFk inSet tableIds)
-      .run
-      .map(ApiDataField.fromDataField)
-
-    val rootTable = tablesWithParents.headOption.map(_._1)
-
-    logger.debug(s"Starting with root table $rootTable")
-    rootTable map { table =>
-      buildTableStructure(table, fields, tablesWithParents)
-    }
+    eventualTables flatMap { tables =>
+      val fieldset = tables.map(getStructureFields).reduce( (fs, structureFields) => fs ++ structureFields )
+      eventualValues.map(values => getValueRecords(values, tables))
+    } map (_.headOption)
   }
 
   protected[service] def buildTableStructure(table: ApiDataTable, fields: Seq[ApiDataField], dataTables: Seq[(ApiDataTable, Option[Int])]): ApiDataTable = {
@@ -395,82 +446,5 @@ trait DataService {
       Some(apiTables)
     }
     table.copy(fields = tableFields, subTables = someApiTables)
-  }
-
-  private def getTablesRecursively(tableId: Int)(implicit session: Session): Seq[(ApiDataTable, Option[Int])] = {
-    val tables = DataTableTree.filter(_.rootTable === tableId).run
-    tables map { table =>
-      (ApiDataTable.fromNestedTable(table)(None)(None), table.table1)
-    }
-  }
-
-  protected[api] def getStructureFields(structure: ApiDataTable): Set[Int] = {
-    val fieldSet = structure.fields match {
-      case Some(fields) =>
-        fields.flatMap(_.id).toSet
-      case None =>
-        Set[Int]()
-    }
-
-    val subtableFieldSets: Seq[Set[Int]] = structure.subTables match {
-      case Some(subTables) =>
-        subTables map getStructureFields
-      case None =>
-        Seq[Set[Int]]()
-    }
-
-    subtableFieldSets.foldLeft(fieldSet)((fields, subtableFields) => fields ++ subtableFields)
-  }
-
-
-  /*
-   * Private function finding data field by ID
-   */
-  def retrieveDataFieldId(fieldId: Int)(implicit session: Session): Option[ApiDataField] = {
-    val field = DataField.filter(_.id === fieldId).run.headOption
-    field map { dataField =>
-      ApiDataField.fromDataField(dataField)
-    }
-  }
-
-  def storeRecordValues(recordValues: ApiRecordValues)(implicit session: Session): Try[ApiRecordValues] = {
-    val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), recordValues.record.name)
-    val maybeRecord = Try((DataRecord returning DataRecord) += newRecord)
-
-    maybeRecord flatMap { insertedRecord =>
-      val record = ApiDataRecord.fromDataRecord(insertedRecord)(None)
-      val insertedValues = recordValues.values map { value =>
-        createValue(value, None, record.id)
-      }
-
-      val maybeValues = Utils.flatten(insertedValues)
-      maybeValues.map { values =>
-        ApiRecordValues(record, values)
-      }
-    }
-  }
-
-  def flattenTableValues(dataTable: ApiDataTable): Map[String, Any] = {
-    val fieldObjects = dataTable.fields.map { fields =>
-      Map[String, Any](
-        fields flatMap { field =>
-        val maybeValues = field.values match {
-          case Some(values) if values.isEmpty => None
-          case Some(values) if values.length == 1 => Some(values.head.value)
-          case Some(values) => Some(values.map(_.value))
-          case None => None
-        }
-        maybeValues.map { values => field.name -> values }
-      }: _*
-      )
-    }
-
-    val subtableObjects = dataTable.subTables.map { subtables =>
-      Map[String, Any](subtables map { subtable =>
-        subtable.name -> flattenTableValues(subtable)
-      }: _*)
-    }
-
-    fieldObjects.getOrElse(Map()) ++ subtableObjects.getOrElse(Map())
   }
 }

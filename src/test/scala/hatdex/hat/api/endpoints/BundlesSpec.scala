@@ -22,13 +22,14 @@
 package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
+import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.endpoints.jsonExamples.BundleExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
-import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import org.specs2.mutable.Specification
@@ -40,6 +41,8 @@ import spray.http._
 import spray.json._
 import spray.testkit.Specs2RouteTest
 import spray.httpx.SprayJsonSupport._
+import scala.concurrent.{ Await, Future }
+import scala.concurrent.duration._
 
 class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll with Bundles {
   def actorRefFactory = system
@@ -82,50 +85,51 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
       new DataRecordRow(6, LocalDateTime.now(), LocalDateTime.now(), "event record 3"))
 
     val dataValues = Seq(
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1", 10, 1),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 1", 11, 1),
+      new DataValueRow(1, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1", 10, 1),
+      new DataValueRow(2, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 1", 11, 1),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 2", 10, 2),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 2", 11, 2),
+      new DataValueRow(3, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 2", 10, 2),
+      new DataValueRow(4, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 2", 11, 2),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 3", 10, 3),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 3", 11, 3),
+      new DataValueRow(5, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 3", 10, 3),
+      new DataValueRow(6, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 3", 11, 3),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 1", 12, 4),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 1", 13, 4),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 1", 14, 4),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 1", 15, 4),
+      new DataValueRow(7, LocalDateTime.now(), LocalDateTime.now(), "event name 1", 12, 4),
+      new DataValueRow(8, LocalDateTime.now(), LocalDateTime.now(), "event location 1", 13, 4),
+      new DataValueRow(9, LocalDateTime.now(), LocalDateTime.now(), "event startTime 1", 14, 4),
+      new DataValueRow(10, LocalDateTime.now(), LocalDateTime.now(), "event endTime 1", 15, 4),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 2", 12, 5),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 2", 13, 5),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 2", 14, 5),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 2", 15, 5),
+      new DataValueRow(11, LocalDateTime.now(), LocalDateTime.now(), "event name 2", 12, 5),
+      new DataValueRow(12, LocalDateTime.now(), LocalDateTime.now(), "event location 2", 13, 5),
+      new DataValueRow(13, LocalDateTime.now(), LocalDateTime.now(), "event startTime 2", 14, 5),
+      new DataValueRow(14, LocalDateTime.now(), LocalDateTime.now(), "event endTime 2", 15, 5),
 
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event name 3", 12, 6),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event location 3", 13, 6),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event startTime 3", 14, 6),
-      new DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), "event endTime 3", 15, 6))
+      new DataValueRow(15, LocalDateTime.now(), LocalDateTime.now(), "event name 3", 12, 6),
+      new DataValueRow(16, LocalDateTime.now(), LocalDateTime.now(), "event location 3", 13, 6),
+      new DataValueRow(17, LocalDateTime.now(), LocalDateTime.now(), "event startTime 3", 14, 6),
+      new DataValueRow(18, LocalDateTime.now(), LocalDateTime.now(), "event endTime 3", 15, 6))
 
-    db.withSession { implicit session =>
-      DataTable.forceInsertAll(dataTableRows: _*)
-      DataTabletotablecrossref.forceInsertAll(dataTableCrossrefs: _*)
-      DataField.forceInsertAll(dataFieldRows: _*)
-      DataRecord.forceInsertAll(dataRecordRows: _*)
-      // Don't _foce_ insert all data values -- IDs don't particularly matter to us
-      DataValue.insertAll(dataValues: _*)
+    DatabaseInfo.db.run {
+      DBIO.seq(
+        DataTable.forceInsertAll(dataTableRows),
+        DataTabletotablecrossref.forceInsertAll(dataTableCrossrefs),
+        DataField.forceInsertAll(dataFieldRows),
+        DataRecord.forceInsertAll(dataRecordRows),
+        // Don't _foce_ insert all data values -- IDs don't particularly matter to us
+        DataValue.forceInsertAll(dataValues))
     }
+
   }
 
   def beforeAll() = {
-    populateData()
+    TestDataCleanup.cleanupAll.flatMap { c =>
+      populateData()
+    }
   }
 
   // Clean up all data
   def afterAll() = {
-    db.withSession { implicit session =>
-      TestDataCleanup.cleanupAll
-      session.close()
-    }
+    TestDataCleanup.cleanupAll
   }
 
   sequential
@@ -140,6 +144,7 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
         check {
           eventually {
             val responseString = responseAs[String]
+            //            logger.info(s"Bundle create response: $responseString")
             response.status should be equalTo Created
           }
           responseAs[ApiBundleContextless]
@@ -153,7 +158,7 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
         check {
           eventually {
             val responseString = responseAs[String]
-//            logger.info(s"Bundle data response ${responseString}")
+            //            logger.info(s"Bundle data response ${responseString}")
             response.status should be equalTo OK
           }
         }
@@ -165,7 +170,7 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
           eventually {
             val responseString = responseAs[String]
 
-//            logger.info(s"Bundle data response ${responseString}")
+            //            logger.info(s"Bundle data response ${responseString}")
 
             response.status should be equalTo OK
 
@@ -217,14 +222,14 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
             responseString must contain("kitchen record 2")
             responseString must contain("kitchen record 3")
 
-            responseString must not contain("kitchen time 1")
+            responseString must not contain ("kitchen time 1")
             responseString must contain("kitchen value 1")
             responseString must contain("event name 1")
-            responseString must not contain("event location 1")
+            responseString must not contain ("event location 1")
             responseString must contain("event name 2")
-            responseString must not contain("event location 2")
-            responseString must not contain("event startTime 2")
-            responseString must not contain("event endTime 2")
+            responseString must not contain ("event location 2")
+            responseString must not contain ("event startTime 2")
+            responseString must not contain ("event endTime 2")
           }
         }
     }

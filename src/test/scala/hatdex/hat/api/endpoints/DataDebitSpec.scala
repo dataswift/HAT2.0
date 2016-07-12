@@ -32,7 +32,7 @@ import hatdex.hat.api.models._
 import hatdex.hat.authentication.{ TestAuthCredentials, HatAuthTestHandler }
 import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
 import hatdex.hat.authentication.models.User
-import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import org.mindrot.jbcrypt.BCrypt
@@ -56,18 +56,12 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
-    db.withSession { implicit session =>
-      TestDataCleanup.cleanupAll
-      session.close()
-    }
+    TestDataCleanup.cleanupAll
   }
 
   // Clean up all data
   def afterAll() = {
-    db.withSession { implicit session =>
-      //      TestDataCleanup.cleanupAll
-      session.close()
-    }
+    TestDataCleanup.cleanupAll
   }
 
   object Context extends DataDebitContextualContext with DataDebitRequiredServices {
@@ -110,6 +104,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
           sealRoute(routes) ~>
           check {
             eventually {
+              logger.info(s"Bundles values response ${responseAs[String]}")
               response.status should be equalTo Forbidden
             }
           }
@@ -175,6 +170,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
           sealRoute(retrieveDataDebitValuesApi) ~>
           check {
             eventually {
+              logger.info(s"Bundles values response ${responseAs[String]}")
               response.status should be equalTo Forbidden
             }
           }
@@ -206,7 +202,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
             resp must contain("testValue1")
             resp must contain("testValue2-1")
           }
-          responseAs[Seq[ApiEntity]]
+          responseAs[ApiDataDebitOut]
         }
 
       HttpRequest(PUT, s"/dataDebit/${dataDebit.key.get}/disable")

@@ -121,12 +121,14 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
       HttpRequest(GET, s"/bundles/context/${bundle.id.get}").withHeaders(ownerAuthHeader) ~>
         routes ~>
         check {
-          response.status should be equalTo OK
-          val resp = responseAs[String]
-          resp must contain("emptyBundleTest1")
-          resp must contain("emptyBundleTest2")
-          resp must contain("emptyBundleTest3")
-          responseAs[ApiBundleContext].id must beSome
+          eventually {
+            response.status should be equalTo OK
+            val resp = responseAs[String]
+            resp must contain("emptyBundleTest1")
+            resp must contain("emptyBundleTest2")
+            resp must contain("emptyBundleTest3")
+            responseAs[ApiBundleContext].id must beSome
+          }
         }
 
     }
@@ -297,10 +299,12 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         .withEntity(HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundlePerson)) ~>
         routes ~>
         check {
-          response.status should be equalTo Created
-          val resp = responseAs[String]
-          resp must contain("emptyBundleTest6-1")
-          resp must contain("HATperson")
+          eventually {
+            response.status should be equalTo Created
+            val resp = responseAs[String]
+            resp must contain("emptyBundleTest6-1")
+            resp must contain("HATperson")
+          }
           responseAs[ApiBundleContext]
         }
 
@@ -310,13 +314,15 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         .withHeaders(ownerAuthHeader) ~>
         routes ~>
         check {
-          response.status should be equalTo OK
-          val resp = responseAs[String]
-          responseAs[Seq[ApiEntity]] must not have size(0)
-          resp must contain("HATperson")
-          resp must contain("testValue1")
-          resp must contain("testValue2-1")
-          resp must not contain ("testValue3")
+          eventually {
+            response.status should be equalTo OK
+            val resp = responseAs[String]
+            responseAs[Seq[ApiEntity]] must not have size(0)
+            resp must contain("HATperson")
+            resp must contain("testValue1")
+            resp must contain("testValue2-1")
+            resp must not contain ("testValue3")
+          }
         }
     }
 
@@ -326,10 +332,12 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         .withEntity(HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundleAllPeople)) ~>
         routes ~>
         check {
-          response.status should be equalTo Created
-          val resp = responseAs[String]
-          resp must contain("emptyBundleTest7-1")
-          resp must contain("person")
+          eventually {
+            response.status should be equalTo Created
+            val resp = responseAs[String]
+            resp must contain("emptyBundleTest7-1")
+            resp must contain("person")
+          }
           responseAs[ApiBundleContext]
         }
 
@@ -339,13 +347,15 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         .withHeaders(ownerAuthHeader) ~>
         routes ~>
         check {
-          response.status should be equalTo OK
-          val resp = responseAs[String]
-          responseAs[Seq[ApiEntity]] must not have size(0)
-          resp must contain("HATperson")
-          resp must contain("testValue1")
-          resp must contain("testValue2-1")
-          resp must not contain ("testValue3")
+          eventually {
+            response.status should be equalTo OK
+            val resp = responseAs[String]
+            responseAs[Seq[ApiEntity]] must not have size(0)
+            resp must contain("HATperson")
+            resp must contain("testValue1")
+            resp must contain("testValue2-1")
+            resp must not contain ("testValue3")
+          }
         }
     }
 
@@ -355,10 +365,12 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         .withEntity(HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundlePersonNoProps)) ~>
         routes ~>
         check {
-          response.status should be equalTo Created
-          val resp = responseAs[String]
-          resp must contain("emptyBundleTest8-1")
-          resp must contain("HATperson")
+          eventually {
+            response.status should be equalTo Created
+            val resp = responseAs[String]
+            resp must contain("emptyBundleTest8-1")
+            resp must contain("HATperson")
+          }
           responseAs[ApiBundleContext]
         }
 
@@ -368,13 +380,15 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         .withHeaders(ownerAuthHeader) ~>
         routes ~>
         check {
-          response.status should be equalTo OK
-          val resp = responseAs[String]
-          responseAs[Seq[ApiEntity]] must not have size(0)
-          resp must contain("HATperson")
-          resp must not contain ("testValue1")
-          resp must not contain ("testValue2-1")
-          resp must not contain ("testValue3")
+          eventually {
+            response.status should be equalTo OK
+            val resp = responseAs[String]
+            responseAs[Seq[ApiEntity]] must not have size(0)
+            resp must contain("HATperson")
+            resp must not contain ("testValue1")
+            resp must not contain ("testValue2-1")
+            resp must not contain ("testValue3")
+          }
         }
     }
 
@@ -384,10 +398,12 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         .withEntity(HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundlePersonProps)) ~>
         routes ~>
         check {
-          response.status should be equalTo Created
-          val resp = responseAs[String]
-          resp must contain("emptyBundleTest9-1")
-          resp must contain("HATperson")
+          eventually {
+            response.status should be equalTo Created
+            val resp = responseAs[String]
+            resp must contain("emptyBundleTest9-1")
+            resp must contain("HATperson")
+          }
           responseAs[ApiBundleContext]
         }
 
@@ -397,13 +413,15 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         .withHeaders(ownerAuthHeader) ~>
         routes ~>
         check {
-          response.status should be equalTo OK
-          val resp = responseAs[String]
-          responseAs[Seq[ApiEntity]] must not have size(0)
-          resp must contain("HATperson")
-          resp must contain("testValue1")
-          resp must contain("testValue2-1")
-          resp must not contain ("testValue3")
+          eventually {
+            response.status should be equalTo OK
+            val resp = responseAs[String]
+            responseAs[Seq[ApiEntity]] must not have size(0)
+            resp must contain("HATperson")
+            resp must contain("testValue1")
+            resp must contain("testValue2-1")
+            resp must not contain ("testValue3")
+          }
         }
     }
   }

@@ -28,7 +28,6 @@ import hatdex.hat.api.models.stats.{ DataCreditStats, DataDebitStats, DataTableS
 
 import scala.collection.immutable.HashMap
 
-//import hatdex.hat.dal.SlickPostgresDriver.simple._
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime

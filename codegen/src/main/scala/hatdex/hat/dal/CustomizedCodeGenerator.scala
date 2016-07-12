@@ -1,6 +1,5 @@
 package hatdex.hat.dal
 
-//import autodal.Config._
 import slick.codegen.SourceCodeGenerator
 import slick.driver.PostgresDriver
 import slick.jdbc.meta.MTable
@@ -10,10 +9,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import slick.profile.SqlProfile.ColumnOption
-
-//import slick.driver
-
-//import SlickPostgresDriver.simple._
 
 /**
  *  This customizes the Slick code generator.

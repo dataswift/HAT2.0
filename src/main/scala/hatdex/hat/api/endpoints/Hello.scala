@@ -328,6 +328,7 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
       val startTime = LocalDateTime.now().minusDays(365)
       val endTime = LocalDateTime.now()
       val eventualValues = fieldsetValues(fieldset, startTime, endTime)
+
       eventualValues.map(values => getValueRecords(values, Seq(profileTable)))
         .map { records => records.headOption }
         .map(_.flatMap(_.tables.flatMap(_.headOption)))

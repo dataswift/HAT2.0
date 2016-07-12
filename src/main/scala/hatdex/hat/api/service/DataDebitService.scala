@@ -26,13 +26,12 @@ import akka.event.LoggingAdapter
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.models.User
-import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
-import org.joda.time.{LocalDateTime, DateTime}
+import org.joda.time.LocalDateTime
 
-import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 trait DataDebitService {
   val logger: LoggingAdapter
@@ -40,9 +39,8 @@ trait DataDebitService {
   val bundlesService: BundleService
   val bundleContextService: BundleContextService
 
-  def storeContextlessDataDebit(debit: ApiDataDebit, bundle: ApiBundleContextless)
-                               (implicit session: Session, user: User): Future[ApiDataDebit] = {
-    val contextlessBundle = bundle.id match {
+  def storeContextlessDataDebit(debit: ApiDataDebit, bundle: ApiBundleContextless)(implicit user: User): Future[ApiDataDebit] = {
+    val eventualBundleContextless = bundle.id match {
       case Some(bundleId) =>
         bundlesService.getBundleContextlessById(bundleId) map { maybeBundle: Option[ApiBundleContextless] =>
           maybeBundle.getOrElse {
@@ -53,35 +51,26 @@ trait DataDebitService {
         bundlesService.storeBundleContextless(bundle)
     }
 
-    contextlessBundle map { bundle =>
+    eventualBundleContextless flatMap { bundle =>
       val dataDebitKey = UUID.randomUUID()
       val newDebit = DataDebitRow(dataDebitKey, LocalDateTime.now(), LocalDateTime.now(), debit.name,
         debit.startDate, debit.endDate, debit.rolling, debit.sell, debit.price,
         enabled = false, "owner", user.userId.toString,
         bundle.id,
         None,
-        "contextless"
-      )
+        "contextless")
 
-      val createdDebit = (DataDebit returning DataDebit) += newDebit
-      val responseDebit = ApiDataDebit.fromDbModel(createdDebit)
-      responseDebit.copy(bundleContextless = Some(bundle))
+      val maybeCreatedDebit = DatabaseInfo.db.run((DataDebit returning DataDebit) += newDebit)
+
+      maybeCreatedDebit.map(ApiDataDebit.fromDbModel)
+        .map(_.copy(bundleContextless = Some(bundle)))
     }
   }
 
-  def storeContextDataDebit(debit: ApiDataDebit, bundle: ApiBundleContext)
-                           (implicit session: Session, user: User): Try[ApiDataDebit] = {
-
+  def storeContextDataDebit(debit: ApiDataDebit, bundle: ApiBundleContext)(implicit user: User): Future[ApiDataDebit] = {
     val contextBundle = bundle.id match {
-      case Some(bundleId) =>
-        bundleContextService.getBundleContextById(bundleId) match {
-          case Some(bundle) =>
-            Success(bundle)
-          case None =>
-            Failure(new IllegalArgumentException(s"Bundle with ID $bundleId does not exist"))
-        }
-      case None =>
-        bundleContextService.storeBundleContext(bundle)
+      case Some(bundleId) => bundleContextService.getBundleContextById(bundleId).map(_.get)
+      case None           => bundleContextService.storeBundleContext(bundle)
     }
 
     contextBundle flatMap { bundle =>
@@ -91,38 +80,31 @@ trait DataDebitService {
         enabled = false, "owner", user.userId.toString,
         None,
         bundle.id,
-        "contextual"
-      )
+        "contextual")
 
-      val maybeCreatedDebit = Try((DataDebit returning DataDebit) += newDebit)
+      val maybeCreatedDebit = DatabaseInfo.db.run((DataDebit returning DataDebit) += newDebit)
 
-      maybeCreatedDebit map { createdDebit =>
-        val responseDebit = ApiDataDebit.fromDbModel(createdDebit)
-        responseDebit.copy(bundleContextual = Some(bundle))
-      }
+      maybeCreatedDebit.map(ApiDataDebit.fromDbModel)
+        .map(_.copy(bundleContextual = Some(bundle)))
     }
   }
 
-
-  def enableDataDebit(debit: DataDebitRow)(implicit session: Session): Try[Int] = {
-//    import hatdex.hat.dal.SlickPostgresDriver.api._
-    Try(
-      DataDebit.filter(_.dataDebitKey === debit.dataDebitKey)
-        .map(dd => (dd.enabled, dd.lastUpdated))
-        .update((true, LocalDateTime.now()))
-    )
+  def enableDataDebit(debit: DataDebitRow): Future[Int] = {
+    val query = DataDebit.filter(_.dataDebitKey === debit.dataDebitKey)
+      .map(dd => (dd.enabled, dd.lastUpdated))
+      .update((true, LocalDateTime.now()))
+    DatabaseInfo.db.run(query)
   }
 
-  def disableDataDebit(debit: DataDebitRow)(implicit session: Session): Try[Int] = {
-    Try(
-      DataDebit.filter(_.dataDebitKey === debit.dataDebitKey)
-        .map(dd => (dd.enabled, dd.lastUpdated))
-        .update((false, LocalDateTime.now()))
-    )
+  def disableDataDebit(debit: DataDebitRow): Future[Int] = {
+    val query = DataDebit.filter(_.dataDebitKey === debit.dataDebitKey)
+      .map(dd => (dd.enabled, dd.lastUpdated))
+      .update((false, LocalDateTime.now()))
+    DatabaseInfo.db.run(query)
   }
 
-  def findDataDebitByKey(dataDebitKey: UUID)(implicit session: Session): Option[DataDebitRow] = {
-    DataDebit.filter(_.dataDebitKey === dataDebitKey).run.headOption
+  def findDataDebitByKey(dataDebitKey: UUID): Future[Option[DataDebitRow]] = {
+    DatabaseInfo.db.run(DataDebit.filter(_.dataDebitKey === dataDebitKey).result).map(_.headOption)
   }
 
   def retrieveDataDebiValues(debit: DataDebitRow, bundleId: Int, maybeLimit: Option[Int] = None, maybeStartTime: Option[LocalDateTime] = None, maybeEndTime: Option[LocalDateTime] = None): Future[ApiDataDebitOut] = {
@@ -134,6 +116,13 @@ trait DataDebitService {
     val bundleValues = bundlesService.getBundleContextlessValues(bundleId, maybeLimit, filterStartTime, filterEndTime)
     bundleValues.map { data =>
       ApiDataDebitOut.fromDbModel(debit, Some(data), None)
+    }
+  }
+
+  def retrieveDataDebitContextualValues(debit: DataDebitRow, bundleId: Int): Future[ApiDataDebitOut] = {
+    val eventualApiEntities = bundleContextService.getBundleContextData(bundleId)
+    eventualApiEntities map { data =>
+      ApiDataDebitOut.fromDbModel(debit, None, Some(data))
     }
   }
 
@@ -158,15 +147,17 @@ trait DataDebitService {
       contextless <- eventualBunleContextless
       contextual <- eventualBundleContextual
     } yield {
-      val cless = contextless.map { case (dd, bundle) =>
-        val apidd = ApiDataDebit.fromDbModel(dd)
-        val apiBundle = ApiBundleContextless.fromBundleContextless(bundle)
-        apidd.copy(bundleContextless = Some(apiBundle))
+      val cless = contextless.map {
+        case (dd, bundle) =>
+          val apidd = ApiDataDebit.fromDbModel(dd)
+          val apiBundle = ApiBundleContextless.fromBundleContextless(bundle)
+          apidd.copy(bundleContextless = Some(apiBundle))
       }
-      val cfull = contextual.map { case (dd, bundle) =>
-        val apidd = ApiDataDebit.fromDbModel(dd)
-        val apiBundle = ApiBundleContext.fromDbModel(bundle)
-        apidd.copy(bundleContextual = Some(apiBundle))
+      val cfull = contextual.map {
+        case (dd, bundle) =>
+          val apidd = ApiDataDebit.fromDbModel(dd)
+          val apiBundle = ApiBundleContext.fromDbModel(bundle)
+          apidd.copy(bundleContextual = Some(apiBundle))
       }
       cless ++ cfull
     }

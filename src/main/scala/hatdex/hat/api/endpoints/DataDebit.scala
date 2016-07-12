@@ -31,12 +31,13 @@ import hatdex.hat.api.service.{ DataDebitOperations, StatsService, DataDebitServ
 import hatdex.hat.authentication.HatServiceAuthHandler
 import hatdex.hat.authentication.authorization.{ UserAuthorization, DataDebitAuthorization }
 import hatdex.hat.authentication.models.User
-import org.joda.time.DateTime
+import hatdex.hat.dal.Tables
+import org.joda.time.{ LocalDateTime, DateTime }
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
 import scala.concurrent.ExecutionContext.Implicits.global
-
+import scala.concurrent.Future
 import scala.util.{ Try, Failure, Success }
 
 // this trait defines our service behavior independently from the service actor
@@ -79,11 +80,7 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
   }
 
   private def processContextlessDDProposal(debit: ApiDataDebit, bundle: ApiBundleContextless)(implicit user: User) = {
-    val eventualDataDebit = db.withSession { implicit session =>
-      val maybeCreatedDebit = storeContextlessDataDebit(debit, bundle)
-      session.close()
-      maybeCreatedDebit
-    }
+    val eventualDataDebit = storeContextlessDataDebit(debit, bundle)
 
     onComplete(eventualDataDebit) {
       case Success(createdDebit) =>
@@ -96,21 +93,14 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
   }
 
   private def processContextualDDProposal(debit: ApiDataDebit, bundle: ApiBundleContext)(implicit user: User) = {
-    val maybeCreatedDebit = db.withSession { implicit session =>
-      val maybeCreatedDebit: Try[ApiDataDebit] = storeContextDataDebit(debit, bundle)
-      session.close()
-      maybeCreatedDebit
+    val eventualDataDebit = storeContextDataDebit(debit, bundle)
+    eventualDataDebit map { createdDebit =>
+      recordDataDebitOperation(createdDebit, user, DataDebitOperations.Create(), "Contextual Data Debit created")
+        .recover { case e => logger.error(s"Error while recording data debit operation: ${e.getMessage}") }
     }
-
-    complete {
-      maybeCreatedDebit match {
-        case Success(createdDebit: ApiDataDebit) =>
-          val recordResponse = recordDataDebitOperation(createdDebit, user, DataDebitOperations.Create(), "Contextual Data Debit created")
-            .recover { case e => logger.error(s"Error while recording data debit operation: ${e.getMessage}") }
-          (Created, createdDebit)
-        case Failure(e) =>
-          (BadRequest, ErrorMessage("Request to create a contextual data debit is malformed", e.getMessage))
-      }
+    onComplete(eventualDataDebit) {
+      case Success(createdDebit: ApiDataDebit) => complete((Created, createdDebit))
+      case Failure(e)                          => complete((BadRequest, ErrorMessage("Request to create a contextual data debit is malformed", e.getMessage)))
     }
   }
 
@@ -118,27 +108,29 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
     put {
       accessTokenHandler { implicit user: User =>
         authorize(UserAuthorization.withRole("owner")) {
-          db.withSession { implicit session =>
-            val dataDebit = findDataDebitByKey(dataDebitKey)
+          val resp = findDataDebitByKey(dataDebitKey) flatMap { dataDebit =>
+            if (DataDebitAuthorization.hasPermissionModifyDataDebit(dataDebit)) {
+              val result = dataDebit.map(enableDataDebit)
+                .map(eventualDD => eventualDD.map(dd => Some(dd)))
+                .getOrElse(Future.successful(None))
 
-            authorize(DataDebitAuthorization.hasPermissionModifyDataDebit(dataDebit)) {
-              val result = dataDebit map enableDataDebit
-              session.close()
               dataDebit.foreach { dd =>
                 recordDataDebitOperation(ApiDataDebit.fromDbModel(dd), user, DataDebitOperations.Enable(), "Data Debit enabled") recover {
                   case e => logger.error(s"Error while recording data debit operation: ${e.getMessage}")
                 }
               }
-
-              complete {
-                result match {
-                  case None                 => (NotFound, ErrorMessage("DataDebit not Found", s"Data Debit $dataDebitKey not found"))
-                  case Some(Success(debit)) => (OK, SuccessResponse("Data Debit enabled"))
-                  case Some(Failure(e))     => (BadRequest, ErrorMessage("Error enabling DataDebit", e.getMessage))
-                }
-              }
+              result
             }
+            else {
+              Future.failed(new SecurityException("You do not have the necessary rights to enable this data debit"))
+            }
+          }
 
+          onComplete(resp) {
+            case Success(None)                 => complete((NotFound, ErrorMessage("DataDebit not Found", s"Data Debit $dataDebitKey not found")))
+            case Success(Some(debit))          => complete((OK, SuccessResponse("Data Debit enabled")))
+            case Failure(e: SecurityException) => complete((Forbidden, ErrorMessage("Forbidden", e.getMessage)))
+            case Failure(e)                    => complete((BadRequest, ErrorMessage("Error enabling DataDebit", e.getMessage)))
           }
         }
       }
@@ -149,28 +141,29 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
     put {
       accessTokenHandler { implicit user: User =>
         authorize(UserAuthorization.withRole("owner", "platform")) {
-          db.withSession { implicit session =>
-            val dataDebit = findDataDebitByKey(dataDebitKey)
-
-            authorize(DataDebitAuthorization.hasPermissionModifyDataDebit(dataDebit)) {
-              val result = dataDebit map disableDataDebit
-              session.close()
+          val resp = findDataDebitByKey(dataDebitKey) flatMap { dataDebit =>
+            if (DataDebitAuthorization.hasPermissionModifyDataDebit(dataDebit)) {
+              val result = dataDebit.map(disableDataDebit)
+                .map(eventualDD => eventualDD.map(dd => Some(dd)))
+                .getOrElse(Future.successful(None))
 
               dataDebit.foreach { dd =>
                 recordDataDebitOperation(ApiDataDebit.fromDbModel(dd), user, DataDebitOperations.Disable(), "Data Debit disabled") recover {
                   case e => logger.error(s"Error while recording data debit operation: ${e.getMessage}")
                 }
               }
-
-              complete {
-                result match {
-                  case None                 => (NotFound, ErrorMessage("DataDebit not Found", s"Data Debit $dataDebitKey not found"))
-                  case Some(Success(debit)) => (OK, SuccessResponse("Data Debit disabled"))
-                  case Some(Failure(e))     => (BadRequest, ErrorMessage("Error disabling DataDebit", e.getMessage))
-                }
-              }
+              result
             }
+            else {
+              Future.failed(new SecurityException("You do not have the necessary rights to disable this data debit"))
+            }
+          }
 
+          onComplete(resp) {
+            case Success(None)                 => complete((NotFound, ErrorMessage("DataDebit not Found", s"Data Debit $dataDebitKey not found")))
+            case Success(Some(debit))          => complete((OK, SuccessResponse("Data Debit enabled")))
+            case Failure(e: SecurityException) => complete((Forbidden, ErrorMessage("Forbidden", e.getMessage)))
+            case Failure(e)                    => complete((BadRequest, ErrorMessage("Error enabling DataDebit", e.getMessage)))
           }
         }
       }
@@ -180,58 +173,63 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
   def retrieveDataDebitValuesApi = path(JavaUUID / "values") { dataDebitKey: UUID =>
     get {
       accessTokenHandler { implicit user: User =>
-        val maybeDataDebit = db.withSession { implicit session =>
-          val dd = findDataDebitByKey(dataDebitKey)
-          session.close()
-          dd
-        }
+        parameters('limit.as[Option[Int]], 'starttime.as[Option[Int]], 'endtime.as[Option[Int]]) {
+          (maybeLimit: Option[Int], maybeStartTimestamp: Option[Int], maybeEndTimestamp: Option[Int]) =>
+            val maybeStartTime = maybeStartTimestamp.map(t => new DateTime(t * 1000L).toLocalDateTime)
+            val maybeEndTime = maybeEndTimestamp.map(t => new DateTime(t * 1000L).toLocalDateTime)
 
-        maybeDataDebit map { dataDebit =>
-          val apiDataDebit = ApiDataDebit.fromDbModel(dataDebit)
-          authorize(DataDebitAuthorization.hasPermissionAccessDataDebit(maybeDataDebit)) {
-            parameters('limit.as[Option[Int]], 'starttime.as[Option[Int]], 'endtime.as[Option[Int]]) {
-              (maybeLimit: Option[Int], maybeStartTimestamp: Option[Int], maybeEndTimestamp: Option[Int]) =>
-                (dataDebit.kind, dataDebit.bundleContextlessId, dataDebit.bundleContextId) match {
-                  case ("contextless", Some(bundleId), None) =>
-                    val maybeStartTime = maybeStartTimestamp.map(t => new DateTime(t * 1000L).toLocalDateTime)
-                    val maybeEndTime = maybeEndTimestamp.map(t => new DateTime(t * 1000L).toLocalDateTime)
-                    val eventualValues = retrieveDataDebiValues(dataDebit, bundleId, maybeLimit, maybeStartTime, maybeEndTime)
+            val eventualMaybeDataDebit = findDataDebitByKey(dataDebitKey)
 
-                    onComplete(eventualValues) {
-                      case Success(values) =>
-                        val statsRecorded = recordDataDebitRetrieval(apiDataDebit, values, user, "Contextless Data Debit Retrieved") recover {
-                          case e => logger.error(s"Error while recording data debit operation: ${e.getMessage}")
-                        }
-                        complete(values)
-                      case Failure(e) =>
-                        complete((BadRequest, ErrorMessage("Error while fetching Data Debit values", s"Does Data Debit $dataDebitKey exist?")))
-                    }
-
-                  case ("contextual", None, Some(bundleId)) =>
-                    complete {
-                      db.withSession { implicit session =>
-                        val values = bundleContextService.retrieveDataDebitContextualValues(dataDebit, bundleId)
-                        val recordResponse = recordDataDebitRetrieval(apiDataDebit, values, user, "Contextual Data Debit Retrieved") recover {
-                          case e =>
-                            logger.error(s"Error while recording data debit operation: ${e.getMessage}")
-                        }
-                        session.close()
-                        values
-                      }
-                    }
-                  case _ =>
-                    complete {
-                      (BadRequest, ErrorMessage("Bad Request", s"Data Debit $dataDebitKey is malformed"))
-                    }
+            val response = eventualMaybeDataDebit flatMap { maybeDataDebit =>
+              if (DataDebitAuthorization.hasPermissionAccessDataDebit(maybeDataDebit)) {
+                maybeDataDebit map { dataDebit =>
+                  val apiDataDebit = ApiDataDebit.fromDbModel(dataDebit)
+                  (dataDebit.kind, dataDebit.bundleContextlessId, dataDebit.bundleContextId) match {
+                    case ("contextless", Some(bundleId), None) => getContextlessDataDebitValues(dataDebit, bundleId, maybeLimit, maybeStartTime, maybeEndTime)
+                    case ("contextual", None, Some(bundleId))  => getContextualDataDebitValues(dataDebit, bundleId, maybeLimit, maybeStartTime, maybeEndTime)
+                    case _                                     => Future.failed(new RuntimeException(s"Data Debit ${dataDebit.dataDebitKey} is malformed"))
+                  }
+                } getOrElse {
+                  Future.failed(new RuntimeException("No such Data Debit exists"))
                 }
+              }
+              else {
+                Future.failed(new SecurityException("You do not have rights to access values for this data debit"))
+              }
             }
-          }
-        } getOrElse {
-          complete {
-            (NotFound, ErrorMessage("DataDebit not Found", s"Data Debit $dataDebitKey not found"))
-          }
+
+            onComplete(response) {
+              case Success(dd)                   => complete((OK, dd))
+              case Failure(e: SecurityException) => complete((Forbidden, ErrorMessage("Forbidden", e.getMessage)))
+              case Failure(e)                    => complete((BadRequest, ErrorMessage("Bad Request", e.getMessage)))
+            }
         }
       }
+    }
+  }
+
+  def getContextlessDataDebitValues(dataDebit: Tables.DataDebitRow, bundleId: Int,
+                                    maybeLimit: Option[Int], maybeStartTime: Option[LocalDateTime], maybeEndTime: Option[LocalDateTime])(implicit user: User): Future[ApiDataDebitOut] = {
+    val eventualValues = retrieveDataDebiValues(dataDebit, bundleId, maybeLimit, maybeStartTime, maybeEndTime)
+    eventualValues map { values =>
+      val apiDataDebit = ApiDataDebit.fromDbModel(dataDebit)
+      val statsRecorded = recordDataDebitRetrieval(apiDataDebit, values, user, "Contextless Data Debit Retrieved") recover {
+        case e => logger.error(s"Error while recording data debit operation: ${e.getMessage}")
+      }
+      values
+    }
+  }
+
+  def getContextualDataDebitValues(dataDebit: Tables.DataDebitRow, bundleId: Int,
+                                   maybeLimit: Option[Int], maybeStartTime: Option[LocalDateTime], maybeEndTime: Option[LocalDateTime])(implicit user: User): Future[ApiDataDebitOut] = {
+    val eventualValues = retrieveDataDebitContextualValues(dataDebit, bundleId)
+    eventualValues map {
+      case values =>
+        val apiDataDebit = ApiDataDebit.fromDbModel(dataDebit)
+        recordDataDebitRetrieval(apiDataDebit, values.bundleContextual.getOrElse(Seq()), user, "Contextual Data Debit Retrieved") recover {
+          case e => logger.error(s"Error while recording data debit operation: ${e.getMessage}")
+        }
+        values
     }
   }
 
@@ -241,8 +239,7 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
         authorize(UserAuthorization.withRole("owner")) {
           val apiDebits = listDataDebits
           onComplete(apiDebits) {
-            case Success(debits) =>
-              complete(debits)
+            case Success(debits) => complete(debits)
             case Failure(e) =>
               logger.debug(s"Error while listing Data Debits: ${e.getMessage}")
               complete((InternalServerError, ErrorMessage("Error while listing Data Debits", "Unknown error")))

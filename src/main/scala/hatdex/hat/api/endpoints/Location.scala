@@ -20,18 +20,21 @@
  */
 package hatdex.hat.api.endpoints
 
+import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.api.service.LocationsService
 import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.User
-import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 
-import scala.util.{ Failure, Success, Try }
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 // this trait defines our service behavior independently from the service actor
 trait Location extends LocationsService with AbstractEntity {
@@ -66,25 +69,19 @@ trait Location extends LocationsService with AbstractEntity {
 
   def createEntity = pathEnd {
     entity(as[ApiLocation]) { location =>
-      db.withSession { implicit session =>
-        val locationslocationRow = new LocationsLocationRow(0, LocalDateTime.now(), LocalDateTime.now(), location.name)
-        val result = Try((LocationsLocation returning LocationsLocation) += locationslocationRow)
-        val entity = result map { createdLocation =>
-          val newEntity = new EntityRow(createdLocation.id, LocalDateTime.now(), LocalDateTime.now(), createdLocation.name, entityKind, Some(createdLocation.id), None, None, None, None)
-          val entityCreated = Try(Entity += newEntity)
-          logger.debug("Creating new entity for location:"+entityCreated)
-        }
-
-        complete {
-          result match {
-            case Success(createdLocation) =>
-              (Created, ApiLocation.fromDbModel(createdLocation))
-            case Failure(e) =>
-              (BadRequest, e.getMessage)
-          }
-        }
+      onComplete(createLocation(location.name)) {
+        case Success(created) => complete((Created, created))
+        case Failure(e) => complete((BadRequest, ErrorMessage("Bad Request", e.getMessage)))
       }
     }
+  }
+
+  def createLocation(name: String): Future[ApiLocation] = {
+    val q = for {
+      location <- (LocationsLocation returning LocationsLocation) += LocationsLocationRow(0, LocalDateTime.now(), LocalDateTime.now(), name)
+      entity <- Entity += EntityRow(location.id, LocalDateTime.now(), LocalDateTime.now(), location.name, entityKind, Some(location.id), None, None, None, None)
+    } yield location
+    DatabaseInfo.db.run(q).map(ApiLocation.fromDbModel)
   }
 }
 

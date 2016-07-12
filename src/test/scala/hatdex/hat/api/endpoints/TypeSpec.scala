@@ -169,22 +169,26 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
         .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo OK
-          val types = responseAs[List[ApiSystemType]]
-          types must have size (1)
-          responseAs[String] must contain("PostalAddress")
+          eventually {
+            response.status should be equalTo OK
+            val types = responseAs[List[ApiSystemType]]
+            types must have size (1)
+            responseAs[String] must contain("PostalAddress")
+          }
         }
 
       HttpRequest(GET, "/type/type")
         .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo OK
-          val types = responseAs[List[ApiSystemType]]
-          types must not be empty
-          responseAs[String] must contain("PostalAddress")
-          responseAs[String] must contain("Date")
-          responseAs[String] must contain("Place")
+          eventually {
+            response.status should be equalTo OK
+            val types = responseAs[List[ApiSystemType]]
+            types must not be empty
+            responseAs[String] must contain("PostalAddress")
+            responseAs[String] must contain("Date")
+            responseAs[String] must contain("Place")
+          }
         }
     }
 
@@ -194,9 +198,11 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
         .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo BadRequest
-          responseAs[String] must contain("PostalAddress")
-          responseAs[ErrorMessage].message must contain("Error")
+          eventually {
+            response.status should be equalTo BadRequest
+            responseAs[String] must contain("PostalAddress")
+            responseAs[ErrorMessage].message must contain("Error")
+          }
         }
     }
 
@@ -206,8 +212,10 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
         .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo BadRequest
-          responseAs[ErrorMessage].message must contain("Error linking Types")
+          eventually {
+            response.status should be equalTo BadRequest
+            responseAs[ErrorMessage].message must contain("Error linking Types")
+          }
         }
     }
 
@@ -224,8 +232,10 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
         .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo BadRequest
-          responseAs[ErrorMessage].message must contain("Error")
+          eventually {
+            response.status should be equalTo BadRequest
+            responseAs[ErrorMessage].message must contain("Error")
+          }
         }
     }
 
@@ -234,30 +244,36 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
         .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo OK
-          val uoms = responseAs[List[ApiSystemUnitofmeasurement]]
-          uoms must not be empty
-          responseAs[String] must contain("meters")
+          eventually {
+            response.status should be equalTo OK
+            val uoms = responseAs[List[ApiSystemUnitofmeasurement]]
+            uoms must not be empty
+            responseAs[String] must contain("meters")
+          }
         }
 
       HttpRequest(GET, Uri("/type/unitofmeasurement"))
         .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo OK
-          val uoms = responseAs[List[ApiSystemUnitofmeasurement]]
-          uoms must not be empty
-          responseAs[String] must contain("meters")
-          responseAs[String] must contain("kilograms")
+          eventually {
+            response.status should be equalTo OK
+            val uoms = responseAs[List[ApiSystemUnitofmeasurement]]
+            uoms must not be empty
+            responseAs[String] must contain("meters")
+            responseAs[String] must contain("kilograms")
+          }
         }
 
       HttpRequest(GET, Uri("/type/unitofmeasurement").withQuery(("name", "notExistingName")) )
         .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo OK
-          val uoms = responseAs[List[ApiSystemUnitofmeasurement]]
-          uoms must be empty
+          eventually {
+            response.status should be equalTo OK
+            val uoms = responseAs[List[ApiSystemUnitofmeasurement]]
+            uoms must be empty
+          }
         }
     }
 

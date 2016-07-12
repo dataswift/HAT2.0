@@ -21,7 +21,7 @@
 
 package hatdex.hat.api.endpoints
 
-import akka.event.{Logging, LoggingAdapter}
+import akka.event.{ Logging, LoggingAdapter }
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.endpoints.jsonExamples.DataExamples
 import hatdex.hat.api.json.JsonProtocol
@@ -53,14 +53,13 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
 
   import JsonProtocol._
 
-  def beforeAll() = {}
+  def beforeAll() = {
+    TestDataCleanup.cleanupAll
+  }
 
   // Clean up all data
   def afterAll() = {
-    db.withSession { implicit session =>
-      TestDataCleanup.cleanupAll
-      session.close()
-    }
+    TestDataCleanup.cleanupAll
   }
 
   sequential
@@ -76,10 +75,13 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
       .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.tableKitchen)) ~>
       sealRoute(routes) ~>
       check {
-        response.status should be equalTo Created
-        responseAs[String] must contain("kitchen")
-        responseAs[String] must contain("fibaro")
+        eventually {
+          response.status should be equalTo Created
+          responseAs[String] must contain("kitchen")
+          responseAs[String] must contain("fibaro")
+        }
         responseAs[ApiDataTable]
+
       }
 
     val dataSubtable = HttpRequest(POST, "/data/table")
@@ -87,10 +89,13 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
       .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.tableKitchenElectricity)) ~>
       sealRoute(routes) ~>
       check {
-        response.status should be equalTo Created
-        responseAs[String] must contain("kitchenElectricity")
-        responseAs[String] must contain("fibaro")
+        eventually {
+          response.status should be equalTo Created
+          responseAs[String] must contain("kitchenElectricity")
+          responseAs[String] must contain("fibaro")
+        }
         responseAs[ApiDataTable]
+
       }
 
     (dataTable, dataSubtable)
@@ -285,17 +290,25 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
             .withHeaders(ownerAuthHeader)
             .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
             sealRoute(routes) ~> check {
-            response.status should be equalTo OK
-          }
+              response.status should be equalTo OK
+            }
+
+          HttpRequest(GET, s"/data/table/${dataSubtable.id.get}")
+            .withHeaders(ownerAuthHeader) ~>
+            sealRoute(routes) ~> check {
+              response.status should be equalTo OK
+              responseAs[String] must not contain ("subTables")
+              responseAs[String] must contain("kitchenElectricity")
+            }
 
           HttpRequest(GET, s"/data/table/${dataTable.id.get}")
             .withHeaders(ownerAuthHeader) ~>
             sealRoute(routes) ~> check {
-            response.status should be equalTo OK
-            responseAs[String] must contain("kitchen")
-            responseAs[String] must contain("subTables")
-            responseAs[String] must contain("kitchenElectricity")
-          }
+              response.status should be equalTo OK
+              responseAs[String] must contain("kitchen")
+              responseAs[String] must contain("subTables")
+              responseAs[String] must contain("kitchenElectricity")
+            }
       }
     }
 

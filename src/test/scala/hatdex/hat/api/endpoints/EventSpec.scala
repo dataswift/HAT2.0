@@ -153,6 +153,7 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
         .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipOwnedBy)) ~>
         sealRoute(routes) ~>
         check {
+          logger.info(s"Relationship response: ${responseAs[String]}")
           response.status should be equalTo Created
           responseAs[String] must contain("id")
         }

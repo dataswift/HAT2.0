@@ -22,7 +22,6 @@ package hatdex.hat.api.endpoints
 
 import akka.actor.ActorRefFactory
 import akka.event.LoggingAdapter
-import hatdex.hat.Utils
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models.{ ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _ }
@@ -30,17 +29,14 @@ import hatdex.hat.api.service.{ StatsService, DataService }
 import hatdex.hat.authentication.HatServiceAuthHandler
 import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.User
-import hatdex.hat.dal.SlickPostgresDriver.simple._
-import hatdex.hat.dal.Tables._
-import org.joda.time.LocalDateTime
 import org.joda.time.DateTime
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
 
-import scala.collection.mutable
-import scala.collection.mutable.Set
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Success, Failure }
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ Future }
 
 // this trait defines our service behavior independently from the service actor
 trait Data extends HttpService with DataService with StatsService with HatServiceAuthHandler {
@@ -57,7 +53,6 @@ trait Data extends HttpService with DataService with StatsService with HatServic
         getTableApi ~
         findTableApi ~
         getTableValuesApi ~
-        getRecordApi ~
         getRecordValuesApi ~
         getValueApi ~
         getDataSourcesApi ~
@@ -82,15 +77,9 @@ trait Data extends HttpService with DataService with StatsService with HatServic
         authorize(UserAuthorization.withRole("owner", "platform", "dataCredit")) {
           logger.debug("POST /table")
           entity(as[ApiDataTable]) { table =>
-            db.withSession { implicit session =>
-              val tableStructure = createTable(table)
-              session.close()
-              complete {
-                tableStructure match {
-                  case Success(structure) => (Created, structure)
-                  case Failure(e)         => (BadRequest, ErrorMessage("Error creating Table", e.getMessage))
-                }
-              }
+            onComplete(createTable(table)) {
+              case Success(structure) => complete { (Created, structure) }
+              case Failure(e)         => complete { (BadRequest, ErrorMessage("Error creating Table", e.getMessage)) }
             }
           }
         }
@@ -107,15 +96,9 @@ trait Data extends HttpService with DataService with StatsService with HatServic
       accessTokenHandler { implicit user: User =>
         authorize(UserAuthorization.withRole("owner", "platform", "dataCredit")) {
           entity(as[ApiRelationship]) { relationship =>
-            db.withSession { implicit session =>
-              val inserted = linkTables(parentId, childId, relationship)
-              session.close()
-              complete {
-                inserted match {
-                  case Success(id) => ApiGenericId(id)
-                  case Failure(e)  => (BadRequest, ErrorMessage(s"Error linking Tables ${parentId} and ${childId}", e.getMessage))
-                }
-              }
+            onComplete(linkTables(parentId, childId, relationship)) {
+              case Success(id) => complete { (OK, ApiGenericId(id)) }
+              case Failure(e)  => complete { (BadRequest, ErrorMessage(s"Error linking Tables $parentId and $childId", e.getMessage)) }
             }
           }
         }
@@ -131,12 +114,10 @@ trait Data extends HttpService with DataService with StatsService with HatServic
       logger.debug(s"GET /table/$tableId")
       accessTokenHandler { implicit user: User =>
         authorize(UserAuthorization.withRole("owner", "platform", "dataCredit")) {
-          db.withSession { implicit session =>
-            val structure = getTableStructure(tableId)
-            session.close()
-            complete {
-              structure
-            }
+          onComplete(getTableStructure(tableId)) {
+            case Success(Some(structure)) => complete((OK, structure))
+            case Success(None)            => complete((NotFound, ErrorMessage(s"No such table", s"Table $tableId not found")))
+            case Failure(e)               => complete((NotFound, ErrorMessage(s"No such valid table found", e.getMessage)))
           }
         }
       }
@@ -150,25 +131,18 @@ trait Data extends HttpService with DataService with StatsService with HatServic
           logger.debug("GET /table")
           parameters('name.?, 'namelike.?, 'nameunlike.?, 'source.?) {
             (name: Option[String], nameLike: Option[String], nameUnlike: Option[String], source: Option[String]) =>
-              db.withSession { implicit session =>
-                val tables = (name, nameLike, nameUnlike, source) match {
-                  case (Some(tableName), _, _, Some(tableSource)) => findTable(tableName, tableSource)
-                  case (None, Some(tableName), _, Some(tableSource)) => findTablesLike(tableName, tableSource)
-                  case (None, None, Some(tableName), Some(tableSource)) => findTablesNotLike(tableName, tableSource)
-                  case _ => Seq[ApiDataTable]()
-                }
+              val tables = (name, nameLike, nameUnlike, source) match {
+                case (Some(tableName), _, _, Some(tableSource)) => findTable(tableName, tableSource)
+                case (None, Some(tableName), _, Some(tableSource)) => findTablesLike(tableName, tableSource)
+                case (None, None, Some(tableName), Some(tableSource)) => findTablesNotLike(tableName, tableSource)
+                case _ => Future.failed(new IllegalArgumentException("No such table found"))
+              }
 
-                session.close()
-
-                val maybeTables = Utils.seqOption(tables)
-
-                complete {
-                  maybeTables match {
-                    case Some(tables) if tables.size > 1 => tables
-                    case Some(tables)                    => tables.headOption
-                    case None                            => (NotFound, ErrorMessage("Table not found", s"Table with name=$name (namelike=$nameLike, nameUnlike=$nameUnlike) and source=$source was not found"))
-                  }
-                }
+              onComplete(tables) {
+                case Success(createdTables) if createdTables.size > 1  => complete { (OK, createdTables) }
+                case Success(createdTables) if createdTables.size == 1 => complete { (OK, createdTables.head) }
+                case Success(createdTables) if createdTables.isEmpty   => complete { (NotFound, ErrorMessage("Table not found", s"No tables matching filters found")) }
+                case Failure(e)                                        => complete { (NotFound, ErrorMessage("Table not found", e.getMessage)) }
               }
           }
         }
@@ -183,17 +157,14 @@ trait Data extends HttpService with DataService with StatsService with HatServic
         authorize(UserAuthorization.withRole("owner")) {
           parameters('limit.as[Option[Int]], 'starttime.as[Option[Int]], 'endtime.as[Option[Int]]) {
             (maybeLimit: Option[Int], maybeStartTimestamp: Option[Int], maybeEndTimestamp: Option[Int]) =>
-              db.withSession { implicit session =>
-                val maybeStartTime = maybeStartTimestamp.map(t => new DateTime(t * 1000L).toLocalDateTime)
-                val maybeEndTime = maybeEndTimestamp.map(t => new DateTime(t * 1000L).toLocalDateTime)
-                val someTableValues = getTableValues(tableId, maybeLimit, maybeStartTime, maybeEndTime)
-                session.close()
-                complete {
-                  someTableValues match {
-                    case Some(tableValues) => tableValues
-                    case None => (NotFound, ErrorMessage("NotFound", s"Table $tableId not found"))
-                  }
-                }
+
+              val maybeStartTime = maybeStartTimestamp.map(t => new DateTime(t * 1000L).toLocalDateTime)
+              val maybeEndTime = maybeEndTimestamp.map(t => new DateTime(t * 1000L).toLocalDateTime)
+              val eventualTableValues = getTableValues(tableId, maybeLimit, maybeStartTime, maybeEndTime)
+
+              onComplete(eventualTableValues) {
+                case Success(values) => complete { (OK, values) }
+                case Failure(e)      => complete { (NotFound, ErrorMessage("No such table with values", e.getMessage)) }
               }
           }
         }
@@ -210,15 +181,9 @@ trait Data extends HttpService with DataService with StatsService with HatServic
         authorize(UserAuthorization.withRole("owner", "platform", "dataCredit")) {
           logger.debug("POST /field")
           entity(as[ApiDataField]) { field =>
-            db.withSession { implicit session =>
-              val insertedField = createField(field)
-              session.close()
-              complete {
-                insertedField match {
-                  case Success(field) => (Created, field)
-                  case Failure(e)     => (BadRequest, ErrorMessage("Error creating Field", e.getMessage))
-                }
-              }
+            onComplete(createField(field)) {
+              case Success(createdField) => complete { (Created, createdField) }
+              case Failure(e)            => complete { (BadRequest, ErrorMessage("Error creating Field", e.getMessage)) }
             }
           }
         }
@@ -234,15 +199,10 @@ trait Data extends HttpService with DataService with StatsService with HatServic
       logger.debug(s"GET /field/$fieldId")
       accessTokenHandler { implicit user: User =>
         authorize(UserAuthorization.withRole("owner", "platform", "dataCredit")) {
-          db.withSession { implicit session =>
-            val dataField = retrieveDataFieldId(fieldId)
-            session.close()
-            complete {
-              dataField match {
-                case Some(field) => field
-                case None        => (NotFound, ErrorMessage("Field Not Found", s"Data field $fieldId not found"))
-              }
-            }
+          onComplete(retrieveDataFieldId(fieldId)) {
+            case Success(Some(field)) => complete { (OK, field) }
+            case Success(None)        => complete { (NotFound, ErrorMessage("Field Not Found", s"Data field $fieldId not found")) }
+            case Failure(e)           => complete { (NotFound, ErrorMessage("Field Not Found", e.getMessage)) }
           }
         }
       }
@@ -258,15 +218,10 @@ trait Data extends HttpService with DataService with StatsService with HatServic
       logger.debug(s"GET /field/$fieldId/values")
       accessTokenHandler { implicit user: User =>
         authorize(UserAuthorization.withRole("owner")) {
-          db.withSession { implicit session =>
-            val fieldValues = getFieldValues(fieldId)
-            session.close()
-            complete {
-              fieldValues match {
-                case Some(field) => field
-                case None        => (NotFound, ErrorMessage("Field Not Found", s"Data field $fieldId not found"))
-              }
-            }
+          onComplete(getFieldValues(fieldId)) {
+            case Success(Some(field)) => complete { (OK, field) }
+            case Success(None)        => complete { (NotFound, ErrorMessage("Field Not Found", s"Data field $fieldId not found")) }
+            case Failure(e)           => complete { (NotFound, ErrorMessage("Field Not Found", e.getMessage)) }
           }
         }
       }
@@ -281,16 +236,9 @@ trait Data extends HttpService with DataService with StatsService with HatServic
       accessTokenHandler { implicit user: User =>
         authorize(UserAuthorization.withRole("owner", "platform", "dataCredit")) {
           entity(as[ApiDataRecord]) { record =>
-            db.withSession { implicit session =>
-              val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), record.name)
-              val insertedRecord = Try((DataRecord returning DataRecord) += newRecord)
-              session.close()
-              complete {
-                insertedRecord match {
-                  case Success(apiRecord) => (Created, ApiDataRecord.fromDataRecord(apiRecord)(None))
-                  case Failure(e)         => (BadRequest, ErrorMessage("Error creating Record", e.getMessage))
-                }
-              }
+            onComplete(createRecord(record)) {
+              case Success(apiRecord) => complete { (Created, apiRecord) }
+              case Failure(e)         => complete { (BadRequest, ErrorMessage("Error creating Record", e.getMessage)) }
             }
           }
         }
@@ -304,63 +252,28 @@ trait Data extends HttpService with DataService with StatsService with HatServic
         authorize(UserAuthorization.withRole("owner", "platform", "dataCredit")) {
           // the more complicated case of putting in data and record for creation of both together
           entity(as[ApiRecordValues]) { recordValues =>
-            db.withSession { implicit session =>
-              val maybeRecordValues = storeRecordValues(recordValues)
-              session.close()
+            val insertedRecord = storeRecordValues(Seq(recordValues)).map(_.head)
+            insertedRecord map {
+              case insertedValues =>
+                recordDataInbound(Seq(insertedValues), user, "Single Data Record Values set posted")
+            }
 
-              complete {
-                maybeRecordValues match {
-                  case Success(recordValues) =>
-                    recordDataInbound(Seq(recordValues), user, "Single Data Record Values set posted")
-                    (Created, recordValues)
-                  case Failure(e) =>
-                    (BadRequest, ErrorMessage("Error creating Record with Values", e.getMessage))
-                }
-              }
+            onComplete(insertedRecord) {
+              case Success(created) => complete { (Created, created) }
+              case Failure(e)       => complete { (BadRequest, ErrorMessage("Error creating Record with Values", e.getMessage)) }
             }
           } ~
             entity(as[Seq[ApiRecordValues]]) { recordValueList =>
-              db.withSession { implicit session =>
-                val listInsertedValues = recordValueList map storeRecordValues
-                val maybeList = Utils.flatten(listInsertedValues)
-                session.close()
-
-                complete {
-                  maybeList match {
-                    case Success(list) =>
-                      recordDataInbound(list, user, "Single Data Record Values set posted")
-                      (Created, list)
-                    case Failure(e) =>
-                      (BadRequest, ErrorMessage("Error creating a list of Records with Values", e.getMessage))
-                  }
-                }
+              val insertedRecords = storeRecordValues(recordValueList)
+              insertedRecords foreach {
+                case insertedValues =>
+                  recordDataInbound(insertedValues, user, "Single Data Record Values set posted")
+              }
+              onComplete(insertedRecords) {
+                case Success(recordValues) => complete { (Created, recordValues) }
+                case Failure(e)            => complete { (BadRequest, ErrorMessage("Error creating Record with Values", e.getMessage)) }
               }
             }
-        }
-      }
-    }
-  }
-
-  /*
-   * Get record
-   */
-  def getRecordApi = path("record" / IntNumber) { (recordId: Int) =>
-    get {
-      logger.debug(s"GET /record/$recordId")
-      accessTokenHandler { implicit user: User =>
-        authorize(UserAuthorization.withRole("owner", "platform", "dataCredit")) {
-          db.withSession { implicit session =>
-            val record = DataRecord.filter(_.id === recordId).run.headOption
-            session.close()
-            complete {
-              record match {
-                case Some(dataRecord) =>
-                  ApiDataRecord.fromDataRecord(dataRecord)(None)
-                case None =>
-                  (NotFound, ErrorMessage("Record Not Found", s"Data Record $recordId not found"))
-              }
-            }
-          }
         }
       }
     }
@@ -375,39 +288,10 @@ trait Data extends HttpService with DataService with StatsService with HatServic
       logger.debug(s"POST /record/$recordId/values")
       accessTokenHandler { implicit user: User =>
         authorize(UserAuthorization.withRole("owner")) {
-          db.withSession { implicit session =>
-            // Retrieve joined Data Values, Fields and Tables
-            val fieldValuesTables = DataValue.filter(_.recordId === recordId) join
-              DataField on (_.fieldId === _.id) join
-              DataTable on (_._2.tableIdFk === _.id)
-
-            val result = fieldValuesTables.run
-
-            val structures = getStructures(result.map(_._2).map { table => ApiDataTable.fromDataTable(table)(None)(None) })
-
-            val apiRecord: Option[ApiDataRecord] = structures match {
-              case Seq() => None
-              case _ =>
-                val values = result.map(_._1._1)
-                //              val valueMap = Map(values map { value => value.fieldId -> ApiDataValue.fromDataValue(value) }: _*)
-                val valueMap = new mutable.HashMap[Int, Set[ApiDataValue]] with mutable.MultiMap[Int, ApiDataValue]
-                values foreach { value =>
-                  valueMap.addBinding(value.fieldId, ApiDataValue.fromDataValue(value))
-                }
-                val recordData = fillStructures(structures)(valueMap)
-
-                // Retrieve and prepare the record itself
-                val record = DataRecord.filter(_.id === recordId).run.head
-                Some(ApiDataRecord.fromDataRecord(record)(Some(recordData)))
-            }
-
-            session.close()
-            complete {
-              apiRecord match {
-                case Some(dataRecord) => dataRecord
-                case None             => (NotFound, ErrorMessage("Record Not Found", s"Data Record $recordId not found"))
-              }
-            }
+          onComplete(getRecordValues(recordId)) {
+            case Success(Some(dataRecord)) => complete { (OK, dataRecord) }
+            case Success(None)             => complete { (NotFound, ErrorMessage("Record Not Found", s"Data Record $recordId not found")) }
+            case Failure(e)                => complete { (NotFound, ErrorMessage("Record Not Found", e.getMessage)) }
           }
         }
       }
@@ -422,22 +306,15 @@ trait Data extends HttpService with DataService with StatsService with HatServic
       logger.debug(s"POST /record/$recordId/values")
       accessTokenHandler { implicit user: User =>
         authorize(UserAuthorization.withRole("owner", "platform", "dataCredit")) {
-          logger.debug("Authenticated user submitting record values")
           entity(as[Seq[ApiDataValue]]) { values =>
-            logger.debug("Authenticated user submitting PARSED record values")
-            db.withSession { implicit session =>
-              val maybeApiValues = values.map(x => createValue(x, None, Some(recordId)))
-              val apiValues = Utils.flatten(maybeApiValues)
-              session.close()
-              complete {
-                apiValues match {
-                  case Success(response) =>
-                    recordDataValuesInbound(response, user, s"Data Values posted for record $recordId")
-                    (Created, response)
-                  case Failure(e) =>
-                    (BadRequest, ErrorMessage("Error storing Record values", e.getMessage))
-                }
-              }
+            val eventualValues = Future.sequence(values.map(x => createValue(x, None, Some(recordId))))
+            eventualValues map {
+              case values =>
+                recordDataValuesInbound(values, user, s"Data Values posted for record $recordId")
+            }
+            onComplete(eventualValues) {
+              case Success(response) => complete { (Created, response) }
+              case Failure(e)        => complete { (BadRequest, ErrorMessage("Error storing Record values", e.getMessage)) }
             }
           }
         }
@@ -454,20 +331,14 @@ trait Data extends HttpService with DataService with StatsService with HatServic
         authorize(UserAuthorization.withRole("owner", "platform", "dataCredit")) {
           logger.debug("POST /value")
           entity(as[ApiDataValue]) { value =>
-            db.withSession { implicit session =>
-              val inserted = createValue(value, None, None)
-
-              complete {
-                session.close()
-                inserted match {
-                  case Success(insertedValue) =>
-                    recordDataValuesInbound(Seq(insertedValue), user, s"Single data value posted")
-                    (Created, insertedValue)
-                  case Failure(e) =>
-                    (BadRequest, ErrorMessage("Error storing value", e.getMessage))
-                }
-
-              }
+            val eventualValues = createValue(value, None, None)
+            eventualValues map {
+              case insertedValue =>
+                recordDataValuesInbound(Seq(insertedValue), user, s"Single data value posted")
+            }
+            onComplete(eventualValues) {
+              case Success(insertedValue) => complete { (Created, insertedValue) }
+              case Failure(e)             => complete { (BadRequest, ErrorMessage("Error storing value", e.getMessage)) }
             }
           }
         }
@@ -483,25 +354,10 @@ trait Data extends HttpService with DataService with StatsService with HatServic
       logger.debug(s"GET /value/$valueId")
       accessTokenHandler { implicit user: User =>
         authorize(UserAuthorization.withRole("owner")) {
-          db.withSession { implicit session =>
-            val valueQuery = for {
-              value <- DataValue.filter(_.id === valueId)
-              field <- value.dataFieldFk
-              record <- value.dataRecordFk
-            } yield (value, field, record)
-            val someValue = valueQuery.run.headOption
-            val apiValue = someValue map {
-              case (value: DataValueRow, field: DataFieldRow, record: DataRecordRow) => {
-                ApiDataValue.fromDataValue(value, Some(field), Some(record))
-              }
-            }
-            session.close()
-            complete {
-              apiValue match {
-                case Some(response) => response
-                case None           => (NotFound, ErrorMessage("Value Not Found", s"Data value $valueId not found"))
-              }
-            }
+          onComplete(getValue(valueId)) {
+            case Success(Some(response)) => complete { (OK, response) }
+            case Success(None)           => complete { (NotFound, ErrorMessage("Value Not Found", s"Data value $valueId not found")) }
+            case Failure(e)              => complete { (NotFound, ErrorMessage("Value Not Found", e.getMessage)) }
           }
         }
       }
@@ -513,10 +369,9 @@ trait Data extends HttpService with DataService with StatsService with HatServic
       accessTokenHandler { implicit user: User =>
         authorize(UserAuthorization.withRole("owner", "platform", "dataCredit")) {
           logger.debug("GET /sources")
-          db.withSession { implicit session =>
-            val dataSources = getDataSources()
-            session.close()
-            complete { dataSources }
+          onComplete(getDataSources()) {
+            case Success(dataSources) => complete { (OK, dataSources) }
+            case Failure(e)           => complete { (InternalServerError, ErrorMessage("Internal Server Error", e.getMessage)) }
           }
         }
       }

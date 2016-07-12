@@ -21,12 +21,12 @@
 
 package hatdex.hat.api
 
-import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 
 object TestFixtures {
-  def prepareEverything(implicit session: Session) = {
+  def prepareEverything = {
     val (dataFields, dataRecords) = prepareDataStructures
     val (systemUoms, systemTypes) = prepareSystemTypes
     val systemProperties = prepareSystemProperties(systemUoms, systemTypes)
@@ -34,7 +34,7 @@ object TestFixtures {
     contextualiseEntities(things, people, locations, organisations, events)
     linkEntityData(things, people, locations, organisations, events, systemProperties, systemTypes, dataFields, dataRecords)
   }
-  def prepareDataStructures(implicit session: Session) = {
+  def prepareDataStructures = {
     // Data tables
     val dataTables = Seq(
       DataTableRow(1, LocalDateTime.now(), LocalDateTime.now(), "Facebook", "facebook"),
@@ -44,7 +44,7 @@ object TestFixtures {
       DataTableRow(5, LocalDateTime.now(), LocalDateTime.now(), "Fitbit", "Fitbit"),
       DataTableRow(6, LocalDateTime.now(), LocalDateTime.now(), "locations", "facebook"))
 
-    DataTable.forceInsertAll(dataTables: _*)
+    DatabaseInfo.db.run(DataTable.forceInsertAll(dataTables))
 
     val facebookTableId = dataTables.find(_.name equals "Facebook").get.id
     val eventsTableId = dataTables.find(_.name equals "events").get.id
@@ -59,7 +59,7 @@ object TestFixtures {
       DataTabletotablecrossrefRow(2, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", facebookTableId, locationsTableId),
       DataTabletotablecrossrefRow(3, LocalDateTime.now(), LocalDateTime.now(), "Parent_Child", facebookTableId, meTableId))
 
-    DataTabletotablecrossref.forceInsertAll(dataTableToTableCrossRefRows: _*)
+    DatabaseInfo.db.run(DataTabletotablecrossref.forceInsertAll(dataTableToTableCrossRefRows))
 
     // Adding data fields to data tables
     val dataFields = Seq(
@@ -71,7 +71,7 @@ object TestFixtures {
       DataFieldRow(6, LocalDateTime.now(), LocalDateTime.now(), "cars speed", fibaroTableId),
       DataFieldRow(7, LocalDateTime.now(), LocalDateTime.now(), "number of employees", facebookTableId))
 
-    DataField.forceInsertAll(dataFields: _*)
+    DatabaseInfo.db.run(DataField.forceInsertAll(dataFields))
 
     val weightFieldId = dataFields.find(_.name equals "weight").get.id
     val elevationFieldId = dataFields.find(_.name equals "elevation").get.id
@@ -86,10 +86,9 @@ object TestFixtures {
       DataRecordRow(3, LocalDateTime.now(), LocalDateTime.now(), "FibaroKitchen"),
       DataRecordRow(4, LocalDateTime.now(), LocalDateTime.now(), "FacebookEvent"),
       DataRecordRow(5, LocalDateTime.now(), LocalDateTime.now(), "FibaroBathroom"),
-      DataRecordRow(6, LocalDateTime.now(), LocalDateTime.now(), "car journey")
-    )
+      DataRecordRow(6, LocalDateTime.now(), LocalDateTime.now(), "car journey"))
 
-    DataRecord.forceInsertAll(dataRecords: _*)
+    DatabaseInfo.db.run(DataRecord.forceInsertAll(dataRecords))
 
     val facebookMeRecordId = dataRecords.find(_.name equals "FacebookMe").get.id
     val facebookLocationRecordId = dataRecords.find(_.name equals "FacebookLocation").get.id
@@ -104,23 +103,23 @@ object TestFixtures {
       DataValueRow(4, LocalDateTime.now(), LocalDateTime.now(), "Having a Shower", facebookEventRecordId, fibaroBathroomRecordId),
       DataValueRow(5, LocalDateTime.now(), LocalDateTime.now(), "25", temperatureFieldId, facebookEventRecordId))
 
-    DataValue.forceInsertAll(dataValueRows: _*)
+    DatabaseInfo.db.run(DataValue.forceInsertAll(dataValueRows))
 
     (dataFields, dataRecords)
   }
 
-  def prepareSystemTypes(implicit sesion: Session) = {
+  def prepareSystemTypes = {
     // contextualisation tools
     val systemUOMs = Seq(
-      SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "meters", Some( "distance measurement"), Some("m")),
-      SystemUnitofmeasurementRow(2, LocalDateTime.now(), LocalDateTime.now(), "kilograms", Some( "weight measurement"), Some("kg")),
-      SystemUnitofmeasurementRow(3, LocalDateTime.now(), LocalDateTime.now(), "meters cubed", Some( "3d space"), Some("m^3")),
+      SystemUnitofmeasurementRow(1, LocalDateTime.now(), LocalDateTime.now(), "meters", Some("distance measurement"), Some("m")),
+      SystemUnitofmeasurementRow(2, LocalDateTime.now(), LocalDateTime.now(), "kilograms", Some("weight measurement"), Some("kg")),
+      SystemUnitofmeasurementRow(3, LocalDateTime.now(), LocalDateTime.now(), "meters cubed", Some("3d space"), Some("m^3")),
       SystemUnitofmeasurementRow(4, LocalDateTime.now(), LocalDateTime.now(), "Kilowatt hours", Some("electricity measurement"), Some("KwH")),
       SystemUnitofmeasurementRow(5, LocalDateTime.now(), LocalDateTime.now(), "centigrade", Some("heat measurement"), Some("C")),
       SystemUnitofmeasurementRow(6, LocalDateTime.now(), LocalDateTime.now(), "miles per hour", Some("speed measurement"), Some("mph")),
       SystemUnitofmeasurementRow(7, LocalDateTime.now(), LocalDateTime.now(), "number", Some("amount of something"), Some("n")))
 
-    SystemUnitofmeasurement.forceInsertAll(systemUOMs: _*)
+    DatabaseInfo.db.run(SystemUnitofmeasurement.forceInsertAll(systemUOMs))
 
     val systemTypes = Seq(
       SystemTypeRow(1, LocalDateTime.now(), LocalDateTime.now(), "room dimensions", Some("Fibaro")),
@@ -134,13 +133,12 @@ object TestFixtures {
       SystemTypeRow(9, LocalDateTime.now(), LocalDateTime.now(), "male", Some("gender type")),
       SystemTypeRow(10, LocalDateTime.now(), LocalDateTime.now(), "department", Some("faculty of a university")))
 
-    SystemType.forceInsertAll(systemTypes: _*)
+    DatabaseInfo.db.run(SystemType.forceInsertAll(systemTypes))
 
     (systemUOMs, systemTypes)
   }
 
-  def prepareSystemProperties(systemUOMs: Seq[SystemUnitofmeasurementRow], systemTypes: Seq[SystemTypeRow])
-                             (implicit sesion: Session) = {
+  def prepareSystemProperties(systemUOMs: Seq[SystemUnitofmeasurementRow], systemTypes: Seq[SystemTypeRow]) = {
     val systemProperties = Seq(
       SystemPropertyRow(1, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", Some("Electricity use in a kitchen"),
         systemTypes.find(_.name equals "utilities").get.id,
@@ -165,15 +163,14 @@ object TestFixtures {
         systemUOMs.find(_.name equals "miles per hour").get.id),
       SystemPropertyRow(8, LocalDateTime.now(), LocalDateTime.now(), "employees", Some("number of employees"),
         systemTypes.find(_.name equals "measurement").get.id,
-        systemUOMs.find(_.name equals "number").get.id)
-    )
+        systemUOMs.find(_.name equals "number").get.id))
 
-    SystemProperty.forceInsertAll(systemProperties: _*)
+    DatabaseInfo.db.run(SystemProperty.forceInsertAll(systemProperties))
 
     systemProperties
   }
 
-  def prepareEntities(implicit session: Session) = {
+  def prepareEntities = {
     // Entities
     val things = Seq(
       ThingsThingRow(1, LocalDateTime.now(), LocalDateTime.now(), "cupbord"),
@@ -181,40 +178,37 @@ object TestFixtures {
       ThingsThingRow(3, LocalDateTime.now(), LocalDateTime.now(), "shower"),
       ThingsThingRow(4, LocalDateTime.now(), LocalDateTime.now(), "scales"))
 
-    ThingsThing.forceInsertAll(things: _*)
+    DatabaseInfo.db.run(ThingsThing.forceInsertAll(things))
 
     val people = Seq(
       PeoplePersonRow(1, LocalDateTime.now(), LocalDateTime.now(), "Martin", "martinID"),
       PeoplePersonRow(2, LocalDateTime.now(), LocalDateTime.now(), "Andrius", "andriusID"),
       PeoplePersonRow(3, LocalDateTime.now(), LocalDateTime.now(), "Xiao", "xiaoID"))
 
-    PeoplePerson.forceInsertAll(people: _*)
+    DatabaseInfo.db.run(PeoplePerson.forceInsertAll(people))
 
     val locations = Seq(
       LocationsLocationRow(1, LocalDateTime.now(), LocalDateTime.now(), "kitchen"),
       LocationsLocationRow(2, LocalDateTime.now(), LocalDateTime.now(), "bathroom"),
       LocationsLocationRow(3, LocalDateTime.now(), LocalDateTime.now(), "WMG"),
-      LocationsLocationRow(4, LocalDateTime.now(), LocalDateTime.now(), "Coventry")
-    )
+      LocationsLocationRow(4, LocalDateTime.now(), LocalDateTime.now(), "Coventry"))
 
-    LocationsLocation.forceInsertAll(locations: _*)
+    DatabaseInfo.db.run(LocationsLocation.forceInsertAll(locations))
 
     val organisations = Seq(
       OrganisationsOrganisationRow(1, LocalDateTime.now(), LocalDateTime.now(), "seventrent"),
       OrganisationsOrganisationRow(2, LocalDateTime.now(), LocalDateTime.now(), "WMG"),
-      OrganisationsOrganisationRow(3, LocalDateTime.now(), LocalDateTime.now(), "Coventry")
-    )
+      OrganisationsOrganisationRow(3, LocalDateTime.now(), LocalDateTime.now(), "Coventry"))
 
-    OrganisationsOrganisation.forceInsertAll(organisations: _*)
+    DatabaseInfo.db.run(OrganisationsOrganisation.forceInsertAll(organisations))
 
     val events = Seq(
       EventsEventRow(1, LocalDateTime.now(), LocalDateTime.now(), "having a shower"),
       EventsEventRow(2, LocalDateTime.now(), LocalDateTime.now(), "driving"),
       EventsEventRow(3, LocalDateTime.now(), LocalDateTime.now(), "going to work"),
-      EventsEventRow(4, LocalDateTime.now(), LocalDateTime.now(), "cooking")
-    )
+      EventsEventRow(4, LocalDateTime.now(), LocalDateTime.now(), "cooking"))
 
-    EventsEvent.forceInsertAll(events: _*)
+    DatabaseInfo.db.run(EventsEvent.forceInsertAll(events))
 
     var entityId = 1
     val entities = things.map { thing =>
@@ -234,15 +228,14 @@ object TestFixtures {
       EntityRow(entityId, LocalDateTime.now(), LocalDateTime.now(), event.name, "event", None, None, Some(event.id), None, None)
     }
 
-    Entity.forceInsertAll(entities: _*)
+    DatabaseInfo.db.run(Entity.forceInsertAll(entities))
 
     (things, people, locations, organisations, events, entities)
   }
 
   def contextualiseEntities(things: Seq[ThingsThingRow], people: Seq[PeoplePersonRow],
                             locations: Seq[LocationsLocationRow], organisations: Seq[OrganisationsOrganisationRow],
-                            events: Seq[EventsEventRow])
-                           (implicit session: Session) = {
+                            events: Seq[EventsEventRow]) = {
 
     // Relationship Record
 
@@ -275,10 +268,9 @@ object TestFixtures {
       SystemRelationshiprecordRow(26, LocalDateTime.now(), LocalDateTime.now(), "wateruse"),
       SystemRelationshiprecordRow(27, LocalDateTime.now(), LocalDateTime.now(), "size"),
       SystemRelationshiprecordRow(28, LocalDateTime.now(), LocalDateTime.now(), "weight"),
-      SystemRelationshiprecordRow(29, LocalDateTime.now(), LocalDateTime.now(), "car is at")
-    )
+      SystemRelationshiprecordRow(29, LocalDateTime.now(), LocalDateTime.now(), "car is at"))
 
-    SystemRelationshiprecord.forceInsertAll(relationshipRecords: _*)
+    DatabaseInfo.db.run(SystemRelationshiprecord.forceInsertAll(relationshipRecords))
 
     // Event Relationships
 
@@ -286,54 +278,45 @@ object TestFixtures {
       EventsEventtoeventcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         events.find(_.name equals "going to work").get.id,
         events.find(_.name equals "driving").get.id,
-        "Driving to work", true,
-        relationshipRecords.find(_.name equals "Driving to Work").get.id)
-    )
-    EventsEventtoeventcrossref.forceInsertAll(eventsEventToEventCrossRefRows: _*)
+        "Driving to work", isCurrent = true,
+        relationshipRecords.find(_.name equals "Driving to Work").get.id))
+    DatabaseInfo.db.run(EventsEventtoeventcrossref.forceInsertAll(eventsEventToEventCrossRefRows))
 
     val eventsEventtothingcrossrefRows = Seq(
       EventsEventthingcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         events.find(_.name equals "having a shower").get.id,
         things.find(_.name equals "shower").get.id,
-        "Used_During", true,
-        relationshipRecords.find(_.name equals "Shower Used_During having a shower").get.id)
-    )
+        "Used_During", isCurrent = true,
+        relationshipRecords.find(_.name equals "Shower Used_During having a shower").get.id))
 
-
-    EventsEventthingcrossref.forceInsertAll(eventsEventtothingcrossrefRows: _*)
+    DatabaseInfo.db.run(EventsEventthingcrossref.forceInsertAll(eventsEventtothingcrossrefRows))
 
     val eventsEventToLocationCrossRefRows = Seq(
       EventsEventlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         events.find(_.name equals "having a shower").get.id,
         locations.find(_.name equals "bathroom").get.id,
-        "Is_At", true,
-        relationshipRecords.find(_.name equals "having a shower Is_At bathrom").get.id)
-    )
+        "Is_At", isCurrent = true,
+        relationshipRecords.find(_.name equals "having a shower Is_At bathrom").get.id))
 
-
-    EventsEventlocationcrossref.forceInsertAll(eventsEventToLocationCrossRefRows: _*)
+    DatabaseInfo.db.run(EventsEventlocationcrossref.forceInsertAll(eventsEventToLocationCrossRefRows))
 
     val eventsEventToPersonCrossRefRows = Seq(
       EventsEventpersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         events.find(_.name equals "having a shower").get.id,
         people.find(_.name equals "Martin").get.id,
-        "Is", true,
-        relationshipRecords.find(_.name equals "Martin Is having a shower").get.id)
-    )
+        "Is", isCurrent = true,
+        relationshipRecords.find(_.name equals "Martin Is having a shower").get.id))
 
-
-    EventsEventpersoncrossref.forceInsertAll(eventsEventToPersonCrossRefRows: _*)
+    DatabaseInfo.db.run(EventsEventpersoncrossref.forceInsertAll(eventsEventToPersonCrossRefRows))
 
     val eventsEventToOrganisationCrossRefRows = Seq(
       EventsEventorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         events.find(_.name equals "going to work").get.id,
         organisations.find(_.name equals "WMG").get.id,
-        "Going to Organisation", true,
-        relationshipRecords.find(_.name equals "Going to Organisation WMG").get.id)
-    )
+        "Going to Organisation", isCurrent = true,
+        relationshipRecords.find(_.name equals "Going to Organisation WMG").get.id))
 
-
-    EventsEventorganisationcrossref.forceInsertAll(eventsEventToOrganisationCrossRefRows: _*)
+    DatabaseInfo.db.run(EventsEventorganisationcrossref.forceInsertAll(eventsEventToOrganisationCrossRefRows))
 
     //  Thing Relationships
 
@@ -341,22 +324,19 @@ object TestFixtures {
       ThingsThingtothingcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         things.find(_.name equals "cupbord").get.id,
         things.find(_.name equals "shower").get.id,
-        "Parent_Child", true,
-        relationshipRecords.find(_.name equals "Shower Parent_Child cupbord").get.id)
-    )
+        "Parent_Child", isCurrent = true,
+        relationshipRecords.find(_.name equals "Shower Parent_Child cupbord").get.id))
 
-    ThingsThingtothingcrossref.forceInsertAll(thingsThingtothingcrossrefRows: _*)
+    DatabaseInfo.db.run(ThingsThingtothingcrossref.forceInsertAll(thingsThingtothingcrossrefRows))
 
     val thingsThingToPersonCrossRefRows = Seq(
       ThingsThingpersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         things.find(_.name equals "car").get.id,
         people.find(_.name equals "Martin").get.id,
-        "Owns", true,
-        relationshipRecords.find(_.name equals "Martin Owns Car").get.id)
-    )
+        "Owns", isCurrent = true,
+        relationshipRecords.find(_.name equals "Martin Owns Car").get.id))
 
-
-    ThingsThingpersoncrossref.forceInsertAll(thingsThingToPersonCrossRefRows: _*)
+    DatabaseInfo.db.run(ThingsThingpersoncrossref.forceInsertAll(thingsThingToPersonCrossRefRows))
 
     // Location Relationships
 
@@ -364,27 +344,24 @@ object TestFixtures {
       LocationsLocationtolocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         locations.find(_.name equals "kitchen").get.id,
         locations.find(_.name equals "bathroom").get.id,
-        "Next_To", true,
+        "Next_To", isCurrent = true,
         relationshipRecords.find(_.name equals "Kitchen Next_To bathroom").get.id),
       LocationsLocationtolocationcrossrefRow(2, LocalDateTime.now(), LocalDateTime.now(),
         locations.find(_.name equals "WMG").get.id,
         locations.find(_.name equals "Coventry").get.id,
-        "Is_At", true,
-        relationshipRecords.find(_.name equals "WMG location Is_At Coventry").get.id)
-    )
+        "Is_At", isCurrent = true,
+        relationshipRecords.find(_.name equals "WMG location Is_At Coventry").get.id))
 
-    LocationsLocationtolocationcrossref.forceInsertAll(locationsLocationToLocationCrossRefRows: _*)
+    DatabaseInfo.db.run(LocationsLocationtolocationcrossref.forceInsertAll(locationsLocationToLocationCrossRefRows))
 
     val locationsLocationtothingcrossrefRows = Seq(
       LocationsLocationthingcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         locations.find(_.name equals "WMG").get.id,
         things.find(_.name equals "car").get.id,
-        "Is_At", true,
-        relationshipRecords.find(_.name equals "car is at").get.id)
-    )
+        "Is_At", isCurrent = true,
+        relationshipRecords.find(_.name equals "car is at").get.id))
 
-    LocationsLocationthingcrossref.forceInsertAll(locationsLocationtothingcrossrefRows: _*)
-
+    DatabaseInfo.db.run(LocationsLocationthingcrossref.forceInsertAll(locationsLocationtothingcrossrefRows))
 
     // Organisation Relationships
 
@@ -392,44 +369,36 @@ object TestFixtures {
       OrganisationsOrganisationtoorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         organisations.find(_.name equals "seventrent").get.id,
         organisations.find(_.name equals "WMG").get.id,
-        "Buys_From", true,
-        relationshipRecords.find(_.name equals "WMG Buys_From seventrent").get.id)
-    )
+        "Buys_From", isCurrent = true,
+        relationshipRecords.find(_.name equals "WMG Buys_From seventrent").get.id))
 
-    OrganisationsOrganisationtoorganisationcrossref.forceInsertAll(organisationsOrganisationToOrganisationCrossRefRows: _*)
-
+    DatabaseInfo.db.run(OrganisationsOrganisationtoorganisationcrossref.forceInsertAll(organisationsOrganisationToOrganisationCrossRefRows))
 
     val organisationOrganisationLocationCrossRefRows = Seq(
       OrganisationsOrganisationlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         locations.find(_.name equals "Coventry").get.id,
         organisations.find(_.name equals "WMG").get.id,
-        "Is_At", true,
-        relationshipRecords.find(_.name equals "WMG organisation Is_At Coventry").get.id)
-    )
+        "Is_At", isCurrent = true,
+        relationshipRecords.find(_.name equals "WMG organisation Is_At Coventry").get.id))
 
-
-    OrganisationsOrganisationlocationcrossref.forceInsertAll(organisationOrganisationLocationCrossRefRows: _*)
-
+    DatabaseInfo.db.run(OrganisationsOrganisationlocationcrossref.forceInsertAll(organisationOrganisationLocationCrossRefRows))
 
     val organisationOrganisationThingCrossRefRows = Seq(
       OrganisationsOrganisationthingcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         organisations.find(_.name equals "WMG").get.id,
         things.find(_.name equals "car").get.id,
-        "Rents", true,
-        relationshipRecords.find(_.name equals "WMG organisation Rents car").get.id)
-    )
+        "Rents", isCurrent = true,
+        relationshipRecords.find(_.name equals "WMG organisation Rents car").get.id))
 
-
-    OrganisationsOrganisationthingcrossref.forceInsertAll(organisationOrganisationThingCrossRefRows: _*)
+    DatabaseInfo.db.run(OrganisationsOrganisationthingcrossref.forceInsertAll(organisationOrganisationThingCrossRefRows))
 
     //People Relationships
 
-    val personRelationshipTypes = Seq (
+    val personRelationshipTypes = Seq(
       PeoplePersontopersonrelationshiptypeRow(1, LocalDateTime.now(), LocalDateTime.now(),
-        "Colleague With", Some("Working Together"))
-    )
+        "Colleague With", Some("Working Together")))
 
-    PeoplePersontopersonrelationshiptype.forceInsertAll(personRelationshipTypes: _*)
+    DatabaseInfo.db.run(PeoplePersontopersonrelationshiptype.forceInsertAll(personRelationshipTypes))
 
     val peoplePersonToPersonCrossRefRows = Seq(
       PeoplePersontopersoncrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
@@ -437,36 +406,32 @@ object TestFixtures {
         people.find(_.name equals "Andrius").get.id,
         personRelationshipTypes.find(_.name equals "Colleague With").get.id,
         true,
-        relationshipRecords.find(_.name equals "Martin Colleague_With Andrius").get.id)
-    )
+        relationshipRecords.find(_.name equals "Martin Colleague_With Andrius").get.id))
 
-    PeoplePersontopersoncrossref.forceInsertAll(peoplePersonToPersonCrossRefRows: _*)
+    DatabaseInfo.db.run(PeoplePersontopersoncrossref.forceInsertAll(peoplePersonToPersonCrossRefRows))
 
     val peoplePersonOrganisationCrossRefRows = Seq(
       PeoplePersonorganisationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         people.find(_.name equals "Martin").get.id,
         organisations.find(_.name equals "WMG").get.id,
-        "Works_at", true,
-        relationshipRecords.find(_.name equals "Martin Works at WMG").get.id)
-    )
+        "Works_at", isCurrent = true,
+        relationshipRecords.find(_.name equals "Martin Works at WMG").get.id))
 
     val peoplePersonLocationCrossRefCrossRefRows = Seq(
       PeoplePersonlocationcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         locations.find(_.name equals "Coventry").get.id,
         people.find(_.name equals "Xiao").get.id,
-        "Is_at", true,
-        relationshipRecords.find(_.name equals "Xiao Is_at Coventry").get.id)
-    )
+        "Is_at", isCurrent = true,
+        relationshipRecords.find(_.name equals "Xiao Is_at Coventry").get.id))
 
-    PeoplePersonlocationcrossref.forceInsertAll(peoplePersonLocationCrossRefCrossRefRows: _*)
+    DatabaseInfo.db.run(PeoplePersonlocationcrossref.forceInsertAll(peoplePersonLocationCrossRefCrossRefRows))
   }
 
   def linkEntityData(
-                     things: Seq[ThingsThingRow], people: Seq[PeoplePersonRow], locations: Seq[LocationsLocationRow],
-                     organisations: Seq[OrganisationsOrganisationRow], events: Seq[EventsEventRow],
-                     systemProperties: Seq[SystemPropertyRow], systemTypes: Seq[SystemTypeRow],
-                     dataFields: Seq[DataFieldRow], dataRecords: Seq[DataRecordRow])
-                    (implicit session: Session) = {
+    things: Seq[ThingsThingRow], people: Seq[PeoplePersonRow], locations: Seq[LocationsLocationRow],
+    organisations: Seq[OrganisationsOrganisationRow], events: Seq[EventsEventRow],
+    systemProperties: Seq[SystemPropertyRow], systemTypes: Seq[SystemTypeRow],
+    dataFields: Seq[DataFieldRow], dataRecords: Seq[DataRecordRow]) = {
 
     // Entity - Property linking
 
@@ -479,26 +444,21 @@ object TestFixtures {
       SystemPropertyrecordRow(6, LocalDateTime.now(), LocalDateTime.now(), "city size"),
       SystemPropertyrecordRow(7, LocalDateTime.now(), LocalDateTime.now(), "temperature"),
       SystemPropertyrecordRow(8, LocalDateTime.now(), LocalDateTime.now(), "speed of car"),
-      SystemPropertyrecordRow(9, LocalDateTime.now(), LocalDateTime.now(), "number of employees")
-    )
+      SystemPropertyrecordRow(9, LocalDateTime.now(), LocalDateTime.now(), "number of employees"))
 
-    SystemPropertyrecord.forceInsertAll(propertyRecords: _*)
-
+    DatabaseInfo.db.run(SystemPropertyrecord.forceInsertAll(propertyRecords))
 
     // location Property/type Relationships
-
 
     val locationsSystempropertydynamiccrossrefRows = Seq(
       LocationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         locations.find(_.name equals "Coventry").get.id,
         systemProperties.find(_.name equals "size").get.id,
         dataFields.find(_.name equals "size").get.id,
-        "Size of City Location", true,
-        propertyRecords.find(_.name equals "city size").get.id)
-    )
+        "Size of City Location", isCurrent = true,
+        propertyRecords.find(_.name equals "city size").get.id))
 
-
-    LocationsSystempropertydynamiccrossref.forceInsertAll(locationsSystempropertydynamiccrossrefRows: _*)
+    DatabaseInfo.db.run(LocationsSystempropertydynamiccrossref.forceInsertAll(locationsSystempropertydynamiccrossrefRows))
 
     val locationsSystempropertystaticcrossrefRows = Seq(
       LocationsSystempropertystaticcrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
@@ -506,20 +466,17 @@ object TestFixtures {
         systemProperties.find(_.name equals "size").get.id,
         dataRecords.find(_.name equals "FacebookLocation").get.id,
         dataFields.find(_.name equals "size").get.id,
-        "Size of City Location", true,
-        propertyRecords.find(_.name equals "city size").get.id)
-    )
+        "Size of City Location", isCurrent = true,
+        propertyRecords.find(_.name equals "city size").get.id))
 
-
-    LocationsSystempropertystaticcrossref.forceInsertAll(locationsSystempropertystaticcrossrefRows: _*)
+    DatabaseInfo.db.run(LocationsSystempropertystaticcrossref.forceInsertAll(locationsSystempropertystaticcrossrefRows))
 
     val locationSystemTypes = Seq(
       LocationsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         locations.find(_.name equals "bathroom").get.id,
-        systemTypes.find(_.name equals "room").get.id, "Is", true)
-    )
+        systemTypes.find(_.name equals "room").get.id, "Is", isCurrent = true))
 
-    LocationsSystemtypecrossref.forceInsertAll(locationSystemTypes: _*)
+    DatabaseInfo.db.run(LocationsSystemtypecrossref.forceInsertAll(locationSystemTypes))
 
     // things Property/type Relationships
 
@@ -529,30 +486,27 @@ object TestFixtures {
         systemProperties.find(_.name equals "size").get.id,
         dataRecords.find(_.name equals "FacebookLocation").get.id,
         dataFields.find(_.name equals "size").get.id,
-        "Parent Child", true,
+        "Parent Child", isCurrent = true,
         propertyRecords.find(_.name equals "city size").get.id))
 
-
-
-    ThingsSystempropertystaticcrossref.forceInsertAll(thingsSystempropertystaticcrossrefRows: _*)
+    DatabaseInfo.db.run(ThingsSystempropertystaticcrossref.forceInsertAll(thingsSystempropertystaticcrossrefRows))
 
     val thingsSystempropertydynamiccrossrefRows = Seq(
       ThingsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         things.find(_.name equals "car").get.id,
         systemProperties.find(_.name equals "temperature").get.id,
         dataFields.find(_.name equals "temperature").get.id,
-        "Parent Child", true,
+        "Parent Child", isCurrent = true,
         propertyRecords.find(_.name equals "temperature").get.id))
 
-
-    ThingsSystempropertydynamiccrossref.forceInsertAll(thingsSystempropertydynamiccrossrefRows: _*)
+    DatabaseInfo.db.run(ThingsSystempropertydynamiccrossref.forceInsertAll(thingsSystempropertydynamiccrossrefRows))
 
     val thingsSystemtypecrossrefRows = Seq(
       ThingsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         things.find(_.name equals "car").get.id,
-        systemTypes.find(_.name equals "vehicle").get.id, "Is", true))
+        systemTypes.find(_.name equals "vehicle").get.id, "Is", isCurrent = true))
 
-    ThingsSystemtypecrossref.forceInsertAll(thingsSystemtypecrossrefRows: _*)
+    DatabaseInfo.db.run(ThingsSystemtypecrossref.forceInsertAll(thingsSystemtypecrossrefRows))
 
     // people Property/type Relationships
 
@@ -562,30 +516,27 @@ object TestFixtures {
         systemProperties.find(_.name equals "weight").get.id,
         dataRecords.find(_.name equals "FibaroBathroom").get.id,
         dataFields.find(_.name equals "weight").get.id,
-        "Parent_Child", true,
+        "Parent_Child", isCurrent = true,
         propertyRecords.find(_.name equals "weight").get.id))
 
-
-    PeopleSystempropertystaticcrossref.forceInsertAll(peopleSystempropertystaticcrossrefRows: _*)
+    DatabaseInfo.db.run(PeopleSystempropertystaticcrossref.forceInsertAll(peopleSystempropertystaticcrossrefRows))
 
     val peopleSystempropertydynamiccrossrefRows = Seq(
       PeopleSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         people.find(_.name equals "Martin").get.id,
         systemProperties.find(_.name equals "weight").get.id,
         dataFields.find(_.name equals "weight").get.id,
-        "Parent_Child", true,
+        "Parent_Child", isCurrent = true,
         propertyRecords.find(_.name equals "weight").get.id))
 
-
-
-    PeopleSystempropertydynamiccrossref.forceInsertAll(peopleSystempropertydynamiccrossrefRows: _*)
+    DatabaseInfo.db.run(PeopleSystempropertydynamiccrossref.forceInsertAll(peopleSystempropertydynamiccrossrefRows))
 
     val peopleSystemTypeRows = Seq(
       PeopleSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         people.find(_.name equals "Martin").get.id,
-        systemTypes.find(_.name equals "male").get.id, "Is", true))
+        systemTypes.find(_.name equals "male").get.id, "Is", isCurrent = true))
 
-    PeopleSystemtypecrossref.forceInsertAll(peopleSystemTypeRows: _*)
+    DatabaseInfo.db.run(PeopleSystemtypecrossref.forceInsertAll(peopleSystemTypeRows))
 
     // events Property/type Relationships
 
@@ -595,29 +546,27 @@ object TestFixtures {
         systemProperties.find(_.name equals "cars speed").get.id,
         dataRecords.find(_.name equals "car journey").get.id,
         dataFields.find(_.name equals "cars speed").get.id,
-        "Parent_Child", true,
+        "Parent_Child", isCurrent = true,
         propertyRecords.find(_.name equals "speed of car").get.id))
 
-
-    EventsSystempropertystaticcrossref.forceInsertAll(eventsSystempropertystaticcrossrefRows: _*)
+    DatabaseInfo.db.run(EventsSystempropertystaticcrossref.forceInsertAll(eventsSystempropertystaticcrossrefRows))
 
     val eventsSystempropertydynamiccrossrefRows = Seq(
       EventsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         events.find(_.name equals "driving").get.id,
         systemProperties.find(_.name equals "cars speed").get.id,
         dataFields.find(_.name equals "cars speed").get.id,
-        "Parent_Child", true,
+        "Parent_Child", isCurrent = true,
         propertyRecords.find(_.name equals "speed of car").get.id))
 
-
-    EventsSystempropertydynamiccrossref.forceInsertAll(eventsSystempropertydynamiccrossrefRows: _*)
+    DatabaseInfo.db.run(EventsSystempropertydynamiccrossref.forceInsertAll(eventsSystempropertydynamiccrossrefRows))
 
     val eventsSystemTypeRows = Seq(
       EventsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         events.find(_.name equals "having a shower").get.id,
-        systemTypes.find(_.name equals "dayily activities").get.id, "Is", true))
+        systemTypes.find(_.name equals "dayily activities").get.id, "Is", isCurrent = true))
 
-    EventsSystemtypecrossref.forceInsertAll(eventsSystemTypeRows: _*)
+    DatabaseInfo.db.run(EventsSystemtypecrossref.forceInsertAll(eventsSystemTypeRows))
 
     // organisation Property/type Relationships
 
@@ -627,27 +576,26 @@ object TestFixtures {
         systemProperties.find(_.name equals "employees").get.id,
         dataRecords.find(_.name equals "FacebookMe").get.id,
         dataFields.find(_.name equals "cars speed").get.id,
-        "Parent_Child", true,
+        "Parent_Child", isCurrent = true,
         propertyRecords.find(_.name equals "speed of car").get.id))
 
-
-    OrganisationsSystempropertystaticcrossref.forceInsertAll(organisationsSystempropertystaticcrossrefRows: _*)
+    DatabaseInfo.db.run(OrganisationsSystempropertystaticcrossref.forceInsertAll(organisationsSystempropertystaticcrossrefRows))
 
     val organisationsSystempropertydynamiccrossrefRows = Seq(
       OrganisationsSystempropertydynamiccrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         organisations.find(_.name equals "WMG").get.id,
         systemProperties.find(_.name equals "employees").get.id,
         dataFields.find(_.name equals "number of employees").get.id,
-        "Parent_Child", true,
+        "Parent_Child", isCurrent = true,
         propertyRecords.find(_.name equals "number of employees").get.id))
 
-    OrganisationsSystempropertydynamiccrossref.forceInsertAll(organisationsSystempropertydynamiccrossrefRows: _*)
+    DatabaseInfo.db.run(OrganisationsSystempropertydynamiccrossref.forceInsertAll(organisationsSystempropertydynamiccrossrefRows))
 
     val organisationsSystemTypeRows = Seq(
       OrganisationsSystemtypecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
         organisations.find(_.name equals "WMG").get.id,
-        systemTypes.find(_.name equals "department").get.id, "Is", true))
+        systemTypes.find(_.name equals "department").get.id, "Is", isCurrent = true))
 
-    OrganisationsSystemtypecrossref.forceInsertAll(organisationsSystemTypeRows: _*)
+    DatabaseInfo.db.run(OrganisationsSystemtypecrossref.forceInsertAll(organisationsSystemTypeRows))
   }
 }

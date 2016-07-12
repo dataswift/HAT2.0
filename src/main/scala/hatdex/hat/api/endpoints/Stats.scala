@@ -30,8 +30,7 @@ import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.User
 import spray.http.StatusCode
 
-import hatdex.hat.dal.SlickPostgresDriver.simple._
-//import hatdex.hat.dal.SlickPostgresDriver.api._
+import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import spray.http.StatusCodes._
@@ -46,8 +45,6 @@ trait Stats extends HttpService with HatServiceAuthHandler with DataService {
   val logger: LoggingAdapter
   def actorRefFactory: ActorRefFactory
 
-  val db = DatabaseInfo.db
-
   val routes = {
     pathPrefix("stats") {
       accessTokenHandler { implicit user: User =>
@@ -60,21 +57,7 @@ trait Stats extends HttpService with HatServiceAuthHandler with DataService {
 
   def apiGetTableStats = path( "table" / IntNumber) { (tableId: Int) =>
       get {
-        val valuesQuery = DataValue
-        db.withSession { implicit session =>
-          val maybeTable = getTableStructure(tableId)
-          maybeTable map { tableStructure =>
-            val fieldsOfInterest = getStructureFields(tableStructure)
-            val fieldRecordCounts = DataValue.filter(_.fieldId inSet fieldsOfInterest)
-                .groupBy(v => v.fieldId)
-                .map{ case (fieldId, values) => (fieldId, values.map(_.recordId).countDistinct) }
-                .run
-
-            None
-          }
-        }
         complete((NotImplemented, "Not yet implemented"))
-
       }
   }
 

@@ -60,11 +60,7 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
 
   // Clean up all data
   def afterAll() = {
-    import hatdex.hat.dal.SlickPostgresDriver.simple._
-    DatabaseInfo.db.withSession { implicit session =>
-      TestDataCleanup.cleanupAll
-      session.close()
-    }
+    TestDataCleanup.cleanupAll
   }
 
   logger.info("Setting up Stats Service context")
@@ -97,9 +93,11 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
         .withEntity(HttpEntity(MediaTypes.`application/json`, dataDebitData.copy(bundleContextless = Some(bundleData)).toJson.toString)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo Created
-          val responseString = responseAs[String]
-          responseString must contain("key")
+          eventually {
+            response.status should be equalTo Created
+            val responseString = responseAs[String]
+            responseString must contain("key")
+          }
           responseAs[ApiDataDebit]
         }
     }
@@ -110,7 +108,9 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
       .withHeaders(ownerAuthHeader) ~>
       sealRoute(routes) ~>
       check {
-        response.status should be equalTo OK
+        eventually {
+          response.status should be equalTo OK
+        }
       }
   }
 
@@ -193,11 +193,7 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
     "Store data in a database" in new Context {
       HatAuthTestHandler.validUsers.find(_.role == "owner") map { user =>
         val ddOperationResult = recordDataDebitOperation(dataDebit, user, DataDebitOperations.Create(), "Test operation")
-
         eventually {
-          ddOperationResult map { result =>
-            logger.info(s"ddOperationResult: $result")
-          }
           ddOperationResult must be isSuccess
         }
       } must beSome

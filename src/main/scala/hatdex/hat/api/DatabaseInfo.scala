@@ -21,7 +21,7 @@
 package hatdex.hat.api
 
 import com.typesafe.config.ConfigFactory
-import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.dal.SlickPostgresDriver.api._
 
 object DatabaseInfo {
   val conf = ConfigFactory.load()
