@@ -55,10 +55,7 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
 
   // Clean up all data
   def afterAll() = {
-    db.withSession { implicit session =>
-//      TestDataCleanup.cleanupAll
-      session.close()
-    }
+    TestDataCleanup.cleanupAll
   }
 
   def createPostalAddressType = HttpRequest(POST, "/type/type")

@@ -6,7 +6,7 @@ name := """The HAT"""
 organization := """org.hatex"""
 version := "2.0-SNAPSHOT"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 parallelExecution in Test := false
 
@@ -21,20 +21,21 @@ val sprayV = "1.3.3"
 val specs2V = "3.3"
 val slf4jV = "1.7.18"
 val logbackV = "1.1.2"
-val slickV = "3.0.0"
-val slick_pgV = "0.9.2"
+val slickV = "3.1.1"
+val slick_pgV = "0.14.2"
 val jwtV = "4.18"
 
 lazy val commonSettings = Seq(
   scalaVersion := "2.11.6",
   libraryDependencies ++= Seq(
     "com.typesafe.slick" %% "slick" % slickV,
+    "com.typesafe.slick" %% "slick-hikaricp" % slickV,
     "org.postgresql" % "postgresql" % "9.4-1206-jdbc4",
     "com.github.tminglei" % "slick-pg_core_2.11" % slick_pgV,
     "com.github.tminglei" %% "slick-pg" % slick_pgV,
-    "com.github.tminglei" %% "slick-pg_joda-time" % "0.6.5.3",
-    "com.github.tminglei" %% "slick-pg_jts" % "0.6.5.3",
-    "com.github.tminglei" % "slick-pg_spray-json_2.11" % "0.6.5.3",
+    "com.github.tminglei" %% "slick-pg_joda-time" % slick_pgV,
+    "com.github.tminglei" %% "slick-pg_jts" % slick_pgV,
+    "com.github.tminglei" % "slick-pg_spray-json_2.11" % slick_pgV,
     "joda-time" % "joda-time" % "2.9.2",
     "org.joda" % "joda-convert" % "1.8",
     "com.vividsolutions" % "jts" % "1.13",

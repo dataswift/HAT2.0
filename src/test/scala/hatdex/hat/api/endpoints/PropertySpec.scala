@@ -52,10 +52,7 @@ class PropertySpec extends Specification with Specs2RouteTest with Property with
 
   // Clean up all data
   def afterAll() = {
-    DatabaseInfo.db.withSession { implicit session =>
-      TestDataCleanup.cleanupAll
-      session.close()
-    }
+    TestDataCleanup.cleanupAll
   }
 
   sequential
