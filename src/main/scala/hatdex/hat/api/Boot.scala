@@ -61,23 +61,4 @@ object Boot extends App {
       ))
 
   system.actorOf(statsReporterSuerpvisor, name = "stats-service-supervisor")
-
-  implicit val timeout = Timeout(5.seconds)
-
-  val ioListener = actor("ioListener")(new Act with ActorLogging {
-    become {
-      case b @ Bound(connection) => log.debug(b.toString)
-    }
-  })
-
-  val conf = ConfigFactory.load()
-  val port = conf.getInt("applicationPort")
-  val host = conf.getString("applicationHost")
-
-  system.actorSelection("user/dalapi-service-supervisor/hatdex.hat.dalapi-service") resolveOne () map { service =>
-    IO(Http).tell(Http.Bind(service, host, port), ioListener)
-  } recover {
-    case e =>
-      system.log.error(s"dalapi-service actor could not be resolved: ${e.getMessage}")
-  }
 }

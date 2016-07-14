@@ -20,11 +20,16 @@
  */
 package hatdex.hat.api.actors
 
+import akka.actor.ActorDSL._
 import akka.actor._
 import akka.event.Logging
+import akka.io.IO
+import akka.io.Tcp.Bound
+import com.typesafe.config.ConfigFactory
 import hatdex.hat.api.endpoints._
 import hatdex.hat.api.service._
 import hatdex.hat.api.{Api, Cors}
+import spray.can.Http
 import spray.http.{HttpRequest, HttpResponse}
 import spray.routing._
 import spray.routing.directives.LogEntry
@@ -41,6 +46,19 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
     conf.getString("mail.smtp.username"),
     conf.getString("mail.smtp.password"))
   val apiEmailService = new EmailService(context.system, smtpConfig)
+
+  override def preStart() = {
+    val conf = ConfigFactory.load()
+    val port = conf.getInt("applicationPort")
+    val host = conf.getString("applicationHost")
+    val ioListener = actor("ioListener")(new Act with ActorLogging {
+      become {
+        case b @ Bound(connection) => log.debug(b.toString)
+      }
+    })
+    IO(Http)(context.system).tell(Http.Bind(self, host, port), ioListener)
+  }
+
 
   // logs request method, uri and response status at debug level
   def requestMethodAndResponseStatusAsInfo(req: HttpRequest): Any => Option[LogEntry] = {
