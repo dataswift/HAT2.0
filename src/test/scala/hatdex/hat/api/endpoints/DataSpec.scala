@@ -35,6 +35,7 @@ import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
 import spray.httpx.SprayJsonSupport._
+import spray.http.Uri.Path
 import spray.json._
 import spray.testkit.Specs2RouteTest
 
@@ -460,6 +461,27 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
               responseAs[String] must contain("testValue4-2")
               responseAs[String] must contain("testValue5-3")
               responseAs[String] must contain("testValue6-1")
+            }
+      }
+    }
+
+    "Prettify outputs" in {
+      populateDataReusable match {
+        case (dataTable, dataField, record) =>
+          val uri = Uri().withPath(Path(s"/data/table/${dataTable.id.get}/values"))
+            .withQuery(Uri.Query(Map("pretty" -> "true")))
+          HttpRequest(GET, uri)
+            .withHeaders(ownerAuthHeader) ~>
+            sealRoute(routes) ~>
+            check {
+              response.status should be equalTo OK
+              logger.info(s"Pretty response ${responseAs[String]}")
+              responseAs[String] must contain("testValue1")
+              responseAs[String] must contain("testValue2")
+              responseAs[String] must contain("testValue3")
+              responseAs[String] must contain("testValue2-1")
+              responseAs[String] must contain("testValue2-2")
+              responseAs[String] must contain("testValue2-3")
             }
       }
     }

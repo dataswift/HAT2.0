@@ -33,6 +33,7 @@ import org.joda.time.DateTime
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
+import spray.json._
 
 import scala.util.{ Success, Failure }
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -155,14 +156,24 @@ trait Data extends HttpService with DataService with StatsService with HatServic
       logger.debug(s"GET /table/$tableId/values")
       accessTokenHandler { implicit user: User =>
         authorize(UserAuthorization.withRole("owner")) {
-          parameters('limit.as[Option[Int]], 'starttime.as[Option[Int]], 'endtime.as[Option[Int]]) {
-            (maybeLimit: Option[Int], maybeStartTimestamp: Option[Int], maybeEndTimestamp: Option[Int]) =>
+          parameters('limit.as[Option[Int]], 'starttime.as[Option[Int]], 'endtime.as[Option[Int]], 'pretty.as[Option[Boolean]] ? false) {
+            (maybeLimit: Option[Int], maybeStartTimestamp: Option[Int], maybeEndTimestamp: Option[Int], pretty: Boolean) =>
 
               val maybeStartTime = maybeStartTimestamp.map(t => new DateTime(t * 1000L).toLocalDateTime)
               val maybeEndTime = maybeEndTimestamp.map(t => new DateTime(t * 1000L).toLocalDateTime)
-              val eventualTableValues = getTableValues(tableId, maybeLimit, maybeStartTime, maybeEndTime)
+              val eventualRecordValues = getTableValues(tableId, maybeLimit, maybeStartTime, maybeEndTime)
 
-              onComplete(eventualTableValues) {
+              val maybeFlatRecords = if (pretty) {
+                eventualRecordValues.map { records =>
+                  val temp = records.map(flattenRecordValues)
+                  temp.toJson.toString
+                }
+              }
+              else {
+                eventualRecordValues.map(_.toJson.toString)
+              }
+
+              onComplete(maybeFlatRecords) {
                 case Success(values) => complete { (OK, values) }
                 case Failure(e)      => complete { (NotFound, ErrorMessage("No such table with values", e.getMessage)) }
               }

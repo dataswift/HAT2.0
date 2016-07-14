@@ -295,6 +295,12 @@ trait DataService {
     fieldObjects.getOrElse(Map()) ++ subtableObjects.getOrElse(Map())
   }
 
+  def flattenRecordValues(record: ApiDataRecord): Map[String, Any] = {
+    Map(record.tables.getOrElse(Seq()).map { table =>
+      table.name -> flattenTableValues(table)
+    }: _*)
+  }
+
   /*
    * Fills ApiDataTable with values grouped by field ID
    */
