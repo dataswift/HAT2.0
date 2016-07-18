@@ -26,6 +26,7 @@ import hatdex.hat.api.endpoints._
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models.ErrorMessage
 import hatdex.hat.authentication.HatServiceAuthHandler
+import spray.http.MediaTypes._
 import spray.http.StatusCodes._
 import spray.http._
 import spray.httpx.SprayJsonSupport._
@@ -76,18 +77,20 @@ trait Api extends HttpService with Cors {
   def routes = handleRejections(jsonRejectionHandler) {
     cors {
       helloService.routes ~
-        apiDataService.routes ~
-        apiPropertyService.routes ~
-//        apiBundleService.routes ~
-        apiBundlesContextService.routes ~
-        eventsService.routes ~
-        locationsService.routes ~
-        peopleService.routes ~
-        thingsService.routes ~
-        organisationsService.routes ~
-        userService.routes ~
-        typeService.routes ~
-        dataDebitService.routes
+        respondWithMediaType(`application/json`) {
+          apiDataService.routes ~
+            apiPropertyService.routes ~
+            //        apiBundleService.routes ~
+            apiBundlesContextService.routes ~
+            eventsService.routes ~
+            locationsService.routes ~
+            peopleService.routes ~
+            thingsService.routes ~
+            organisationsService.routes ~
+            userService.routes ~
+            typeService.routes ~
+            dataDebitService.routes
+        }
     }
   }
 
