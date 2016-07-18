@@ -30,6 +30,7 @@ import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.{ AccessToken, User }
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
+import org.joda.time.Duration._
 
 import org.joda.time.{ LocalDateTime }
 import spray.http.StatusCode
@@ -135,7 +136,7 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
     // Any password-authenticated user (not only owner)
     userPassHandler { implicit user: User =>
       get {
-        val response = fetchOrGenerateToken(user, issuer, accessScope = user.role)
+        val response = fetchOrGenerateToken(user, issuer, accessScope = user.role, validity = standardHours(2))
         onComplete(response) {
           case Success(value) => complete((OK, value))
           case Failure(e: ApiError) =>

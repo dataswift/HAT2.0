@@ -68,7 +68,7 @@ trait JwtTokenHandler {
     user: User,
     resource: String,
     accessScope: String = "validate",
-    validity: Duration = standardMinutes(30)): Future[AccessToken] = {
+    validity: Duration = standardHours(2)): Future[AccessToken] = {
     val tokenQuery = UserAccessToken.filter(_.userId === user.userId)
       .filter(_.resource === resource)
       .filter(_.scope === accessScope)

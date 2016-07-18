@@ -39,6 +39,7 @@ trait DataService {
   val logger: LoggingAdapter
 
   def getTableValues(tableId: Int, maybeLimit: Option[Int] = None, maybeStartTime: Option[LocalDateTime] = None, maybeEndTime: Option[LocalDateTime] = None): Future[Seq[ApiDataRecord]] = {
+    val t0 = System.nanoTime()
     val valuesQuery = DataValue
     val startTime = maybeStartTime.getOrElse(LocalDateTime.now().minusDays(7))
     val endTime = maybeEndTime.getOrElse(LocalDateTime.now())
@@ -52,10 +53,22 @@ trait DataService {
     val eventualTables = buildDataTreeStructures(dataTableTreesQuery, Set(tableId))
 
     eventualTables flatMap { tables =>
+      val t1 = System.nanoTime()
+      logger.info(s"Time to build data tree structures: ${(t1 - t0)/1000000} ms")
       val fieldset = tables.map(getStructureFields).reduce((acc, fields) => acc ++ fields)
+      val t4 = System.nanoTime()
+      logger.info(s"Time to get fieldset: ${(t4 - t0)/1000000} ms")
       val eventualValues = fieldsetValues(fieldset, startTime, endTime)
-      val eventualValueRecords = eventualValues.map(values => getValueRecords(values, tables))
-      eventualValueRecords.map(r => r.take(maybeLimit.getOrElse(r.length)))
+      val eventualValueRecords = eventualValues.map { values =>
+        val t2 = System.nanoTime()
+        logger.info(s"Time to get values for discovered fieldset: ${(t2 - t0)/1000000} ms")
+        getValueRecords(values, tables)
+      }
+      eventualValueRecords.map { r =>
+        val t3 = System.nanoTime()
+        logger.info(s"Total time to get values for table: ${(t3 - t0)/1000000} ms")
+        r.take(maybeLimit.getOrElse(r.length))
+      }
     }
   }
 
@@ -373,16 +386,14 @@ trait DataService {
    * Fetches values from database matching a set of fields and falling within a time range
    */
   protected[api] def fieldsetValues(fieldset: Set[Int], startTime: LocalDateTime, endTime: LocalDateTime): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
-    val valueQuery = fieldset map { fieldId =>
-      for {
-        value <- DataValue.filter(_.fieldId === fieldId)
-          .filter(v => v.dateCreated <= endTime && v.dateCreated >= startTime)
+    val fieldValues = DataValue.filter(_.fieldId inSet fieldset)
+    val valueQuery = for {
+        value <- fieldValues.filter(v => v.dateCreated <= endTime && v.dateCreated >= startTime)
         field <- value.dataFieldFk
-        record <- DataRecord.filter(_.id === value.recordId)
+        record <- value.dataRecordFk
       } yield (record, field, value)
-    } reduce ( (q, vq) => q ++ vq )
 
-    DatabaseInfo.db.run(valueQuery.sortBy(_._1.id.desc).result)
+    DatabaseInfo.db.run(valueQuery.result)
   }
 
   def recordValues(recordId: Int): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
