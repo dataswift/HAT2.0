@@ -321,7 +321,7 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
 
   private def getPublicProfile: Future[(Boolean, Iterable[ProfileField])] = {
     val eventualMaybeProfileTable = sourceDatasetTables(Seq(("rumpel", "profile")), None).map(_.head)
-    val eventualMaybeFacebookTable = sourceDatasetTables(Seq(("facebook", "profile_picture")), None).map(_.head)
+    val eventualMaybeFacebookTable = sourceDatasetTables(Seq(("facebook", "profile_picture")), None).map(_.headOption)
     val eventualProfileRecord = eventualMaybeProfileTable flatMap { profileTable =>
       val fieldset = getStructureFields(profileTable)
 
@@ -334,20 +334,25 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
         .map(_.flatMap(_.tables.flatMap(_.headOption)))
     }
 
-    val eventualProfilePicture = eventualMaybeFacebookTable flatMap { table =>
-      val fieldset = getStructureFields(table)
-
-      val startTime = LocalDateTime.now().minusDays(365)
-      val endTime = LocalDateTime.now()
-      val eventualValues = fieldsetValues(fieldset, startTime, endTime)
-      eventualValues.map(values => getValueRecords(values, Seq(table)))
-        .map { records => records.headOption }
-        .map { record => record.flatMap(_.tables.flatMap(_.headOption)) }
+    val eventualProfilePicture = eventualMaybeFacebookTable flatMap { maybeTable =>
+      maybeTable map { table =>
+        val fieldset = getStructureFields(table)
+        val startTime = LocalDateTime.now().minusDays(365)
+        val endTime = LocalDateTime.now()
+        val eventualValues = fieldsetValues(fieldset, startTime, endTime)
+        eventualValues.map(values => getValueRecords(values, Seq(table)))
+          .map { records => records.headOption }
+          .map { record => record.flatMap(_.tables.flatMap(_.headOption)) }
+      } getOrElse {
+        Future.successful(None)
+      }
     }
 
-    val eventualProfilePictureField = eventualProfilePicture.map(_.get) map { valueTable =>
-      val flattenedValues = flattenTableValues(valueTable)
-      ProfileField("fb_profile_picture", Map("url" -> flattenedValues.getOrElse("url", "").toString), true)
+    val eventualProfilePictureField = eventualProfilePicture map { maybeValueTable =>
+      maybeValueTable map { valueTable =>
+        val flattenedValues = flattenTableValues(valueTable)
+        ProfileField("fb_profile_picture", Map("url" -> flattenedValues.getOrElse("url", "").toString), true)
+      }
     }
 
     for {
@@ -357,9 +362,9 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
       val flattenedValues = flattenTableValues(valueTable)
       val publicProfile = flattenedValues.get("private").contains("false")
       val profileFields = flattenedValues.collect {
-        case ("fb_profile_photo", m: Map[String, String]) =>
+        case ("fb_profile_photo", m: Map[String, String]) if profilePictureField.isDefined =>
           val publicField = m.get("private").contains("false")
-          profilePictureField
+          profilePictureField.get
         case (fieldName, m: Map[String, String]) =>
           val publicField = m.get("private").contains("false")
           ProfileField(fieldName, m - "private", publicField)
