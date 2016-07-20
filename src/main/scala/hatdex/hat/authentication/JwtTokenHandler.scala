@@ -72,8 +72,7 @@ trait JwtTokenHandler {
     val tokenQuery = UserAccessToken.filter(_.userId === user.userId)
       .filter(_.resource === resource)
       .filter(_.scope === accessScope)
-      .take(1)
-    val maybeToken = DatabaseInfo.db.run(tokenQuery.result).map(_.headOption)
+    val maybeToken = DatabaseInfo.db.run(tokenQuery.take(1).result).map(_.headOption)
 
     maybeToken flatMap {
       case Some(token) if validateJwtToken(token.accessToken) =>
@@ -83,9 +82,11 @@ trait JwtTokenHandler {
         val newAccessToken = UserAccessTokenRow(
           getJwtToken(user.userId, resource, accessScope, validity),
           user.userId, accessScope, resource)
-        DatabaseInfo.db.run((UserAccessToken += newAccessToken).asTry) map {
-          case Success(_) => AccessToken(newAccessToken.accessToken, user.userId)
-          case Failure(e) => throw ApiError(InternalServerError, ErrorMessage("Error while creating access_token, please try again later", e.getMessage))
+        DatabaseInfo.db.run(tokenQuery.delete) flatMap { result =>
+          DatabaseInfo.db.run((UserAccessToken += newAccessToken).asTry) map {
+            case Success(_) => AccessToken(newAccessToken.accessToken, user.userId)
+            case Failure(e) => throw ApiError(InternalServerError, ErrorMessage("Error while creating access_token, please try again later", e.getMessage))
+          }
         }
     }
   }
