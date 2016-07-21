@@ -1,4 +1,5 @@
-@main("Welcome to the HAT") {
+@(parameters: Map[String, Map[String, String]])
+@main("Welcome to the HAT", hatName = parameters.get("hat").flatMap(_.get("hatName"))) {
     <div class="row profile profile-private">
         <div class="col-md-offset-1 col-md-10">
             <h1>Private Profile</h1>

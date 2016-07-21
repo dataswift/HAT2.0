@@ -73,9 +73,9 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
           myhat
         } ~ {
           onComplete(getPublicProfile) {
-            case Success((true, publicFields)) => complete { hatdex.hat.views.html.index(formatProfile(publicFields.toSeq)) }
-            case Success((false, _))           => complete { logger.info("Private profile!"); hatdex.hat.views.html.indexPrivate() }
-            case Failure(e)                    => complete { logger.info(s"Failure getting table: ${e.getMessage}"); hatdex.hat.views.html.indexPrivate() }
+            case Success((true, publicFields))  => complete { hatdex.hat.views.html.index(formatProfile(publicFields.toSeq)) }
+            case Success((false, publicFields)) => complete { logger.info("Private profile!"); hatdex.hat.views.html.indexPrivate(formatProfile(publicFields.toSeq)) }
+            case Failure(e)                     => complete { logger.info(s"Failure getting table: ${e.getMessage}"); hatdex.hat.views.html.indexPrivate(Map()) }
           }
         }
       }
@@ -115,13 +115,13 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
               }
             case Success(_) =>
               deleteCookie("X-Auth-Token") {
-                complete(hatdex.hat.views.html.simpleMessage("Invalid Credentials!"))
+                complete(hatdex.hat.views.html.simpleMessage("Invalid Credentials!", formatProfile(Seq())))
               }
             case Failure(e) =>
               deleteCookie("X-Auth-Token") {
                 complete {
                   logger.error(s"Error while authenticating: ${e.getMessage}")
-                  hatdex.hat.views.html.simpleMessage("Error while authenticating")
+                  hatdex.hat.views.html.simpleMessage("Error while authenticating", formatProfile(Seq()))
                 }
               }
           }
@@ -320,18 +320,22 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
   case class ProfileField(name: String, values: Map[String, String], fieldPublic: Boolean)
 
   private def getPublicProfile: Future[(Boolean, Iterable[ProfileField])] = {
-    val eventualMaybeProfileTable = sourceDatasetTables(Seq(("rumpel", "profile")), None).map(_.head)
+    val eventualMaybeProfileTable = sourceDatasetTables(Seq(("rumpel", "profile")), None).map(_.headOption)
     val eventualMaybeFacebookTable = sourceDatasetTables(Seq(("facebook", "profile_picture")), None).map(_.headOption)
-    val eventualProfileRecord = eventualMaybeProfileTable flatMap { profileTable =>
-      val fieldset = getStructureFields(profileTable)
+    val eventualProfileRecord = eventualMaybeProfileTable flatMap { maybeTable =>
+      maybeTable map { table =>
+        val fieldset = getStructureFields(table)
 
-      val startTime = LocalDateTime.now().minusDays(365)
-      val endTime = LocalDateTime.now()
-      val eventualValues = fieldsetValues(fieldset, startTime, endTime)
+        val startTime = LocalDateTime.now().minusDays(365)
+        val endTime = LocalDateTime.now()
+        val eventualValues = fieldsetValues(fieldset, startTime, endTime)
 
-      eventualValues.map(values => getValueRecords(values, Seq(profileTable)))
-        .map { records => records.headOption }
-        .map(_.flatMap(_.tables.flatMap(_.headOption)))
+        eventualValues.map(values => getValueRecords(values, Seq(table)))
+          .map { records => records.headOption }
+          .map(_.flatMap(_.tables.flatMap(_.headOption)))
+      } getOrElse {
+        Future.successful(None)
+      }
     }
 
     val eventualProfilePicture = eventualMaybeFacebookTable flatMap { maybeTable =>
@@ -355,7 +359,7 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
       }
     }
 
-    for {
+    val profile = for {
       profilePictureField <- eventualProfilePictureField
       valueTable <- eventualProfileRecord.map(_.get)
     } yield {
@@ -371,6 +375,11 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
       }
 
       (publicProfile, profileFields.filter(_.fieldPublic))
+    }
+
+    profile recover {
+      case e =>
+        (false, Iterable())
     }
   }
 
