@@ -5,7 +5,7 @@
             @if(parameters.get("profile").isDefined) {
                 @parameters.get("profile").map { profile =>
                     <img src="@profile.get("profile_picture").getOrElse("/assets/images/certified.png")" alt="HAT" class="img img-responsive img-rounded profile-img" />
-                    <h3>@profile("personal")</h3>
+                    <h3>@profile.getOrElse("personal", "")</h3>
                 @profile.get("nick").map { v => <h4>Nick: @v</h4> }
                 @profile.get("age").map { v => <h4>Age: @v</h4> }
                 @profile.get("birthDate").map { v => <h4>Birth Date: @v</h4> }
