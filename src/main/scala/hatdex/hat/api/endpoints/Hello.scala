@@ -227,7 +227,9 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
       case ProfileField("google", values, true)   => "Google" -> values.getOrElse("link", "")
       case ProfileField("blog", values, true)     => "Blog" -> values.getOrElse("link", "")
       case ProfileField("twitter", values, true)  => "Twitter" -> values.getOrElse("link", "")
-    }: _*).filterNot(_._2 == "")
+    }: _*).filterNot(_._2 == "").map { case (k, v) =>
+      k -> (if (v.startsWith("http:")) { v } else { s"http://$v" })
+    }
 
     val contact = Map(profileFields collect {
       // contact
