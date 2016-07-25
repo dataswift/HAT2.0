@@ -3,14 +3,14 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@@thehatdex">
     <meta name="twitter:title" content="Personal HAT page @parameters.get("hat").flatMap(_.get("hatName"))">
-    <meta name="twitter:description" content="Welcome to the HAT @parameters.get("hat").flatMap(_.get("hatName"))">
-    <meta name="twitter:image:src" content="http://www.hatdex.org/wp-content/uploads/2016/01/3-getcreative-small.png">
+    <meta name="twitter:description" content="Welcome to my HAT">
+    <meta name="twitter:image:src" content="https://@parameters.get("hat").map(_.getOrElse("hatAddress", ""))/assets/images/HAT_logo_mydata.png">
     <meta name="twitter:domain" content="https://@parameters.get("hat").map(_.getOrElse("hatAddress", ""))">
     <meta property="og:url" content="https://@parameters.get("hat").map(_.getOrElse("hatAddress", ""))" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Personal HAT page @parameters.get("hat").flatMap(_.get("hatName"))" />
-    <meta property="og:description" content="Welcome to the HAT @parameters.get("hat").flatMap(_.get("hatName"))" />
-    <meta property="og:image" content="http://www.hatdex.org/wp-content/uploads/2016/01/3-getcreative-small.png" />
+    <meta property="og:description" content="Welcome to my HAT" />
+    <meta property="og:image" content="https://@parameters.get("hat").map(_.getOrElse("hatAddress", ""))/assets/images/HAT_logo_mydata.png" />
     <meta property="og:site_name" content="HAT" />
     <meta property="og:app_id" content="158753364485419" />
 
