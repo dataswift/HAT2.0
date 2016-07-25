@@ -141,6 +141,35 @@ h3 {
     font-size: 1.6em;
 }
 
+a {
+    color: white;
+    font-size: 1.2em;
+}
+a:hover {
+    color: white;
+}
+.hatservice {
+    width: 200px;
+    height: 250px;
+    display: inline-block;
+}
+.hatservice .thumbnail {
+    height: 100%;
+}
+.hatservice h4 {
+    height: 2.2em;
+}
+.btn-facebook {
+    background: #3b5998;
+    color: white;
+    border-color: #3b5998;
+}
+.btn-twitter {
+    background: #2CA7E0;
+    color: white;
+    border-color: #2CA7E0;
+}
+
 footer {
     position: relative;
     text-align: center;

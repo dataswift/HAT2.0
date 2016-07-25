@@ -256,10 +256,10 @@ trait Hello extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
           val title = values.get("title").map(_+" ").getOrElse("")
           val preferredName = values.get("preferred_name").map(_+" ").getOrElse("")
           val firstName = values.get("first_name").map { n =>
-            if (preferredName != "" && preferredName != n+" ") {
+            if (preferredName.nonEmpty && !preferredName.startsWith(n)) {
               s"($n) "
             }
-            else if (preferredName == "") {
+            else if (preferredName.isEmpty) {
               s"$n "
             }
             else {

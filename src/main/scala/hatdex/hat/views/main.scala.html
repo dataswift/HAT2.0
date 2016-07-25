@@ -1,10 +1,11 @@
 @import hatdex.hat.authentication.models.User
-@(title: String, maybeUser: Option[User] = None, hatName: Option[String] = None, navbarContent: Html = Html(""), styles: Html = Html(""), scripts: Html = Html(""), modals: Html = Html(""))(content: Html)
+@(title: String, maybeUser: Option[User] = None, hatName: Option[String] = None, navbarContent: Html = Html(""), styles: Html = Html(""), scripts: Html = Html(""), modals: Html = Html(""), meta: Html = Html(""))(content: Html)
 
 <!DOCTYPE html>
 <html>
     <head>
         <title>@title</title>
+        @meta
         <link rel="shortcut icon" type="image/png" href="/assets/images/haticon.png">
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
         <link rel="stylesheet" media="screen" href="/assets/stylesheets/main.css">

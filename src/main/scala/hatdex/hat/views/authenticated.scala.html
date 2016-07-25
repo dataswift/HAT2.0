@@ -1,40 +1,42 @@
 @import hatdex.hat.api.models.HatService
-@import hatdex.hat.authentication.models.{AccessToken, User}
+@import hatdex.hat.authentication.models.User
 @(user: User, services: Seq[HatService])
 
 @main(s"HAT - Welcome back ${user.name}", Some(user)) {
     <div class="row">
         <div class="col-md-10 col-md-offset-1">
-            <h1 class="text-center">Please choose a service you wish to use:</h1>
+            <h1 class="text-center">You are now logged on to your HAT</h1>
+            <h1 class="text-center">Where would you like to go now?</h1>
         </div>
     </div>
 
     <div class="row text-center">
-        <div class="col-sm-@((12 - (services.length+1) * 4)/2) col-md-@((12 - (services.length + 1) * 2)/2)">&nbsp;</div>
-        @services.map { case service =>
-        <a href="@service.url@service.authUrl">
-            <div class="col-xs-6 col-sm-4 col-md-2">
-                <div class="thumbnail">
-                    <img src="@service.logoUrl" alt="@service.title" class="img img-responsive img-rounded profile-img" />
-                    <div class="caption">
-                        <h3>@service.title</h3>
-                        <p>@service.description</p>
+        <div class="center-block">
+            <a href="/profile">
+                <div class="hatservice">
+                    <div class="thumbnail">
+                        <img src="/assets/images/certified.png" alt="HAT Profile" class="img img-responsive img-rounded profile-img" />
+                        <div class="caption">
+                            <h4>Personal HAT Page</h4>
+                            <p></p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </a>
-        }
+            </a>
 
-        <a href="/profile">
-            <div class="col-xs-6 col-sm-4 col-md-2">
-                <div class="thumbnail">
-                    <img src="/assets/images/certified.png" alt="HAT Profile" class="img img-responsive img-rounded profile-img" />
-                    <div class="caption">
-                        <h3>HAT Profile</h3>
-                        <p></p>
+            @services.map { case service =>
+            <a href="@service.url @service.authUrl">
+                <div class="hatservice">
+                    <div class="thumbnail">
+                        <img src="@service.logoUrl" alt="@service.title" class="img img-responsive img-rounded profile-img" />
+                        <div class="caption">
+                            <h4>@service.title</h4>
+                            <p>@service.description</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </a>
+            </a>
+            }
+        </div>
     </div>
 }
