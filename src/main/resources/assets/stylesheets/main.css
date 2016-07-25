@@ -1,44 +1,44 @@
 body {
     font-family: 'Roboto', sans-serif;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
 }
 
-@media (max-width: 377px) {
-    body {
-        font-size: 10px;
-    }
-}
+/*@media (max-width: 377px) {*/
+    /*body {*/
+        /*font-size: 10px;*/
+    /*}*/
+/*}*/
 
-@media (min-width: 377px) and (max-width: 480px) {
-    body {
-        font-size: 10px;
-    }
-}
+/*@media (min-width: 377px) and (max-width: 480px) {*/
+    /*body {*/
+        /*font-size: 10px;*/
+    /*}*/
+/*}*/
 
-@media (min-width: 481px) and (max-width: 768px) {
-    body {
-        font-size: 10px;
-    }
-}
+/*@media (min-width: 481px) and (max-width: 768px) {*/
+    /*body {*/
+        /*font-size: 10px;*/
+    /*}*/
+/*}*/
 
-@media (min-width: 769px) and (max-width: 992px) {
-    body {
-        font-size: 10px;
-    }
-}
+/*@media (min-width: 769px) and (max-width: 992px) {*/
+    /*body {*/
+        /*font-size: 10px;*/
+    /*}*/
+/*}*/
 
-@media (min-width: 993px) and (max-width: 1200px) {
-    body {
-        font-size: 11px;
-    }
-}
+/*@media (min-width: 993px) and (max-width: 1200px) {*/
+    /*body {*/
+        /*font-size: 11px;*/
+    /*}*/
+/*}*/
 
-@media (min-width: 1201px) {
-    body {
-        font-size: 13px;
-    }
-}
+/*@media (min-width: 1201px) {*/
+    /*body {*/
+        /*font-size: 13px;*/
+    /*}*/
+/*}*/
 
 .container-fluid.content {
     min-height: 80vh;
@@ -105,7 +105,7 @@ body {
 }
 
 .navbar .navbar-brand {
-    font-size: 2em;
+    font-size: 1.6em;
 }
 
 .navbar .navbar-brand.navbar-brand-main {
@@ -130,11 +130,11 @@ body {
 }
 
 h1 {
-    font-size: 3em;
+    font-size: 2em;
 }
 
 h2 {
-    font-size: 2.5em;
+    font-size: 1.8em;
 }
 
 h3 {
@@ -151,10 +151,19 @@ a:hover {
 .hatservice {
     width: 200px;
     height: 250px;
+    margin-top: 20px;
     display: inline-block;
 }
 .hatservice .thumbnail {
     height: 100%;
+    background: transparent;
+    border: 0;
+}
+.hatservice .thumbnail img {
+    background: transparent;
+}
+.hatservice .thumbnail .caption {
+    color: white;
 }
 .hatservice h4 {
     height: 2.2em;

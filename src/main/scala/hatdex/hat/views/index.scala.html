@@ -20,7 +20,7 @@
         <div class="col-xs-4 col-sm-3 col-md-2 col-md-offset-1">
             @if(parameters.get("profile").isDefined) {
                 @parameters.get("profile").map { profile =>
-                    <img src="@profile.get("profile_picture").getOrElse("/assets/images/certified.png")" alt="HAT" class="img img-responsive img-rounded profile-img" />
+                    <img src="@profile.get("profile_picture").getOrElse("/assets/images/haticon.png")" alt="HAT" class="img img-responsive img-rounded profile-img" />
                     <h3>@profile.getOrElse("personal", "")</h3>
                 @profile.get("nick").map { v => <h4>Nick:&nbsp;@v</h4> }
                 @profile.get("age").map { v => <h4>Age:&nbsp;@v</h4> }
@@ -30,7 +30,7 @@
                 @profile.get("address_global").map { v => <h4>@v</h4> }
                 }
             } else {
-                <img src="/assets/images/certified.png" alt="HAT" class="img img-responsive img-rounded profile-img" />
+                <img src="/assets/images/haticon.png" alt="HAT" class="img img-responsive img-rounded profile-img" />
             }
             @parameters.get("contact").map { profile =>
                 <h3>Contact:</h3>
@@ -69,6 +69,7 @@
             <a role="button" class="btn btn-primary">@parameters.get("hat").map(_.getOrElse("hatAddress", ""))</a>
         </div>
         <div class="col-xs-8 col-sm-9 col-md-8">
+            Share my HAT page on:
             <a role="button" class="btn btn-primary btn-facebook" href="https://www.facebook.com/sharer/sharer.php?u=https://@parameters.get("hat").map(_.getOrElse("hatAddress", ""))" target="_blank">Facebook</a>
             <a role="button" class="btn btn-primary btn-twitter" href="https://twitter.com/intent/tweet?url=https://@parameters.get("hat").map(_.getOrElse("hatAddress", ""))" target="_blank">Twitter</a>
         </div>
