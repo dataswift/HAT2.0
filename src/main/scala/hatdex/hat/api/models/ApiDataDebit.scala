@@ -32,6 +32,7 @@ case class ApiDataDebit(
   name: String,
   startDate: LocalDateTime,
   endDate: LocalDateTime,
+  enabled: Option[Boolean],
   rolling: Boolean,
   sell: Boolean,
   price: Float,
@@ -42,7 +43,7 @@ case class ApiDataDebit(
 object ApiDataDebit {
   def fromDbModel(dataDebitRow: DataDebitRow): ApiDataDebit = {
     new ApiDataDebit(Some(dataDebitRow.dataDebitKey), Some(dataDebitRow.dateCreated), Some(dataDebitRow.lastUpdated),
-      dataDebitRow.name, dataDebitRow.startDate, dataDebitRow.endDate, dataDebitRow.rolling, dataDebitRow.sellRent,
+      dataDebitRow.name, dataDebitRow.startDate, dataDebitRow.endDate, Some(dataDebitRow.enabled), dataDebitRow.rolling, dataDebitRow.sellRent,
       dataDebitRow.price, dataDebitRow.kind, None, None)
 
   }

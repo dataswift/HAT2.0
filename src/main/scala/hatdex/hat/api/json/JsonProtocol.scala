@@ -93,7 +93,7 @@ trait HatJsonProtocol extends DefaultJsonProtocol with UuidMarshalling with Date
   implicit val apiBundleContext: RootJsonFormat[ApiBundleContext] =
     rootFormat(lazyFormat(jsonFormat6(ApiBundleContext.apply)))
 
-  implicit val apiDataDebit = jsonFormat12(ApiDataDebit.apply)
+  implicit val apiDataDebit = jsonFormat13(ApiDataDebit.apply)
   implicit val apiDataDebitOut = jsonFormat12(ApiDataDebitOut.apply)
 
   // Users
