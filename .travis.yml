@@ -14,10 +14,11 @@ addons:
   postgresql: "9.3"
 
 before_script:
-  - bash ./hat-database-schema/env.sh
-  - bash ./hat-database-schema/setupDatabase.sh
-  - bash ./hat-database-schema/setupAccess.sh
-  - bash ./hat-database-schema/applyEvolutions.sh
+  - cd ./hat-database-schema
+  - bash ./env.sh
+  - bash ./setupDatabase.sh
+  - bash ./setupAccess.sh
+  - bash ./applyEvolutions.sh
 
 script:
    - sbt clean
