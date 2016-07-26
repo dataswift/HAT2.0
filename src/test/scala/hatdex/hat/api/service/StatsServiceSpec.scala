@@ -56,9 +56,15 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
   lazy val testLogger = logger
   override def actorRefFactory: ActorRefFactory = system
 
+
   // Prepare the data to create test bundles on
   def beforeAll() = {
-    Await.result(TestDataCleanup.cleanupAll, Duration("20 seconds"))
+    val result = TestDataCleanup.cleanupAll map { _ =>
+      val dataSpec = new DataSpec()
+      dataSpec.createBasicTables
+      val populatedData = dataSpec.populateDataReusable
+    }
+    Await.result(result, Duration("20 seconds"))
   }
 
   // Clean up all data

@@ -38,6 +38,9 @@ import spray.httpx.SprayJsonSupport._
 import spray.json._
 import spray.testkit.Specs2RouteTest
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+
 class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeAfterAll with BundlesContext {
   def actorRefFactory = system
 
@@ -86,7 +89,7 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
-    TestDataCleanup.cleanupAll
+    Await.result(TestDataCleanup.cleanupAll, Duration("20 seconds"))
   }
 
   // Clean up all data
