@@ -88,6 +88,8 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
       val bundleData = JsonParser(contextlessBundle).convertTo[ApiBundleContextless]
       val dataDebitData = JsonParser(DataDebitExamples.dataDebitExample).convertTo[ApiDataDebit]
 
+      logger.info(s"populated data table: $populatedTable")
+
       val dataDebit = {
         val dataDebit = HttpRequest(POST, "/dataDebit/propose")
           .withHeaders(dataDebitAuthHeader)

@@ -59,12 +59,7 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
-    val result = TestDataCleanup.cleanupAll map { _ =>
-      val dataSpec = new DataSpec()
-      dataSpec.createBasicTables
-      val populatedData = dataSpec.populateDataReusable
-    }
-    Await.result(result, Duration("20 seconds"))
+    Await.result(TestDataCleanup.cleanupAll, Duration("40 seconds"))
   }
 
   // Clean up all data
