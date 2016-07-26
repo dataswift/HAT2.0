@@ -59,7 +59,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
-    Await.result(TestDataCleanup.cleanupAll, Duration("20 seconds"))
+//    Await.result(TestDataCleanup.cleanupAll, Duration("20 seconds"))
   }
 
   // Clean up all data
@@ -68,6 +68,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
   }
 
   object Context extends DataDebitContextualContext with DataDebitRequiredServices {
+    Await.result(TestDataCleanup.cleanupAll, Duration("40 seconds"))
     def actorRefFactory = system
     val logger: LoggingAdapter = testLogger
   }

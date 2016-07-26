@@ -59,7 +59,6 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
-    Await.result(TestDataCleanup.cleanupAll, Duration("40 seconds"))
   }
 
   // Clean up all data
@@ -69,6 +68,7 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
 
   logger.info("Setting up Stats Service context")
   object DataDebitContext extends DataDebitContextualContext with DataDebitRequiredServices {
+    Await.result(TestDataCleanup.cleanupAll, Duration("40 seconds"))
     def actorRefFactory = system
     val logger: LoggingAdapter = Logging.getLogger(system, "tests")
     override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
