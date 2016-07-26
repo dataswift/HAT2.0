@@ -48,6 +48,9 @@ import spray.testkit.Specs2RouteTest
 import spray.routing.HttpService
 import spray.httpx.SprayJsonSupport._
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+
 class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with StatsService {
   override val logger: LoggingAdapter = Logging.getLogger(system, "tests")
   lazy val testLogger = logger
@@ -55,12 +58,12 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
-
+    Await.result(TestDataCleanup.cleanupAll, Duration("20 seconds"))
   }
 
   // Clean up all data
   def afterAll() = {
-    TestDataCleanup.cleanupAll
+//    TestDataCleanup.cleanupAll
   }
 
   logger.info("Setting up Stats Service context")

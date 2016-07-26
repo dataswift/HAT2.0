@@ -61,7 +61,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
 
   // Clean up all data
   def afterAll() = {
-    TestDataCleanup.cleanupAll
+//    TestDataCleanup.cleanupAll
   }
 
   object Context extends DataDebitContextualContext with DataDebitRequiredServices {

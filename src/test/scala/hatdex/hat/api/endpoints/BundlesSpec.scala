@@ -122,14 +122,15 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
   }
 
   def beforeAll() = {
-    TestDataCleanup.cleanupAll.flatMap { c =>
+    val f = TestDataCleanup.cleanupAll.flatMap { c =>
       populateData()
     }
+    Await.result(f, Duration("20 seconds"))
   }
 
   // Clean up all data
   def afterAll() = {
-    TestDataCleanup.cleanupAll
+//    TestDataCleanup.cleanupAll
   }
 
   sequential
@@ -144,7 +145,7 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
         check {
           eventually {
             val responseString = responseAs[String]
-            //            logger.info(s"Bundle create response: $responseString")
+                        logger.info(s"Bundle create response: $responseString")
             response.status should be equalTo Created
           }
           responseAs[ApiBundleContextless]

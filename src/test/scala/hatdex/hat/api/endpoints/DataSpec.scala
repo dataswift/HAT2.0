@@ -39,6 +39,7 @@ import spray.http.Uri.Path
 import spray.json._
 import spray.testkit.Specs2RouteTest
 
+import scala.concurrent.Await
 import scala.concurrent.duration._
 
 class DataSpec extends Specification with Specs2RouteTest with Data with BeforeAfterAll {
@@ -55,12 +56,12 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
   import JsonProtocol._
 
   def beforeAll() = {
-    TestDataCleanup.cleanupAll
+    Await.result(TestDataCleanup.cleanupAll, Duration("20 seconds"))
   }
 
   // Clean up all data
   def afterAll() = {
-    TestDataCleanup.cleanupAll
+//    TestDataCleanup.cleanupAll
   }
 
   sequential

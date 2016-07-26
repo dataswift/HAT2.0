@@ -39,6 +39,9 @@ import spray.json._
 import spray.testkit.Specs2RouteTest
 import spray.httpx.SprayJsonSupport._
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+
 class PropertySpec extends Specification with Specs2RouteTest with Property with BeforeAfterAll {
   def actorRefFactory = system
   val logger: LoggingAdapter = system.log
@@ -48,11 +51,13 @@ class PropertySpec extends Specification with Specs2RouteTest with Property with
 
   import JsonProtocol._
 
-  def beforeAll() = { }
+  def beforeAll() = {
+    Await.result(TestDataCleanup.cleanupAll, Duration("20 seconds"))
+  }
 
   // Clean up all data
   def afterAll() = {
-    TestDataCleanup.cleanupAll
+//    TestDataCleanup.cleanupAll
   }
 
   sequential

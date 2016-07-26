@@ -86,12 +86,12 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
-
+    TestDataCleanup.cleanupAll
   }
 
   // Clean up all data
   def afterAll() = {
-    TestDataCleanup.cleanupAll
+//    TestDataCleanup.cleanupAll
   }
 
   sequential
@@ -138,6 +138,7 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         check {
           response.status should be equalTo Created
           val resp = responseAs[String]
+          logger.info(s"Got bundle creation response $resp")
           resp must contain("emptyBundleTest2-1")
           resp must contain("sunrise")
           responseAs[ApiBundleContext]

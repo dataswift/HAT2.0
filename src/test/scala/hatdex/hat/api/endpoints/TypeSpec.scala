@@ -37,6 +37,8 @@ import spray.http.StatusCodes._
 import spray.http._
 import spray.testkit.Specs2RouteTest
 import spray.httpx.SprayJsonSupport._
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeAfterAll {
   def actorRefFactory = system
@@ -48,14 +50,14 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
 
   def beforeAll() = {
-
+    Await.result(TestDataCleanup.cleanupAll, Duration("10 seconds"))
   }
 
   import JsonProtocol._
 
   // Clean up all data
   def afterAll() = {
-    TestDataCleanup.cleanupAll
+//    TestDataCleanup.cleanupAll
   }
 
   def createPostalAddressType = HttpRequest(POST, "/type/type")

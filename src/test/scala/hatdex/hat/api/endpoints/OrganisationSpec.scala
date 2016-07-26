@@ -38,6 +38,9 @@ import spray.httpx.SprayJsonSupport._
 import spray.json._
 import spray.testkit.Specs2RouteTest
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+
 class OrganisationSpec extends Specification with Specs2RouteTest with Organisation with BeforeAfterAll {
   def actorRefFactory = system
 
@@ -60,11 +63,12 @@ class OrganisationSpec extends Specification with Specs2RouteTest with Organisat
   import JsonProtocol._
 
   def beforeAll() = {
+    Await.result(TestDataCleanup.cleanupAll, Duration("20 seconds"))
   }
 
   // Clean up all data
   def afterAll() = {
-    TestDataCleanup.cleanupAll
+//    TestDataCleanup.cleanupAll
   }
 
   val ownerAuthToken = HatAuthTestHandler.validUsers.find(_.role == "owner").map(_.userId).flatMap { ownerId =>

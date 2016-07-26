@@ -24,7 +24,7 @@ package hatdex.hat.api.endpoints
 import java.util.UUID
 
 import akka.event.LoggingAdapter
-import hatdex.hat.api.DatabaseInfo
+import hatdex.hat.api.{TestDataCleanup, DatabaseInfo}
 import hatdex.hat.api.endpoints.jsonExamples.UserExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.authentication.models.{ AccessToken, User }
@@ -55,6 +55,7 @@ class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll w
   def actorRefFactory = system
 
   def beforeAll() = {
+    Await.result(TestDataCleanup.cleanupAll, Duration("20 seconds"))
     val validUsers = Seq(
       UserUserRow(UUID.fromString("6096eba1-0e9e-4607-9dfd-072bfa106bf4"),
         LocalDateTime.now(), LocalDateTime.now(),
