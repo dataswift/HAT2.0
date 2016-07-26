@@ -7,13 +7,13 @@ object Tables extends {
 /** Slick data model trait for extension, choice of backend or usage in the cake pattern. (Make sure to initialize this late.) */
 trait Tables {
   val profile: hatdex.hat.dal.SlickPostgresDriver
-  import profile.simple._
+  import profile.api._
   import slick.model.ForeignKeyAction
   // NOTE: GetResult mappers for plain SQL are only generated for tables where Slick knows how to map the types of all columns.
   import slick.jdbc.{GetResult => GR}
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema = Array(BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessJoin.schema, BundleContextlessTable.schema, BundleContextlessTableSlice.schema, BundleContextlessTableSliceCondition.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -29,7 +29,7 @@ trait Tables {
     BundleContextRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String]))
   }
   /** Table description of table bundle_context. Objects of this class serve as prototypes for rows in queries. */
-  class BundleContext(_tableTag: Tag) extends Table[BundleContextRow](_tableTag, "bundle_context") {
+  class BundleContext(_tableTag: Tag) extends Table[BundleContextRow](_tableTag, Some("hat"), "bundle_context") {
     def * = (id, dateCreated, lastUpdated, name) <> (BundleContextRow.tupled, BundleContextRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name)).shaped.<>({r=>import r._; _1.map(_=> BundleContextRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -61,7 +61,7 @@ trait Tables {
     BundleContextEntitySelectionRow.tupled((<<[Int], <<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<?[String], <<?[Int], <<?[String]))
   }
   /** Table description of table bundle_context_entity_selection. Objects of this class serve as prototypes for rows in queries. */
-  class BundleContextEntitySelection(_tableTag: Tag) extends Table[BundleContextEntitySelectionRow](_tableTag, "bundle_context_entity_selection") {
+  class BundleContextEntitySelection(_tableTag: Tag) extends Table[BundleContextEntitySelectionRow](_tableTag, Some("hat"), "bundle_context_entity_selection") {
     def * = (id, bundleContextId, dateCreated, lastUpdated, entityName, entityId, entityKind) <> (BundleContextEntitySelectionRow.tupled, BundleContextEntitySelectionRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(bundleContextId), Rep.Some(dateCreated), Rep.Some(lastUpdated), entityName, entityId, entityKind).shaped.<>({r=>import r._; _1.map(_=> BundleContextEntitySelectionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6, _7)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -101,7 +101,7 @@ trait Tables {
     BundleContextlessRow.tupled((<<[Int], <<[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime]))
   }
   /** Table description of table bundle_contextless. Objects of this class serve as prototypes for rows in queries. */
-  class BundleContextless(_tableTag: Tag) extends Table[BundleContextlessRow](_tableTag, "bundle_contextless") {
+  class BundleContextless(_tableTag: Tag) extends Table[BundleContextlessRow](_tableTag, Some("hat"), "bundle_contextless") {
     def * = (id, name, dateCreated, lastUpdated) <> (BundleContextlessRow.tupled, BundleContextlessRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(name), Rep.Some(dateCreated), Rep.Some(lastUpdated)).shaped.<>({r=>import r._; _1.map(_=> BundleContextlessRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -118,173 +118,51 @@ trait Tables {
   /** Collection-like TableQuery object for table BundleContextless */
   lazy val BundleContextless = new TableQuery(tag => new BundleContextless(tag))
 
-  /** Entity class storing rows of table BundleContextlessJoin
+  /** Entity class storing rows of table BundleContextlessDataSourceDataset
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
-   *  @param dateCreated Database column date_created SqlType(timestamp)
-   *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param name Database column name SqlType(varchar)
-   *  @param bundleContextlessTableId Database column bundle_contextless_table_id SqlType(int4)
-   *  @param bundleContextlessId Database column bundle_contextless_id SqlType(int4)
-   *  @param bundleContextlessJoinField Database column bundle_contextless_join_field SqlType(int4), Default(None)
-   *  @param bundleContextlessTableField Database column bundle_contextless_table_field SqlType(int4), Default(None)
-   *  @param operator Database column operator SqlType(varchar), Default(None) */
-  case class BundleContextlessJoinRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, bundleContextlessTableId: Int, bundleContextlessId: Int, bundleContextlessJoinField: Option[Int] = None, bundleContextlessTableField: Option[Int] = None, operator: Option[String] = None)
-  /** GetResult implicit for fetching BundleContextlessJoinRow objects using plain SQL queries */
-  implicit def GetResultBundleContextlessJoinRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Option[Int]], e4: GR[Option[String]]): GR[BundleContextlessJoinRow] = GR{
+   *  @param bundleId Database column bundle_id SqlType(int4)
+   *  @param sourceName Database column source_name SqlType(varchar)
+   *  @param datasetName Database column dataset_name SqlType(varchar)
+   *  @param datasetTableId Database column dataset_table_id SqlType(int4)
+   *  @param description Database column description SqlType(varchar)
+   *  @param fieldStructure Database column field_structure SqlType(varchar)
+   *  @param fieldIds Database column field_ids SqlType(_int4), Length(10,false) */
+  case class BundleContextlessDataSourceDatasetRow(id: Int, bundleId: Int, sourceName: String, datasetName: String, datasetTableId: Int, description: String, fieldStructure: String, fieldIds: List[Int])
+  /** GetResult implicit for fetching BundleContextlessDataSourceDatasetRow objects using plain SQL queries */
+  implicit def GetResultBundleContextlessDataSourceDatasetRow(implicit e0: GR[Int], e1: GR[String], e2: GR[List[Int]]): GR[BundleContextlessDataSourceDatasetRow] = GR{
     prs => import prs._
-    BundleContextlessJoinRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int], <<[Int], <<?[Int], <<?[Int], <<?[String]))
+    BundleContextlessDataSourceDatasetRow.tupled((<<[Int], <<[Int], <<[String], <<[String], <<[Int], <<[String], <<[String], <<[List[Int]]))
   }
-  /** Table description of table bundle_contextless_join. Objects of this class serve as prototypes for rows in queries. */
-  class BundleContextlessJoin(_tableTag: Tag) extends Table[BundleContextlessJoinRow](_tableTag, "bundle_contextless_join") {
-    def * = (id, dateCreated, lastUpdated, name, bundleContextlessTableId, bundleContextlessId, bundleContextlessJoinField, bundleContextlessTableField, operator) <> (BundleContextlessJoinRow.tupled, BundleContextlessJoinRow.unapply)
+  /** Table description of table bundle_contextless_data_source_dataset. Objects of this class serve as prototypes for rows in queries. */
+  class BundleContextlessDataSourceDataset(_tableTag: Tag) extends Table[BundleContextlessDataSourceDatasetRow](_tableTag, Some("hat"), "bundle_contextless_data_source_dataset") {
+    def * = (id, bundleId, sourceName, datasetName, datasetTableId, description, fieldStructure, fieldIds) <> (BundleContextlessDataSourceDatasetRow.tupled, BundleContextlessDataSourceDatasetRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(bundleContextlessTableId), Rep.Some(bundleContextlessId), bundleContextlessJoinField, bundleContextlessTableField, operator).shaped.<>({r=>import r._; _1.map(_=> BundleContextlessJoinRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7, _8, _9)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(bundleId), Rep.Some(sourceName), Rep.Some(datasetName), Rep.Some(datasetTableId), Rep.Some(description), Rep.Some(fieldStructure), Rep.Some(fieldIds)).shaped.<>({r=>import r._; _1.map(_=> BundleContextlessDataSourceDatasetRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
-    /** Database column date_created SqlType(timestamp) */
-    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
-    /** Database column last_updated SqlType(timestamp) */
-    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column name SqlType(varchar) */
-    val name: Rep[String] = column[String]("name")
-    /** Database column bundle_contextless_table_id SqlType(int4) */
-    val bundleContextlessTableId: Rep[Int] = column[Int]("bundle_contextless_table_id")
-    /** Database column bundle_contextless_id SqlType(int4) */
-    val bundleContextlessId: Rep[Int] = column[Int]("bundle_contextless_id")
-    /** Database column bundle_contextless_join_field SqlType(int4), Default(None) */
-    val bundleContextlessJoinField: Rep[Option[Int]] = column[Option[Int]]("bundle_contextless_join_field", O.Default(None))
-    /** Database column bundle_contextless_table_field SqlType(int4), Default(None) */
-    val bundleContextlessTableField: Rep[Option[Int]] = column[Option[Int]]("bundle_contextless_table_field", O.Default(None))
-    /** Database column operator SqlType(varchar), Default(None) */
-    val operator: Rep[Option[String]] = column[Option[String]]("operator", O.Default(None))
+    /** Database column bundle_id SqlType(int4) */
+    val bundleId: Rep[Int] = column[Int]("bundle_id")
+    /** Database column source_name SqlType(varchar) */
+    val sourceName: Rep[String] = column[String]("source_name")
+    /** Database column dataset_name SqlType(varchar) */
+    val datasetName: Rep[String] = column[String]("dataset_name")
+    /** Database column dataset_table_id SqlType(int4) */
+    val datasetTableId: Rep[Int] = column[Int]("dataset_table_id")
+    /** Database column description SqlType(varchar) */
+    val description: Rep[String] = column[String]("description")
+    /** Database column field_structure SqlType(varchar) */
+    val fieldStructure: Rep[String] = column[String]("field_structure")
+    /** Database column field_ids SqlType(_int4), Length(10,false) */
+    val fieldIds: Rep[List[Int]] = column[List[Int]]("field_ids", O.Length(10,varying=false))
 
-    /** Foreign key referencing BundleContextless (database name bundle_contextless_bundle_contextless_join_fk) */
-    lazy val bundleContextlessFk = foreignKey("bundle_contextless_bundle_contextless_join_fk", bundleContextlessId, BundleContextless)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing BundleContextlessTable (database name bundle_contextless_table_bundle_join_fk) */
-    lazy val bundleContextlessTableFk = foreignKey("bundle_contextless_table_bundle_join_fk", bundleContextlessTableId, BundleContextlessTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing DataField (database name data_field_bundle_contextless_join_fk) */
-    lazy val dataFieldFk3 = foreignKey("data_field_bundle_contextless_join_fk", bundleContextlessJoinField, DataField)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing DataField (database name data_field_bundle_contextless_join_fk1) */
-    lazy val dataFieldFk4 = foreignKey("data_field_bundle_contextless_join_fk1", bundleContextlessTableField, DataField)(r => Rep.Some(r.id), onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing BundleContextless (database name bundle_contextless_data_source_dataset_bundle_id_fkey) */
+    lazy val bundleContextlessFk = foreignKey("bundle_contextless_data_source_dataset_bundle_id_fkey", bundleId, BundleContextless)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing DataTable (database name bundle_contextless_data_source_dataset_dataset_table_id_fkey) */
+    lazy val dataTableFk = foreignKey("bundle_contextless_data_source_dataset_dataset_table_id_fkey", datasetTableId, DataTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
   }
-  /** Collection-like TableQuery object for table BundleContextlessJoin */
-  lazy val BundleContextlessJoin = new TableQuery(tag => new BundleContextlessJoin(tag))
-
-  /** Entity class storing rows of table BundleContextlessTable
-   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
-   *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param dateCreated Database column date_created SqlType(timestamp)
-   *  @param name Database column name SqlType(varchar)
-   *  @param dataTable Database column data_table SqlType(int4) */
-  case class BundleContextlessTableRow(id: Int, lastUpdated: org.joda.time.LocalDateTime, dateCreated: org.joda.time.LocalDateTime, name: String, dataTable: Int)
-  /** GetResult implicit for fetching BundleContextlessTableRow objects using plain SQL queries */
-  implicit def GetResultBundleContextlessTableRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[BundleContextlessTableRow] = GR{
-    prs => import prs._
-    BundleContextlessTableRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int]))
-  }
-  /** Table description of table bundle_contextless_table. Objects of this class serve as prototypes for rows in queries. */
-  class BundleContextlessTable(_tableTag: Tag) extends Table[BundleContextlessTableRow](_tableTag, "bundle_contextless_table") {
-    def * = (id, lastUpdated, dateCreated, name, dataTable) <> (BundleContextlessTableRow.tupled, BundleContextlessTableRow.unapply)
-    /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(lastUpdated), Rep.Some(dateCreated), Rep.Some(name), Rep.Some(dataTable)).shaped.<>({r=>import r._; _1.map(_=> BundleContextlessTableRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
-
-    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
-    /** Database column last_updated SqlType(timestamp) */
-    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column date_created SqlType(timestamp) */
-    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
-    /** Database column name SqlType(varchar) */
-    val name: Rep[String] = column[String]("name")
-    /** Database column data_table SqlType(int4) */
-    val dataTable: Rep[Int] = column[Int]("data_table")
-
-    /** Foreign key referencing DataTable (database name data_table_bundle_contextless_table_fk) */
-    lazy val dataTableFk = foreignKey("data_table_bundle_contextless_table_fk", dataTable, DataTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-  }
-  /** Collection-like TableQuery object for table BundleContextlessTable */
-  lazy val BundleContextlessTable = new TableQuery(tag => new BundleContextlessTable(tag))
-
-  /** Entity class storing rows of table BundleContextlessTableSlice
-   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
-   *  @param dateCreated Database column date_created SqlType(timestamp)
-   *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param bundleContextlessTableId Database column bundle_contextless_table_id SqlType(int4)
-   *  @param dataTableId Database column data_table_id SqlType(int4) */
-  case class BundleContextlessTableSliceRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, bundleContextlessTableId: Int, dataTableId: Int)
-  /** GetResult implicit for fetching BundleContextlessTableSliceRow objects using plain SQL queries */
-  implicit def GetResultBundleContextlessTableSliceRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[BundleContextlessTableSliceRow] = GR{
-    prs => import prs._
-    BundleContextlessTableSliceRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int]))
-  }
-  /** Table description of table bundle_contextless_table_slice. Objects of this class serve as prototypes for rows in queries. */
-  class BundleContextlessTableSlice(_tableTag: Tag) extends Table[BundleContextlessTableSliceRow](_tableTag, "bundle_contextless_table_slice") {
-    def * = (id, dateCreated, lastUpdated, bundleContextlessTableId, dataTableId) <> (BundleContextlessTableSliceRow.tupled, BundleContextlessTableSliceRow.unapply)
-    /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(bundleContextlessTableId), Rep.Some(dataTableId)).shaped.<>({r=>import r._; _1.map(_=> BundleContextlessTableSliceRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
-
-    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
-    /** Database column date_created SqlType(timestamp) */
-    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
-    /** Database column last_updated SqlType(timestamp) */
-    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column bundle_contextless_table_id SqlType(int4) */
-    val bundleContextlessTableId: Rep[Int] = column[Int]("bundle_contextless_table_id")
-    /** Database column data_table_id SqlType(int4) */
-    val dataTableId: Rep[Int] = column[Int]("data_table_id")
-
-    /** Foreign key referencing BundleContextlessTable (database name bundle_contextless_table_bundle_contextless_tableslice_fk) */
-    lazy val bundleContextlessTableFk = foreignKey("bundle_contextless_table_bundle_contextless_tableslice_fk", bundleContextlessTableId, BundleContextlessTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing DataTable (database name data_table_bundle_contextless_table_slice_fk) */
-    lazy val dataTableFk = foreignKey("data_table_bundle_contextless_table_slice_fk", dataTableId, DataTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-  }
-  /** Collection-like TableQuery object for table BundleContextlessTableSlice */
-  lazy val BundleContextlessTableSlice = new TableQuery(tag => new BundleContextlessTableSlice(tag))
-
-  /** Entity class storing rows of table BundleContextlessTableSliceCondition
-   *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
-   *  @param dateCreated Database column date_created SqlType(timestamp)
-   *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param fieldId Database column field_id SqlType(int4)
-   *  @param tableSliceId Database column table_slice_id SqlType(int4)
-   *  @param operator Database column operator SqlType(varchar)
-   *  @param value Database column value SqlType(varchar) */
-  case class BundleContextlessTableSliceConditionRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, fieldId: Int, tableSliceId: Int, operator: String, value: String)
-  /** GetResult implicit for fetching BundleContextlessTableSliceConditionRow objects using plain SQL queries */
-  implicit def GetResultBundleContextlessTableSliceConditionRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[BundleContextlessTableSliceConditionRow] = GR{
-    prs => import prs._
-    BundleContextlessTableSliceConditionRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[String]))
-  }
-  /** Table description of table bundle_contextless_table_slice_condition. Objects of this class serve as prototypes for rows in queries. */
-  class BundleContextlessTableSliceCondition(_tableTag: Tag) extends Table[BundleContextlessTableSliceConditionRow](_tableTag, "bundle_contextless_table_slice_condition") {
-    def * = (id, dateCreated, lastUpdated, fieldId, tableSliceId, operator, value) <> (BundleContextlessTableSliceConditionRow.tupled, BundleContextlessTableSliceConditionRow.unapply)
-    /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(fieldId), Rep.Some(tableSliceId), Rep.Some(operator), Rep.Some(value)).shaped.<>({r=>import r._; _1.map(_=> BundleContextlessTableSliceConditionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
-
-    /** Database column id SqlType(serial), AutoInc, PrimaryKey */
-    val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
-    /** Database column date_created SqlType(timestamp) */
-    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
-    /** Database column last_updated SqlType(timestamp) */
-    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
-    /** Database column field_id SqlType(int4) */
-    val fieldId: Rep[Int] = column[Int]("field_id")
-    /** Database column table_slice_id SqlType(int4) */
-    val tableSliceId: Rep[Int] = column[Int]("table_slice_id")
-    /** Database column operator SqlType(varchar) */
-    val operator: Rep[String] = column[String]("operator")
-    /** Database column value SqlType(varchar) */
-    val value: Rep[String] = column[String]("value")
-
-    /** Foreign key referencing BundleContextlessTableSlice (database name bundle_contextless_table_slice_condition_fk) */
-    lazy val bundleContextlessTableSliceFk = foreignKey("bundle_contextless_table_slice_condition_fk", tableSliceId, BundleContextlessTableSlice)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-    /** Foreign key referencing DataField (database name data_field_bundle_contextless_table_slice_condition_fk) */
-    lazy val dataFieldFk = foreignKey("data_field_bundle_contextless_table_slice_condition_fk", fieldId, DataField)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
-  }
-  /** Collection-like TableQuery object for table BundleContextlessTableSliceCondition */
-  lazy val BundleContextlessTableSliceCondition = new TableQuery(tag => new BundleContextlessTableSliceCondition(tag))
+  /** Collection-like TableQuery object for table BundleContextlessDataSourceDataset */
+  lazy val BundleContextlessDataSourceDataset = new TableQuery(tag => new BundleContextlessDataSourceDataset(tag))
 
   /** Entity class storing rows of table BundleContextPropertySelection
    *  @param propertySelectionId Database column property_selection_id SqlType(serial), AutoInc, PrimaryKey
@@ -303,7 +181,7 @@ trait Tables {
     BundleContextPropertySelectionRow.tupled((<<[Int], <<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<?[String], <<?[Int], <<?[String], <<?[String], <<?[String]))
   }
   /** Table description of table bundle_context_property_selection. Objects of this class serve as prototypes for rows in queries. */
-  class BundleContextPropertySelection(_tableTag: Tag) extends Table[BundleContextPropertySelectionRow](_tableTag, "bundle_context_property_selection") {
+  class BundleContextPropertySelection(_tableTag: Tag) extends Table[BundleContextPropertySelectionRow](_tableTag, Some("hat"), "bundle_context_property_selection") {
     def * = (propertySelectionId, bundleContextEntitySelectionId, dateCreated, lastUpdated, propertyRelationshipKind, propertyRelationshipId, propertyName, propertyType, propertyUnitofmeasurement) <> (BundleContextPropertySelectionRow.tupled, BundleContextPropertySelectionRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(propertySelectionId), Rep.Some(bundleContextEntitySelectionId), Rep.Some(dateCreated), Rep.Some(lastUpdated), propertyRelationshipKind, propertyRelationshipId, propertyName, propertyType, propertyUnitofmeasurement).shaped.<>({r=>import r._; _1.map(_=> BundleContextPropertySelectionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6, _7, _8, _9)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -346,7 +224,7 @@ trait Tables {
     BundleContextToBundleCrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int]))
   }
   /** Table description of table bundle_context_to_bundle_crossref. Objects of this class serve as prototypes for rows in queries. */
-  class BundleContextToBundleCrossref(_tableTag: Tag) extends Table[BundleContextToBundleCrossrefRow](_tableTag, "bundle_context_to_bundle_crossref") {
+  class BundleContextToBundleCrossref(_tableTag: Tag) extends Table[BundleContextToBundleCrossrefRow](_tableTag, Some("hat"), "bundle_context_to_bundle_crossref") {
     def * = (id, dateCreated, lastUpdated, bundleParent, bundleChild) <> (BundleContextToBundleCrossrefRow.tupled, BundleContextToBundleCrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(bundleParent), Rep.Some(bundleChild)).shaped.<>({r=>import r._; _1.map(_=> BundleContextToBundleCrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -369,6 +247,42 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table BundleContextToBundleCrossref */
   lazy val BundleContextToBundleCrossref = new TableQuery(tag => new BundleContextToBundleCrossref(tag))
+
+  /** Entity class storing rows of table BundleContextTree
+   *  @param id Database column id SqlType(int4), Default(None)
+   *  @param dateCreated Database column date_created SqlType(timestamp), Default(None)
+   *  @param lastUpdated Database column last_updated SqlType(timestamp), Default(None)
+   *  @param name Database column name SqlType(varchar), Default(None)
+   *  @param bundleParent Database column bundle_parent SqlType(int4), Default(None)
+   *  @param path Database column path SqlType(_int4), Length(10,false), Default(None)
+   *  @param rootBundle Database column root_bundle SqlType(int4), Default(None) */
+  case class BundleContextTreeRow(id: Option[Int] = None, dateCreated: Option[org.joda.time.LocalDateTime] = None, lastUpdated: Option[org.joda.time.LocalDateTime] = None, name: Option[String] = None, bundleParent: Option[Int] = None, path: Option[List[Int]] = None, rootBundle: Option[Int] = None)
+  /** GetResult implicit for fetching BundleContextTreeRow objects using plain SQL queries */
+  implicit def GetResultBundleContextTreeRow(implicit e0: GR[Option[Int]], e1: GR[Option[org.joda.time.LocalDateTime]], e2: GR[Option[String]], e3: GR[Option[List[Int]]]): GR[BundleContextTreeRow] = GR{
+    prs => import prs._
+    BundleContextTreeRow.tupled((<<?[Int], <<?[org.joda.time.LocalDateTime], <<?[org.joda.time.LocalDateTime], <<?[String], <<?[Int], <<?[List[Int]], <<?[Int]))
+  }
+  /** Table description of table bundle_context_tree. Objects of this class serve as prototypes for rows in queries. */
+  class BundleContextTree(_tableTag: Tag) extends Table[BundleContextTreeRow](_tableTag, Some("hat"), "bundle_context_tree") {
+    def * = (id, dateCreated, lastUpdated, name, bundleParent, path, rootBundle) <> (BundleContextTreeRow.tupled, BundleContextTreeRow.unapply)
+
+    /** Database column id SqlType(int4), Default(None) */
+    val id: Rep[Option[Int]] = column[Option[Int]]("id", O.Default(None))
+    /** Database column date_created SqlType(timestamp), Default(None) */
+    val dateCreated: Rep[Option[org.joda.time.LocalDateTime]] = column[Option[org.joda.time.LocalDateTime]]("date_created", O.Default(None))
+    /** Database column last_updated SqlType(timestamp), Default(None) */
+    val lastUpdated: Rep[Option[org.joda.time.LocalDateTime]] = column[Option[org.joda.time.LocalDateTime]]("last_updated", O.Default(None))
+    /** Database column name SqlType(varchar), Default(None) */
+    val name: Rep[Option[String]] = column[Option[String]]("name", O.Default(None))
+    /** Database column bundle_parent SqlType(int4), Default(None) */
+    val bundleParent: Rep[Option[Int]] = column[Option[Int]]("bundle_parent", O.Default(None))
+    /** Database column path SqlType(_int4), Length(10,false), Default(None) */
+    val path: Rep[Option[List[Int]]] = column[Option[List[Int]]]("path", O.Length(10,varying=false), O.Default(None))
+    /** Database column root_bundle SqlType(int4), Default(None) */
+    val rootBundle: Rep[Option[Int]] = column[Option[Int]]("root_bundle", O.Default(None))
+  }
+  /** Collection-like TableQuery object for table BundleContextTree */
+  lazy val BundleContextTree = new TableQuery(tag => new BundleContextTree(tag))
 
   /** Entity class storing rows of table DataDebit
    *  @param dataDebitKey Database column data_debit_key SqlType(uuid), PrimaryKey
@@ -393,7 +307,7 @@ trait Tables {
     DataDebitRow.tupled((<<[java.util.UUID], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Boolean], <<[Boolean], <<[Float], <<[Boolean], <<[String], <<[String], <<?[Int], <<?[Int], <<[String]))
   }
   /** Table description of table data_debit. Objects of this class serve as prototypes for rows in queries. */
-  class DataDebit(_tableTag: Tag) extends Table[DataDebitRow](_tableTag, "data_debit") {
+  class DataDebit(_tableTag: Tag) extends Table[DataDebitRow](_tableTag, Some("hat"), "data_debit") {
     def * = (dataDebitKey, dateCreated, lastUpdated, name, startDate, endDate, rolling, sellRent, price, enabled, senderId, recipientId, bundleContextlessId, bundleContextId, kind) <> (DataDebitRow.tupled, DataDebitRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(dataDebitKey), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(startDate), Rep.Some(endDate), Rep.Some(rolling), Rep.Some(sellRent), Rep.Some(price), Rep.Some(enabled), Rep.Some(senderId), Rep.Some(recipientId), bundleContextlessId, bundleContextId, Rep.Some(kind)).shaped.<>({r=>import r._; _1.map(_=> DataDebitRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get, _10.get, _11.get, _12.get, _13, _14, _15.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -450,7 +364,7 @@ trait Tables {
     DataFieldRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int]))
   }
   /** Table description of table data_field. Objects of this class serve as prototypes for rows in queries. */
-  class DataField(_tableTag: Tag) extends Table[DataFieldRow](_tableTag, "data_field") {
+  class DataField(_tableTag: Tag) extends Table[DataFieldRow](_tableTag, Some("hat"), "data_field") {
     def * = (id, dateCreated, lastUpdated, name, tableIdFk) <> (DataFieldRow.tupled, DataFieldRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(tableIdFk)).shaped.<>({r=>import r._; _1.map(_=> DataFieldRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -484,7 +398,7 @@ trait Tables {
     DataRecordRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String]))
   }
   /** Table description of table data_record. Objects of this class serve as prototypes for rows in queries. */
-  class DataRecord(_tableTag: Tag) extends Table[DataRecordRow](_tableTag, "data_record") {
+  class DataRecord(_tableTag: Tag) extends Table[DataRecordRow](_tableTag, Some("hat"), "data_record") {
     def * = (id, dateCreated, lastUpdated, name) <> (DataRecordRow.tupled, DataRecordRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name)).shaped.<>({r=>import r._; _1.map(_=> DataRecordRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -514,7 +428,7 @@ trait Tables {
     DataTableRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[String]))
   }
   /** Table description of table data_table. Objects of this class serve as prototypes for rows in queries. */
-  class DataTable(_tableTag: Tag) extends Table[DataTableRow](_tableTag, "data_table") {
+  class DataTable(_tableTag: Tag) extends Table[DataTableRow](_tableTag, Some("hat"), "data_table") {
     def * = (id, dateCreated, lastUpdated, name, sourceName) <> (DataTableRow.tupled, DataTableRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(sourceName)).shaped.<>({r=>import r._; _1.map(_=> DataTableRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -550,7 +464,7 @@ trait Tables {
     DataTabletotablecrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int], <<[Int]))
   }
   /** Table description of table data_tabletotablecrossref. Objects of this class serve as prototypes for rows in queries. */
-  class DataTabletotablecrossref(_tableTag: Tag) extends Table[DataTabletotablecrossrefRow](_tableTag, "data_tabletotablecrossref") {
+  class DataTabletotablecrossref(_tableTag: Tag) extends Table[DataTabletotablecrossrefRow](_tableTag, Some("hat"), "data_tabletotablecrossref") {
     def * = (id, dateCreated, lastUpdated, relationshipType, table1, table2) <> (DataTabletotablecrossrefRow.tupled, DataTabletotablecrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(relationshipType), Rep.Some(table1), Rep.Some(table2)).shaped.<>({r=>import r._; _1.map(_=> DataTabletotablecrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -576,6 +490,45 @@ trait Tables {
   /** Collection-like TableQuery object for table DataTabletotablecrossref */
   lazy val DataTabletotablecrossref = new TableQuery(tag => new DataTabletotablecrossref(tag))
 
+  /** Entity class storing rows of table DataTableTree
+   *  @param id Database column id SqlType(int4), Default(None)
+   *  @param dateCreated Database column date_created SqlType(timestamp), Default(None)
+   *  @param lastUpdated Database column last_updated SqlType(timestamp), Default(None)
+   *  @param name Database column name SqlType(varchar), Default(None)
+   *  @param sourceName Database column source_name SqlType(varchar), Default(None)
+   *  @param table1 Database column table1 SqlType(int4), Default(None)
+   *  @param path Database column path SqlType(_int4), Length(10,false), Default(None)
+   *  @param rootTable Database column root_table SqlType(int4), Default(None) */
+  case class DataTableTreeRow(id: Option[Int] = None, dateCreated: Option[org.joda.time.LocalDateTime] = None, lastUpdated: Option[org.joda.time.LocalDateTime] = None, name: Option[String] = None, sourceName: Option[String] = None, table1: Option[Int] = None, path: Option[List[Int]] = None, rootTable: Option[Int] = None)
+  /** GetResult implicit for fetching DataTableTreeRow objects using plain SQL queries */
+  implicit def GetResultDataTableTreeRow(implicit e0: GR[Option[Int]], e1: GR[Option[org.joda.time.LocalDateTime]], e2: GR[Option[String]], e3: GR[Option[List[Int]]]): GR[DataTableTreeRow] = GR{
+    prs => import prs._
+    DataTableTreeRow.tupled((<<?[Int], <<?[org.joda.time.LocalDateTime], <<?[org.joda.time.LocalDateTime], <<?[String], <<?[String], <<?[Int], <<?[List[Int]], <<?[Int]))
+  }
+  /** Table description of table data_table_tree. Objects of this class serve as prototypes for rows in queries. */
+  class DataTableTree(_tableTag: Tag) extends Table[DataTableTreeRow](_tableTag, Some("hat"), "data_table_tree") {
+    def * = (id, dateCreated, lastUpdated, name, sourceName, table1, path, rootTable) <> (DataTableTreeRow.tupled, DataTableTreeRow.unapply)
+
+    /** Database column id SqlType(int4), Default(None) */
+    val id: Rep[Option[Int]] = column[Option[Int]]("id", O.Default(None))
+    /** Database column date_created SqlType(timestamp), Default(None) */
+    val dateCreated: Rep[Option[org.joda.time.LocalDateTime]] = column[Option[org.joda.time.LocalDateTime]]("date_created", O.Default(None))
+    /** Database column last_updated SqlType(timestamp), Default(None) */
+    val lastUpdated: Rep[Option[org.joda.time.LocalDateTime]] = column[Option[org.joda.time.LocalDateTime]]("last_updated", O.Default(None))
+    /** Database column name SqlType(varchar), Default(None) */
+    val name: Rep[Option[String]] = column[Option[String]]("name", O.Default(None))
+    /** Database column source_name SqlType(varchar), Default(None) */
+    val sourceName: Rep[Option[String]] = column[Option[String]]("source_name", O.Default(None))
+    /** Database column table1 SqlType(int4), Default(None) */
+    val table1: Rep[Option[Int]] = column[Option[Int]]("table1", O.Default(None))
+    /** Database column path SqlType(_int4), Length(10,false), Default(None) */
+    val path: Rep[Option[List[Int]]] = column[Option[List[Int]]]("path", O.Length(10,varying=false), O.Default(None))
+    /** Database column root_table SqlType(int4), Default(None) */
+    val rootTable: Rep[Option[Int]] = column[Option[Int]]("root_table", O.Default(None))
+  }
+  /** Collection-like TableQuery object for table DataTableTree */
+  lazy val DataTableTree = new TableQuery(tag => new DataTableTree(tag))
+
   /** Entity class storing rows of table DataValue
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
@@ -590,7 +543,7 @@ trait Tables {
     DataValueRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int], <<[Int]))
   }
   /** Table description of table data_value. Objects of this class serve as prototypes for rows in queries. */
-  class DataValue(_tableTag: Tag) extends Table[DataValueRow](_tableTag, "data_value") {
+  class DataValue(_tableTag: Tag) extends Table[DataValueRow](_tableTag, Some("hat"), "data_value") {
     def * = (id, dateCreated, lastUpdated, value, fieldId, recordId) <> (DataValueRow.tupled, DataValueRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(value), Rep.Some(fieldId), Rep.Some(recordId)).shaped.<>({r=>import r._; _1.map(_=> DataValueRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -634,7 +587,7 @@ trait Tables {
     EntityRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[String], <<?[Int], <<?[Int], <<?[Int], <<?[Int], <<?[Int]))
   }
   /** Table description of table entity. Objects of this class serve as prototypes for rows in queries. */
-  class Entity(_tableTag: Tag) extends Table[EntityRow](_tableTag, "entity") {
+  class Entity(_tableTag: Tag) extends Table[EntityRow](_tableTag, Some("hat"), "entity") {
     def * = (id, dateCreated, lastUpdated, name, kind, locationId, thingId, eventId, organisationId, personId) <> (EntityRow.tupled, EntityRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(kind), locationId, thingId, eventId, organisationId, personId).shaped.<>({r=>import r._; _1.map(_=> EntityRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7, _8, _9, _10)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -686,7 +639,7 @@ trait Tables {
     EventsEventRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String]))
   }
   /** Table description of table events_event. Objects of this class serve as prototypes for rows in queries. */
-  class EventsEvent(_tableTag: Tag) extends Table[EventsEventRow](_tableTag, "events_event") {
+  class EventsEvent(_tableTag: Tag) extends Table[EventsEventRow](_tableTag, Some("hat"), "events_event") {
     def * = (id, dateCreated, lastUpdated, name) <> (EventsEventRow.tupled, EventsEventRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name)).shaped.<>({r=>import r._; _1.map(_=> EventsEventRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -719,7 +672,7 @@ trait Tables {
     EventsEventlocationcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table events_eventlocationcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class EventsEventlocationcrossref(_tableTag: Tag) extends Table[EventsEventlocationcrossrefRow](_tableTag, "events_eventlocationcrossref") {
+  class EventsEventlocationcrossref(_tableTag: Tag) extends Table[EventsEventlocationcrossrefRow](_tableTag, Some("hat"), "events_eventlocationcrossref") {
     def * = (id, dateCreated, lastUpdated, locationId, eventId, relationshipType, isCurrent, relationshiprecordId) <> (EventsEventlocationcrossrefRow.tupled, EventsEventlocationcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(locationId), Rep.Some(eventId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> EventsEventlocationcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -767,7 +720,7 @@ trait Tables {
     EventsEventorganisationcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table events_eventorganisationcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class EventsEventorganisationcrossref(_tableTag: Tag) extends Table[EventsEventorganisationcrossrefRow](_tableTag, "events_eventorganisationcrossref") {
+  class EventsEventorganisationcrossref(_tableTag: Tag) extends Table[EventsEventorganisationcrossrefRow](_tableTag, Some("hat"), "events_eventorganisationcrossref") {
     def * = (id, dateCreated, lastUpdated, organisationId, eventId, relationshipType, isCurrent, relationshiprecordId) <> (EventsEventorganisationcrossrefRow.tupled, EventsEventorganisationcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(organisationId), Rep.Some(eventId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> EventsEventorganisationcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -815,7 +768,7 @@ trait Tables {
     EventsEventpersoncrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table events_eventpersoncrossref. Objects of this class serve as prototypes for rows in queries. */
-  class EventsEventpersoncrossref(_tableTag: Tag) extends Table[EventsEventpersoncrossrefRow](_tableTag, "events_eventpersoncrossref") {
+  class EventsEventpersoncrossref(_tableTag: Tag) extends Table[EventsEventpersoncrossrefRow](_tableTag, Some("hat"), "events_eventpersoncrossref") {
     def * = (id, dateCreated, lastUpdated, personId, eventId, relationshipType, isCurrent, relationshiprecordId) <> (EventsEventpersoncrossrefRow.tupled, EventsEventpersoncrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(personId), Rep.Some(eventId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> EventsEventpersoncrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -863,7 +816,7 @@ trait Tables {
     EventsEventthingcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table events_eventthingcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class EventsEventthingcrossref(_tableTag: Tag) extends Table[EventsEventthingcrossrefRow](_tableTag, "events_eventthingcrossref") {
+  class EventsEventthingcrossref(_tableTag: Tag) extends Table[EventsEventthingcrossrefRow](_tableTag, Some("hat"), "events_eventthingcrossref") {
     def * = (id, dateCreated, lastUpdated, thingId, eventId, relationshipType, isCurrent, relationshiprecordId) <> (EventsEventthingcrossrefRow.tupled, EventsEventthingcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(thingId), Rep.Some(eventId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> EventsEventthingcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -911,7 +864,7 @@ trait Tables {
     EventsEventtoeventcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table events_eventtoeventcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class EventsEventtoeventcrossref(_tableTag: Tag) extends Table[EventsEventtoeventcrossrefRow](_tableTag, "events_eventtoeventcrossref") {
+  class EventsEventtoeventcrossref(_tableTag: Tag) extends Table[EventsEventtoeventcrossrefRow](_tableTag, Some("hat"), "events_eventtoeventcrossref") {
     def * = (id, dateCreated, lastUpdated, eventOneId, eventTwoId, relationshipType, isCurrent, relationshiprecordId) <> (EventsEventtoeventcrossrefRow.tupled, EventsEventtoeventcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(eventOneId), Rep.Some(eventTwoId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> EventsEventtoeventcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -960,7 +913,7 @@ trait Tables {
     EventsSystempropertydynamiccrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table events_systempropertydynamiccrossref. Objects of this class serve as prototypes for rows in queries. */
-  class EventsSystempropertydynamiccrossref(_tableTag: Tag) extends Table[EventsSystempropertydynamiccrossrefRow](_tableTag, "events_systempropertydynamiccrossref") {
+  class EventsSystempropertydynamiccrossref(_tableTag: Tag) extends Table[EventsSystempropertydynamiccrossrefRow](_tableTag, Some("hat"), "events_systempropertydynamiccrossref") {
     def * = (id, dateCreated, lastUpdated, eventId, systemPropertyId, fieldId, relationshipType, isCurrent, propertyrecordId) <> (EventsSystempropertydynamiccrossrefRow.tupled, EventsSystempropertydynamiccrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(eventId), Rep.Some(systemPropertyId), Rep.Some(fieldId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(propertyrecordId)).shaped.<>({r=>import r._; _1.map(_=> EventsSystempropertydynamiccrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1014,7 +967,7 @@ trait Tables {
     EventsSystempropertystaticcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table events_systempropertystaticcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class EventsSystempropertystaticcrossref(_tableTag: Tag) extends Table[EventsSystempropertystaticcrossrefRow](_tableTag, "events_systempropertystaticcrossref") {
+  class EventsSystempropertystaticcrossref(_tableTag: Tag) extends Table[EventsSystempropertystaticcrossrefRow](_tableTag, Some("hat"), "events_systempropertystaticcrossref") {
     def * = (id, dateCreated, lastUpdated, eventId, systemPropertyId, recordId, fieldId, relationshipType, isCurrent, propertyrecordId) <> (EventsSystempropertystaticcrossrefRow.tupled, EventsSystempropertystaticcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(eventId), Rep.Some(systemPropertyId), Rep.Some(recordId), Rep.Some(fieldId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(propertyrecordId)).shaped.<>({r=>import r._; _1.map(_=> EventsSystempropertystaticcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get, _10.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1069,7 +1022,7 @@ trait Tables {
     EventsSystemtypecrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean]))
   }
   /** Table description of table events_systemtypecrossref. Objects of this class serve as prototypes for rows in queries. */
-  class EventsSystemtypecrossref(_tableTag: Tag) extends Table[EventsSystemtypecrossrefRow](_tableTag, "events_systemtypecrossref") {
+  class EventsSystemtypecrossref(_tableTag: Tag) extends Table[EventsSystemtypecrossrefRow](_tableTag, Some("hat"), "events_systemtypecrossref") {
     def * = (id, dateCreated, lastUpdated, eventId, systemTypeId, relationshipType, isCurrent) <> (EventsSystemtypecrossrefRow.tupled, EventsSystemtypecrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(eventId), Rep.Some(systemTypeId), Rep.Some(relationshipType), Rep.Some(isCurrent)).shaped.<>({r=>import r._; _1.map(_=> EventsSystemtypecrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1109,7 +1062,7 @@ trait Tables {
     LocationsLocationRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String]))
   }
   /** Table description of table locations_location. Objects of this class serve as prototypes for rows in queries. */
-  class LocationsLocation(_tableTag: Tag) extends Table[LocationsLocationRow](_tableTag, "locations_location") {
+  class LocationsLocation(_tableTag: Tag) extends Table[LocationsLocationRow](_tableTag, Some("hat"), "locations_location") {
     def * = (id, dateCreated, lastUpdated, name) <> (LocationsLocationRow.tupled, LocationsLocationRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name)).shaped.<>({r=>import r._; _1.map(_=> LocationsLocationRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1142,7 +1095,7 @@ trait Tables {
     LocationsLocationthingcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table locations_locationthingcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class LocationsLocationthingcrossref(_tableTag: Tag) extends Table[LocationsLocationthingcrossrefRow](_tableTag, "locations_locationthingcrossref") {
+  class LocationsLocationthingcrossref(_tableTag: Tag) extends Table[LocationsLocationthingcrossrefRow](_tableTag, Some("hat"), "locations_locationthingcrossref") {
     def * = (id, dateCreated, lastUpdated, thingId, locationId, relationshipType, isCurrent, relationshiprecordId) <> (LocationsLocationthingcrossrefRow.tupled, LocationsLocationthingcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(thingId), Rep.Some(locationId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> LocationsLocationthingcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1190,7 +1143,7 @@ trait Tables {
     LocationsLocationtolocationcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table locations_locationtolocationcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class LocationsLocationtolocationcrossref(_tableTag: Tag) extends Table[LocationsLocationtolocationcrossrefRow](_tableTag, "locations_locationtolocationcrossref") {
+  class LocationsLocationtolocationcrossref(_tableTag: Tag) extends Table[LocationsLocationtolocationcrossrefRow](_tableTag, Some("hat"), "locations_locationtolocationcrossref") {
     def * = (id, dateCreated, lastUpdated, locOneId, locTwoId, relationshipType, isCurrent, relationshiprecordId) <> (LocationsLocationtolocationcrossrefRow.tupled, LocationsLocationtolocationcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(locOneId), Rep.Some(locTwoId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> LocationsLocationtolocationcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1239,7 +1192,7 @@ trait Tables {
     LocationsSystempropertydynamiccrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table locations_systempropertydynamiccrossref. Objects of this class serve as prototypes for rows in queries. */
-  class LocationsSystempropertydynamiccrossref(_tableTag: Tag) extends Table[LocationsSystempropertydynamiccrossrefRow](_tableTag, "locations_systempropertydynamiccrossref") {
+  class LocationsSystempropertydynamiccrossref(_tableTag: Tag) extends Table[LocationsSystempropertydynamiccrossrefRow](_tableTag, Some("hat"), "locations_systempropertydynamiccrossref") {
     def * = (id, dateCreated, lastUpdated, locationId, systemPropertyId, fieldId, relationshipType, isCurrent, propertyrecordId) <> (LocationsSystempropertydynamiccrossrefRow.tupled, LocationsSystempropertydynamiccrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(locationId), Rep.Some(systemPropertyId), Rep.Some(fieldId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(propertyrecordId)).shaped.<>({r=>import r._; _1.map(_=> LocationsSystempropertydynamiccrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1293,7 +1246,7 @@ trait Tables {
     LocationsSystempropertystaticcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table locations_systempropertystaticcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class LocationsSystempropertystaticcrossref(_tableTag: Tag) extends Table[LocationsSystempropertystaticcrossrefRow](_tableTag, "locations_systempropertystaticcrossref") {
+  class LocationsSystempropertystaticcrossref(_tableTag: Tag) extends Table[LocationsSystempropertystaticcrossrefRow](_tableTag, Some("hat"), "locations_systempropertystaticcrossref") {
     def * = (id, dateCreated, lastUpdated, locationId, systemPropertyId, recordId, fieldId, relationshipType, isCurrent, propertyrecordId) <> (LocationsSystempropertystaticcrossrefRow.tupled, LocationsSystempropertystaticcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(locationId), Rep.Some(systemPropertyId), Rep.Some(recordId), Rep.Some(fieldId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(propertyrecordId)).shaped.<>({r=>import r._; _1.map(_=> LocationsSystempropertystaticcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get, _10.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1348,7 +1301,7 @@ trait Tables {
     LocationsSystemtypecrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean]))
   }
   /** Table description of table locations_systemtypecrossref. Objects of this class serve as prototypes for rows in queries. */
-  class LocationsSystemtypecrossref(_tableTag: Tag) extends Table[LocationsSystemtypecrossrefRow](_tableTag, "locations_systemtypecrossref") {
+  class LocationsSystemtypecrossref(_tableTag: Tag) extends Table[LocationsSystemtypecrossrefRow](_tableTag, Some("hat"), "locations_systemtypecrossref") {
     def * = (id, dateCreated, lastUpdated, locationId, systemTypeId, relationshipType, isCurrent) <> (LocationsSystemtypecrossrefRow.tupled, LocationsSystemtypecrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(locationId), Rep.Some(systemTypeId), Rep.Some(relationshipType), Rep.Some(isCurrent)).shaped.<>({r=>import r._; _1.map(_=> LocationsSystemtypecrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1388,7 +1341,7 @@ trait Tables {
     OrganisationsOrganisationRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String]))
   }
   /** Table description of table organisations_organisation. Objects of this class serve as prototypes for rows in queries. */
-  class OrganisationsOrganisation(_tableTag: Tag) extends Table[OrganisationsOrganisationRow](_tableTag, "organisations_organisation") {
+  class OrganisationsOrganisation(_tableTag: Tag) extends Table[OrganisationsOrganisationRow](_tableTag, Some("hat"), "organisations_organisation") {
     def * = (id, dateCreated, lastyUpdated, name) <> (OrganisationsOrganisationRow.tupled, OrganisationsOrganisationRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastyUpdated), Rep.Some(name)).shaped.<>({r=>import r._; _1.map(_=> OrganisationsOrganisationRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1421,7 +1374,7 @@ trait Tables {
     OrganisationsOrganisationlocationcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table organisations_organisationlocationcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class OrganisationsOrganisationlocationcrossref(_tableTag: Tag) extends Table[OrganisationsOrganisationlocationcrossrefRow](_tableTag, "organisations_organisationlocationcrossref") {
+  class OrganisationsOrganisationlocationcrossref(_tableTag: Tag) extends Table[OrganisationsOrganisationlocationcrossrefRow](_tableTag, Some("hat"), "organisations_organisationlocationcrossref") {
     def * = (id, dateCreated, lastUpdated, locationId, organisationId, relationshipType, isCurrent, relationshiprecordId) <> (OrganisationsOrganisationlocationcrossrefRow.tupled, OrganisationsOrganisationlocationcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(locationId), Rep.Some(organisationId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> OrganisationsOrganisationlocationcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1469,7 +1422,7 @@ trait Tables {
     OrganisationsOrganisationthingcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table organisations_organisationthingcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class OrganisationsOrganisationthingcrossref(_tableTag: Tag) extends Table[OrganisationsOrganisationthingcrossrefRow](_tableTag, "organisations_organisationthingcrossref") {
+  class OrganisationsOrganisationthingcrossref(_tableTag: Tag) extends Table[OrganisationsOrganisationthingcrossrefRow](_tableTag, Some("hat"), "organisations_organisationthingcrossref") {
     def * = (id, dateCreated, lastUpdated, thingId, organisationId, relationshipType, isCurrent, relationshiprecordId) <> (OrganisationsOrganisationthingcrossrefRow.tupled, OrganisationsOrganisationthingcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(thingId), Rep.Some(organisationId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> OrganisationsOrganisationthingcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1517,7 +1470,7 @@ trait Tables {
     OrganisationsOrganisationtoorganisationcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table organisations_organisationtoorganisationcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class OrganisationsOrganisationtoorganisationcrossref(_tableTag: Tag) extends Table[OrganisationsOrganisationtoorganisationcrossrefRow](_tableTag, "organisations_organisationtoorganisationcrossref") {
+  class OrganisationsOrganisationtoorganisationcrossref(_tableTag: Tag) extends Table[OrganisationsOrganisationtoorganisationcrossrefRow](_tableTag, Some("hat"), "organisations_organisationtoorganisationcrossref") {
     def * = (id, dateCreated, lastUpdated, organisationOneId, organisationTwoId, relationshipType, isCurrent, relationshiprecordId) <> (OrganisationsOrganisationtoorganisationcrossrefRow.tupled, OrganisationsOrganisationtoorganisationcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(organisationOneId), Rep.Some(organisationTwoId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> OrganisationsOrganisationtoorganisationcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1566,7 +1519,7 @@ trait Tables {
     OrganisationsSystempropertydynamiccrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table organisations_systempropertydynamiccrossref. Objects of this class serve as prototypes for rows in queries. */
-  class OrganisationsSystempropertydynamiccrossref(_tableTag: Tag) extends Table[OrganisationsSystempropertydynamiccrossrefRow](_tableTag, "organisations_systempropertydynamiccrossref") {
+  class OrganisationsSystempropertydynamiccrossref(_tableTag: Tag) extends Table[OrganisationsSystempropertydynamiccrossrefRow](_tableTag, Some("hat"), "organisations_systempropertydynamiccrossref") {
     def * = (id, dateCreated, lastUpdated, organisationId, systemPropertyId, fieldId, relationshipType, isCurrent, propertyrecordId) <> (OrganisationsSystempropertydynamiccrossrefRow.tupled, OrganisationsSystempropertydynamiccrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(organisationId), Rep.Some(systemPropertyId), Rep.Some(fieldId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(propertyrecordId)).shaped.<>({r=>import r._; _1.map(_=> OrganisationsSystempropertydynamiccrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1620,7 +1573,7 @@ trait Tables {
     OrganisationsSystempropertystaticcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table organisations_systempropertystaticcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class OrganisationsSystempropertystaticcrossref(_tableTag: Tag) extends Table[OrganisationsSystempropertystaticcrossrefRow](_tableTag, "organisations_systempropertystaticcrossref") {
+  class OrganisationsSystempropertystaticcrossref(_tableTag: Tag) extends Table[OrganisationsSystempropertystaticcrossrefRow](_tableTag, Some("hat"), "organisations_systempropertystaticcrossref") {
     def * = (id, dateCreated, lastUpdated, organisationId, systemPropertyId, recordId, fieldId, relationshipType, isCurrent, propertyrecordId) <> (OrganisationsSystempropertystaticcrossrefRow.tupled, OrganisationsSystempropertystaticcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(organisationId), Rep.Some(systemPropertyId), Rep.Some(recordId), Rep.Some(fieldId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(propertyrecordId)).shaped.<>({r=>import r._; _1.map(_=> OrganisationsSystempropertystaticcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get, _10.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1675,7 +1628,7 @@ trait Tables {
     OrganisationsSystemtypecrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean]))
   }
   /** Table description of table organisations_systemtypecrossref. Objects of this class serve as prototypes for rows in queries. */
-  class OrganisationsSystemtypecrossref(_tableTag: Tag) extends Table[OrganisationsSystemtypecrossrefRow](_tableTag, "organisations_systemtypecrossref") {
+  class OrganisationsSystemtypecrossref(_tableTag: Tag) extends Table[OrganisationsSystemtypecrossrefRow](_tableTag, Some("hat"), "organisations_systemtypecrossref") {
     def * = (id, dateCreated, lastUpdated, organisationId, systemTypeId, relationshipType, isCurrent) <> (OrganisationsSystemtypecrossrefRow.tupled, OrganisationsSystemtypecrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(organisationId), Rep.Some(systemTypeId), Rep.Some(relationshipType), Rep.Some(isCurrent)).shaped.<>({r=>import r._; _1.map(_=> OrganisationsSystemtypecrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1716,7 +1669,7 @@ trait Tables {
     PeoplePersonRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[String]))
   }
   /** Table description of table people_person. Objects of this class serve as prototypes for rows in queries. */
-  class PeoplePerson(_tableTag: Tag) extends Table[PeoplePersonRow](_tableTag, "people_person") {
+  class PeoplePerson(_tableTag: Tag) extends Table[PeoplePersonRow](_tableTag, Some("hat"), "people_person") {
     def * = (id, dateCreated, lastUpdated, name, personId) <> (PeoplePersonRow.tupled, PeoplePersonRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(personId)).shaped.<>({r=>import r._; _1.map(_=> PeoplePersonRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1751,7 +1704,7 @@ trait Tables {
     PeoplePersonlocationcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table people_personlocationcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class PeoplePersonlocationcrossref(_tableTag: Tag) extends Table[PeoplePersonlocationcrossrefRow](_tableTag, "people_personlocationcrossref") {
+  class PeoplePersonlocationcrossref(_tableTag: Tag) extends Table[PeoplePersonlocationcrossrefRow](_tableTag, Some("hat"), "people_personlocationcrossref") {
     def * = (id, dateCreated, lastUpdated, locationId, personId, relationshipType, isCurrent, relationshiprecordId) <> (PeoplePersonlocationcrossrefRow.tupled, PeoplePersonlocationcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(locationId), Rep.Some(personId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> PeoplePersonlocationcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1799,7 +1752,7 @@ trait Tables {
     PeoplePersonorganisationcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table people_personorganisationcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class PeoplePersonorganisationcrossref(_tableTag: Tag) extends Table[PeoplePersonorganisationcrossrefRow](_tableTag, "people_personorganisationcrossref") {
+  class PeoplePersonorganisationcrossref(_tableTag: Tag) extends Table[PeoplePersonorganisationcrossrefRow](_tableTag, Some("hat"), "people_personorganisationcrossref") {
     def * = (id, dateCreated, lastUpdated, organisationId, personId, relationshipType, isCurrent, relationshiprecordId) <> (PeoplePersonorganisationcrossrefRow.tupled, PeoplePersonorganisationcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(organisationId), Rep.Some(personId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> PeoplePersonorganisationcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1847,7 +1800,7 @@ trait Tables {
     PeoplePersontopersoncrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int], <<[Boolean], <<[Int]))
   }
   /** Table description of table people_persontopersoncrossref. Objects of this class serve as prototypes for rows in queries. */
-  class PeoplePersontopersoncrossref(_tableTag: Tag) extends Table[PeoplePersontopersoncrossrefRow](_tableTag, "people_persontopersoncrossref") {
+  class PeoplePersontopersoncrossref(_tableTag: Tag) extends Table[PeoplePersontopersoncrossrefRow](_tableTag, Some("hat"), "people_persontopersoncrossref") {
     def * = (id, dateCreated, lastUpdated, personOneId, personTwoId, relationshipTypeId, isCurrent, relationshiprecordId) <> (PeoplePersontopersoncrossrefRow.tupled, PeoplePersontopersoncrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(personOneId), Rep.Some(personTwoId), Rep.Some(relationshipTypeId), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> PeoplePersontopersoncrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1894,7 +1847,7 @@ trait Tables {
     PeoplePersontopersonrelationshiptypeRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<?[String]))
   }
   /** Table description of table people_persontopersonrelationshiptype. Objects of this class serve as prototypes for rows in queries. */
-  class PeoplePersontopersonrelationshiptype(_tableTag: Tag) extends Table[PeoplePersontopersonrelationshiptypeRow](_tableTag, "people_persontopersonrelationshiptype") {
+  class PeoplePersontopersonrelationshiptype(_tableTag: Tag) extends Table[PeoplePersontopersonrelationshiptypeRow](_tableTag, Some("hat"), "people_persontopersonrelationshiptype") {
     def * = (id, dateCreated, lastUpdated, name, description) <> (PeoplePersontopersonrelationshiptypeRow.tupled, PeoplePersontopersonrelationshiptypeRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), description).shaped.<>({r=>import r._; _1.map(_=> PeoplePersontopersonrelationshiptypeRow.tupled((_1.get, _2.get, _3.get, _4.get, _5)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1930,7 +1883,7 @@ trait Tables {
     PeopleSystempropertydynamiccrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table people_systempropertydynamiccrossref. Objects of this class serve as prototypes for rows in queries. */
-  class PeopleSystempropertydynamiccrossref(_tableTag: Tag) extends Table[PeopleSystempropertydynamiccrossrefRow](_tableTag, "people_systempropertydynamiccrossref") {
+  class PeopleSystempropertydynamiccrossref(_tableTag: Tag) extends Table[PeopleSystempropertydynamiccrossrefRow](_tableTag, Some("hat"), "people_systempropertydynamiccrossref") {
     def * = (id, dateCreated, lastUpdated, personId, systemPropertyId, fieldId, relationshipType, isCurrent, propertyrecordId) <> (PeopleSystempropertydynamiccrossrefRow.tupled, PeopleSystempropertydynamiccrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(personId), Rep.Some(systemPropertyId), Rep.Some(fieldId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(propertyrecordId)).shaped.<>({r=>import r._; _1.map(_=> PeopleSystempropertydynamiccrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -1984,7 +1937,7 @@ trait Tables {
     PeopleSystempropertystaticcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table people_systempropertystaticcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class PeopleSystempropertystaticcrossref(_tableTag: Tag) extends Table[PeopleSystempropertystaticcrossrefRow](_tableTag, "people_systempropertystaticcrossref") {
+  class PeopleSystempropertystaticcrossref(_tableTag: Tag) extends Table[PeopleSystempropertystaticcrossrefRow](_tableTag, Some("hat"), "people_systempropertystaticcrossref") {
     def * = (id, dateCreated, lastUpdated, personId, systemPropertyId, recordId, fieldId, relationshipType, isCurrent, propertyrecordId) <> (PeopleSystempropertystaticcrossrefRow.tupled, PeopleSystempropertystaticcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(personId), Rep.Some(systemPropertyId), Rep.Some(recordId), Rep.Some(fieldId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(propertyrecordId)).shaped.<>({r=>import r._; _1.map(_=> PeopleSystempropertystaticcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get, _10.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2039,7 +1992,7 @@ trait Tables {
     PeopleSystemtypecrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean]))
   }
   /** Table description of table people_systemtypecrossref. Objects of this class serve as prototypes for rows in queries. */
-  class PeopleSystemtypecrossref(_tableTag: Tag) extends Table[PeopleSystemtypecrossrefRow](_tableTag, "people_systemtypecrossref") {
+  class PeopleSystemtypecrossref(_tableTag: Tag) extends Table[PeopleSystemtypecrossrefRow](_tableTag, Some("hat"), "people_systemtypecrossref") {
     def * = (id, dateCreated, lastUpdated, usersId, systemTypeId, relationshipType, isCurrent) <> (PeopleSystemtypecrossrefRow.tupled, PeopleSystemtypecrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(usersId), Rep.Some(systemTypeId), Rep.Some(relationshipType), Rep.Some(isCurrent)).shaped.<>({r=>import r._; _1.map(_=> PeopleSystemtypecrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2067,6 +2020,184 @@ trait Tables {
   /** Collection-like TableQuery object for table PeopleSystemtypecrossref */
   lazy val PeopleSystemtypecrossref = new TableQuery(tag => new PeopleSystemtypecrossref(tag))
 
+  /** Entity class storing rows of table StatsDataDebitClessBundleRecords
+   *  @param recordId Database column record_id SqlType(serial), AutoInc, PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param bundleContextlessId Database column bundle_contextless_id SqlType(int4)
+   *  @param dataDebitOperation Database column data_debit_operation SqlType(int4)
+   *  @param recordCount Database column record_count SqlType(int4), Default(0) */
+  case class StatsDataDebitClessBundleRecordsRow(recordId: Int, dateCreated: org.joda.time.LocalDateTime, bundleContextlessId: Int, dataDebitOperation: Int, recordCount: Int = 0)
+  /** GetResult implicit for fetching StatsDataDebitClessBundleRecordsRow objects using plain SQL queries */
+  implicit def GetResultStatsDataDebitClessBundleRecordsRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[StatsDataDebitClessBundleRecordsRow] = GR{
+    prs => import prs._
+    StatsDataDebitClessBundleRecordsRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int]))
+  }
+  /** Table description of table stats_data_debit_cless_bundle_records. Objects of this class serve as prototypes for rows in queries. */
+  class StatsDataDebitClessBundleRecords(_tableTag: Tag) extends Table[StatsDataDebitClessBundleRecordsRow](_tableTag, Some("hat"), "stats_data_debit_cless_bundle_records") {
+    def * = (recordId, dateCreated, bundleContextlessId, dataDebitOperation, recordCount) <> (StatsDataDebitClessBundleRecordsRow.tupled, StatsDataDebitClessBundleRecordsRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(recordId), Rep.Some(dateCreated), Rep.Some(bundleContextlessId), Rep.Some(dataDebitOperation), Rep.Some(recordCount)).shaped.<>({r=>import r._; _1.map(_=> StatsDataDebitClessBundleRecordsRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column record_id SqlType(serial), AutoInc, PrimaryKey */
+    val recordId: Rep[Int] = column[Int]("record_id", O.AutoInc, O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column bundle_contextless_id SqlType(int4) */
+    val bundleContextlessId: Rep[Int] = column[Int]("bundle_contextless_id")
+    /** Database column data_debit_operation SqlType(int4) */
+    val dataDebitOperation: Rep[Int] = column[Int]("data_debit_operation")
+    /** Database column record_count SqlType(int4), Default(0) */
+    val recordCount: Rep[Int] = column[Int]("record_count", O.Default(0))
+
+    /** Foreign key referencing StatsDataDebitOperation (database name stats_data_debit_cless_bundle_records_data_debit_operation_fkey) */
+    lazy val statsDataDebitOperationFk = foreignKey("stats_data_debit_cless_bundle_records_data_debit_operation_fkey", dataDebitOperation, StatsDataDebitOperation)(r => r.recordId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table StatsDataDebitClessBundleRecords */
+  lazy val StatsDataDebitClessBundleRecords = new TableQuery(tag => new StatsDataDebitClessBundleRecords(tag))
+
+  /** Entity class storing rows of table StatsDataDebitDataFieldAccess
+   *  @param recordId Database column record_id SqlType(serial), AutoInc, PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param fieldId Database column field_id SqlType(int4)
+   *  @param dataDebitOperation Database column data_debit_operation SqlType(int4)
+   *  @param valueCount Database column value_count SqlType(int4), Default(0) */
+  case class StatsDataDebitDataFieldAccessRow(recordId: Int, dateCreated: org.joda.time.LocalDateTime, fieldId: Int, dataDebitOperation: Int, valueCount: Int = 0)
+  /** GetResult implicit for fetching StatsDataDebitDataFieldAccessRow objects using plain SQL queries */
+  implicit def GetResultStatsDataDebitDataFieldAccessRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[StatsDataDebitDataFieldAccessRow] = GR{
+    prs => import prs._
+    StatsDataDebitDataFieldAccessRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int]))
+  }
+  /** Table description of table stats_data_debit_data_field_access. Objects of this class serve as prototypes for rows in queries. */
+  class StatsDataDebitDataFieldAccess(_tableTag: Tag) extends Table[StatsDataDebitDataFieldAccessRow](_tableTag, Some("hat"), "stats_data_debit_data_field_access") {
+    def * = (recordId, dateCreated, fieldId, dataDebitOperation, valueCount) <> (StatsDataDebitDataFieldAccessRow.tupled, StatsDataDebitDataFieldAccessRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(recordId), Rep.Some(dateCreated), Rep.Some(fieldId), Rep.Some(dataDebitOperation), Rep.Some(valueCount)).shaped.<>({r=>import r._; _1.map(_=> StatsDataDebitDataFieldAccessRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column record_id SqlType(serial), AutoInc, PrimaryKey */
+    val recordId: Rep[Int] = column[Int]("record_id", O.AutoInc, O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column field_id SqlType(int4) */
+    val fieldId: Rep[Int] = column[Int]("field_id")
+    /** Database column data_debit_operation SqlType(int4) */
+    val dataDebitOperation: Rep[Int] = column[Int]("data_debit_operation")
+    /** Database column value_count SqlType(int4), Default(0) */
+    val valueCount: Rep[Int] = column[Int]("value_count", O.Default(0))
+
+    /** Foreign key referencing DataField (database name stats_data_debit_data_field_access_field_id_fkey) */
+    lazy val dataFieldFk = foreignKey("stats_data_debit_data_field_access_field_id_fkey", fieldId, DataField)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing StatsDataDebitOperation (database name stats_data_debit_data_field_access_data_debit_operation_fkey) */
+    lazy val statsDataDebitOperationFk = foreignKey("stats_data_debit_data_field_access_data_debit_operation_fkey", dataDebitOperation, StatsDataDebitOperation)(r => r.recordId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table StatsDataDebitDataFieldAccess */
+  lazy val StatsDataDebitDataFieldAccess = new TableQuery(tag => new StatsDataDebitDataFieldAccess(tag))
+
+  /** Entity class storing rows of table StatsDataDebitDataTableAccess
+   *  @param recordId Database column record_id SqlType(serial), AutoInc, PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param tableId Database column table_id SqlType(int4)
+   *  @param dataDebitOperation Database column data_debit_operation SqlType(int4)
+   *  @param valueCount Database column value_count SqlType(int4), Default(0) */
+  case class StatsDataDebitDataTableAccessRow(recordId: Int, dateCreated: org.joda.time.LocalDateTime, tableId: Int, dataDebitOperation: Int, valueCount: Int = 0)
+  /** GetResult implicit for fetching StatsDataDebitDataTableAccessRow objects using plain SQL queries */
+  implicit def GetResultStatsDataDebitDataTableAccessRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[StatsDataDebitDataTableAccessRow] = GR{
+    prs => import prs._
+    StatsDataDebitDataTableAccessRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int]))
+  }
+  /** Table description of table stats_data_debit_data_table_access. Objects of this class serve as prototypes for rows in queries. */
+  class StatsDataDebitDataTableAccess(_tableTag: Tag) extends Table[StatsDataDebitDataTableAccessRow](_tableTag, Some("hat"), "stats_data_debit_data_table_access") {
+    def * = (recordId, dateCreated, tableId, dataDebitOperation, valueCount) <> (StatsDataDebitDataTableAccessRow.tupled, StatsDataDebitDataTableAccessRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(recordId), Rep.Some(dateCreated), Rep.Some(tableId), Rep.Some(dataDebitOperation), Rep.Some(valueCount)).shaped.<>({r=>import r._; _1.map(_=> StatsDataDebitDataTableAccessRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column record_id SqlType(serial), AutoInc, PrimaryKey */
+    val recordId: Rep[Int] = column[Int]("record_id", O.AutoInc, O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column table_id SqlType(int4) */
+    val tableId: Rep[Int] = column[Int]("table_id")
+    /** Database column data_debit_operation SqlType(int4) */
+    val dataDebitOperation: Rep[Int] = column[Int]("data_debit_operation")
+    /** Database column value_count SqlType(int4), Default(0) */
+    val valueCount: Rep[Int] = column[Int]("value_count", O.Default(0))
+
+    /** Foreign key referencing DataTable (database name stats_data_debit_data_table_access_table_id_fkey) */
+    lazy val dataTableFk = foreignKey("stats_data_debit_data_table_access_table_id_fkey", tableId, DataTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing StatsDataDebitOperation (database name stats_data_debit_data_table_access_data_debit_operation_fkey) */
+    lazy val statsDataDebitOperationFk = foreignKey("stats_data_debit_data_table_access_data_debit_operation_fkey", dataDebitOperation, StatsDataDebitOperation)(r => r.recordId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table StatsDataDebitDataTableAccess */
+  lazy val StatsDataDebitDataTableAccess = new TableQuery(tag => new StatsDataDebitDataTableAccess(tag))
+
+  /** Entity class storing rows of table StatsDataDebitOperation
+   *  @param recordId Database column record_id SqlType(serial), AutoInc, PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param dataDebit Database column data_debit SqlType(uuid)
+   *  @param hatUser Database column hat_user SqlType(uuid)
+   *  @param operation Database column operation SqlType(varchar) */
+  case class StatsDataDebitOperationRow(recordId: Int, dateCreated: org.joda.time.LocalDateTime, dataDebit: java.util.UUID, hatUser: java.util.UUID, operation: String)
+  /** GetResult implicit for fetching StatsDataDebitOperationRow objects using plain SQL queries */
+  implicit def GetResultStatsDataDebitOperationRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[java.util.UUID], e3: GR[String]): GR[StatsDataDebitOperationRow] = GR{
+    prs => import prs._
+    StatsDataDebitOperationRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[java.util.UUID], <<[java.util.UUID], <<[String]))
+  }
+  /** Table description of table stats_data_debit_operation. Objects of this class serve as prototypes for rows in queries. */
+  class StatsDataDebitOperation(_tableTag: Tag) extends Table[StatsDataDebitOperationRow](_tableTag, Some("hat"), "stats_data_debit_operation") {
+    def * = (recordId, dateCreated, dataDebit, hatUser, operation) <> (StatsDataDebitOperationRow.tupled, StatsDataDebitOperationRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(recordId), Rep.Some(dateCreated), Rep.Some(dataDebit), Rep.Some(hatUser), Rep.Some(operation)).shaped.<>({r=>import r._; _1.map(_=> StatsDataDebitOperationRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column record_id SqlType(serial), AutoInc, PrimaryKey */
+    val recordId: Rep[Int] = column[Int]("record_id", O.AutoInc, O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column data_debit SqlType(uuid) */
+    val dataDebit: Rep[java.util.UUID] = column[java.util.UUID]("data_debit")
+    /** Database column hat_user SqlType(uuid) */
+    val hatUser: Rep[java.util.UUID] = column[java.util.UUID]("hat_user")
+    /** Database column operation SqlType(varchar) */
+    val operation: Rep[String] = column[String]("operation")
+
+    /** Foreign key referencing DataDebit (database name stats_data_debit_operation_data_debit_fkey) */
+    lazy val dataDebitFk = foreignKey("stats_data_debit_operation_data_debit_fkey", dataDebit, DataDebit)(r => r.dataDebitKey, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+    /** Foreign key referencing UserUser (database name stats_data_debit_operation_hat_user_fkey) */
+    lazy val userUserFk = foreignKey("stats_data_debit_operation_hat_user_fkey", hatUser, UserUser)(r => r.userId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table StatsDataDebitOperation */
+  lazy val StatsDataDebitOperation = new TableQuery(tag => new StatsDataDebitOperation(tag))
+
+  /** Entity class storing rows of table StatsDataDebitRecordCount
+   *  @param recordId Database column record_id SqlType(serial), AutoInc, PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param dataDebitOperation Database column data_debit_operation SqlType(int4)
+   *  @param recordCount Database column record_count SqlType(int4), Default(0) */
+  case class StatsDataDebitRecordCountRow(recordId: Int, dateCreated: org.joda.time.LocalDateTime, dataDebitOperation: Int, recordCount: Int = 0)
+  /** GetResult implicit for fetching StatsDataDebitRecordCountRow objects using plain SQL queries */
+  implicit def GetResultStatsDataDebitRecordCountRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime]): GR[StatsDataDebitRecordCountRow] = GR{
+    prs => import prs._
+    StatsDataDebitRecordCountRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int]))
+  }
+  /** Table description of table stats_data_debit_record_count. Objects of this class serve as prototypes for rows in queries. */
+  class StatsDataDebitRecordCount(_tableTag: Tag) extends Table[StatsDataDebitRecordCountRow](_tableTag, Some("hat"), "stats_data_debit_record_count") {
+    def * = (recordId, dateCreated, dataDebitOperation, recordCount) <> (StatsDataDebitRecordCountRow.tupled, StatsDataDebitRecordCountRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(recordId), Rep.Some(dateCreated), Rep.Some(dataDebitOperation), Rep.Some(recordCount)).shaped.<>({r=>import r._; _1.map(_=> StatsDataDebitRecordCountRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column record_id SqlType(serial), AutoInc, PrimaryKey */
+    val recordId: Rep[Int] = column[Int]("record_id", O.AutoInc, O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column data_debit_operation SqlType(int4) */
+    val dataDebitOperation: Rep[Int] = column[Int]("data_debit_operation")
+    /** Database column record_count SqlType(int4), Default(0) */
+    val recordCount: Rep[Int] = column[Int]("record_count", O.Default(0))
+
+    /** Foreign key referencing StatsDataDebitOperation (database name stats_data_debit_record_count_data_debit_operation_fkey) */
+    lazy val statsDataDebitOperationFk = foreignKey("stats_data_debit_record_count_data_debit_operation_fkey", dataDebitOperation, StatsDataDebitOperation)(r => r.recordId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table StatsDataDebitRecordCount */
+  lazy val StatsDataDebitRecordCount = new TableQuery(tag => new StatsDataDebitRecordCount(tag))
+
   /** Entity class storing rows of table SystemEventlog
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param eventType Database column event_type SqlType(varchar), Length(45,true)
@@ -2082,7 +2213,7 @@ trait Tables {
     SystemEventlogRow.tupled((<<[Int], <<[String], <<[org.joda.time.LocalDate], <<[org.joda.time.LocalTime], <<[String], <<[String], <<[String]))
   }
   /** Table description of table system_eventlog. Objects of this class serve as prototypes for rows in queries. */
-  class SystemEventlog(_tableTag: Tag) extends Table[SystemEventlogRow](_tableTag, "system_eventlog") {
+  class SystemEventlog(_tableTag: Tag) extends Table[SystemEventlogRow](_tableTag, Some("hat"), "system_eventlog") {
     def * = (id, eventType, date, time, creator, command, result) <> (SystemEventlogRow.tupled, SystemEventlogRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(eventType), Rep.Some(date), Rep.Some(time), Rep.Some(creator), Rep.Some(command), Rep.Some(result)).shaped.<>({r=>import r._; _1.map(_=> SystemEventlogRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2120,7 +2251,7 @@ trait Tables {
     SystemPropertyRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<?[String], <<[Int], <<[Int]))
   }
   /** Table description of table system_property. Objects of this class serve as prototypes for rows in queries. */
-  class SystemProperty(_tableTag: Tag) extends Table[SystemPropertyRow](_tableTag, "system_property") {
+  class SystemProperty(_tableTag: Tag) extends Table[SystemPropertyRow](_tableTag, Some("hat"), "system_property") {
     def * = (id, dateCreated, lastUpdated, name, description, typeId, unitofmeasurementId) <> (SystemPropertyRow.tupled, SystemPropertyRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), description, Rep.Some(typeId), Rep.Some(unitofmeasurementId)).shaped.<>({r=>import r._; _1.map(_=> SystemPropertyRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2160,7 +2291,7 @@ trait Tables {
     SystemPropertyrecordRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String]))
   }
   /** Table description of table system_propertyrecord. Objects of this class serve as prototypes for rows in queries. */
-  class SystemPropertyrecord(_tableTag: Tag) extends Table[SystemPropertyrecordRow](_tableTag, "system_propertyrecord") {
+  class SystemPropertyrecord(_tableTag: Tag) extends Table[SystemPropertyrecordRow](_tableTag, Some("hat"), "system_propertyrecord") {
     def * = (id, dateCreated, lastUpdated, name) <> (SystemPropertyrecordRow.tupled, SystemPropertyrecordRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name)).shaped.<>({r=>import r._; _1.map(_=> SystemPropertyrecordRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2189,7 +2320,7 @@ trait Tables {
     SystemRelationshiprecordRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String]))
   }
   /** Table description of table system_relationshiprecord. Objects of this class serve as prototypes for rows in queries. */
-  class SystemRelationshiprecord(_tableTag: Tag) extends Table[SystemRelationshiprecordRow](_tableTag, "system_relationshiprecord") {
+  class SystemRelationshiprecord(_tableTag: Tag) extends Table[SystemRelationshiprecordRow](_tableTag, Some("hat"), "system_relationshiprecord") {
     def * = (id, dateCreated, lastUpdated, name) <> (SystemRelationshiprecordRow.tupled, SystemRelationshiprecordRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name)).shaped.<>({r=>import r._; _1.map(_=> SystemRelationshiprecordRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2220,7 +2351,7 @@ trait Tables {
     SystemRelationshiprecordtorecordcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String]))
   }
   /** Table description of table system_relationshiprecordtorecordcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class SystemRelationshiprecordtorecordcrossref(_tableTag: Tag) extends Table[SystemRelationshiprecordtorecordcrossrefRow](_tableTag, "system_relationshiprecordtorecordcrossref") {
+  class SystemRelationshiprecordtorecordcrossref(_tableTag: Tag) extends Table[SystemRelationshiprecordtorecordcrossrefRow](_tableTag, Some("hat"), "system_relationshiprecordtorecordcrossref") {
     def * = (id, dateCreated, lastUpdated, relationshiprecordId1, relationshiprecordId2, relationshipType) <> (SystemRelationshiprecordtorecordcrossrefRow.tupled, SystemRelationshiprecordtorecordcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(relationshiprecordId1), Rep.Some(relationshiprecordId2), Rep.Some(relationshipType)).shaped.<>({r=>import r._; _1.map(_=> SystemRelationshiprecordtorecordcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2259,7 +2390,7 @@ trait Tables {
     SystemTypeRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<?[String]))
   }
   /** Table description of table system_type. Objects of this class serve as prototypes for rows in queries. */
-  class SystemType(_tableTag: Tag) extends Table[SystemTypeRow](_tableTag, "system_type") {
+  class SystemType(_tableTag: Tag) extends Table[SystemTypeRow](_tableTag, Some("hat"), "system_type") {
     def * = (id, dateCreated, lastUpdated, name, description) <> (SystemTypeRow.tupled, SystemTypeRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), description).shaped.<>({r=>import r._; _1.map(_=> SystemTypeRow.tupled((_1.get, _2.get, _3.get, _4.get, _5)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2295,7 +2426,7 @@ trait Tables {
     SystemTypetotypecrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String]))
   }
   /** Table description of table system_typetotypecrossref. Objects of this class serve as prototypes for rows in queries. */
-  class SystemTypetotypecrossref(_tableTag: Tag) extends Table[SystemTypetotypecrossrefRow](_tableTag, "system_typetotypecrossref") {
+  class SystemTypetotypecrossref(_tableTag: Tag) extends Table[SystemTypetotypecrossrefRow](_tableTag, Some("hat"), "system_typetotypecrossref") {
     def * = (id, dateCreated, lastUpdated, typeOneId, typeTwoId, relationshipType) <> (SystemTypetotypecrossrefRow.tupled, SystemTypetotypecrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(typeOneId), Rep.Some(typeTwoId), Rep.Some(relationshipType)).shaped.<>({r=>import r._; _1.map(_=> SystemTypetotypecrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2335,7 +2466,7 @@ trait Tables {
     SystemUnitofmeasurementRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<?[String], <<?[String]))
   }
   /** Table description of table system_unitofmeasurement. Objects of this class serve as prototypes for rows in queries. */
-  class SystemUnitofmeasurement(_tableTag: Tag) extends Table[SystemUnitofmeasurementRow](_tableTag, "system_unitofmeasurement") {
+  class SystemUnitofmeasurement(_tableTag: Tag) extends Table[SystemUnitofmeasurementRow](_tableTag, Some("hat"), "system_unitofmeasurement") {
     def * = (id, dateCreated, lastUpdated, name, description, symbol) <> (SystemUnitofmeasurementRow.tupled, SystemUnitofmeasurementRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), description, symbol).shaped.<>({r=>import r._; _1.map(_=> SystemUnitofmeasurementRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2376,7 +2507,7 @@ trait Tables {
     ThingsSystempropertydynamiccrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table things_systempropertydynamiccrossref. Objects of this class serve as prototypes for rows in queries. */
-  class ThingsSystempropertydynamiccrossref(_tableTag: Tag) extends Table[ThingsSystempropertydynamiccrossrefRow](_tableTag, "things_systempropertydynamiccrossref") {
+  class ThingsSystempropertydynamiccrossref(_tableTag: Tag) extends Table[ThingsSystempropertydynamiccrossrefRow](_tableTag, Some("hat"), "things_systempropertydynamiccrossref") {
     def * = (id, dateCreated, lastUpdated, thingId, systemPropertyId, fieldId, relationshipType, isCurrent, propertyrecordId) <> (ThingsSystempropertydynamiccrossrefRow.tupled, ThingsSystempropertydynamiccrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(thingId), Rep.Some(systemPropertyId), Rep.Some(fieldId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(propertyrecordId)).shaped.<>({r=>import r._; _1.map(_=> ThingsSystempropertydynamiccrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2430,7 +2561,7 @@ trait Tables {
     ThingsSystempropertystaticcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table things_systempropertystaticcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class ThingsSystempropertystaticcrossref(_tableTag: Tag) extends Table[ThingsSystempropertystaticcrossrefRow](_tableTag, "things_systempropertystaticcrossref") {
+  class ThingsSystempropertystaticcrossref(_tableTag: Tag) extends Table[ThingsSystempropertystaticcrossrefRow](_tableTag, Some("hat"), "things_systempropertystaticcrossref") {
     def * = (id, dateCreated, lastUpdated, thingId, systemPropertyId, recordId, fieldId, relationshipType, isCurrent, propertyrecordId) <> (ThingsSystempropertystaticcrossrefRow.tupled, ThingsSystempropertystaticcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(thingId), Rep.Some(systemPropertyId), Rep.Some(recordId), Rep.Some(fieldId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(propertyrecordId)).shaped.<>({r=>import r._; _1.map(_=> ThingsSystempropertystaticcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get, _10.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2485,7 +2616,7 @@ trait Tables {
     ThingsSystemtypecrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean]))
   }
   /** Table description of table things_systemtypecrossref. Objects of this class serve as prototypes for rows in queries. */
-  class ThingsSystemtypecrossref(_tableTag: Tag) extends Table[ThingsSystemtypecrossrefRow](_tableTag, "things_systemtypecrossref") {
+  class ThingsSystemtypecrossref(_tableTag: Tag) extends Table[ThingsSystemtypecrossrefRow](_tableTag, Some("hat"), "things_systemtypecrossref") {
     def * = (id, dateCreated, lastUpdated, thingId, systemTypeId, relationshipType, isCurrent) <> (ThingsSystemtypecrossrefRow.tupled, ThingsSystemtypecrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(thingId), Rep.Some(systemTypeId), Rep.Some(relationshipType), Rep.Some(isCurrent)).shaped.<>({r=>import r._; _1.map(_=> ThingsSystemtypecrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2525,7 +2656,7 @@ trait Tables {
     ThingsThingRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String]))
   }
   /** Table description of table things_thing. Objects of this class serve as prototypes for rows in queries. */
-  class ThingsThing(_tableTag: Tag) extends Table[ThingsThingRow](_tableTag, "things_thing") {
+  class ThingsThing(_tableTag: Tag) extends Table[ThingsThingRow](_tableTag, Some("hat"), "things_thing") {
     def * = (id, dateCreated, lastUpdated, name) <> (ThingsThingRow.tupled, ThingsThingRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name)).shaped.<>({r=>import r._; _1.map(_=> ThingsThingRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2558,7 +2689,7 @@ trait Tables {
     ThingsThingpersoncrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table things_thingpersoncrossref. Objects of this class serve as prototypes for rows in queries. */
-  class ThingsThingpersoncrossref(_tableTag: Tag) extends Table[ThingsThingpersoncrossrefRow](_tableTag, "things_thingpersoncrossref") {
+  class ThingsThingpersoncrossref(_tableTag: Tag) extends Table[ThingsThingpersoncrossrefRow](_tableTag, Some("hat"), "things_thingpersoncrossref") {
     def * = (id, dateCreated, lastUpdated, personId, thingId, relationshipType, isCurrent, relationshiprecordId) <> (ThingsThingpersoncrossrefRow.tupled, ThingsThingpersoncrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(personId), Rep.Some(thingId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> ThingsThingpersoncrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2606,7 +2737,7 @@ trait Tables {
     ThingsThingtothingcrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Int], <<[Int], <<[String], <<[Boolean], <<[Int]))
   }
   /** Table description of table things_thingtothingcrossref. Objects of this class serve as prototypes for rows in queries. */
-  class ThingsThingtothingcrossref(_tableTag: Tag) extends Table[ThingsThingtothingcrossrefRow](_tableTag, "things_thingtothingcrossref") {
+  class ThingsThingtothingcrossref(_tableTag: Tag) extends Table[ThingsThingtothingcrossrefRow](_tableTag, Some("hat"), "things_thingtothingcrossref") {
     def * = (id, dateCreated, lastUpdated, thingOneId, thingTwoId, relationshipType, isCurrent, relationshiprecordId) <> (ThingsThingtothingcrossrefRow.tupled, ThingsThingtothingcrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(thingOneId), Rep.Some(thingTwoId), Rep.Some(relationshipType), Rep.Some(isCurrent), Rep.Some(relationshiprecordId)).shaped.<>({r=>import r._; _1.map(_=> ThingsThingtothingcrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
@@ -2640,23 +2771,29 @@ trait Tables {
 
   /** Entity class storing rows of table UserAccessToken
    *  @param accessToken Database column access_token SqlType(varchar), PrimaryKey
-   *  @param userId Database column user_id SqlType(uuid) */
-  case class UserAccessTokenRow(accessToken: String, userId: java.util.UUID)
+   *  @param userId Database column user_id SqlType(uuid)
+   *  @param scope Database column scope SqlType(varchar), Default()
+   *  @param resource Database column resource SqlType(varchar), Default() */
+  case class UserAccessTokenRow(accessToken: String, userId: java.util.UUID, scope: String = "", resource: String = "")
   /** GetResult implicit for fetching UserAccessTokenRow objects using plain SQL queries */
   implicit def GetResultUserAccessTokenRow(implicit e0: GR[String], e1: GR[java.util.UUID]): GR[UserAccessTokenRow] = GR{
     prs => import prs._
-    UserAccessTokenRow.tupled((<<[String], <<[java.util.UUID]))
+    UserAccessTokenRow.tupled((<<[String], <<[java.util.UUID], <<[String], <<[String]))
   }
   /** Table description of table user_access_token. Objects of this class serve as prototypes for rows in queries. */
-  class UserAccessToken(_tableTag: Tag) extends Table[UserAccessTokenRow](_tableTag, "user_access_token") {
-    def * = (accessToken, userId) <> (UserAccessTokenRow.tupled, UserAccessTokenRow.unapply)
+  class UserAccessToken(_tableTag: Tag) extends Table[UserAccessTokenRow](_tableTag, Some("hat"), "user_access_token") {
+    def * = (accessToken, userId, scope, resource) <> (UserAccessTokenRow.tupled, UserAccessTokenRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(accessToken), Rep.Some(userId)).shaped.<>({r=>import r._; _1.map(_=> UserAccessTokenRow.tupled((_1.get, _2.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(accessToken), Rep.Some(userId), Rep.Some(scope), Rep.Some(resource)).shaped.<>({r=>import r._; _1.map(_=> UserAccessTokenRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column access_token SqlType(varchar), PrimaryKey */
     val accessToken: Rep[String] = column[String]("access_token", O.PrimaryKey)
     /** Database column user_id SqlType(uuid) */
     val userId: Rep[java.util.UUID] = column[java.util.UUID]("user_id")
+    /** Database column scope SqlType(varchar), Default() */
+    val scope: Rep[String] = column[String]("scope", O.Default(""))
+    /** Database column resource SqlType(varchar), Default() */
+    val resource: Rep[String] = column[String]("resource", O.Default(""))
 
     /** Foreign key referencing UserUser (database name user_fk) */
     lazy val userUserFk = foreignKey("user_fk", userId, UserUser)(r => r.userId, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
@@ -2680,7 +2817,7 @@ trait Tables {
     UserUserRow.tupled((<<[java.util.UUID], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<?[String], <<[String], <<[String], <<[Boolean]))
   }
   /** Table description of table user_user. Objects of this class serve as prototypes for rows in queries. */
-  class UserUser(_tableTag: Tag) extends Table[UserUserRow](_tableTag, "user_user") {
+  class UserUser(_tableTag: Tag) extends Table[UserUserRow](_tableTag, Some("hat"), "user_user") {
     def * = (userId, dateCreated, lastUpdated, email, pass, name, role, enabled) <> (UserUserRow.tupled, UserUserRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(userId), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(email), pass, Rep.Some(name), Rep.Some(role), Rep.Some(enabled)).shaped.<>({r=>import r._; _1.map(_=> UserUserRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6.get, _7.get, _8.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))

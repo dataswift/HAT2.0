@@ -1,15 +1,14 @@
 package hatdex.hat.dal
 
-//import autodal.Config._
 import slick.codegen.SourceCodeGenerator
 import slick.driver.PostgresDriver
+import slick.jdbc.meta.MTable
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import slick.driver.JdbcDriver.api._
-
-//import SlickPostgresDriver.simple._
+import hatdex.hat.dal.SlickPostgresDriver.api._
+import slick.profile.SqlProfile.ColumnOption
 
 /**
  *  This customizes the Slick code generator.
@@ -18,8 +17,9 @@ import slick.driver.JdbcDriver.api._
 object CustomizedCodeGenerator{
 
   def main(args: Array[String]) : Unit = {
-    println( "Running Customized Generator" )
+    println( " [CODEGEN] Running Customized Generator" )
     codegenFuture.onSuccess { case codegen =>
+      println (s" [CODEGEN] success - write to file ${args(0)}, package ${args(1)}")
       val writefileFuture = codegen.writeToFile(
         "hatdex.hat.dal.SlickPostgresDriver",
         args(0),
@@ -38,19 +38,34 @@ object CustomizedCodeGenerator{
 
   val db = Database.forConfig("devdb")
 
-  val modelAction = PostgresDriver.createModel( Some(PostgresDriver.defaultTables) )
-  val modelFuture = db.run(modelAction)
+  val excluded = Seq("databasechangelog", "databasechangeloglock")
 
-  val codegenFuture = modelFuture.map(model => new SourceCodeGenerator(model){
+  val tablesAndViews = MTable.getTables(None, None, None, Some(Seq("TABLE", "VIEW"))) //TABLE, and VIEW represent metadata, i.e. get database objects which are tables and views
+    .map(_.filterNot(t => excluded contains t.name.name))
+
+  val modelFuture = db.run {
+    tablesAndViews.flatMap( SlickPostgresDriver.createModelBuilder(_, false).buildModel )
+  }
+
+  val codegenFuture = modelFuture.map(model => new slick.codegen.SourceCodeGenerator(model) {
     override def Table = new Table(_) { table =>
       override def Column = new Column(_) { column =>
         // customize db type -> scala type mapping, pls adjust it according to your environment
-        override def rawType = model.tpe match {
+        override def rawType: String = model.tpe match {
           case "java.sql.Date" => "org.joda.time.LocalDate"
           case "java.sql.Time" => "org.joda.time.LocalTime"
           case "java.sql.Timestamp" => "org.joda.time.LocalDateTime"
           // currently, all types that's not built-in support were mapped to `String`
-          case "String" => "String"
+          case "String" => model.options.find(_.isInstanceOf[ColumnOption.SqlType]).map(_.asInstanceOf[ColumnOption.SqlType].typeName).map({
+            case "hstore" => "Map[String, String]"
+            case "geometry" => "com.vividsolutions.jts.geom.Geometry"
+            case "int8[]" => "List[Long]"
+            case "int4[]" => "List[Int]"
+            case "text[]" => "List[String]"
+            case "_int4" => "List[Int]"
+            case "jsonb" => "spray.json.JsValue"
+            case _ =>  "String"
+          }).getOrElse("String")
           case _ => super.rawType
         }
       }
@@ -70,7 +85,7 @@ object ${container} extends {
 /** Slick data model trait for extension, choice of backend or usage in the cake pattern. (Make sure to initialize this late.) */
 trait ${container} {
   val profile: $profile
-  import profile.simple._
+  import profile.api._
   ${indent(fullCode)}
 }
       """.trim()

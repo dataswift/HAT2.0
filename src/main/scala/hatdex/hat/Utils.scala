@@ -1,10 +1,31 @@
+/*
+ * Copyright (C) 2016 Andrius Aucinas <andrius.aucinas@hatdex.org>
+ * SPDX-License-Identifier: AGPL-3.0
+ *
+ * This file is part of the Hub of All Things project (HAT).
+ *
+ * HAT is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, version 3 of
+ * the License.
+ *
+ * HAT is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+ * the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General
+ * Public License along with this program. If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
 package hatdex.hat
 
-import scala.util.{Failure, Success, Try}
+import scala.collection.immutable.HashMap
+import scala.util.{ Failure, Success, Try }
 
 object Utils {
   def flatten[T](xs: Seq[Try[T]]): Try[Seq[T]] = {
-    val (ss: Seq[Success[T]]@unchecked, fs: Seq[Failure[T]]@unchecked) =
+    val (ss: Seq[Success[T]] @unchecked, fs: Seq[Failure[T]] @unchecked) =
       xs.partition(_.isSuccess)
 
     if (fs.isEmpty) Success(ss map (_.get))
@@ -29,4 +50,9 @@ object Utils {
         Failure(e)
     }
   }
+
+  def mergeMap[A, B](ms: Iterable[HashMap[A, B]])(f: (B, B) => B): HashMap[A, B] =
+    (HashMap[A, B]() /: (for (m <- ms; kv <- m) yield kv)) { (a, kv) =>
+      a + (if (a.contains(kv._1)) kv._1 -> f(a(kv._1), kv._2) else kv)
+    }
 }

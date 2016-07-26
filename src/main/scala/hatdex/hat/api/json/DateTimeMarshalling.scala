@@ -1,7 +1,27 @@
+/*
+ * Copyright (C) 2016 Andrius Aucinas <andrius.aucinas@hatdex.org>
+ * SPDX-License-Identifier: AGPL-3.0
+ *
+ * This file is part of the Hub of All Things project (HAT).
+ *
+ * HAT is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, version 3 of
+ * the License.
+ *
+ * HAT is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+ * the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General
+ * Public License along with this program. If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
 package hatdex.hat.api.json
 
 import org.joda.time.LocalDateTime
-import org.joda.time.format.ISODateTimeFormat
+import org.joda.time.format.{ISODateTimeFormat, DateTimeFormatterBuilder, DateTimeParser}
 import spray.json._
 
 /**
@@ -10,7 +30,23 @@ import spray.json._
 trait DateTimeMarshalling {
   implicit object DateTimeFormat extends RootJsonFormat[LocalDateTime] {
 
-    val formatter = ISODateTimeFormat.dateTimeNoMillis
+    ISODateTimeFormat.dateTime()
+//    val formatter = new DateTimeFormatterBuilder()
+//      .appendOptional(ISODateTimeFormat.dateTime.getParser)
+//      .appendOptional(ISODateTimeFormat.localDateOptionalTimeParser().getParser)
+//      .appendOptional(ISODateTimeFormat.dateTimeNoMillis().getParser)
+//      .toFormatter
+
+    import collection.JavaConverters._
+    val parsers = Array(
+      ISODateTimeFormat.dateTime.getParser,
+      ISODateTimeFormat.localDateOptionalTimeParser().getParser,
+      ISODateTimeFormat.dateTimeNoMillis().getParser
+    )
+
+    val formatter = new DateTimeFormatterBuilder().append( ISODateTimeFormat.dateTimeNoMillis().getPrinter, parsers).toFormatter();
+
+//    val printFormatter = ISODateTimeFormat.dateTimeNoMillis()
 
     def write(obj: LocalDateTime): JsValue = {
       JsString(formatter.print(obj.toDateTime))

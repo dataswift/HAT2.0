@@ -1,3 +1,24 @@
+/*
+ * Copyright (C) 2016 Andrius Aucinas <andrius.aucinas@hatdex.org>
+ * SPDX-License-Identifier: AGPL-3.0
+ *
+ * This file is part of the Hub of All Things project (HAT).
+ *
+ * HAT is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, version 3 of
+ * the License.
+ *
+ * HAT is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+ * the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General
+ * Public License along with this program. If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
+
 package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
@@ -6,9 +27,10 @@ import hatdex.hat.api.endpoints.jsonExamples.BundleContextExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
+import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
 import org.specs2.mutable.Specification
-import org.specs2.specification.{BeforeAfterAll, Scope}
+import org.specs2.specification.{ BeforeAfterAll, Scope }
+import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
@@ -21,13 +43,10 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
 
   val logger: LoggingAdapter = system.log
 
-  val parameters = Map("username" -> "bob@gmail.com", "password" -> "pa55w0rd")
-
-  def appendParams(parameters: Map[String, String]): String = {
-    parameters.foldLeft[String]("?") { case (params, (key, value)) =>
-      s"$params$key=$value&"
-    }
-  }
+  val ownerAuthToken = HatAuthTestHandler.validUsers.find(_.role == "owner").map(_.userId).flatMap { ownerId =>
+    HatAuthTestHandler.validAccessTokens.find(_.userId == ownerId).map(_.accessToken)
+  } getOrElse ("")
+  val ownerAuthHeader = RawHeader("X-Auth-Token", ownerAuthToken)
 
   import JsonProtocol._
 
@@ -67,61 +86,59 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
-
+    TestDataCleanup.cleanupAll
   }
 
   // Clean up all data
   def afterAll() = {
-    db.withSession { implicit session =>
-      TestDataCleanup.cleanupAll
-      session.close()
-    }
+//    TestDataCleanup.cleanupAll
   }
 
   sequential
 
   "Contextual Bundle Service for Tables" should {
     "Accept valid empty bundles" in {
-      val bundle = HttpRequest(POST,
-        "/bundles/context" + appendParams(parameters),
-        entity = HttpEntity(MediaTypes.`application/json`, BundleContextExamples.emptyBundle)
-      ) ~>
+      val bundle = HttpRequest(POST, "/bundles/context")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleContextExamples.emptyBundle)) ~>
         routes ~>
         check {
-          response.status should be equalTo Created
-          val resp = responseAs[String]
-          resp must contain("emptyBundleTest1")
-          resp must contain("emptyBundleTest2")
-          resp must contain("emptyBundleTest3")
+          eventually {
+            response.status should be equalTo Created
+            val resp = responseAs[String]
+            resp must contain("emptyBundleTest1")
+            resp must contain("emptyBundleTest2")
+            resp must contain("emptyBundleTest3")
+          }
           responseAs[ApiBundleContext]
         }
 
       bundle.id must beSome
 
-      HttpRequest(GET,
-        s"/bundles/context/${bundle.id.get}" + appendParams(parameters)
-      ) ~>
+      HttpRequest(GET, s"/bundles/context/${bundle.id.get}").withHeaders(ownerAuthHeader) ~>
         routes ~>
         check {
-          response.status should be equalTo OK
-          val resp = responseAs[String]
-          resp must contain("emptyBundleTest1")
-          resp must contain("emptyBundleTest2")
-          resp must contain("emptyBundleTest3")
-          responseAs[ApiBundleContext].id must beSome
+          eventually {
+            response.status should be equalTo OK
+            val resp = responseAs[String]
+            resp must contain("emptyBundleTest1")
+            resp must contain("emptyBundleTest2")
+            resp must contain("emptyBundleTest3")
+            responseAs[ApiBundleContext].id must beSome
+          }
         }
 
     }
 
     "Accept bundles with entity selectors" in {
-      val bundle = HttpRequest(POST,
-        "/bundles/context" + appendParams(parameters),
-        entity = HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundleSunrise)
-      ) ~>
+      val bundle = HttpRequest(POST, "/bundles/context")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundleSunrise)) ~>
         routes ~>
         check {
           response.status should be equalTo Created
           val resp = responseAs[String]
+          logger.info(s"Got bundle creation response $resp")
           resp must contain("emptyBundleTest2-1")
           resp must contain("sunrise")
           responseAs[ApiBundleContext]
@@ -129,9 +146,8 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
 
       bundle.id must beSome
 
-      HttpRequest(GET,
-        s"/bundles/context/${bundle.id.get}" + appendParams(parameters)
-      ) ~>
+      HttpRequest(GET, s"/bundles/context/${bundle.id.get}")
+        .withHeaders(ownerAuthHeader) ~>
         routes ~>
         check {
           response.status should be equalTo OK
@@ -141,10 +157,9 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
           responseAs[ApiBundleContext].id must beSome
         }
 
-      val bundle2 = HttpRequest(POST,
-        "/bundles/context" + appendParams(parameters),
-        entity = HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundleKind)
-      ) ~>
+      val bundle2 = HttpRequest(POST, "/bundles/context")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundleKind)) ~>
         routes ~>
         check {
           response.status should be equalTo Created
@@ -156,9 +171,8 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
 
       bundle2.id must beSome
 
-      HttpRequest(GET,
-        s"/bundles/context/${bundle2.id.get}" + appendParams(parameters)
-      ) ~>
+      HttpRequest(GET, s"/bundles/context/${bundle2.id.get}")
+        .withHeaders(ownerAuthHeader) ~>
         routes ~>
         check {
           response.status should be equalTo OK
@@ -168,10 +182,9 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
           responseAs[ApiBundleContext].id must beSome
         }
 
-      val bundle3 = HttpRequest(POST,
-        "/bundles/context" + appendParams(parameters),
-        entity = HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entitiesBundleKindName)
-      ) ~>
+      val bundle3 = HttpRequest(POST, "/bundles/context")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entitiesBundleKindName)) ~>
         routes ~>
         check {
           response.status should be equalTo Created
@@ -184,9 +197,8 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
 
       bundle3.id must beSome
 
-      HttpRequest(GET,
-        s"/bundles/context/${bundle3.id.get}" + appendParams(parameters)
-      ) ~>
+      HttpRequest(GET, s"/bundles/context/${bundle3.id.get}")
+        .withHeaders(ownerAuthHeader) ~>
         routes ~>
         check {
           response.status should be equalTo OK
@@ -199,10 +211,9 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
     }
 
     "Accept bundles with entity and property selectors" in {
-      val bundle = HttpRequest(POST,
-        "/bundles/context" + appendParams(parameters),
-        entity = HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundleProperties)
-      ) ~>
+      val bundle = HttpRequest(POST, "/bundles/context")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundleProperties)) ~>
         routes ~>
         check {
           response.status should be equalTo Created
@@ -217,9 +228,8 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
 
       bundle.id must beSome
 
-      HttpRequest(GET,
-        s"/bundles/context/${bundle.id.get}" + appendParams(parameters)
-      ) ~>
+      HttpRequest(GET, s"/bundles/context/${bundle.id.get}")
+        .withHeaders(ownerAuthHeader) ~>
         routes ~>
         check {
           response.status should be equalTo OK
@@ -252,10 +262,9 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
       val dynamicPropertyLink = ApiPropertyRelationshipDynamic(
         None, property, None, None, "test property", dataField)
 
-      val propertyLinkId = HttpRequest(
-        POST, s"/person/${newPerson.id.get}/property/dynamic/${property.id.get}" + appendParams(parameters),
-        entity = HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)
-      ) ~>
+      val propertyLinkId = HttpRequest(POST, s"/person/${newPerson.id.get}/property/dynamic/${property.id.get}")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)) ~>
         sealRoute(personSpec.routes) ~>
         check {
           eventually {
@@ -264,7 +273,8 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
           responseAs[ApiGenericId]
         }
 
-      val personValues = HttpRequest(GET, s"/person/${newPerson.id.get}/values" + appendParams(parameters)) ~>
+      val personValues = HttpRequest(GET, s"/person/${newPerson.id.get}/values")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(personSpec.routes) ~>
         check {
           eventually {
@@ -282,129 +292,136 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
     }
 
     "Retrieve entity-connected data without property filtering for a named entity" in new Context {
-      val bundle = HttpRequest(POST,
-        "/bundles/context" + appendParams(parameters),
-        entity = HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundlePerson)
-      ) ~>
+      val bundle = HttpRequest(POST, "/bundles/context")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundlePerson)) ~>
         routes ~>
         check {
-          response.status should be equalTo Created
-          val resp = responseAs[String]
-          resp must contain("emptyBundleTest6-1")
-          resp must contain("HATperson")
+          eventually {
+            response.status should be equalTo Created
+            val resp = responseAs[String]
+            resp must contain("emptyBundleTest6-1")
+            resp must contain("HATperson")
+          }
           responseAs[ApiBundleContext]
         }
 
       bundle.id must beSome
 
-      HttpRequest(GET,
-        s"/bundles/context/${bundle.id.get}/values" + appendParams(parameters)
-      ) ~>
+      HttpRequest(GET, s"/bundles/context/${bundle.id.get}/values")
+        .withHeaders(ownerAuthHeader) ~>
         routes ~>
         check {
-          response.status should be equalTo OK
-          val resp = responseAs[String]
-          responseAs[Seq[ApiEntity]] must not have size (0)
-          resp must contain("HATperson")
-          resp must contain("testValue1")
-          resp must contain("testValue2-1")
-          resp must not contain ("testValue3")
+          eventually {
+            response.status should be equalTo OK
+            val resp = responseAs[String]
+            responseAs[Seq[ApiEntity]] must not have size(0)
+            resp must contain("HATperson")
+            resp must contain("testValue1")
+            resp must contain("testValue2-1")
+            resp must not contain ("testValue3")
+          }
         }
     }
 
     "Retrieve entity-connected data without property filtering for all entities of a kind" in new Context {
-      val bundle = HttpRequest(POST,
-        "/bundles/context" + appendParams(parameters),
-        entity = HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundleAllPeople)
-      ) ~>
+      val bundle = HttpRequest(POST, "/bundles/context")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundleAllPeople)) ~>
         routes ~>
         check {
-          response.status should be equalTo Created
-          val resp = responseAs[String]
-          resp must contain("emptyBundleTest7-1")
-          resp must contain("person")
+          eventually {
+            response.status should be equalTo Created
+            val resp = responseAs[String]
+            resp must contain("emptyBundleTest7-1")
+            resp must contain("person")
+          }
           responseAs[ApiBundleContext]
         }
 
       bundle.id must beSome
 
-      HttpRequest(GET,
-        s"/bundles/context/${bundle.id.get}/values" + appendParams(parameters)
-      ) ~>
+      HttpRequest(GET, s"/bundles/context/${bundle.id.get}/values")
+        .withHeaders(ownerAuthHeader) ~>
         routes ~>
         check {
-          response.status should be equalTo OK
-          val resp = responseAs[String]
-          responseAs[Seq[ApiEntity]] must not have size (0)
-          resp must contain("HATperson")
-          resp must contain("testValue1")
-          resp must contain("testValue2-1")
-          resp must not contain ("testValue3")
+          eventually {
+            response.status should be equalTo OK
+            val resp = responseAs[String]
+            responseAs[Seq[ApiEntity]] must not have size(0)
+            resp must contain("HATperson")
+            resp must contain("testValue1")
+            resp must contain("testValue2-1")
+            resp must not contain ("testValue3")
+          }
         }
     }
 
     "Not retrieve data from an entity with list of not matching properties" in new Context {
-      val bundle = HttpRequest(POST,
-        "/bundles/context" + appendParams(parameters),
-        entity = HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundlePersonNoProps)
-      ) ~>
+      val bundle = HttpRequest(POST, "/bundles/context")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundlePersonNoProps)) ~>
         routes ~>
         check {
-          response.status should be equalTo Created
-          val resp = responseAs[String]
-          resp must contain("emptyBundleTest8-1")
-          resp must contain("HATperson")
+          eventually {
+            response.status should be equalTo Created
+            val resp = responseAs[String]
+            resp must contain("emptyBundleTest8-1")
+            resp must contain("HATperson")
+          }
           responseAs[ApiBundleContext]
         }
 
       bundle.id must beSome
 
-      HttpRequest(GET,
-        s"/bundles/context/${bundle.id.get}/values" + appendParams(parameters)
-      ) ~>
+      HttpRequest(GET, s"/bundles/context/${bundle.id.get}/values")
+        .withHeaders(ownerAuthHeader) ~>
         routes ~>
         check {
-          response.status should be equalTo OK
-          val resp = responseAs[String]
-          responseAs[Seq[ApiEntity]] must not have size (0)
-          resp must contain("HATperson")
-          resp must not contain("testValue1")
-          resp must not contain("testValue2-1")
-          resp must not contain ("testValue3")
+          eventually {
+            response.status should be equalTo OK
+            val resp = responseAs[String]
+            responseAs[Seq[ApiEntity]] must not have size(0)
+            resp must contain("HATperson")
+            resp must not contain ("testValue1")
+            resp must not contain ("testValue2-1")
+            resp must not contain ("testValue3")
+          }
         }
     }
 
     "Retrieve data from an entity with a specific named property" in new Context {
-      val bundle = HttpRequest(POST,
-        "/bundles/context" + appendParams(parameters),
-        entity = HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundlePersonProps)
-      ) ~>
+      val bundle = HttpRequest(POST, "/bundles/context")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, BundleContextExamples.entityBundlePersonProps)) ~>
         routes ~>
         check {
-          response.status should be equalTo Created
-          val resp = responseAs[String]
-          resp must contain("emptyBundleTest9-1")
-          resp must contain("HATperson")
+          eventually {
+            response.status should be equalTo Created
+            val resp = responseAs[String]
+            resp must contain("emptyBundleTest9-1")
+            resp must contain("HATperson")
+          }
           responseAs[ApiBundleContext]
         }
 
       bundle.id must beSome
 
-      HttpRequest(GET,
-        s"/bundles/context/${bundle.id.get}/values" + appendParams(parameters)
-      ) ~>
+      HttpRequest(GET, s"/bundles/context/${bundle.id.get}/values")
+        .withHeaders(ownerAuthHeader) ~>
         routes ~>
         check {
-          response.status should be equalTo OK
-          val resp = responseAs[String]
-          responseAs[Seq[ApiEntity]] must not have size (0)
-          resp must contain("HATperson")
-          resp must contain("testValue1")
-          resp must contain("testValue2-1")
-          resp must not contain ("testValue3")
+          eventually {
+            response.status should be equalTo OK
+            val resp = responseAs[String]
+            responseAs[Seq[ApiEntity]] must not have size(0)
+            resp must contain("HATperson")
+            resp must contain("testValue1")
+            resp must contain("testValue2-1")
+            resp must not contain ("testValue3")
+          }
         }
     }
   }
 }
-
 

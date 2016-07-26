@@ -16,7 +16,7 @@ object HatAuthTestHandler extends TestData {
 
     private def authFunction(params: Map[String, String]) = Future {
       //      println ("### Running test access_token authenticator")
-      val mayBeToken = params.get("access_token")
+      val mayBeToken = params.get("X-Auth-Token")
       mayBeToken flatMap { token =>
         validAccessTokens.find(_.accessToken equals token).map(_.userId) flatMap { userId =>
           validUsers.find(_.userId equals userId)
@@ -49,10 +49,10 @@ object HatAuthTestHandler extends TestData {
 trait TestData {
   // Following are the hard coded values
   val validUsers = Seq(
-    User(UUID.randomUUID(), "bob@gmail.com", Some(BCrypt.hashpw("pa55w0rd", BCrypt.gensalt())), "Test User", "owner"),
-    User(UUID.randomUUID(), "alice@gmail.com", Some(BCrypt.hashpw("dr0w55ap", BCrypt.gensalt())), "Test Debit User", "dataDebit"),
-    User(UUID.randomUUID(), "carol@gmail.com", Some(BCrypt.hashpw("p4ssWOrD", BCrypt.gensalt())), "Test Credit User", "dataCredit"),
-    User(UUID.randomUUID(), "platform@platform.com", Some(BCrypt.hashpw("p4ssWOrD", BCrypt.gensalt())), "Platform User", "platform")
+    User(UUID.fromString("afc5a06f-c351-4e7e-8755-765770c56bb6"), "bob@gmail.com", Some(BCrypt.hashpw("pa55w0rd", BCrypt.gensalt())), "Test User", "owner"),
+    User(UUID.fromString("e1e8e1b7-30e2-4cd2-8407-e5321bf0e9ee"), "alice@gmail.com", Some(BCrypt.hashpw("dr0w55ap", BCrypt.gensalt())), "Test Debit User", "dataDebit"),
+    User(UUID.fromString("08867a9c-4969-481f-8830-01d73ac45068"), "carol@gmail.com", Some(BCrypt.hashpw("p4ssWOrD", BCrypt.gensalt())), "Test Credit User", "dataCredit"),
+    User(UUID.fromString("860774bc-99f9-4238-b661-c3492e95d800"), "platform@platform.com", Some(BCrypt.hashpw("p4ssWOrD", BCrypt.gensalt())), "Platform User", "platform")
   )
 
   val validAccessTokens = Seq(

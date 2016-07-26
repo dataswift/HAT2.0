@@ -1,17 +1,40 @@
+/*
+ * Copyright (C) 2016 Andrius Aucinas <andrius.aucinas@hatdex.org>
+ * SPDX-License-Identifier: AGPL-3.0
+ *
+ * This file is part of the Hub of All Things project (HAT).
+ *
+ * HAT is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, version 3 of
+ * the License.
+ *
+ * HAT is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+ * the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General
+ * Public License along with this program. If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
 package hatdex.hat.api.endpoints
 
+import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.api.service.PeopleService
+import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.User
-import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 
-import scala.util.{Failure, Success, Try}
-
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.util.{ Failure, Success, Try }
 
 // this trait defines our service behavior independently from the service actor
 trait Person extends PeopleService with AbstractEntity {
@@ -19,23 +42,27 @@ trait Person extends PeopleService with AbstractEntity {
 
   val routes = {
     pathPrefix(entityKind) {
-      userPassHandler { implicit user: User =>
-        createApi ~
-          getApi ~
-          getApiValues ~
-          getAllApi ~
-          createPersonRelationshipType ~
-          getPersonRelationshipTypes ~
-          linkToPerson ~
-          linkToLocation ~
-          linkToOrganisation ~
-          linkToPropertyStatic ~
-          linkToPropertyDynamic ~
-          addTypeApi ~
-          getPropertiesStaticApi ~
-          getPropertiesDynamicApi ~
-          getPropertyStaticValueApi ~
-          getPropertyDynamicValueApi
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner")) {
+          createApi ~
+            getApi ~
+            getApiValues ~
+            getAllApi ~
+            createPersonRelationshipType ~
+            getPersonRelationshipTypes ~
+            linkToPerson ~
+            linkToLocation ~
+            linkToOrganisation ~
+            linkToThing ~
+            linkToEvent ~
+            linkToPropertyStatic ~
+            linkToPropertyDynamic ~
+            addTypeApi ~
+            getPropertiesStaticApi ~
+            getPropertiesDynamicApi ~
+            getPropertyStaticValueApi ~
+            getPropertyDynamicValueApi
+        }
       }
     }
   }
@@ -44,26 +71,19 @@ trait Person extends PeopleService with AbstractEntity {
 
   def createEntity = pathEnd {
     entity(as[ApiPerson]) { person =>
-      db.withSession { implicit session =>
-        val personspersonRow = new PeoplePersonRow(0, LocalDateTime.now(), LocalDateTime.now(), person.name, person.personId)
-        val result = Try((PeoplePerson returning PeoplePerson) += personspersonRow)
-        val entity = result map { createdPerson =>
-          val newEntity = new EntityRow(createdPerson.id, LocalDateTime.now(), LocalDateTime.now(), createdPerson.name, "person", None, None, None, None, Some(createdPerson.id))
-          val entityCreated = Try(Entity += newEntity)
-          logger.debug("Creating new entity for person:" + entityCreated)
-        }
-        session.close()
-
-        complete {
-          result match {
-            case Success(createdPerson) =>
-              (Created, ApiPerson.fromDbModel(createdPerson))
-            case Failure(e) =>
-              (BadRequest, e.getMessage)
-          }
-        }
+      onComplete(createPersonRow(person.name, person.personId)) {
+        case Success(created) => complete((Created, created))
+        case Failure(e)       => complete((BadRequest, ErrorMessage("Bad Request", e.getMessage)))
       }
     }
+  }
+
+  def createPersonRow(name: String, personId: String): Future[ApiPerson] = {
+    val q = for {
+      person <- (PeoplePerson returning PeoplePerson) += PeoplePersonRow(0, LocalDateTime.now(), LocalDateTime.now(), name, personId)
+      entity <- Entity += EntityRow(person.id, LocalDateTime.now(), LocalDateTime.now(), person.name, entityKind, None, None, None, None, Some(person.id))
+    } yield (person, entity)
+    DatabaseInfo.db.run(q).map(r => ApiPerson.fromDbModel(r._1))
   }
 
   def createPersonRelationshipType = path("relationshipType") {
@@ -71,23 +91,14 @@ trait Person extends PeopleService with AbstractEntity {
     post {
       logger.debug("Creating Relationship type")
       entity(as[ApiPersonRelationshipType]) { relationship =>
-        logger.debug("Creating Relationship type PARSED")
-        db.withSession { implicit session =>
-          logger.debug("Creating Relationship SESSION")
-          val reltypeRow = new PeoplePersontopersonrelationshiptypeRow(0, LocalDateTime.now(), LocalDateTime.now(), relationship.name, relationship.description)
-          val maybeReltype = Try((PeoplePersontopersonrelationshiptype returning PeoplePersontopersonrelationshiptype) += reltypeRow)
-          session.close()
-          complete {
-            maybeReltype match {
-              case Success(reltype) =>
-                (Created, ApiPersonRelationshipType.fromDbModel(reltype))
-              case Failure(e) =>
-                (BadRequest, ErrorMessage("Error creating relationship type", e.getMessage))
-            }
+        val reltypeRow = new PeoplePersontopersonrelationshiptypeRow(0, LocalDateTime.now(), LocalDateTime.now(), relationship.name, relationship.description)
+        val relType = DatabaseInfo.db.run((PeoplePersontopersonrelationshiptype returning PeoplePersontopersonrelationshiptype) += reltypeRow)
+          .map(ApiPersonRelationshipType.fromDbModel)
 
-          }
+        onComplete(relType) {
+          case Success(reltype) => complete((Created, reltype))
+          case Failure(e)       => complete((BadRequest, ErrorMessage("Error creating relationship type", e.getMessage)))
         }
-
       }
     }
   }
@@ -95,11 +106,11 @@ trait Person extends PeopleService with AbstractEntity {
   def getPersonRelationshipTypes = path("relationshipType") {
     get {
       logger.debug("Getting Relationship types")
-      db.withSession { implicit session =>
-        val relTypes = PeoplePersontopersonrelationshiptype.run
-        complete {
-          (OK, relTypes.map(ApiPersonRelationshipType.fromDbModel))
-        }
+      val eventualReltypes = DatabaseInfo.db.run(PeoplePersontopersonrelationshiptype.result)
+        .map(_.map(ApiPersonRelationshipType.fromDbModel))
+      onComplete(eventualReltypes) {
+        case Success(relTypes) => complete((OK, relTypes))
+        case Failure(e)        => complete((InternalServerError, ErrorMessage("Error fetching person relationship types", e.getMessage)))
       }
     }
   }
@@ -110,28 +121,19 @@ trait Person extends PeopleService with AbstractEntity {
   override def linkToPerson = path(IntNumber / "person" / IntNumber) { (personId: Int, person2Id: Int) =>
     post {
       entity(as[ApiPersonRelationshipType]) { relationship =>
-        db.withSession { implicit session =>
-          val recordId = createRelationshipRecord(s"$entityKind/$personId/person/$person2Id:${relationship.name}")
 
-          val result = relationship.id match {
-            case Some(relationshipTypeId) =>
-              createLinkPerson(personId, person2Id, relationshipTypeId, recordId)
-            case None =>
-              Failure(new IllegalArgumentException("People can only be linked with an existing relationship type"))
+        val eventualResult = for {
+          recordId <- createRelationshipRecord(s"$entityKind/$personId/person/$person2Id:${relationship.name}")
+          result <- relationship.id map { relationshipTypeId =>
+            createLinkPerson(personId, person2Id, relationshipTypeId, recordId)
+          } getOrElse {
+            Future.failed(new IllegalArgumentException("People can only be linked with an existing relationship type"))
           }
+        } yield ApiGenericId(result)
 
-          session.close()
-
-          // Return the created crossref
-          complete {
-            result match {
-              case Success(crossrefId) =>
-                (Created, ApiGenericId(crossrefId))
-              case Failure(e) =>
-                (BadRequest, ErrorMessage(s"Error linking ${entityKind} to person", e.getMessage))
-            }
-          }
-
+        onComplete(eventualResult) {
+          case Success(id) => complete( (Created, id) )
+          case Failure(e)  => complete( (BadRequest, ErrorMessage(s"Error linking ${entityKind} to person", e.getMessage)) )
         }
       }
     }

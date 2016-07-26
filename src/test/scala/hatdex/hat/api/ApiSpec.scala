@@ -1,15 +1,28 @@
 /*
- * Copyright (c) 2015.
+ * Copyright (C) 2016 Andrius Aucinas <andrius.aucinas@hatdex.org>
+ * SPDX-License-Identifier: AGPL-3.0
  *
- * This work is licensed under the
- * Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.
- * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-nd/4.0/
- * or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+ * This file is part of the Hub of All Things project (HAT).
+ *
+ * HAT is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, version 3 of
+ * the License.
+ *
+ * HAT is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+ * the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General
+ * Public License along with this program. If not, see
+ * <http://www.gnu.org/licenses/>.
  */
 
 package hatdex.hat.api
 
 import akka.event.LoggingAdapter
+import hatdex.hat.api.actors.{EmailService, SmtpConfig}
 import hatdex.hat.api.endpoints._
 import hatdex.hat.api.endpoints.jsonExamples.DataExamples
 import hatdex.hat.api.json.JsonProtocol
@@ -18,6 +31,7 @@ import hatdex.hat.api.service._
 import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
+import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
 import spray.http._
@@ -38,7 +52,17 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
     val logger: LoggingAdapter = system.log
   }
 
-  val helloService = new Hello with LoggingHttpService
+  val smtpConfig = SmtpConfig(conf.getBoolean("mail.smtp.tls"),
+    conf.getBoolean("mail.smtp.ssl"),
+    conf.getInt("mail.smtp.port"),
+    conf.getString("mail.smtp.host"),
+    conf.getString("mail.smtp.username"),
+    conf.getString("mail.smtp.password"))
+  val apiEmailService = new EmailService(system, smtpConfig)
+
+  val helloService = new Hello with LoggingHttpService {
+    val emailService = apiEmailService
+  }
   val apiDataService = new Data with LoggingHttpService {
     override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
 
@@ -73,7 +97,10 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
     apiDataService.routes
   }
 
-  val ownerAuthParams = "?username=bob@gmail.com&password=pa55w0rd"
+  val ownerAuthToken = HatAuthTestHandler.validUsers.find(_.role == "owner").map(_.userId).flatMap { ownerId =>
+    HatAuthTestHandler.validAccessTokens.find(_.userId == ownerId).map(_.accessToken)
+  } getOrElse ("")
+  val ownerAuthHeader = RawHeader("X-Auth-Token", ownerAuthToken)
 
   sequential
 
@@ -93,10 +120,9 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
     }
 
     "respond with correctly formatted error message for bad request" in {
-      HttpRequest(
-        POST,
-        "/data/table" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, DataExamples.malformedTable)
+      HttpRequest(POST, "/data/table")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.malformedTable)
       ) ~>
         sealRoute(testRoute) ~>
         check {

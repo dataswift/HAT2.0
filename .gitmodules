@@ -1,0 +1,3 @@
+[submodule "hat-database-schema"]
+	path = hat-database-schema
+	url = https://github.com/Hub-of-all-Things/hat-database-schema.git

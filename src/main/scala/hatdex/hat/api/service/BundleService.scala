@@ -1,366 +1,259 @@
+/*
+ * Copyright (C) 2016 Andrius Aucinas <andrius.aucinas@hatdex.org>
+ * SPDX-License-Identifier: AGPL-3.0
+ *
+ * This file is part of the Hub of All Things project (HAT).
+ *
+ * HAT is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, version 3 of
+ * the License.
+ *
+ * HAT is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+ * the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General
+ * Public License along with this program. If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
 package hatdex.hat.api.service
 
+import akka.actor.ActorRefFactory
 import akka.event.LoggingAdapter
-import hatdex.hat.Utils
+import hatdex.hat.api.DatabaseInfo
+import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
-import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
+import spray.json.{ JsonParser, _ }
 
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 // this trait defines our service behavior independently from the service actor
 trait BundleService extends DataService {
 
   val logger: LoggingAdapter
+  def actorRefFactory: ActorRefFactory
+  import JsonProtocol._
 
-  protected[api] def getBundleTableValues(bundleTableId: Int)(implicit session: Session): Option[ApiBundleTable] = {
-    val bundleDataTableQuery = for {
-      bundleTable <- BundleContextlessTable.filter(_.id === bundleTableId)
-      dataTable <- bundleTable.dataTableFk
-    } yield (bundleTable, dataTable)
+  protected[api] def storeBundleContextless(bundle: ApiBundleContextless): Future[ApiBundleContextless] = {
+    val bundleContextlessRow = BundleContextlessRow(0, bundle.name, LocalDateTime.now(), LocalDateTime.now())
 
-    val maybeBundleDataTable = Try(bundleDataTableQuery.run.headOption)
+    val maybeInsertedBundle = DatabaseInfo.db.run {
+      (BundleContextless returning BundleContextless) += bundleContextlessRow
+    }
 
-    maybeBundleDataTable match {
-      case Success(bundleDataTable) =>
+    val apiBundle = bundle.sources map { sources =>
+      val insertDatasets = for {
+        insertedBundle <- maybeInsertedBundle
+        dataFieldsWithTables <- getSourceFields(sources)
+      } yield {
+        // Empty Contextless Bundle
+        val bundleDatasetRows = dataFieldsWithTables.map {
+          case (sourceStructure, dataset, datasetTable, datasetFields) =>
+            BundleContextlessDataSourceDatasetRow(0, insertedBundle.id, sourceStructure.source, dataset.name,
+              datasetTable.id.get, dataset.description, dataset.fields.toJson.toString, datasetFields.flatMap(_.id).toList)
+        }
+        bundleDatasetRows.map { dataset =>
+          BundleContextlessDataSourceDataset += dataset
+        }
+      }
 
-        bundleDataTable map { case (bundleTable: BundleContextlessTableRow, dataTable: DataTableRow) =>
-          val tableId = dataTable.id
-          val slices = getBundleTableSlices(bundleTableId)
-          val apiDataTables = slices match {
-            // Without any slices, the case degrades to plain data table access
-            case None =>
-              getTableValues(tableId)
-            case Some(tableSlices) =>
-              // For each table slice, get a query that filters only the records that match the slice conditions
-              val recordLists = tableSlices map { slice =>
-                slice.conditions.foldLeft(DataValue.flatMap(_.dataRecordFk).map(_.id)) { (sliceRecordSet, condition) =>
-                  // Filter only the records that have been included so far
-                  val fieldMatcher = DataValue.filter(_.recordId in sliceRecordSet)
-                    .filter(_.fieldId === condition.field.id) // Then for matching field
-
-                  // And maching condition value
-                  val valueMatcher = condition.operator match {
-                    case ComparisonOperators.equal =>
-                      fieldMatcher.filter(_.value === condition.value)
-                    case ComparisonOperators.notEqual =>
-                      fieldMatcher.filterNot(_.value === condition.value)
-                    case ComparisonOperators.greaterThan =>
-                      fieldMatcher.filter(_.value > condition.value)
-                    case ComparisonOperators.lessThan =>
-                      fieldMatcher.filter(_.value < condition.value)
-                    case ComparisonOperators.like =>
-                      fieldMatcher.filter(_.value like condition.value)
-                    // FIXME: handle date-related operators
-                    case _ =>
-                      fieldMatcher.filter(_.value === condition.value)
-                  }
-
-                  valueMatcher.flatMap(_.dataRecordFk) // Extract data record IDs
-                     .map(_.id)
-                }
+      val insertedDatasets = insertDatasets.flatMap {
+        case datasets =>
+          Future.sequence(
+            datasets.map { dataset =>
+              DatabaseInfo.db.run(dataset).recover {
+                case e =>
+                  logger.error(s"Error inserting dataset $dataset: ${e.getMessage}")
+                  logger.error(s"Executed statemetns: ${dataset.statements}")
+                  throw e
               }
-
-              // Union all records of the different slices
-              val records = recordLists.tail.foldLeft(recordLists.head) { (recordUnion, recordSet) =>
-                recordUnion ++ recordSet
-              }
-
-              // Query that takes only the records of interest
-              val values = DataValue.filter(_.recordId in records)
-
-              getTableValues(tableId, values)
-          }
-
-          val emptyBundleTable = ApiBundleTable.fromBundleTable(bundleTable)(ApiDataTable.fromDataTable(dataTable)(None)(None))
-          emptyBundleTable.copy(data = apiDataTables)
-        }
-      case Failure(e) =>
-        print("Failure getting bundle data: " + e.getMessage)
-        None
-    }
-
-  }
-
-
-  protected[api] def getBundleContextlessValues(bundleId: Int)(implicit session: Session): Option[ApiBundleContextlessData] = {
-    // TODO: include join fields
-    val bundleQuery = for {
-      bundle <- BundleContextless.filter(_.id === bundleId) // 1 or 0
-      combination <- BundleContextlessJoin.filter(_.bundleContextlessId === bundleId) // N for each bundle
-      table <- combination.bundleContextlessTableFk // 1 for each combination
-    } yield (bundle, combination, table)
-
-    val maybeBundle = Try(bundleQuery.run)
-    maybeBundle match {
-      case Success(bundle) =>
-        // Only one or no contextless bundles
-        val contextlessBundle = bundle.headOption.map(_._1)
-
-        contextlessBundle map { cBundle =>
-          val bundleData = bundle.groupBy(_._2.name).map { case (combinationName, tableGroup) =>
-            val bundleData = getBundleTableValues(tableGroup.map(_._3.id).head).get
-            (combinationName, bundleData)
-          }
-
-          // TODO: rearrange data as per join fields
-          val dataGroups = Iterable(bundleData)
-
-          ApiBundleContextlessData.fromDbModel(cBundle, dataGroups)
-        }
-      case Failure(e) =>
-        print(s"Error getting bundle: ${e.getMessage}\n")
-        e.printStackTrace()
-        None
-    }
-  }
-
-  /*
-   * Stores bundle table provided from the incoming API call
-   */
-  protected[api] def storeBundleTable(bundleTable: ApiBundleTable)(implicit session: Session): Try[ApiBundleTable] = {
-    // Require the bundle to be based on a data table that already exists
-    bundleTable.table.id match {
-      case Some(tableId) =>
-        val bundleTableRow = new BundleContextlessTableRow(0, LocalDateTime.now(), LocalDateTime.now(), bundleTable.name, tableId)
-
-        // Using Try to handle errors
-        Try((BundleContextlessTable returning BundleContextlessTable) += bundleTableRow) flatMap { insertedBundleTable =>
-          // Convert from database format to API format
-          val insertedApiBundleTable = ApiBundleTable.fromBundleTable(insertedBundleTable)(bundleTable.table)
-          // A partial function to store all table slices related to this bundle table
-          def storeBundleSlice = storeSlice(insertedApiBundleTable) _
-
-          val apiSlices = bundleTable.slices map { tableSlices =>
-            val slices = tableSlices.map(storeBundleSlice)
-            // Flattens to a simple Try with list if slices or returns the first error that occurred
-            Utils.flatten(slices)
-          }
-
-          apiSlices match {
-            case Some(Success(slices)) =>
-              Success(insertedApiBundleTable.copy(slices = Some(slices)))
-            case Some(Failure(e)) =>
-              Failure(e)
-            case None =>
-              // Bundle Table with no slicing
-              Success(insertedApiBundleTable)
-          }
-
-        }
-      case None =>
-        Failure(new IllegalArgumentException("Table provided for bundling must contain ID"))
-    }
-
-  }
-
-  protected[api] def getBundleTableById(bundleTableId: Int)(implicit session: Session): Option[ApiBundleTable] = {
-    // Traversing entity graph the Slick way
-    val tableQuery = for {
-      bundleTable <- BundleContextlessTable.filter(_.id === bundleTableId)
-      dataTable <- bundleTable.dataTableFk
-    } yield (bundleTable, dataTable)
-
-    val table = tableQuery.run.headOption
-
-    // Map back from database types to API ones
-    table map {
-      case (bundleTable: BundleContextlessTableRow, dataTable: DataTableRow) =>
-        val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
-        val apiBundleTable = ApiBundleTable.fromBundleTable(bundleTable)(apiDataTable)
-        val slices = apiBundleTable.id.flatMap(getBundleTableSlices)
-        apiBundleTable.copy(slices = slices)
-    }
-  }
-
-  protected[api] def storeSlice(bundleTable: ApiBundleTable)
-                               (slice: ApiBundleTableSlice)
-                               (implicit session: Session): Try[ApiBundleTableSlice] = {
-
-    (bundleTable.table.id, bundleTable.id, slice.table.id) match {
-      case (None, _, _) =>
-        Failure(new IllegalArgumentException("Table provided for bundling must contain ID"))
-
-      case (slice.table.id, Some(bundleTableId), Some(sliceTableId)) =>
-
-        val sliceRow = new BundleContextlessTableSliceRow(
-          0, LocalDateTime.now(), LocalDateTime.now(),
-          bundleTableId, sliceTableId)
-
-        Try((BundleContextlessTableSlice returning BundleContextlessTableSlice) += sliceRow) flatMap { insertedSlice =>
-          val insertedApiBundleTableSlice = ApiBundleTableSlice.fromBundleTableSlice(insertedSlice)(slice.table)
-
-          def storeSliceCondition = storeCondition(insertedApiBundleTableSlice) _
-          val conditions = slice.conditions.map(storeSliceCondition)
-
-          // If all conditions have been inserted successfully,
-          // Return the complete ApiBundleTableSlice object;
-          // Otherwise, the first error that occurred
-          Utils.flatten(conditions) map { apiConditions =>
-            insertedApiBundleTableSlice.copy(conditions = apiConditions)
-          }
-        }
-
-      case _ =>
-        Failure(new IllegalArgumentException("Bundle table must refer to the same table as each slice of the table"))
-    }
-
-  }
-
-  protected[api] def getBundleTableSlices(bundleTableId: Int)
-                                         (implicit session: Session): Option[Seq[ApiBundleTableSlice]] = {
-
-    // Traversing entity graph the Slick way
-    val slicesQuery = for {
-      slice <- BundleContextlessTableSlice.filter(_.bundleContextlessTableId === bundleTableId)
-      dataTable <- slice.dataTableFk
-    } yield (slice, dataTable)
-
-    val slices = slicesQuery.run
-
-    val result = slices flatMap { case (slice: BundleContextlessTableSliceRow, dataTable: DataTableRow) =>
-      // Returning the Data Table information of the slice without subTables or fields
-      val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
-      val apiSlice = ApiBundleTableSlice.fromBundleTableSlice(slice)(apiDataTable)
-      apiSlice.id.map(getSliceConditions) map { conditions =>
-        apiSlice.copy(conditions = conditions)
+            })
       }
+
+      for {
+        insertedBundle <- maybeInsertedBundle
+        _ <- insertedDatasets
+      } yield {
+        val bundleApi = ApiBundleContextless.fromBundleContextless(insertedBundle)
+        bundleApi.copy(sources = Some(sources))
+      }
+
+    } getOrElse {
+      Future.failed(new RuntimeException("Bundle has no sources defined"))
     }
-    Utils.seqOption(result)
-  }
 
-  protected[api] def storeCondition(bundleTableSlice: ApiBundleTableSlice)
-                                   (condition: ApiBundleTableCondition)
-                                   (implicit session: Session): Try[ApiBundleTableCondition] = {
-
-    (bundleTableSlice.table.id, condition.field.id, bundleTableSlice.id) match {
-      case (condition.field.tableId, Some(fieldId), Some(sliceId)) =>
-        val conditionRow = new BundleContextlessTableSliceConditionRow(
-          0, LocalDateTime.now(), LocalDateTime.now(),
-          fieldId, sliceId, condition.operator.toString, condition.value)
-
-        Try((BundleContextlessTableSliceCondition returning BundleContextlessTableSliceCondition) += conditionRow) map { insertedCondition =>
-          ApiBundleTableCondition.fromBundleTableSliceCondition(insertedCondition)(condition.field)
-        }
-
-      case _ =>
-        Failure(new IllegalArgumentException("Invalid table slice or table field provided"))
-
+    apiBundle recover {
+      case e =>
+        logger.error(s"Error creating Contextless Data Bundle: ${e.getMessage}")
+        throw new RuntimeException(s"Error creating Contextless Data Bundle ${e.getMessage}")
     }
   }
 
-  protected[api] def getSliceConditions(tableSliceId: Int)
-                                       (implicit session: Session): Seq[ApiBundleTableCondition] = {
-    // Traversing entity graph the Slick way
-    val conditionsQuery = for {
-      c <- BundleContextlessTableSliceCondition.filter(_.tableSliceId === tableSliceId)
-      f <- c.dataFieldFk
-    } yield (c, f)
+  case class FieldRequested(sourceName: String, tableName: String, fieldName: String)
 
-    val conditions = conditionsQuery.run
-    conditions map { case (condition: BundleContextlessTableSliceConditionRow, field: DataFieldRow) =>
-      val apiField = ApiDataField.fromDataField(field)
-      ApiBundleTableCondition.fromBundleTableSliceCondition(condition)(apiField)
+  private def getFieldsRequested(sourceName: String, tableName: String, sourceDataset: ApiBundleDataSourceField): Seq[FieldRequested] = {
+    if (sourceDataset.fields.isEmpty || sourceDataset.fields.get.isEmpty) {
+      // source name, table name, field name
+      Seq(FieldRequested(sourceName, tableName, sourceDataset.name))
     }
-  }
-
-  protected[api] def storeBundleContextless(bundle: ApiBundleContextless)
-                                           (implicit session: Session): Try[ApiBundleContextless] = {
-    val bundleContextlessRow = new BundleContextlessRow(0, bundle.name, LocalDateTime.now(), LocalDateTime.now())
-
-    val maybeInsertedBundle = Try((BundleContextless returning BundleContextless) += bundleContextlessRow)
-
-    maybeInsertedBundle flatMap { insertedBundle =>
-      // Empty Contextless Bundle
-      val bundleApi = ApiBundleContextless.fromBundleContextlessTables(insertedBundle)(None)
-      bundle.tables match {
-        case Some(bundleCombinations) =>
-          val storedCombinations = bundleCombinations map { combination =>
-            storeBundleCombination(combination)(bundleApi)
-          }
-          Utils.flatten(storedCombinations) map { apiCombinations =>
-            bundleApi.copy(tables = Some(apiCombinations))
-          }
-        case None =>
-          Success(bundleApi)
+    else {
+      sourceDataset.fields.get.flatMap { subfield =>
+        getFieldsRequested(sourceName, sourceDataset.name, subfield)
       }
     }
   }
 
-  protected[api] def getBundleContextlessById(bundleId: Int)(implicit session: Session): Option[ApiBundleContextless] = {
-    BundleContextless.filter(_.id === bundleId).run.headOption map { bundle =>
-      // Traversing entity graph the Slick way
-      // A fairly complex case with a lot of related data that needs to be retrieved for each bundle join
-      val tableQuery = for {
-        ((join, joinField), tableField) <- BundleContextlessJoin.filter(_.bundleContextlessId === bundleId)
-          .joinLeft(DataField)
-          .on(_.bundleContextlessJoinField === _.id)
-          .joinLeft(DataField)
-          .on(_._1.bundleContextlessTableField === _.id)
-        bundleTable <- join.bundleContextlessTableFk
-        dataTable <- bundleTable.dataTableFk
-      } yield (join, bundleTable, dataTable, joinField, tableField)
-
-      val tables = tableQuery.run
-
-      val apiTables = tables.map {
-        case (join: BundleContextlessJoinRow, bundleTable: BundleContextlessTableRow, dataTable: DataTableRow, joinField: Option[DataFieldRow], tableField: Option[DataFieldRow]) =>
-          val apiDataTable = ApiDataTable.fromDataTable(dataTable)(None)(None)
-          val apiTable = ApiBundleTable.fromBundleTable(bundleTable)(apiDataTable)
-          val apiJoinField = joinField.map(ApiDataField.fromDataField)
-          val apiTableField = tableField.map(ApiDataField.fromDataField)
-          ApiBundleCombination.fromBundleJoin(join)(apiJoinField, apiTableField, apiTable)
+  private def sourceStructureFieldsRequested(sources: Seq[ApiBundleDataSourceStructure]): Seq[FieldRequested] = {
+    sources.flatMap { sourceStructure =>
+      sourceStructure.datasets.flatMap { dataset =>
+        dataset.fields.flatMap { field =>
+          getFieldsRequested(sourceStructure.source, dataset.name, field)
+        }
       }
-
-      ApiBundleContextless.fromBundleContextlessTables(bundle)(Some(apiTables))
     }
-
   }
 
-  protected[api] def storeBundleCombination(combination: ApiBundleCombination)
-                                           (bundle: ApiBundleContextless)
-                                           (implicit session: Session): Try[ApiBundleCombination] = {
+  private def getSourceFields(sources: Seq[ApiBundleDataSourceStructure]): Future[Seq[(ApiBundleDataSourceStructure, ApiBundleDataSourceDataset, ApiDataTable, Seq[ApiDataField])]] = {
+    val sourceDatasetFieldEventuals = for {
+      source <- sources
+      dataset <- source.datasets
+    } yield {
+      val fieldsRequested = dataset.fields.flatMap { field =>
+        getFieldsRequested(source.source, dataset.name, field)
+      }
 
-    val storedBundleTableID = combination.bundleTable.id match {
-      case Some(bundleTableId) =>
-        // Bundle Table already exists, just return it
-        Success(Some(bundleTableId))
-      case None =>
-        storeBundleTable(combination.bundleTable).map(_.id)
+      val requestedTableFieldsQuery = fieldsRequested.map { fReq =>
+        for {
+          sourceTable <- DataTable.filter(table => table.sourceName === source.source && table.name === dataset.name)
+          t <- DataTable.filter(table => table.sourceName === fReq.sourceName && table.name === fReq.tableName)
+          f <- DataField.filter(field => field.name === fReq.fieldName && field.tableIdFk === t.id)
+        } yield (sourceTable, f)
+      } reduceLeft { (q, field) =>
+        q ++ field
+      }
+
+      DatabaseInfo.db.run {
+        requestedTableFieldsQuery.result
+      } map { tableFields =>
+        val sourceDatasetTable = tableFields
+          .headOption.map(_._1)
+          .map(t => ApiDataTable.fromDataTable(t)(None)(None))
+          .getOrElse(throw new IllegalArgumentException("None of the selected fields exist"))
+        val dataFields = tableFields.map(_._2).map(f => ApiDataField.fromDataField(f))
+        (source, dataset, sourceDatasetTable, dataFields)
+      }
     }
 
-    (storedBundleTableID, bundle.id) match {
-      // Both bundle table and bundle id have to be "well defined", already with IDs
-      case (Success(Some(bundleTableId)), Some(bundleId)) =>
-        (combination.bundleJoinField, combination.bundleTableField, combination.operator) match {
-          // Either both bundleJoinField, bundleTableField and the comparison operator have to be defined
-          case (Some(bundleJoinField), Some(bundleTableField), Some(comparisonOperator)) =>
-            val combinationRow = new BundleContextlessJoinRow(0, LocalDateTime.now(), LocalDateTime.now(),
-              combination.name, bundleTableId, bundleId,
-              bundleJoinField.id, bundleTableField.id, Some(comparisonOperator.toString))
+    val eventualSourceDatasetField = Future.sequence(sourceDatasetFieldEventuals)
+    eventualSourceDatasetField
+  }
 
-            Try((BundleContextlessJoin returning BundleContextlessJoin) += combinationRow) map { insertedCombination =>
-              ApiBundleCombination.fromBundleJoin(insertedCombination)(Some(bundleJoinField), Some(bundleTableField), combination.bundleTable)
+  protected[api] def getBundleContextlessById(bundleId: Int): Future[Option[ApiBundleContextless]] = {
+    getBundleContextlessWithDatasets(bundleId).map(_.map(_._1))
+  }
+
+  private def getBundleContextlessWithDatasets(bundleId: Int): Future[Option[(ApiBundleContextless, Set[Int])]] = {
+    val bundleDatasetQuery = for {
+      bundle <- BundleContextless.filter(_.id === bundleId)
+      bundleDataset <- BundleContextlessDataSourceDataset.filter(_.bundleId === bundleId)
+    } yield (bundle, bundleDataset)
+
+    val eventualBundleDataset = DatabaseInfo.db.run {
+      bundleDatasetQuery.result
+    }
+    eventualBundleDataset map { bundleWithDataset =>
+      // Only one (or none) bundle mathcing specific ID
+      val maybeBundle = bundleWithDataset.headOption.map(_._1)
+      maybeBundle.map { bundle =>
+        val sources = bundleWithDataset map {
+          case (_, bundleDataset) =>
+            val dataSourceDataset = ApiBundleDataSourceDataset(bundleDataset.datasetName, bundleDataset.description,
+              bundleDataset.fieldStructure.parseJson.convertTo[List[ApiBundleDataSourceField]])
+
+            val dataSourceStructure = ApiBundleDataSourceStructure(bundleDataset.sourceName, List(dataSourceDataset))
+
+            // Return both the structure and the set of field ids separately
+            (dataSourceStructure, bundleDataset.fieldIds)
+        }
+        // Flatten the set of fields of interest across all sources and datasets
+        val fieldsOfInterest = sources.unzip._2.flatten.toSet
+        val collatedSources = sources.unzip._1.groupBy(_.source).map {
+          case (sourceName, structures) =>
+            structures.reduceLeft { (sourceStructure, structure) =>
+              sourceStructure.copy(datasets = sourceStructure.datasets ++ structure.datasets)
             }
-
-          // Or none of them
-          case (None, None, None) =>
-            val combinationRow = new BundleContextlessJoinRow(0, LocalDateTime.now(), LocalDateTime.now(),
-              combination.name, bundleTableId, bundleId,
-              None, None, None)
-
-            Try((BundleContextlessJoin returning BundleContextlessJoin) += combinationRow) map { insertedCombination =>
-              ApiBundleCombination.fromBundleJoin(insertedCombination)(None, None, combination.bundleTable)
-            }
-          case _ =>
-            Failure(new IllegalArgumentException("Both columns must be provided to join data on as well as the operator, or none"))
         }
+        val retrievedBundle = ApiBundleContextless(Some(bundle.id),
+          Some(bundle.dateCreated), Some(bundle.lastUpdated),
+          bundle.name, Some(collatedSources.toSeq))
 
-      case (Failure(e), _) =>
-        Failure(new IllegalArgumentException(s"Failure creating Bundle Table ${combination.bundleTable}"))
-      case _ =>
-        Failure(new IllegalArgumentException(s"Bundle Table ${combination.bundleTable.id} to create a bundle combination on (bundle ${bundle.id}) not found"))
+        (retrievedBundle, fieldsOfInterest)
+      }
+    }
+  }
+
+  protected[api] def getBundleContextlessValues(bundleId: Int, maybeLimit: Option[Int],
+                                                startTime: LocalDateTime, endTime: LocalDateTime): Future[ApiBundleContextlessData] = {
+    for {
+      (bundle, fieldset) <- getBundleContextlessWithDatasets(bundleId).map(_.get)
+      sourceTables <- getSourceTables(bundle.sources.get)
+      values <- fieldsetValues(fieldset, startTime, endTime)
+    } yield {
+      val valueRecords = getValueRecords(values, sourceTables)
+      val dataGroups = recordsDatasetGrouped(sourceTables, valueRecords)
+      ApiBundleContextlessData(bundle.id.get, bundle.name, dataGroups)
+    }
+  }
+
+  protected[api] def recordsDatasetGrouped(
+    tables: Seq[ApiDataTable],
+    valueRecords: Iterable[ApiDataRecord]): Map[String, Seq[ApiBundleContextlessDatasetData]] = {
+
+    val datasets = tables.map { table =>
+      val recordsWithTable = valueRecords.filter { record =>
+        record.tables
+          .map(recordTable => recordTable.map(_.id))
+          .getOrElse(Seq())
+          .contains(table.id)
+      }
+
+      (table.source, ApiBundleContextlessDatasetData(table.name, table, Some(recordsWithTable.toSeq)))
+    }
+    datasets.groupBy(_._1).map { case (k, v) => (k, v.unzip._2) }
+
+  }
+
+  private def getSourceTables(sources: Seq[ApiBundleDataSourceStructure]): Future[Seq[ApiDataTable]] = {
+    val fieldsRequested = sourceStructureFieldsRequested(sources)
+    val sourceDatasets = sources flatMap { source =>
+      source.datasets.map { dataset =>
+        (source.source, dataset.name)
+      }
+    }
+    sourceDatasetTables(sourceDatasets, Some(fieldsRequested))
+  }
+
+  protected[api] def sourceDatasetTables(sourceDatasets: Seq[(String, String)], maybeFieldsRequested: Option[Seq[FieldRequested]]): Future[Seq[ApiDataTable]] = {
+    // Get All Data Table trees matchinf source and name
+    val dataTableTrees = sourceDatasets.map {
+      case (source, dataset) =>
+        for {
+          rootTable <- DataTableTree.filter(_.sourceName === source).filter(_.name === dataset)
+          tree <- DataTableTree.filter(_.rootTable === rootTable.id)
+        } yield (rootTable, tree)
+    } reduceLeft { (q, tree) =>
+      q ++ tree
+    }
+
+    val eventualRoots = DatabaseInfo.db.run(dataTableTrees.map(_._1.id).result) map { roots => roots.flatten.toSet }
+    eventualRoots flatMap { roots =>
+      buildDataTreeStructures(dataTableTrees.map(_._2), roots)
     }
   }
 }

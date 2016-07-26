@@ -1,5 +1,26 @@
+/*
+ * Copyright (C) 2016 Andrius Aucinas <andrius.aucinas@hatdex.org>
+ * SPDX-License-Identifier: AGPL-3.0
+ *
+ * This file is part of the Hub of All Things project (HAT).
+ *
+ * HAT is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, version 3 of
+ * the License.
+ *
+ * HAT is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+ * the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General
+ * Public License along with this program. If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
 package hatdex.hat.authentication
 
+import com.typesafe.config.ConfigFactory
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.authentication.models.{AccessToken, User}
 import org.mindrot.jbcrypt.BCrypt
@@ -7,7 +28,7 @@ import org.mindrot.jbcrypt.BCrypt
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import hatdex.hat.dal.SlickPostgresDriver.simple._
+import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 
 /**
@@ -16,21 +37,28 @@ import hatdex.hat.dal.Tables._
 
 object HatAuthHandler {
 
-  val db = DatabaseInfo.db
-
-  object AccessTokenHandler {
+  object AccessTokenHandler extends JwtTokenHandler {
     val authenticator = authFunction _
-    private def authFunction(params: Map[String, String]) = Future {
-      val mayBeToken = params.get("access_token")
-      db.withSession { implicit session:Session =>
-        val mayBeUser = for {
-          token <- mayBeToken
-          user <- UserAccessToken.filter(_.accessToken === token).flatMap(_.userUserFk).filter(_.enabled === true).firstOption
-        } yield {
-            User(user.userId, user.email, None, user.name, user.role)
+    private def authFunction(params: Map[String, String]): Future[Option[User]] = {
+      val mayBeToken = Future {
+        params.get("X-Auth-Token")
+      }
+
+      mayBeToken flatMap {
+        case Some(token: String) if validateJwtToken(token) && verifyResource(token, issuer) =>
+          val userQuery = UserAccessToken.filter(_.accessToken === token).flatMap(_.userUserFk).filter(_.enabled === true).take(1)
+          val matchingUsers = DatabaseInfo.db.run(userQuery.result)
+          val maybeRole = getTokenAccessScope(token)
+          matchingUsers.map { users =>
+            users.headOption
+              .map(User.fromDbModel)
+              .map(_.copy(role = maybeRole.getOrElse("")))
           }
-        session.close()
-        mayBeUser
+        case Some(_) =>
+          // Invalid token
+          Future.successful(None)
+        case None =>
+          Future.successful(None)
       }
     }
   }
@@ -38,43 +66,28 @@ object HatAuthHandler {
   // Normally only allowing the owner to authenticate with password
   object UserPassHandler {
     val authenticator = authFunction _
-    private def authFunction(params: Map[String, String]) = Future {
+    private def authFunction(params: Map[String, String]): Future[Option[User]] = {
       val emailOpt = params.get("username")
       val passwordOpt = params.get("password")
-      db.withSession { implicit session: Session =>
-        val mayBeUser = for {
-          email <- emailOpt
-          password <- passwordOpt
-          user <- UserUser.filter(_.email === email).filter(_.role === "owner").filter(_.enabled === true).firstOption
-          if BCrypt.checkpw(password, user.pass.getOrElse(""))
-        } yield {
-            User(user.userId, user.email, None, user.name, user.role)
-          }
-//        println("Authenticated? " + mayBeUser.toString)
-        session.close()
-        mayBeUser
-      }
-    }
-  }
 
-  // Except for the special case, used to create authentication token
-  object UserPassApiHandler {
-    val authenticator = authFunction _
-    private def authFunction(params: Map[String, String]) = Future {
-      val emailOpt = params.get("username")
-      val passwordOpt = params.get("password")
-      db.withSession { implicit session: Session =>
-        val mayBeUser = for {
+      val maybeCredentials = Future {
+        for {
           email <- emailOpt
           password <- passwordOpt
-          user <- UserUser.filter(_.email === email).filter(_.enabled === true).firstOption
-          if BCrypt.checkpw(password, user.pass.getOrElse(""))
-        } yield {
-            User(user.userId, user.email, None, user.name, user.role)
+        } yield (email, password)
+      }
+
+      maybeCredentials flatMap {
+        case Some((email, password)) =>
+          val userQuery = UserUser.filter(_.email === email).filter(_.enabled === true).take(1)
+          val matchingUsers = DatabaseInfo.db.run(userQuery.result)
+          matchingUsers.map { users =>
+            users.headOption
+              .filter(user => BCrypt.checkpw(password, user.pass.getOrElse("")))
+              .map(User.fromDbModel)
           }
-//        println("Authenticated? " + mayBeUser.toString)
-        session.close()
-        mayBeUser
+        case None =>
+          Future.successful(None)
       }
     }
   }

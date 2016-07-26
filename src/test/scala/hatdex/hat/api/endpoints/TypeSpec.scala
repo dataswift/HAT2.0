@@ -1,19 +1,44 @@
+/*
+ * Copyright (C) 2016 Andrius Aucinas <andrius.aucinas@hatdex.org>
+ * SPDX-License-Identifier: AGPL-3.0
+ *
+ * This file is part of the Hub of All Things project (HAT).
+ *
+ * HAT is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, version 3 of
+ * the License.
+ *
+ * HAT is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+ * the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General
+ * Public License along with this program. If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
+
 package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
+import spray.httpx.RequestBuilding._
+import spray.http.HttpHeaders._
 import hatdex.hat.api.TestDataCleanup
 import hatdex.hat.api.endpoints.jsonExamples.TypeExamples
 import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.api.models.{ApiSystemType, ApiSystemUnitofmeasurement, ErrorMessage}
+import hatdex.hat.api.models.{ ApiSystemType, ApiSystemUnitofmeasurement, ErrorMessage }
 import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
+import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
-import spray.http.{HttpEntity, HttpRequest, MediaTypes}
+import spray.http._
 import spray.testkit.Specs2RouteTest
 import spray.httpx.SprayJsonSupport._
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeAfterAll {
   def actorRefFactory = system
@@ -25,25 +50,22 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
 
   def beforeAll() = {
-
+    Await.result(TestDataCleanup.cleanupAll, Duration("10 seconds"))
   }
 
   import JsonProtocol._
 
   // Clean up all data
   def afterAll() = {
-    db.withSession { implicit session =>
-      TestDataCleanup.cleanupAll
-      session.close()
-    }
+//    TestDataCleanup.cleanupAll
   }
 
-  def createPostalAddressType = HttpRequest(POST, "/type/type" + ownerAuthParams,
-    entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.postalAddress)) ~>
+  def createPostalAddressType = HttpRequest(POST, "/type/type")
+    .withEntity(HttpEntity(MediaTypes.`application/json`, TypeExamples.postalAddress))
+    .withHeaders(ownerAuthHeader) ~>
     sealRoute(routes) ~>
     check {
       eventually {
-        logger.debug("Type create response: " + response.toString)
         response.status should be equalTo Created
         responseAs[String] must contain("PostalAddress")
         responseAs[ApiSystemType].id must beSome
@@ -51,8 +73,9 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
       responseAs[ApiSystemType]
     }
 
-  def createDateType = HttpRequest(POST, "/type/type" + ownerAuthParams,
-    entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.date)) ~>
+  def createDateType = HttpRequest(POST, "/type/type")
+    .withEntity(HttpEntity(MediaTypes.`application/json`, TypeExamples.date))
+    .withHeaders(ownerAuthHeader) ~>
     sealRoute(routes) ~>
     check {
       eventually {
@@ -63,8 +86,9 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
       responseAs[ApiSystemType]
     }
 
-  def createPlaceType = HttpRequest(POST, "/type/type" + ownerAuthParams,
-    entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.place)) ~>
+  def createPlaceType = HttpRequest(POST, "/type/type")
+    .withEntity(HttpEntity(MediaTypes.`application/json`, TypeExamples.place))
+    .withHeaders(ownerAuthHeader) ~>
     sealRoute(routes) ~>
     check {
       eventually {
@@ -75,8 +99,9 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
       responseAs[ApiSystemType]
     }
 
-  def createQuantitativeValueType = HttpRequest(POST, "/type/type" + ownerAuthParams,
-    entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.quantitativeValue)) ~>
+  def createQuantitativeValueType = HttpRequest(POST, "/type/type")
+    .withEntity(HttpEntity(MediaTypes.`application/json`, TypeExamples.quantitativeValue))
+    .withHeaders(ownerAuthHeader) ~>
     sealRoute(routes) ~>
     check {
       eventually {
@@ -87,12 +112,13 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
       responseAs[ApiSystemType]
     }
 
-  def createMetersUom = HttpRequest(POST, "/type/unitofmeasurement" + ownerAuthParams,
-    entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.uomMeters)) ~>
+  def createMetersUom = HttpRequest(POST, "/type/unitofmeasurement")
+    .withEntity(HttpEntity(MediaTypes.`application/json`, TypeExamples.uomMeters))
+    .withHeaders(ownerAuthHeader) ~>
     sealRoute(routes) ~>
     check {
       eventually {
-        logger.debug("UOM create response: " + response.toString)
+        logger.debug("UOM create response: "+response.toString)
         response.status should be equalTo Created
         responseAs[String] must contain("meters")
         responseAs[ApiSystemUnitofmeasurement].id must beSome
@@ -100,8 +126,9 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
       responseAs[ApiSystemUnitofmeasurement]
     }
 
-  def createWeightUom = HttpRequest(POST, "/type/unitofmeasurement" + ownerAuthParams,
-    entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.uomWeight)) ~>
+  def createWeightUom = HttpRequest(POST, "/type/unitofmeasurement")
+    .withEntity(HttpEntity(MediaTypes.`application/json`, TypeExamples.uomWeight))
+    .withHeaders(ownerAuthHeader) ~>
     sealRoute(routes) ~>
     check {
       eventually {
@@ -114,7 +141,10 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
 
   sequential
 
-  val ownerAuthParams = "?username=bob@gmail.com&password=pa55w0rd"
+  val ownerAuthToken = HatAuthTestHandler.validUsers.find(_.role == "owner").map(_.userId).flatMap { ownerId =>
+    HatAuthTestHandler.validAccessTokens.find(_.userId == ownerId).map(_.accessToken)
+  } getOrElse ("")
+  val ownerAuthHeader = RawHeader("X-Auth-Token", ownerAuthToken)
 
   "Types Service" should {
     "Accept new types created" in {
@@ -122,8 +152,9 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
       val dateType = createDateType
       val placeType = createPlaceType
 
-      HttpRequest(POST, s"/type/${placeType.id.get}/type/${postalAddressType.id.get}" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.addressOfPlace)) ~>
+      HttpRequest(POST, s"/type/${placeType.id.get}/type/${postalAddressType.id.get}")
+        .withEntity(HttpEntity(MediaTypes.`application/json`, TypeExamples.addressOfPlace))
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
           eventually {
@@ -133,47 +164,57 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
     }
 
     "Allow type lookup" in {
-      HttpRequest(
-        GET, "/type/type" + ownerAuthParams + "&name=PostalAddress") ~>
+      HttpRequest(GET, Uri("/type/type").withQuery(("name", "PostalAddress")))
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo OK
-          val types = responseAs[List[ApiSystemType]]
-          types must have size (1)
-          responseAs[String] must contain("PostalAddress")
+          eventually {
+            response.status should be equalTo OK
+            val types = responseAs[List[ApiSystemType]]
+            types must have size (1)
+            responseAs[String] must contain("PostalAddress")
+          }
         }
 
-      HttpRequest(
-        GET, "/type/type" + ownerAuthParams) ~>
+      HttpRequest(GET, "/type/type")
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo OK
-          val types = responseAs[List[ApiSystemType]]
-          types must not be empty
-          responseAs[String] must contain("PostalAddress")
-          responseAs[String] must contain("Date")
-          responseAs[String] must contain("Place")
+          eventually {
+            response.status should be equalTo OK
+            val types = responseAs[List[ApiSystemType]]
+            types must not be empty
+            responseAs[String] must contain("PostalAddress")
+            responseAs[String] must contain("Date")
+            responseAs[String] must contain("Place")
+          }
         }
     }
 
-    "Disallow duplicte types" in {
-      HttpRequest(POST, "/type/type" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.postalAddress)) ~>
+    "Disallow duplicte types" in pending {
+      HttpRequest(POST, "/type/type")
+        .withEntity(HttpEntity(MediaTypes.`application/json`, TypeExamples.postalAddress))
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo BadRequest
-          responseAs[String] must contain("PostalAddress")
-          responseAs[ErrorMessage].message must contain("Error")
+          eventually {
+            response.status should be equalTo BadRequest
+            responseAs[String] must contain("PostalAddress")
+            responseAs[ErrorMessage].message must contain("Error")
+          }
         }
     }
 
     "Rejecet bad linking of types" in {
-      HttpRequest(POST, s"/type/1/type/0" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.addressOfPlace)) ~>
+      HttpRequest(POST, s"/type/1/type/0")
+        .withEntity(HttpEntity(MediaTypes.`application/json`, TypeExamples.addressOfPlace))
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo BadRequest
-          responseAs[ErrorMessage].message must contain("Error linking Types")
+          eventually {
+            response.status should be equalTo BadRequest
+            responseAs[ErrorMessage].message must contain("Error linking Types")
+          }
         }
     }
 
@@ -184,45 +225,54 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
       kilograms.id must beSome
     }
 
-    "Reject duplicate Units of Measurement" in {
-      HttpRequest(POST, "/type/unitofmeasurement" + ownerAuthParams,
-        entity = HttpEntity(MediaTypes.`application/json`, TypeExamples.uomMeters)) ~>
+    "Reject duplicate Units of Measurement" in pending {
+      HttpRequest(POST, "/type/unitofmeasurement")
+        .withEntity(HttpEntity(MediaTypes.`application/json`, TypeExamples.uomMeters))
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo BadRequest
-          responseAs[ErrorMessage].message must contain("Error")
+          eventually {
+            response.status should be equalTo BadRequest
+            responseAs[ErrorMessage].message must contain("Error")
+          }
         }
     }
 
     "Allow Unit of Measurement lookup" in {
-      HttpRequest(
-        GET, "/type/unitofmeasurement" + ownerAuthParams + "&name=meters") ~>
+      HttpRequest(GET, Uri("/type/unitofmeasurement").withQuery(("name", "meters")) )
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo OK
-          val uoms = responseAs[List[ApiSystemUnitofmeasurement]]
-          uoms must not be empty
-          responseAs[String] must contain("meters")
+          eventually {
+            response.status should be equalTo OK
+            val uoms = responseAs[List[ApiSystemUnitofmeasurement]]
+            uoms must not be empty
+            responseAs[String] must contain("meters")
+          }
         }
 
-      HttpRequest(
-        GET, "/type/unitofmeasurement" + ownerAuthParams) ~>
+      HttpRequest(GET, Uri("/type/unitofmeasurement"))
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo OK
-          val uoms = responseAs[List[ApiSystemUnitofmeasurement]]
-          uoms must not be empty
-          responseAs[String] must contain("meters")
-          responseAs[String] must contain("kilograms")
+          eventually {
+            response.status should be equalTo OK
+            val uoms = responseAs[List[ApiSystemUnitofmeasurement]]
+            uoms must not be empty
+            responseAs[String] must contain("meters")
+            responseAs[String] must contain("kilograms")
+          }
         }
 
-      HttpRequest(
-        GET, "/type/unitofmeasurement" + ownerAuthParams + "&name=notExistingName") ~>
+      HttpRequest(GET, Uri("/type/unitofmeasurement").withQuery(("name", "notExistingName")) )
+        .withHeaders(ownerAuthHeader) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo OK
-          val uoms = responseAs[List[ApiSystemUnitofmeasurement]]
-          uoms must be empty
+          eventually {
+            response.status should be equalTo OK
+            val uoms = responseAs[List[ApiSystemUnitofmeasurement]]
+            uoms must be empty
+          }
         }
     }
 

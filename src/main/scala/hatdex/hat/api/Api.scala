@@ -1,12 +1,23 @@
 /*
- * Copyright (c) 2015.
+ * Copyright (C) 2016 Andrius Aucinas <andrius.aucinas@hatdex.org>
+ * SPDX-License-Identifier: AGPL-3.0
  *
- * This work is licensed under the
- * Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.
- * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-nd/4.0/
- * or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+ * This file is part of the Hub of All Things project (HAT).
+ *
+ * HAT is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, version 3 of
+ * the License.
+ *
+ * HAT is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+ * the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General
+ * Public License along with this program. If not, see
+ * <http://www.gnu.org/licenses/>.
  */
-
 package hatdex.hat.api
 
 import akka.actor.ActorRefFactory
@@ -15,6 +26,7 @@ import hatdex.hat.api.endpoints._
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models.ErrorMessage
 import hatdex.hat.authentication.HatServiceAuthHandler
+import spray.http.MediaTypes._
 import spray.http.StatusCodes._
 import spray.http._
 import spray.httpx.SprayJsonSupport._
@@ -41,13 +53,6 @@ trait Api extends HttpService with Cors {
   def userService:Users
   def typeService: Type
 
-  // logs request method, uri and response status at debug level
-  def requestMethodAndResponseStatusAsInfo(req: HttpRequest): Any => Option[LogEntry] = {
-    case res: HttpResponse => Some(LogEntry(req.method + ":" + req.uri + ":" + res.message.status, Logging.InfoLevel))
-    case Rejected(rejections) => Some(LogEntry(req.method + ":" + req.uri + ":" + rejections.toString(), Logging.ErrorLevel)) // log rejections
-    case _ => None // other kind of responses
-  }
-
   // Wraps rejections in JSON to be sent back to the client
 
   import JsonProtocol._
@@ -72,18 +77,20 @@ trait Api extends HttpService with Cors {
   def routes = handleRejections(jsonRejectionHandler) {
     cors {
       helloService.routes ~
-        apiDataService.routes ~
-        apiPropertyService.routes ~
-        apiBundleService.routes ~
-        apiBundlesContextService.routes ~
-        eventsService.routes ~
-        locationsService.routes ~
-        peopleService.routes ~
-        thingsService.routes ~
-        organisationsService.routes ~
-        userService.routes ~
-        typeService.routes ~
-        dataDebitService.routes
+        respondWithMediaType(`application/json`) {
+          apiDataService.routes ~
+            apiPropertyService.routes ~
+            //        apiBundleService.routes ~
+            apiBundlesContextService.routes ~
+            eventsService.routes ~
+            locationsService.routes ~
+            peopleService.routes ~
+            thingsService.routes ~
+            organisationsService.routes ~
+            userService.routes ~
+            typeService.routes ~
+            dataDebitService.routes
+        }
     }
   }
 
