@@ -19,6 +19,7 @@ before_script:
   - bash ./setupDatabase.sh
   - bash ./setupAccess.sh
   - bash ./applyEvolutions.sh
+  - cd -
 
 script:
    - sbt clean
