@@ -13,6 +13,11 @@ branches:
 addons:
   postgresql: "9.4"
 
+cache:
+  directories:
+  - $HOME/.sbt
+  - $HOME/.ivy2
+
 before_script:
   - cd ./hat-database-schema
   - source ./env.sh
