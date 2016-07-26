@@ -11,15 +11,13 @@ branches:
     - testing
 
 addons:
-  postgresql: "9.3"
+  postgresql: "9.4"
 
 before_script:
   - cd ./hat-database-schema
-  - bash ./env.sh
-  - bash ./setupDatabase.sh
-  - bash ./setupAccess.sh
-  - bash ./applyEvolutions.sh
+  - bash ./env.sh && bash ./setupDatabase.sh && bash ./setupAccess.sh && bash ./applyEvolutions.sh
   - cd -
+  - cp src/main/resources/database.conf codegen/src/main/resources/database.conf
 
 script:
    - sbt clean
