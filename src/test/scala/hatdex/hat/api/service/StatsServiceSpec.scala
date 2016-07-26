@@ -97,8 +97,9 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
         sealRoute(routes) ~>
         check {
           eventually {
-            response.status should be equalTo Created
             val responseString = responseAs[String]
+            logger.info(s"Data debit propose response $responseString")
+            response.status should be equalTo Created
             responseString must contain("key")
           }
           responseAs[ApiDataDebit]
