@@ -91,7 +91,7 @@ trait DataService {
   }
 
   def createTable(table: ApiDataTable): Future[ApiDataTable] = {
-    logger.debug("Creating new table for "+table)
+    //logger.debug(s"Creating new table for $table")
     val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, table.source)
     for {
       insertedTable <- DatabaseInfo.db.run((DataTable returning DataTable) += newTable)
@@ -237,6 +237,7 @@ trait DataService {
       val tablesWithParents = treeFields.map(_._1) // Get the trees
         .map(tree => (ApiDataTable.fromNestedTable(tree)(None)(None), tree.table1)) // Use the API data model for each tree
         .distinct // Take only distinct trees (duplicates returned with each field
+      //logger.debug(s"Got tables with parents: $tablesWithParents")
 
       val fields = treeFields.flatMap(_._2)
         .map(ApiDataField.fromDataField)
@@ -425,19 +426,23 @@ trait DataService {
   def getRecordValues(recordId: Int): Future[Option[ApiDataRecord]] = {
     val eventualValues = recordValues(recordId)
     val eventualFielset = eventualValues.map { recordValues =>
+      // logger.debug(s"Getting record values $recordValues")
       recordValues.unzip3._2.map(_.id).toSet
     }
 
     val eventualTables = eventualFielset flatMap { case fieldset: Set[Int] =>
+      // logger.debug(s"Getting tables for fieldset $fieldset")
       val dataTableTreesQuery = for {
         field <- DataField.filter(_.id inSet fieldset)
-        tree <- DataTableTree.filter(_.id === field.tableIdFk)
+        rootTable <- DataTableTree.filter(field.tableIdFk === _.path.any)
+        tree <- DataTableTree.filter(_.rootTable === rootTable.path.any)
       } yield tree
 
       buildDataTreeStructures(dataTableTreesQuery)
     }
 
     eventualTables flatMap { tables =>
+      // logger.debug(s"Filling record tables $tables")
       val fieldset = tables.map(getStructureFields).reduce( (fs, structureFields) => fs ++ structureFields )
       eventualValues.map(values => getValueRecords(values, tables))
     } map (_.headOption)
