@@ -21,9 +21,6 @@
 
 package hatdex.hat.api.endpoints.jsonExamples
 
-/**
- * Created by andrius on 10/10/15.
- */
 object UserExamples {
   val userExample =
     """

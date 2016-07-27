@@ -190,7 +190,7 @@ class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll w
           responseAs[User]
         }
 
-      HttpRequest(GET, "/users/access_token?username=apiClient@platform.com&password=simplepass")
+      HttpRequest(GET, "/users/access_token")
         .withHeaders(RawHeader("username", "apiClient@platform.com"), RawHeader("password", "simplepass")) ~>
         sealRoute(routes) ~> check {
           response.status should be equalTo OK

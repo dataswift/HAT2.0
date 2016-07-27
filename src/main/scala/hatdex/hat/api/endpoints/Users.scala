@@ -140,7 +140,7 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
         onComplete(response) {
           case Success(value) => complete((OK, value))
           case Failure(e: ApiError) =>
-            logger.error(s"API Error while fetching Access Token: ${e.getMessage}")
+            logger.error(s"API Error while fetching Access Token: ${e.message}")
             complete((e.statusCode, e.message))
           case Failure(e) =>
             logger.error(s"Unexpected Error while fetching Access Token: ${e.getMessage}")

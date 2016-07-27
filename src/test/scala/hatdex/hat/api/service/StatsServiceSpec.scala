@@ -27,7 +27,7 @@ import akka.actor.{ ActorSystem, ActorRefFactory, ActorContext }
 import akka.event.{ Logging, LoggingAdapter }
 import hatdex.hat.api.{ DatabaseInfo, TestDataCleanup }
 import hatdex.hat.api.endpoints._
-import hatdex.hat.api.endpoints.jsonExamples.{ BundleExamples, DataDebitExamples }
+import hatdex.hat.api.endpoints.jsonExamples.{DataExamples, BundleExamples, DataDebitExamples}
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.authenticators.AccessTokenHandler
@@ -74,7 +74,7 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
     override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
     import JsonProtocol._
 
-    logger.info(s"Poulated data table: $dataTable")
+    logger.info(s"Populated data table: $dataTable")
 
     HatAuthTestHandler.validUsers.find(_.role == "owner") map { user =>
       UserUserRow(user.userId,
