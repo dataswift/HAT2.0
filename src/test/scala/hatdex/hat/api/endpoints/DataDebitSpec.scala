@@ -25,7 +25,7 @@ import java.util.UUID
 
 import akka.actor.{ ActorSystem, ActorRefFactory }
 import akka.event.LoggingAdapter
-import hatdex.hat.api.TestDataCleanup
+import hatdex.hat.api.{TestFixtures, DatabaseInfo, TestDataCleanup}
 import hatdex.hat.api.endpoints.jsonExamples.{ BundleExamples, DataDebitExamples }
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
@@ -59,7 +59,10 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
-//    Await.result(TestDataCleanup.cleanupAll, Duration("20 seconds"))
+    val f = TestDataCleanup.cleanupAll.flatMap { c =>
+      TestFixtures.contextlessBundleContext
+    }
+    Await.result(f, Duration("20 seconds"))
   }
 
   // Clean up all data
@@ -68,7 +71,6 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
   }
 
   object Context extends DataDebitContextualContext with DataDebitRequiredServices {
-    Await.result(TestDataCleanup.cleanupAll, Duration("40 seconds"))
     def actorRefFactory = system
     val logger: LoggingAdapter = testLogger
   }
@@ -84,17 +86,18 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
   "Data Debit Service" should {
     "Accept a contextless Data Debit proposal" in new Context {
 
-      val contextlessBundle = BundleExamples.fullbundle
+      val bundleData = JsonParser(BundleExamples.fullbundle).convertTo[ApiBundleContextless]
+      val dataDebitData = JsonParser(DataDebitExamples.dataDebitExample).convertTo[ApiDataDebit].copy(bundleContextless = Some(bundleData))
 
-      val bundleData = JsonParser(contextlessBundle).convertTo[ApiBundleContextless]
-      val dataDebitData = JsonParser(DataDebitExamples.dataDebitExample).convertTo[ApiDataDebit]
-
-      logger.info(s"populated data table: $populatedTable")
+      import hatdex.hat.dal.SlickPostgresDriver.api._
+        DatabaseInfo.db.run { DataTable.result }
+          .map(tables => logger.info(s"Tables: $tables"))
+//      logger.info(s"populated data table: $populatedTables")
 
       val dataDebit = {
         val dataDebit = HttpRequest(POST, "/dataDebit/propose")
           .withHeaders(dataDebitAuthHeader)
-          .withEntity(HttpEntity(MediaTypes.`application/json`, dataDebitData.copy(bundleContextless = Some(bundleData)).toJson.toString)) ~>
+          .withEntity(HttpEntity(MediaTypes.`application/json`, dataDebitData.toJson.toString)) ~>
           sealRoute(routes) ~>
           check {
             eventually {
@@ -293,6 +296,8 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
 
 trait DataDebitContext extends Specification with Specs2RouteTest with DataDebit with TestAuthCredentials {
   import JsonProtocol._
+  val result = TestFixtures.contextlessBundleContext
+  Await.result(result, Duration("20 seconds"))
 
   val propertySpec = new PropertySpec()
   val property = propertySpec.createWeightProperty
@@ -315,7 +320,7 @@ trait DataDebitContext extends Specification with Specs2RouteTest with DataDebit
   }
 
   val bundlesSpec = new BundlesSpec()
-  val moreData = bundlesSpec.populateData()
+  val moreData = TestFixtures.contextlessBundleContext
 }
 
 trait DataDebitContextualContext extends DataDebitContext {

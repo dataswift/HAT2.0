@@ -88,7 +88,7 @@ trait Type extends HttpService with HatServiceAuthHandler {
           onComplete(typeResponse) {
             case Success((statusCode: StatusCode, value)) => complete((statusCode, value))
             case Failure(e: ApiError)                     => complete((e.statusCode, e.message))
-            case Failure(e)                               => complete((InternalServerError, ErrorMessage("Error while creating type", "Unknown error occurred")))
+            case Failure(e)                               => complete((InternalServerError, ErrorMessage("Error while creating type", s"Unknown error occurred: ${e.getMessage}")))
           }
         }
       }

@@ -50,7 +50,7 @@ class TypeSpec extends Specification with Specs2RouteTest with Type with BeforeA
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
 
   def beforeAll() = {
-    Await.result(TestDataCleanup.cleanupAll, Duration("10 seconds"))
+    Await.result(TestDataCleanup.cleanupAll, 10 seconds)
   }
 
   import JsonProtocol._

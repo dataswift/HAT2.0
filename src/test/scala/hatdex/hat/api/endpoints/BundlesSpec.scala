@@ -22,8 +22,7 @@
 package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
-import hatdex.hat.api.DatabaseInfo
-import hatdex.hat.api.TestDataCleanup
+import hatdex.hat.api.{TestFixtures, DatabaseInfo, TestDataCleanup}
 import hatdex.hat.api.endpoints.jsonExamples.BundleExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
@@ -58,72 +57,9 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
 
-  // Prepare the data to create test bundles on
-  def populateData() = {
-    val dataTableRows = Seq(
-      new DataTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "kitchen", "Fibaro"),
-      new DataTableRow(3, LocalDateTime.now(), LocalDateTime.now(), "kichenElectricity", "Fibaro"),
-      new DataTableRow(4, LocalDateTime.now(), LocalDateTime.now(), "event", "Facebook"))
-
-    val dataTableCrossrefs = Seq(
-      new DataTabletotablecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), "contains", 2, 3))
-
-    val dataFieldRows = Seq(
-      new DataFieldRow(10, LocalDateTime.now(), LocalDateTime.now(), "timestamp", 3),
-      new DataFieldRow(11, LocalDateTime.now(), LocalDateTime.now(), "value", 3),
-      new DataFieldRow(12, LocalDateTime.now(), LocalDateTime.now(), "name", 4),
-      new DataFieldRow(13, LocalDateTime.now(), LocalDateTime.now(), "location", 4),
-      new DataFieldRow(14, LocalDateTime.now(), LocalDateTime.now(), "startTime", 4),
-      new DataFieldRow(15, LocalDateTime.now(), LocalDateTime.now(), "endTime", 4))
-
-    val dataRecordRows = Seq(
-      new DataRecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "kitchen record 1"),
-      new DataRecordRow(2, LocalDateTime.now(), LocalDateTime.now(), "kitchen record 2"),
-      new DataRecordRow(3, LocalDateTime.now(), LocalDateTime.now(), "kitchen record 3"),
-      new DataRecordRow(4, LocalDateTime.now(), LocalDateTime.now(), "event record 1"),
-      new DataRecordRow(5, LocalDateTime.now(), LocalDateTime.now(), "event record 2"),
-      new DataRecordRow(6, LocalDateTime.now(), LocalDateTime.now(), "event record 3"))
-
-    val dataValues = Seq(
-      new DataValueRow(1, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1", 10, 1),
-      new DataValueRow(2, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 1", 11, 1),
-
-      new DataValueRow(3, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 2", 10, 2),
-      new DataValueRow(4, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 2", 11, 2),
-
-      new DataValueRow(5, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 3", 10, 3),
-      new DataValueRow(6, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 3", 11, 3),
-
-      new DataValueRow(7, LocalDateTime.now(), LocalDateTime.now(), "event name 1", 12, 4),
-      new DataValueRow(8, LocalDateTime.now(), LocalDateTime.now(), "event location 1", 13, 4),
-      new DataValueRow(9, LocalDateTime.now(), LocalDateTime.now(), "event startTime 1", 14, 4),
-      new DataValueRow(10, LocalDateTime.now(), LocalDateTime.now(), "event endTime 1", 15, 4),
-
-      new DataValueRow(11, LocalDateTime.now(), LocalDateTime.now(), "event name 2", 12, 5),
-      new DataValueRow(12, LocalDateTime.now(), LocalDateTime.now(), "event location 2", 13, 5),
-      new DataValueRow(13, LocalDateTime.now(), LocalDateTime.now(), "event startTime 2", 14, 5),
-      new DataValueRow(14, LocalDateTime.now(), LocalDateTime.now(), "event endTime 2", 15, 5),
-
-      new DataValueRow(15, LocalDateTime.now(), LocalDateTime.now(), "event name 3", 12, 6),
-      new DataValueRow(16, LocalDateTime.now(), LocalDateTime.now(), "event location 3", 13, 6),
-      new DataValueRow(17, LocalDateTime.now(), LocalDateTime.now(), "event startTime 3", 14, 6),
-      new DataValueRow(18, LocalDateTime.now(), LocalDateTime.now(), "event endTime 3", 15, 6))
-
-    DatabaseInfo.db.run {
-      DBIO.seq(
-        DataTable.forceInsertAll(dataTableRows),
-        DataTabletotablecrossref.forceInsertAll(dataTableCrossrefs),
-        DataField.forceInsertAll(dataFieldRows),
-        DataRecord.forceInsertAll(dataRecordRows),
-        // Don't _foce_ insert all data values -- IDs don't particularly matter to us
-        DataValue.forceInsertAll(dataValues))
-    }
-
-  }
-
   def beforeAll() = {
     val f = TestDataCleanup.cleanupAll.flatMap { c =>
-      populateData()
+      TestFixtures.contextlessBundleContext
     }
     Await.result(f, Duration("20 seconds"))
   }

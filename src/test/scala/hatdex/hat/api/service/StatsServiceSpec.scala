@@ -59,6 +59,7 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
+    Await.result(TestDataCleanup.cleanupAll, Duration("40 seconds"))
   }
 
   // Clean up all data
@@ -67,12 +68,13 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
   }
 
   logger.info("Setting up Stats Service context")
-  object DataDebitContext extends DataDebitContextualContext with DataDebitRequiredServices {
-    Await.result(TestDataCleanup.cleanupAll, Duration("40 seconds"))
+  class DataDebitContext extends DataDebitContextualContext with DataDebitRequiredServices {
     def actorRefFactory = system
     val logger: LoggingAdapter = Logging.getLogger(system, "tests")
     override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
     import JsonProtocol._
+
+    logger.info(s"Poulated data table: $dataTable")
 
     HatAuthTestHandler.validUsers.find(_.role == "owner") map { user =>
       UserUserRow(user.userId,
@@ -86,9 +88,7 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
       }
     }
 
-    val contextlessBundle = BundleExamples.fullbundle
-
-    val bundleData = JsonParser(contextlessBundle).convertTo[ApiBundleContextless]
+    val bundleData = JsonParser(BundleExamples.fullbundle).convertTo[ApiBundleContextless]
     val dataDebitData = JsonParser(DataDebitExamples.dataDebitExample).convertTo[ApiDataDebit]
 
     val dataDebit = {
@@ -119,11 +119,11 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
       }
   }
 
-  class Context extends Scope {
-    val property = DataDebitContext.property
-    val populatedData = DataDebitContext.populatedData
-    val populatedTable = DataDebitContext.dataTable
-    val dataDebit = DataDebitContext.dataDebit
+  class Context extends DataDebitContext with Scope {
+//    val property = DataDebitContext.property
+//    val populatedData = DataDebitContext.populatedData
+//    val populatedTable = DataDebitContext.dataTable
+//    val dataDebit = DataDebitContext.dataDebit
   }
 
   //  object StatsServiceSpecContext extends StatsServiceContext with DataDebitRequiredServices {

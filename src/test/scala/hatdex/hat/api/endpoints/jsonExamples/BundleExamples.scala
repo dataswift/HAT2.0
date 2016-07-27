@@ -27,13 +27,13 @@ object BundleExamples {
       |{
       |    "name": "test bundle with full data",
       |    "sources": [{
-      |        "source": "Fibaro",
+      |        "source": "bundlefibaro",
       |        "datasets": [{
       |            "name": "kitchen",
       |            "description": "Fibaro sensors from the kitchen",
       |            "fields": [
       |                {
-      |                    "name": "kichenElectricity",
+      |                    "name": "kitchenElectricity",
       |                    "description": "electricity in the kitchen",
       |                    "fields": [
       |                        {"name": "timestamp", "description": "Timestamp of the data record", "fields": []},
@@ -43,7 +43,7 @@ object BundleExamples {
       |            ]
       |        }]
       |    }, {
-      |        "source": "Facebook",
+      |        "source": "bundlefacebook",
       |        "datasets": [{
       |            "name": "event",
       |            "description": "Your Social network Events",
@@ -63,13 +63,13 @@ object BundleExamples {
       |{
       |    "name": "test bundle with full data",
       |    "sources": [{
-      |        "source": "Fibaro",
+      |        "source": "bundlefibaro",
       |        "datasets": [{
       |            "name": "kitchen",
       |            "description": "Fibaro sensors from the kitchen",
       |            "fields": [
       |                {
-      |                    "name": "kichenElectricity",
+      |                    "name": "kitchenElectricity",
       |                    "description": "electricity in the kitchen",
       |                    "fields": [
       |                        {"name": "value", "description": "Instantaneouse use", "fields": []}
@@ -78,7 +78,7 @@ object BundleExamples {
       |            ]
       |        }]
       |    }, {
-      |        "source": "Facebook",
+      |        "source": "bundlefacebook",
       |        "datasets": [{
       |            "name": "event",
       |            "description": "Your Social network Events",
@@ -95,13 +95,13 @@ object BundleExamples {
       |{
       |    "name": "test bundle with full data",
       |    "sources": [{
-      |        "source": "Fibaro",
+      |        "source": "bundlefibaro",
       |        "datasets": [{
       |            "name": "kitchen",
       |            "description": "Fibaro sensors from the kitchen",
       |            "fields": [
       |                {
-      |                    "name": "kichenElectricity",
+      |                    "name": "kitchenElectricity",
       |                    "description": "electricity in the kitchen",
       |                    "fields": [
       |                        {"name": "value", "description": "Instantaneouse use", "fields": []}
@@ -110,7 +110,7 @@ object BundleExamples {
       |            ]
       |        }]
       |    }, {
-      |        "source": "Facebook",
+      |        "source": "bundlefacebook",
       |        "datasets": [{
       |            "name": "event",
       |            "description": "Your Social network Events",
@@ -126,8 +126,8 @@ object BundleExamples {
       |  {
       |    "name": "Electricity in the kitchen",
       |    "table": {
-      |      "name": "kichenElectricity",
-      |      "source": "fibaro"
+      |      "name": "kitchenElectricity",
+      |      "source": "bundlefibaro"
       |    }
       |  }
     """.stripMargin
@@ -146,7 +146,7 @@ object BundleExamples {
       |    "dateCreated": "2016-06-08T11:02:50+01:00",
       |    "tables": [{
       |      "name": "event",
-      |      "source": "Facebook",
+      |      "source": "bundlefacebook",
       |      "lastUpdated": "2016-06-08T11:02:50+01:00",
       |      "id": 4,
       |      "dateCreated": "2016-06-08T11:02:50+01:00",
@@ -207,7 +207,7 @@ object BundleExamples {
       |    "dateCreated": "2016-06-08T11:02:50+01:00",
       |    "tables": [{
       |      "name": "event",
-      |      "source": "Facebook",
+      |      "source": "bundlefacebook",
       |      "lastUpdated": "2016-06-08T11:02:50+01:00",
       |      "id": 4,
       |      "dateCreated": "2016-06-08T11:02:50+01:00",
@@ -266,7 +266,7 @@ object BundleExamples {
       |  "dateCreated": "2016-06-08T11:02:53+01:00",
       |  "table": {
       |    "name": "event",
-      |    "source": "Facebook",
+      |    "source": "bundlefacebook",
       |    "lastUpdated": "2016-06-08T11:02:50+01:00",
       |    "id": 4,
       |    "dateCreated": "2016-06-08T11:02:50+01:00"

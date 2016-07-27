@@ -56,7 +56,7 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="a.e.s.Slf4jLogger" LEVEL="ERROR">
+    <logger name="Slf4jLogger" LEVEL="ERROR">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
