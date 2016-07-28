@@ -44,8 +44,7 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <root level="DEBUG">
-        <appender-ref ref="ASYNCCONSOLE"/>
+    <root level="INFO">
     </root>
 
     <logger name="scala.slick.session" LEVEL="INFO">
