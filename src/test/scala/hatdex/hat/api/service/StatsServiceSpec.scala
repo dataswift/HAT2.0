@@ -74,7 +74,7 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
     override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
     import JsonProtocol._
 
-    logger.info(s"Populated data table: $dataTable")
+    logger.debug(s"Populated data table: $dataTable")
 
     HatAuthTestHandler.validUsers.find(_.role == "owner") map { user =>
       UserUserRow(user.userId,
@@ -99,7 +99,7 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
         check {
           eventually {
             val responseString = responseAs[String]
-            logger.info(s"Data debit propose response $responseString")
+            logger.debug(s"Data debit propose response $responseString")
             response.status should be equalTo Created
             responseString must contain("key")
           }

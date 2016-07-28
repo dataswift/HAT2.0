@@ -112,15 +112,27 @@ trait StatsService {
 
   def recordDataInbound(records: Seq[ApiRecordValues], user: User, logEntry: String): Future[Unit] = {
     val userInfo = user.copy(pass = None)
-    val allFields = records.flatMap(_.values.flatMap(_.field))
+    val allFields = records.flatMap(_.values flatMap { value =>
+      value.field.map { field =>
+        field.copy(values = Some(Seq(value.copy(field = None))))
+      }
+    })
+
     getFieldsetStats(allFields) map { stats =>
+      //logger.info(s"For data records $records")
+      //logger.info(s"And fields $allFields")
+      //logger.info(s"Posting stats $stats")
       statsActor ! DataCreditStats("datacredit", "Data Record Inbound", LocalDateTime.now(), userInfo, Some(stats), logEntry)
     }
   }
 
   def recordDataValuesInbound(values: Seq[ApiDataValue], user: User, logEntry: String): Future[Unit] = {
     val userInfo = user.copy(pass = None)
-    val allFields = values.flatMap(_.field)
+    val allFields = values flatMap { value =>
+      value.field.map { field =>
+        field.copy(values = Some(Seq(value.copy(field = None))))
+      }
+    }
     getFieldsetStats(allFields) map { stats =>
       statsActor ! DataCreditStats("datacredit", "Data Values Inbound", LocalDateTime.now(), userInfo, Some(stats), logEntry)
     }

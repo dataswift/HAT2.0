@@ -264,9 +264,8 @@ trait Data extends HttpService with DataService with StatsService with HatServic
           // the more complicated case of putting in data and record for creation of both together
           entity(as[ApiRecordValues]) { recordValues =>
             val insertedRecord = storeRecordValues(Seq(recordValues)).map(_.head)
-            insertedRecord map {
-              case insertedValues =>
-                recordDataInbound(Seq(insertedValues), user, "Single Data Record Values set posted")
+            insertedRecord map { record =>
+              recordDataInbound(Seq(record), user, "Single Data Record Values set posted")
             }
 
             onComplete(insertedRecord) {
@@ -276,10 +275,10 @@ trait Data extends HttpService with DataService with StatsService with HatServic
           } ~
             entity(as[Seq[ApiRecordValues]]) { recordValueList =>
               val insertedRecords = storeRecordValues(recordValueList)
-              insertedRecords foreach {
-                case insertedValues =>
-                  recordDataInbound(insertedValues, user, "Single Data Record Values set posted")
+              insertedRecords map { records =>
+                recordDataInbound(records, user, "Multiple Data Record Values set posted")
               }
+
               onComplete(insertedRecords) {
                 case Success(recordValues) => complete { (Created, recordValues) }
                 case Failure(e)            => complete { (BadRequest, ErrorMessage("Error creating Record with Values", e.getMessage)) }

@@ -85,6 +85,7 @@ class StatsReporter extends Actor with ActorLogging with JwtTokenHandler {
       statsQueue += StatsMessageQueued(LocalDateTime.now(), 0, stats)
     case stats: DataCreditStats =>
       statsQueue += StatsMessageQueued(LocalDateTime.now(), 0, stats)
+      logger.info(s"Data credit stats added: $stats")
     case stats: DataStorageStats =>
       logger.info(s"Data storage stats computed: $stats")
       statsQueue += StatsMessageQueued(LocalDateTime.now(), 0, stats)

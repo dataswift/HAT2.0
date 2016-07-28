@@ -54,19 +54,15 @@ trait DataService {
 
     eventualTables flatMap { tables =>
       val t1 = System.nanoTime()
-      logger.info(s"Time to build data tree structures: ${(t1 - t0)/1000000} ms")
       val fieldset = tables.map(getStructureFields).reduce((acc, fields) => acc ++ fields)
       val t4 = System.nanoTime()
-      logger.info(s"Time to get fieldset: ${(t4 - t0)/1000000} ms")
       val eventualValues = fieldsetValues(fieldset, startTime, endTime)
       val eventualValueRecords = eventualValues.map { values =>
         val t2 = System.nanoTime()
-        logger.info(s"Time to get values for discovered fieldset: ${(t2 - t0)/1000000} ms")
         getValueRecords(values, tables)
       }
       eventualValueRecords.map { r =>
         val t3 = System.nanoTime()
-        logger.info(s"Total time to get values for table: ${(t3 - t0)/1000000} ms")
         r.take(maybeLimit.getOrElse(r.length))
       }
     }
@@ -245,7 +241,8 @@ trait DataService {
 
       val rootTables = if (roots.nonEmpty) {
         tablesWithParents.filter(t => roots.contains(t._1.id.get)).map(_._1)
-      } else {
+      }
+      else {
         tablesWithParents.filter(_._2.isEmpty).map(_._1)
       }
 
@@ -272,10 +269,22 @@ trait DataService {
           (DataValue returning DataValue) ++= valueRows
         }
 
-        val maybeValues = insertedValues
-        maybeValues.map { values =>
-          val apiValues = values.map(ApiDataValue.fromDataValue)
-          ApiRecordValues(record, apiValues)
+        insertedValues flatMap { values =>
+          val valueSet = values.map(_.id).toSet
+          val valueDetailQuery = for {
+            value <- DataValue.filter(_.id inSet valueSet)
+            field <- value.dataFieldFk
+            record <- value.dataRecordFk
+          } yield (value, field, record)
+          val eventualDataValues = DatabaseInfo.db.run(valueDetailQuery.result).map { values =>
+            values map {
+              case (value, field, record) =>
+                ApiDataValue.fromDataValue(value, Some(field), Some(record))
+            }
+          }
+          eventualDataValues map { dataValues =>
+            ApiRecordValues(record, dataValues)
+          }
         }
       }
     }
@@ -389,10 +398,10 @@ trait DataService {
   protected[api] def fieldsetValues(fieldset: Set[Int], startTime: LocalDateTime, endTime: LocalDateTime): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
     val fieldValues = DataValue.filter(_.fieldId inSet fieldset)
     val valueQuery = for {
-        value <- fieldValues.filter(v => v.dateCreated <= endTime && v.dateCreated >= startTime)
-        field <- value.dataFieldFk
-        record <- value.dataRecordFk
-      } yield (record, field, value)
+      value <- fieldValues.filter(v => v.dateCreated <= endTime && v.dateCreated >= startTime)
+      field <- value.dataFieldFk
+      record <- value.dataRecordFk
+    } yield (record, field, value)
 
     DatabaseInfo.db.run(valueQuery.result)
   }
@@ -417,8 +426,9 @@ trait DataService {
     val eventualValues = DatabaseInfo.db.run(valueQuery.sortBy(_._1.id.desc).result)
 
     eventualValues map { values =>
-      values.headOption map { case (record: DataRecordRow, field: DataFieldRow, value: DataValueRow) =>
-        ApiDataValue.fromDataValue(value, Some(field), Some(record))
+      values.headOption map {
+        case (record: DataRecordRow, field: DataFieldRow, value: DataValueRow) =>
+          ApiDataValue.fromDataValue(value, Some(field), Some(record))
       }
     }
   }
@@ -430,20 +440,21 @@ trait DataService {
       recordValues.unzip3._2.map(_.id).toSet
     }
 
-    val eventualTables = eventualFielset flatMap { case fieldset: Set[Int] =>
-      // logger.debug(s"Getting tables for fieldset $fieldset")
-      val dataTableTreesQuery = for {
-        field <- DataField.filter(_.id inSet fieldset)
-        rootTable <- DataTableTree.filter(field.tableIdFk === _.path.any)
-        tree <- DataTableTree.filter(_.rootTable === rootTable.path.any)
-      } yield tree
+    val eventualTables = eventualFielset flatMap {
+      case fieldset: Set[Int] =>
+        // logger.debug(s"Getting tables for fieldset $fieldset")
+        val dataTableTreesQuery = for {
+          field <- DataField.filter(_.id inSet fieldset)
+          rootTable <- DataTableTree.filter(field.tableIdFk === _.path.any)
+          tree <- DataTableTree.filter(_.rootTable === rootTable.path.any)
+        } yield tree
 
-      buildDataTreeStructures(dataTableTreesQuery)
+        buildDataTreeStructures(dataTableTreesQuery)
     }
 
     eventualTables flatMap { tables =>
       // logger.debug(s"Filling record tables $tables")
-      val fieldset = tables.map(getStructureFields).reduce( (fs, structureFields) => fs ++ structureFields )
+      val fieldset = tables.map(getStructureFields).reduce((fs, structureFields) => fs ++ structureFields)
       eventualValues.map(values => getValueRecords(values, tables))
     } map (_.headOption)
   }
@@ -453,7 +464,8 @@ trait DataService {
       val tFields = fields.filter(_.tableId == table.id)
       if (tFields.isEmpty) {
         None
-      } else {
+      }
+      else {
         Some(tFields)
       }
     }
@@ -464,7 +476,8 @@ trait DataService {
     }
     val someApiTables = if (apiTables.isEmpty) {
       None
-    } else {
+    }
+    else {
       Some(apiTables)
     }
     table.copy(fields = tableFields, subTables = someApiTables)

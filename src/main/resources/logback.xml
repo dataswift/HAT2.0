@@ -24,11 +24,6 @@
         <appender-ref ref="CONSOLE" />
     </appender>
 
-    <!-- if you want to dump different packages to different files, here's where you do it
-            <logger name="com.onuspride" level="DEBUG" additivity="false">
-            <appender-ref ref="logFileOutput"/>
-        </logger>-->
-
     <logger name="akka" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
@@ -50,6 +45,7 @@
     </logger>
 
     <root level="DEBUG">
+        <appender-ref ref="ASYNCCONSOLE"/>
     </root>
 
     <logger name="scala.slick.session" LEVEL="INFO">
