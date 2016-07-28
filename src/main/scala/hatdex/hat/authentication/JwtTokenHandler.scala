@@ -40,7 +40,7 @@ import org.joda.time.DateTime
 import spray.http.StatusCodes._
 
 import scala.concurrent.Future
-import scala.util.{Try, Failure, Success}
+import scala.util.{ Try, Failure, Success }
 import scala.concurrent.ExecutionContext.Implicits.global
 import org.joda.time.Duration
 import org.joda.time.Duration._
@@ -69,25 +69,43 @@ trait JwtTokenHandler {
     resource: String,
     accessScope: String = "validate",
     validity: Duration = standardHours(2)): Future[AccessToken] = {
+
+    val maybeToken = fetchToken(user, resource, accessScope, validity)
+
+    maybeToken flatMap {
+      case Some(token) if validateJwtToken(token.accessToken) => Future.successful(token)
+      case _ => getToken(user, resource, accessScope, validity)
+    }
+  }
+
+  def fetchToken(
+    user: User,
+    resource: String,
+    accessScope: String = "validate",
+    validity: Duration = standardHours(2)): Future[Option[AccessToken]] = {
     val tokenQuery = UserAccessToken.filter(_.userId === user.userId)
       .filter(_.resource === resource)
       .filter(_.scope === accessScope)
-    val maybeToken = DatabaseInfo.db.run(tokenQuery.take(1).result).map(_.headOption)
+    val eventualToken = DatabaseInfo.db.run(tokenQuery.take(1).result).map(_.headOption)
+    eventualToken map { _.map(token => AccessToken(token.accessToken, token.userId)) }
+  }
 
-    maybeToken flatMap {
-      case Some(token) if validateJwtToken(token.accessToken) =>
-        Future(AccessToken(token.accessToken, token.userId))
-
-      case _ =>
-        val newAccessToken = UserAccessTokenRow(
-          getJwtToken(user.userId, resource, accessScope, validity),
-          user.userId, accessScope, resource)
-        DatabaseInfo.db.run(tokenQuery.delete) flatMap { result =>
-          DatabaseInfo.db.run((UserAccessToken += newAccessToken).asTry) map {
-            case Success(_) => AccessToken(newAccessToken.accessToken, user.userId)
-            case Failure(e) => throw ApiError(InternalServerError, ErrorMessage("Error while creating access_token, please try again later", e.getMessage))
-          }
-        }
+  def getToken(
+    user: User,
+    resource: String,
+    accessScope: String = "validate",
+    validity: Duration = standardHours(2)): Future[AccessToken] = {
+    val tokenQuery = UserAccessToken.filter(_.userId === user.userId)
+      .filter(_.resource === resource)
+      .filter(_.scope === accessScope)
+    val newAccessToken = UserAccessTokenRow(
+      getJwtToken(user.userId, resource, accessScope, validity),
+      user.userId, accessScope, resource)
+    DatabaseInfo.db.run(tokenQuery.delete) flatMap { result =>
+      DatabaseInfo.db.run((UserAccessToken += newAccessToken).asTry) map {
+        case Success(_) => AccessToken(newAccessToken.accessToken, user.userId)
+        case Failure(e) => throw ApiError(InternalServerError, ErrorMessage("Error while creating access_token, please try again later", e.getMessage))
+      }
     }
   }
 
@@ -130,7 +148,7 @@ trait JwtTokenHandler {
       val subjectMatches = claimSet.getSubject == subject
 
       signed && fresh && rightIssuer && subjectMatches
-    } getOrElse  {
+    } getOrElse {
       false
     }
   }

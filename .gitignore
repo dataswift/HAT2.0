@@ -15,3 +15,4 @@ target/
 /deployment/docker-deploy
 *.pem
 deployment/docker/docker-deploy
+/deployment/docker/docker-deploy/

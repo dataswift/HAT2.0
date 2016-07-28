@@ -12,18 +12,6 @@
 
     <div class="row text-center">
         <div class="center-block">
-            <a href="/profile">
-                <div class="hatservice">
-                    <div class="thumbnail">
-                        <img src="/assets/images/haticon.png" alt="HAT Profile" class="img img-responsive img-rounded profile-img" />
-                        <div class="caption">
-                            <h4>Personal HAT Page</h4>
-                            <p></p>
-                        </div>
-                    </div>
-                </div>
-            </a>
-
             @services.map { case service =>
             <a href="@service.url@service.authUrl">
                 <div class="hatservice">
