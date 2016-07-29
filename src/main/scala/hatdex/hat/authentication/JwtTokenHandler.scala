@@ -101,12 +101,16 @@ trait JwtTokenHandler {
     val newAccessToken = UserAccessTokenRow(
       getJwtToken(user.userId, resource, accessScope, validity),
       user.userId, accessScope, resource)
-    DatabaseInfo.db.run(tokenQuery.delete) flatMap { result =>
-      DatabaseInfo.db.run((UserAccessToken += newAccessToken).asTry) map {
+    val newTokenQuery = for {
+      _ <- tokenQuery.delete
+      token <- UserAccessToken += newAccessToken
+    } yield token
+
+      DatabaseInfo.db.run(newTokenQuery.transactionally.asTry) map {
         case Success(_) => AccessToken(newAccessToken.accessToken, user.userId)
         case Failure(e) => throw ApiError(InternalServerError, ErrorMessage("Error while creating access_token, please try again later", e.getMessage))
       }
-    }
+
   }
 
   private def getJwtToken(userId: UUID, resource: String, accessScope: String, validity: Duration): String = {
