@@ -116,6 +116,9 @@ with the appropriate parameters
 
 API documentation can be found at [http://hub-of-all-things.github.io/doc/](http://hub-of-all-things.github.io/doc/) 
 
+### Schema
+[HAT Database Schema](https://github.com/Hub-of-all-Things/hat-database-schema) has been split up into a separate project for easier reuse across different environments.
+
 ### Additional information
 
 - [Environment Setup Guides](https://github.com/Hub-of-all-Things/HAT2.0/wiki/Environment-Setup)
