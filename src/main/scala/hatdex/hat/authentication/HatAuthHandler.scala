@@ -41,7 +41,7 @@ object HatAuthHandler {
     val authenticator = authFunction _
     private def authFunction(params: Map[String, String]): Future[Option[User]] = {
       val mayBeToken = Future {
-        params.get("X-Auth-Token")
+        params.get("X-Auth-Token").orElse(params.get("x-auth-token"))
       }
 
       mayBeToken flatMap {

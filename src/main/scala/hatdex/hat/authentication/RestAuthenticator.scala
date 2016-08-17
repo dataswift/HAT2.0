@@ -43,7 +43,8 @@ trait RestAuthenticator[U] extends ContextAuthenticator[U] {
     (ctx: RequestContext) => {
       ctx.request.cookies.map(c => c.name -> c.content).toMap ++  // Include cookies as parameters
         ctx.request.uri.query.toMap ++                            // as well as query parameters
-        ctx.request.headers.map(h => h.name -> h.value).toMap     // and headers, in increasing importance
+        ctx.request.headers.map(h => h.name -> h.value).toMap ++  // and headers, in increasing importance
+        ctx.request.headers.map(h => h.name.toLowerCase -> h.value).toMap     // as well as lowercase headers
     }
   }
 
