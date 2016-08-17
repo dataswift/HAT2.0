@@ -61,7 +61,7 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
 
   // Clean up all data
   def afterAll() = {
-//    TestDataCleanup.cleanupAll
+    //    TestDataCleanup.cleanupAll
   }
 
   sequential
@@ -486,6 +486,43 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
             }
       }
     }
+
+    "Allow values to be updated" in {
+      val apiDataValue: ApiDataValue = populateDataReusable match {
+        case (dataTable, dataField, record) =>
+          // Make sure that the right data elements are contained in the different kinds of responses
+          HttpRequest(GET, s"/data/record/${record.id.get}/values")
+            .withHeaders(ownerAuthHeader) ~>
+            sealRoute(routes) ~>
+            check {
+              val record = responseAs[ApiDataRecord]
+              record.tables must beSome
+              record.tables.get.head.fields must beSome
+              record.tables.get.head.fields.get.head.values must beSome
+              record.tables.get.head.fields.get.head.values.get.head
+            }
+      }
+      apiDataValue.id must beSome
+
+      val updatedValue = apiDataValue.copy(value = "updated value")
+
+      HttpRequest(PUT, "/data/value")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, updatedValue.toJson.toString)) ~>
+        sealRoute(routes) ~>
+        check {
+          responseAs[String] must contain("updated value")
+        }
+
+      HttpRequest(GET, s"/data/value/${apiDataValue.id.get}")
+        .withHeaders(ownerAuthHeader) ~>
+        sealRoute(routes) ~>
+        check {
+          responseAs[String] must contain("updated value")
+        }
+
+    }
+
   }
 }
 

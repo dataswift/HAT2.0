@@ -42,8 +42,8 @@ trait RestAuthenticator[U] extends ContextAuthenticator[U] {
   val extractor: ParamExtractor = {
     (ctx: RequestContext) => {
       ctx.request.cookies.map(c => c.name -> c.content).toMap ++  // Include cookies as parameters
-        ctx.request.uri.query.toMap ++                            // as well as query parameters
-        ctx.request.headers.map(h => h.name -> h.value).toMap ++  // and headers, in increasing importance
+        ctx.request.uri.query.map(q => q._1.toLowerCase -> q._2).toMap ++                            // as well as query parameters
+//        ctx.request.headers.map(h => h.name -> h.value).toMap ++  // and headers, in increasing importance
         ctx.request.headers.map(h => h.name.toLowerCase -> h.value).toMap     // as well as lowercase headers
     }
   }

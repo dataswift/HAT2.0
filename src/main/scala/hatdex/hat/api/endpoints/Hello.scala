@@ -25,7 +25,7 @@ import akka.event.LoggingAdapter
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.actors.{ EmailMessage, EmailService }
 import hatdex.hat.api.models.HatService
-import hatdex.hat.api.service.{UserProfileService, BundleService}
+import hatdex.hat.api.service.{ UserProfileService, BundleService }
 import hatdex.hat.authentication.HatAuthHandler.UserPassHandler
 import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.User
@@ -36,7 +36,7 @@ import org.joda.time.Duration._
 import org.joda.time.LocalDateTime
 import org.mindrot.jbcrypt.BCrypt
 import spray.http.MediaTypes._
-import spray.http.{Uri, HttpCookie, StatusCodes}
+import spray.http.{ Uri, HttpCookie, StatusCodes }
 import spray.routing.HttpService
 import spray.httpx.SprayJsonSupport._
 import spray.httpx.PlayTwirlSupport._
@@ -66,8 +66,8 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
 
   val approvedHatServices = Seq(
     HatService("Personal HAT page", "", "/assets/images/haticon.png", "", "/profile", browser = false),
-    HatService("MarketSquare", "", "/assets/images/MarketSquare-logo.svg", "https://marketsquare.hubofallthings.com", "/authenticate/hat?token=", browser = false),
-    HatService("Rumpel", "", "/assets/images/Rumpel-logo.svg", "https://rumpel.hubofallthings.com", "/users/authenticate/", browser = true))
+    HatService("MarketSquare", "", "/assets/images/MarketSquare-logo.svg", "https://marketsquare.hubofallthings.com", "/authenticate/hat", browser = false),
+    HatService("Rumpel", "", "/assets/images/Rumpel-logo.svg", "https://rumpel.hubofallthings.com", "/users/authenticate", browser = true))
 
   def home = pathEndOrSingleSlash {
     get {
@@ -121,7 +121,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
         setCookie(HttpCookie("X-Auth-Token", content = token.accessToken)) {
           (maybeName, maybeRedirect) match {
             case (Some(name), Some(redirectUrl)) => redirect(Uri("/hatlogin").withQuery(Uri.Query("name" -> name, "redirect" -> redirectUrl)), StatusCodes.Found)
-            case _ => redirect("/", StatusCodes.Found)
+            case _                               => redirect("/", StatusCodes.Found)
           }
         }
       case Success(_) =>
@@ -161,31 +161,37 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
               logger.debug(s"Find service for $name:${redirectUrl} - ${redirectUrl.startsWith("https://rumpel.hubofallthings.com")}")
               val redirectUri = Uri(redirectUrl)
               val service = approvedHatServices.find(s => s.title == name && redirectUrl.startsWith(s.url))
-                .map(_.copy(url = redirectUri.authority.toString(), authUrl = redirectUri.toRelative.toString()))
-                .getOrElse(HatService(name, redirectUrl, "/assets/images/haticon.png", redirectUrl, "", browser = false))
+                .map(_.copy(url = s"${redirectUri.scheme}:${redirectUri.authority.toString}" /*, authUrl = redirectUri.toRelative.toString()*/ ))
+                .getOrElse(HatService(name, redirectUrl, "/assets/images/haticon.png", redirectUrl, redirectUri.path.toString(), browser = false))
 
               val accessScope = "validate"
               val resource = service.url
               val validity = standardDays(1)
 
+              logger.info(s"Got service: $service")
+
+              logger.info(s"URL ${redirectUri.scheme}:${redirectUri.authority.toString} ${Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> "asdasd"))}")
+
               val eventualResponse = fetchToken(user, resource, accessScope, validity) flatMap { maybeToken =>
                 maybeToken map { token =>
                   // known service, redirect
-                  val uri = redirectUri.withQuery(Uri.Query("token" -> token.accessToken))
-//                  Future.successful(redirect(uri, StatusCodes.Found))
-                  Future.successful(complete(hatdex.hat.views.html.authenticated(user, Seq(service.copy(url=uri.toString())))))
+                  val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
+                  Future.successful(redirect(uri, StatusCodes.Found))
+                  //                  val services = Seq(service.copy(url=uri.scheme + uri.toString()))
+                  //                  Future.successful(complete( hatdex.hat.views.html.authenticated(user, services) ))
                 } getOrElse {
                   // show page for login confirmation
                   val eventualToken = getToken(user, resource, accessScope, validity)
                   eventualToken.map { token =>
-                    val uri = redirectUri.withQuery(Uri.Query("token" -> token.accessToken))
-                    complete(hatdex.hat.views.html.authenticated(user, Seq(service.copy(url=uri.toString()))))
+                    val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
+                    val services = Seq(service.copy(url = uri.scheme + uri.toString()))
+                    Future.successful(complete(hatdex.hat.views.html.authenticated(user, services)))
                   }
                 }
               }
               onComplete(eventualResponse) {
                 case Success(response) => response
-                case Failure(e) => complete((StatusCodes.InternalServerError, s"Error occurred while logging you into $redirectUrl: ${e.getMessage}"))
+                case Failure(e)        => complete((StatusCodes.InternalServerError, s"Error occurred while logging you into $redirectUrl: ${e.getMessage}"))
               }
             }
           }
@@ -221,7 +227,8 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
           token.map { accessToken =>
             if (service.url.nonEmpty) {
               service.copy(authUrl = service.authUrl + accessToken.accessToken)
-            } else {
+            }
+            else {
               service
             }
           }
@@ -390,5 +397,4 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
   }
 
 }
-
 

@@ -76,13 +76,28 @@ trait DataService {
     val someRecordId = maybeRecordId.orElse(value.record.flatMap(_.id))
 
     val eventuallyInsertedValue = (someFieldId, someRecordId) match {
-      case (Some(fieldId), Some(recordId)) => DatabaseInfo.db.run { (DataValue returning DataValue) += DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, fieldId, recordId) }
+      case (Some(fieldId), Some(recordId)) => DatabaseInfo.db.run { (DataValue returning DataValue) += DataValueRow(0, LocalDateTime.now(), value.lastUpdated.getOrElse(LocalDateTime.now()), value.value, fieldId, recordId) }
       case (None, _)                       => Future.failed(new IllegalArgumentException("Correct field must be set for value to be inserted into"))
       case (_, None)                       => Future.failed(new IllegalArgumentException("Correct record must be set for value to be inserted as part of"))
     }
 
     eventuallyInsertedValue map { inserted =>
       ApiDataValue.fromDataValueApi(inserted, value.field, value.record)
+    }
+  }
+
+  def updateValue(value: ApiDataValue): Future[ApiDataValue] = {
+    val valueUpdateQuery = DataValue.filter(_.id === value.id.get)
+      .map(v => (v.value, v.lastUpdated, v.dateCreated))
+      .update((value.value, value.lastUpdated.getOrElse(LocalDateTime.now()), LocalDateTime.now()))
+
+    val getValue = DataValue.filter(_.id === value.id.get)
+    val updateRecordDate = DataRecord.filter(_.id in getValue.map(_.recordId))
+      .map(r => r.dateCreated)
+      .update(LocalDateTime.now())
+
+    DatabaseInfo.db.run(valueUpdateQuery) map { id =>
+      value
     }
   }
 
@@ -163,7 +178,7 @@ trait DataService {
   }
 
   def createRecord(record: ApiDataRecord): Future[ApiDataRecord] = {
-    val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), record.name)
+    val newRecord = new DataRecordRow(0, LocalDateTime.now(), record.lastUpdated.getOrElse(LocalDateTime.now()), record.name)
     DatabaseInfo.db.run {
       (DataRecord returning DataRecord) += newRecord
     } map { record =>
