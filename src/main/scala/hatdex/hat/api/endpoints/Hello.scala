@@ -160,7 +160,6 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
         accessTokenHandler { implicit user: User =>
           authorize(UserAuthorization.withRole("owner")) {
             parameters('name, 'redirect) { (name: String, redirectUrl: String) =>
-              logger.debug(s"Find service for $name:${redirectUrl} - ${redirectUrl.startsWith("https://rumpel.hubofallthings.com")}")
               val redirectUri = Uri(redirectUrl)
               val service = approvedHatServices.find(s => s.title == name && redirectUrl.startsWith(s.url))
                 .map(_.copy(url = s"${redirectUri.scheme}:${redirectUri.authority.toString}" /*, authUrl = redirectUri.toRelative.toString()*/ ))
@@ -182,7 +181,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
                   val eventualToken = getToken(user, resource, accessScope, validity)
                   val foobar = eventualToken.flatMap { token =>
                     val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
-                    val services = Seq(service.copy(url = uri.scheme + uri.toString()))
+                    val services = Seq(service.copy(url = uri.toString()))
                     Future.successful(complete((StatusCodes.OK, hatdex.hat.views.html.authenticated(user, services))))
                   }
                   foobar
