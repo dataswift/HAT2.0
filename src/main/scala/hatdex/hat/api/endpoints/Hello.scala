@@ -74,6 +74,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
     get {
       respondWithMediaType(`text/html`) {
         accessTokenHandler { implicit user: User =>
+          logger.info("Showing MY HAT")
           myhat
         } ~ {
           onComplete(getPublicProfile) {
@@ -119,6 +120,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
 
     onComplete(fCredentials) {
       case Success((Some(user), Some(token))) =>
+        logger.info("Login successful, setting credentials")
         setCookie(HttpCookie("X-Auth-Token", content = token.accessToken)) {
           (maybeName, maybeRedirect) match {
             case (Some(name), Some(redirectUrl)) => redirect(Uri("/hatlogin").withQuery(Uri.Query("name" -> name, "redirect" -> redirectUrl)), StatusCodes.Found)
@@ -126,10 +128,12 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
           }
         }
       case Success(_) =>
+        logger.info("Login invalid credentials")
         deleteCookie("X-Auth-Token") {
           complete(hatdex.hat.views.html.simpleMessage("Invalid Credentials!", formatProfile(Seq())))
         }
       case Failure(e) =>
+        logger.info("Login another issue, clear cookies")
         deleteCookie("X-Auth-Token") {
           complete {
             logger.error(s"Error while authenticating: ${e.getMessage}")
