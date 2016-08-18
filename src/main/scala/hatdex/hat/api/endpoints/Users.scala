@@ -51,15 +51,16 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
 
   val routes = {
     pathPrefix("users") {
-      createApiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount ~ validateAccessToken
+      apiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount ~ validateAccessToken
     }
   }
 
   import hatdex.hat.api.json.JsonProtocol._
 
-  def createApiUserAccount = path("user") {
+  def apiUserAccount = path("user") {
     accessTokenHandler { implicit systemUser: User =>
       authorize(UserAuthorization.withRole("owner", "platform")) {
+        logger.info("user endpoint authorized")
         post {
           entity(as[User]) { implicit newUser =>
             // Only two types of users can be created via the api
@@ -92,6 +93,17 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
               case Failure(e: ApiError)         => complete((e.statusCode, e.message))
               case Failure(e)                   => complete((InternalServerError, ErrorMessage("Error while creating user", "Unknown error occurred")))
             }
+          }
+        } ~ get {
+          val fUsers = DatabaseInfo.db.run {
+            UserUser.result
+          } map { users =>
+            users.map(User.fromDbModel)
+          }
+          onComplete(fUsers) {
+            case Success(users) => complete((OK, users))
+            case Failure(e: ApiError)         => complete((e.statusCode, e.message))
+            case Failure(e)                   => complete((InternalServerError, ErrorMessage("Error while creating user", "Unknown error occurred")))
           }
         }
       }

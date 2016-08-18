@@ -22,6 +22,7 @@ package hatdex.hat.api.endpoints
 
 import akka.actor.ActorRefFactory
 import akka.event.LoggingAdapter
+import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.actors.{ EmailMessage, EmailService }
 import hatdex.hat.api.models.HatService
@@ -182,13 +183,15 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
                 } getOrElse {
                   // show page for login confirmation
                   val eventualToken = getToken(user, resource, accessScope, validity)
-                  eventualToken.map { token =>
+                  val foobar = eventualToken.flatMap { token =>
                     val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
                     val services = Seq(service.copy(url = uri.scheme + uri.toString()))
-                    Future.successful(complete(hatdex.hat.views.html.authenticated(user, services)))
+                    Future.successful(complete((StatusCodes.OK, hatdex.hat.views.html.authenticated(user, services))))
                   }
+                  foobar
                 }
               }
+
               onComplete(eventualResponse) {
                 case Success(response) => response
                 case Failure(e)        => complete((StatusCodes.InternalServerError, s"Error occurred while logging you into $redirectUrl: ${e.getMessage}"))
