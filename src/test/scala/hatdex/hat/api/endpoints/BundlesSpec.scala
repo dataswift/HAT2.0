@@ -22,7 +22,7 @@
 package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
-import hatdex.hat.api.{TestFixtures, DatabaseInfo, TestDataCleanup}
+import hatdex.hat.api.{ TestFixtures, DatabaseInfo, TestDataCleanup }
 import hatdex.hat.api.endpoints.jsonExamples.BundleExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
@@ -66,7 +66,7 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
 
   // Clean up all data
   def afterAll() = {
-//    TestDataCleanup.cleanupAll
+    //    TestDataCleanup.cleanupAll
   }
 
   sequential
@@ -81,13 +81,13 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
         check {
           eventually {
             val responseString = responseAs[String]
-                        logger.info(s"Bundle create response: $responseString")
+            logger.debug(s"Bundle create response: $responseString")
             response.status should be equalTo Created
           }
           responseAs[ApiBundleContextless]
         }
 
-      logger.info(s"Looking up bundle id ${cBundle.id}")
+      logger.debug(s"Looking up bundle id ${cBundle.id}")
 
       HttpRequest(GET, s"/bundles/contextless/${cBundle.id.get}")
         .withHeaders(ownerAuthHeader) ~>

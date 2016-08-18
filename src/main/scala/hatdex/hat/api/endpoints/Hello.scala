@@ -74,7 +74,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
     get {
       respondWithMediaType(`text/html`) {
         accessTokenHandler { implicit user: User =>
-          logger.info("Showing MY HAT")
+          logger.debug("Showing MY HAT")
           myhat
         } ~ {
           onComplete(getPublicProfile) {
@@ -120,7 +120,6 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
 
     onComplete(fCredentials) {
       case Success((Some(user), Some(token))) =>
-        logger.info("Login successful, setting credentials")
         setCookie(HttpCookie("X-Auth-Token", content = token.accessToken)) {
           (maybeName, maybeRedirect) match {
             case (Some(name), Some(redirectUrl)) => redirect(Uri("/hatlogin").withQuery(Uri.Query("name" -> name, "redirect" -> redirectUrl)), StatusCodes.Found)
@@ -128,12 +127,10 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
           }
         }
       case Success(_) =>
-        logger.info("Login invalid credentials")
         deleteCookie("X-Auth-Token") {
           complete(hatdex.hat.views.html.simpleMessage("Invalid Credentials!", formatProfile(Seq())))
         }
       case Failure(e) =>
-        logger.info("Login another issue, clear cookies")
         deleteCookie("X-Auth-Token") {
           complete {
             logger.error(s"Error while authenticating: ${e.getMessage}")
@@ -173,10 +170,6 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
               val resource = service.url
               val validity = standardDays(1)
 
-              logger.info(s"Got service: $service")
-
-              logger.info(s"URL ${redirectUri.scheme}:${redirectUri.authority.toString} ${Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> "asdasd"))}")
-
               val eventualResponse = fetchToken(user, resource, accessScope, validity) flatMap { maybeToken =>
                 maybeToken map { token =>
                   // known service, redirect
@@ -204,7 +197,8 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
           }
         } ~ {
           parameters('name, 'redirect) { (name: String, redirectUrl: String) =>
-            complete(hatdex.hat.views.html.login(name, redirectUrl))
+            val configuration = getHatConfiguration
+            complete(hatdex.hat.views.html.login(name, redirectUrl, Map("hat" -> configuration)))
           }
         }
       }

@@ -95,11 +95,16 @@ trait UserProfileService extends BundleService {
     }
   }
 
-  def formatProfile(profileFields: Seq[ProfileField]): Map[String, Map[String, String]] = {
+  def getHatConfiguration: Map[String, String] = {
     val hatParameters: Map[String, String] = Map(
       "hatName" -> configuration.getString("hat.name"),
       "hatDomain" -> configuration.getString("hat.domain"),
       "hatAddress" -> s"${configuration.getString("hat.name")}.${configuration.getString("hat.domain")}")
+    hatParameters
+  }
+
+  def formatProfile(profileFields: Seq[ProfileField]): Map[String, Map[String, String]] = {
+    val hatParameters: Map[String, String] = getHatConfiguration
 
     val links = Map(profileFields collect {
       // links

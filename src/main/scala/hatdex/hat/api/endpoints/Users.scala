@@ -60,7 +60,6 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
   def apiUserAccount = path("user") {
     accessTokenHandler { implicit systemUser: User =>
       authorize(UserAuthorization.withRole("owner", "platform")) {
-        logger.info("user endpoint authorized")
         post {
           entity(as[User]) { implicit newUser =>
             // Only two types of users can be created via the api

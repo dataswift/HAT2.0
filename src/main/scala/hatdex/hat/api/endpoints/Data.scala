@@ -355,9 +355,9 @@ trait Data extends HttpService with DataService with StatsService with HatServic
       }
     } ~ put {
       accessTokenHandler { implicit user: User =>
-        logger.info("PUT /value")
+        logger.debug("PUT /value")
         authorize(UserAuthorization.withRole("owner")) {
-          logger.info("PUT /value")
+          logger.debug("PUT /value")
           entity(as[ApiDataValue]) { value =>
             val eventualValues = updateValue(value)
             eventualValues map {
