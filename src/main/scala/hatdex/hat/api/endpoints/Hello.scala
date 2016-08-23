@@ -225,7 +225,13 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
           }
           token.map { accessToken =>
             if (service.url.nonEmpty) {
-              service.copy(authUrl = service.authUrl + accessToken.accessToken)
+              if (service.browser == false) {
+                val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> accessToken.accessToken))
+                service.copy(url = uri.toString())
+              } else {
+                val uri = Uri(service.url).withPath(Uri.Path(service.authUrl + "/" + accessToken.accessToken))
+                service.copy(url = uri.toString())
+              }
             }
             else {
               service
