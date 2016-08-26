@@ -68,7 +68,9 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
   val approvedHatServices = Seq(
     HatService("Personal HAT page", "", "/assets/images/haticon.png", "", "/profile", browser = false),
     HatService("MarketSquare", "", "/assets/images/MarketSquare-logo.svg", "https://marketsquare.hubofallthings.com", "/authenticate/hat", browser = false),
-    HatService("Rumpel", "", "/assets/images/Rumpel-logo.svg", "https://rumpel.hubofallthings.com", "/users/authenticate", browser = true))
+    HatService("Rumpel", "", "/assets/images/Rumpel-logo.svg", "https://rumpel.hubofallthings.com", "/users/authenticate", browser = true),
+    HatService("Rumpel", "", "/assets/images/Rumpel-logo.svg", "http://rumpel-stage.hubofallthings.com.s3-website-eu-west-1.amazonaws.com", "/users/authenticate", browser = true))
+
 
   def home = pathEndOrSingleSlash {
     get {
