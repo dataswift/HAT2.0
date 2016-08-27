@@ -174,13 +174,12 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
                   Future.successful(redirect(redirectUrl, StatusCodes.Found))
                 } getOrElse {
                   // show page for login confirmation
-                  val eventualToken = getToken(user, resource, accessScope, validity)
-                  val foobar = eventualToken.flatMap { token =>
+                  val eventualToken = fetchOrGenerateToken(user, resource, accessScope, validity)
+                  eventualToken.flatMap { token =>
                     val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
                     val services = Seq(service.copy(url = uri.toString()))
                     Future.successful(complete((StatusCodes.OK, hatdex.hat.views.html.authenticated(user, services))))
                   }
-                  foobar
                 }
               }
 
