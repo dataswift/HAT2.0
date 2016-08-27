@@ -71,7 +71,6 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
     HatService("Rumpel", "", "/assets/images/Rumpel-logo.svg", "https://rumpel.hubofallthings.com", "/users/authenticate", browser = true),
     HatService("Rumpel", "", "/assets/images/Rumpel-logo.svg", "http://rumpel-stage.hubofallthings.com.s3-website-eu-west-1.amazonaws.com", "/users/authenticate", browser = true))
 
-
   def home = pathEndOrSingleSlash {
     get {
       respondWithMediaType(`text/html`) {
@@ -144,14 +143,10 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
 
   def profile = path("profile") {
     get {
-      accessTokenHandler { implicit user: User =>
-        authorize(UserAuthorization.withRole("owner")) {
-          onComplete(getPublicProfile) {
-            case Success((true, publicFields))  => complete(hatdex.hat.views.html.index(formatProfile(publicFields.toSeq)))
-            case Success((false, publicFields)) => complete(hatdex.hat.views.html.indexPrivate(formatProfile(publicFields.toSeq)))
-            case Failure(e)                     => complete(hatdex.hat.views.html.indexPrivate(Map()))
-          }
-        }
+      onComplete(getPublicProfile) {
+        case Success((true, publicFields))  => complete(hatdex.hat.views.html.index(formatProfile(publicFields.toSeq)))
+        case Success((false, publicFields)) => complete(hatdex.hat.views.html.indexPrivate(formatProfile(publicFields.toSeq)))
+        case Failure(e)                     => complete(hatdex.hat.views.html.indexPrivate(Map()))
       }
     }
   }
@@ -230,8 +225,9 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
               if (service.browser == false) {
                 val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> accessToken.accessToken))
                 service.copy(url = uri.toString())
-              } else {
-                val uri = Uri(service.url).withPath(Uri.Path(service.authUrl + "/" + accessToken.accessToken))
+              }
+              else {
+                val uri = Uri(service.url).withPath(Uri.Path(service.authUrl+"/"+accessToken.accessToken))
                 service.copy(url = uri.toString())
               }
             }
