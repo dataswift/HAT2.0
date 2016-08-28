@@ -77,13 +77,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
         accessTokenHandler { implicit user: User =>
           logger.debug("Showing MY HAT")
           myhat
-        } ~ {
-          onComplete(getPublicProfile) {
-            case Success((true, publicFields))  => complete(hatdex.hat.views.html.index(formatProfile(publicFields.toSeq)))
-            case Success((false, publicFields)) => complete(hatdex.hat.views.html.indexPrivate(formatProfile(publicFields.toSeq)))
-            case Failure(e)                     => complete(hatdex.hat.views.html.indexPrivate(Map()))
-          }
-        }
+        } ~ getProfile
       }
     } ~ post {
       formField('username.as[String], 'password.as[String], 'remember.?, 'name.?, 'redirect.?) {
@@ -95,10 +89,10 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
   private def login(username: String, password: String, remember: Option[String], maybeName: Option[String], maybeRedirect: Option[String]) = {
     val params = Map[String, String]("username" -> username, "password" -> password)
     val validity = if (remember.contains("remember")) {
-      standardDays(7)
+      standardDays(30)
     }
     else {
-      standardMinutes(60)
+      standardMinutes(180)
     }
     val fUser = UserPassHandler.authenticator(params)
     val fToken = fUser.flatMap { maybeUser =>
@@ -143,12 +137,14 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
 
   def profile = path("profile") {
     get {
-      onComplete(getPublicProfile) {
-        case Success((true, publicFields))  => complete(hatdex.hat.views.html.index(formatProfile(publicFields.toSeq)))
-        case Success((false, publicFields)) => complete(hatdex.hat.views.html.indexPrivate(formatProfile(publicFields.toSeq)))
-        case Failure(e)                     => complete(hatdex.hat.views.html.indexPrivate(Map()))
-      }
+      getProfile
     }
+  }
+
+  private def getProfile = onComplete(getPublicProfile) {
+    case Success((true, publicFields))  => complete(hatdex.hat.views.html.index(formatProfile(publicFields.toSeq)))
+    case Success((false, publicFields)) => complete(hatdex.hat.views.html.indexPrivate(formatProfile(publicFields.toSeq)))
+    case Failure(e)                     => complete(hatdex.hat.views.html.indexPrivate(Map()))
   }
 
   def hatLogin = path("hatlogin") {
@@ -159,25 +155,21 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
             parameters('name, 'redirect) { (name: String, redirectUrl: String) =>
               val redirectUri = Uri(redirectUrl)
               val service = approvedHatServices.find(s => s.title == name && redirectUrl.startsWith(s.url))
-                .map(_.copy(url = s"${redirectUri.scheme}:${redirectUri.authority.toString}" /*, authUrl = redirectUri.toRelative.toString()*/ ))
+                .map(_.copy(url = s"${redirectUri.scheme}:${redirectUri.authority.toString}", authUrl = redirectUri.toRelative.toString()))
                 .getOrElse(HatService(name, redirectUrl, "/assets/images/haticon.png", redirectUrl, redirectUri.path.toString(), browser = false))
 
-              val accessScope = "validate"
-              val resource = service.url
+              logger.info(s"Found service ${service}")
+
+              val accessScope = if (service.browser) { user.role } else { "validate" }
+              val resource = if (service.browser) { issuer } else { service.url }
               val validity = standardDays(1)
 
-              val eventualResponse = fetchToken(user, resource, accessScope, validity) flatMap { maybeToken =>
-                maybeToken map { token =>
+              val eventualResponse = fetchToken(user, resource, accessScope, validity) flatMap { maybeKnownServiceToken =>
+                val eventuallyFreshToken = fetchOrGenerateToken(user, resource = resource, accessScope, validity)
+
+                maybeKnownServiceToken map { knownServiceToken =>
                   // known service, redirect
-
-                  // get a fresh token
-                  val eventuallyFreshToken = if (!service.browser) {
-                    fetchOrGenerateToken(user, resource = service.url, accessScope = "validate", validity = standardDays(1))
-                  }
-                  else {
-                    fetchOrGenerateToken(user, issuer, accessScope = user.role)
-                  }
-
+                  logger.info("Known service redirecting")
                   eventuallyFreshToken map { token =>
                     val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
                     val redirectUrl = uri.toString
@@ -185,11 +177,11 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
                   }
                 } getOrElse {
                   // show page for login confirmation
-                  val eventualToken = fetchOrGenerateToken(user, resource, accessScope, validity)
-                  eventualToken.flatMap { token =>
+                  logger.info("New service, showing interface")
+                  eventuallyFreshToken map { token =>
                     val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
                     val services = Seq(service.copy(url = uri.toString()))
-                    Future.successful(complete((StatusCodes.OK, hatdex.hat.views.html.authenticated(user, services))))
+                    complete((StatusCodes.OK, hatdex.hat.views.html.authenticated(user, services)))
                   }
                 }
               }
@@ -218,17 +210,17 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
     }
   }
 
-  def myhat(implicit user: User) = {
+  private def myhat(implicit user: User) = {
     respondWithMediaType(`text/html`) {
       get {
         val services = approvedHatServices
 
         val serviceCredentials = services.map { service =>
-          val eventualToken = if (!service.browser) {
-            fetchOrGenerateToken(user, resource = service.url, accessScope = "validate", validity = standardDays(1))
+          val eventualToken = if (service.browser) {
+            fetchOrGenerateToken(user, issuer, accessScope = user.role)
           }
           else {
-            fetchOrGenerateToken(user, issuer, accessScope = user.role)
+            fetchOrGenerateToken(user, resource = service.url, accessScope = "validate", validity = standardDays(1))
           }
           eventualToken.map { accessToken =>
             if (service.url.nonEmpty) {

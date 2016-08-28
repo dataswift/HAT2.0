@@ -73,7 +73,7 @@ trait JwtTokenHandler {
     val maybeToken = fetchToken(user, resource, accessScope, validity)
 
     maybeToken flatMap {
-      case Some(token) if validateJwtToken(token.accessToken) => Future.successful(token)
+      case Some(token) if validateJwtToken(token.accessToken) && verifyAccessScope(token.accessToken, accessScope) => Future.successful(token)
       case _ => getToken(user, resource, accessScope, validity)
     }
   }
