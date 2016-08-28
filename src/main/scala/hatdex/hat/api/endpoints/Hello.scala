@@ -171,7 +171,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
                   // known service, redirect
 
                   // get a fresh token
-                  val eventuallyFreshToken = if (service.browser == false) {
+                  val eventuallyFreshToken = if (!service.browser) {
                     fetchOrGenerateToken(user, resource = service.url, accessScope = "validate", validity = standardDays(1))
                   }
                   else {
@@ -224,22 +224,16 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
         val services = approvedHatServices
 
         val serviceCredentials = services.map { service =>
-          val token = if (service.browser == false) {
+          val eventualToken = if (!service.browser) {
             fetchOrGenerateToken(user, resource = service.url, accessScope = "validate", validity = standardDays(1))
           }
           else {
             fetchOrGenerateToken(user, issuer, accessScope = user.role)
           }
-          token.map { accessToken =>
+          eventualToken.map { accessToken =>
             if (service.url.nonEmpty) {
-              if (service.browser == false) {
-                val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> accessToken.accessToken))
-                service.copy(url = uri.toString())
-              }
-              else {
-                val uri = Uri(service.url).withPath(Uri.Path(service.authUrl+"/"+accessToken.accessToken))
-                service.copy(url = uri.toString())
-              }
+              val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> accessToken.accessToken))
+              service.copy(url = uri.toString())
             }
             else {
               service
