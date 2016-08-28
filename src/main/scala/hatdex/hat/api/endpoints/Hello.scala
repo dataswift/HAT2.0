@@ -169,9 +169,20 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
               val eventualResponse = fetchToken(user, resource, accessScope, validity) flatMap { maybeToken =>
                 maybeToken map { token =>
                   // known service, redirect
-                  val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
-                  val redirectUrl = uri.toString
-                  Future.successful(redirect(redirectUrl, StatusCodes.Found))
+
+                  // get a fresh token
+                  val eventuallyFreshToken = if (service.browser == false) {
+                    fetchOrGenerateToken(user, resource = service.url, accessScope = "validate", validity = standardDays(1))
+                  }
+                  else {
+                    fetchOrGenerateToken(user, issuer, accessScope = user.role)
+                  }
+
+                  eventuallyFreshToken map { token =>
+                    val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
+                    val redirectUrl = uri.toString
+                    redirect(redirectUrl, StatusCodes.Found)
+                  }
                 } getOrElse {
                   // show page for login confirmation
                   val eventualToken = fetchOrGenerateToken(user, resource, accessScope, validity)
