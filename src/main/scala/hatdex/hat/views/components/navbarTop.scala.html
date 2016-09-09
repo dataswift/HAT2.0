@@ -1,0 +1,45 @@
+@(maybeUser: Option[hatdex.hat.authentication.models.User] = None, hatName: Option[String] = None)
+
+<nav class="navbar">
+    <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <a class="navbar-brand navbar-brand-main" href="/"><img src="/assets/images/hat_logo.png" alt="HAT" class="img"></a>
+        </div>
+
+        <div class="nav navbar-nav navbar-right">
+        @if(maybeUser.isDefined) {
+            <span class="navbar-text">Welcome back, @maybeUser.get.name</span>
+            <a role="button" class="btn btn-default navbar-btn" href="/logout">Sign Out</a>
+            <a role="button" class="btn btn-default navbar-btn" href="/password">Change Password</a>
+        } else {
+
+            <form class="navbar-form" method="post" action="/">
+                <div class="form-group">
+                    Log in to your HAT:
+                </div>
+                <div class="form-group">
+                    <label class="sr-only" for="inputHatName">HAT Name</label>
+                    @hatName.map { name =>
+                    <input type="hidden" class="form-control" id="inputHatName" name="username" placeholder="HAT Name" value="@name">
+                    }.getOrElse {
+                        <input type="text" class="form-control" id="inputHatName" name="username" placeholder="HAT Name">
+                        }
+                </div>
+                <div class="form-group">
+                    <label class="sr-only" for="inputPassword">Password</label>
+                    <input type="password" class="form-control" id="inputPassword" name="password" placeholder="Password">
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" name="remember" value="remember"> Remember me
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-main">Sign in</button>
+                <a href="/passwordreset"><button type="button" class="btn btn-primary">Forgot Password</button></a>
+            </form>
+        }
+        </div>
+
+    </div>
+</nav>

@@ -1,4 +1,4 @@
-@(parameters: Map[String, Map[String, String]])
+@(parameters: Map[String, Map[String, String]], maybeUser: Option[hatdex.hat.authentication.models.User] = None)
 @meta = {
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@@thehatdex">
@@ -15,63 +15,107 @@
     <meta property="og:app_id" content="158753364485419" />
 
 }
-@main("Welcome to the HAT", hatName = parameters.get("hat").flatMap(_.get("hatName")), meta = meta) {
-    <div class="row profile">
-        <div class="col-xs-4 col-sm-3 col-md-2 col-md-offset-1">
+
+@hatname = @{parameters.get("hat").flatMap(_.get("hatName"))}
+
+@menubarcontent = @{
+    components.menubarLeft(None, hatname, hatAddress = parameters.get("hat").flatMap(_.get("hatAddress")), tab="index")
+}
+
+
+@main("Welcome to the HAT", maybeUser, hatName = hatname, menubarContent = menubarcontent, meta = meta) {
+    <div class="grid">
+        <div class="wrapper grid-item">
+            <div class="box-square aspect-ratio"></div>
+            <div class="box-content box-photos">
             @if(parameters.get("profile").isDefined) {
                 @parameters.get("profile").map { profile =>
-                    <img src="@profile.get("profile_picture").getOrElse("/assets/images/haticon.png")" alt="HAT" class="img img-responsive img-rounded profile-img" />
-                    <h3>@profile.getOrElse("personal", "")</h3>
-                @profile.get("nick").map { v => <h4>Nick:&nbsp;@v</h4> }
-                @profile.get("age").map { v => <h4>Age:&nbsp;@v</h4> }
-                @profile.get("birthDate").map { v => <h4>Birth&nbsp;Date:&nbsp;@v</h4> }
-                @profile.get("gender").map { v => <h4>Gender:&nbsp;@v</h4> }
-
-                @profile.get("address_global").map { v => <h4>@v</h4> }
+                    <img src="@profile.get("profile_picture").getOrElse("/assets/images/haticon.png")" alt="HAT" class="img img-responsive" />
                 }
             } else {
                 <img src="/assets/images/haticon.png" alt="HAT" class="img img-responsive img-rounded profile-img" />
             }
-            @parameters.get("contact").map { profile =>
-                <h3>Contact:</h3>
-                @profile.get("primary_email").map { v => <h4>e:&nbsp;@v</h4> }
-                @profile.get("alternative_email").map { v => <h4>e:&nbsp;@v</h4> }
-                @profile.get("mobile").map { v => <h4>Mobile:&nbsp;@v</h4> }
-                @profile.get("home_phone").map { v => <h4>Phone:&nbsp;@v</h4> }
-            }
+            </div>
         </div>
-        <div class="col-xs-8 col-sm-9 col-md-8">
-            @parameters.get("about").map { about =>
-                <h1>
-                    @about("title")
-                </h1>
-                <p>
-                @about("body")
-                </p>
-            }
-            @parameters.get("links").map { links =>
-                <h3>Find me on:</h3>
-                <ul>
-                    @links.map { case (key, value) =>
-                    <li><a href="@value">@key - @value</a></li>
+        <div class="wrapper grid-item">
+            <div class="box-square aspect-ratio"></div>
+            <div class="box-content about-me">
+                <div class="about-me-wrapper">
+                    <h1>
+                        @parameters.get("hat").map(_.getOrElse("hatAddress", ""))
+                        @if(parameters.get("profile").isDefined) {
+                            @parameters.get("profile").map { profile =>
+                                - @profile.getOrElse("personal", "")
+                            }
+                        }
+                    </h1>
+
+                    @parameters.get("about").map { about =>
+                        <h1>
+                            @about("title")
+                        </h1>
+                        <p>
+                        @about("body")
+                        </p>
                     }
-                </ul>
-            }
+
+                    <div class="contactme">
+                    @parameters.get("contact").map { profile =>
+                        @profile.get("primary_email").map { v =>
+                            <div class="contact">
+                                <h4><span class="icon ss-mail"></span>&nbsp;@v</h4>
+                            </div>
+                        }
+                        @profile.get("alternative_email").map { v =>
+                            <div class="contact">
+                                <h4><span class="icon ss-mail"></span>&nbsp;@v</h4>
+                            </div>
+                        }
+                        @profile.get("mobile").map { v =>
+                            <div class="contact">
+                                <h4><span class="icon ss-phone"></span>&nbsp;@v</h4>
+                            </div>
+                        }
+                        @profile.get("home_phone").map { v =>
+                            <div class="contact">
+                                <h4><span class="icon ss-phone"></span>&nbsp;@v</h4>
+                            </div>
+                        }
+                    }
+                    </div>
+                </div>
+
+                <div class="findme">
+                @parameters.get("links").map { links =>
+                    @links.map { case (key, value) =>
+                    <a href="@value"><div class="findme-link icon-@key.toLowerCase @key.toLowerCase"></div></a>
+                    }
+                }
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-md-10 col-md-offset-1">
-            <hr/>
+
+        @if(parameters.get("profile").isDefined) {
+            <div class="wrapper grid-item">
+                <div class="box-square aspect-ratio"></div>
+                <div class="box-content">
+
+                    <h1>More about me</h1>
+
+                    @parameters.get("profile").map { profile =>
+                        <h3>@profile.getOrElse("personal", "")</h3>
+
+                    @profile.get("nick").map { v => <h4>Nick:&nbsp;@v</h4> }
+                    @profile.get("age").map { v => <h4>Age:&nbsp;@v</h4> }
+                    @profile.get("birthDate").map { v => <h4>Birth&nbsp;Date:&nbsp;@v</h4> }
+                    @profile.get("gender").map { v => <h4>Gender:&nbsp;@v</h4> }
+
+                    @profile.get("address_global").map { v => <h4>@v</h4> }
+                    }
+
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-xs-4 col-sm-3 col-md-2 col-md-offset-1">
-            <a role="button" class="btn btn-primary">@parameters.get("hat").map(_.getOrElse("hatAddress", ""))</a>
-        </div>
-        <div class="col-xs-8 col-sm-9 col-md-8">
-            Share my HAT page on:
-            <a role="button" class="btn btn-primary btn-facebook" href="https://www.facebook.com/sharer/sharer.php?u=https://@parameters.get("hat").map(_.getOrElse("hatAddress", ""))" target="_blank">Facebook</a>
-            <a role="button" class="btn btn-primary btn-twitter" href="https://twitter.com/intent/tweet?url=https://@parameters.get("hat").map(_.getOrElse("hatAddress", ""))" target="_blank">Twitter</a>
-        </div>
-    </div>
+    }
+
 }

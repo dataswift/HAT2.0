@@ -1,0 +1,42 @@
+@(maybeUser: Option[hatdex.hat.authentication.models.User] = None, hatName: Option[String] = None, hatAddress: Option[String] = None, tab: String = "")
+
+<div class="menubar-left">
+    <ul class="center">
+        <li class="@("active".when(tab == "index"))">
+            <a href="/profile">
+                <span class="icon ss-home"></span>
+                Home
+            </a>
+        </li>
+        <li class="@("active".when(tab == "launcher"))">
+            <a href="/">
+                <span class="icon ss-earth"></span>
+                Launcher
+            </a>
+        </li>
+        <li class="@("active".when(tab == "photos"))">
+            <a href="">
+                <span class="icon ss-camera"></span>
+                Photos
+            </a>
+        </li>
+        <li class="@("active".when(tab == "location"))">
+            <a href="">
+                <span class="icon ss-location"></span>
+                Location
+            </a>
+        </li>
+        <li class="@("active".when(tab == "notables"))">
+            <a href="">
+                <span class="icon ss-megaphone"></span>
+                Notables
+            </a>
+        </li>
+
+        <li class="share">
+        <span class="title">Share my <br />HAT on:</span><br />
+        <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=https://@hatAddress.getOrElse("")" target="_blank"></a>
+        <a class="icon-twitter" href="https://twitter.com/intent/tweet?url=https://@hatAddress.getOrElse("")" target="_blank"></a>
+        </li>
+    </ul>
+</div>

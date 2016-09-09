@@ -3,7 +3,7 @@
 @(message: String, parameters: Map[String, Map[String, String]] = Map())
 
 @main(s"HAT - ${message}", hatName = parameters.get("hat").flatMap(_.get("hatName"))) {
-    <div class="row">
+    <div class="row simpleMessage">
         <div class="col-md-10 col-md-offset-1">
             <h1 class="text-center">@message</h1>
         </div>

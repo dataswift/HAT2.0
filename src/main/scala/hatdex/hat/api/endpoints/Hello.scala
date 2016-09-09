@@ -66,10 +66,10 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
   implicit def actorRefFactory: ActorRefFactory
 
   val approvedHatServices = Seq(
-    HatService("Personal HAT page", "", "/assets/images/haticon.png", "", "/profile", browser = false),
-    HatService("MarketSquare", "", "/assets/images/MarketSquare-logo.svg", "https://marketsquare.hubofallthings.com", "/authenticate/hat", browser = false),
-    HatService("Rumpel", "", "/assets/images/Rumpel-logo.svg", "https://rumpel.hubofallthings.com", "/users/authenticate", browser = true),
-    HatService("Rumpel", "", "/assets/images/Rumpel-logo.svg", "http://rumpel-stage.hubofallthings.com.s3-website-eu-west-1.amazonaws.com", "/users/authenticate", browser = true))
+    HatService("MarketSquare", "", "/assets/images/MarketSquare-logo.svg", "https://marketsquare.hubofallthings.com", "/authenticate/hat", browser = false, category = "app"),
+    HatService("Rumpel", "", "/assets/images/Rumpel-logo.svg", "https://rumpel.hubofallthings.com", "/users/authenticate", browser = true, category = "app"),
+    HatService("Hatters", "", "/assets/images/Hatters-logo.svg", "https://hatters.hubofallthings.com", "/users/authenticate", browser = false, category = "app"),
+    HatService("Rumpel", "", "/assets/images/Rumpel-logo.svg", "http://rumpel-stage.hubofallthings.com.s3-website-eu-west-1.amazonaws.com", "/users/authenticate", browser = true, category = "testapp"))
 
   def home = pathEndOrSingleSlash {
     get {
@@ -77,7 +77,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
         accessTokenHandler { implicit user: User =>
           logger.debug("Showing MY HAT")
           myhat
-        } ~ getProfile
+        } ~ getProfile(None)
       }
     } ~ post {
       formField('username.as[String], 'password.as[String], 'remember.?, 'name.?, 'redirect.?) {
@@ -136,15 +136,24 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
   }
 
   def profile = path("profile") {
-    get {
-      getProfile
+      accessTokenHandler { implicit user: User =>
+        get {
+          logger.info(s"Get profile for logged in user $user")
+          getProfile(Some(user))
+        }
+      } ~ {
+        get {
+          getProfile(None)
+        }
+      }
     }
-  }
 
-  private def getProfile = onComplete(getPublicProfile) {
-    case Success((true, publicFields))  => complete(hatdex.hat.views.html.index(formatProfile(publicFields.toSeq)))
-    case Success((false, publicFields)) => complete(hatdex.hat.views.html.indexPrivate(formatProfile(publicFields.toSeq)))
-    case Failure(e)                     => complete(hatdex.hat.views.html.indexPrivate(Map()))
+
+  val publicResourcePath: String = conf.getString("public-resource-path")
+  private def getProfile(maybeUser: Option[User]) = onComplete(getPublicProfile) {
+    case Success((true, publicFields))  => complete(hatdex.hat.views.html.index(formatProfile(publicFields.toSeq), maybeUser))
+    case Success((false, publicFields)) => complete(hatdex.hat.views.html.indexPrivate(formatProfile(publicFields.toSeq), maybeUser))
+    case Failure(e)                     => complete(hatdex.hat.views.html.indexPrivate(Map(), maybeUser))
   }
 
   def hatLogin = path("hatlogin") {
@@ -156,7 +165,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
               val redirectUri = Uri(redirectUrl)
               val service = approvedHatServices.find(s => s.title == name && redirectUrl.startsWith(s.url))
                 .map(_.copy(url = s"${redirectUri.scheme}:${redirectUri.authority.toString}", authUrl = redirectUri.toRelative.toString()))
-                .getOrElse(HatService(name, redirectUrl, "/assets/images/haticon.png", redirectUrl, redirectUri.path.toString(), browser = false))
+                .getOrElse(HatService(name, redirectUrl, "/assets/images/haticon.png", redirectUrl, redirectUri.path.toString(), browser = false, category="app"))
 
               logger.info(s"Found service ${service}")
 
@@ -181,7 +190,9 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
                   eventuallyFreshToken map { token =>
                     val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
                     val services = Seq(service.copy(url = uri.toString()))
-                    complete((StatusCodes.OK, hatdex.hat.views.html.authenticated(user, services)))
+                    val configuration = getHatConfiguration
+                    val parameters = Map("hat" -> configuration)
+                    complete((StatusCodes.OK, hatdex.hat.views.html.authenticated(user, services, parameters)))
                   }
                 }
               }
@@ -195,7 +206,8 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
         } ~ {
           parameters('name, 'redirect) { (name: String, redirectUrl: String) =>
             val configuration = getHatConfiguration
-            complete(hatdex.hat.views.html.login(name, redirectUrl, Map("hat" -> configuration)))
+            val parameters = Map("hat" -> configuration)
+            complete(hatdex.hat.views.html.login(name, redirectUrl, parameters))
           }
         }
       }
@@ -215,7 +227,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
       get {
         val services = approvedHatServices
 
-        val serviceCredentials = services.map { service =>
+        val serviceCredentials = services.filter(_.category == "app").map { service =>
           val eventualToken = if (service.browser) {
             fetchOrGenerateToken(user, issuer, accessScope = user.role)
           }
@@ -233,15 +245,17 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
           }
         }
         val futureCredentials = Future.sequence(serviceCredentials)
+        val configuration = getHatConfiguration
+        val parameters = Map("hat" -> configuration)
         onComplete(futureCredentials) {
           case Success(credentials) =>
             complete {
-              hatdex.hat.views.html.authenticated(user, credentials)
+              hatdex.hat.views.html.authenticated(user, credentials, parameters)
             }
           case Failure(e) =>
             logger.warning(s"Error resolving access tokens for auth page: ${e.getMessage}")
             complete {
-              hatdex.hat.views.html.authenticated(user, Seq())
+              hatdex.hat.views.html.authenticated(user, Seq(), parameters)
             }
         }
       }
@@ -392,7 +406,8 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
   }
 
   def assets = pathPrefix("assets") {
-    getFromResourceDirectory("assets")
+    //FIXME: not a very clean way to expose the whole path
+    getFromResourceDirectory("META-INF/resources/webjars/the-hat/2.0-SNAPSHOT/public")
   }
 
 }

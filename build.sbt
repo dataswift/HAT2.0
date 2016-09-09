@@ -124,6 +124,12 @@ lazy val core = (project in file("."))
     publishArtifact in(Compile, packageDoc) := false
   )
   .dependsOn("codegen")
+  .enablePlugins(SbtWeb)
+  .enablePlugins(SbtSassify)
+    .settings(
+      pipelineStages := Seq(uglify),
+      sourceDirectory in Assets := baseDirectory.value / "src" / "main" / "assets"
+    )
   .enablePlugins(SbtTwirl)
   .settings(
     aggregate in update := false,

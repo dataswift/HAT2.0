@@ -1,14 +1,16 @@
-@(parameters: Map[String, Map[String, String]])
-@main("Welcome to the HAT", hatName = parameters.get("hat").flatMap(_.get("hatName"))) {
+@(parameters: Map[String, Map[String, String]], maybeUser: Option[hatdex.hat.authentication.models.User] = None)
+
+@hatname = @{parameters.get("hat").flatMap(_.get("hatName"))}
+
+@menubarcontent = @{
+    components.menubarLeft(None, hatname, hatAddress = parameters.get("hat").flatMap(_.get("hatAddress")))
+}
+
+@main("Welcome to the HAT", hatName = hatname, menubarContent = menubarcontent) {
     <div class="row profile profile-private">
         <div class="col-md-offset-1 col-md-10">
             <h1>Private Profile</h1>
             <h2>The user has made this Profile Private</h2>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-10 col-md-offset-1">
-            <hr/>
         </div>
     </div>
 }
