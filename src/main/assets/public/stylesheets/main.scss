@@ -2,6 +2,7 @@
 
 
 $base-white: white;
+$base-black: black;
 $base-color: rgb(233, 58, 63);
 $base-active-color: rgb(17, 134, 117);
 $text-light: white;
@@ -116,8 +117,35 @@ h1, h2, h3, h4, h5 {
 }
 
 .navbar-text {
-  font-size: 1.5em;
+  //font-size: 1.5em;
+  margin: 0;
+  padding: 0;
   color: $text-light;
+}
+
+.navbar li {
+  margin-top: 5px;
+  margin-bottom: 5px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  padding-left: 1em;
+  padding-right: 1em;
+  font-size: 1.1em;
+  border-left: 1px solid $base-white;
+  &:first-child {
+    border-left: none;
+  }
+  a {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  &:hover {
+    background: transparent;
+    a:hover {
+      background: transparent;
+    }
+  }
 }
 
 .btn {

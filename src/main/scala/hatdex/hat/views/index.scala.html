@@ -42,6 +42,7 @@
             <div class="box-content about-me">
                 <div class="about-me-wrapper">
                     <h1>
+                        <span class="icon ss-user"></span>
                         @parameters.get("hat").map(_.getOrElse("hatAddress", ""))
                         @if(parameters.get("profile").isDefined) {
                             @parameters.get("profile").map { profile =>
@@ -100,7 +101,7 @@
                 <div class="box-square aspect-ratio"></div>
                 <div class="box-content more-about-me">
 
-                    <h1>More about me</h1>
+                    <h1><span class="icon ss-page"></span>More about me</h1>
 
                     @parameters.get("profile").map { profile =>
                         <h3>@profile.getOrElse("personal", "")</h3>
@@ -121,7 +122,7 @@
             <div class="box-square aspect-ratio"></div>
             <div class="box-content notes">
 
-                <h1>My Public Notes</h1>
+                <h1><span class="icon ss-pen"></span>My Public Notes</h1>
 
                 <h2>Coming Soon</h2>
 

@@ -51,6 +51,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
   val routes = {
     home ~
       authHat ~
+      loginPage ~
       hatLogin ~
       profile ~
       logout ~
@@ -138,7 +139,6 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
   def profile = path("profile") {
       accessTokenHandler { implicit user: User =>
         get {
-          logger.info(s"Get profile for logged in user $user")
           getProfile(Some(user))
         }
       } ~ {
@@ -156,6 +156,16 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
     case Failure(e)                     => complete(hatdex.hat.views.html.indexPrivate(Map(), maybeUser))
   }
 
+  def loginPage = path("signin") {
+    get {
+      respondWithMediaType(`text/html`) {
+        val configuration = getHatConfiguration
+        val parameters = Map("hat" -> configuration)
+        complete(hatdex.hat.views.html.simpleLogin(parameters))
+      }
+    }
+  }
+
   def hatLogin = path("hatlogin") {
     get {
       respondWithMediaType(`text/html`) {
@@ -167,8 +177,6 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
                 .map(_.copy(url = s"${redirectUri.scheme}:${redirectUri.authority.toString}", authUrl = redirectUri.toRelative.toString()))
                 .getOrElse(HatService(name, redirectUrl, "/assets/images/haticon.png", redirectUrl, redirectUri.path.toString(), browser = false, category="app"))
 
-              logger.info(s"Found service ${service}")
-
               val accessScope = if (service.browser) { user.role } else { "validate" }
               val resource = if (service.browser) { issuer } else { service.url }
               val validity = standardDays(1)
@@ -178,7 +186,6 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
 
                 maybeKnownServiceToken map { knownServiceToken =>
                   // known service, redirect
-                  logger.info("Known service redirecting")
                   eventuallyFreshToken map { token =>
                     val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
                     val redirectUrl = uri.toString
@@ -186,7 +193,6 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
                   }
                 } getOrElse {
                   // show page for login confirmation
-                  logger.info("New service, showing interface")
                   eventuallyFreshToken map { token =>
                     val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
                     val services = Seq(service.copy(url = uri.toString()))
