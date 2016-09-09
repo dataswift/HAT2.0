@@ -329,7 +329,7 @@ a.active {
 .grid-item {
   width: 50%;
   float: left;
-  background: rgb(17, 134, 117);
+  background: lighten(#a0a0a0, 20%);
 }
 
 .box-square.aspect-ratio {
@@ -360,29 +360,32 @@ a.active {
   padding-right: 6em;
   border-style: solid;
   border-color: rgb(17, 134, 117);
+  background: rgb(17, 134, 117);
+
+  h1 {
+    margin-top: 0;
+    margin-bottom: 0.8em;
+  }
+
+  p {
+    line-height: 1.2em;
+  }
+  .findme {
+    position: absolute;
+    right: 0;
+    top: 1em;
+  }
+  .findme .findme-link {
+    width: 1.25em;
+    height: 1.25em;
+    margin-top: 0.25em;
+    font-size: 3.5em;
+    background: white;
+  }
 }
 
-.box-content.about-me h1 {
-  margin-top: 0;
-  margin-bottom: 0.8em;
-}
-
-.box-content.about-me p {
-  line-height: 1.2em;
-}
-
-.box-content.about-me .findme {
-  position: absolute;
-  right: 0;
-  top: 1em;
-}
-
-.box-content.about-me .findme .findme-link {
-  width: 1.25em;
-  height: 1.25em;
-  margin-top: 0.25em;
-  font-size: 3.5em;
-  background: white;
+.box-content.notes {
+  background: #2d2d2d;
 }
 
 .contactme {
