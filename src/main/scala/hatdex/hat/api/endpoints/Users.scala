@@ -143,11 +143,12 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
     }
   }
 
+  private val standardTokenValidity = standardHours(2)
   def getAccessToken = path("access_token") {
     // Any password-authenticated user (not only owner)
     userPassHandler { implicit user: User =>
       get {
-        val response = fetchOrGenerateToken(user, issuer, accessScope = user.role, validity = standardHours(2))
+        val response = fetchOrGenerateToken(user, issuer, accessScope = user.role, validity = standardTokenValidity)
         onComplete(response) {
           case Success(value) => complete((OK, value))
           case Failure(e: ApiError) =>
@@ -158,6 +159,26 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
             complete((InternalServerError, ErrorMessage("Error while retrieving access token", "Unknown error occurred")))
         }
       }
+    } ~ accessTokenHandler { implicit user: User =>  // Allow owner to fetch validation tokens
+      get {
+        authorize(UserAuthorization.withRole("owner")) {
+          parameters('name, 'resource) { (name: String, resource: String) =>
+            logger.info(s"Getting access token for $name - $resource")
+            val eventuallyFreshToken = fetchOrGenerateToken(user, resource = resource, "validate", validity = standardTokenValidity)
+
+            onComplete(eventuallyFreshToken) {
+              case Success(value) => complete((OK, value))
+              case Failure(e: ApiError) =>
+                logger.error(s"API Error while fetching Access Token: ${e.message}")
+                complete((e.statusCode, e.message))
+              case Failure(e) =>
+                logger.error(s"Unexpected Error while fetching Access Token: ${e.getMessage}")
+                complete((InternalServerError, ErrorMessage("Error while retrieving access token", "Unknown error occurred")))
+            }
+          }
+        }
+      }
+
     }
   }
 
