@@ -32,7 +32,7 @@ import spray.http._
 import spray.httpx.SprayJsonSupport._
 import spray.httpx.marshalling
 import spray.routing.directives.LogEntry
-import spray.routing.{HttpService, MalformedRequestContentRejection, Rejected, RejectionHandler}
+import spray.routing._
 import spray.util.LoggingContext
 
 trait Api extends HttpService with Cors {
@@ -72,6 +72,8 @@ trait Api extends HttpService with Cors {
         }
       }
   }
+
+  override def timeoutRoute: Route = complete(InternalServerError, ErrorMessage("Timeout.", ""))
 
   // Concatenate all the handled routes
   def routes = handleRejections(jsonRejectionHandler) {

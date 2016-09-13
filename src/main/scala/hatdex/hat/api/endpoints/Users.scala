@@ -51,7 +51,7 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
 
   val routes = {
     pathPrefix("users") {
-      apiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount ~ validateAccessToken
+      apiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount ~ validateAccessToken ~ getAppLoginToken
     }
   }
 
@@ -100,9 +100,9 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
             users.map(User.fromDbModel)
           }
           onComplete(fUsers) {
-            case Success(users) => complete((OK, users))
-            case Failure(e: ApiError)         => complete((e.statusCode, e.message))
-            case Failure(e)                   => complete((InternalServerError, ErrorMessage("Error while creating user", "Unknown error occurred")))
+            case Success(users)       => complete((OK, users))
+            case Failure(e: ApiError) => complete((e.statusCode, e.message))
+            case Failure(e)           => complete((InternalServerError, ErrorMessage("Error while creating user", "Unknown error occurred")))
           }
         }
       }
@@ -159,8 +159,12 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
             complete((InternalServerError, ErrorMessage("Error while retrieving access token", "Unknown error occurred")))
         }
       }
-    } ~ accessTokenHandler { implicit user: User =>  // Allow owner to fetch validation tokens
-      get {
+    }
+  }
+
+  def getAppLoginToken = path("application_token") {
+    get {
+      accessTokenHandler { implicit user: User => // Allow owner to fetch validation tokens
         authorize(UserAuthorization.withRole("owner")) {
           parameters('name, 'resource) { (name: String, resource: String) =>
             logger.info(s"Getting access token for $name - $resource")
