@@ -128,7 +128,10 @@ lazy val core = (project in file("."))
   .enablePlugins(SbtSassify)
     .settings(
       pipelineStages := Seq(uglify),
-      sourceDirectory in Assets := baseDirectory.value / "src" / "main" / "assets"
+      sourceDirectory in Assets := baseDirectory.value / "src" / "main" / "assets",
+      fullClasspath in reStart += baseDirectory.value / "src" / "main" / "assets",
+      javaOptions in reStart += "-Xmx500m",
+      javaOptions in reStart += "-Xms100m"
     )
   .enablePlugins(SbtTwirl)
   .settings(
