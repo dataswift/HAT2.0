@@ -1,35 +1,32 @@
 @(parameters: Map[String, Map[String, String]])
 
 @main(s"HAT Login", None, hatName = parameters.get("hat").flatMap(_.get("hatName"))) {
-    <div class="row">
-        <div class="col-md-8 col-md-offset-2">
-            <h1 class="text-center">Please Log In</h1>
+    <div class="login-content">
+        <div class="logo">
+            <img src="/assets/images/haticon.png" class="img img-responsive">
         </div>
-    </div>
 
-    <div class="row text-center">
-        <div class="col-md-8 col-md-offset-2">
-            <form class="form-horizontal" method="post" action="/">
-                <div class="form-group">
-                    <div class="col-sm-10">
-                        <input type="hidden" class="form-control" id="inputHatName" name="username" placeholder="HAT Name" value="@parameters.get("hat").flatMap(_.get("hatName"))">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="inputPassword" class="col-sm-2 control-label">Password</label>
-                    <div class="col-sm-10">
-                        <input type="password" class="form-control" id="inputPassword" name="password" placeholder="Password">
-                    </div>
-                </div>
+        <h1 class="subtext">Please Log In</h1>
 
-                <div class="checkbox">
-                    <label>
-                        <input type="checkbox" name="remember" value="remember"> Remember me
-                    </label>
-                </div>
-                <button type="submit" class="btn btn-red">Sign in</button>
-                <a href="/passwordreset"><button type="button" class="btn btn-default">Forgot Password</button></a>
-            </form>
-        </div>
+        <form class="form" action="/" method="post">
+            <input type="hidden" class="form-control" id="inputHatName" name="username" placeholder="HAT Name" value="@parameters.get("hat").flatMap(_.get("hatName"))">
+            <div class="form-group">
+                <label for="inputPassword" class="sr-only">Password</label>
+                <input type="password" class="form-control hat-input" id="inputPassword" name="password" placeholder="Password">
+            </div>
+
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="remember" value="remember"> Remember me
+                </label>
+            </div>
+            <button type="submit" class="btn btn-login">Sign in</button>
+
+        </form>
+        <p class="subtext">
+            <a href="/passwordreset">
+                Forgot Password
+            </a>
+        </p>
     </div>
 }

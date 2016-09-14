@@ -67,10 +67,10 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
   implicit def actorRefFactory: ActorRefFactory
 
   val approvedHatServices = Seq(
-    HatService("MarketSquare", "", "/assets/images/MarketSquare-logo.svg", "https://marketsquare.hubofallthings.com", "/authenticate/hat", browser = false, category = "app"),
-    HatService("Rumpel", "", "/assets/images/Rumpel-logo.svg", "https://rumpel.hubofallthings.com", "/users/authenticate", browser = true, category = "app"),
-    HatService("Hatters", "", "/assets/images/Hatters-logo.svg", "https://hatters.hubofallthings.com", "/users/authenticate", browser = false, category = "app"),
-    HatService("Rumpel", "", "/assets/images/Rumpel-logo.svg", "http://rumpel-stage.hubofallthings.com.s3-website-eu-west-1.amazonaws.com", "/users/authenticate", browser = true, category = "testapp"))
+    HatService("MarketSquare", "Community and Public space for HATs", "/assets/images/MarketSquare-logo.svg", "https://marketsquare.hubofallthings.com", "/authenticate/hat", browser = false, category = "app"),
+    HatService("Rumpel", "Private hyperdata browser for your HAT data", "/assets/images/Rumpel-logo.svg", "https://rumpel.hubofallthings.com", "/users/authenticate", browser = true, category = "app"),
+    HatService("Hatters", "HATs, Apps and HAT2HAT exchanges", "/assets/images/Hatters-logo.svg", "https://hatters.hubofallthings.com", "/users/authenticate", browser = false, category = "app"),
+    HatService("Rumpel", "Private hyperdata browser for your HAT data", "/assets/images/Rumpel-logo.svg", "http://rumpel-stage.hubofallthings.com.s3-website-eu-west-1.amazonaws.com", "/users/authenticate", browser = true, category = "testapp"))
 
   def home = pathEndOrSingleSlash {
     get {

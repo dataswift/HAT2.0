@@ -155,7 +155,8 @@
 
 /* '' */
 .icon-blog:before {
-  content: '\e800';
+  content: '\270e';
+  font-family: "SSGlyphish";
 }
 
 /* '' */
@@ -201,7 +202,7 @@
 /* '' */
 
 .icon-web:before {
-  content: '\e671';
+  content: '\1f30e';
   font-family: "SSGlyphish";
 }
 
@@ -265,73 +266,3 @@
   animation-fill-mode: both;
 }
 
-.about-me .findme a div.findme-link {
-  &.web {
-    background: #9C0;
-    padding-top: 0.1em;
-  }
-
-  &.facebook {
-    background: #3b5998;
-  }
-
-  &.twitter {
-    background: #00a0d1;
-  }
-
-  &.pinterest {
-    background: #910101;
-  }
-
-  &.blog {
-    background: #c4302b;
-  }
-
-  &.youtube {
-    background: #c4302b;
-  }
-
-  &.tumblr {
-    background: #34526f;
-  }
-
-  &.flickr {
-    background: #F3F;
-  }
-
-  &.digg {
-    background: #036;
-  }
-
-  &.delicious {
-    background: #03C;
-  }
-
-  &.smashmag {
-    background: #F30;
-  }
-
-  &.email {
-    background: #9C0;
-  }
-
-  &.stackoverflow {
-    background: #F60;
-  }
-
-  &.vimeo {
-    background: #069;
-  }
-}
-
-.share {
-  .icon-facebook {
-    background: #3b5998;
-    font-size: 2em;
-  }
-
-  .icon-twitter {
-    background: #00a0d1;
-    font-size: 2em;
-  }
-}

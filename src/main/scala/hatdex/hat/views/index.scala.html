@@ -16,10 +16,12 @@
 
 }
 
-@hatname = @{parameters.get("hat").flatMap(_.get("hatName"))}
+@hatname = @{
+    parameters.get("hat").flatMap(_.get("hatName"))
+}
 
 @menubarcontent = @{
-    components.menubarLeft(None, hatname, hatAddress = parameters.get("hat").flatMap(_.get("hatAddress")), tab="index")
+    components.menubarLeft(None, hatname, hatAddress = parameters.get("hat").flatMap(_.get("hatAddress")), tab = "index")
 }
 
 
@@ -44,12 +46,15 @@
                     <h1>
                         <span class="icon ss-user"></span>&nbsp;
                         @parameters.get("hat").map(_.getOrElse("hatAddress", ""))
-                        @if(parameters.get("profile").isDefined) {
-                            @parameters.get("profile").map { profile =>
-                                - @profile.getOrElse("personal", "")
-                            }
-                        }
                     </h1>
+
+                    @if(parameters.get("profile").isDefined) {
+                        @parameters.get("profile").map { profile =>
+                            <h1>
+                                @profile.getOrElse("personal", "")
+                            </h1>
+                        }
+                    }
 
                     @parameters.get("about").map { about =>
                         <h1>
@@ -89,7 +94,11 @@
                 <div class="findme">
                 @parameters.get("links").map { links =>
                     @links.map { case (key, value) =>
-                    <a href="@value"><div class="findme-link icon-@key.toLowerCase @key.toLowerCase"></div></a>
+                    <a href="@value">
+                        <div class="findme-link @key.toLowerCase">
+                        <i class="fa fa-@key.toLowerCase"></i>
+                        </div>
+                    </a>
                     }
                 }
                 </div>
@@ -117,7 +126,7 @@
                 </div>
             </div>
 
-    }
+        }
         <div class="wrapper grid-item">
             <div class="box-square aspect-ratio"></div>
             <div class="box-content notes">

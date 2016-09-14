@@ -3,7 +3,7 @@
 
 $base-white: white;
 $base-black: black;
-$base-color: rgb(233, 58, 63);
+$base-color: rgb(188, 51, 51); /*rgb(233, 58, 63);*/
 $base-active-color: rgb(17, 134, 117);
 $text-light: white;
 $text-dark: lighten(black, 20%);
@@ -412,6 +412,8 @@ a.active {
 
   p {
     line-height: 1.2em;
+    font-size: 1.8em;
+    font-family: 'Open Sans Condensed', sans-serif;
   }
   .findme {
     position: absolute;
@@ -420,9 +422,10 @@ a.active {
   }
   .findme .findme-link {
     width: 1.25em;
-    height: 1.25em;
+    height: 1.3em;
     margin-top: 0.25em;
-    font-size: 3.5em;
+    font-size: 2.75em;
+    padding-left: 0.2em;
     background: white;
   }
 }
@@ -560,6 +563,10 @@ a.active {
       //margin-left: 1em;
       //margin-right: 1em;
       //position: relative;
+
+      .caption p {
+        font-size: 1.6em;
+      }
     }
 
     .popover{
@@ -599,4 +606,87 @@ a.active {
   }
 }
 
-@import "socialIcons";
+@import "fontawesome/font-awesome";
+
+.fa.fa-web {
+  @extend .fa-globe;
+}
+.fa.fa-blog {
+  @extend .fa-pencil;
+}
+
+.about-me .findme a div.findme-link {
+  &.web {
+    background: #9C0;
+  }
+
+  &.facebook {
+    background: #3b5998;
+  }
+
+  &.linkedin {
+    background: #0077b5;
+  }
+
+  &.twitter {
+    background: #00a0d1;
+  }
+
+  &.pinterest {
+    background: #910101;
+  }
+
+  &.blog {
+    background: #c4302b;
+  }
+
+  &.youtube {
+    background: #c4302b;
+  }
+
+  &.tumblr {
+    background: #34526f;
+  }
+
+  &.flickr {
+    background: #F3F;
+  }
+
+  &.digg {
+    background: #036;
+  }
+
+  &.delicious {
+    background: #03C;
+  }
+
+  &.smashmag {
+    background: #F30;
+  }
+
+  &.email {
+    background: #9C0;
+  }
+
+  &.stackoverflow {
+    background: #F60;
+  }
+
+  &.vimeo {
+    background: #069;
+  }
+}
+
+.share {
+  .icon-facebook {
+    background: #3b5998;
+    font-size: 2em;
+  }
+
+  .icon-twitter {
+    background: #00a0d1;
+    font-size: 2em;
+  }
+}
+
+@import "login";
