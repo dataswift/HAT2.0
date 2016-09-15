@@ -46,7 +46,7 @@
         <div class="tab-content">
             <div role="tabpanel" class="tab-pane active" id="apps">
                 <div class="app-category">
-                    @services.map { service =>
+                    @services.filter(_.category == "app").map { service =>
                         <div class="app-item centered">
                             <div>
                                 <div class="app-item-info">
@@ -66,9 +66,20 @@
 
             <div role="tabpanel" class="tab-pane" id="dataplugs">
                 <div class="app-category">
-                    <div class="comingsoon">
-                        <h1>Data Plugs - Coming Soon</h1>
+                @services.filter(_.category == "dataplug").map { service =>
+                    <div class="app-item centered">
+                        <div>
+                            <div class="app-item-info">
+                                <img src="@service.logoUrl" alt="@service.title" class="app-item-illustration img-rounded" />
+                                <div class="caption">
+                                    <h2>@service.title</h2>
+                                    <p>@service.description</p>
+                                </div>
+                            </div>
+                            <a href="@service.url" type="button" class="btn btn-lg launcher-button">Launch</a>
+                        </div>
                     </div>
+                }
                 </div>
             </div>
         </div>

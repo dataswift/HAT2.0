@@ -112,7 +112,7 @@ trait UserProfileService extends BundleService {
       case ProfileField("website", values, true)  => "Web" -> values.getOrElse("link", "")
       case ProfileField("youtube", values, true)  => "Youtube" -> values.getOrElse("link", "")
       case ProfileField("linkedin", values, true) => "LinkedIn" -> values.getOrElse("link", "")
-      case ProfileField("google", values, true)   => "Google" -> values.getOrElse("link", "")
+      case ProfileField("google", values, true)   => "Google-Plus" -> values.getOrElse("link", "")
       case ProfileField("blog", values, true)     => "Blog" -> values.getOrElse("link", "")
       case ProfileField("twitter", values, true)  => "Twitter" -> values.getOrElse("link", "")
     }: _*).filterNot(_._2 == "").map {

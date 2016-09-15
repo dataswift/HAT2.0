@@ -421,12 +421,12 @@ a.active {
     top: 1em;
   }
   .findme .findme-link {
-    width: 1.25em;
+    width: 1.5em;
     height: 1.3em;
     margin-top: 0.25em;
-    font-size: 2.75em;
+    font-size: 2.5em;
     padding-left: 0.2em;
-    background: white;
+    background: white
   }
 }
 
@@ -675,6 +675,10 @@ a.active {
 
   &.vimeo {
     background: #069;
+  }
+
+  &.google-plus {
+    background: #dd4b39;
   }
 }
 

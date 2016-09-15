@@ -69,8 +69,14 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
   val approvedHatServices = Seq(
     HatService("MarketSquare", "Community and Public space for HATs", "/assets/images/MarketSquare-logo.svg", "https://marketsquare.hubofallthings.com", "/authenticate/hat", browser = false, category = "app"),
     HatService("Rumpel", "Private hyperdata browser for your HAT data", "/assets/images/Rumpel-logo.svg", "https://rumpel.hubofallthings.com", "/users/authenticate", browser = true, category = "app"),
-    HatService("Hatters", "HATs, Apps and HAT2HAT exchanges", "/assets/images/Hatters-logo.svg", "https://hatters.hubofallthings.com", "/users/authenticate", browser = false, category = "app"),
-    HatService("Rumpel", "Private hyperdata browser for your HAT data", "/assets/images/Rumpel-logo.svg", "http://rumpel-stage.hubofallthings.com.s3-website-eu-west-1.amazonaws.com", "/users/authenticate", browser = true, category = "testapp"))
+    HatService("Hatters", "HATs, Apps and HAT2HAT exchanges", "/assets/images/Hatters-logo.svg", "https://hatters.hubofallthings.com", "/authenticate/hat", browser = false, category = "app"),
+    HatService("Rumpel", "Private hyperdata browser for your HAT data", "/assets/images/Rumpel-logo.svg", "http://rumpel-stage.hubofallthings.com.s3-website-eu-west-1.amazonaws.com", "/users/authenticate", browser = true, category = "testapp"),
+    HatService("Facebook", "Pull in all of your Facebook Data", "https://rumpel.hubofallthings.com/icons/facebook-plug.png", "https://social-plug.hubofallthings.com", "/hat/authenticate", browser = false, category = "dataplug"),
+    HatService("Calendar", "Paste an iCal link to any of your calendars for it to be added to your HAT", "https://rumpel.hubofallthings.com/icons/calendar-plug.svg", "https://calendar-plug.hubofallthings.com", "", browser = false, category = "dataplug"),
+    HatService("Photos", "Import your best moments from Dropbox into your HAT", "https://rumpel.hubofallthings.com/icons/photos-plug.svg", "https://photos-plug.hubofallthings.com", "", browser = false, category = "dataplug"),
+    HatService("RumpelLite", "Your location coming in directly from your iOS device into your HAT!", "https://rumpel.hubofallthings.com/icons/location-plug.svg", "https://itunes.apple.com", "/gb/app/rumpel-lite/id1147137249", browser = false, category = "dataplug")
+
+  )
 
   def home = pathEndOrSingleSlash {
     get {
@@ -233,7 +239,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
       get {
         val services = approvedHatServices
 
-        val serviceCredentials = services.filter(_.category == "app").map { service =>
+        val serviceCredentials = services.map { service =>
           val eventualToken = if (service.browser) {
             fetchOrGenerateToken(user, issuer, accessScope = user.role)
           }
