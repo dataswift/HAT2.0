@@ -51,6 +51,7 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
   val routes = {
     pathPrefix("dataDebit") {
       proposeDataDebitApi ~
+        getDataDebit ~
         retrieveDataDebitValuesApi ~
         listDataDebitsApi ~
         enableDataDebitApi ~
@@ -230,6 +231,28 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
           case e => logger.error(s"Error while recording data debit operation: ${e.getMessage}")
         }
         values
+    }
+  }
+
+  def getDataDebit = path(JavaUUID) { dataDebitKey: UUID =>
+    get {
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner", "platform")) {
+          val eventualDebit = for {
+            maybeDataDebit <- findDataDebitByKey(dataDebitKey)
+          } yield {
+            maybeDataDebit.map(ApiDataDebit.fromDbModel)
+          }
+
+          onComplete(eventualDebit) {
+            case Success(None)                 => complete((NotFound, ErrorMessage("DataDebit not Found", s"Data Debit $dataDebitKey not found")))
+            case Success(Some(debit))          => complete((OK, debit))
+            case Failure(e: SecurityException) => complete((Forbidden, ErrorMessage("Forbidden", e.getMessage)))
+            case Failure(e)                    => complete((BadRequest, ErrorMessage("Error enabling DataDebit", e.getMessage)))
+          }
+
+        }
+      }
     }
   }
 
