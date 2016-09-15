@@ -117,7 +117,7 @@ trait UserProfileService extends BundleService {
       case ProfileField("twitter", values, true)  => "Twitter" -> values.getOrElse("link", "")
     }: _*).filterNot(_._2 == "").map {
       case (k, v) =>
-        k -> (if (v.startsWith("http:")) {
+        k -> (if (v.startsWith("http")) {
           v
         }
         else {

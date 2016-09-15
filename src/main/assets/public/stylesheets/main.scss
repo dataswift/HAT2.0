@@ -566,6 +566,7 @@ a.active {
 
       .caption p {
         font-size: 1.6em;
+        font-family: 'Open Sans Condensed', sans-serif;
       }
     }
 
@@ -678,12 +679,16 @@ a.active {
 }
 
 .share {
-  .icon-facebook {
+  .fa-facebook {
+    width: 1.1em;
+    padding: 0.1em;
     background: #3b5998;
     font-size: 2em;
   }
 
-  .icon-twitter {
+  .fa-twitter {
+    width: 1.1em;
+    padding: 0.1em;
     background: #00a0d1;
     font-size: 2em;
   }
