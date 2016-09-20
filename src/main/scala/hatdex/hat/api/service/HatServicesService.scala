@@ -20,6 +20,7 @@
  */
 package hatdex.hat.api.service
 
+import akka.event.LoggingAdapter
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.JwtTokenHandler
@@ -33,6 +34,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 trait HatServicesService extends JwtTokenHandler {
+  val logger: LoggingAdapter
+
   def hatServices(categories: Set[String]): Future[Seq[HatService]] = {
     val applicationsQuery = for {
       application <- Applications.filter(_.category inSet categories)
@@ -62,7 +65,7 @@ trait HatServicesService extends JwtTokenHandler {
     }
   }
 
-  private def hatServiceToken(user: User, service: HatService): Future[AccessToken] = {
+  protected def hatServiceToken(user: User, service: HatService): Future[AccessToken] = {
     val accessScope = if (service.browser) { user.role } else { "validate" }
     val resource = if (service.browser) { issuer } else { service.url }
     val validity = standardDays(1)
@@ -80,7 +83,7 @@ trait HatServicesService extends JwtTokenHandler {
     }
 
     eventualUri map { serviceLink =>
-      service.copy(url = serviceLink.toString)
+      service.copy(url = serviceLink.toString, authUrl = "")
     }
   }
 

@@ -56,7 +56,7 @@ trait DataService {
       val t1 = System.nanoTime()
       val fieldset = tables.map(getStructureFields).reduce((acc, fields) => acc ++ fields)
       val t4 = System.nanoTime()
-      val eventualValues = fieldsetValues(fieldset, startTime, endTime)
+      val eventualValues = fieldsetValues(fieldset, startTime, endTime, maybeLimit)
       val eventualValueRecords = eventualValues.map { values =>
         val t2 = System.nanoTime()
         getValueRecords(values, tables)
@@ -410,10 +410,11 @@ trait DataService {
   /*
    * Fetches values from database matching a set of fields and falling within a time range
    */
-  protected[api] def fieldsetValues(fieldset: Set[Int], startTime: LocalDateTime, endTime: LocalDateTime): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
+  protected[api] def fieldsetValues(fieldset: Set[Int], startTime: LocalDateTime, endTime: LocalDateTime, maybeLimit: Option[Int] = None): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
     val fieldValues = DataValue.filter(_.fieldId inSet fieldset)
     val valueQuery = for {
       value <- fieldValues.filter(v => v.dateCreated <= endTime && v.dateCreated >= startTime)
+        .take(maybeLimit.getOrElse(1000) * fieldset.size) // Limit the number of records taken by default
       field <- value.dataFieldFk
       record <- value.dataRecordFk
     } yield (record, field, value)
