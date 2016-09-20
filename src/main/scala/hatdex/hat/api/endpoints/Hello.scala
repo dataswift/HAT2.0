@@ -26,15 +26,16 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.actors.{ EmailMessage, EmailService }
 import hatdex.hat.api.models.HatService
-import hatdex.hat.api.service.{ UserProfileService, BundleService }
+import hatdex.hat.api.service.{ HatServicesService, UserProfileService, BundleService }
 import hatdex.hat.authentication.HatAuthHandler.UserPassHandler
 import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.User
 import hatdex.hat.authentication.{ HatServiceAuthHandler, JwtTokenHandler }
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
+import org.joda.time._
 import org.joda.time.Duration._
-import org.joda.time.LocalDateTime
+import org.joda.time.{DateTime}
 import org.mindrot.jbcrypt.BCrypt
 import spray.http.MediaTypes._
 import spray.http.{ Uri, HttpCookie, StatusCodes }
@@ -47,7 +48,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 
-trait Hello extends HttpService with UserProfileService with HatServiceAuthHandler with JwtTokenHandler with BundleService {
+trait Hello extends HttpService with UserProfileService with HatServiceAuthHandler with JwtTokenHandler with HatServicesService with BundleService {
   val routes = {
     home ~
       authHat ~
@@ -61,22 +62,13 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
       resetPassword ~
       resetPasswordConfirm
   }
+
   val logger: LoggingAdapter
   val emailService: EmailService
 
   implicit def actorRefFactory: ActorRefFactory
 
-  val approvedHatServices = Seq(
-    HatService("MarketSquare", "Community and Public space for HATs", "/assets/images/MarketSquare-logo.svg", "https://marketsquare.hubofallthings.com", "/authenticate/hat", browser = false, category = "app"),
-    HatService("Rumpel", "Private hyperdata browser for your HAT data", "/assets/images/Rumpel-logo.svg", "https://rumpel.hubofallthings.com", "/users/authenticate", browser = true, category = "app"),
-    HatService("Hatters", "HATs, Apps and HAT2HAT exchanges", "/assets/images/Hatters-logo.svg", "https://hatters.hubofallthings.com", "/authenticate/hat", browser = false, category = "app"),
-    HatService("Rumpel", "Private hyperdata browser for your HAT data", "/assets/images/Rumpel-logo.svg", "http://rumpel-stage.hubofallthings.com.s3-website-eu-west-1.amazonaws.com", "/users/authenticate", browser = true, category = "testapp"),
-    HatService("Facebook", "Pull in all of your Facebook Data", "https://rumpel.hubofallthings.com/icons/facebook-plug.png", "https://social-plug.hubofallthings.com", "/hat/authenticate", browser = false, category = "dataplug"),
-    HatService("Calendar", "Paste an iCal link to any of your calendars for it to be added to your HAT", "https://rumpel.hubofallthings.com/icons/calendar-plug.svg", "https://calendar-plug.hubofallthings.com", "", browser = false, category = "dataplug"),
-    HatService("Photos", "Import your best moments from Dropbox into your HAT", "https://rumpel.hubofallthings.com/icons/photos-plug.svg", "https://photos-plug.hubofallthings.com", "", browser = false, category = "dataplug"),
-    HatService("RumpelLite", "Your location coming in directly from your iOS device into your HAT!", "https://rumpel.hubofallthings.com/icons/location-plug.svg", "https://itunes.apple.com", "/gb/app/rumpel-lite/id1147137249", browser = false, category = "dataplug")
-
-  )
+  lazy val eventualApprovedHatServices: Future[Seq[HatService]] = hatServices(Set("app", "dataplug", "testapp"))
 
   def home = pathEndOrSingleSlash {
     get {
@@ -101,6 +93,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
     else {
       standardMinutes(180)
     }
+
     val fUser = UserPassHandler.authenticator(params)
     val fToken = fUser.flatMap { maybeUser =>
       // Fetch Access token if user has authenticated
@@ -122,7 +115,11 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
 
     onComplete(fCredentials) {
       case Success((Some(user), Some(token))) =>
-        setCookie(HttpCookie("X-Auth-Token", content = token.accessToken)) {
+        val expires = spray.http.DateTime(DateTime.now().plus(validity).getMillis)
+        val cookie = HttpCookie("X-Auth-Token", content = token.accessToken,
+          expires = Option(expires), maxAge = Some(validity.getMillis),
+          domain = Some(issuer))
+        setCookie(cookie) {
           (maybeName, maybeRedirect) match {
             case (Some(name), Some(redirectUrl)) => redirect(Uri("/hatlogin").withQuery(Uri.Query("name" -> name, "redirect" -> redirectUrl)), StatusCodes.Found)
             case _                               => redirect("/", StatusCodes.Found)
@@ -143,17 +140,16 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
   }
 
   def profile = path("profile") {
-      accessTokenHandler { implicit user: User =>
-        get {
-          getProfile(Some(user))
-        }
-      } ~ {
-        get {
-          getProfile(None)
-        }
+    accessTokenHandler { implicit user: User =>
+      get {
+        getProfile(Some(user))
+      }
+    } ~ {
+      get {
+        getProfile(None)
       }
     }
-
+  }
 
   val publicResourcePath: String = conf.getString("public-resource-path")
   private def getProfile(maybeUser: Option[User]) = onComplete(getPublicProfile) {
@@ -178,30 +174,17 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
         accessTokenHandler { implicit user: User =>
           authorize(UserAuthorization.withRole("owner")) {
             parameters('name, 'redirect) { (name: String, redirectUrl: String) =>
-              val redirectUri = Uri(redirectUrl)
-              val service = approvedHatServices.find(s => s.title == name && redirectUrl.startsWith(s.url))
-                .map(_.copy(url = s"${redirectUri.scheme}:${redirectUri.authority.toString}", authUrl = redirectUri.toRelative.toString()))
-                .getOrElse(HatService(name, redirectUrl, "/assets/images/haticon.png", redirectUrl, redirectUri.path.toString(), browser = false, category="app"))
 
-              val accessScope = if (service.browser) { user.role } else { "validate" }
-              val resource = if (service.browser) { issuer } else { service.url }
-              val validity = standardDays(1)
-
-              val eventualResponse = fetchToken(user, resource, accessScope, validity) flatMap { maybeKnownServiceToken =>
-                val eventuallyFreshToken = fetchOrGenerateToken(user, resource = resource, accessScope, validity)
-
-                maybeKnownServiceToken map { knownServiceToken =>
-                  // known service, redirect
-                  eventuallyFreshToken map { token =>
-                    val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
-                    val redirectUrl = uri.toString
-                    redirect(redirectUrl, StatusCodes.Found)
+              val eventualResponse = eventualApprovedHatServices flatMap { approvedHatServices =>
+                for {
+                  service <- findOrCreateHatService(name, redirectUrl)
+                  linkedService <- hatServiceLink(user, service)
+                } yield {
+                  if (service.setup) {
+                    redirect(linkedService.url, StatusCodes.Found)
                   }
-                } getOrElse {
-                  // show page for login confirmation
-                  eventuallyFreshToken map { token =>
-                    val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
-                    val services = Seq(service.copy(url = uri.toString()))
+                  else {
+                    val services = Seq(linkedService)
                     val configuration = getHatConfiguration
                     val parameters = Map("hat" -> configuration)
                     complete((StatusCodes.OK, hatdex.hat.views.html.authenticated(user, services, parameters)))
@@ -237,26 +220,11 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
   private def myhat(implicit user: User) = {
     respondWithMediaType(`text/html`) {
       get {
-        val services = approvedHatServices
+        val futureCredentials = for {
+          services <- eventualApprovedHatServices
+          serviceCredentials <- Future.sequence(services.map(hatServiceLink(user, _)))
+        } yield serviceCredentials
 
-        val serviceCredentials = services.map { service =>
-          val eventualToken = if (service.browser) {
-            fetchOrGenerateToken(user, issuer, accessScope = user.role)
-          }
-          else {
-            fetchOrGenerateToken(user, resource = service.url, accessScope = "validate", validity = standardDays(1))
-          }
-          eventualToken.map { accessToken =>
-            if (service.url.nonEmpty) {
-              val uri = Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> accessToken.accessToken))
-              service.copy(url = uri.toString())
-            }
-            else {
-              service
-            }
-          }
-        }
-        val futureCredentials = Future.sequence(serviceCredentials)
         val configuration = getHatConfiguration
         val parameters = Map("hat" -> configuration)
         onComplete(futureCredentials) {
@@ -292,29 +260,21 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
             }
           } ~ post {
             formField('oldPassword.as[String], 'newPassword.as[String], 'confirmPassword.as[String]) {
+              case (oldPassword, newPassword, confirmPassword) if newPassword != confirmPassword =>
+                complete(hatdex.hat.views.html.passwordChange(user, Seq("Passwords do not match")))
+              case (oldPassword, newPassword, confirmPassword) if !BCrypt.checkpw(oldPassword, user.pass.getOrElse("")) =>
+                complete(hatdex.hat.views.html.passwordChange(user, Seq("Old password incorrect")))
               case (oldPassword, newPassword, confirmPassword) =>
-                if (newPassword != confirmPassword) {
-                  complete {
-                    hatdex.hat.views.html.passwordChange(user, Seq("Passwords do not match"))
-                  }
+                val passwordHash = BCrypt.hashpw(newPassword, BCrypt.gensalt())
+                val tryPasswordChange = DatabaseInfo.db.run {
+                  UserUser.filter(_.userId === user.userId)
+                    .map(user => user.pass)
+                    .update(Some(passwordHash))
+                    .asTry
                 }
-                else if (!BCrypt.checkpw(oldPassword, user.pass.getOrElse(""))) {
-                  complete {
-                    hatdex.hat.views.html.passwordChange(user, Seq("Old password incorrect"))
-                  }
-                }
-                else {
-                  val passwordHash = BCrypt.hashpw(newPassword, BCrypt.gensalt())
-                  val tryPasswordChange = DatabaseInfo.db.run {
-                    UserUser.filter(_.userId === user.userId)
-                      .map(user => user.pass)
-                      .update(Some(passwordHash))
-                      .asTry
-                  }
-                  onComplete(tryPasswordChange) {
-                    case Success(change) => complete(hatdex.hat.views.html.passwordChange(user, Seq(), true))
-                    case Failure(e)      => complete(hatdex.hat.views.html.passwordChange(user, Seq("An error occurred while changing your password, please try again"), false))
-                  }
+                onComplete(tryPasswordChange) {
+                  case Success(change) => complete(hatdex.hat.views.html.passwordChange(user, Seq(), true))
+                  case Failure(e)      => complete(hatdex.hat.views.html.passwordChange(user, Seq("An error occurred while changing your password, please try again"), false))
                 }
             }
 

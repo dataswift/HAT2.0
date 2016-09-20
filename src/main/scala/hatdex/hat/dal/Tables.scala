@@ -13,9 +13,62 @@ trait Tables {
   import slick.jdbc.{GetResult => GR}
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataTable.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
+
+  /** Entity class storing rows of table Applications
+   *  @param applicationId Database column application_id SqlType(serial), AutoInc, PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param dateSetup Database column date_setup SqlType(timestamp), Default(None)
+   *  @param title Database column title SqlType(varchar)
+   *  @param description Database column description SqlType(varchar)
+   *  @param logoUrl Database column logo_url SqlType(varchar)
+   *  @param url Database column url SqlType(varchar)
+   *  @param authUrl Database column auth_url SqlType(varchar)
+   *  @param browser Database column browser SqlType(bool)
+   *  @param category Database column category SqlType(varchar)
+   *  @param setup Database column setup SqlType(bool)
+   *  @param loginAvailable Database column login_available SqlType(bool) */
+  case class ApplicationsRow(applicationId: Int, dateCreated: org.joda.time.LocalDateTime, dateSetup: Option[org.joda.time.LocalDateTime] = None, title: String, description: String, logoUrl: String, url: String, authUrl: String, browser: Boolean, category: String, setup: Boolean, loginAvailable: Boolean)
+  /** GetResult implicit for fetching ApplicationsRow objects using plain SQL queries */
+  implicit def GetResultApplicationsRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[Option[org.joda.time.LocalDateTime]], e3: GR[String], e4: GR[Boolean]): GR[ApplicationsRow] = GR{
+    prs => import prs._
+    ApplicationsRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<?[org.joda.time.LocalDateTime], <<[String], <<[String], <<[String], <<[String], <<[String], <<[Boolean], <<[String], <<[Boolean], <<[Boolean]))
+  }
+  /** Table description of table applications. Objects of this class serve as prototypes for rows in queries. */
+  class Applications(_tableTag: Tag) extends Table[ApplicationsRow](_tableTag, Some("hat"), "applications") {
+    def * = (applicationId, dateCreated, dateSetup, title, description, logoUrl, url, authUrl, browser, category, setup, loginAvailable) <> (ApplicationsRow.tupled, ApplicationsRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(applicationId), Rep.Some(dateCreated), dateSetup, Rep.Some(title), Rep.Some(description), Rep.Some(logoUrl), Rep.Some(url), Rep.Some(authUrl), Rep.Some(browser), Rep.Some(category), Rep.Some(setup), Rep.Some(loginAvailable)).shaped.<>({r=>import r._; _1.map(_=> ApplicationsRow.tupled((_1.get, _2.get, _3, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get, _10.get, _11.get, _12.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column application_id SqlType(serial), AutoInc, PrimaryKey */
+    val applicationId: Rep[Int] = column[Int]("application_id", O.AutoInc, O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column date_setup SqlType(timestamp), Default(None) */
+    val dateSetup: Rep[Option[org.joda.time.LocalDateTime]] = column[Option[org.joda.time.LocalDateTime]]("date_setup", O.Default(None))
+    /** Database column title SqlType(varchar) */
+    val title: Rep[String] = column[String]("title")
+    /** Database column description SqlType(varchar) */
+    val description: Rep[String] = column[String]("description")
+    /** Database column logo_url SqlType(varchar) */
+    val logoUrl: Rep[String] = column[String]("logo_url")
+    /** Database column url SqlType(varchar) */
+    val url: Rep[String] = column[String]("url")
+    /** Database column auth_url SqlType(varchar) */
+    val authUrl: Rep[String] = column[String]("auth_url")
+    /** Database column browser SqlType(bool) */
+    val browser: Rep[Boolean] = column[Boolean]("browser")
+    /** Database column category SqlType(varchar) */
+    val category: Rep[String] = column[String]("category")
+    /** Database column setup SqlType(bool) */
+    val setup: Rep[Boolean] = column[Boolean]("setup")
+    /** Database column login_available SqlType(bool) */
+    val loginAvailable: Rep[Boolean] = column[Boolean]("login_available")
+  }
+  /** Collection-like TableQuery object for table Applications */
+  lazy val Applications = new TableQuery(tag => new Applications(tag))
 
   /** Entity class storing rows of table BundleContext
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey

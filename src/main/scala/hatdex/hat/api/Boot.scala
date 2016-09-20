@@ -28,6 +28,7 @@ import akka.pattern.{ BackoffSupervisor, Backoff }
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import hatdex.hat.api.actors.{ StatsReporter, ApiService }
+import hatdex.hat.dal.SchemaMigration
 import spray.can.Http
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -36,6 +37,9 @@ object Boot extends App {
 
   // we need an ActorSystem to host our application in
   implicit val system = ActorSystem("on-spray-can")
+
+  val migration = new SchemaMigration(system)
+  migration.run()
 
   // create and start our service actor
   val dalapiServiceProps = Props[ApiService]

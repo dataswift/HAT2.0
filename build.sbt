@@ -71,7 +71,7 @@ lazy val codegen = (project in file("codegen")).
       val fname = outputDir + "/" + pkg.replace('.', '/') + "/Tables.scala"
       Seq(file(fname))
     },
-    cleanFiles <+= baseDirectory { base => base / "../src/main/scala/hatdex/hat/dal/" }
+    cleanFiles <+= baseDirectory { base => base / "../src/main/scala/hatdex/hat/dal/Tables.scala" }
   )
 
 //slick <<= slickCodeGenTask
@@ -109,7 +109,8 @@ lazy val core = (project in file("."))
       "org.mindrot" % "jbcrypt" % "0.3m",
       "com.nimbusds" % "nimbus-jose-jwt" % jwtV,
       "org.bouncycastle" % "bcprov-jdk16" % "1.46",
-      "org.apache.commons" % "commons-email" % "1.4"
+      "org.apache.commons" % "commons-email" % "1.4",
+      "org.liquibase" % "liquibase-maven-plugin" % "3.5.1"
     ),
     gentables := {
       val main = Project("root", file("."))
