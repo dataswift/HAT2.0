@@ -24,13 +24,14 @@ val logbackV = "1.1.2"
 val slickV = "3.1.1"
 val slick_pgV = "0.14.2"
 val jwtV = "4.22"
+val postgresV = "9.4-1206-jdbc4"
 
 lazy val commonSettings = Seq(
-  scalaVersion := "2.11.6",
+  scalaVersion := "2.11.8",
   libraryDependencies ++= Seq(
     "com.typesafe.slick" %% "slick" % slickV,
     "com.typesafe.slick" %% "slick-hikaricp" % slickV,
-    "org.postgresql" % "postgresql" % "9.4-1206-jdbc4",
+    "org.postgresql" % "postgresql" % postgresV,
     "com.github.tminglei" % "slick-pg_core_2.11" % slick_pgV,
     "com.github.tminglei" %% "slick-pg" % slick_pgV,
     "com.github.tminglei" %% "slick-pg_joda-time" % slick_pgV,
@@ -150,5 +151,3 @@ resolvers ++= Seq(
   "scoverage-bintray" at "https://dl.bintray.com/sksamuel/sbt-plugins/",
   "Atlassian Releases" at "https://maven.atlassian.com/public/"
 )
-
-resolvers += Resolver.typesafeRepo("releases")
