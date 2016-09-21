@@ -414,6 +414,7 @@ trait DataService {
     val fieldValues = DataValue.filter(_.fieldId inSet fieldset)
     val valueQuery = for {
       value <- fieldValues.filter(v => v.dateCreated <= endTime && v.dateCreated >= startTime)
+        .sortBy(_.dateCreated.desc)
         .take(maybeLimit.getOrElse(1000) * fieldset.size) // Limit the number of records taken by default
       field <- value.dataFieldFk
       record <- value.dataRecordFk
