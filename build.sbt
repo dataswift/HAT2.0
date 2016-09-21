@@ -150,3 +150,5 @@ resolvers ++= Seq(
   "scoverage-bintray" at "https://dl.bintray.com/sksamuel/sbt-plugins/",
   "Atlassian Releases" at "https://maven.atlassian.com/public/"
 )
+
+resolvers += Resolver.typesafeRepo("releases")

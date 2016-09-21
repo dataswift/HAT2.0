@@ -247,7 +247,7 @@ trait DataService {
     DatabaseInfo.db.run(treeFieldQuery.result).map { treeFields =>
       val tablesWithParents = treeFields.map(_._1) // Get the trees
         .map(tree => (ApiDataTable.fromNestedTable(tree)(None)(None), tree.table1)) // Use the API data model for each tree
-        .distinct // Take only distinct trees (duplicates returned with each field
+        .distinct // Take only distinct trees (duplicates are returned with each field
       //logger.debug(s"Got tables with parents: $tablesWithParents")
 
       val fields = treeFields.flatMap(_._2)
@@ -272,13 +272,13 @@ trait DataService {
    */
   def storeRecordValues(recordValues: Seq[ApiRecordValues]): Future[Seq[ApiRecordValues]] = {
     val records = recordValues map { valueRecord =>
-      val newRecord = new DataRecordRow(0, LocalDateTime.now(), LocalDateTime.now(), valueRecord.record.name)
+      val newRecord = new DataRecordRow(0, LocalDateTime.now(), valueRecord.record.lastUpdated.getOrElse(LocalDateTime.now()), valueRecord.record.name)
       val maybeRecord = DatabaseInfo.db.run((DataRecord returning DataRecord) += newRecord)
 
       maybeRecord flatMap { insertedRecord =>
         val record = ApiDataRecord.fromDataRecord(insertedRecord)(None)
         val valueRows = valueRecord.values map { value =>
-          DataValueRow(0, LocalDateTime.now(), LocalDateTime.now(), value.value, value.field.get.id.get, record.id.get)
+          DataValueRow(0, LocalDateTime.now(), value.lastUpdated.getOrElse(LocalDateTime.now()), value.value, value.field.get.id.get, record.id.get)
         }
         val insertedValues = DatabaseInfo.db.run {
           (DataValue returning DataValue) ++= valueRows
@@ -413,8 +413,8 @@ trait DataService {
   protected[api] def fieldsetValues(fieldset: Set[Int], startTime: LocalDateTime, endTime: LocalDateTime, maybeLimit: Option[Int] = None): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
     val fieldValues = DataValue.filter(_.fieldId inSet fieldset)
     val valueQuery = for {
-      value <- fieldValues.filter(v => v.dateCreated <= endTime && v.dateCreated >= startTime)
-        .sortBy(_.dateCreated.desc)
+      value <- fieldValues.filter(v => v.lastUpdated <= endTime && v.lastUpdated >= startTime)
+        .sortBy(_.lastUpdated.desc)
         .take(maybeLimit.getOrElse(1000) * fieldset.size) // Limit the number of records taken by default
       field <- value.dataFieldFk
       record <- value.dataRecordFk

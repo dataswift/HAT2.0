@@ -99,7 +99,7 @@ object ApiDataValue {
   // Can construct the value object with only value info (e.g. outbound, when part of record and field anyway)
   def fromDataValue(value: DataValueRow): ApiDataValue = {
     ApiDataValue(
-      Some(value.id), Some(value.dateCreated), None,
+      Some(value.id), Some(value.dateCreated), Some(value.lastUpdated),
       value.value, None, None)
   }
   // Or construct the value object with value, field and record info (e.g. inbound, when determining where to insert)
