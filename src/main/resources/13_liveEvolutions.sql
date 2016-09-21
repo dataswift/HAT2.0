@@ -22,7 +22,7 @@ CREATE TABLE hat.applications (
 --rollback DROP TABLE hat.applications;
 --rollback DROP SEQUENCE hat.application_seq;
 
---changeset hubofallthings:presetApplications context:data
+--changeset hubofallthings:presetApplications context:data,testdata
 
 INSERT INTO hat.applications (title, description, logo_url, url, auth_url, browser, category, setup, login_available)
 VALUES ('MarketSquare', 'Community and Public space for HATs', '/assets/images/MarketSquare-logo.svg',

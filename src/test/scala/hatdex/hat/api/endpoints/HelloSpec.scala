@@ -90,7 +90,7 @@ class HelloSpec extends Specification with Specs2RouteTest with Hello {
         check {
           eventually {
             response.status should be equalTo OK
-            responseAs[String] must contain("Where would you like to go?")
+            responseAs[String] must contain("HAT - Welcome back Test User")
           }
         }
     }
