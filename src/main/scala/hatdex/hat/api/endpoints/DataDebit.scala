@@ -97,7 +97,10 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
     val eventualDataDebit = storeContextDataDebit(debit, bundle)
     eventualDataDebit map { createdDebit =>
       recordDataDebitOperation(createdDebit, user, DataDebitOperations.Create(), "Contextual Data Debit created")
-        .recover { case e => logger.error(s"Error while recording data debit operation: ${e.getMessage}") }
+        .recover { case e =>
+          logger.error(s"Error while recording data debit operation: ${e.getMessage}")
+            throw e
+        }
     }
     onComplete(eventualDataDebit) {
       case Success(createdDebit: ApiDataDebit) => complete((Created, createdDebit))

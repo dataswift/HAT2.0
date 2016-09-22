@@ -73,7 +73,7 @@ trait Api extends HttpService with Cors {
       }
   }
 
-  override def timeoutRoute: Route = complete(InternalServerError, ErrorMessage("Timeout.", ""))
+  override def timeoutRoute: Route = complete((InternalServerError, ErrorMessage("Timeout.", "")))
 
   // Concatenate all the handled routes
   def routes = handleRejections(jsonRejectionHandler) {
