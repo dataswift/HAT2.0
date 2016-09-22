@@ -71,6 +71,10 @@ trait UserProfileService extends BundleService {
       }
     }
 
+    import scala.reflect.runtime.universe.{ typeTag, TypeTag, typeOf }
+    def getTypeTag[T: TypeTag](t: T) = typeTag[T].tpe
+    def getTypeOfTag[T: TypeTag] = typeOf[T]
+
     val profile = for {
       profilePictureField <- eventualProfilePictureField
       valueTable <- eventualProfileRecord.map(_.get)
@@ -78,10 +82,11 @@ trait UserProfileService extends BundleService {
       val flattenedValues = flattenTableValues(valueTable)
       val publicProfile = flattenedValues.get("private").contains("false")
       val profileFields = flattenedValues.collect {
-        case ("fb_profile_photo", m: Map[String, String]) if profilePictureField.isDefined =>
+        case ("fb_profile_photo", m: Map[String, String] @unchecked)
+          if getTypeTag(m) =:= getTypeOfTag[Map[String, Int]] && profilePictureField.isDefined =>
           val publicField = m.get("private").contains("false")
           profilePictureField.get.copy(fieldPublic = publicField)
-        case (fieldName, m: Map[String, String]) =>
+        case (fieldName, m: Map[String, String] @unchecked) if getTypeTag(m) =:= getTypeOfTag[Map[String, Int]] =>
           val publicField = m.get("private").contains("false")
           ProfileField(fieldName, m - "private", publicField)
       }

@@ -145,7 +145,7 @@ trait HatJsonProtocol extends DefaultJsonProtocol with UuidMarshalling with Date
       case n: Int => JsNumber(n)
       case s: String => JsString(s)
       case x: Seq[_] => seqFormat[Any].write(x)
-      case m: Map[String, _] => mapFormat[String, Any].write(m)
+      case m: Map[String, _] @unchecked => mapFormat[String, Any].write(m)
       case b: Boolean if b == true => JsTrue
       case b: Boolean if b == false => JsFalse
       case x => serializationError("Do not understand object of type " + x.getClass.getName)
