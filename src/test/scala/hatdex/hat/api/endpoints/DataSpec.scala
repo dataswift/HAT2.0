@@ -78,9 +78,9 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
       sealRoute(routes) ~>
       check {
         eventually {
-          response.status should be equalTo Created
           responseAs[String] must contain("kitchen")
           responseAs[String] must contain("fibaro")
+          response.status should be equalTo Created
         }
         responseAs[ApiDataTable]
 
@@ -92,9 +92,9 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
       sealRoute(routes) ~>
       check {
         eventually {
-          response.status should be equalTo Created
           responseAs[String] must contain("kitchenElectricity")
           responseAs[String] must contain("fibaro")
+          response.status should be equalTo Created
         }
         responseAs[ApiDataTable]
 
