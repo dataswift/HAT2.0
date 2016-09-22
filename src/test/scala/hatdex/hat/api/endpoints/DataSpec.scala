@@ -144,6 +144,7 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
       .withEntity(HttpEntity(MediaTypes.`application/json`, completeTableField.toJson.toString)) ~>
       sealRoute(routes) ~>
       check {
+        responseAs[String] must contain("tableTestField")
         response.status should be equalTo Created
         responseAs[ApiDataField]
       }

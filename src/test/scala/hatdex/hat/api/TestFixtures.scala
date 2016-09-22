@@ -649,6 +649,15 @@ object TestFixtures {
         new DataValueRow(17, LocalDateTime.now(), LocalDateTime.now(), "event startTime 3", 14, 6),
         new DataValueRow(18, LocalDateTime.now(), LocalDateTime.now(), "event endTime 3", 15, 6))
 
+    def restartSequences: DBIO[Int] =
+      sqlu"""
+         |ALTER SEQUENCE hat.data_table_id_seq RESTART WITH 10;
+         |ALTER SEQUENCE hat.data_field_id_seq RESTART WITH 20;
+         |ALTER SEQUENCE hat.data_record_id_seq RESTART WITH 10;
+         |ALTER SEQUENCE hat.data_tabletotablecrossref_id_seq RESTART WITH 2;
+         |ALTER SEQUENCE hat.data_value_id_seq RESTART WITH 20;
+          """
+
       DatabaseInfo.db.run {
         DBIO.seq(
           DataTable.forceInsertAll(dataTableRows),
@@ -656,7 +665,9 @@ object TestFixtures {
           DataField.forceInsertAll(dataFieldRows),
           DataRecord.forceInsertAll(dataRecordRows),
           // Don't _foce_ insert all data values -- IDs don't particularly matter to us
-          DataValue.forceInsertAll(dataValues)).asTry
+          DataValue.forceInsertAll(dataValues),
+          restartSequences
+        ).asTry
       }
   }
 }
