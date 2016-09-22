@@ -59,10 +59,10 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
-    val f = TestDataCleanup.cleanupAll.flatMap { c =>
+    val f = TestDataCleanup.cleanupAll.andThen { case _ =>
       TestFixtures.contextlessBundleContext
     }
-    Await.result(f, Duration("20 seconds"))
+    Await.result(f, Duration("40 seconds"))
   }
 
   // Clean up all data
