@@ -78,9 +78,7 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
     Await.result(TestDataCleanup.cleanupAll, Duration("20 seconds"))
   }
 
-  // Clean up all data
   def afterAll() = {
-//    TestDataCleanup.cleanupAll
   }
 
   val ownerAuthToken = HatAuthTestHandler.validUsers.find(_.role == "owner").map(_.userId).flatMap { ownerId =>
@@ -110,6 +108,8 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
       responseAs[ApiEvent]
     }
 
+  sequential
+
   "EventsService" should {
     "Accept new events created" in {
       //test createEntity
@@ -126,6 +126,7 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
         sealRoute(routes) ~>
         check {
           response.status should be equalTo Created
+          logger.info(s"Event created: ${responseAs[String]}")
           responseAs[String] must contain("id")
         }
     }
@@ -141,6 +142,7 @@ class EventSpec extends Specification with Specs2RouteTest with Event with Befor
         .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.personValid)) ~>
         sealRoute(personEndpoint.routes) ~>
         check {
+          logger.info(s"Person create response: ${responseAs[String]}")
           response.status should be equalTo Created
           responseAs[String] must contain("HATperson")
           responseAs[ApiEvent]

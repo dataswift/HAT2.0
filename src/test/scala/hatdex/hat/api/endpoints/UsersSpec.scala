@@ -191,6 +191,7 @@ class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll w
       HttpRequest(GET, "/users/access_token")
         .withHeaders(RawHeader("username", "apiClient@platform.com"), RawHeader("password", "simplepass")) ~>
         sealRoute(routes) ~> check {
+        logger.info(s"User get token response: ${responseAs[String]}")
           response.status should be equalTo OK
           responseAs[String] must contain("accessToken")
         }

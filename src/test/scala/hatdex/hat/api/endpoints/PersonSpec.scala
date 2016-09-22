@@ -91,6 +91,8 @@ class PersonSpec extends Specification with Specs2RouteTest with Person with Bef
       responseAs[ApiPerson]
     }
 
+  sequential
+
   "Person Endpoint" should {
     "Accept new people created" in {
       //test createEntity

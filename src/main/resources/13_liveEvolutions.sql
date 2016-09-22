@@ -61,3 +61,9 @@ VALUES ('RumpelLite', 'Your location coming in directly from your iOS device int
         '/gb/app/rumpel-lite/id1147137249', FALSE, 'dataplug', TRUE, FALSE);
 
 --rollback DELETE FROM hat.applications WHERE title IN ('MarketSquare', 'Rumpel', 'Hatters', 'Facebook', 'Calendar', 'Photos', 'RumpelLite');
+
+--changeset hubofallthings:eventCorrectIdSequence context:structuresonly
+
+ALTER TABLE hat.events_event ALTER COLUMN id SET DEFAULT nextval('hat.entity_id_seq');
+
+--rollback ALTER TABLE hat.events_event ALTER COLUMN id SET DEFAULT nextval('hat.events_event_id_seq'),;
