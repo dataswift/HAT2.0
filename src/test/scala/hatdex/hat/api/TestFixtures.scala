@@ -601,62 +601,62 @@ object TestFixtures {
 
   def contextlessBundleContext = {
       val dataTableRows = Seq(
-        new DataTableRow(2, LocalDateTime.now(), LocalDateTime.now(), "kitchen", "bundlefibaro"),
-        new DataTableRow(3, LocalDateTime.now(), LocalDateTime.now(), "kitchenElectricity", "bundlefibaro"),
-        new DataTableRow(4, LocalDateTime.now(), LocalDateTime.now(), "event", "bundlefacebook"))
+        new DataTableRow(1002, LocalDateTime.now(), LocalDateTime.now(), "kitchen", "bundlefibaro"),
+        new DataTableRow(1003, LocalDateTime.now(), LocalDateTime.now(), "kitchenElectricity", "bundlefibaro"),
+        new DataTableRow(1004, LocalDateTime.now(), LocalDateTime.now(), "event", "bundlefacebook"))
 
       val dataTableCrossrefs = Seq(
-        new DataTabletotablecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(), "contains", 2, 3))
+        new DataTabletotablecrossrefRow(1001, LocalDateTime.now(), LocalDateTime.now(), "contains", 1002, 1003))
 
       val dataFieldRows = Seq(
-        new DataFieldRow(10, LocalDateTime.now(), LocalDateTime.now(), "timestamp", 3),
-        new DataFieldRow(11, LocalDateTime.now(), LocalDateTime.now(), "value", 3),
-        new DataFieldRow(12, LocalDateTime.now(), LocalDateTime.now(), "name", 4),
-        new DataFieldRow(13, LocalDateTime.now(), LocalDateTime.now(), "location", 4),
-        new DataFieldRow(14, LocalDateTime.now(), LocalDateTime.now(), "startTime", 4),
-        new DataFieldRow(15, LocalDateTime.now(), LocalDateTime.now(), "endTime", 4))
+        new DataFieldRow(1010, LocalDateTime.now(), LocalDateTime.now(), "timestamp", 1003),
+        new DataFieldRow(1011, LocalDateTime.now(), LocalDateTime.now(), "value", 1003),
+        new DataFieldRow(1012, LocalDateTime.now(), LocalDateTime.now(), "name", 1004),
+        new DataFieldRow(1013, LocalDateTime.now(), LocalDateTime.now(), "location", 1004),
+        new DataFieldRow(1014, LocalDateTime.now(), LocalDateTime.now(), "startTime", 1004),
+        new DataFieldRow(1015, LocalDateTime.now(), LocalDateTime.now(), "endTime", 1004))
 
       val dataRecordRows = Seq(
-        new DataRecordRow(1, LocalDateTime.now(), LocalDateTime.now(), "kitchen record 1"),
-        new DataRecordRow(2, LocalDateTime.now(), LocalDateTime.now(), "kitchen record 2"),
-        new DataRecordRow(3, LocalDateTime.now(), LocalDateTime.now(), "kitchen record 3"),
-        new DataRecordRow(4, LocalDateTime.now(), LocalDateTime.now(), "event record 1"),
-        new DataRecordRow(5, LocalDateTime.now(), LocalDateTime.now(), "event record 2"),
-        new DataRecordRow(6, LocalDateTime.now(), LocalDateTime.now(), "event record 3"))
+        new DataRecordRow(1001, LocalDateTime.now(), LocalDateTime.now(), "kitchen record 1"),
+        new DataRecordRow(1002, LocalDateTime.now(), LocalDateTime.now(), "kitchen record 2"),
+        new DataRecordRow(1003, LocalDateTime.now(), LocalDateTime.now(), "kitchen record 3"),
+        new DataRecordRow(1004, LocalDateTime.now(), LocalDateTime.now(), "event record 1"),
+        new DataRecordRow(1005, LocalDateTime.now(), LocalDateTime.now(), "event record 2"),
+        new DataRecordRow(1006, LocalDateTime.now(), LocalDateTime.now(), "event record 3"))
 
       val dataValues = Seq(
-        new DataValueRow(1, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1", 10, 1),
-        new DataValueRow(2, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 1", 11, 1),
+        new DataValueRow(1001, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 1", 1010, 1001),
+        new DataValueRow(1002, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 1", 1011, 1001),
 
-        new DataValueRow(3, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 2", 10, 2),
-        new DataValueRow(4, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 2", 11, 2),
+        new DataValueRow(1003, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 2", 1010, 1002),
+        new DataValueRow(1004, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 2", 1011, 1002),
 
-        new DataValueRow(5, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 3", 10, 3),
-        new DataValueRow(6, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 3", 11, 3),
+        new DataValueRow(1005, LocalDateTime.now(), LocalDateTime.now(), "kitchen time 3", 1010, 1003),
+        new DataValueRow(1006, LocalDateTime.now(), LocalDateTime.now(), "kitchen value 3", 1011, 1003),
 
-        new DataValueRow(7, LocalDateTime.now(), LocalDateTime.now(), "event name 1", 12, 4),
-        new DataValueRow(8, LocalDateTime.now(), LocalDateTime.now(), "event location 1", 13, 4),
-        new DataValueRow(9, LocalDateTime.now(), LocalDateTime.now(), "event startTime 1", 14, 4),
-        new DataValueRow(10, LocalDateTime.now(), LocalDateTime.now(), "event endTime 1", 15, 4),
+        new DataValueRow(1007, LocalDateTime.now(), LocalDateTime.now(), "event name 1", 1012, 1004),
+        new DataValueRow(1008, LocalDateTime.now(), LocalDateTime.now(), "event location 1", 1013, 1004),
+        new DataValueRow(1009, LocalDateTime.now(), LocalDateTime.now(), "event startTime 1", 1014, 1004),
+        new DataValueRow(1010, LocalDateTime.now(), LocalDateTime.now(), "event endTime 1", 1015, 1004),
 
-        new DataValueRow(11, LocalDateTime.now(), LocalDateTime.now(), "event name 2", 12, 5),
-        new DataValueRow(12, LocalDateTime.now(), LocalDateTime.now(), "event location 2", 13, 5),
-        new DataValueRow(13, LocalDateTime.now(), LocalDateTime.now(), "event startTime 2", 14, 5),
-        new DataValueRow(14, LocalDateTime.now(), LocalDateTime.now(), "event endTime 2", 15, 5),
+        new DataValueRow(1011, LocalDateTime.now(), LocalDateTime.now(), "event name 2", 1012, 1005),
+        new DataValueRow(1012, LocalDateTime.now(), LocalDateTime.now(), "event location 2", 1013, 1005),
+        new DataValueRow(1013, LocalDateTime.now(), LocalDateTime.now(), "event startTime 2", 1014, 1005),
+        new DataValueRow(1014, LocalDateTime.now(), LocalDateTime.now(), "event endTime 2", 1015, 1005),
 
-        new DataValueRow(15, LocalDateTime.now(), LocalDateTime.now(), "event name 3", 12, 6),
-        new DataValueRow(16, LocalDateTime.now(), LocalDateTime.now(), "event location 3", 13, 6),
-        new DataValueRow(17, LocalDateTime.now(), LocalDateTime.now(), "event startTime 3", 14, 6),
-        new DataValueRow(18, LocalDateTime.now(), LocalDateTime.now(), "event endTime 3", 15, 6))
+        new DataValueRow(1015, LocalDateTime.now(), LocalDateTime.now(), "event name 3", 1012, 1006),
+        new DataValueRow(1016, LocalDateTime.now(), LocalDateTime.now(), "event location 3", 1013, 1006),
+        new DataValueRow(1017, LocalDateTime.now(), LocalDateTime.now(), "event startTime 3", 1014, 1006),
+        new DataValueRow(1018, LocalDateTime.now(), LocalDateTime.now(), "event endTime 3", 1015, 1006))
 
-    def restartSequences: DBIO[Int] =
-      sqlu"""
-         |ALTER SEQUENCE hat.data_table_id_seq RESTART WITH 10;
-         |ALTER SEQUENCE hat.data_field_id_seq RESTART WITH 20;
-         |ALTER SEQUENCE hat.data_record_id_seq RESTART WITH 10;
-         |ALTER SEQUENCE hat.data_tabletotablecrossref_id_seq RESTART WITH 2;
-         |ALTER SEQUENCE hat.data_value_id_seq RESTART WITH 20;
-          """
+//    def restartSequences: DBIO[Int] =
+//      sqlu"""
+//         |ALTER SEQUENCE hat.data_table_id_seq RESTART WITH 10;
+//         |ALTER SEQUENCE hat.data_field_id_seq RESTART WITH 20;
+//         |ALTER SEQUENCE hat.data_record_id_seq RESTART WITH 10;
+//         |ALTER SEQUENCE hat.data_tabletotablecrossref_id_seq RESTART WITH 2;
+//         |ALTER SEQUENCE hat.data_value_id_seq RESTART WITH 20;
+//          """
 
       DatabaseInfo.db.run {
         DBIO.seq(
@@ -665,8 +665,8 @@ object TestFixtures {
           DataField.forceInsertAll(dataFieldRows),
           DataRecord.forceInsertAll(dataRecordRows),
           // Don't _foce_ insert all data values -- IDs don't particularly matter to us
-          DataValue.forceInsertAll(dataValues),
-          restartSequences
+          DataValue.forceInsertAll(dataValues)
+//          restartSequences
         ).asTry
       }
   }
