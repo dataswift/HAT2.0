@@ -31,6 +31,7 @@ import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models.ErrorMessage
 import hatdex.hat.api.service._
 import hatdex.hat.api.{Api, Cors}
+import hatdex.hat.phata.Phata
 import spray.can.Http
 import spray.http.{StatusCodes, Timedout, HttpRequest, HttpResponse}
 import spray.httpx.marshalling
@@ -87,7 +88,7 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
     implicit def actorRefFactory: ActorRefFactory = context
 
     // Initialise all the service the actor handles
-    val helloService = new Hello with LoggingHttpService {
+    val helloService = new Phata with LoggingHttpService {
       val emailService = apiEmailService
     }
     val apiDataService = new Data with LoggingHttpService

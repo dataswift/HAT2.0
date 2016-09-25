@@ -18,37 +18,35 @@
  * Public License along with this program. If not, see
  * <http://www.gnu.org/licenses/>.
  */
-package hatdex.hat.api.endpoints
+package hatdex.hat.phata
 
 import akka.actor.ActorRefFactory
 import akka.event.LoggingAdapter
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
+import hatdex.hat.FutureTransformations
 import hatdex.hat.api.DatabaseInfo
-import hatdex.hat.api.actors.{ EmailMessage, EmailService }
+import hatdex.hat.api.actors.{EmailMessage, EmailService}
 import hatdex.hat.api.models.HatService
-import hatdex.hat.api.service.{ HatServicesService, UserProfileService, BundleService }
+import hatdex.hat.api.service.{BundleService, HatServicesService, UserProfileService}
 import hatdex.hat.authentication.HatAuthHandler.UserPassHandler
 import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.User
-import hatdex.hat.authentication.{ HatServiceAuthHandler, JwtTokenHandler }
+import hatdex.hat.authentication.{HatServiceAuthHandler, JwtTokenHandler}
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
-import org.joda.time._
+import org.joda.time.DateTime
 import org.joda.time.Duration._
-import org.joda.time.{DateTime}
 import org.mindrot.jbcrypt.BCrypt
 import spray.http.MediaTypes._
-import spray.http.{ Uri, HttpCookie, StatusCodes }
-import spray.routing.HttpService
-import spray.httpx.SprayJsonSupport._
+import spray.http.{HttpCookie, StatusCodes, Uri}
 import spray.httpx.PlayTwirlSupport._
+import spray.routing.HttpService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.{ Failure, Success }
+import scala.util.{Failure, Success}
 
-trait Hello extends HttpService with UserProfileService with HatServiceAuthHandler with JwtTokenHandler with HatServicesService with BundleService {
+trait Phata extends HttpService with UserProfileService with HatServiceAuthHandler with JwtTokenHandler with HatServicesService with BundleService {
   val routes = {
     home ~
       authHat ~
@@ -56,7 +54,6 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
       hatLogin ~
       profile ~
       logout ~
-      getPublicKey ~
       assets ~
       passwordChange ~
       resetPassword ~
@@ -94,26 +91,20 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
       standardMinutes(180)
     }
 
-    val fUser = UserPassHandler.authenticator(params)
-    val fToken = fUser.flatMap { maybeUser =>
+    val eventualMaybeUser = UserPassHandler.authenticator(params)
+    val eventualMaybeToken = eventualMaybeUser.flatMap { maybeUser =>
       // Fetch Access token if user has authenticated
       val maybeFutureToken = maybeUser.map(user => fetchOrGenerateToken(user, issuer, accessScope = user.role, validity = validity))
       // Transform option of future to future of option
-      maybeFutureToken.map { futureToken =>
-        futureToken.map { token =>
-          Some(token)
-        }
-      } getOrElse {
-        Future.successful(None)
-      }
+      FutureTransformations.transform(maybeFutureToken)
     }
 
-    val fCredentials = for {
-      maybeUser <- fUser
-      maybeToken <- fToken
+    val eventualCredentials = for {
+      maybeUser <- eventualMaybeUser
+      maybeToken <- eventualMaybeToken
     } yield (maybeUser, maybeToken)
 
-    onComplete(fCredentials) {
+    onComplete(eventualCredentials) {
       case Success((Some(user), Some(token))) =>
         val expires = spray.http.DateTime(DateTime.now().plus(validity).getMillis)
         val cookie = HttpCookie("X-Auth-Token", content = token.accessToken,
@@ -127,13 +118,13 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
         }
       case Success(_) =>
         deleteCookie("X-Auth-Token") {
-          complete(hatdex.hat.views.html.simpleMessage("Invalid Credentials!", formatProfile(Seq())))
+          complete(hatdex.hat.phata.views.html.simpleMessage("Invalid Credentials!", formattedHatConfiguration))
         }
       case Failure(e) =>
         deleteCookie("X-Auth-Token") {
           complete {
             logger.error(s"Error while authenticating: ${e.getMessage}")
-            hatdex.hat.views.html.simpleMessage("Error while authenticating", formatProfile(Seq()))
+            hatdex.hat.phata.views.html.simpleMessage("Error while authenticating", formattedHatConfiguration)
           }
         }
     }
@@ -153,17 +144,17 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
 
   val publicResourcePath: String = conf.getString("public-resource-path")
   private def getProfile(maybeUser: Option[User]) = onComplete(getPublicProfile) {
-    case Success((true, publicFields))  => complete(hatdex.hat.views.html.index(formatProfile(publicFields.toSeq), maybeUser))
-    case Success((false, publicFields)) => complete(hatdex.hat.views.html.indexPrivate(formatProfile(publicFields.toSeq), maybeUser))
-    case Failure(e)                     => complete(hatdex.hat.views.html.indexPrivate(Map(), maybeUser))
+    case Success((true, profile))  =>
+      logger.info(s"Public profile ${profile}")
+      complete(hatdex.hat.phata.views.html.index(profile, maybeUser))
+    case Success((false, profile)) => complete(hatdex.hat.phata.views.html.indexPrivate(profile, maybeUser))
+    case Failure(e)                     => complete(hatdex.hat.phata.views.html.indexPrivate(Map(), maybeUser))
   }
 
   def loginPage = path("signin") {
     get {
       respondWithMediaType(`text/html`) {
-        val configuration = getHatConfiguration
-        val parameters = Map("hat" -> configuration)
-        complete(hatdex.hat.views.html.simpleLogin(parameters))
+        complete(hatdex.hat.phata.views.html.simpleLogin(formattedHatConfiguration))
       }
     }
   }
@@ -173,7 +164,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
       respondWithMediaType(`text/html`) {
         accessTokenHandler { implicit user: User =>
           authorize(UserAuthorization.withRole("owner")) {
-            parameters('name, 'redirect) { (name: String, redirectUrl: String) =>
+            parameters('name, 'redirect) { case (name: String, redirectUrl: String) =>
 
               val eventualResponse = eventualApprovedHatServices flatMap { approvedHatServices =>
                 for {
@@ -185,24 +176,26 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
                   }
                   else {
                     val services = Seq(linkedService)
-                    val configuration = getHatConfiguration
-                    val parameters = Map("hat" -> configuration)
-                    complete((StatusCodes.OK, hatdex.hat.views.html.authenticated(user, services, parameters)))
+                    complete {
+                      (StatusCodes.OK, hatdex.hat.phata.views.html.authenticated(user, services, formattedHatConfiguration))
+                    }
                   }
                 }
               }
 
               onComplete(eventualResponse) {
                 case Success(response) => response
-                case Failure(e)        => complete((StatusCodes.InternalServerError, s"Error occurred while logging you into $redirectUrl: ${e.getMessage}"))
+                case Failure(e)        => complete {
+                  (StatusCodes.InternalServerError, s"Error occurred while logging you into $redirectUrl: ${e.getMessage}")
+                }
               }
             }
           }
         } ~ {
-          parameters('name, 'redirect) { (name: String, redirectUrl: String) =>
-            val configuration = getHatConfiguration
-            val parameters = Map("hat" -> configuration)
-            complete(hatdex.hat.views.html.login(name, redirectUrl, parameters))
+          parameters('name, 'redirect) { case (name: String, redirectUrl: String) =>
+            complete {
+              hatdex.hat.phata.views.html.login(name, redirectUrl, formattedHatConfiguration)
+            }
           }
         }
       }
@@ -225,17 +218,15 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
           serviceCredentials <- Future.sequence(services.map(hatServiceLink(user, _)))
         } yield serviceCredentials
 
-        val configuration = getHatConfiguration
-        val parameters = Map("hat" -> configuration)
         onComplete(futureCredentials) {
           case Success(credentials) =>
             complete {
-              hatdex.hat.views.html.authenticated(user, credentials, parameters)
+              hatdex.hat.phata.views.html.authenticated(user, credentials, formattedHatConfiguration)
             }
           case Failure(e) =>
             logger.warning(s"Error resolving access tokens for auth page: ${e.getMessage}")
             complete {
-              hatdex.hat.views.html.authenticated(user, Seq(), parameters)
+              hatdex.hat.phata.views.html.authenticated(user, Seq(), formattedHatConfiguration)
             }
         }
       }
@@ -256,14 +247,14 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
         respondWithMediaType(`text/html`) {
           get {
             complete {
-              hatdex.hat.views.html.passwordChange(user, Seq(), false)
+              hatdex.hat.phata.views.html.passwordChange(user, Seq(), changed = false, formattedHatConfiguration)
             }
           } ~ post {
-            formField('oldPassword.as[String], 'newPassword.as[String], 'confirmPassword.as[String]) {
+            formFields('oldPassword.as[String], 'newPassword.as[String], 'confirmPassword.as[String]) {
               case (oldPassword, newPassword, confirmPassword) if newPassword != confirmPassword =>
-                complete(hatdex.hat.views.html.passwordChange(user, Seq("Passwords do not match")))
+                complete(hatdex.hat.phata.views.html.passwordChange(user, Seq("Passwords do not match"), parameters = formattedHatConfiguration))
               case (oldPassword, newPassword, confirmPassword) if !BCrypt.checkpw(oldPassword, user.pass.getOrElse("")) =>
-                complete(hatdex.hat.views.html.passwordChange(user, Seq("Old password incorrect")))
+                complete(hatdex.hat.phata.views.html.passwordChange(user, Seq("Old password incorrect"), parameters = formattedHatConfiguration))
               case (oldPassword, newPassword, confirmPassword) =>
                 val passwordHash = BCrypt.hashpw(newPassword, BCrypt.gensalt())
                 val tryPasswordChange = DatabaseInfo.db.run {
@@ -273,8 +264,8 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
                     .asTry
                 }
                 onComplete(tryPasswordChange) {
-                  case Success(change) => complete(hatdex.hat.views.html.passwordChange(user, Seq(), true))
-                  case Failure(e)      => complete(hatdex.hat.views.html.passwordChange(user, Seq("An error occurred while changing your password, please try again"), false))
+                  case Success(change) => complete(hatdex.hat.phata.views.html.passwordChange(user, Seq(), changed = true, formattedHatConfiguration))
+                  case Failure(e)      => complete(hatdex.hat.phata.views.html.passwordChange(user, Seq("An error occurred while changing your password, please try again"), changed = false, formattedHatConfiguration))
                 }
             }
 
@@ -288,7 +279,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
     respondWithMediaType(`text/html`) {
       get {
         complete {
-          hatdex.hat.views.html.passwordReset()
+          hatdex.hat.phata.views.html.passwordReset()
         }
       } ~ post {
         formField('email.as[String]) {
@@ -312,8 +303,8 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
                     val message = EmailMessage("HAT - reset your password",
                       configuredEmail, // to
                       s"${conf.getString("hat.name")}@${conf.getString("hat.domain")}", // from
-                      hatdex.hat.views.txt.emailPasswordReset.render(user, resetLink).toString(),
-                      hatdex.hat.views.html.emailPasswordReset.render(user, resetLink).toString(),
+                      hatdex.hat.phata.views.txt.emailPasswordReset.render(user, resetLink).toString(),
+                      hatdex.hat.phata.views.html.emailPasswordReset.render(user, resetLink).toString(),
                       1 minute, 5)
                     emailService.send(message)
                   }
@@ -322,7 +313,7 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
 
             }
             complete {
-              hatdex.hat.views.html.simpleMessage("If the email you have entered is correct, you will shortly receive an email with password reset instructions")
+              hatdex.hat.phata.views.html.simpleMessage("If the email you have entered is correct, you will shortly receive an email with password reset instructions")
             }
         }
       }
@@ -337,14 +328,14 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
           case parameters =>
             get {
               complete {
-                hatdex.hat.views.html.passwordResetConfirm(user, Seq(), token = parameters.get("X-Auth-Token").getOrElse(""))
+                hatdex.hat.phata.views.html.passwordResetConfirm(user, Seq(), token = parameters.getOrElse("X-Auth-Token", ""))
               }
             } ~ post {
-              formField('newPassword.as[String], 'confirmPassword.as[String]) {
+              formFields('newPassword.as[String], 'confirmPassword.as[String]) {
                 case (newPassword, confirmPassword) =>
                   if (newPassword != confirmPassword) {
                     complete {
-                      hatdex.hat.views.html.passwordResetConfirm(user, Seq("Passwords do not match"), token = parameters.get("X-Auth-Token").getOrElse(""))
+                      hatdex.hat.phata.views.html.passwordResetConfirm(user, Seq("Passwords do not match"), token = parameters.getOrElse("X-Auth-Token", ""))
                     }
                   }
                   else {
@@ -356,22 +347,12 @@ trait Hello extends HttpService with UserProfileService with HatServiceAuthHandl
                         .asTry
                     }
                     onComplete(tryPasswordChange) {
-                      case Success(change) => complete(hatdex.hat.views.html.passwordResetConfirm(user, Seq(), true, token = parameters.get("X-Auth-Token").get))
-                      case Failure(e)      => complete(hatdex.hat.views.html.passwordResetConfirm(user, Seq("An error occurred while changing your password, please try again"), false, token = parameters.get("X-Auth-Token").get))
+                      case Success(change) => complete(hatdex.hat.phata.views.html.passwordResetConfirm(user, Seq(), changed = true, token = parameters.get("X-Auth-Token").get))
+                      case Failure(e)      => complete(hatdex.hat.phata.views.html.passwordResetConfirm(user, Seq("An error occurred while changing your password, please try again"), changed = false, token = parameters.get("X-Auth-Token").get))
                     }
                   }
               }
             }
-        }
-      }
-    }
-  }
-
-  def getPublicKey = path("publickey") {
-    get {
-      respondWithMediaType(`text/plain`) {
-        complete {
-          conf.getString("auth.publicKey")
         }
       }
     }

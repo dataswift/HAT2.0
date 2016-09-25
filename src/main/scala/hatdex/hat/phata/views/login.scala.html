@@ -1,6 +1,10 @@
 @(loginServiceName: String, loginServiceUrl: String, parameters: Map[String, Map[String, String]])
 
-@main(s"HAT Login", None, hatName = parameters.get("hat").flatMap(_.get("hatName"))) {
+@menubarcontent = @{
+    components.menubarLeft(None, parameters.get("hat").flatMap(_.get("hatName")), hatAddress = parameters.get("hat").flatMap(_.get("hatAddress")), tab = "login")
+}
+
+@main(s"HAT Login", None, hatName = parameters.get("hat").flatMap(_.get("hatName")), menubarContent = menubarcontent) {
     <div class="login-content">
         <div class="logo">
             <img src="/assets/images/haticon.png" class="img img-responsive">

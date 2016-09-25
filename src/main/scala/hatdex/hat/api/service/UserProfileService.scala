@@ -22,7 +22,8 @@
 package hatdex.hat.api.service
 
 import com.typesafe.config.ConfigFactory
-import hatdex.hat.api.models.ProfileField
+import hatdex.hat.FutureTransformations
+import hatdex.hat.api.models.{ApiDataTable, ProfileField}
 import org.joda.time.LocalDateTime
 
 import scala.concurrent.Future
@@ -31,37 +32,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 trait UserProfileService extends BundleService {
   val configuration = ConfigFactory.load()
 
-  def getPublicProfile: Future[(Boolean, Iterable[ProfileField])] = {
+  def getPublicProfile: Future[(Boolean, Map[String, Map[String, String]])] = {
     val eventualMaybeProfileTable = sourceDatasetTables(Seq(("rumpel", "profile")), None).map(_.headOption)
     val eventualMaybeFacebookTable = sourceDatasetTables(Seq(("facebook", "profile_picture")), None).map(_.headOption)
     val eventualProfileRecord = eventualMaybeProfileTable flatMap { maybeTable =>
-      maybeTable map { table =>
-        val fieldset = getStructureFields(table)
-
-        val startTime = LocalDateTime.now().minusDays(365)
-        val endTime = LocalDateTime.now()
-        val eventualValues = fieldsetValues(fieldset, startTime, endTime)
-
-        eventualValues.map(values => getValueRecords(values, Seq(table)))
-          .map { records => records.headOption }
-          .map(_.flatMap(_.tables.flatMap(_.headOption)))
-      } getOrElse {
-        Future.successful(None)
-      }
+      FutureTransformations.transform(maybeTable map getProfileTable)
     }
 
     val eventualProfilePicture = eventualMaybeFacebookTable flatMap { maybeTable =>
-      maybeTable map { table =>
-        val fieldset = getStructureFields(table)
-        val startTime = LocalDateTime.now().minusDays(365)
-        val endTime = LocalDateTime.now()
-        val eventualValues = fieldsetValues(fieldset, startTime, endTime)
-        eventualValues.map(values => getValueRecords(values, Seq(table)))
-          .map { records => records.headOption }
-          .map { record => record.flatMap(_.tables.flatMap(_.headOption)) }
-      } getOrElse {
-        Future.successful(None)
-      }
+      FutureTransformations.transform(maybeTable map getProfileTable)
     }
 
     val eventualProfilePictureField = eventualProfilePicture map { maybeValueTable =>
@@ -83,10 +62,10 @@ trait UserProfileService extends BundleService {
       val publicProfile = flattenedValues.get("private").contains("false")
       val profileFields = flattenedValues.collect {
         case ("fb_profile_photo", m: Map[String, String] @unchecked)
-          if getTypeTag(m) =:= getTypeOfTag[Map[String, Int]] && profilePictureField.isDefined =>
+          if getTypeTag(m) =:= getTypeOfTag[Map[String, String]] && profilePictureField.isDefined =>
           val publicField = m.get("private").contains("false")
           profilePictureField.get.copy(fieldPublic = publicField)
-        case (fieldName, m: Map[String, String] @unchecked) if getTypeTag(m) =:= getTypeOfTag[Map[String, Int]] =>
+        case (fieldName, m: Map[String, String] @unchecked) if getTypeTag(m) =:= getTypeOfTag[Map[String, String]] =>
           val publicField = m.get("private").contains("false")
           ProfileField(fieldName, m - "private", publicField)
       }
@@ -94,13 +73,34 @@ trait UserProfileService extends BundleService {
       (publicProfile, profileFields.filter(_.fieldPublic))
     }
 
-    profile recover {
+    val profilePublicFields = profile recover {
       case e =>
         (false, Iterable())
     }
+
+    profilePublicFields map { case (public, fields) =>
+      (public, formatProfile(fields.toSeq))
+    }
   }
 
-  def getHatConfiguration: Map[String, String] = {
+  private def getProfileTable(table: ApiDataTable) = {
+    val fieldset = getStructureFields(table)
+
+    val startTime = LocalDateTime.now().minusDays(365)
+    val endTime = LocalDateTime.now()
+    val eventualValues = fieldsetValues(fieldset, startTime, endTime)
+
+    eventualValues.map(values => getValueRecords(values, Seq(table)))
+      .map { records => records.headOption }
+      .map(_.flatMap(_.tables.flatMap(_.headOption)))
+  }
+
+  def formattedHatConfiguration: Map[String, Map[String, String]] = {
+    val configuration = getHatConfiguration
+    Map("hat" -> configuration)
+  }
+
+  private def getHatConfiguration: Map[String, String] = {
     val hatParameters: Map[String, String] = Map(
       "hatName" -> configuration.getString("hat.name"),
       "hatDomain" -> configuration.getString("hat.domain"),

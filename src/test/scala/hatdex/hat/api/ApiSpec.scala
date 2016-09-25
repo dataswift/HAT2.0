@@ -30,6 +30,7 @@ import hatdex.hat.api.models.ErrorMessage
 import hatdex.hat.api.service._
 import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
+import hatdex.hat.phata.Phata
 import org.specs2.mutable.Specification
 import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._
@@ -60,7 +61,7 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
     conf.getString("mail.smtp.password"))
   val apiEmailService = new EmailService(system, smtpConfig)
 
-  val helloService = new Hello with LoggingHttpService {
+  val helloService = new Phata with LoggingHttpService {
     val emailService = apiEmailService
   }
   val apiDataService = new Data with LoggingHttpService {

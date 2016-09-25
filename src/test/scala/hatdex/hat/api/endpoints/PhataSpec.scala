@@ -25,12 +25,13 @@ import akka.event.LoggingAdapter
 import hatdex.hat.api.actors.{EmailService, SmtpConfig}
 import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
+import hatdex.hat.phata.Phata
 import org.specs2.mutable.Specification
 import spray.http.HttpHeaders.RawHeader
 import spray.http.StatusCodes._
 import spray.testkit.Specs2RouteTest
 
-class HelloSpec extends Specification with Specs2RouteTest with Hello {
+class PhataSpec extends Specification with Specs2RouteTest with Phata {
   def actorRefFactory = system
 
   val logger: LoggingAdapter = system.log

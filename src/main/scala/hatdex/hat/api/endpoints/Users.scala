@@ -33,6 +33,7 @@ import hatdex.hat.dal.Tables._
 import org.joda.time.Duration._
 
 import org.joda.time.{ LocalDateTime }
+import spray.http.MediaTypes._
 import spray.http.StatusCode
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
@@ -51,7 +52,7 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
 
   val routes = {
     pathPrefix("users") {
-      apiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount ~ validateAccessToken ~ getAppLoginToken
+      apiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount ~ validateAccessToken ~ getAppLoginToken ~ getPublicKey
     }
   }
 
@@ -190,6 +191,16 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
     get {
       accessTokenHandler { implicit systemUser: User =>
         complete((OK, SuccessResponse("Authenticated")))
+      }
+    }
+  }
+
+  def getPublicKey = path("publickey") {
+    get {
+      respondWithMediaType(`text/plain`) {
+        complete {
+          conf.getString("auth.publicKey")
+        }
       }
     }
   }
