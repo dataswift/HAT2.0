@@ -52,8 +52,8 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
 
   val routes = {
     pathPrefix("users") {
-      apiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount ~ validateAccessToken ~ getAppLoginToken ~ getPublicKey
-    }
+      apiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount ~ validateAccessToken ~ getAppLoginToken
+    } ~ getPublicKey
   }
 
   import hatdex.hat.api.json.JsonProtocol._

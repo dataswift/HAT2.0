@@ -417,7 +417,7 @@ trait DataService {
       .sortBy(_.recordId.desc)
     val valueQuery = for {
       (record, value) <- DataRecord.filter(_.id in valuesQuery.map(_.recordId))
-        .filter(_.deleted === false)
+        .filter(r => r.lastUpdated <= endTime && r.lastUpdated >= startTime && r.deleted === false)
         .sortBy(_.lastUpdated.desc)
         .take(maybeLimit.getOrElse(1000))
         .join(valuesQuery)
