@@ -109,8 +109,7 @@ trait Phata extends HttpService with UserProfileService with HatServiceAuthHandl
       case Success((Some(user), Some(token))) =>
         val expires = spray.http.DateTime(DateTime.now().plus(validity).getMillis)
         val cookie = HttpCookie("X-Auth-Token", content = token.accessToken,
-          expires = Option(expires), maxAge = Some(validity.getMillis),
-          domain = Some(issuer))
+          expires = Option(expires), maxAge = Some(validity.getMillis))
         setCookie(cookie) {
           (maybeName, maybeRedirect) match {
             case (Some(name), Some(redirectUrl)) => redirect(Uri("/hatlogin").withQuery(Uri.Query("name" -> name, "redirect" -> redirectUrl)), StatusCodes.Found)
