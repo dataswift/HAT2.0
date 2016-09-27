@@ -22,7 +22,7 @@
 package hatdex.hat.api
 
 import akka.event.LoggingAdapter
-import hatdex.hat.api.actors.{EmailService, SmtpConfig}
+import hatdex.hat.api.actors.{DalExecutionContext, EmailService, SmtpConfig}
 import hatdex.hat.api.endpoints._
 import hatdex.hat.api.endpoints.jsonExamples.DataExamples
 import hatdex.hat.api.json.JsonProtocol
@@ -61,24 +61,24 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
     conf.getString("mail.smtp.password"))
   val apiEmailService = new EmailService(system, smtpConfig)
 
-  val helloService = new Phata with LoggingHttpService {
+  val helloService = new Phata with LoggingHttpService with DalExecutionContext {
     val emailService = apiEmailService
   }
-  val apiDataService = new Data with LoggingHttpService {
+  val apiDataService = new Data with LoggingHttpService with DalExecutionContext {
     override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
 
     override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
   }
-  val apiBundleService = new Bundles with LoggingHttpService
+  val apiBundleService = new Bundles with LoggingHttpService with DalExecutionContext
 
-  val apiPropertyService = new Property with LoggingHttpService
-  val eventsService = new Event with LoggingHttpService
-  val locationsService = new Location with LoggingHttpService
-  val peopleService = new Person with LoggingHttpService
-  val thingsService = new Thing with LoggingHttpService
-  val organisationsService = new Organisation with LoggingHttpService
+  val apiPropertyService = new Property with LoggingHttpService with DalExecutionContext
+  val eventsService = new Event with LoggingHttpService with DalExecutionContext
+  val locationsService = new Location with LoggingHttpService with DalExecutionContext
+  val peopleService = new Person with LoggingHttpService with DalExecutionContext
+  val thingsService = new Thing with LoggingHttpService with DalExecutionContext
+  val organisationsService = new Organisation with LoggingHttpService with DalExecutionContext
 
-  val apiBundlesContextService = new BundlesContext with LoggingHttpService {
+  val apiBundlesContextService = new BundlesContext with LoggingHttpService with DalExecutionContext {
     def eventsService: EventsService = ApiSpec.this.eventsService
     def peopleService: PeopleService = ApiSpec.this.peopleService
     def thingsService: ThingsService = ApiSpec.this.thingsService
@@ -86,7 +86,7 @@ class ApiSpec extends Specification with Specs2RouteTest with Api {
     def organisationsService: OrganisationsService = ApiSpec.this.organisationsService
   }
 
-  val dataDebitService = new DataDebit with LoggingHttpService {
+  val dataDebitService = new DataDebit with LoggingHttpService with DalExecutionContext {
     val bundlesService: BundleService = apiBundleService
     val bundleContextService: BundleContextService = apiBundlesContextService
   }

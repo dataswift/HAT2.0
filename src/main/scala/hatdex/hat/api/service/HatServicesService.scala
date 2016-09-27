@@ -30,11 +30,11 @@ import hatdex.hat.dal.Tables._
 import org.joda.time.Duration._
 import spray.http.Uri
 
-import hatdex.hat.api.service.IoExecutionContext.ioThreadPool
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait HatServicesService extends JwtTokenHandler {
   val logger: LoggingAdapter
+  implicit val dalExecutionContext: ExecutionContext
 
   def hatServices(categories: Set[String]): Future[Seq[HatService]] = {
     val applicationsQuery = for {

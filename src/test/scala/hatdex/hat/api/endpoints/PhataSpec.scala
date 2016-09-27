@@ -22,7 +22,7 @@
 package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
-import hatdex.hat.api.actors.{EmailService, SmtpConfig}
+import hatdex.hat.api.actors.{DalExecutionContext, EmailService, SmtpConfig}
 import hatdex.hat.authentication.HatAuthTestHandler
 import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import hatdex.hat.phata.Phata
@@ -31,7 +31,7 @@ import spray.http.HttpHeaders.RawHeader
 import spray.http.StatusCodes._
 import spray.testkit.Specs2RouteTest
 
-class PhataSpec extends Specification with Specs2RouteTest with Phata {
+class PhataSpec extends Specification with Specs2RouteTest with Phata with DalExecutionContext {
   def actorRefFactory = system
 
   val logger: LoggingAdapter = system.log

@@ -25,6 +25,7 @@ import java.util.UUID
 
 import akka.actor.{ActorContext, ActorRefFactory, ActorSystem}
 import akka.event.{Logging, LoggingAdapter}
+import hatdex.hat.api.actors.DalExecutionContext
 import hatdex.hat.api.{DatabaseInfo, TestDataCleanup}
 import hatdex.hat.api.endpoints._
 import hatdex.hat.api.endpoints.jsonExamples.{BundleExamples, DataDebitExamples, DataExamples}
@@ -52,7 +53,7 @@ import spray.httpx.SprayJsonSupport._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with StatsService {
+class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with StatsService with DalExecutionContext {
   override val logger: LoggingAdapter = Logging.getLogger(system, "tests")
   val testLogger = logger
   override def actorRefFactory: ActorRefFactory = system
@@ -68,7 +69,7 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
 
   logger.info("Setting up Stats Service context")
 
-  object Context extends StatsDataDebitContext {
+  object Context extends StatsDataDebitContext with DalExecutionContext {
     override def actorRefFactory = system
     override val logger: LoggingAdapter = Logging.getLogger(system, "tests")
     val dataDebit = setupDataDebit()

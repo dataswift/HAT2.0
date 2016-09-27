@@ -41,6 +41,8 @@ import spray.http._
 import spray.httpx.SprayJsonSupport._
 import spray.httpx.marshalling
 
+
+
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor
 class ApiService extends HttpServiceActor with ActorLogging with Cors {
@@ -88,19 +90,19 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
     implicit def actorRefFactory: ActorRefFactory = context
 
     // Initialise all the service the actor handles
-    val helloService = new Phata with LoggingHttpService {
+    val helloService = new Phata with LoggingHttpService with DalExecutionContext{
       val emailService = apiEmailService
     }
-    val apiDataService = new Data with LoggingHttpService
-    val apiBundleService = new Bundles with LoggingHttpService
-    val apiPropertyService = new Property with LoggingHttpService
-    val eventsService = new Event with LoggingHttpService
-    val locationsService = new Location with LoggingHttpService
-    val peopleService = new Person with LoggingHttpService
-    val thingsService = new Thing with LoggingHttpService
-    val organisationsService = new Organisation with LoggingHttpService
+    val apiDataService = new Data with LoggingHttpService with DalExecutionContext
+    val apiBundleService = new Bundles with LoggingHttpService with DalExecutionContext
+    val apiPropertyService = new Property with LoggingHttpService with DalExecutionContext
+    val eventsService = new Event with LoggingHttpService with DalExecutionContext
+    val locationsService = new Location with LoggingHttpService with DalExecutionContext
+    val peopleService = new Person with LoggingHttpService with DalExecutionContext
+    val thingsService = new Thing with LoggingHttpService with DalExecutionContext
+    val organisationsService = new Organisation with LoggingHttpService with DalExecutionContext
 
-    val apiBundlesContextService = new BundlesContext with LoggingHttpService {
+    val apiBundlesContextService = new BundlesContext with LoggingHttpService with DalExecutionContext {
       def eventsService: EventsService = ApiService.this.api.eventsService
       def peopleService: PeopleService = ApiService.this.api.peopleService
       def thingsService: ThingsService = ApiService.this.api.thingsService
@@ -108,7 +110,7 @@ class ApiService extends HttpServiceActor with ActorLogging with Cors {
       def organisationsService: OrganisationsService = ApiService.this.api.organisationsService
     }
 
-    val dataDebitService = new DataDebit with LoggingHttpService {
+    val dataDebitService = new DataDebit with LoggingHttpService with DalExecutionContext {
       val bundlesService: BundleService = apiBundleService
       val bundleContextService: BundleContextService = apiBundlesContextService
     }

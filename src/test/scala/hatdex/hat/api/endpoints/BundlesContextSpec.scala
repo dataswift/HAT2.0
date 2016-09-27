@@ -23,6 +23,7 @@ package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
+import hatdex.hat.api.actors.DalExecutionContext
 import hatdex.hat.api.endpoints.jsonExamples.BundleContextExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
@@ -41,7 +42,7 @@ import spray.testkit.Specs2RouteTest
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeAfterAll with BundlesContext {
+class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeAfterAll with BundlesContext with DalExecutionContext {
   def actorRefFactory = system
 
   val logger: LoggingAdapter = system.log
@@ -57,31 +58,31 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
 
   override def userPassHandler = UserPassHandler.UserPassAuthenticator(authenticator = HatAuthTestHandler.UserPassHandler.authenticator).apply()
 
-  def peopleService = new Person {
+  def peopleService = new Person with DalExecutionContext {
     def actorRefFactory = system
 
     val logger: LoggingAdapter = system.log
   }
 
-  def thingsService = new Thing {
+  def thingsService = new Thing with DalExecutionContext {
     def actorRefFactory = system
 
     val logger: LoggingAdapter = system.log
   }
 
-  def organisationsService = new Organisation {
+  def organisationsService = new Organisation with DalExecutionContext {
     def actorRefFactory = system
 
     val logger: LoggingAdapter = system.log
   }
 
-  def locationsService = new Location {
+  def locationsService = new Location with DalExecutionContext {
     def actorRefFactory = system
 
     val logger: LoggingAdapter = system.log
   }
 
-  def eventsService = new Event {
+  def eventsService = new Event with DalExecutionContext {
     def actorRefFactory = system
 
     val logger: LoggingAdapter = system.log
@@ -247,7 +248,7 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
     }
 
     val testLogger = logger
-    object Context extends DataSpecContextMixin {
+    object Context extends DataSpecContextMixin with DalExecutionContext {
       val logger: LoggingAdapter = testLogger
       def actorRefFactory = system
       val propertySpec = new PropertySpec()

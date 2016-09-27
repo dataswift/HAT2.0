@@ -23,21 +23,22 @@ package hatdex.hat.api.endpoints
 
 import java.util.UUID
 
-import akka.actor.{ ActorSystem, ActorRefFactory }
+import akka.actor.{ActorRefFactory, ActorSystem}
 import akka.event.LoggingAdapter
-import hatdex.hat.api.{TestFixtures, DatabaseInfo, TestDataCleanup}
-import hatdex.hat.api.endpoints.jsonExamples.{ BundleExamples, DataDebitExamples }
+import hatdex.hat.api.actors.DalExecutionContext
+import hatdex.hat.api.{DatabaseInfo, TestDataCleanup, TestFixtures}
+import hatdex.hat.api.endpoints.jsonExamples.{BundleExamples, DataDebitExamples}
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
-import hatdex.hat.authentication.{ TestAuthCredentials, HatAuthTestHandler }
-import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
+import hatdex.hat.authentication.{HatAuthTestHandler, TestAuthCredentials}
+import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.specs2.mutable.Specification
-import org.specs2.specification.{ BeforeAfterAll, Scope }
+import org.specs2.specification.{BeforeAfterAll, Scope}
 import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
@@ -49,7 +50,7 @@ import spray.httpx.SprayJsonSupport._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterAll with DataDebit with DataDebitRequiredServices with TestAuthCredentials {
+class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterAll with DataDebit with DataDebitRequiredServices with TestAuthCredentials with DalExecutionContext {
   def actorRefFactory = system
   val logger: LoggingAdapter = system.log
   override val testLogger = logger
@@ -68,7 +69,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
 //    TestDataCleanup.cleanupAll
   }
 
-  object Context extends DataDebitContextualContext with DataDebitRequiredServices {
+  object Context extends DataDebitContextualContext with DataDebitRequiredServices with DalExecutionContext {
     def actorRefFactory = system
     val logger: LoggingAdapter = system.log
   }
@@ -291,7 +292,7 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
   }
 }
 
-trait DataDebitContext extends Specification with Specs2RouteTest with DataDebit with Data with TestAuthCredentials {
+trait DataDebitContext extends Specification with Specs2RouteTest with DataDebit with Data with TestAuthCredentials with DalExecutionContext {
   val logger: LoggingAdapter
   import JsonProtocol._
   override def routes = super[DataDebit].routes ~ super[Data].routes
@@ -386,12 +387,12 @@ trait DataDebitRequiredServices {
     lazy val logger = testLogger
   }
 
-  val bundlesService = new Bundles with LoggingHttpService
-  val bundleContextService = new BundlesContext with LoggingHttpService {
-    val eventsService = new Event with LoggingHttpService
-    val locationsService = new Location with LoggingHttpService
-    val peopleService = new Person with LoggingHttpService
-    val thingsService = new Thing with LoggingHttpService
-    val organisationsService = new Organisation with LoggingHttpService
+  val bundlesService = new Bundles with LoggingHttpService with DalExecutionContext
+  val bundleContextService = new BundlesContext with LoggingHttpService with DalExecutionContext {
+    val eventsService = new Event with LoggingHttpService with DalExecutionContext
+    val locationsService = new Location with LoggingHttpService with DalExecutionContext
+    val peopleService = new Person with LoggingHttpService with DalExecutionContext
+    val thingsService = new Thing with LoggingHttpService with DalExecutionContext
+    val organisationsService = new Organisation with LoggingHttpService with DalExecutionContext
   }
 }

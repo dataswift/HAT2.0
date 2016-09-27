@@ -26,11 +26,11 @@ import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 
-import hatdex.hat.api.service.IoExecutionContext.ioThreadPool
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 // this trait defines our service behavior independently from the service actor
 trait EventsService extends AbstractEntityService with PropertyService {
+  implicit val dalExecutionContext: ExecutionContext
 
   protected def createLinkLocation(entityId: Int, locationId: Int, relationshipType: String, recordId: Int): Future[Int] = {
     val crossref = new EventsEventlocationcrossrefRow(0, LocalDateTime.now(), LocalDateTime.now(),

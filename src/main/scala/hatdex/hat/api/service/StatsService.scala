@@ -32,15 +32,15 @@ import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import hatdex.hat.authentication.models.User
 import hatdex.hat.Utils
-import hatdex.hat.api.service.IoExecutionContext.ioThreadPool
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 trait StatsService {
 
   val logger: LoggingAdapter
   def actorRefFactory: ActorRefFactory
+  implicit val dalExecutionContext: ExecutionContext
 
   val statsActor = actorRefFactory.actorSelection("/user/stats-service-supervisor/hatdex.marketplace.stats-service")
 

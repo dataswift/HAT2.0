@@ -23,6 +23,7 @@ package hatdex.hat.api.endpoints
 
 import akka.event.{Logging, LoggingAdapter}
 import hatdex.hat.api.TestDataCleanup
+import hatdex.hat.api.actors.DalExecutionContext
 import hatdex.hat.api.endpoints.jsonExamples.DataExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
@@ -42,7 +43,7 @@ import spray.testkit.Specs2RouteTest
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class DataSpec extends Specification with Specs2RouteTest with Data with BeforeAfterAll {
+class DataSpec extends Specification with Specs2RouteTest with Data with BeforeAfterAll with DalExecutionContext {
   def actorRefFactory = system
 
   val logger: LoggingAdapter = Logging.getLogger(system, "API-Access")
@@ -65,7 +66,7 @@ class DataSpec extends Specification with Specs2RouteTest with Data with BeforeA
     //    TestDataCleanup.cleanupAll
   }
 
-  object DataSpecContext extends DataSpecContextMixin {
+  object DataSpecContext extends DataSpecContextMixin with DalExecutionContext {
     val logger: LoggingAdapter = testLogger
     def actorRefFactory = system
     val (dataTable, dataSubtable) = createBasicTables

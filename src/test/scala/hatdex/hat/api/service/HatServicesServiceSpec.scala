@@ -24,12 +24,13 @@ package hatdex.hat.api.service
 import java.util.UUID
 
 import akka.actor.ActorRefFactory
-import akka.event.{ Logging, LoggingAdapter }
+import akka.event.{Logging, LoggingAdapter}
+import hatdex.hat.api.actors.DalExecutionContext
 import hatdex.hat.api.{DatabaseInfo, TestDataCleanup}
 import hatdex.hat.api.endpoints._
-import hatdex.hat.api.endpoints.jsonExamples.{ BundleExamples, DataDebitExamples }
+import hatdex.hat.api.endpoints.jsonExamples.{BundleExamples, DataDebitExamples}
 import hatdex.hat.api.models._
-import hatdex.hat.authentication.{JwtTokenHandler, HatAuthTestHandler}
+import hatdex.hat.authentication.{HatAuthTestHandler, JwtTokenHandler}
 import hatdex.hat.authentication.authenticators.AccessTokenHandler
 import hatdex.hat.dal.Tables._
 import hatdex.hat.dal.SlickPostgresDriver.api._
@@ -38,17 +39,17 @@ import org.mindrot.jbcrypt.BCrypt
 import org.specs2.execute.Result
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable.Specification
-import org.specs2.specification.{ BeforeAfterAll, Scope }
+import org.specs2.specification.{BeforeAfterAll, Scope}
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
-import spray.http.{ HttpRequest, _ }
+import spray.http.{HttpRequest, _}
 import spray.json._
 import spray.testkit.Specs2RouteTest
 
-import scala.concurrent.{ Future, Await }
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 
-class HatServicesServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with HatServicesService with JwtTokenHandler {
+class HatServicesServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with HatServicesService with JwtTokenHandler with DalExecutionContext{
   override val logger: LoggingAdapter = Logging.getLogger(system, "tests")
   lazy val testLogger = logger
 

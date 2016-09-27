@@ -27,13 +27,14 @@ import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 
-import hatdex.hat.api.service.IoExecutionContext.ioThreadPool
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 // this trait defines our service behavior independently from the service actor
 trait DataService {
 
   val logger: LoggingAdapter
+  implicit val dalExecutionContext: ExecutionContext
 
   def getTableValues(tableId: Int, maybeLimit: Option[Int] = None, maybeStartTime: Option[LocalDateTime] = None, maybeEndTime: Option[LocalDateTime] = None): Future[Seq[ApiDataRecord]] = {
     //    val t0 = System.nanoTime()
@@ -475,8 +476,6 @@ trait DataService {
     }
 
     eventualTables flatMap { tables =>
-      // logger.debug(s"Filling record tables $tables")
-//      val fieldset = tables.map(getStructureFields).reduce((fs, structureFields) => fs ++ structureFields)
       eventualValues.map(values => getValueRecords(values, tables))
     } map (_.headOption)
   }

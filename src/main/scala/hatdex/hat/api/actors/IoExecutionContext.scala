@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-package hatdex.hat.api.service
+package hatdex.hat.api.actors
 
 import java.util.concurrent.Executors
 
@@ -27,7 +27,7 @@ import scala.concurrent.ExecutionContext
 
 object IoExecutionContext {
     private val concurrency = Runtime.getRuntime.availableProcessors()
-    private val factor =  3 // get from configuration  file
+    private val factor =  5 // get from configuration  file
     private val noOfThread = concurrency * factor
     implicit val ioThreadPool: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(noOfThread))
 }

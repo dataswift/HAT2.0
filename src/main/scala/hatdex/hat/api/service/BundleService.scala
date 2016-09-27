@@ -28,16 +28,17 @@ import hatdex.hat.api.models._
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
-import spray.json.{ JsonParser, _ }
+import spray.json.{JsonParser, _}
 
-import hatdex.hat.api.service.IoExecutionContext.ioThreadPool
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 // this trait defines our service behavior independently from the service actor
 trait BundleService extends DataService {
 
   val logger: LoggingAdapter
   def actorRefFactory: ActorRefFactory
+  implicit val dalExecutionContext: ExecutionContext
+
   import JsonProtocol._
 
   protected[api] def storeBundleContextless(bundle: ApiBundleContextless): Future[ApiBundleContextless] = {

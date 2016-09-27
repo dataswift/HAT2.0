@@ -156,3 +156,12 @@ FROM recursive_table;
 --rollback )
 --rollback SELECT *
 --rollback FROM recursive_table;
+
+--changeset hubofallthings:updateDataplugIcons context:data,testdata runOnChange:true
+
+UPDATE hat.applications SET logo_url = '/assets/images/Rumpel-logo.svg' WHERE title = 'Rumpel';
+UPDATE hat.applications SET logo_url = 'https://rumpel.hubofallthings.com/assets/icons/facebook-plug.png' WHERE title = 'Facebook';
+UPDATE hat.applications SET logo_url = 'https://rumpel.hubofallthings.com/assets/icons/calendar-plug.svg' WHERE title = 'Calendar';
+UPDATE hat.applications SET logo_url = 'https://rumpel.hubofallthings.com/assets/icons/photos-plug.svg' WHERE title = 'Photos';
+UPDATE hat.applications SET logo_url = 'https://rumpel.hubofallthings.com/assets/icons/location-plug.svg' WHERE title = 'RumpelLite';
+

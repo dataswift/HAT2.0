@@ -24,17 +24,18 @@ package hatdex.hat.api.endpoints
 import akka.event.LoggingAdapter
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.TestDataCleanup
+import hatdex.hat.api.actors.DalExecutionContext
 import hatdex.hat.api.endpoints.jsonExamples.PropertyExamples
 import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.api.models.{ ApiProperty, ApiSystemType, ApiSystemUnitofmeasurement }
+import hatdex.hat.api.models.{ApiProperty, ApiSystemType, ApiSystemUnitofmeasurement}
 import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
+import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
 import org.specs2.specification.BeforeAfterAll
 import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
-import spray.http.{ Uri, HttpEntity, HttpRequest, MediaTypes }
+import spray.http.{HttpEntity, HttpRequest, MediaTypes, Uri}
 import spray.json._
 import spray.testkit.Specs2RouteTest
 import spray.httpx.SprayJsonSupport._
@@ -42,7 +43,7 @@ import spray.httpx.SprayJsonSupport._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-class PropertySpec extends Specification with Specs2RouteTest with Property with BeforeAfterAll {
+class PropertySpec extends Specification with Specs2RouteTest with Property with BeforeAfterAll with DalExecutionContext {
   def actorRefFactory = system
   val logger: LoggingAdapter = system.log
 

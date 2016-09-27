@@ -22,9 +22,11 @@
 package hatdex.hat.dal
 
 import java.sql.Connection
+
 import akka.actor.ActorSystem
 import akka.event.Logging
 import hatdex.hat.api.DatabaseInfo
+import hatdex.hat.api.actors.IoExecutionContext
 import liquibase.{Contexts, Liquibase}
 import liquibase.resource.FileSystemResourceAccessor
 import liquibase.database.DatabaseFactory
@@ -32,8 +34,9 @@ import liquibase.database.jvm.JdbcConnection
 import liquibase.resource.ClassLoaderResourceAccessor
 import slick.jdbc.JdbcDataSource
 import slick.util.Logging
-import collection.JavaConverters._
 
+import collection.JavaConverters._
+import scala.concurrent.{Future, blocking}
 import scala.util.Try
 
 /**
@@ -46,47 +49,59 @@ import scala.util.Try
  * It does not matter which module runs this migration first.
  */
 class SchemaMigration(system: ActorSystem) {
-
+  import IoExecutionContext.ioThreadPool
   val logger = Logging.getLogger(system, "SchemaMigration")
 
   val masterChangeLogFile = "13_liveEvolutions.sql"
 
-  def createLiquibase(dbConnection: Connection, diffFilePath: String): Liquibase = {
+  def createLiquibase(dbConnection: Connection, diffFilePath: String): Future[Liquibase] = {
     val classLoader = getClass.getClassLoader
     val resourceAccessor = new ClassLoaderResourceAccessor(classLoader)
-    val database = DatabaseFactory.getInstance()
-      .findCorrectDatabaseImplementation(new JdbcConnection(dbConnection))
-    database.setDefaultSchemaName("hat")
-    database.setLiquibaseSchemaName("public")
-    new Liquibase(masterChangeLogFile, resourceAccessor, database)
+    Future {
+      blocking {
+        val database = DatabaseFactory.getInstance()
+          .findCorrectDatabaseImplementation(new JdbcConnection(dbConnection))
+        database.setDefaultSchemaName("hat")
+        database.setLiquibaseSchemaName("public")
+        new Liquibase(masterChangeLogFile, resourceAccessor, database)
+      }
+    }
   }
 
-  def updateDb(db: JdbcDataSource, diffFilePath: String): Unit = {
+  def updateDb(db: JdbcDataSource, diffFilePath: String): Future[Boolean] = {
     val dbConnection = connProvider.createConnection()
     logger.info(s"Liquibase running evolutions $diffFilePath on db: [${dbConnection.getMetaData.getURL}]")
-    val triedLiquibase = Try { createLiquibase(dbConnection, diffFilePath) }
+    val eventualLiquibase = createLiquibase(dbConnection, diffFilePath)
 
-    triedLiquibase map { liquibase =>
+    eventualLiquibase map { liquibase =>
       val changesetStatuses = liquibase.getChangeSetStatuses(new Contexts("structuresonly, data")).asScala
-      logger.info(s"existing changesets: \n${changesetStatuses.map(cs => cs.getChangeSet.toString + " - " + cs.getWillRun + "\n")}")
-      Try(liquibase.update("structuresonly, data"))
-        .map { _ =>
-          liquibase.forceReleaseLocks()
-          dbConnection.rollback()
-          dbConnection.close()
+      logger.info(s"existing changesets: \n${changesetStatuses.map(cs => cs.getChangeSet.toString+" - "+cs.getWillRun+"\n")}")
+      Try(
+        blocking {
+          liquibase.update("structuresonly, data")
+        }).map { _ =>
+          blocking {
+            logger.info(s"Schema evolutions completed, releasing locks")
+            liquibase.forceReleaseLocks()
+            dbConnection.rollback()
+            dbConnection.close()
+            true
+          }
         }
         .recover {
           case e =>
             logger.error(s"Error: ${e.getMessage}", e)
-            liquibase.forceReleaseLocks()
-            dbConnection.rollback()
-            dbConnection.close()
+            blocking {
+              liquibase.forceReleaseLocks()
+              dbConnection.rollback()
+              dbConnection.close()
+            }
             throw e
-        }
-
+        } get
     } recover {
       case e =>
         logger.error(s"Error instantiating Liquibase: ${e.getMessage}, ${e}, ${e.getStackTrace.mkString("\n")}", e)
+        throw e
     }
   }
 
@@ -95,9 +110,8 @@ class SchemaMigration(system: ActorSystem) {
   /**
    * Invoke this method to apply all DB migrations.
    */
-  def run(): Unit = {
+  def run(): Future[Boolean] = {
     val db = connProvider
-
     updateDb(db, masterChangeLogFile)
   }
 

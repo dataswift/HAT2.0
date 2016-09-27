@@ -30,12 +30,11 @@ import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 
-import hatdex.hat.api.service.IoExecutionContext.ioThreadPool
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait DataDebitService {
   val logger: LoggingAdapter
-
+  implicit val dalExecutionContext: ExecutionContext
   val bundlesService: BundleService
   val bundleContextService: BundleContextService
 

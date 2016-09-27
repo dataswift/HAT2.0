@@ -89,7 +89,7 @@ trait UserProfileService extends BundleService {
 
     val startTime = LocalDateTime.now().minusDays(365)
     val endTime = LocalDateTime.now()
-    val eventualValues = fieldsetValues(fieldset, startTime, endTime)
+    val eventualValues = fieldsetValues(fieldset, startTime, endTime, Some(1))
 
     eventualValues.map(values => getValueRecords(values, Seq(table)))
       .map { records => records.headOption }
