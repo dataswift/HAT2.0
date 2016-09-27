@@ -55,7 +55,7 @@ object Boot extends App {
 
   system.actorOf(supervisor, name = "dalapi-service-supervisor")
 
-  val statsReporterSuerpvisor = BackoffSupervisor.props(
+  val statsReporterSupervisor = BackoffSupervisor.props(
     Backoff.onStop(
       StatsReporter.props,
       childName = "hatdex.marketplace.stats-service",
@@ -64,5 +64,5 @@ object Boot extends App {
       randomFactor = 0.2 // adds 20% "noise" to vary the intervals slightly
       ))
 
-  system.actorOf(statsReporterSuerpvisor, name = "stats-service-supervisor")
+  system.actorOf(statsReporterSupervisor, name = "stats-service-supervisor")
 }

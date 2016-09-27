@@ -62,7 +62,9 @@ class PhataSpec extends Specification with Specs2RouteTest with Phata {
     "return a greeting for GET requests to the root path" in {
       Get() ~> sealRoute(routes) ~>
         check {
-          responseAs[String] must contain("Welcome to the HAT")
+          eventually {
+            responseAs[String] must contain("Welcome to the HAT")
+          }
         }
     }
 

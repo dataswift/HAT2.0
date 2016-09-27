@@ -24,27 +24,28 @@ import akka.actor.ActorRefFactory
 import akka.event.LoggingAdapter
 import hatdex.hat.FutureTransformations
 import hatdex.hat.api.DatabaseInfo
-import hatdex.hat.api.actors.{EmailMessage, EmailService}
+import hatdex.hat.api.actors.{ EmailMessage, EmailService }
 import hatdex.hat.api.models.HatService
-import hatdex.hat.api.service.{BundleService, HatServicesService, UserProfileService}
+import hatdex.hat.api.service.{ BundleService, HatServicesService }
 import hatdex.hat.authentication.HatAuthHandler.UserPassHandler
 import hatdex.hat.authentication.authorization.UserAuthorization
 import hatdex.hat.authentication.models.User
-import hatdex.hat.authentication.{HatServiceAuthHandler, JwtTokenHandler}
+import hatdex.hat.authentication.{ HatServiceAuthHandler, JwtTokenHandler }
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
+import hatdex.hat.phata.service.UserProfileService
 import org.joda.time.DateTime
 import org.joda.time.Duration._
 import org.mindrot.jbcrypt.BCrypt
 import spray.http.MediaTypes._
-import spray.http.{HttpCookie, StatusCodes, Uri}
+import spray.http.{ HttpCookie, StatusCodes, Uri }
 import spray.httpx.PlayTwirlSupport._
 import spray.routing.HttpService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 
 trait Phata extends HttpService with UserProfileService with HatServiceAuthHandler with JwtTokenHandler with HatServicesService with BundleService {
   val routes = {
@@ -144,11 +145,9 @@ trait Phata extends HttpService with UserProfileService with HatServiceAuthHandl
 
   val publicResourcePath: String = conf.getString("public-resource-path")
   private def getProfile(maybeUser: Option[User]) = onComplete(getPublicProfile) {
-    case Success((true, profile))  =>
-      logger.info(s"Public profile ${profile}")
-      complete(hatdex.hat.phata.views.html.index(profile, maybeUser))
+    case Success((true, profile))  => complete(hatdex.hat.phata.views.html.index(profile, maybeUser))
     case Success((false, profile)) => complete(hatdex.hat.phata.views.html.indexPrivate(profile, maybeUser))
-    case Failure(e)                     => complete(hatdex.hat.phata.views.html.indexPrivate(Map(), maybeUser))
+    case Failure(e)                => complete(hatdex.hat.phata.views.html.indexPrivate(Map(), maybeUser))
   }
 
   def loginPage = path("signin") {
@@ -164,38 +163,40 @@ trait Phata extends HttpService with UserProfileService with HatServiceAuthHandl
       respondWithMediaType(`text/html`) {
         accessTokenHandler { implicit user: User =>
           authorize(UserAuthorization.withRole("owner")) {
-            parameters('name, 'redirect) { case (name: String, redirectUrl: String) =>
+            parameters('name, 'redirect) {
+              case (name: String, redirectUrl: String) =>
 
-              val eventualResponse = eventualApprovedHatServices flatMap { approvedHatServices =>
-                for {
-                  service <- findOrCreateHatService(name, redirectUrl)
-                  linkedService <- hatServiceLink(user, service)
-                } yield {
-                  if (service.setup) {
-                    redirect(linkedService.url, StatusCodes.Found)
-                  }
-                  else {
-                    val services = Seq(linkedService)
-                    complete {
-                      (StatusCodes.OK, hatdex.hat.phata.views.html.authenticated(user, services, formattedHatConfiguration))
+                val eventualResponse = eventualApprovedHatServices flatMap { approvedHatServices =>
+                  for {
+                    service <- findOrCreateHatService(name, redirectUrl)
+                    linkedService <- hatServiceLink(user, service)
+                  } yield {
+                    if (service.setup) {
+                      redirect(linkedService.url, StatusCodes.Found)
+                    }
+                    else {
+                      val services = Seq(linkedService)
+                      complete {
+                        (StatusCodes.OK, hatdex.hat.phata.views.html.authenticated(user, services, formattedHatConfiguration))
+                      }
                     }
                   }
                 }
-              }
 
-              onComplete(eventualResponse) {
-                case Success(response) => response
-                case Failure(e)        => complete {
-                  (StatusCodes.InternalServerError, s"Error occurred while logging you into $redirectUrl: ${e.getMessage}")
+                onComplete(eventualResponse) {
+                  case Success(response) => response
+                  case Failure(e) => complete {
+                    (StatusCodes.InternalServerError, s"Error occurred while logging you into $redirectUrl: ${e.getMessage}")
+                  }
                 }
-              }
             }
           }
         } ~ {
-          parameters('name, 'redirect) { case (name: String, redirectUrl: String) =>
-            complete {
-              hatdex.hat.phata.views.html.login(name, redirectUrl, formattedHatConfiguration)
-            }
+          parameters('name, 'redirect) {
+            case (name: String, redirectUrl: String) =>
+              complete {
+                hatdex.hat.phata.views.html.login(name, redirectUrl, formattedHatConfiguration)
+              }
           }
         }
       }

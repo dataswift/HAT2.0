@@ -22,13 +22,10 @@ package hatdex.hat.api.service
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.DatabaseInfo
-import hatdex.hat.api.json.JsonProtocol
-import hatdex.hat.api.models.{ ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _ }
+import hatdex.hat.api.models.{ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _}
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
-import hatdex.hat.api.models._
 import org.joda.time.LocalDateTime
-import spray.json._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -39,31 +36,34 @@ trait DataService {
   val logger: LoggingAdapter
 
   def getTableValues(tableId: Int, maybeLimit: Option[Int] = None, maybeStartTime: Option[LocalDateTime] = None, maybeEndTime: Option[LocalDateTime] = None): Future[Seq[ApiDataRecord]] = {
-    val t0 = System.nanoTime()
-    val valuesQuery = DataValue
+    //    val t0 = System.nanoTime()
     val startTime = maybeStartTime.getOrElse(LocalDateTime.now().minusDays(7))
     val endTime = maybeEndTime.getOrElse(LocalDateTime.now())
 
     // Get All Data Table trees matchinf source and name
     val dataTableTreesQuery = for {
       rootTable <- DataTableTree.filter(_.id === tableId)
-      tree <- DataTableTree.filter(_.rootTable === rootTable.id)
+      tree <- DataTableTree.filter(t => t.rootTable === rootTable.id && t.deleted === false)
     } yield tree
 
     val eventualTables = buildDataTreeStructures(dataTableTreesQuery, Set(tableId))
+    val fieldsetQuery = DataField.filter(_.tableIdFk in dataTableTreesQuery.map(_.id))
 
-    eventualTables flatMap { tables =>
-      val t1 = System.nanoTime()
-      val fieldset = tables.map(getStructureFields).reduce((acc, fields) => acc ++ fields)
-      val t4 = System.nanoTime()
-      val eventualValues = fieldsetValues(fieldset, startTime, endTime, maybeLimit)
-      val eventualValueRecords = eventualValues.map { values =>
-        val t2 = System.nanoTime()
-        getValueRecords(values, tables)
-      }
-      eventualValueRecords.map { r =>
-        val t3 = System.nanoTime()
-        r.take(maybeLimit.getOrElse(r.length))
+    val eventualFieldset = DatabaseInfo.db.run(fieldsetQuery.result).map(_.map(_.id).toSet)
+
+    for {
+      tables <- eventualTables
+      fieldset <- eventualFieldset
+      values <- fieldsetValues(fieldset, startTime, endTime, maybeLimit)
+    } yield {
+      if (tables.isEmpty) {
+        throw new RuntimeException("No such table exists")
+      } else {
+        maybeLimit.map { limit =>
+          getValueRecords(values, tables).take(limit)
+        } getOrElse {
+          getValueRecords(values, tables)
+        }
       }
     }
   }
@@ -93,10 +93,12 @@ trait DataService {
 
     val getValue = DataValue.filter(_.id === value.id.get)
     val updateRecordDate = DataRecord.filter(_.id in getValue.map(_.recordId))
-      .map(r => r.dateCreated)
+      .map(r => r.lastUpdated)
       .update(LocalDateTime.now())
 
-    DatabaseInfo.db.run(valueUpdateQuery) map { id =>
+    val updateSteps = DBIO.seq(valueUpdateQuery, updateRecordDate)
+
+    DatabaseInfo.db.run(updateSteps) map { _ =>
       value
     }
   }
@@ -137,7 +139,7 @@ trait DataService {
       maybeField <- retrieveDataFieldId(fieldId)
       maybeValues <- maybeField.map { field =>
         DatabaseInfo.db.run {
-          DataValue.filter(_.fieldId === fieldId)
+          DataValue.filter(v => v.fieldId === fieldId && v.deleted === false)
             .sortBy(_.lastUpdated.desc)
             .result
         } map (v => Some(v))
@@ -154,7 +156,7 @@ trait DataService {
    * Private function finding data field by ID
    */
   def retrieveDataFieldId(fieldId: Int): Future[Option[ApiDataField]] = {
-    val eventualField = DatabaseInfo.db.run(DataField.filter(_.id === fieldId).take(1).result).map(_.headOption)
+    val eventualField = DatabaseInfo.db.run(DataField.filter(f => f.id === fieldId && f.deleted === false).take(1).result).map(_.headOption)
     eventualField.map(_.map(ApiDataField.fromDataField))
   }
 
@@ -163,8 +165,7 @@ trait DataService {
       maybeField <- retrieveDataFieldId(fieldId)
       maybeValues <- maybeField.map { field =>
         DatabaseInfo.db.run {
-          DataValue.filter(_.fieldId === fieldId)
-            .filter(_.recordId === recordId)
+          DataValue.filter(v => v.fieldId === fieldId && v.recordId === recordId && v.deleted === false)
             .sortBy(_.lastUpdated.desc)
             .result
         } map (v => Some(v))
@@ -188,7 +189,7 @@ trait DataService {
 
   def findTable(name: String, source: String): Future[Seq[ApiDataTable]] = {
     DatabaseInfo.db.run {
-      DataTable.filter(_.sourceName === source).filter(_.name === name).result
+      DataTable.filter(t => t.sourceName === source && t.name === name && t.deleted === false).result
     } map { tables =>
       tables.map(ApiDataTable.fromDataTable(_)(None)(None))
     }
@@ -196,7 +197,7 @@ trait DataService {
 
   def findTablesLike(name: String, source: String): Future[Seq[ApiDataTable]] = {
     DatabaseInfo.db.run {
-      DataTable.filter(_.sourceName === source).filter(_.name like "%"+name+"%").result
+      DataTable.filter(t => t.sourceName === source && t.deleted === false).filter(_.name like "%"+name+"%").result
     } map { tables =>
       tables.map(ApiDataTable.fromDataTable(_)(None)(None))
     }
@@ -204,7 +205,7 @@ trait DataService {
 
   def findTablesNotLike(name: String, source: String): Future[Seq[ApiDataTable]] = {
     DatabaseInfo.db.run {
-      DataTable.filter(_.sourceName === source).filterNot(_.name like "%"+name+"%").result
+      DataTable.filter(t => t.sourceName === source && t.deleted === false).filterNot(_.name like "%"+name+"%").result
     } map { tables =>
       tables.map(ApiDataTable.fromDataTable(_)(None)(None))
     }
@@ -213,7 +214,7 @@ trait DataService {
   /*
    * Get all "Sources" of data - root tables of each data tree
    */
-  def getDataSources(): Future[Seq[ApiDataTable]] = {
+  def dataSources(): Future[Seq[ApiDataTable]] = {
     val rootTablesQuery = for {
       trees <- DataTableTree.filter(_.table1.isEmpty)
     } yield trees
@@ -241,7 +242,7 @@ trait DataService {
   protected[api] def buildDataTreeStructures(dataTableTrees: Query[DataTableTree, DataTableTreeRow, Seq], roots: Set[Int] = Set()): Future[Seq[ApiDataTable]] = {
     // Another round of field filtering to only get those within the returned trees
     val treeFieldQuery = for {
-      (tree, maybeField) <- dataTableTrees joinLeft DataField
+      (tree, maybeField) <- dataTableTrees joinLeft DataField.filter(_.deleted === false)
     } yield (tree, maybeField)
 
     DatabaseInfo.db.run(treeFieldQuery.result).map { treeFields =>
@@ -293,8 +294,8 @@ trait DataService {
           } yield (value, field, record)
           val eventualDataValues = DatabaseInfo.db.run(valueDetailQuery.result).map { values =>
             values map {
-              case (value, field, record) =>
-                ApiDataValue.fromDataValue(value, Some(field), Some(record))
+              case (value, field, valueRecord) =>
+                ApiDataValue.fromDataValue(value, Some(field), Some(valueRecord))
             }
           }
           eventualDataValues map { dataValues =>
@@ -410,14 +411,18 @@ trait DataService {
   /*
    * Fetches values from database matching a set of fields and falling within a time range
    */
-  protected[api] def fieldsetValues(fieldset: Set[Int], startTime: LocalDateTime, endTime: LocalDateTime, maybeLimit: Option[Int] = None): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
+  protected[service] def fieldsetValues(fieldset: Set[Int], startTime: LocalDateTime, endTime: LocalDateTime, maybeLimit: Option[Int] = None): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
     val fieldValues = DataValue.filter(_.fieldId inSet fieldset)
+    val valuesQuery = fieldValues.filter(v => v.lastUpdated <= endTime && v.lastUpdated >= startTime && v.deleted === false)
+      .sortBy(_.recordId.desc)
     val valueQuery = for {
-      value <- fieldValues.filter(v => v.lastUpdated <= endTime && v.lastUpdated >= startTime)
+      (record, value) <- DataRecord.filter(_.id in valuesQuery.map(_.recordId))
+        .filter(_.deleted === false)
         .sortBy(_.lastUpdated.desc)
-        .take(maybeLimit.getOrElse(1000) * fieldset.size) // Limit the number of records taken by default
-      field <- value.dataFieldFk
-      record <- value.dataRecordFk
+        .take(maybeLimit.getOrElse(1000))
+        .join(valuesQuery)
+        .on(_.id === _.recordId)
+      field <- value.dataFieldFk if field.deleted === false
     } yield (record, field, value)
 
     DatabaseInfo.db.run(valueQuery.result)
@@ -425,9 +430,9 @@ trait DataService {
 
   def recordValues(recordId: Int): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
     val valueQuery = for {
-      value <- DataValue
-      record <- value.dataRecordFk.filter(_.id === recordId)
-      field <- value.dataFieldFk
+      value <- DataValue.filter(_.deleted === false)
+      record <- value.dataRecordFk.filter(_.id === recordId) if record.deleted === false
+      field <- value.dataFieldFk if field.deleted === false
     } yield (record, field, value)
 
     DatabaseInfo.db.run(valueQuery.sortBy(_._1.id.desc).result)
@@ -435,9 +440,9 @@ trait DataService {
 
   def getValue(id: Int): Future[Option[ApiDataValue]] = {
     val valueQuery = for {
-      value <- DataValue.filter(_.id === id)
-      record <- value.dataRecordFk
-      field <- value.dataFieldFk
+      value <- DataValue.filter(v => v.id === id && v.deleted === false)
+      record <- value.dataRecordFk if record.deleted === false
+      field <- value.dataFieldFk if field.deleted === false
     } yield (record, field, value)
 
     val eventualValues = DatabaseInfo.db.run(valueQuery.sortBy(_._1.id.desc).result)
@@ -461,7 +466,7 @@ trait DataService {
       case fieldset: Set[Int] =>
         // logger.debug(s"Getting tables for fieldset $fieldset")
         val dataTableTreesQuery = for {
-          field <- DataField.filter(_.id inSet fieldset)
+          field <- DataField.filter(_.id inSet fieldset) if field.deleted === false
           rootTable <- DataTableTree.filter(field.tableIdFk === _.path.any)
           tree <- DataTableTree.filter(_.rootTable === rootTable.path.any)
         } yield tree
@@ -471,7 +476,7 @@ trait DataService {
 
     eventualTables flatMap { tables =>
       // logger.debug(s"Filling record tables $tables")
-      val fieldset = tables.map(getStructureFields).reduce((fs, structureFields) => fs ++ structureFields)
+//      val fieldset = tables.map(getStructureFields).reduce((fs, structureFields) => fs ++ structureFields)
       eventualValues.map(values => getValueRecords(values, tables))
     } map (_.headOption)
   }
@@ -498,5 +503,87 @@ trait DataService {
       Some(apiTables)
     }
     table.copy(fields = tableFields, subTables = someApiTables)
+  }
+
+  ///////////////////
+  // Data deletion
+  // Important: Data never gets deleted from the HAT, it only gets hidden from all APIs
+
+  def deleteRecord(recordId: Int): Future[Unit] = {
+    DatabaseInfo.db.run {
+      DBIO.seq(
+        // 1. Delete all values in the record
+        DataValue.filter(_.recordId === recordId)
+          .map(v => (v.lastUpdated, v.deleted))
+          .update((LocalDateTime.now(), true)),
+        // 2. Delete the record
+        DataRecord.filter(_.id === recordId)
+          .map(r => (r.lastUpdated, r.deleted))
+          .update((LocalDateTime.now(), true)))
+    }
+  }
+
+  def deleteValue(value: Int): Future[Unit] = {
+    deleteValues(List(value))
+  }
+
+  def deleteValues(values: List[Int]): Future[Unit] = {
+    val valueSet = values.toSet
+    // Delete the matching values
+    DatabaseInfo.db.run {
+      DBIO.seq(
+        DataValue.filter(_.id inSet valueSet)
+          .map(v => (v.lastUpdated, v.deleted))
+          .update((LocalDateTime.now(), true)))
+    }
+  }
+
+  def deleteField(fieldId: Int): Future[Unit] = {
+    DatabaseInfo.db.run {
+      DBIO.seq(
+        // 1. Delete all values in the field
+        DataValue.filter(_.fieldId === fieldId)
+          .map(v => (v.lastUpdated, v.deleted))
+          .update((LocalDateTime.now(), true)),
+        // 2. Delete the field
+        DataField.filter(_.id === fieldId)
+          .map(f => (f.lastUpdated, f.deleted))
+          .update((LocalDateTime.now(), true)))
+    }
+  }
+
+  def deleteTable(tableId: Int): Future[Unit] = {
+    // 1. Find the full tree of subtables
+    val tableQuery = DataTable.filter(_.id in DataTableTree.filter(_.rootTable === tableId).map(_.id))
+    // 2. Find all table relationships
+    val tableRelationshipInQuery = DataTabletotablecrossref.filter(_.table1 in tableQuery.map(_.id))
+    val tableRelatonshipOutQuery = DataTabletotablecrossref.filter(_.table2 in tableQuery.map(_.id))
+    // 3. Find the full tree of fields
+    val fieldQuery = DataField.filter(_.tableIdFk in tableQuery.map(_.id))
+    // 4. Find all values in the fieldset
+    val valueQuery = DataValue.filter(_.fieldId in fieldQuery.map(_.id))
+
+    DatabaseInfo.db.run {
+      DBIO.seq(
+        // 5. Delete the values
+        valueQuery
+          .map(v => (v.lastUpdated, v.deleted))
+          .update((LocalDateTime.now(), true)),
+        // 6. Delete the fields
+        fieldQuery
+          .map(f => (f.lastUpdated, f.deleted))
+          .update((LocalDateTime.now(), true)),
+        // 7. Delete table relationships
+        tableRelationshipInQuery
+          .map(tr => (tr.lastUpdated, tr.deleted))
+          .update((LocalDateTime.now(), true)),
+        tableRelatonshipOutQuery
+          .map(tr => (tr.lastUpdated, tr.deleted))
+          .update((LocalDateTime.now(), true)),
+        // 8. Delete the tables
+        tableQuery
+          .map(t => (t.lastUpdated, t.deleted))
+          .update((LocalDateTime.now(), true)))
+    }
   }
 }

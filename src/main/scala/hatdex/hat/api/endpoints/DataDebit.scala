@@ -48,7 +48,7 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
   val logger: LoggingAdapter
   def actorRefFactory: ActorRefFactory
 
-  val routes = {
+  def routes = {
     pathPrefix("dataDebit") {
       proposeDataDebitApi ~
         getDataDebit ~

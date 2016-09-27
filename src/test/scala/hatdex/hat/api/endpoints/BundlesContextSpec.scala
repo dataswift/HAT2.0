@@ -27,9 +27,9 @@ import hatdex.hat.api.endpoints.jsonExamples.BundleContextExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
+import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
-import org.specs2.specification.{ BeforeAfterAll, Scope }
+import org.specs2.specification.{BeforeAfterAll, Scope}
 import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
@@ -246,22 +246,22 @@ class BundlesContextSpec extends Specification with Specs2RouteTest with BeforeA
         }
     }
 
-    object Context {
+    val testLogger = logger
+    object Context extends DataSpecContextMixin {
+      val logger: LoggingAdapter = testLogger
+      def actorRefFactory = system
       val propertySpec = new PropertySpec()
       val property = propertySpec.createWeightProperty
       val dataSpec = new DataSpec()
-      dataSpec.createBasicTables
-      val populatedData = dataSpec.populateDataReusable
+
+      val (dataTable, dataSubtable) = createBasicTables
+      val (_, dataField, record) = populateDataReusable
+      val populatedData = (dataTable, dataField, record)
 
       val personSpec = new PersonSpec()
-
       val newPerson = personSpec.createNewPerson
       newPerson.id must beSome
 
-      val dataField = populatedData match {
-        case (dataTable, dataField, record) =>
-          dataField
-      }
       val dynamicPropertyLink = ApiPropertyRelationshipDynamic(
         None, property, None, None, "test property", dataField)
 

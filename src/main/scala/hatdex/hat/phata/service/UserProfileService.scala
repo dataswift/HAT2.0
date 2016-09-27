@@ -19,15 +19,16 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-package hatdex.hat.api.service
+package hatdex.hat.phata.service
 
 import com.typesafe.config.ConfigFactory
 import hatdex.hat.FutureTransformations
 import hatdex.hat.api.models.{ApiDataTable, ProfileField}
+import hatdex.hat.api.service.BundleService
 import org.joda.time.LocalDateTime
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 trait UserProfileService extends BundleService {
   val configuration = ConfigFactory.load()
@@ -46,11 +47,11 @@ trait UserProfileService extends BundleService {
     val eventualProfilePictureField = eventualProfilePicture map { maybeValueTable =>
       maybeValueTable map { valueTable =>
         val flattenedValues = flattenTableValues(valueTable)
-        ProfileField("fb_profile_picture", Map("url" -> flattenedValues.getOrElse("url", "").toString), true)
+        ProfileField("fb_profile_picture", Map("url" -> flattenedValues.getOrElse("url", "").toString), fieldPublic = true)
       }
     }
 
-    import scala.reflect.runtime.universe.{ typeTag, TypeTag, typeOf }
+    import scala.reflect.runtime.universe.{TypeTag, typeOf, typeTag}
     def getTypeTag[T: TypeTag](t: T) = typeTag[T].tpe
     def getTypeOfTag[T: TypeTag] = typeOf[T]
 

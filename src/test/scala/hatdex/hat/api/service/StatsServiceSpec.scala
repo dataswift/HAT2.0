@@ -53,7 +53,7 @@ import scala.concurrent.duration.Duration
 
 class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAfterAll with StatsService {
   override val logger: LoggingAdapter = Logging.getLogger(system, "tests")
-  lazy val testLogger = logger
+  val testLogger = logger
   override def actorRefFactory: ActorRefFactory = system
 
 
@@ -63,78 +63,19 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
   }
 
   // Clean up all data
-  def afterAll() = {
-//    TestDataCleanup.cleanupAll
-  }
+  def afterAll() = {  }
 
   logger.info("Setting up Stats Service context")
-  class DataDebitContext extends DataDebitContextualContext with DataDebitRequiredServices {
-    def actorRefFactory = system
-    val logger: LoggingAdapter = Logging.getLogger(system, "tests")
-    override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
-    import JsonProtocol._
 
-    logger.debug(s"Populated data table: $dataTable")
-
-    HatAuthTestHandler.validUsers.find(_.role == "owner") map { user =>
-      UserUserRow(user.userId,
-        LocalDateTime.now(), LocalDateTime.now(),
-        user.email, user.pass,
-        user.name, user.role, enabled = true)
-    } map { userRow =>
-      import hatdex.hat.dal.SlickPostgresDriver.api._
-      db.run {
-        (UserUser += userRow).asTry
-      }
-    }
-
-    val bundleData = JsonParser(BundleExamples.fullbundle).convertTo[ApiBundleContextless]
-    val dataDebitData = JsonParser(DataDebitExamples.dataDebitExample).convertTo[ApiDataDebit]
-
-    val dataDebit = {
-      HttpRequest(POST, "/dataDebit/propose")
-        .withHeaders(ownerAuthHeader)
-        .withEntity(HttpEntity(MediaTypes.`application/json`, dataDebitData.copy(bundleContextless = Some(bundleData)).toJson.toString)) ~>
-        sealRoute(routes) ~>
-        check {
-          eventually {
-            val responseString = responseAs[String]
-            logger.debug(s"Data debit propose response $responseString")
-            response.status should be equalTo Created
-            responseString must contain("key")
-          }
-          responseAs[ApiDataDebit]
-        }
-    }
-
-    dataDebit.key must beSome
-
-    HttpRequest(PUT, s"/dataDebit/${dataDebit.key.get}/enable")
-      .withHeaders(ownerAuthHeader) ~>
-      sealRoute(routes) ~>
-      check {
-        eventually {
-          response.status should be equalTo OK
-        }
-      }
+  object Context extends StatsDataDebitContext {
+    override def actorRefFactory = system
+    override val logger: LoggingAdapter = Logging.getLogger(system, "tests")
+    val dataDebit = setupDataDebit()
   }
 
-  class Context extends DataDebitContext with Scope {
-//    val property = DataDebitContext.property
-//    val populatedData = DataDebitContext.populatedData
-//    val populatedTable = DataDebitContext.dataTable
-//    val dataDebit = DataDebitContext.dataDebit
+  class Context extends Scope {
+    val dataDebit = Context.dataDebit
   }
-
-  //  object StatsServiceSpecContext extends StatsServiceContext with DataDebitRequiredServices {
-  //    def actorRefFactory: ActorRefFactory = system
-  //    override val logger: LoggingAdapter = Logging.getLogger(system, "tests")
-  //    logger.info("Stats Service context object created")
-  //  }
-  //
-  //  class StatsServiceSpecContext extends Scope {
-  //    val dataDebit = StatsServiceSpecContext.dataDebit
-  //  }
 
   import JsonProtocol._
 
@@ -203,5 +144,60 @@ class StatsServiceSpec extends Specification with Specs2RouteTest with BeforeAft
         }
       } must beSome
     }
+  }
+}
+
+trait StatsDataDebitContext extends DataDebitContextualContext with DataDebitRequiredServices {
+  def actorRefFactory: ActorRefFactory
+  val logger: LoggingAdapter
+
+  override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
+  import JsonProtocol._
+
+  def setupDataDebit(): ApiDataDebit = {
+    logger.info("Setting up Data Debit Context in Stats Service Spec")
+    super.setup()
+    HatAuthTestHandler.validUsers.find(_.role == "owner") map { user =>
+      UserUserRow(user.userId,
+        LocalDateTime.now(), LocalDateTime.now(),
+        user.email, user.pass,
+        user.name, user.role, enabled = true)
+    } map { userRow =>
+      import hatdex.hat.dal.SlickPostgresDriver.api._
+      db.run {
+        (UserUser += userRow).asTry
+      }
+    }
+
+    val bundleData = JsonParser(BundleExamples.fullbundle).convertTo[ApiBundleContextless]
+    val dataDebitData = JsonParser(DataDebitExamples.dataDebitExample).convertTo[ApiDataDebit]
+
+    val dataDebit = {
+      HttpRequest(POST, "/dataDebit/propose")
+        .withHeaders(ownerAuthHeader)
+        .withEntity(HttpEntity(MediaTypes.`application/json`, dataDebitData.copy(bundleContextless = Some(bundleData)).toJson.toString)) ~>
+        sealRoute(routes) ~>
+        check {
+          eventually {
+            val responseString = responseAs[String]
+            logger.debug(s"Data debit propose response $responseString")
+            response.status should be equalTo Created
+            responseString must contain("key")
+          }
+          responseAs[ApiDataDebit]
+        }
+    }
+
+    dataDebit.key must beSome
+
+    HttpRequest(PUT, s"/dataDebit/${dataDebit.key.get}/enable")
+      .withHeaders(ownerAuthHeader) ~>
+      sealRoute(routes) ~>
+      check {
+        eventually {
+          response.status should be equalTo OK
+        }
+      }
+    dataDebit
   }
 }

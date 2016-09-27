@@ -301,12 +301,14 @@ class PersonSpec extends Specification with Specs2RouteTest with Person with Bef
 
     }
 
-    object Context {
+    val testLogger = logger
+    object Context extends DataSpecContextMixin {
+      val logger: LoggingAdapter = testLogger
+      def actorRefFactory = system
       val propertySpec = new PropertySpec()
       val property = propertySpec.createWeightProperty
-      val dataSpec = new DataSpec()
-      dataSpec.createBasicTables
-      val populatedData = dataSpec.populateDataReusable
+      createBasicTables
+      val populatedData = populateDataReusable
     }
 
     class Context extends Scope {

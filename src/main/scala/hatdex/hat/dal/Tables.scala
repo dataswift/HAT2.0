@@ -409,18 +409,19 @@ trait Tables {
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param name Database column name SqlType(varchar)
-   *  @param tableIdFk Database column table_id_fk SqlType(int4) */
-  case class DataFieldRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, tableIdFk: Int)
+   *  @param tableIdFk Database column table_id_fk SqlType(int4)
+   *  @param deleted Database column deleted SqlType(bool), Default(false) */
+  case class DataFieldRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, tableIdFk: Int, deleted: Boolean = false)
   /** GetResult implicit for fetching DataFieldRow objects using plain SQL queries */
-  implicit def GetResultDataFieldRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[DataFieldRow] = GR{
+  implicit def GetResultDataFieldRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Boolean]): GR[DataFieldRow] = GR{
     prs => import prs._
-    DataFieldRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int]))
+    DataFieldRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int], <<[Boolean]))
   }
   /** Table description of table data_field. Objects of this class serve as prototypes for rows in queries. */
   class DataField(_tableTag: Tag) extends Table[DataFieldRow](_tableTag, Some("hat"), "data_field") {
-    def * = (id, dateCreated, lastUpdated, name, tableIdFk) <> (DataFieldRow.tupled, DataFieldRow.unapply)
+    def * = (id, dateCreated, lastUpdated, name, tableIdFk, deleted) <> (DataFieldRow.tupled, DataFieldRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(tableIdFk)).shaped.<>({r=>import r._; _1.map(_=> DataFieldRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(tableIdFk), Rep.Some(deleted)).shaped.<>({r=>import r._; _1.map(_=> DataFieldRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -432,6 +433,8 @@ trait Tables {
     val name: Rep[String] = column[String]("name")
     /** Database column table_id_fk SqlType(int4) */
     val tableIdFk: Rep[Int] = column[Int]("table_id_fk")
+    /** Database column deleted SqlType(bool), Default(false) */
+    val deleted: Rep[Boolean] = column[Boolean]("deleted", O.Default(false))
 
     /** Foreign key referencing DataTable (database name data_table_fk) */
     lazy val dataTableFk = foreignKey("data_table_fk", tableIdFk, DataTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
@@ -443,18 +446,19 @@ trait Tables {
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
-   *  @param name Database column name SqlType(varchar) */
-  case class DataRecordRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String)
+   *  @param name Database column name SqlType(varchar)
+   *  @param deleted Database column deleted SqlType(bool), Default(false) */
+  case class DataRecordRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, deleted: Boolean = false)
   /** GetResult implicit for fetching DataRecordRow objects using plain SQL queries */
-  implicit def GetResultDataRecordRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[DataRecordRow] = GR{
+  implicit def GetResultDataRecordRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Boolean]): GR[DataRecordRow] = GR{
     prs => import prs._
-    DataRecordRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String]))
+    DataRecordRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Boolean]))
   }
   /** Table description of table data_record. Objects of this class serve as prototypes for rows in queries. */
   class DataRecord(_tableTag: Tag) extends Table[DataRecordRow](_tableTag, Some("hat"), "data_record") {
-    def * = (id, dateCreated, lastUpdated, name) <> (DataRecordRow.tupled, DataRecordRow.unapply)
+    def * = (id, dateCreated, lastUpdated, name, deleted) <> (DataRecordRow.tupled, DataRecordRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name)).shaped.<>({r=>import r._; _1.map(_=> DataRecordRow.tupled((_1.get, _2.get, _3.get, _4.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(deleted)).shaped.<>({r=>import r._; _1.map(_=> DataRecordRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -464,6 +468,8 @@ trait Tables {
     val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
     /** Database column name SqlType(varchar) */
     val name: Rep[String] = column[String]("name")
+    /** Database column deleted SqlType(bool), Default(false) */
+    val deleted: Rep[Boolean] = column[Boolean]("deleted", O.Default(false))
   }
   /** Collection-like TableQuery object for table DataRecord */
   lazy val DataRecord = new TableQuery(tag => new DataRecord(tag))
@@ -473,18 +479,19 @@ trait Tables {
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param name Database column name SqlType(varchar)
-   *  @param sourceName Database column source_name SqlType(varchar) */
-  case class DataTableRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, sourceName: String)
+   *  @param sourceName Database column source_name SqlType(varchar)
+   *  @param deleted Database column deleted SqlType(bool), Default(false) */
+  case class DataTableRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, name: String, sourceName: String, deleted: Boolean = false)
   /** GetResult implicit for fetching DataTableRow objects using plain SQL queries */
-  implicit def GetResultDataTableRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[DataTableRow] = GR{
+  implicit def GetResultDataTableRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Boolean]): GR[DataTableRow] = GR{
     prs => import prs._
-    DataTableRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[String]))
+    DataTableRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[String], <<[Boolean]))
   }
   /** Table description of table data_table. Objects of this class serve as prototypes for rows in queries. */
   class DataTable(_tableTag: Tag) extends Table[DataTableRow](_tableTag, Some("hat"), "data_table") {
-    def * = (id, dateCreated, lastUpdated, name, sourceName) <> (DataTableRow.tupled, DataTableRow.unapply)
+    def * = (id, dateCreated, lastUpdated, name, sourceName, deleted) <> (DataTableRow.tupled, DataTableRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(sourceName)).shaped.<>({r=>import r._; _1.map(_=> DataTableRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(name), Rep.Some(sourceName), Rep.Some(deleted)).shaped.<>({r=>import r._; _1.map(_=> DataTableRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -496,6 +503,8 @@ trait Tables {
     val name: Rep[String] = column[String]("name")
     /** Database column source_name SqlType(varchar) */
     val sourceName: Rep[String] = column[String]("source_name")
+    /** Database column deleted SqlType(bool), Default(false) */
+    val deleted: Rep[Boolean] = column[Boolean]("deleted", O.Default(false))
 
     /** Uniqueness Index over (name,sourceName) (database name data_table_name_source) */
     val index1 = index("data_table_name_source", (name, sourceName), unique=true)
@@ -509,18 +518,19 @@ trait Tables {
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param relationshipType Database column relationship_type SqlType(varchar)
    *  @param table1 Database column table1 SqlType(int4)
-   *  @param table2 Database column table2 SqlType(int4) */
-  case class DataTabletotablecrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, relationshipType: String, table1: Int, table2: Int)
+   *  @param table2 Database column table2 SqlType(int4)
+   *  @param deleted Database column deleted SqlType(bool), Default(false) */
+  case class DataTabletotablecrossrefRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, relationshipType: String, table1: Int, table2: Int, deleted: Boolean = false)
   /** GetResult implicit for fetching DataTabletotablecrossrefRow objects using plain SQL queries */
-  implicit def GetResultDataTabletotablecrossrefRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[DataTabletotablecrossrefRow] = GR{
+  implicit def GetResultDataTabletotablecrossrefRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Boolean]): GR[DataTabletotablecrossrefRow] = GR{
     prs => import prs._
-    DataTabletotablecrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int], <<[Int]))
+    DataTabletotablecrossrefRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int], <<[Int], <<[Boolean]))
   }
   /** Table description of table data_tabletotablecrossref. Objects of this class serve as prototypes for rows in queries. */
   class DataTabletotablecrossref(_tableTag: Tag) extends Table[DataTabletotablecrossrefRow](_tableTag, Some("hat"), "data_tabletotablecrossref") {
-    def * = (id, dateCreated, lastUpdated, relationshipType, table1, table2) <> (DataTabletotablecrossrefRow.tupled, DataTabletotablecrossrefRow.unapply)
+    def * = (id, dateCreated, lastUpdated, relationshipType, table1, table2, deleted) <> (DataTabletotablecrossrefRow.tupled, DataTabletotablecrossrefRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(relationshipType), Rep.Some(table1), Rep.Some(table2)).shaped.<>({r=>import r._; _1.map(_=> DataTabletotablecrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(relationshipType), Rep.Some(table1), Rep.Some(table2), Rep.Some(deleted)).shaped.<>({r=>import r._; _1.map(_=> DataTabletotablecrossrefRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -534,6 +544,8 @@ trait Tables {
     val table1: Rep[Int] = column[Int]("table1")
     /** Database column table2 SqlType(int4) */
     val table2: Rep[Int] = column[Int]("table2")
+    /** Database column deleted SqlType(bool), Default(false) */
+    val deleted: Rep[Boolean] = column[Boolean]("deleted", O.Default(false))
 
     /** Foreign key referencing DataTable (database name data_table_data_tabletotablecrossref_fk) */
     lazy val dataTableFk1 = foreignKey("data_table_data_tabletotablecrossref_fk", table2, DataTable)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
@@ -549,18 +561,19 @@ trait Tables {
    *  @param lastUpdated Database column last_updated SqlType(timestamp), Default(None)
    *  @param name Database column name SqlType(varchar), Default(None)
    *  @param sourceName Database column source_name SqlType(varchar), Default(None)
+   *  @param deleted Database column deleted SqlType(bool), Default(None)
    *  @param table1 Database column table1 SqlType(int4), Default(None)
    *  @param path Database column path SqlType(_int4), Length(10,false), Default(None)
    *  @param rootTable Database column root_table SqlType(int4), Default(None) */
-  case class DataTableTreeRow(id: Option[Int] = None, dateCreated: Option[org.joda.time.LocalDateTime] = None, lastUpdated: Option[org.joda.time.LocalDateTime] = None, name: Option[String] = None, sourceName: Option[String] = None, table1: Option[Int] = None, path: Option[List[Int]] = None, rootTable: Option[Int] = None)
+  case class DataTableTreeRow(id: Option[Int] = None, dateCreated: Option[org.joda.time.LocalDateTime] = None, lastUpdated: Option[org.joda.time.LocalDateTime] = None, name: Option[String] = None, sourceName: Option[String] = None, deleted: Option[Boolean] = None, table1: Option[Int] = None, path: Option[List[Int]] = None, rootTable: Option[Int] = None)
   /** GetResult implicit for fetching DataTableTreeRow objects using plain SQL queries */
-  implicit def GetResultDataTableTreeRow(implicit e0: GR[Option[Int]], e1: GR[Option[org.joda.time.LocalDateTime]], e2: GR[Option[String]], e3: GR[Option[List[Int]]]): GR[DataTableTreeRow] = GR{
+  implicit def GetResultDataTableTreeRow(implicit e0: GR[Option[Int]], e1: GR[Option[org.joda.time.LocalDateTime]], e2: GR[Option[String]], e3: GR[Option[Boolean]], e4: GR[Option[List[Int]]]): GR[DataTableTreeRow] = GR{
     prs => import prs._
-    DataTableTreeRow.tupled((<<?[Int], <<?[org.joda.time.LocalDateTime], <<?[org.joda.time.LocalDateTime], <<?[String], <<?[String], <<?[Int], <<?[List[Int]], <<?[Int]))
+    DataTableTreeRow.tupled((<<?[Int], <<?[org.joda.time.LocalDateTime], <<?[org.joda.time.LocalDateTime], <<?[String], <<?[String], <<?[Boolean], <<?[Int], <<?[List[Int]], <<?[Int]))
   }
   /** Table description of table data_table_tree. Objects of this class serve as prototypes for rows in queries. */
   class DataTableTree(_tableTag: Tag) extends Table[DataTableTreeRow](_tableTag, Some("hat"), "data_table_tree") {
-    def * = (id, dateCreated, lastUpdated, name, sourceName, table1, path, rootTable) <> (DataTableTreeRow.tupled, DataTableTreeRow.unapply)
+    def * = (id, dateCreated, lastUpdated, name, sourceName, deleted, table1, path, rootTable) <> (DataTableTreeRow.tupled, DataTableTreeRow.unapply)
 
     /** Database column id SqlType(int4), Default(None) */
     val id: Rep[Option[Int]] = column[Option[Int]]("id", O.Default(None))
@@ -572,6 +585,8 @@ trait Tables {
     val name: Rep[Option[String]] = column[Option[String]]("name", O.Default(None))
     /** Database column source_name SqlType(varchar), Default(None) */
     val sourceName: Rep[Option[String]] = column[Option[String]]("source_name", O.Default(None))
+    /** Database column deleted SqlType(bool), Default(None) */
+    val deleted: Rep[Option[Boolean]] = column[Option[Boolean]]("deleted", O.Default(None))
     /** Database column table1 SqlType(int4), Default(None) */
     val table1: Rep[Option[Int]] = column[Option[Int]]("table1", O.Default(None))
     /** Database column path SqlType(_int4), Length(10,false), Default(None) */
@@ -588,18 +603,19 @@ trait Tables {
    *  @param lastUpdated Database column last_updated SqlType(timestamp)
    *  @param value Database column value SqlType(text)
    *  @param fieldId Database column field_id SqlType(int4)
-   *  @param recordId Database column record_id SqlType(int4) */
-  case class DataValueRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, value: String, fieldId: Int, recordId: Int)
+   *  @param recordId Database column record_id SqlType(int4)
+   *  @param deleted Database column deleted SqlType(bool), Default(false) */
+  case class DataValueRow(id: Int, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, value: String, fieldId: Int, recordId: Int, deleted: Boolean = false)
   /** GetResult implicit for fetching DataValueRow objects using plain SQL queries */
-  implicit def GetResultDataValueRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String]): GR[DataValueRow] = GR{
+  implicit def GetResultDataValueRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[String], e3: GR[Boolean]): GR[DataValueRow] = GR{
     prs => import prs._
-    DataValueRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int], <<[Int]))
+    DataValueRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[String], <<[Int], <<[Int], <<[Boolean]))
   }
   /** Table description of table data_value. Objects of this class serve as prototypes for rows in queries. */
   class DataValue(_tableTag: Tag) extends Table[DataValueRow](_tableTag, Some("hat"), "data_value") {
-    def * = (id, dateCreated, lastUpdated, value, fieldId, recordId) <> (DataValueRow.tupled, DataValueRow.unapply)
+    def * = (id, dateCreated, lastUpdated, value, fieldId, recordId, deleted) <> (DataValueRow.tupled, DataValueRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(value), Rep.Some(fieldId), Rep.Some(recordId)).shaped.<>({r=>import r._; _1.map(_=> DataValueRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(dateCreated), Rep.Some(lastUpdated), Rep.Some(value), Rep.Some(fieldId), Rep.Some(recordId), Rep.Some(deleted)).shaped.<>({r=>import r._; _1.map(_=> DataValueRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get)))}, (_:Any) =>  throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
     val id: Rep[Int] = column[Int]("id", O.AutoInc, O.PrimaryKey)
@@ -613,6 +629,8 @@ trait Tables {
     val fieldId: Rep[Int] = column[Int]("field_id")
     /** Database column record_id SqlType(int4) */
     val recordId: Rep[Int] = column[Int]("record_id")
+    /** Database column deleted SqlType(bool), Default(false) */
+    val deleted: Rep[Boolean] = column[Boolean]("deleted", O.Default(false))
 
     /** Foreign key referencing DataField (database name data_field_data_value_fk) */
     lazy val dataFieldFk = foreignKey("data_field_data_value_fk", fieldId, DataField)(r => r.id, onUpdate=ForeignKeyAction.NoAction, onDelete=ForeignKeyAction.NoAction)
