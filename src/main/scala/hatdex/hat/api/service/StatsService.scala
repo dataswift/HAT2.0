@@ -20,23 +20,22 @@
  */
 package hatdex.hat.api.service
 
-import akka.actor.{ ActorRefFactory, ActorContext }
-import akka.event.{ Logging, LoggingAdapter }
+import akka.actor.{ActorContext, ActorRefFactory}
+import akka.event.{Logging, LoggingAdapter}
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.models._
-import hatdex.hat.api.models.stats.{ DataCreditStats, DataDebitStats, DataTableStats, DataFieldStats }
+import hatdex.hat.api.models.stats._
 
 import scala.collection.immutable.HashMap
-
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import hatdex.hat.authentication.models.User
 import hatdex.hat.Utils
+import hatdex.hat.api.service.IoExecutionContext.ioThreadPool
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{ Failure, Success }
+import scala.util.{Failure, Success}
 
 trait StatsService {
 
@@ -271,11 +270,5 @@ trait StatsService {
   }
 }
 
-object DataDebitOperations {
-  sealed trait DataDebitOperation
-  case class Create() extends DataDebitOperation
-  case class Enable() extends DataDebitOperation
-  case class Disable() extends DataDebitOperation
-  case class GetValues() extends DataDebitOperation
-}
+
 

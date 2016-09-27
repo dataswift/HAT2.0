@@ -22,23 +22,25 @@ package hatdex.hat.api.endpoints
 
 import java.util.UUID
 
-import akka.actor.{ ActorRefFactory, ActorContext }
+import akka.actor.{ActorContext, ActorRefFactory}
 import akka.event.LoggingAdapter
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
-import hatdex.hat.api.service.{ DataDebitOperations, StatsService, DataDebitService }
+import hatdex.hat.api.models.stats.DataDebitOperations
+import hatdex.hat.api.service.{DataDebitService, StatsService}
 import hatdex.hat.authentication.HatServiceAuthHandler
-import hatdex.hat.authentication.authorization.{ UserAuthorization, DataDebitAuthorization }
+import hatdex.hat.authentication.authorization.{DataDebitAuthorization, UserAuthorization}
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.Tables
-import org.joda.time.{ LocalDateTime, DateTime }
+import org.joda.time.{DateTime, LocalDateTime}
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{ Try, Failure, Success }
+import scala.util.{Failure, Success, Try}
 
 // this trait defines our service behavior independently from the service actor
 trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHandler with StatsService {

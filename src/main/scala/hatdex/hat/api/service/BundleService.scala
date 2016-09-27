@@ -30,7 +30,7 @@ import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import spray.json.{ JsonParser, _ }
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import hatdex.hat.api.service.IoExecutionContext.ioThreadPool
 import scala.concurrent.Future
 
 // this trait defines our service behavior independently from the service actor

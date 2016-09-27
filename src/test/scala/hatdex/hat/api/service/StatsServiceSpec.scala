@@ -23,21 +23,22 @@ package hatdex.hat.api.service
 
 import java.util.UUID
 
-import akka.actor.{ ActorSystem, ActorRefFactory, ActorContext }
-import akka.event.{ Logging, LoggingAdapter }
-import hatdex.hat.api.{ DatabaseInfo, TestDataCleanup }
+import akka.actor.{ActorContext, ActorRefFactory, ActorSystem}
+import akka.event.{Logging, LoggingAdapter}
+import hatdex.hat.api.{DatabaseInfo, TestDataCleanup}
 import hatdex.hat.api.endpoints._
-import hatdex.hat.api.endpoints.jsonExamples.{DataExamples, BundleExamples, DataDebitExamples}
+import hatdex.hat.api.endpoints.jsonExamples.{BundleExamples, DataDebitExamples, DataExamples}
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
+import hatdex.hat.api.models.stats.DataDebitOperations
 import hatdex.hat.authentication.authenticators.AccessTokenHandler
-import hatdex.hat.authentication.{ TestAuthCredentials, HatAuthTestHandler }
+import hatdex.hat.authentication.{HatAuthTestHandler, TestAuthCredentials}
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.specs2.mutable.Specification
-import org.specs2.specification.{ BeforeAfterAll, Scope }
+import org.specs2.specification.{BeforeAfterAll, Scope}
 import spray.http.HttpRequest
 import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._

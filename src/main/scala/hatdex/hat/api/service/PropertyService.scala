@@ -27,7 +27,7 @@ import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import hatdex.hat.api.service.IoExecutionContext.ioThreadPool
 import scala.util.{ Failure, Success }
 
 trait PropertyService extends DataService {

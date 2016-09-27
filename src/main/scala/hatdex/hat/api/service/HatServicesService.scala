@@ -30,7 +30,7 @@ import hatdex.hat.dal.Tables._
 import org.joda.time.Duration._
 import spray.http.Uri
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import hatdex.hat.api.service.IoExecutionContext.ioThreadPool
 import scala.concurrent.Future
 
 trait HatServicesService extends JwtTokenHandler {
