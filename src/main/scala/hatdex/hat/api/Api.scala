@@ -80,6 +80,7 @@ trait Api extends HttpService with Cors {
   def routes = handleRejections(jsonRejectionHandler) {
     cors {
       helloService.routes ~
+      userService.getPublicKey ~
         respondWithMediaType(`application/json`) {
           apiDataService.routes ~
             apiPropertyService.routes ~

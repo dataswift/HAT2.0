@@ -49,7 +49,7 @@ echo "Building HAT : sbt docker:stage"
 sbt docker:stage
 
 if [ ! -f "$HAT_HOME/target/docker/Dockerfile" ]; then
-    echo "Missing $HAT_HOME/target/docker/Dockerfile" 
+    echo "Missing $HAT_HOME/target/docker/Dockerfile"
     echo "The docker-hat container was not created."
     echo "Please run 'sbt docker:stage' on main folder and re-run this script to generate it."
     exit
@@ -69,4 +69,4 @@ echo "#Do not modify this file. Use Dockerfile-hat.template instead." > $DOCKER_
 cat $DOCKER/Dockerfile-hat.template >> $DOCKER_DEPLOY/Dockerfile
 
 echo "Building hat docker image: docker-hat"
-docker build -t hubofallthings/hat .
+docker build -t hubofallthings/hat-experimental .
