@@ -1,5 +1,7 @@
-docker stop $(docker ps -a -q)
-docker rm $(docker ps -a -q)
+#!/usr/bin/env bash
+
+docker stop $(docker ps -a | grep "hubofallthings/hat" | awk '{print $1}')
+docker rm $(docker ps -a | grep "hubofallthings/hat" | awk '{print $1}')
 
 port=3001
 

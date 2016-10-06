@@ -2,7 +2,6 @@ FROM java:jre
 WORKDIR /opt/docker
 ADD opt /opt
 RUN ["chown", "-R", "daemon:daemon", "."]
-#RUN apt-get update && apt-get -y install postgresql
 USER daemon
 EXPOSE 8080
 ENV JAVA_OPTS="-Xmx500m -Xms100m"
