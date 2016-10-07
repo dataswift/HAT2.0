@@ -118,13 +118,16 @@ trait Phata extends HttpService with UserProfileService with HatServiceAuthHandl
         }
       case Success(_) =>
         deleteCookie("X-Auth-Token") {
-          complete(hatdex.hat.phata.views.html.simpleLogin(formattedHatConfiguration, Some("Invalid Credentials!")))
+          (maybeName, maybeRedirect) match {
+            case (Some(name), Some(redirect)) => complete(hatdex.hat.phata.views.html.login(name, redirect, formattedHatConfiguration, Some("Invalid Credentials!")))
+            case _                            => complete(hatdex.hat.phata.views.html.simpleLogin(formattedHatConfiguration, Some("Invalid Credentials!")))
+          }
         }
       case Failure(e) =>
         deleteCookie("X-Auth-Token") {
-          complete {
-            logger.error(s"Error while authenticating: ${e.getMessage}")
-            hatdex.hat.phata.views.html.simpleLogin(formattedHatConfiguration, Some("Error while authenticating"))
+          (maybeName, maybeRedirect) match {
+            case (Some(name), Some(redirect)) => complete(hatdex.hat.phata.views.html.login(name, redirect, formattedHatConfiguration, Some("Server error while authenticating")))
+            case _                            => complete(hatdex.hat.phata.views.html.simpleLogin(formattedHatConfiguration, Some("Server error while authenticating")))
           }
         }
     }

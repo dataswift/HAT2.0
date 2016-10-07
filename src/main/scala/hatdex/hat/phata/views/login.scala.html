@@ -1,4 +1,4 @@
-@(loginServiceName: String, loginServiceUrl: String, parameters: Map[String, Map[String, String]])
+@(loginServiceName: String, loginServiceUrl: String, parameters: Map[String, Map[String, String]], maybeMessage: Option[String] = None)
 
 @menubarcontent = @{
     components.menubarLeft(None, parameters.get("hat").flatMap(_.get("hatName")), hatAddress = parameters.get("hat").flatMap(_.get("hatAddress")), tab = "login")
@@ -10,7 +10,7 @@
             <img src="/assets/images/haticon.png" class="img img-responsive">
         </div>
 
-        <h1 class="subtext">Please Log In</h1>
+        <h1 class="subtext">@maybeMessage.getOrElse("Please Log In")</h1>
 
         <form class="form" action="/" method="post">
             <input type="hidden" class="form-control" id="inputHatName" name="username" placeholder="HAT Name" value="@parameters.get("hat").flatMap(_.get("hatName"))">
