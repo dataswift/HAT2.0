@@ -342,7 +342,7 @@ trait DataService {
     Map(
       "id" -> record.id.get,
       "name" -> record.name,
-      "dateCreated" -> record.dateCreated,
+      "dateCreated" -> record.dateCreated.getOrElse(LocalDateTime.now()).toDateTime.toString(),
       "data" -> recordDataTables
     )
   }
