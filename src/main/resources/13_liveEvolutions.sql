@@ -165,3 +165,6 @@ UPDATE hat.applications SET logo_url = 'https://rumpel.hubofallthings.com/assets
 UPDATE hat.applications SET logo_url = 'https://rumpel.hubofallthings.com/assets/icons/photos-plug.svg', login_available = TRUE WHERE title = 'Photos';
 UPDATE hat.applications SET logo_url = 'https://rumpel.hubofallthings.com/assets/icons/location-plug.svg' WHERE title = 'RumpelLite';
 
+UPDATE hat.applications SET auth_url = '/hat/authenticate' WHERE title = 'Calendar';
+UPDATE hat.applications SET auth_url = '/hat/authenticate' WHERE title = 'Photos';
+

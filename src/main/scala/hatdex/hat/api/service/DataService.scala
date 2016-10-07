@@ -336,9 +336,15 @@ trait DataService {
   }
 
   def flattenRecordValues(record: ApiDataRecord): Map[String, Any] = {
-    Map(record.tables.getOrElse(Seq()).map { table =>
+    val recordDataTables = Map(record.tables.getOrElse(Seq()).map { table =>
       table.name -> flattenTableValues(table)
     }: _*)
+    Map(
+      "id" -> record.id.get,
+      "name" -> record.name,
+      "dateCreated" -> record.dateCreated,
+      "data" -> recordDataTables
+    )
   }
 
   /*
