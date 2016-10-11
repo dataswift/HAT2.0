@@ -54,6 +54,7 @@ h1, h2, h3, h4, h5 {
 
 .profile-img {
   padding: 1em;
+  color: white;
 }
 
 .btn-primary {
@@ -364,13 +365,17 @@ a.active {
   .icon {
     color: $base-active-color;
   }
+
+  &.item-wide {
+    width: 100%;
+  }
 }
 
 .box-square.aspect-ratio {
   padding-bottom: 100%;
 }
 
-.box-content {
+.grid-item .box-content {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -378,6 +383,11 @@ a.active {
   right: 0;
   padding: 2em; /* Optional padding for content area */
   overflow: hidden;
+}
+
+.grid-item.item-wide .box-content {
+  position: relative;
+  overflow: auto;
 }
 
 .box-content.box-photos {
@@ -431,11 +441,6 @@ a.active {
 
 .box-content.more-about-me {
   background: lighten(#2d2d2d, 70%);
-  color: $text-dark;
-}
-
-.box-content.notes {
-  background: lighten(#2d2d2d, 80%);
   color: $text-dark;
 }
 
@@ -698,3 +703,6 @@ a.active {
 }
 
 @import "login";
+
+@import "notables";
+

@@ -21,7 +21,7 @@
 
 package hatdex.hat.phata.service
 
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import hatdex.hat.FutureTransformations
 import hatdex.hat.api.models.{ApiDataTable, ProfileField}
 import hatdex.hat.api.service.BundleService
@@ -31,7 +31,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 trait UserProfileService extends BundleService {
-  val configuration = ConfigFactory.load()
+  val configuration: Config
 
   def getPublicProfile: Future[(Boolean, Map[String, Map[String, String]])] = {
     val eventualMaybeProfileTable = sourceDatasetTables(Seq(("rumpel", "profile")), None).map(_.headOption)

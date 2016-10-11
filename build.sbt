@@ -125,7 +125,8 @@ lazy val core = (project in file("."))
       "com.nimbusds" % "nimbus-jose-jwt" % jwtV,
       "org.bouncycastle" % "bcprov-jdk16" % "1.46",
       "org.apache.commons" % "commons-email" % "1.4",
-      "org.liquibase" % "liquibase-maven-plugin" % "3.5.1"
+      "org.liquibase" % "liquibase-maven-plugin" % "3.5.1",
+      "org.pegdown" % "pegdown" % "1.6.0"
     ),
     gentables := {
       val main = Project("root", file("."))

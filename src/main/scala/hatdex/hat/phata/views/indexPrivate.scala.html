@@ -1,4 +1,7 @@
-@(parameters: Map[String, Map[String, String]], maybeUser: Option[hatdex.hat.authentication.models.User] = None)
+@(
+        parameters: Map[String, Map[String, String]],
+        maybeUser: Option[hatdex.hat.authentication.models.User] = None
+)
 
 @hatname = @{parameters.get("hat").flatMap(_.get("hatName"))}
 
