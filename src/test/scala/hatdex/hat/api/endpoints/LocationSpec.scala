@@ -119,8 +119,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo Created
-          responseAs[String] must contain("id")
+          eventually {
+            response.status should be equalTo Created
+            responseAs[String] must contain("id")
+          }
         }
     }
 
@@ -133,8 +135,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo BadRequest
-          responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+          eventually {
+            response.status should be equalTo BadRequest
+            responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+          }
         }
 
       HttpRequest(POST, s"/location/${newLocation.id.get}/person/1")
@@ -142,8 +146,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo BadRequest
-          responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+          eventually {
+            response.status should be equalTo BadRequest
+            responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+          }
         }
 
       HttpRequest(POST, s"/location/${newLocation.id.get}/event/1")
@@ -151,8 +157,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo BadRequest
-          responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+          eventually {
+            response.status should be equalTo BadRequest
+            responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+          }
         }
     }
 
@@ -182,9 +190,11 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.thingValid)) ~>
         sealRoute(thingEndpoint.routes) ~>
         check {
-          response.status should be equalTo Created
-          responseAs[String] must contain("tv")
-          responseAs[ApiThing]
+          eventually {
+            response.status should be equalTo Created
+            responseAs[String] must contain("tv")
+            responseAs[ApiThing]
+          }
         }
 
       someThing.id must beSome
@@ -194,8 +204,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo Created //retuns BadRequest, should be Created
-          responseAs[String] must contain("id")
+          eventually {
+            response.status should be equalTo Created //retuns BadRequest, should be Created
+            responseAs[String] must contain("id")
+          }
         }
 
       HttpRequest(GET, s"/location/${newLocation.id.get}")
@@ -215,21 +227,27 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withHeaders(ownerAuthHeader)
         .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.locationBadName)) ~>
         sealRoute(routes) ~> check {
-          response.status should be equalTo BadRequest
+          eventually {
+            response.status should be equalTo BadRequest
+          }
         }
 
       HttpRequest(POST, s"/location/0/location/1}")
         .withHeaders(ownerAuthHeader)
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(routes) ~> check {
-          response.status should be equalTo NotFound
+          eventually {
+            response.status should be equalTo NotFound
+          }
         }
 
       HttpRequest(POST, s"/location/0/thing/0}")
         .withHeaders(ownerAuthHeader)
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(routes) ~> check {
-          response.status should be equalTo NotFound
+          eventually {
+            response.status should be equalTo NotFound
+          }
         }
     }
 
@@ -269,7 +287,9 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipType)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo Created
+          eventually {
+            response.status should be equalTo Created
+          }
         }
 
       HttpRequest(POST, s"/location/${newLocation.id.get}/type/0")
@@ -277,7 +297,9 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipType)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo BadRequest
+          eventually {
+            response.status should be equalTo BadRequest
+          }
         }
 
     }
