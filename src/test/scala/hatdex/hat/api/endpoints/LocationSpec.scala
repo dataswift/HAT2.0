@@ -193,8 +193,8 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
           eventually {
             response.status should be equalTo Created
             responseAs[String] must contain("tv")
-            responseAs[ApiThing]
           }
+          responseAs[ApiThing]
         }
 
       someThing.id must beSome
