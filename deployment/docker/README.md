@@ -4,7 +4,7 @@ Create the docker hat and hat-postgres images:
 
     deployment/docker/docker-build-images.sh
 
-Test both images (cautious that it stops and removes running docker images!):  
+Test both images (*WARNING that it stops and removes all hat docker images!*):  
 
     deployment/docker/docker-test-images.sh
 
@@ -26,6 +26,6 @@ Find the corresponding port with:
 
     docker ps
 
-And finally test in your browser (you might need to set port, username and password accordingly):
+And finally test in your browser or better still - postman (you might need to set port, username and password accordingly):
 
-    http://127.0.0.1:3003/data/sources?username=junior@gmail.com&password=junior
+    http://127.0.0.1:3003/users/access_token?username=junior@gmail.com&password=junior

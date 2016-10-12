@@ -112,8 +112,6 @@ class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll w
 
   "User Service" should {
     "Let Platform user create new users" in {
-      logger.info(s"Platform access token: $platformAccessToken")
-
       val user = HttpRequest(POST, "/users/user")
         .withHeaders(RawHeader("X-Auth-Token", platformAccessToken)) // platform user
         .withEntity(HttpEntity(MediaTypes.`application/json`, UserExamples.userExample)) ~>
@@ -193,6 +191,7 @@ class UsersSpec extends Specification with Specs2RouteTest with BeforeAfterAll w
       HttpRequest(GET, "/users/access_token")
         .withHeaders(RawHeader("username", "apiClient@platform.com"), RawHeader("password", "simplepass")) ~>
         sealRoute(routes) ~> check {
+        logger.info(s"User get token response: ${responseAs[String]}")
           response.status should be equalTo OK
           responseAs[String] must contain("accessToken")
         }

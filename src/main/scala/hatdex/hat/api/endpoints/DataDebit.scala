@@ -22,23 +22,25 @@ package hatdex.hat.api.endpoints
 
 import java.util.UUID
 
-import akka.actor.{ ActorRefFactory, ActorContext }
+import akka.actor.{ActorContext, ActorRefFactory}
 import akka.event.LoggingAdapter
 import hatdex.hat.api.DatabaseInfo
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
-import hatdex.hat.api.service.{ DataDebitOperations, StatsService, DataDebitService }
+import hatdex.hat.api.models.stats.DataDebitOperations
+import hatdex.hat.api.service.{DataDebitService, StatsService}
 import hatdex.hat.authentication.HatServiceAuthHandler
-import hatdex.hat.authentication.authorization.{ UserAuthorization, DataDebitAuthorization }
+import hatdex.hat.authentication.authorization.{DataDebitAuthorization, UserAuthorization}
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.Tables
-import org.joda.time.{ LocalDateTime, DateTime }
+import org.joda.time.{DateTime, LocalDateTime}
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
 import spray.routing._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{ Try, Failure, Success }
+import scala.util.{Failure, Success, Try}
 
 // this trait defines our service behavior independently from the service actor
 trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHandler with StatsService {
@@ -48,9 +50,10 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
   val logger: LoggingAdapter
   def actorRefFactory: ActorRefFactory
 
-  val routes = {
+  def routes = {
     pathPrefix("dataDebit") {
       proposeDataDebitApi ~
+        getDataDebit ~
         retrieveDataDebitValuesApi ~
         listDataDebitsApi ~
         enableDataDebitApi ~
@@ -96,7 +99,10 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
     val eventualDataDebit = storeContextDataDebit(debit, bundle)
     eventualDataDebit map { createdDebit =>
       recordDataDebitOperation(createdDebit, user, DataDebitOperations.Create(), "Contextual Data Debit created")
-        .recover { case e => logger.error(s"Error while recording data debit operation: ${e.getMessage}") }
+        .recover { case e =>
+          logger.error(s"Error while recording data debit operation: ${e.getMessage}")
+            throw e
+        }
     }
     onComplete(eventualDataDebit) {
       case Success(createdDebit: ApiDataDebit) => complete((Created, createdDebit))
@@ -230,6 +236,28 @@ trait DataDebit extends HttpService with DataDebitService with HatServiceAuthHan
           case e => logger.error(s"Error while recording data debit operation: ${e.getMessage}")
         }
         values
+    }
+  }
+
+  def getDataDebit = path(JavaUUID) { dataDebitKey: UUID =>
+    get {
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner", "platform")) {
+          val eventualDebit = for {
+            maybeDataDebit <- findDataDebitByKey(dataDebitKey)
+          } yield {
+            maybeDataDebit.map(ApiDataDebit.fromDbModel)
+          }
+
+          onComplete(eventualDebit) {
+            case Success(None)                 => complete((NotFound, ErrorMessage("DataDebit not Found", s"Data Debit $dataDebitKey not found")))
+            case Success(Some(debit))          => complete((OK, debit))
+            case Failure(e: SecurityException) => complete((Forbidden, ErrorMessage("Forbidden", e.getMessage)))
+            case Failure(e)                    => complete((BadRequest, ErrorMessage("Error enabling DataDebit", e.getMessage)))
+          }
+
+        }
+      }
     }
   }
 

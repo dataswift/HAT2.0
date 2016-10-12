@@ -21,6 +21,7 @@
 package hatdex.hat
 
 import scala.collection.immutable.HashMap
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{ Failure, Success, Try }
 
 object Utils {
@@ -56,3 +57,12 @@ object Utils {
       a + (if (a.contains(kv._1)) kv._1 -> f(a(kv._1), kv._2) else kv)
     }
 }
+
+object FutureTransformations {
+  def transform[A](o: Option[Future[A]])(implicit ec: ExecutionContext): Future[Option[A]] =
+    o.map(f => f.map(Option(_))).getOrElse(Future.successful(None))
+
+  def transform[A](o: Option[Future[Option[A]]]): Future[Option[A]] =
+    o.getOrElse(Future.successful(None))
+}
+

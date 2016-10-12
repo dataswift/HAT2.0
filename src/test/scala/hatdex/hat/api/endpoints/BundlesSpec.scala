@@ -22,12 +22,13 @@
 package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
-import hatdex.hat.api.{TestFixtures, DatabaseInfo, TestDataCleanup}
+import hatdex.hat.api.actors.DalExecutionContext
+import hatdex.hat.api.{DatabaseInfo, TestDataCleanup, TestFixtures}
 import hatdex.hat.api.endpoints.jsonExamples.BundleExamples
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
+import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
@@ -40,10 +41,11 @@ import spray.http._
 import spray.json._
 import spray.testkit.Specs2RouteTest
 import spray.httpx.SprayJsonSupport._
-import scala.concurrent.{ Await, Future }
+
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
-class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll with Bundles {
+class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll with Bundles with DalExecutionContext {
   def actorRefFactory = system
   val logger: LoggingAdapter = system.log
 
@@ -66,7 +68,7 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
 
   // Clean up all data
   def afterAll() = {
-//    TestDataCleanup.cleanupAll
+    //    TestDataCleanup.cleanupAll
   }
 
   sequential
@@ -81,13 +83,13 @@ class BundlesSpec extends Specification with Specs2RouteTest with BeforeAfterAll
         check {
           eventually {
             val responseString = responseAs[String]
-                        logger.info(s"Bundle create response: $responseString")
+            logger.debug(s"Bundle create response: $responseString")
             response.status should be equalTo Created
           }
           responseAs[ApiBundleContextless]
         }
 
-      logger.info(s"Looking up bundle id ${cBundle.id}")
+      logger.debug(s"Looking up bundle id ${cBundle.id}")
 
       HttpRequest(GET, s"/bundles/contextless/${cBundle.id.get}")
         .withHeaders(ownerAuthHeader) ~>

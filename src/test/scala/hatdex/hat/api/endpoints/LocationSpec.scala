@@ -23,17 +23,18 @@ package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.api.endpoints.jsonExamples.{ DataExamples, EntityExamples }
+import hatdex.hat.api.actors.DalExecutionContext
+import hatdex.hat.api.endpoints.jsonExamples.{DataExamples, EntityExamples}
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
+import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
-import org.specs2.specification.{ BeforeAfterAll, Scope }
+import org.specs2.specification.{BeforeAfterAll, Scope}
 import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
-import spray.http.{ HttpEntity, HttpRequest, MediaTypes }
+import spray.http.{HttpEntity, HttpRequest, MediaTypes}
 import spray.httpx.SprayJsonSupport._
 import spray.json._
 import spray.testkit.Specs2RouteTest
@@ -41,18 +42,18 @@ import spray.testkit.Specs2RouteTest
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-class LocationSpec extends Specification with Specs2RouteTest with Location with BeforeAfterAll {
+class LocationSpec extends Specification with Specs2RouteTest with Location with BeforeAfterAll with DalExecutionContext {
   def actorRefFactory = system
 
   val logger: LoggingAdapter = system.log
 
-  val thingEndpoint = new Thing {
+  val thingEndpoint = new Thing with DalExecutionContext {
     def actorRefFactory = system
     override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
     val logger: LoggingAdapter = system.log
   }
 
-  val typeEndpoint = new Type {
+  val typeEndpoint = new Type with DalExecutionContext {
     def actorRefFactory = system
     override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
     val logger: LoggingAdapter = system.log
@@ -118,8 +119,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo Created
-          responseAs[String] must contain("id")
+          eventually {
+            response.status should be equalTo Created
+            responseAs[String] must contain("id")
+          }
         }
     }
 
@@ -132,8 +135,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo BadRequest
-          responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+          eventually {
+            response.status should be equalTo BadRequest
+            responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+          }
         }
 
       HttpRequest(POST, s"/location/${newLocation.id.get}/person/1")
@@ -141,8 +146,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo BadRequest
-          responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+          eventually {
+            response.status should be equalTo BadRequest
+            responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+          }
         }
 
       HttpRequest(POST, s"/location/${newLocation.id.get}/event/1")
@@ -150,8 +157,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo BadRequest
-          responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+          eventually {
+            response.status should be equalTo BadRequest
+            responseAs[ErrorMessage].cause must contain("Operation Not Supprted")
+          }
         }
     }
 
@@ -181,8 +190,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.thingValid)) ~>
         sealRoute(thingEndpoint.routes) ~>
         check {
-          response.status should be equalTo Created
-          responseAs[String] must contain("tv")
+          eventually {
+            response.status should be equalTo Created
+            responseAs[String] must contain("tv")
+          }
           responseAs[ApiThing]
         }
 
@@ -193,8 +204,10 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo Created //retuns BadRequest, should be Created
-          responseAs[String] must contain("id")
+          eventually {
+            response.status should be equalTo Created //retuns BadRequest, should be Created
+            responseAs[String] must contain("id")
+          }
         }
 
       HttpRequest(GET, s"/location/${newLocation.id.get}")
@@ -214,21 +227,27 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withHeaders(ownerAuthHeader)
         .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.locationBadName)) ~>
         sealRoute(routes) ~> check {
-          response.status should be equalTo BadRequest
+          eventually {
+            response.status should be equalTo BadRequest
+          }
         }
 
       HttpRequest(POST, s"/location/0/location/1}")
         .withHeaders(ownerAuthHeader)
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(routes) ~> check {
-          response.status should be equalTo NotFound
+          eventually {
+            response.status should be equalTo NotFound
+          }
         }
 
       HttpRequest(POST, s"/location/0/thing/0}")
         .withHeaders(ownerAuthHeader)
         .withEntity(HttpEntity(MediaTypes.`application/json`, DataExamples.relationshipParent)) ~>
         sealRoute(routes) ~> check {
-          response.status should be equalTo NotFound
+          eventually {
+            response.status should be equalTo NotFound
+          }
         }
     }
 
@@ -268,7 +287,9 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipType)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo Created
+          eventually {
+            response.status should be equalTo Created
+          }
         }
 
       HttpRequest(POST, s"/location/${newLocation.id.get}/type/0")
@@ -276,17 +297,21 @@ class LocationSpec extends Specification with Specs2RouteTest with Location with
         .withEntity(HttpEntity(MediaTypes.`application/json`, EntityExamples.relationshipType)) ~>
         sealRoute(routes) ~>
         check {
-          response.status should be equalTo BadRequest
+          eventually {
+            response.status should be equalTo BadRequest
+          }
         }
 
     }
 
-    object Context {
+    val testLogger = logger
+    object Context extends DataSpecContextMixin with DalExecutionContext {
+      val logger: LoggingAdapter = testLogger
+      def actorRefFactory = system
       val propertySpec = new PropertySpec()
       val property = propertySpec.createWeightProperty
-      val dataSpec = new DataSpec()
-      dataSpec.createBasicTables
-      val populatedData = dataSpec.populateDataReusable
+      createBasicTables
+      val populatedData = populateDataReusable
     }
 
     class Context extends Scope {

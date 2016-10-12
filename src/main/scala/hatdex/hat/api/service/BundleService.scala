@@ -28,16 +28,17 @@ import hatdex.hat.api.models._
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
-import spray.json.{ JsonParser, _ }
+import spray.json.{JsonParser, _}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 // this trait defines our service behavior independently from the service actor
 trait BundleService extends DataService {
 
   val logger: LoggingAdapter
   def actorRefFactory: ActorRefFactory
+  implicit val dalExecutionContext: ExecutionContext
+
   import JsonProtocol._
 
   protected[api] def storeBundleContextless(bundle: ApiBundleContextless): Future[ApiBundleContextless] = {
@@ -241,7 +242,7 @@ trait BundleService extends DataService {
 
   protected[api] def sourceDatasetTables(sourceDatasets: Seq[(String, String)], maybeFieldsRequested: Option[Seq[FieldRequested]]): Future[Seq[ApiDataTable]] = {
     // Get All Data Table trees matchinf source and name
-    val dataTableTrees = sourceDatasets.map {
+    val dataTableTreesQuery = sourceDatasets.map {
       case (source, dataset) =>
         for {
           rootTable <- DataTableTree.filter(_.sourceName === source).filter(_.name === dataset)
@@ -251,9 +252,13 @@ trait BundleService extends DataService {
       q ++ tree
     }
 
-    val eventualRoots = DatabaseInfo.db.run(dataTableTrees.map(_._1.id).result) map { roots => roots.flatten.toSet }
+    val eventualRoots = DatabaseInfo.db.run {
+      dataTableTreesQuery.map(_._1.id).result
+    } map { roots =>
+      roots.flatten.toSet
+    }
     eventualRoots flatMap { roots =>
-      buildDataTreeStructures(dataTableTrees.map(_._2), roots)
+      buildDataTreeStructures(dataTableTreesQuery.map(_._2), roots)
     }
   }
 }

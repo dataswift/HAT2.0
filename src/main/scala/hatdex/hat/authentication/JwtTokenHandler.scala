@@ -73,16 +73,12 @@ trait JwtTokenHandler {
     val maybeToken = fetchToken(user, resource, accessScope, validity)
 
     maybeToken flatMap {
-      case Some(token) if validateJwtToken(token.accessToken) => Future.successful(token)
+      case Some(token) if validateJwtToken(token.accessToken) && verifyAccessScope(token.accessToken, accessScope) => Future.successful(token)
       case _ => getToken(user, resource, accessScope, validity)
     }
   }
 
-  def fetchToken(
-    user: User,
-    resource: String,
-    accessScope: String = "validate",
-    validity: Duration = standardHours(2)): Future[Option[AccessToken]] = {
+  def fetchToken(user: User, resource: String, accessScope: String, validity: Duration): Future[Option[AccessToken]] = {
     val tokenQuery = UserAccessToken.filter(_.userId === user.userId)
       .filter(_.resource === resource)
       .filter(_.scope === accessScope)
@@ -90,30 +86,27 @@ trait JwtTokenHandler {
     eventualToken map { _.map(token => AccessToken(token.accessToken, token.userId)) }
   }
 
-  def getToken(
-    user: User,
-    resource: String,
-    accessScope: String = "validate",
-    validity: Duration = standardHours(2)): Future[AccessToken] = {
+  def getToken(user: User, resource: String, accessScope: String, validity: Duration): Future[AccessToken] = {
     val tokenQuery = UserAccessToken.filter(_.userId === user.userId)
       .filter(_.resource === resource)
       .filter(_.scope === accessScope)
-    val newAccessToken = UserAccessTokenRow(
-      getJwtToken(user.userId, resource, accessScope, validity),
-      user.userId, accessScope, resource)
+
+    val jwtToken = generateJwtToken(user.userId, resource, accessScope, validity)
+    val newAccessToken = UserAccessTokenRow(jwtToken, user.userId, accessScope, resource)
+
     val newTokenQuery = for {
       _ <- tokenQuery.delete
       token <- UserAccessToken += newAccessToken
     } yield token
 
-      DatabaseInfo.db.run(newTokenQuery.transactionally.asTry) map {
-        case Success(_) => AccessToken(newAccessToken.accessToken, user.userId)
-        case Failure(e) => throw ApiError(InternalServerError, ErrorMessage("Error while creating access_token, please try again later", e.getMessage))
-      }
+    DatabaseInfo.db.run(newTokenQuery.transactionally.asTry) map {
+      case Success(_) => AccessToken(newAccessToken.accessToken, user.userId)
+      case Failure(e) => throw ApiError(InternalServerError, ErrorMessage("Error while creating access_token, please try again later", e.getMessage))
+    }
 
   }
 
-  private def getJwtToken(userId: UUID, resource: String, accessScope: String, validity: Duration): String = {
+  private def generateJwtToken(userId: UUID, resource: String, accessScope: String, validity: Duration): String = {
     val issuedAt = new DateTime()
     val expiresAt = issuedAt.plus(validity)
 
@@ -126,6 +119,7 @@ trait JwtTokenHandler {
       .expirationTime(expiresAt.toDate)
       .claim("resource", resource)
       .claim("accessScope", accessScope)
+      .claim("client", userId.toString)
     val claimsSet = builder.build()
 
     val signedJWT: SignedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.RS256), claimsSet)

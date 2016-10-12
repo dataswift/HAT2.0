@@ -9,6 +9,7 @@ branches:
   only:
     - master
     - testing
+    - dev
 
 addons:
   postgresql: "9.4"
@@ -23,7 +24,7 @@ before_script:
   - source ./env.sh
   - bash ./setupDatabase.sh
   - bash ./setupAccess.sh
-  - bash ./applyEvolutions.sh -c structuresonly data
+  - bash ./applyEvolutions.sh -c structuresonly,testdata
   - cd ../
   - sed -e "s;%DATABASE%;$DATABASE;g" -e "s;%DBUSER%;$DBUSER;g" -e "s;%DBPASS%;$DBPASS;g" deployment/database.conf.template > src/main/resources/database.conf
   - cp ./src/main/resources/database.conf ./codegen/src/main/resources/database.conf

@@ -26,11 +26,13 @@ import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{ Failure, Success }
+import scala.concurrent.{ExecutionContext, Future}
+
+import scala.util.{Failure, Success}
 
 trait PropertyService extends DataService {
+
+  implicit val dalExecutionContext: ExecutionContext
 
   def getPropertyRelationshipValues(propertyRel: ApiPropertyRelationshipStatic): Future[ApiPropertyRelationshipStatic] = {
     // For each property relationship (should only ever be one)

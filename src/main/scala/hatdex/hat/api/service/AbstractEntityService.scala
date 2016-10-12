@@ -28,12 +28,12 @@ import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import spray.routing
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait AbstractEntityService {
   val entityKind: String
   val logger: LoggingAdapter
+  implicit val dalExecutionContext: ExecutionContext
 
   protected def createEntity: routing.Route
 

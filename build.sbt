@@ -12,7 +12,21 @@ parallelExecution in Test := false
 
 publishArtifact in Test := false
 
-scalacOptions in (Compile, doc) ++= Seq("-unchecked", /*"-deprecation", */ "-implicits", "-skip-packages", "samples")
+scalacOptions ++= Seq(
+  "-deprecation", // Emit warning and location for usages of deprecated APIs.
+  "-feature", // Emit warning and location for usages of features that should be imported explicitly.
+  "-unchecked", // Enable additional warnings where generated code depends on assumptions.
+  //"-Xfatal-warnings", // Fail the compilation if there are any warnings.
+  "-Xlint", // Enable recommended additional warnings.
+  "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver.
+  "-Ywarn-dead-code", // Warn when dead code is identified.
+  "-Ywarn-inaccessible", // Warn about inaccessible types in method signatures.
+  "-Ywarn-nullary-override", // Warn when non-nullary overrides nullary, e.g. def foo() over def foo.
+  "-Ywarn-numeric-widen", // Warn when numerics are widened.
+  "-language:reflectiveCalls",
+  "-language:postfixOps", // Postfix operators allowed
+  "-language:implicitConversions" // Allow for implicit conversions
+)
 
 logLevel := Level.Info
 
@@ -24,13 +38,14 @@ val logbackV = "1.1.2"
 val slickV = "3.1.1"
 val slick_pgV = "0.14.2"
 val jwtV = "4.22"
+val postgresV = "9.4-1206-jdbc4"
 
 lazy val commonSettings = Seq(
-  scalaVersion := "2.11.6",
+  scalaVersion := "2.11.8",
   libraryDependencies ++= Seq(
     "com.typesafe.slick" %% "slick" % slickV,
     "com.typesafe.slick" %% "slick-hikaricp" % slickV,
-    "org.postgresql" % "postgresql" % "9.4-1206-jdbc4",
+    "org.postgresql" % "postgresql" % postgresV,
     "com.github.tminglei" % "slick-pg_core_2.11" % slick_pgV,
     "com.github.tminglei" %% "slick-pg" % slick_pgV,
     "com.github.tminglei" %% "slick-pg_joda-time" % slick_pgV,
@@ -71,7 +86,7 @@ lazy val codegen = (project in file("codegen")).
       val fname = outputDir + "/" + pkg.replace('.', '/') + "/Tables.scala"
       Seq(file(fname))
     },
-    cleanFiles <+= baseDirectory { base => base / "../src/main/scala/hatdex/hat/dal/" }
+    cleanFiles <+= baseDirectory { base => base / "../src/main/scala/hatdex/hat/dal/Tables.scala" }
   )
 
 //slick <<= slickCodeGenTask
@@ -109,7 +124,9 @@ lazy val core = (project in file("."))
       "org.mindrot" % "jbcrypt" % "0.3m",
       "com.nimbusds" % "nimbus-jose-jwt" % jwtV,
       "org.bouncycastle" % "bcprov-jdk16" % "1.46",
-      "org.apache.commons" % "commons-email" % "1.4"
+      "org.apache.commons" % "commons-email" % "1.4",
+      "org.liquibase" % "liquibase-maven-plugin" % "3.5.1",
+      "org.pegdown" % "pegdown" % "1.6.0"
     ),
     gentables := {
       val main = Project("root", file("."))
@@ -124,6 +141,15 @@ lazy val core = (project in file("."))
     publishArtifact in(Compile, packageDoc) := false
   )
   .dependsOn("codegen")
+  .enablePlugins(SbtWeb)
+  .enablePlugins(SbtSassify)
+    .settings(
+      pipelineStages := Seq(uglify),
+      sourceDirectory in Assets := baseDirectory.value / "src" / "main" / "assets",
+      fullClasspath in reStart += baseDirectory.value / "src" / "main" / "assets",
+      javaOptions in reStart += "-Xmx500m",
+      javaOptions in reStart += "-Xms100m"
+    )
   .enablePlugins(SbtTwirl)
   .settings(
     aggregate in update := false,

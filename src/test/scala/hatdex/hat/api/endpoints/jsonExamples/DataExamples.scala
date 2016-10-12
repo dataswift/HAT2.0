@@ -48,7 +48,7 @@ object DataExamples {
   val testField =
     """
       |{
-      | "name": "tableTestField",
+      | "name": "tableTestField0",
       | "tableId": 0
       |}
     """.stripMargin

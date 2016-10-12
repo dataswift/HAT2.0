@@ -26,8 +26,7 @@ import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 // this trait defines our service behavior independently from the service actor
 trait PeopleService extends AbstractEntityService with PropertyService {

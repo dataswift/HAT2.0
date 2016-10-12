@@ -33,6 +33,7 @@ import hatdex.hat.dal.Tables._
 import org.joda.time.Duration._
 
 import org.joda.time.{ LocalDateTime }
+import spray.http.MediaTypes._
 import spray.http.StatusCode
 import spray.http.StatusCodes._
 import spray.httpx.SprayJsonSupport._
@@ -51,13 +52,13 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
 
   val routes = {
     pathPrefix("users") {
-      createApiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount ~ validateAccessToken
+      apiUserAccount ~ getAccessToken ~ enableUserAccount ~ suspendUserAccount ~ validateAccessToken ~ getAppLoginToken
     }
   }
 
   import hatdex.hat.api.json.JsonProtocol._
 
-  def createApiUserAccount = path("user") {
+  def apiUserAccount = path("user") {
     accessTokenHandler { implicit systemUser: User =>
       authorize(UserAuthorization.withRole("owner", "platform")) {
         post {
@@ -92,6 +93,17 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
               case Failure(e: ApiError)         => complete((e.statusCode, e.message))
               case Failure(e)                   => complete((InternalServerError, ErrorMessage("Error while creating user", "Unknown error occurred")))
             }
+          }
+        } ~ get {
+          val fUsers = DatabaseInfo.db.run {
+            UserUser.result
+          } map { users =>
+            users.map(User.fromDbModel)
+          }
+          onComplete(fUsers) {
+            case Success(users)       => complete((OK, users))
+            case Failure(e: ApiError) => complete((e.statusCode, e.message))
+            case Failure(e)           => complete((InternalServerError, ErrorMessage("Error while creating user", "Unknown error occurred")))
           }
         }
       }
@@ -132,11 +144,12 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
     }
   }
 
+  private val standardTokenValidity = standardHours(2)
   def getAccessToken = path("access_token") {
     // Any password-authenticated user (not only owner)
     userPassHandler { implicit user: User =>
       get {
-        val response = fetchOrGenerateToken(user, issuer, accessScope = user.role, validity = standardHours(2))
+        val response = fetchOrGenerateToken(user, issuer, accessScope = user.role, validity = standardTokenValidity)
         onComplete(response) {
           case Success(value) => complete((OK, value))
           case Failure(e: ApiError) =>
@@ -150,10 +163,44 @@ trait Users extends HttpService with HatServiceAuthHandler with JwtTokenHandler 
     }
   }
 
+  def getAppLoginToken = path("application_token") {
+    get {
+      accessTokenHandler { implicit user: User => // Allow owner to fetch validation tokens
+        authorize(UserAuthorization.withRole("owner")) {
+          parameters('name, 'resource) { (name: String, resource: String) =>
+            logger.info(s"Getting access token for $name - $resource")
+            val eventuallyFreshToken = fetchOrGenerateToken(user, resource = resource, "validate", validity = standardTokenValidity)
+
+            onComplete(eventuallyFreshToken) {
+              case Success(value) => complete((OK, value))
+              case Failure(e: ApiError) =>
+                logger.error(s"API Error while fetching Access Token: ${e.message}")
+                complete((e.statusCode, e.message))
+              case Failure(e) =>
+                logger.error(s"Unexpected Error while fetching Access Token: ${e.getMessage}")
+                complete((InternalServerError, ErrorMessage("Error while retrieving access token", "Unknown error occurred")))
+            }
+          }
+        }
+      }
+
+    }
+  }
+
   def validateAccessToken = path("access_token" / "validate") {
     get {
       accessTokenHandler { implicit systemUser: User =>
         complete((OK, SuccessResponse("Authenticated")))
+      }
+    }
+  }
+
+  def getPublicKey = path("publickey") {
+    get {
+      respondWithMediaType(`text/plain`) {
+        complete {
+          conf.getString("auth.publicKey")
+        }
       }
     }
   }

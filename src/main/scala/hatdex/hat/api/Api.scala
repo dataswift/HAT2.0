@@ -26,20 +26,21 @@ import hatdex.hat.api.endpoints._
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models.ErrorMessage
 import hatdex.hat.authentication.HatServiceAuthHandler
+import hatdex.hat.phata.Phata
 import spray.http.MediaTypes._
 import spray.http.StatusCodes._
 import spray.http._
 import spray.httpx.SprayJsonSupport._
 import spray.httpx.marshalling
 import spray.routing.directives.LogEntry
-import spray.routing.{HttpService, MalformedRequestContentRejection, Rejected, RejectionHandler}
+import spray.routing._
 import spray.util.LoggingContext
 
 trait Api extends HttpService with Cors {
   implicit def actorRefFactory: ActorRefFactory
 
   // Initialise all the service the actor handles
-  def helloService: Hello
+  def helloService: Phata
   def apiDataService: Data
   def apiBundleService: Bundles
   def apiBundlesContextService: BundlesContext
@@ -73,10 +74,13 @@ trait Api extends HttpService with Cors {
       }
   }
 
+  override def timeoutRoute: Route = complete((InternalServerError, ErrorMessage("Timeout.", "")))
+
   // Concatenate all the handled routes
   def routes = handleRejections(jsonRejectionHandler) {
     cors {
       helloService.routes ~
+      userService.getPublicKey ~
         respondWithMediaType(`application/json`) {
           apiDataService.routes ~
             apiPropertyService.routes ~

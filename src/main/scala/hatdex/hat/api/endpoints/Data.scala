@@ -47,7 +47,7 @@ trait Data extends HttpService with DataService with StatsService with HatServic
   val db = DatabaseInfo.db
   def actorRefFactory: ActorRefFactory
 
-  val routes = {
+  def routes = {
     pathPrefix("data") {
       getFieldApi ~
         getFieldValuesApi ~
@@ -63,7 +63,11 @@ trait Data extends HttpService with DataService with StatsService with HatServic
         createRecordApi ~
         createRecordValuesApi ~
         createValueApi ~
-        storeValueListApi
+        storeValueListApi ~
+        deleteDataValueApi ~
+        deleteDataFieldApi ~
+        deleteDataRecordApi ~
+        deleteDataTableApi
     }
   }
 
@@ -139,7 +143,12 @@ trait Data extends HttpService with DataService with StatsService with HatServic
                 case _ => Future.failed(new IllegalArgumentException("No such table found"))
               }
 
-              onComplete(tables) {
+              val eventualTableStructures = tables flatMap { tables =>
+                val eventualStructures = tables.flatMap(t => t.id.map(getTableStructure))
+                Future.sequence(eventualStructures).map(_.flatten)
+              }
+
+              onComplete(eventualTableStructures) {
                 case Success(createdTables) if createdTables.size > 1  => complete { (OK, createdTables) }
                 case Success(createdTables) if createdTables.size == 1 => complete { (OK, createdTables.head) }
                 case Success(createdTables) if createdTables.isEmpty   => complete { (NotFound, ErrorMessage("Table not found", s"No tables matching filters found")) }
@@ -165,12 +174,15 @@ trait Data extends HttpService with DataService with StatsService with HatServic
 
               val maybeFlatRecords = if (pretty) {
                 eventualRecordValues.map { records =>
-                  val temp = records.map(flattenRecordValues)
-                  temp.toJson.toString
+                  records.map(flattenRecordValues)
+                    .toJson
+                    .toString
                 }
               }
               else {
-                eventualRecordValues.map(_.toJson.toString)
+                eventualRecordValues.map { records =>
+                  records.toJson.toString
+                }
               }
 
               onComplete(maybeFlatRecords) {
@@ -353,6 +365,22 @@ trait Data extends HttpService with DataService with StatsService with HatServic
           }
         }
       }
+    } ~ put {
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner")) {
+          entity(as[ApiDataValue]) { value =>
+            val eventualValues = updateValue(value)
+            eventualValues map {
+              case insertedValue =>
+                recordDataValuesInbound(Seq(insertedValue), user, s"Single data value updated")
+            }
+            onComplete(eventualValues) {
+              case Success(insertedValue) => complete { (Created, insertedValue) }
+              case Failure(e)             => complete { (BadRequest, ErrorMessage("Error storing value", e.getMessage)) }
+            }
+          }
+        }
+      }
     }
   }
 
@@ -379,9 +407,61 @@ trait Data extends HttpService with DataService with StatsService with HatServic
       accessTokenHandler { implicit user: User =>
         authorize(UserAuthorization.withRole("owner", "platform", "dataCredit")) {
           logger.debug("GET /sources")
-          onComplete(getDataSources()) {
+          onComplete(dataSources()) {
             case Success(dataSources) => complete { (OK, dataSources) }
             case Failure(e)           => complete { (InternalServerError, ErrorMessage("Internal Server Error", e.getMessage)) }
+          }
+        }
+      }
+    }
+  }
+
+  def deleteDataValueApi = path("value" / IntNumber) { (valueId: Int) =>
+    delete {
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner", "dataCredit")) {
+          onComplete(deleteValue(valueId)) {
+            case Success(_) => complete { (OK, SuccessResponse(s"Value $valueId deleted")) }
+            case Failure(e) => complete { (InternalServerError, ErrorMessage("Internal Server Error", e.getMessage)) }
+          }
+        }
+      }
+    }
+  }
+
+  def deleteDataFieldApi = path("field" / IntNumber) { (fieldId: Int) =>
+    delete {
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner", "dataCredit")) {
+          onComplete(deleteField(fieldId)) {
+            case Success(_) => complete { (OK, SuccessResponse(s"Field $fieldId deleted")) }
+            case Failure(e) => complete { (InternalServerError, ErrorMessage("Internal Server Error", e.getMessage)) }
+          }
+        }
+      }
+    }
+  }
+
+  def deleteDataTableApi = path("table" / IntNumber) { (tableId: Int) =>
+    delete {
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner", "dataCredit")) {
+          onComplete(deleteTable(tableId)) {
+            case Success(_) => complete { (OK, SuccessResponse(s"Table $tableId deleted")) }
+            case Failure(e) => complete { (InternalServerError, ErrorMessage("Internal Server Error", e.getMessage)) }
+          }
+        }
+      }
+    }
+  }
+
+  def deleteDataRecordApi = path("record" / IntNumber) { (recordId: Int) =>
+    delete {
+      accessTokenHandler { implicit user: User =>
+        authorize(UserAuthorization.withRole("owner", "dataCredit")) {
+          onComplete(deleteRecord(recordId)) {
+            case Success(_) => complete { (OK, SuccessResponse(s"Record $recordId deleted")) }
+            case Failure(e) => complete { (InternalServerError, ErrorMessage("Internal Server Error", e.getMessage)) }
           }
         }
       }

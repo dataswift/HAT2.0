@@ -1,0 +1,20 @@
+@(maybeUser: Option[hatdex.hat.authentication.models.User] = None, hatName: Option[String] = None)
+
+<nav class="navbar">
+    <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <a class="navbar-brand navbar-brand-main" href="http://hatdex.org"><img src="/assets/images/HATDeX-text.png" alt="HATDeX" class="img"></a>
+        </div>
+        <ul class="nav navbar-nav navbar-right">
+        @maybeUser.map { user =>
+        <li><a href="/">Welcome back, @user.name</a></li>
+        <li><a href="/logout">Sign Out</a></li>
+        <li><a href="/password">Change Password</a></li>
+        }.getOrElse {
+            <li><a href="/signin">Sign In</a></li>
+        }
+        </ul>
+
+    </div>
+</nav>

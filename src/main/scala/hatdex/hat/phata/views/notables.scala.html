@@ -1,0 +1,71 @@
+@(
+        parameters: Map[String, Map[String, String]],
+        maybeUser: Option[hatdex.hat.authentication.models.User] = None,
+        selectedNotable: Option[hatdex.hat.phata.models.Notable],
+        notables: Seq[hatdex.hat.phata.models.Notable]
+)
+
+@meta = {
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@@thehatdex">
+    <meta name="twitter:title" content="Personal HAT page @parameters.get("hat").flatMap(_.get("hatName"))">
+    <meta name="twitter:description" content="Welcome to my HAT">
+    <meta name="twitter:image:src" content="https://@parameters.get("hat").map(_.getOrElse("hatAddress", ""))/assets/images/HAT_logo_mydata.png">
+    <meta name="twitter:domain" content="https://@parameters.get("hat").map(_.getOrElse("hatAddress", ""))">
+    <meta property="og:url" content="https://@parameters.get("hat").map(_.getOrElse("hatAddress", ""))" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Personal HAT page @parameters.get("hat").flatMap(_.get("hatName"))" />
+    <meta property="og:description" content="Welcome to my HAT" />
+    <meta property="og:image" content="https://@parameters.get("hat").map(_.getOrElse("hatAddress", ""))/assets/images/HAT_logo_mydata.png" />
+    <meta property="og:site_name" content="HAT" />
+    <meta property="og:app_id" content="158753364485419" />
+
+}
+
+@hatname = @{
+    parameters.get("hat").flatMap(_.get("hatName"))
+}
+
+@menubarcontent = @{
+    components.menubarLeft(None, hatname, hatAddress = parameters.get("hat").flatMap(_.get("hatAddress")), tab = "notables")
+}
+
+@notablesscripts = {
+    <script>
+            $(".notable-item").click(function () {
+                var id = $(".header-content", this).data("id");
+                window.location.href = "/notables?id=" + id;
+            })
+    </script>
+}
+
+
+@main("Welcome to the HAT", maybeUser, hatName = hatname, menubarContent = menubarcontent, meta = meta, scripts = notablesscripts) {
+    <div class="grid">
+        @selectedNotable.map { note =>
+            <div class="wrapper grid-item item-wide">
+                @*<div class="box-square aspect-ratio"></div>*@
+                <div class="box-content notable-full-view" id="notable-full-view">
+                    <h1><span class="icon ss-write"></span>&nbsp;Notable <span class="notable-id">@note.id</span></h1>
+                    @components.notable(note)
+                </div>
+            </div>
+        }
+        <div class="wrapper grid-item item-wide">
+            @*<div class="box-square aspect-ratio"></div>*@
+            <div class="box-content notes">
+                <h1><span class="icon ss-write"></span>&nbsp;My Public Notables</h1>
+                @notables.map { note =>
+                    @if(selectedNotable.map(_.id).contains(note.id)) {
+                        <div class="active">
+                        @components.notable(note)
+                        </div>
+                    } else {
+                        @components.notable(note)
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+}

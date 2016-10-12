@@ -23,21 +23,22 @@ package hatdex.hat.api.endpoints
 
 import java.util.UUID
 
-import akka.actor.{ ActorSystem, ActorRefFactory }
+import akka.actor.{ActorRefFactory, ActorSystem}
 import akka.event.LoggingAdapter
-import hatdex.hat.api.{TestFixtures, DatabaseInfo, TestDataCleanup}
-import hatdex.hat.api.endpoints.jsonExamples.{ BundleExamples, DataDebitExamples }
+import hatdex.hat.api.actors.DalExecutionContext
+import hatdex.hat.api.{DatabaseInfo, TestDataCleanup, TestFixtures}
+import hatdex.hat.api.endpoints.jsonExamples.{BundleExamples, DataDebitExamples}
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
-import hatdex.hat.authentication.{ TestAuthCredentials, HatAuthTestHandler }
-import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
+import hatdex.hat.authentication.{HatAuthTestHandler, TestAuthCredentials}
+import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import hatdex.hat.authentication.models.User
 import hatdex.hat.dal.SlickPostgresDriver.api._
 import hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import org.mindrot.jbcrypt.BCrypt
 import org.specs2.mutable.Specification
-import org.specs2.specification.{ BeforeAfterAll, Scope }
+import org.specs2.specification.{BeforeAfterAll, Scope}
 import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
@@ -49,20 +50,18 @@ import spray.httpx.SprayJsonSupport._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterAll with DataDebit with DataDebitRequiredServices with TestAuthCredentials {
+class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterAll with DataDebit with DataDebitRequiredServices with TestAuthCredentials with DalExecutionContext {
   def actorRefFactory = system
   val logger: LoggingAdapter = system.log
-  override lazy val testLogger = logger
+  override val testLogger = logger
   import JsonProtocol._
 
   override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
 
   // Prepare the data to create test bundles on
   def beforeAll() = {
-    val f = TestDataCleanup.cleanupAll.flatMap { c =>
-      TestFixtures.contextlessBundleContext
-    }
-    Await.result(f, Duration("20 seconds"))
+    val f = TestDataCleanup.cleanupAll
+    Await.result(f, Duration("40 seconds"))
   }
 
   // Clean up all data
@@ -70,15 +69,14 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
 //    TestDataCleanup.cleanupAll
   }
 
-  object Context extends DataDebitContextualContext with DataDebitRequiredServices {
+  object Context extends DataDebitContextualContext with DataDebitRequiredServices with DalExecutionContext {
     def actorRefFactory = system
-    val logger: LoggingAdapter = testLogger
+    val logger: LoggingAdapter = system.log
   }
 
   class Context extends Scope {
-    val property = Context.property
-    val populatedData = Context.populatedData
-    val populatedTable = Context.dataTable
+    logger.info("Setting up Data Debit Spec context")
+    Context.setup()
   }
 
   sequential
@@ -208,8 +206,8 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
             response.status should be equalTo OK
             val resp = responseAs[String]
             resp must contain("HATperson")
-            resp must contain("testValue1")
-            resp must contain("testValue2-1")
+            resp must contain("kitchen value 1")
+            resp must contain("kitchen value 2")
           }
           responseAs[ApiDataDebitOut]
         }
@@ -294,69 +292,94 @@ class DataDebitSpec extends Specification with Specs2RouteTest with BeforeAfterA
   }
 }
 
-trait DataDebitContext extends Specification with Specs2RouteTest with DataDebit with TestAuthCredentials {
+trait DataDebitContext extends Specification with Specs2RouteTest with DataDebit with Data with TestAuthCredentials with DalExecutionContext {
+  val logger: LoggingAdapter
   import JsonProtocol._
-  val result = TestFixtures.contextlessBundleContext
-  Await.result(result, Duration("20 seconds"))
+  override def routes = super[DataDebit].routes ~ super[Data].routes
+  override val db = DatabaseInfo.db
 
-  val propertySpec = new PropertySpec()
-  val property = propertySpec.createWeightProperty
-  val dataSpec = new DataSpec()
-  dataSpec.createBasicTables
-  val populatedData = dataSpec.populateDataReusable
+  override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
 
-  val personSpec = new PersonSpec()
-
-  val newPerson = personSpec.createNewPerson
-  newPerson.id must beSome
-
-  val dataTable = populatedData match {
-    case (dataTable, dataField, record) =>
-      dataTable
+  def setup(): Unit = {
+    logger.info("Setting up Data Debit Context")
+    val result = TestFixtures.contextlessBundleContext
+    Await.result(result, Duration("20 seconds"))
+    logger.info("Contextless Bundle test fixtures setup")
+    //  lazy val (dataTable, dataSubtable) = createBasicTables
+    //  lazy val (_, dataField, record) = populateDataReusable
+    //  lazy val populatedData = (dataTable, dataField, record)
+    //    val bundlesSpec = new BundlesSpec()
   }
-  val dataField = populatedData match {
-    case (dataTable, dataField, record) =>
-      dataField
-  }
-
-  val bundlesSpec = new BundlesSpec()
-  val moreData = TestFixtures.contextlessBundleContext
 }
 
 trait DataDebitContextualContext extends DataDebitContext {
+  val logger: LoggingAdapter
   import JsonProtocol._
 
-  val dynamicPropertyLink = ApiPropertyRelationshipDynamic(
-    None, property, None, None, "test property", dataField)
+  override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
 
-  val propertyLinkId = HttpRequest(POST, s"/person/${newPerson.id.get}/property/dynamic/${property.id.get}")
-    .withHeaders(ownerAuthHeader)
-    .withEntity(HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)) ~>
-    sealRoute(personSpec.routes) ~>
-    check {
-      eventually {
-        response.status should be equalTo Created
-      }
-      responseAs[ApiGenericId]
-    }
+  override def setup(): Unit = {
+    logger.info("Setting up Data Debit Contextual Context")
+    super.setup()
 
-  val personValues = HttpRequest(GET, s"/person/${newPerson.id.get}/values")
-    .withHeaders(ownerAuthHeader) ~>
-    sealRoute(personSpec.routes) ~>
-    check {
-      eventually {
+    val propertySpec = new PropertySpec()
+    val property = propertySpec.createWeightProperty
+
+    val personSpec = new PersonSpec()
+    val newPerson = personSpec.createNewPerson
+
+    val dataTable = HttpRequest(GET, "/data/table?name=kitchenElectricity&source=bundlefibaro")
+      .withHeaders(ownerAuthHeader) ~>
+      sealRoute(routes) ~>
+      check {
         response.status should be equalTo OK
-        responseAs[String] must contain("testValue1")
-        responseAs[String] must contain("testValue2-1")
-        responseAs[String] must not contain ("testValue3")
+        responseAs[ApiDataTable]
       }
+
+    val maybeDataField = dataTable.fields.map { fields =>
+      logger.info(s"Fields in data table: $fields")
+      val maybeField = fields.find(f => f.name == "value")
+      maybeField must beSome
+      maybeField.get
     }
+
+    maybeDataField must beSome
+    val dataField = maybeDataField.get
+
+    val dynamicPropertyLink = ApiPropertyRelationshipDynamic(
+      None, property, None, None, "test property", dataField)
+
+    val propertyLinkId = HttpRequest(POST, s"/person/${newPerson.id.get}/property/dynamic/${property.id.get}")
+      .withHeaders(ownerAuthHeader)
+      .withEntity(HttpEntity(MediaTypes.`application/json`, dynamicPropertyLink.toJson.toString)) ~>
+      sealRoute(personSpec.routes) ~>
+      check {
+        eventually {
+          response.status should be equalTo Created
+        }
+        responseAs[ApiGenericId]
+      }
+
+    val personValues = HttpRequest(GET, s"/person/${newPerson.id.get}/values")
+      .withHeaders(ownerAuthHeader) ~>
+      sealRoute(personSpec.routes) ~>
+      check {
+        eventually {
+          response.status should be equalTo OK
+          responseAs[String] must contain("kitchen value 1")
+          responseAs[String] must contain("kitchen value 2")
+          responseAs[String] must not contain ("kitchen time 1")
+        }
+      }
+
+
+  }
 }
 
 trait DataDebitRequiredServices {
   def actorRefFactory: ActorRefFactory
   val logger: LoggingAdapter
-  lazy val testLogger = logger
+  val testLogger = logger
   val system: ActorSystem
 
   trait LoggingHttpService {
@@ -364,12 +387,12 @@ trait DataDebitRequiredServices {
     lazy val logger = testLogger
   }
 
-  val bundlesService = new Bundles with LoggingHttpService
-  val bundleContextService = new BundlesContext with LoggingHttpService {
-    val eventsService = new Event with LoggingHttpService
-    val locationsService = new Location with LoggingHttpService
-    val peopleService = new Person with LoggingHttpService
-    val thingsService = new Thing with LoggingHttpService
-    val organisationsService = new Organisation with LoggingHttpService
+  val bundlesService = new Bundles with LoggingHttpService with DalExecutionContext
+  val bundleContextService = new BundlesContext with LoggingHttpService with DalExecutionContext {
+    val eventsService = new Event with LoggingHttpService with DalExecutionContext
+    val locationsService = new Location with LoggingHttpService with DalExecutionContext
+    val peopleService = new Person with LoggingHttpService with DalExecutionContext
+    val thingsService = new Thing with LoggingHttpService with DalExecutionContext
+    val organisationsService = new Organisation with LoggingHttpService with DalExecutionContext
   }
 }

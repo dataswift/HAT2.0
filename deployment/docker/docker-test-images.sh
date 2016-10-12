@@ -1,5 +1,7 @@
-docker stop $(docker ps -a -q)
-docker rm $(docker ps -a -q)
+#!/usr/bin/env bash
+
+docker stop $(docker ps -a | grep "hubofallthings/hat" | awk '{print $1}')
+docker rm $(docker ps -a | grep "hubofallthings/hat" | awk '{print $1}')
 
 port=3001
 
@@ -13,7 +15,7 @@ for name in jorge nichola junior; do
     -e "POSTGRES_USER=$name"\
     -e "POSTGRES_DB=$name"\
     -e "POSTGRES_HOST=hat-postgres-$name"\
-    -e "HAT_OWNER=$name@gmail.com"\
+    -e "HAT_OWNER=$name"\
     -e "HAT_OWNER_NAME=$name"\
     -e "HAT_OWNER_PASSWORD=$name"\
     -d --name hat-postgres-$name hubofallthings/hat-postgres
@@ -26,7 +28,8 @@ for name in jorge nichola junior; do
     -e "POSTGRES_USER=$name"\
     -e "POSTGRES_DB=$name"\
     -e "POSTGRES_HOST=hat-postgres-$name"\
-    -e "HAT_OWNER=$name@gmail.com"\
+    -e "HAT_NAME=$name"\
+    -e "HAT_OWNER=$name"\
     -e "HAT_OWNER_NAME=$name"\
     -e "HAT_OWNER_PASSWORD=$name"\
     -d --name hat-$name --link hat-postgres-$name -p $port:8080 hubofallthings/hat

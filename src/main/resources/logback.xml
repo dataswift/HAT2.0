@@ -44,8 +44,9 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <root level="INFO">
-    </root>
+    <logger name="SchemaMigration" LEVEL="DEBUG">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
 
     <logger name="scala.slick.session" LEVEL="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>

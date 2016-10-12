@@ -1,0 +1,15 @@
+@import hatdex.hat.api.models.HatService
+@import hatdex.hat.authentication.models.{AccessToken, User}
+@(message: String, parameters: Map[String, Map[String, String]] = Map())
+
+@menubarcontent = @{
+    components.menubarLeft(None, parameters.get("hat").flatMap(_.get("hatName")), hatAddress = parameters.get("hat").flatMap(_.get("hatAddress")), tab = "login")
+}
+
+@main(s"HAT - ${message}", hatName = parameters.get("hat").flatMap(_.get("hatName")), menubarContent = menubarcontent) {
+    <div class="row simpleMessage">
+        <div class="col-md-10 col-md-offset-1">
+            <h1 class="text-center">@message</h1>
+        </div>
+    </div>
+}

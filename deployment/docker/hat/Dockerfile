@@ -1,0 +1,9 @@
+FROM java:jre
+WORKDIR /opt/docker
+ADD opt /opt
+RUN ["chown", "-R", "daemon:daemon", "."]
+USER daemon
+EXPOSE 8080
+ENV JAVA_OPTS="-Xmx500m -Xms100m"
+ENTRYPOINT ["bin/the-hat", "-DapplicationHost=0.0.0.0"]
+CMD []

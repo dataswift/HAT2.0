@@ -23,17 +23,18 @@ package hatdex.hat.api.endpoints
 
 import akka.event.LoggingAdapter
 import hatdex.hat.api.TestDataCleanup
-import hatdex.hat.api.endpoints.jsonExamples.{ DataExamples, EntityExamples }
+import hatdex.hat.api.actors.DalExecutionContext
+import hatdex.hat.api.endpoints.jsonExamples.{DataExamples, EntityExamples}
 import hatdex.hat.api.json.JsonProtocol
 import hatdex.hat.api.models._
 import hatdex.hat.authentication.HatAuthTestHandler
-import hatdex.hat.authentication.authenticators.{ AccessTokenHandler, UserPassHandler }
+import hatdex.hat.authentication.authenticators.{AccessTokenHandler, UserPassHandler}
 import org.specs2.mutable.Specification
-import org.specs2.specification.{ BeforeAfterAll, Scope }
+import org.specs2.specification.{BeforeAfterAll, Scope}
 import spray.http.HttpHeaders.RawHeader
 import spray.http.HttpMethods._
 import spray.http.StatusCodes._
-import spray.http.{ HttpEntity, HttpRequest, MediaTypes }
+import spray.http.{HttpEntity, HttpRequest, MediaTypes}
 import spray.httpx.SprayJsonSupport._
 import spray.json._
 import spray.testkit.Specs2RouteTest
@@ -41,18 +42,18 @@ import spray.testkit.Specs2RouteTest
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-class OrganisationSpec extends Specification with Specs2RouteTest with Organisation with BeforeAfterAll {
+class OrganisationSpec extends Specification with Specs2RouteTest with Organisation with BeforeAfterAll with DalExecutionContext {
   def actorRefFactory = system
 
   val logger: LoggingAdapter = system.log
 
-  val locationEndpoint = new Location {
+  val locationEndpoint = new Location with DalExecutionContext {
     def actorRefFactory = system
     override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
     val logger: LoggingAdapter = system.log
   }
 
-  val typeEndpoint = new Type {
+  val typeEndpoint = new Type with DalExecutionContext {
     def actorRefFactory = system
     override def accessTokenHandler = AccessTokenHandler.AccessTokenAuthenticator(authenticator = HatAuthTestHandler.AccessTokenHandler.authenticator).apply()
     val logger: LoggingAdapter = system.log
@@ -275,12 +276,14 @@ class OrganisationSpec extends Specification with Specs2RouteTest with Organisat
 
     }
 
-    object Context {
+    val testLogger = logger
+    object Context extends DataSpecContextMixin with DalExecutionContext {
+      val logger: LoggingAdapter = testLogger
+      def actorRefFactory = system
       val propertySpec = new PropertySpec()
       val property = propertySpec.createWeightProperty
-      val dataSpec = new DataSpec()
-      dataSpec.createBasicTables
-      val populatedData = dataSpec.populateDataReusable
+      createBasicTables
+      val populatedData = populateDataReusable
     }
 
     class Context extends Scope {

@@ -83,7 +83,7 @@ trait Person extends PeopleService with AbstractEntity {
       person <- (PeoplePerson returning PeoplePerson) += PeoplePersonRow(0, LocalDateTime.now(), LocalDateTime.now(), name, personId)
       entity <- Entity += EntityRow(person.id, LocalDateTime.now(), LocalDateTime.now(), person.name, entityKind, None, None, None, None, Some(person.id))
     } yield (person, entity)
-    DatabaseInfo.db.run(q).map(r => ApiPerson.fromDbModel(r._1))
+    DatabaseInfo.db.run(q.transactionally).map(r => ApiPerson.fromDbModel(r._1))
   }
 
   def createPersonRelationshipType = path("relationshipType") {
