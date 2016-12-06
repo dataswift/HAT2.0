@@ -1,0 +1,53 @@
+@(title: String, maybeUser: Option[org.hatdex.hat.authentication.models.HatUser] = None, hatName: Option[String] = None, menubarContent: Html = Html(""), styles: Html = Html(""), scripts: Html = Html(""), modals: Html = Html(""), meta: Html = Html(""))(content: Html)
+
+@import org.hatdex.hat.phata.views.html._
+
+@allScripts = {
+    <script src="/assets/js/jquery.js"></script>
+    <script src="/assets/js/bootstrap.min.js"></script>
+    @scripts
+}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>@title</title>
+        @meta
+        <link rel="shortcut icon" type="image/png" href="/assets/images/haticon.png">
+        <link href="/assets/webfonts/ss-glyphish-outlined.css" rel="stylesheet" />
+        <link href='https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,300italic,700' rel='stylesheet' type='text/css'>
+        <link rel="stylesheet" media="screen" href="/assets/stylesheets/main.css">
+        @styles
+    </head>
+    <body>
+        <header>
+        @components.navbarTop(maybeUser, hatName)
+        </header>
+
+        @menubarContent
+
+        <div class="content-main">
+            <div class="content-grid container-fluid">
+                @content
+            </div>
+
+            <footer>
+                <p>
+                    This is the public facing placeholder front page of a HAT user registered with HATDeX. HAT users would
+                    be able to replace this page with any information they wish to broadcast (e.g. personal website, a blog,
+                    a storefront, a video channel, art, video or media created by the user, etc.). The information on these
+                    pages are part of the HAT that the user has designated to be public.
+                </p>
+                <p class="copyright">
+                    <a href="http://hatdex.org">Copyright &copy; HATDeX Ltd 2016. All Rights Reserved.</a>
+                </p>
+                <div class="certified">
+                    <img src="/assets/images/certified.png" alt="HATDeX Certified" />
+                </div>
+            </footer>
+        </div>
+        @modals
+        @allScripts
+    </body>
+
+</html>

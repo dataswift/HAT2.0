@@ -1,0 +1,20 @@
+@(notables: Seq[org.hatdex.hat.phata.models.Notable])
+<div class="wrapper grid-item">
+    <div class="box-square aspect-ratio"></div>
+    <div class="box-content notes">
+
+        <h1><span class="icon ss-write"></span>&nbsp;My Public Notables</h1>
+        @notables.take(5).map { note =>
+            @notable(note)
+        }
+        </div>
+</div>
+@notables.headOption.map { note =>
+    <div class="wrapper grid-item">
+        <div class="box-square aspect-ratio"></div>
+        <div class="box-content notable-full-view" id="notable-full-view">
+            <h1><span class="icon ss-write"></span>&nbsp;Notable <span class="notable-id">@note.id</span></h1>
+            @notable(note)
+        </div>
+    </div>
+}

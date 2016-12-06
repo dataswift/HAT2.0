@@ -1,0 +1,19 @@
+@(notable: org.hatdex.hat.phata.models.Notable)
+
+<div class="notable-item">
+    <div class="notable-type"><span class="ss-@notable.kind ss-glyphish-filled"></span>@notable.kind</div>
+    <div class="notable-header">
+        <div class="user-photo">
+            <img src="@notable.author.photo_url.getOrElse("/assets/images/user-icon-black.svg")" alt="@notable.author.phata" class="img-profile img-circle"/>
+        </div>
+        <div class="header-content" data-id="@notable.id">
+            <h5>@notable.author.phata</h5>
+            <span class="logged-time" data-logged="@notable.created_time.toString("dd MMMM YYYY HH:mm")">Logged @notable.created_time.toString("dd MMMM YYYY HH:mm")</span>
+            <span>@notable.shared</span>
+            <span>@notable.public_until</span>
+        </div>
+    </div>
+    <div class="notable-content" data-content="@notable.message">
+    @Html(notable.message)
+    </div>
+</div>

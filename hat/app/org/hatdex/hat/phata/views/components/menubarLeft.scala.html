@@ -1,0 +1,30 @@
+@(maybeUser: Option[org.hatdex.hat.authentication.models.HatUser] = None, hatName: Option[String] = None, hatAddress: Option[String] = None, tab: String = "")
+
+<div class="menubar-left">
+    <ul class="center">
+        <li class="@("active".when(tab == "index"))">
+            <a href="@org.hatdex.hat.phata.controllers.routes.Phata.profile()">
+                <span class="icon ss-user"></span>
+                Profile
+            </a>
+        </li>
+        <li class="@("active".when(tab == "launcher"))">
+            <a href="@org.hatdex.hat.phata.controllers.routes.Phata.launcher()">
+                <span class="icon ss-earth"></span>
+                Launcher
+            </a>
+        </li>
+        <li class="@("active".when(tab == "notables"))">
+            <a href="@org.hatdex.hat.phata.controllers.routes.Phata.notables(None)">
+                <span class="icon ss-megaphone"></span>
+                Notables
+            </a>
+        </li>
+
+        <li class="share">
+        <span class="title">Share my <br />HAT on:</span><br />
+        <a class="fa fa-facebook" href="https://www.facebook.com/sharer/sharer.php?u=https://@hatAddress.getOrElse("")" target="_blank"></a>
+        <a class="fa fa-twitter" href="https://twitter.com/intent/tweet?url=https://@hatAddress.getOrElse("")" target="_blank"></a>
+        </li>
+    </ul>
+</div>
