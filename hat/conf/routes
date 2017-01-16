@@ -8,6 +8,7 @@ GET           /users/application_token                    org.hatdex.hat.api.con
 GET           /users/access_token                         org.hatdex.hat.api.controllers.Users.accessToken
 PUT           /users/user/:userId/enable                  org.hatdex.hat.api.controllers.Users.enableUser(userId: java.util.UUID)
 PUT           /users/user/:userId/disable                 org.hatdex.hat.api.controllers.Users.disableUser(userId: java.util.UUID)
+PUT           /users/user/:userId/delete                  org.hatdex.hat.api.controllers.Users.deleteUser(userId: java.util.UUID)
 
 # DATA Routes
 GET           /data/sources                               org.hatdex.hat.api.controllers.Data.getDataSources
@@ -39,8 +40,9 @@ DELETE        /data/record/:recordId                      org.hatdex.hat.api.con
 GET           /dataDebit                                  org.hatdex.hat.api.controllers.DataDebit.listDataDebits()
 POST          /dataDebit/propose                          org.hatdex.hat.api.controllers.DataDebit.proposeDataDebit
 GET           /dataDebit/:dataDebitKey                    org.hatdex.hat.api.controllers.DataDebit.getDataDebit(dataDebitKey: java.util.UUID)
-GET           /dataDebit/:dataDebitKey/enable             org.hatdex.hat.api.controllers.DataDebit.enableDataDebit(dataDebitKey: java.util.UUID)
-GET           /dataDebit/:dataDebitKey/disable            org.hatdex.hat.api.controllers.DataDebit.disableDataDebit(dataDebitKey: java.util.UUID)
+PUT           /dataDebit/:dataDebitKey/enable             org.hatdex.hat.api.controllers.DataDebit.enableDataDebit(dataDebitKey: java.util.UUID)
+PUT           /dataDebit/:dataDebitKey/disable            org.hatdex.hat.api.controllers.DataDebit.disableDataDebit(dataDebitKey: java.util.UUID)
+PUT           /dataDebit/:dataDebitKey/roll               org.hatdex.hat.api.controllers.DataDebit.rollDataDebitApi(dataDebitKey: java.util.UUID)
 GET           /dataDebit/:dataDebitKey/values             org.hatdex.hat.api.controllers.DataDebit.retrieveDataDebitValues(dataDebitKey: java.util.UUID, limit: Option[Int], startTime: Option[Long], endTime: Option[Long], pretty: Option[Boolean])
 
 # SYSTEM routes

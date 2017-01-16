@@ -147,7 +147,8 @@ class DataDebit @Inject() (
     }
   }
 
-  def retrieveDataDebitValues(dataDebitKey: UUID, limit: Option[Int], startTime: Option[Long], endTime: Option[Long], pretty: Option[Boolean]) = SecuredAction(WithRole("owner")).async { implicit request =>
+  def retrieveDataDebitValues(dataDebitKey: UUID, limit: Option[Int], startTime: Option[Long], endTime: Option[Long],
+    pretty: Option[Boolean]) = SecuredAction(WithRole("owner")).async { implicit request =>
     val maybeStartTime = startTime.map(t => new DateTime(t * 1000L).toLocalDateTime)
     val maybeEndTime = endTime.map(t => new DateTime(t * 1000L).toLocalDateTime)
 
@@ -172,7 +173,8 @@ class DataDebit @Inject() (
   }
 
   private def getContextlessDataDebitValues(dataDebit: Tables.DataDebitRow, bundleId: Int,
-    maybeLimit: Option[Int], maybeStartTime: Option[LocalDateTime], maybeEndTime: Option[LocalDateTime])(implicit hatServer: HatServer, user: User, request: RequestHeader): Future[ApiDataDebitOut] = {
+    maybeLimit: Option[Int], maybeStartTime: Option[LocalDateTime],
+    maybeEndTime: Option[LocalDateTime])(implicit hatServer: HatServer, user: User, request: RequestHeader): Future[ApiDataDebitOut] = {
     val eventualValues = dataDebitService.retrieveDataDebiValues(dataDebit, bundleId, maybeLimit, maybeStartTime, maybeEndTime)
     eventualValues map { values =>
       val apiDataDebit = ModelTranslation.fromDbModel(dataDebit)
@@ -184,7 +186,9 @@ class DataDebit @Inject() (
   }
 
   private def getContextualDataDebitValues(dataDebit: Tables.DataDebitRow, bundleId: Int,
-    maybeLimit: Option[Int], maybeStartTime: Option[LocalDateTime], maybeEndTime: Option[LocalDateTime])(implicit hatServer: HatServer, user: User, request: RequestHeader): Future[ApiDataDebitOut] = {
+    maybeLimit: Option[Int],
+    maybeStartTime: Option[LocalDateTime],
+    maybeEndTime: Option[LocalDateTime])(implicit hatServer: HatServer, user: User, request: RequestHeader): Future[ApiDataDebitOut] = {
     val eventualValues = dataDebitService.retrieveDataDebitContextualValues(dataDebit, bundleId)
     eventualValues map { values =>
       val apiDataDebit = ModelTranslation.fromDbModel(dataDebit)
@@ -215,4 +219,30 @@ class DataDebit @Inject() (
       case e => InternalServerError(Json.toJson(ErrorMessage("Error while listing Data Debits", "Unknown error")))
     }
   }
+
+  def rollDataDebitApi(dataDebitKey: UUID) = SecuredAction(WithRole("owner", "platform")).async { implicit request =>
+
+    val resp = dataDebitService.findDataDebitByKey(dataDebitKey) flatMap { dataDebit =>
+      val result = dataDebit.map(dataDebitService.rollDataDebit)
+        .map(eventualDD => eventualDD.map(dd => Some(dd)))
+        .getOrElse(Future.successful(None))
+
+      dataDebit.foreach { dd =>
+        statsService.recordDataDebitOperation(ModelTranslation.fromDbModel(dd), ModelTranslation.fromInternalModel(request.identity),
+          DataDebitOperations.Roll(), "Data Debit rolled") recover {
+            case e => logger.error(s"Error while recording data debit operation: ${e.getMessage}")
+          }
+      }
+      result
+    }
+
+    resp map {
+      case None    => NotFound(Json.toJson(ErrorMessage("DataDebit not Found", s"Data Debit $dataDebitKey not found")))
+      case Some(_) => Ok(Json.toJson(SuccessResponse("Data Debit rolled")))
+    } recover {
+      case e: SecurityException => Forbidden(Json.toJson(ErrorMessage("Forbidden", e.getMessage)))
+      case e                    => BadRequest(Json.toJson(ErrorMessage("Error enabling DataDebit", e.getMessage)))
+    }
+  }
+
 }

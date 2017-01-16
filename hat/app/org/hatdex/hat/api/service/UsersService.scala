@@ -63,6 +63,16 @@ class UsersService extends DalExecutionContext {
     }
   }
 
+  def deleteUser(userId: UUID)(implicit db: Database): Future[Unit] = {
+    val deleteUserQuery = UserUser.filter(_.userId === userId)
+      .filterNot(_.role === "owner")
+      .filterNot(_.role === "platform")
+
+    val deleteTokensQuery = UserAccessToken.filter(_.userId in deleteUserQuery.map(_.userId)).delete
+
+    db.run(DBIO.seq(deleteTokensQuery, deleteUserQuery.delete))
+  }
+
   def changeUserState(userId: UUID, enabled: Boolean)(implicit db: Database): Future[Unit] = {
     val query = UserUser.filter(_.userId === userId)
       .map(u => (u.enabled))

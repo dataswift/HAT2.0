@@ -36,7 +36,7 @@ class Users @Inject() (
     clock: Clock,
     usersService: UsersService) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
-  val logger = Logger("org.hatdex.hat.api.controllers.Users")
+  val logger = Logger(this.getClass)
 
   def listUsers(): Action[AnyContent] = SecuredAction.async { implicit request =>
     logger.warn(s"Requesting users for ${request.host} ${request.identity}, ${request.dynamicEnvironment}")
@@ -69,7 +69,15 @@ class Users @Inject() (
     else {
       Future.successful(BadRequest(Json.toJson(ErrorMessage("Invalid User", s"Only users with certain roles can be created: ${permittedRoles.mkString(",")}"))))
     }
+  }
 
+  def deleteUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole("owner", "platform")).async { implicit request =>
+    usersService.deleteUser(userId) map { _ =>
+      Ok(Json.toJson(SuccessResponse(s"Account deleted")))
+    } recover {
+      case e =>
+        BadRequest(Json.toJson(ErrorMessage("Error deleting account", e.getMessage)))
+    }
   }
 
   def publicKey(): Action[AnyContent] = UserAwareAction.async { implicit request =>

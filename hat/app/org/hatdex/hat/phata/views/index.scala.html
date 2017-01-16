@@ -29,20 +29,12 @@
 
 @notablesscripts = {
     <script>
-        $(".notable-item").click(function(){
-            var id = $(".header-content", this).data("id");
-            var logged = $(".header-content .logged-time", this).data("logged");
-            var content = $(".notable-content", this).data("content");
-            console.log(id, logged, content);
-
-            var fullView = $("#notable-full-view");
-            $(".notable-id", fullView)[0].innerHTML = id;
-            $(".logged-time", fullView)[0].innerHTML = logged;
-            $(".notable-content", fullView)[0].innerHTML = content;
-        })
+            $(".notable-item").click(function(){
+                var id = $(".header-content", this).data("id");
+                location.href = "/notables?id=" + id;
+            })
     </script>
 }
-
 
 @main("Welcome to the HAT", maybeUser, hatName = Some(hatPublicInfo.hatName), menubarContent = menubarcontent, meta = meta, scripts = notablesscripts) {
     <div class="grid">

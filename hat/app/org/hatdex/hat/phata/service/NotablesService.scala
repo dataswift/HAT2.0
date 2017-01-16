@@ -77,8 +77,8 @@ class NotablesService @Inject() (bundleService: BundleService, dataService: Data
     }
 
     someNotables.map(_.collect {
-      case Success(notable) if notable.shared && notable.public_until.nonEmpty && notable.public_until.get.isAfter(DateTime.now()) => notable
-      case Success(notable) if notable.shared => notable
+      case Success(notable) if notable.shared && notable.shared_on.exists(_.contains("marketsquare")) && notable.public_until.nonEmpty && notable.public_until.get.isAfter(DateTime.now()) => notable
+      case Success(notable) if notable.shared && notable.shared_on.exists(_.contains("marketsquare")) && notable.public_until.isEmpty => notable
     }).map(_.toSeq.sortBy(_.created_time))
   }
 
@@ -114,7 +114,7 @@ class NotablesService @Inject() (bundleService: BundleService, dataService: Data
         (__ \ 'shared_on).json.update(of[JsString].map {
           case JsString(sharedOn) =>
             val sharedNetworks = sharedOn.split(',').map(_.trim)
-            logger.info(s"Shared Networks: ${JsArray(sharedNetworks.map(v => Json.toJson(v)))}")
+            logger.debug(s"Shared Networks: ${JsArray(sharedNetworks.map(v => Json.toJson(v)))}")
             JsArray(sharedNetworks.map(v => Json.toJson(v)))
           case _ =>
             JsArray(Seq[JsValue]())

@@ -80,6 +80,13 @@ class DataDebitService @Inject() (bundlesService: BundleService) extends DalExec
     db.run(query)
   }
 
+  def rollDataDebit(debit: DataDebitRow)(implicit db: Database): Future[Int] = {
+    val query = DataDebit.filter(_.dataDebitKey === debit.dataDebitKey)
+      .map(dd => (dd.rolling, dd.lastUpdated))
+      .update((true, LocalDateTime.now()))
+    db.run(query)
+  }
+
   def findDataDebitByKey(dataDebitKey: UUID)(implicit db: Database): Future[Option[DataDebitRow]] = {
     db.run(DataDebit.filter(_.dataDebitKey === dataDebitKey).result).map(_.headOption)
   }

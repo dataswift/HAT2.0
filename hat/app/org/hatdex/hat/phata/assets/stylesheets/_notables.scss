@@ -63,17 +63,19 @@
     font-size: 3em;
   }
 }
+$notable-border-color: #515151;
 .notable-item {
   //@include make-row();
-  border-top: 3px solid #515151;
+  border-top: 3px solid $notable-border-color;
   padding-bottom: 2em;
   position: relative;
+  font-size: 1.1em;
   .notable-type {
     position: absolute;
     top: 0;
     right: 0;
     font-family: "Open Sans Condensed", sans-serif;
-    background-color: #515151;
+    background-color: $notable-border-color;
     text-transform: uppercase;
     padding: 0.5em 1em;
     font-size: 1.2em;
@@ -92,7 +94,7 @@
     .controls-item {
       font-size: 1.1em;
       padding: 0.5em 1em;
-      border-right: 2px solid #515151;
+      border-right: 2px solid $notable-border-color;
       cursor: pointer;
       &:last-child {
         border: none;
@@ -108,14 +110,29 @@
   padding-left: 2em;
   padding-right: 2em;
   color: $base-black;
-  max-height: 7em;
+  //max-height: 7em;
   overflow: hidden;
   padding-bottom: 3em;
+  font-size: 1.2em;
   a {
     color: $base-black;
   }
   h1, h2, h3, h4, h5 {
     margin-top: 0.5em;
+  }
+
+  img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    max-height: 20em;
+    max-width: 80%;
+  }
+
+  .btn.btn-preview {
+    border-radius: 0;
+    background: $notable-border-color;
+    color: $base-white;
   }
 }
 .filter-header {
@@ -163,6 +180,7 @@
 .notable-full-view {
   .notable-content {
     max-height: none;
-    overflow: auto;
+    //overflow: auto;
   }
+  overflow: scroll;
 }

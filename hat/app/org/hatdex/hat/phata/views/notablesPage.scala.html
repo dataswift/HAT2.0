@@ -5,22 +5,34 @@
 )(implicit hatPublicInfo: org.hatdex.hat.phata.models.HatPublicInfo, requestHeader: RequestHeader, messages: Messages)
 
 @import org.hatdex.hat.phata.views.html._
+@import scala.util.matching.Regex
+
+@metaIllustration = @{
+    selectedNotable.flatMap { notable =>
+        val imgPattern = new Regex("<img src=\"(.*)\" .*/>")
+        imgPattern.findFirstIn(notable.message) match {
+            case Some(imgPattern(imageUrl)) => Some(imageUrl)
+            case _ => None
+        }
+    } getOrElse {
+        s"https://${hatPublicInfo.domain}/assets/images/hat_logo.png"
+    }
+}
 
 @meta = {
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@@thehatdex">
-    <meta name="twitter:title" content="Personal HAT page @hatPublicInfo.hatName">
-    <meta name="twitter:description" content="Welcome to my HAT">
-    <meta name="twitter:image:src" content="https://@hatPublicInfo.domain/assets/images/HAT_logo_mydata.png">
-    <meta name="twitter:domain" content="https://@hatPublicInfo.domain">
-    <meta property="og:url" content="https://@hatPublicInfo.domain" />
+    <meta name="twitter:title" content="HAT Notables - @hatPublicInfo.hatName">
+    <meta name="twitter:description" content="@selectedNotable.map(_.message).getOrElse(s"Notables by ${hatPublicInfo.hatName}")">
+    <meta name="twitter:image:src" content="@metaIllustration">
+    <meta name="twitter:domain" content="@hatPublicInfo.domain">
+    <meta property="og:url" content="@hatPublicInfo.domain/notables?id=@selectedNotable.map(_.id).getOrElse("")" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Personal HAT page @hatPublicInfo.hatName" />
-    <meta property="og:description" content="Welcome to my HAT" />
-    <meta property="og:image" content="https://@hatPublicInfo.domain/assets/images/HAT_logo_mydata.png" />
-    <meta property="og:site_name" content="HAT" />
+    <meta property="og:title" content="HAT Notables - @hatPublicInfo.domain" />
+    <meta property="og:description" content="@selectedNotable.map(_.message).getOrElse(s"Notables by ${hatPublicInfo.hatName}")" />
+    <meta property="og:image" content="@metaIllustration" />
+    <meta property="og:site_name" content="@hatPublicInfo.hatName HAT Notables" />
     <meta property="og:app_id" content="158753364485419" />
-
 }
 
 @menubarcontent = @{
@@ -37,7 +49,7 @@
 }
 
 
-@main("Welcome to the HAT", maybeUser, hatName = Some(hatPublicInfo.hatName), menubarContent = menubarcontent, meta = meta, scripts = notablesscripts) {
+@main(s"Welcome to ${hatPublicInfo.hatName} HAT", maybeUser, hatName = Some(hatPublicInfo.hatName), menubarContent = menubarcontent, meta = meta, scripts = notablesscripts) {
     <div class="grid">
         @selectedNotable.map { note =>
             <div class="wrapper grid-item item-wide">
@@ -51,14 +63,14 @@
         <div class="wrapper grid-item item-wide">
             @*<div class="box-square aspect-ratio"></div>*@
             <div class="box-content notes">
-                <h1><span class="icon ss-write"></span>&nbsp;My Public Notables</h1>
+                <h1><span class="icon ss-write"></span>&nbsp;More of My Public Notables</h1>
                 @notables.map { note =>
                     @if(selectedNotable.map(_.id).contains(note.id)) {
                         <div class="active">
                         @components.notable(note)
                         </div>
                     } else {
-                        @components.notable(note)
+                        @components.notable(note, preview = true)
                     }
                 }
             </div>

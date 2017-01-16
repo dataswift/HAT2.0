@@ -294,7 +294,7 @@ class DataService extends DalExecutionContext {
           DataValueRow(0, LocalDateTime.now(), value.lastUpdated.getOrElse(LocalDateTime.now()), value.value, value.field.get.id.get, record.id.get)
         }
         val insertedValues = db.run {
-          (DataValue returning DataValue) ++= valueRows
+          ((DataValue returning DataValue) ++= valueRows).transactionally
         }
 
         insertedValues flatMap { values =>

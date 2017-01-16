@@ -1,4 +1,4 @@
-@(notable: org.hatdex.hat.phata.models.Notable)
+@(notable: org.hatdex.hat.phata.models.Notable, preview: Boolean = false)
 
 <div class="notable-item">
     <div class="notable-type"><span class="ss-@notable.kind ss-glyphish-filled"></span>@notable.kind</div>
@@ -14,6 +14,12 @@
         </div>
     </div>
     <div class="notable-content" data-content="@notable.message">
-    @Html(notable.message)
+    @if(preview) {
+        @Html(notable.message.split("\n").take(5).mkString("\n"))
+
+        <a role="button" class="btn btn-preview center-block" href="/notables?id=@notable.id">Read More</a>
+    } else {
+        @Html(notable.message)
+    }
     </div>
 </div>

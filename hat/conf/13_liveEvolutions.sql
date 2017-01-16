@@ -176,3 +176,31 @@ CREATE TABLE hat.data_stats_log (
   stats_id INT8  NOT NULL DEFAULT nextval('hat.data_stats_seq') PRIMARY KEY,
   stats    JSONB NOT NULL
 );
+
+--changeset hubofallthings:baseTableIndexes context:structuresonly runOnChange:true
+
+DROP INDEX IF EXISTS hat.data_value_field;
+DROP INDEX IF EXISTS hat.data_value_record;
+DROP INDEX IF EXISTS hat.data_field_table;
+DROP INDEX IF EXISTS hat.data_table_name;
+DROP INDEX IF EXISTS hat.data_table_source_name;
+
+CREATE INDEX data_value_field ON hat.data_value(field_id ASC);
+CREATE INDEX data_value_record ON hat.data_value(record_id ASC);
+CREATE INDEX data_field_table ON hat.data_field(table_id_fk ASC);
+CREATE INDEX data_table_name ON hat.data_table(name);
+CREATE INDEX data_table_source_name ON hat.data_table(source_name);
+
+--rollback DROP INDEX IF EXISTS hat.data_value_field;
+--rollback DROP INDEX IF EXISTS hat.data_value_record;
+--rollback DROP INDEX IF EXISTS hat.data_field_table;
+--rollback DROP INDEX IF EXISTS hat.data_table_name;
+--rollback DROP INDEX IF EXISTS hat.data_table_source_name;
+
+--changeset hubofallthings:rumpelLiteApp
+
+INSERT INTO hat.applications (title, description, logo_url, url, auth_url, browser, category, setup, login_available)
+VALUES ('RumpelLite', 'Mobile hyperdata browser for your HAT data', '/assets/images/Rumpel-logo.svg',
+        'rumpellocationtrackerapp://rumpellocationtrackerapphost', '/', TRUE, 'app', TRUE, TRUE);
+
+--rollback DELETE FROM hat.applications WHERE title = 'RumpelLite';
