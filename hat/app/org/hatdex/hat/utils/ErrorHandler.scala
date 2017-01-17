@@ -84,23 +84,34 @@ class ErrorHandler @Inject() (
     implicit val _request = request
     implicit val noUser: Option[HatUser] = None
     //      mailer.serverErrorNotify(request, exception)
-    val message = exception match {
-      //      case e: SQLTransientConnectionException =>
-      //        "HAT unavailable"
-      case e: HatServerDiscoveryException =>
-        "HAT unavailable"
-      case e =>
-        s"A server error occurred, please report this error code to our admins: ${e.getMessage}"
-    }
+    //    val message = exception match {
+    //      //      case e: SQLTransientConnectionException =>
+    //      //        "HAT unavailable"
+    //      case e: HatServerDiscoveryException =>
+    //        NotFound(org.hatdex.hat.phata.views.html.hatNotFound())
+    //      case e =>
+    //        s"A server error occurred, please report this error code to our admins: ${e.getMessage}"
+    //    }
 
     Future.successful {
       render {
         case Accepts.Json() =>
+          val message = exception match {
+            case e: SQLTransientConnectionException =>
+              "HAT unavailable"
+            case e =>
+              s"A server error occurred, please report this error code to our admins: ${e.getMessage}"
+          }
           InternalServerError(Json.obj(
             "error" -> "Internal Server error",
             "message" -> message))
         case _ =>
-          InternalServerError(message)
+          exception match {
+            case e: HatServerDiscoveryException =>
+              NotFound(org.hatdex.hat.phata.views.html.hatNotFound())
+            case e =>
+              InternalServerError(s"A server error occurred, please report this error code to our admins: ${e.getMessage}")
+          }
       }
     }
   }
