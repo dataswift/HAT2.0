@@ -44,15 +44,3 @@ libraryDependencies ++= Seq(
   Library.Specs2.mock
 )
 
-lazy val gentables = taskKey[Seq[File]]("Slick Code generation")
-
-gentables := {
-  val main = Project("root", file("."))
-  val outputDir = (main.base.getAbsoluteFile / "hat/app/org").getPath
-  streams.value.log.info("Output directory for codegen: " + outputDir.toString)
-  val pkg = "org.hatdex.hat.dal"
-  streams.value.log.info("Dependency classpath: " + dependencyClasspath.toString)
-  (runner in Compile).value.run("org.hatdex.hat.dal.CustomizedCodeGenerator", (dependencyClasspath in Compile).value.files, Array(outputDir, pkg), streams.value.log)
-  val fname = outputDir + "/" + pkg.replace('.', '/') + "/Tables.scala"
-  Seq(file(fname))
-}

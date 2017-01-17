@@ -48,7 +48,8 @@ libraryDependencies ++= Seq(
   Library.Play.Specs2.mock,
   Library.Play.Utils.playBootstrap,
   Library.scalaGuice,
-  Library.jbcrypt
+  Library.jbcrypt,
+  filters
 )
 
 enablePlugins(PlayScala)
@@ -57,34 +58,23 @@ enablePlugins(JavaAppPackaging)
 
 enablePlugins(SbtWeb, SbtSassify)
 
-pipelineStages := Seq(uglify)
+//pipelineStages in Assets := Seq(uglify)
 sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets"
 
-//excludeFilter += (baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "api" / "controllers" / "*.scala") filter ( _.g)
-
-//unmanagedSourceDirectories in Compile ++= (baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "api" / "actors" / "*.scala").get
-//
-//unmanagedSourceDirectories in Compile ++= (baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "dal" / "*.scala").get
-//
-//unmanagedSourceDirectories in Compile ++= (baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "api" / "service" / "UsersService*.scala").get
-//
-//unmanagedSourceDirectories in Compile ++= (baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "api" / "DatabaseInfo*.scala").get
-
 aggregate in update := false
-//sourceDirectories in(Compile, TwirlKeys.compileTemplates) := (unmanagedSourceDirectories in Compile).value
+
 testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "exclude", "REMOTE")
 
-
-//  in unmanagedSources := new SimpleFileFilter(
-//  (baseDirectory.value / "hat" / "app" / "org" / "hatdex" / "hat" / "api" / "endpoints" / "*.scala") +++
-//  (baseDirectory.value / "hat" / "app" / "org" / "hatdex" / "hat" / "api" / "json" / "*.scala") +++
-//  (baseDirectory.value / "hat" / "app" / "org" / "hatdex" / "hat" / "api" / "endpoints" / "Api*.scala") +++
-//  (baseDirectory.value / "hat" / "app" / "org" / "hatdex" / "hat" / "api" / "endpoints" * "Boot*.scala") +++
-//  (baseDirectory.value / "hat" / "app" / "org" / "hatdex" / "hat" / "api" / "endpoints" * "Cors*.scala"))
-
-// scoverage.ScoverageSbtPlugin.ScoverageKeys.coverageExcludedPackages := "hatdex.hat.dal"
-
 //publishArtifact in(Compile, packageDoc) := false
+
+routesGenerator := InjectedRoutesGenerator
+
+import com.typesafe.sbt.packager.docker._
+packageName in Docker := "hat"
+maintainer in Docker := "andrius.aucinas@hatdex.org"
+version in Docker := version.value
+dockerExposedPorts := Seq(9000)
+dockerBaseImage := "java:8"
 
 lazy val gentables = taskKey[Seq[File]]("Slick Code generation")
 

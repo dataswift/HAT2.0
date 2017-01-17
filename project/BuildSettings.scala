@@ -87,39 +87,39 @@ object CodeFormatter extends AutoPlugin {
 ////*******************************
 //// ScalaDoc settings
 ////*******************************
-object Doc extends AutoPlugin {
-
-  import play.core.PlayVersion
-
-  override def projectSettings = Seq(
-    autoAPIMappings := true,
-    apiURL := Some(url(s"http://hub-of-all-things.github.io/doc/${version.value}/")),
-    apiMappings ++= {
-      implicit val cp = (fullClasspath in Compile).value
-      Map(
-        jarFor("com.typesafe.play", "play") -> url(s"http://www.playframework.com/documentation/${PlayVersion.current}/api/scala/"),
-        scalaInstance.value.libraryJar -> url(s"http://www.scala-lang.org/api/${scalaVersion.value}/")
-      )
-    }
-  )
-
-  /**
-   * Gets the JAR file for a package.
-   *
-   * @param organization The organization name.
-   * @param name The name of the package.
-   * @param cp The class path.
-   * @return The file which points to the JAR.
-   * @see http://stackoverflow.com/a/20919304/2153190
-   */
-  private def jarFor(organization: String, name: String)(implicit cp: Seq[Attributed[File]]): File = {
-    (for {
-      entry <- cp
-      module <- entry.get(moduleID.key)
-      if module.organization == organization
-      if module.name.startsWith(name)
-      jarFile = entry.data
-    } yield jarFile).head
-  }
-}
+//object Doc extends AutoPlugin {
+//
+//  import play.core.PlayVersion
+//
+//  override def projectSettings = Seq(
+//    autoAPIMappings := true,
+//    apiURL := Some(url(s"http://hub-of-all-things.github.io/doc/${version.value}/")),
+//    apiMappings ++= {
+//      implicit val cp = (fullClasspath in Compile).value
+//      Map(
+//        jarFor("com.typesafe.play", "play") -> url(s"http://www.playframework.com/documentation/${PlayVersion.current}/api/scala/"),
+//        scalaInstance.value.libraryJar -> url(s"http://www.scala-lang.org/api/${scalaVersion.value}/")
+//      )
+//    }
+//  )
+//
+//  /**
+//   * Gets the JAR file for a package.
+//   *
+//   * @param organization The organization name.
+//   * @param name The name of the package.
+//   * @param cp The class path.
+//   * @return The file which points to the JAR.
+//   * @see http://stackoverflow.com/a/20919304/2153190
+//   */
+//  private def jarFor(organization: String, name: String)(implicit cp: Seq[Attributed[File]]): File = {
+//    (for {
+//      entry <- cp
+//      module <- entry.get(moduleID.key)
+//      if module.organization == organization
+//      if module.name.startsWith(name)
+//      jarFile = entry.data
+//    } yield jarFile).head
+//  }
+//}
 
