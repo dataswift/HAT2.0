@@ -10,8 +10,9 @@ package org.hatdex.hat.authentication.models
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
+import org.hatdex.hat.resourceManagement.HatServer
 
 case class HatUser(userId: UUID, email: String, pass: Option[String], name: String, role: String, enabled: Boolean) extends Identity {
-  def loginInfo = LoginInfo("hat", userId.toString)
+  def loginInfo(implicit hatServer: HatServer) = LoginInfo(hatServer.domain, email)
 }
 

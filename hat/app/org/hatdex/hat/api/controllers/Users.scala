@@ -111,7 +111,7 @@ class Users @Inject() (
           usersService.getUser(loginInfo.providerKey).flatMap {
             case Some(user) =>
               // FIXME: resource asd??
-              val customClaims = Map("resource" -> Json.toJson("asd"), "accessScope" -> Json.toJson(user.role))
+              val customClaims = Map("resource" -> Json.toJson(request.dynamicEnvironment.domain), "accessScope" -> Json.toJson(user.role))
               for {
                 authenticator <- env.authenticatorService.create(loginInfo)
                 token <- env.authenticatorService.init(authenticator.copy(customClaims = Some(JsObject(customClaims))))

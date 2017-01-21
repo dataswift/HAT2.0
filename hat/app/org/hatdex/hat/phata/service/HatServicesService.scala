@@ -22,10 +22,12 @@ package org.hatdex.hat.phata.service
 
 import javax.inject.Inject
 
+import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
 import org.hatdex.hat.api.actors.DalExecutionContext
 import org.hatdex.hat.api.models._
+import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
@@ -37,7 +39,7 @@ import spray.http.Uri
 
 import scala.concurrent.Future
 
-class HatServicesService @Inject() (authenticatorService: AuthenticatorService[JWTRS256Authenticator, HatServer]) extends DalExecutionContext {
+class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment]) extends DalExecutionContext {
   private val logger = Logger(this.getClass)
 
   def hatServices(categories: Set[String])(implicit hatServer: HatServer): Future[Seq[HatService]] = {
@@ -77,9 +79,9 @@ class HatServicesService @Inject() (authenticatorService: AuthenticatorService[J
       "resource" -> Json.toJson(resource),
       "accessScope" -> Json.toJson(accessScope)))
 
-    authenticatorService.create(user.loginInfo)
+    silhouette.env.authenticatorService.create(user.loginInfo)
       .map(_.copy(customClaims = Some(customClaims)))
-      .flatMap(authenticatorService.init)
+      .flatMap(silhouette.env.authenticatorService.init)
       .map(AccessToken(_, user.userId))
   }
 
