@@ -9,6 +9,7 @@ import play.api.Configuration
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import net.ceedubs.ficus.Ficus._
 
 object HatServerActor {
   sealed trait HatServerActorMessage
@@ -30,13 +31,14 @@ class HatServerActor @Inject() (
     hatKeyProvider: HatKeyProvider) extends Actor with ActorLogging with Stash {
   import HatServerActor._
   import IoExecutionContext.ioThreadPool
+  val idleTimeout = configuration.underlying.as[FiniteDuration]("resourceManagement.serverIdleTimeout")
 
   def receive: Receive = {
     case message: HatRetrieve =>
       log.debug(s"RECEIVE HATRetrieve, stashing, connecting")
       stash()
       context.become(connecting)
-      context.setReceiveTimeout(30.seconds)
+      context.setReceiveTimeout(idleTimeout)
       connect()
 
     case message =>
@@ -50,7 +52,7 @@ class HatServerActor @Inject() (
       context.parent ! HatServerProviderActor.HatServerStarted(hat)
     case HatFailed(error) =>
       unstashAll()
-      context.setReceiveTimeout(5.minutes)
+      context.setReceiveTimeout(idleTimeout * 10)
       context.become(failed(error))
     case message: HatServerActorMessage =>
       stash()
