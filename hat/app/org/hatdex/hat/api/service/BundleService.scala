@@ -206,7 +206,7 @@ class BundleService @Inject() (dataService: DataService) extends DalExecutionCon
       sourceTables <- getSourceTables(bundle.sources.get)
       values <- dataService.fieldsetValues(fieldset, startTime, endTime)
     } yield {
-      val valueRecords = dataService.getValueRecords(values, sourceTables)
+      val valueRecords = dataService.restructureTableValuesToRecords(values, sourceTables)
       val dataGroups = recordsDatasetGrouped(sourceTables, valueRecords)
       ApiBundleContextlessData(bundle.id.get, bundle.name, dataGroups)
     }

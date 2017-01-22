@@ -103,7 +103,7 @@ class UserProfileService @Inject() (bundleService: BundleService, dataService: D
     val endTime = LocalDateTime.now()
     val eventualValues = dataService.fieldsetValues(fieldset, startTime, endTime, Some(1))
 
-    eventualValues.map(values => dataService.getValueRecords(values, Seq(table)))
+    eventualValues.map(values => dataService.restructureTableValuesToRecords(values, Seq(table)))
       .map { records => records.headOption }
       .map(_.flatMap(_.tables.flatMap(_.headOption)))
   }

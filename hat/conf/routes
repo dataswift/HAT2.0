@@ -17,7 +17,7 @@ POST          /data/table                                 org.hatdex.hat.api.con
 POST          /data/table/:parentId/table/:childId        org.hatdex.hat.api.controllers.Data.linkTables(parentId: Int, childId: Int)
 GET           /data/table/:tableId                        org.hatdex.hat.api.controllers.Data.getTable(tableId: Int)
 GET           /data/table                                 org.hatdex.hat.api.controllers.Data.findTable(name: Option[String], nameLike: Option[String], nameUnlike: Option[String], source: String)
-GET           /data/table/:tableId/values                 org.hatdex.hat.api.controllers.Data.getTableValues(tableId: Int, limit: Option[Int], startTime: Option[Long], endTime: Option[Long], pretty: Option[Boolean])
+GET           /data/table/:tableId/values                 org.hatdex.hat.api.controllers.Data.getTableValues(tableId: Int, limit: Option[Int], starttime: Option[Long], endtime: Option[Long], pretty: Option[Boolean])
 
 POST          /data/field                                 org.hatdex.hat.api.controllers.Data.createField
 GET           /data/field/:fieldId                        org.hatdex.hat.api.controllers.Data.getField(fieldId: Int)
@@ -43,7 +43,7 @@ GET           /dataDebit/:dataDebitKey                    org.hatdex.hat.api.con
 PUT           /dataDebit/:dataDebitKey/enable             org.hatdex.hat.api.controllers.DataDebit.enableDataDebit(dataDebitKey: java.util.UUID)
 PUT           /dataDebit/:dataDebitKey/disable            org.hatdex.hat.api.controllers.DataDebit.disableDataDebit(dataDebitKey: java.util.UUID)
 PUT           /dataDebit/:dataDebitKey/roll               org.hatdex.hat.api.controllers.DataDebit.rollDataDebitApi(dataDebitKey: java.util.UUID)
-GET           /dataDebit/:dataDebitKey/values             org.hatdex.hat.api.controllers.DataDebit.retrieveDataDebitValues(dataDebitKey: java.util.UUID, limit: Option[Int], startTime: Option[Long], endTime: Option[Long], pretty: Option[Boolean])
+GET           /dataDebit/:dataDebitKey/values             org.hatdex.hat.api.controllers.DataDebit.retrieveDataDebitValues(dataDebitKey: java.util.UUID, limit: Option[Int], starttime: Option[Long], endtime: Option[Long], pretty: Option[Boolean])
 
 # SYSTEM routes
 GET           /system/update                              org.hatdex.hat.api.controllers.Updates.update()

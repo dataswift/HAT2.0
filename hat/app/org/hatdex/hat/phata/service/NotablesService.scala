@@ -134,7 +134,7 @@ class NotablesService @Inject() (bundleService: BundleService, dataService: Data
     val endTime = LocalDateTime.now()
     val eventualValues = dataService.fieldsetValues(fieldset, startTime, endTime, Some(10))
 
-    eventualValues.map(values => dataService.getValueRecords(values, Seq(table)))
+    eventualValues.map(values => dataService.restructureTableValuesToRecords(values, Seq(table)))
   }
 
 }

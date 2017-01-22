@@ -53,22 +53,20 @@ class DataService extends DalExecutionContext {
 
     val eventualTables = buildDataTreeStructures(dataTableTreesQuery, Set(tableId))
     val fieldsetQuery = DataField.filter(_.tableIdFk in dataTableTreesQuery.map(_.id))
-
-    val eventualFieldset = db.run(fieldsetQuery.result).map(_.map(_.id).toSet)
+    val eventualValues = fieldsetValues(fieldsetQuery, startTime, endTime, maybeLimit.getOrElse(1000))
 
     for {
       tables <- eventualTables
-      fieldset <- eventualFieldset
-      values <- fieldsetValues(fieldset, startTime, endTime, maybeLimit)
+      values <- eventualValues
     } yield {
       if (tables.isEmpty) {
         throw new RuntimeException("No such table exists")
       }
       else {
         maybeLimit.map { limit =>
-          getValueRecords(values, tables).take(limit)
+          restructureTableValuesToRecords(values, tables).take(limit)
         } getOrElse {
-          getValueRecords(values, tables)
+          restructureTableValuesToRecords(values, tables)
         }
       }
     }
@@ -346,7 +344,7 @@ class DataService extends DalExecutionContext {
     table.copy(fields = filledFields, subTables = filledSubtables)
   }
 
-  protected[hat] def getValueRecords(
+  protected[hat] def restructureTableValuesToRecords(
     dbValues: Seq[(DataRecordRow, DataFieldRow, DataValueRow)],
     tables: Seq[ApiDataTable]): Seq[ApiDataRecord] = {
 
@@ -395,6 +393,7 @@ class DataService extends DalExecutionContext {
     fieldset: Set[Int],
     startTime: LocalDateTime, endTime: LocalDateTime,
     maybeLimit: Option[Int] = None)(implicit db: Database): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
+    logger.info(s"Getting values for fieldset: ${fieldset}, ${startTime} to ${endTime}, limited to $maybeLimit")
     val fieldValues = DataValue.filter(_.fieldId inSet fieldset)
     val valuesQuery = fieldValues.filter(v => v.lastUpdated <= endTime && v.lastUpdated >= startTime && v.deleted === false)
       .sortBy(_.recordId.desc)
@@ -403,6 +402,27 @@ class DataService extends DalExecutionContext {
         .filter(r => r.lastUpdated <= endTime && r.lastUpdated >= startTime && r.deleted === false)
         .sortBy(_.lastUpdated.desc)
         .take(maybeLimit.getOrElse(1000))
+        .join(valuesQuery)
+        .on(_.id === _.recordId)
+      field <- value.dataFieldFk if field.deleted === false
+    } yield (record, field, value)
+
+    db.run(valueQuery.result)
+  }
+
+  protected[hat] def fieldsetValues(
+    fieldset: Query[DataField, DataField#TableElementType, Seq],
+    startTime: LocalDateTime, endTime: LocalDateTime,
+    limit: Int)(implicit db: Database): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
+    logger.info(s"Getting values for fieldset: ${fieldset}, ${startTime} to ${endTime}, limited to $limit")
+    val fieldValues = DataValue.filter(_.fieldId in fieldset.map(_.id))
+    val valuesQuery = fieldValues.filter(v => v.lastUpdated <= endTime && v.lastUpdated >= startTime && v.deleted === false)
+      .sortBy(_.recordId.desc)
+    val valueQuery = for {
+      (record, value) <- DataRecord.filter(_.id in valuesQuery.map(_.recordId))
+        .filter(r => r.lastUpdated <= endTime && r.lastUpdated >= startTime && r.deleted === false)
+        .sortBy(_.lastUpdated.desc)
+        .take(limit)
         .join(valuesQuery)
         .on(_.id === _.recordId)
       field <- value.dataFieldFk if field.deleted === false
@@ -458,7 +478,7 @@ class DataService extends DalExecutionContext {
     }
 
     eventualTables flatMap { tables =>
-      eventualValues.map(values => getValueRecords(values, tables))
+      eventualValues.map(values => restructureTableValuesToRecords(values, tables))
     } map (_.headOption)
   }
 
