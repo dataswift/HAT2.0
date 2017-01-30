@@ -45,7 +45,8 @@ class Phata @Inject() (
     clock: Clock,
     hatServicesService: HatServicesService,
     userProfileService: UserProfileService,
-    notablesService: NotablesService) extends HatFrontendController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    notablesService: NotablesService
+) extends HatFrontendController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   import org.hatdex.hat.phata.models.HatPublicInfo.hatServer2PublicInfo
 

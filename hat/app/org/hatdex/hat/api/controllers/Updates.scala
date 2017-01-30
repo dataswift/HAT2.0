@@ -21,6 +21,9 @@ import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
 import scala.concurrent.Future
+//import net.ceedubs.ficus.Ficus._
+//import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+//import net.ceedubs.ficus.readers.EnumerationReader._
 
 class Updates @Inject() (
     val messagesApi: MessagesApi,
@@ -31,6 +34,13 @@ class Updates @Inject() (
     hatDatabaseProvider: HatDatabaseProvider) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   val logger = Logger("org.hatdex.hat.api.controllers.Users")
+
+  configuration.getStringSeq("databaseServers.serverUrls") map { testlist =>
+    logger.warn(s"Got testlist")
+    testlist.foreach { item =>
+      logger.warn(s"Item $item")
+    }
+  }
 
   def update(): Action[AnyContent] = SecuredAction.async { implicit request =>
     hatDatabaseProvider.update(request.dynamicEnvironment.db) map {

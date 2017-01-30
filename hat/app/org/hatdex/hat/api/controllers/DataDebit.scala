@@ -25,12 +25,11 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.{ Clock, PasswordHasherRegistry }
-import org.hatdex.hat.api.json.{ DataDebitFormats, HatJsonFormats }
+import org.hatdex.hat.api.json.DataDebitFormats
 import org.hatdex.hat.api.models.{ User, _ }
 import org.hatdex.hat.api.service.{ DataDebitService, StatsService }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.dal.{ ModelTranslation, Tables }
-import org.hatdex.hat.dal.SlickPostgresDriver.api.Database
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider }
 import org.joda.time.{ DateTime, LocalDateTime }
 import play.api.i18n.MessagesApi

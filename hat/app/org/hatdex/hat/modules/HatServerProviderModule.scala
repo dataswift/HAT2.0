@@ -15,17 +15,22 @@ import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.hatdex.hat.resourceManagement.{ HatDatabaseProvider, HatDatabaseProviderMilliner, HatKeyProvider, HatKeyProviderMilliner }
 
 class HatServerProviderModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
   def configure = {
     bindActor[HatServerProviderActor]("hatServerProviderActor")
     bindActorFactory[HatServerActor, HatServerActor.Factory]
+
+    bind[HatDatabaseProvider].to[HatDatabaseProviderMilliner]
+    bind[HatKeyProvider].to[HatKeyProviderMilliner]
   }
 
   @Provides
   def provideSmtpConfiguration(
-    configuration: Configuration): SmtpConfig = {
+    configuration: Configuration
+  ): SmtpConfig = {
     configuration.underlying.as[SmtpConfig]("mail.smtp")
   }
 }

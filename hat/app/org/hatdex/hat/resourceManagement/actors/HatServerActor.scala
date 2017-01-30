@@ -28,7 +28,8 @@ class HatServerActor @Inject() (
     @Assisted hat: String,
     configuration: Configuration,
     hatDatabaseProvider: HatDatabaseProvider,
-    hatKeyProvider: HatKeyProvider) extends Actor with ActorLogging with Stash {
+    hatKeyProvider: HatKeyProvider
+) extends Actor with ActorLogging with Stash {
   import HatServerActor._
   import IoExecutionContext.ioThreadPool
   val idleTimeout = configuration.underlying.as[FiniteDuration]("resourceManagement.serverIdleTimeout")
@@ -101,7 +102,7 @@ class HatServerActor @Inject() (
       publicKey <- hatKeyProvider.publicKey(hat)
       db <- hatDatabaseProvider.database(hat)
     } yield {
-      val hatServer = HatServer(hat, hat.split('.').headOption.getOrElse(hat), configuration.getString(s"hat.$hat.ownerEmail").get, privateKey, publicKey, db)
+      val hatServer = HatServer(hat, hat.split('.').headOption.getOrElse(hat), "andrius.aucinas@gmail.com", privateKey, publicKey, db)
       log.debug(s"HAT connection info $hatServer")
       hatServer
     }

@@ -69,5 +69,9 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
+    <logger name="org.hatdex.hat" LEVEL="DEBUG">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
 
 </configuration>

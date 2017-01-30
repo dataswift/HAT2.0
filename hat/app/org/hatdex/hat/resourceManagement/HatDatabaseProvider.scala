@@ -4,20 +4,16 @@ import javax.inject.{ Inject, Singleton }
 
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
-import play.api.Configuration
+import play.api.cache.CacheApi
+import play.api.libs.ws.WSClient
+import play.api.{ Configuration, Logger }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-@Singleton
-class HatDatabaseProvider @Inject() (configuration: Configuration, schemaMigration: SchemaMigration) {
-  def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {
-    Future {
-      Database.forConfig(s"hat.$hat.database")
-    } recoverWith {
-      case e =>
-        Future.failed(new HatServerDiscoveryException(s"Database configuration for $hat incorrect or unavailable", e))
-    }
-  }
+trait HatDatabaseProvider {
+  val schemaMigration: SchemaMigration
+
+  def database(hat: String)(implicit ec: ExecutionContext): Future[Database]
 
   def shutdown(db: Database)(implicit ec: ExecutionContext): Future[Unit] = {
     db.shutdown
@@ -27,3 +23,34 @@ class HatDatabaseProvider @Inject() (configuration: Configuration, schemaMigrati
     schemaMigration.run()(db)
   }
 }
+
+@Singleton
+class HatDatabaseProviderConfig @Inject() (configuration: Configuration, val schemaMigration: SchemaMigration) extends HatDatabaseProvider {
+  def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {
+    Future {
+      Database.forConfig(s"hat.$hat.database")
+    } recoverWith {
+      case e =>
+        Future.failed(new HatServerDiscoveryException(s"Database configuration for $hat incorrect or unavailable", e))
+    }
+  }
+}
+
+@Singleton
+class HatDatabaseProviderMilliner @Inject() (
+    val configuration: Configuration,
+    val cache: CacheApi,
+    val ws: WSClient,
+    val schemaMigration: SchemaMigration) extends HatDatabaseProvider with MillinerHatSignup {
+  val logger = Logger(this.getClass)
+
+  def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {
+    getHatSignup(hat) map { signup =>
+      logger.debug(s"Getting $hat database for ${signup.databaseServer} and ${signup.database}")
+      val databaseUrl = s"jdbc:postgresql://${signup.databaseServer.get.host}:${signup.databaseServer.get.port}/${signup.database.get.name}"
+      logger.debug(s"For URL $databaseUrl and ${signup.database.get.name}:${signup.database.get.password}")
+      Database.forURL(databaseUrl, signup.database.get.name, signup.database.get.password, driver = "org.postgresql.Driver")
+    }
+  }
+}
+

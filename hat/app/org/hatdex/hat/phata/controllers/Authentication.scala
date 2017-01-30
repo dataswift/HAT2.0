@@ -104,7 +104,7 @@ class Authentication @Inject() (
   def login: Action[AnyContent] = UserAwareAction.async { implicit request =>
     LoginDetails.loginForm.bindFromRequest.fold(
       formWithErrors => {
-        Logger.info(s"Form with errors: $formWithErrors")
+        logger.info(s"Form with errors: $formWithErrors")
         Future.successful(BadRequest(phataViews.html.simpleLogin(formWithErrors)))
       },
       loginDetails =>
@@ -161,12 +161,14 @@ class Authentication @Inject() (
           authenticator <- env.authenticatorService.create(request.identity.loginInfo)
           result <- env.authenticatorService.renew(
             authenticator,
-            Ok(phataViews.html.passwordChange(request.identity, Seq(), changed = true)))
+            Ok(phataViews.html.passwordChange(request.identity, Seq(), changed = true))
+          )
         } yield {
           env.eventBus.publish(LoginEvent(request.identity, request))
           result
         }
-      })
+      }
+    )
   }
 
   def passwordResetStart = UserAwareAction { implicit request =>
@@ -180,29 +182,43 @@ class Authentication @Inject() (
   def passwordResetProcess = UserAwareAction.async { implicit request =>
     emailForm.bindFromRequest.fold(
       formWithErrors => Future.successful(BadRequest(phataViews.html.passwordReset(emailForm))),
-      email => usersService.getUser(email).flatMap {
-        case Some(user) if email == request.dynamicEnvironment.ownerEmail =>
-          val protocol = if (configuration.getBoolean("hat.tls").get) {
-            "https://"
+      email => {
+        logger.error(s"PAssword reset for email $email")
+        if (email == request.dynamicEnvironment.ownerEmail) {
+          usersService.listUsers.map(_.find(_.role == "owner")).map(_.get) map {
+            case user =>
+              logger.error(s"Found owner user $user")
+              val protocol = if (configuration.getBoolean("hat.tls").get) {
+                "https://"
+              }
+              else {
+                "http://"
+              }
+              val resetLink = s"$protocol${request.dynamicEnvironment.domain}/passwordreset/confirm?X-Auth-Token="
+              val message = EmailMessage(
+                "HAT - reset your password",
+                email, // to
+                s"owner@${request.dynamicEnvironment.domain}", // from
+                phataViews.txt.emailPasswordReset.render(user, resetLink).toString(),
+                phataViews.html.emailPasswordReset.render(user, resetLink).toString(),
+                1 minute, 5
+              )
+
+              logger.error(s"Sending password reset email $message")
+              emailService.send(message)
+          } recover {
+            case e =>
+              logger.error(s"Finding user failed ${e.getMessage}")
           }
-          else {
-            "http://"
-          }
-          val resetLink = s"$protocol${request.dynamicEnvironment.domain}/passwordreset/confirm?X-Auth-Token="
-          val message = EmailMessage(
-            "HAT - reset your password",
-            email, // to
-            request.dynamicEnvironment.domain, // from
-            phataViews.txt.emailPasswordReset.render(user, resetLink).toString(),
-            phataViews.html.emailPasswordReset.render(user, resetLink).toString(),
-            1 minute, 5)
-          emailService.send(message)
 
           Future.successful(Ok(phataViews.html.simpleMessage("If the email you have entered is correct, you will shortly receive an email with password reset instructions")))
-
-        case _ =>
+        }
+        else {
+          logger.error(s"email doesn't match: $email ${request.dynamicEnvironment.ownerEmail}")
           Future.successful(Ok(phataViews.html.simpleMessage("If the email you have entered is correct, you will shortly receive an email with password reset instructions")))
-      })
+        }
+      }
+    )
   }
 
   def passwordResetConfirmStart = SecuredAction { implicit request =>
@@ -222,13 +238,15 @@ class Authentication @Inject() (
           authenticator <- env.authenticatorService.create(request.identity.loginInfo)
           result <- env.authenticatorService.renew(
             authenticator,
-            Ok(phataViews.html.passwordResetConfirm(request.identity, Seq(), changed = true, token = request.getQueryString("X-Auth-Token").get)))
+            Ok(phataViews.html.passwordResetConfirm(request.identity, Seq(), changed = true, token = request.getQueryString("X-Auth-Token").get))
+          )
         } yield {
           env.eventBus.publish(LoginEvent(request.identity, request))
           result
         }
 
         Ok(phataViews.html.passwordResetConfirm(request.identity, Seq(), changed = true, token = request.getQueryString("X-Auth-Token").get))
-      })
+      }
+    )
   }
 }

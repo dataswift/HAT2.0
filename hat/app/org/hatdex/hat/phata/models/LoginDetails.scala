@@ -7,7 +7,8 @@ case class LoginDetails(
   password: String,
   remember: Option[Boolean],
   name: Option[String],
-  redirect: Option[String])
+  redirect: Option[String]
+)
 
 object LoginDetails {
   private val loginDetailsMapping: Mapping[LoginDetails] = Forms.mapping(
@@ -24,7 +25,8 @@ object LoginDetails {
 case class PasswordChange(
   oldPassword: String,
   newPassword: String,
-  confirmPassword: String)
+  confirmPassword: String
+)
 
 object PasswordChange {
   private val passwordChangeMapping: Mapping[PasswordChange] = Forms.mapping(
@@ -34,7 +36,8 @@ object PasswordChange {
       "confirm" -> Forms.nonEmptyText(minLength = 12)
     ).verifying(
         "constraints.passwords.match",
-        passConfirm => passConfirm._1 == passConfirm._2)
+        passConfirm => passConfirm._1 == passConfirm._2
+      )
   )({
       case (oldPassword, (password, confirm)) =>
         PasswordChange(oldPassword, password, confirm)

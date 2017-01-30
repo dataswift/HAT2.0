@@ -83,7 +83,8 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     userService: AuthUserService,
     authenticatorService: AuthenticatorService[JWTRS256Authenticator, HatServer],
     dynamicEnvironmentProviderService: DynamicEnvironmentProviderService[HatServer],
-    eventBus: EventBus): Environment[HatApiAuthEnvironment] = {
+    eventBus: EventBus
+  ): Environment[HatApiAuthEnvironment] = {
 
     Environment[HatApiAuthEnvironment](
       userService,
@@ -99,7 +100,8 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     userService: AuthUserService,
     authenticatorService: AuthenticatorService[CookieAuthenticator, HatServer],
     dynamicEnvironmentProviderService: DynamicEnvironmentProviderService[HatServer],
-    eventBus: EventBus): Environment[HatFrontendAuthEnvironment] = {
+    eventBus: EventBus
+  ): Environment[HatFrontendAuthEnvironment] = {
 
     Environment[HatFrontendAuthEnvironment](
       userService,
@@ -164,7 +166,8 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     fingerprintGenerator: FingerprintGenerator,
     idGenerator: IDGenerator,
     configuration: Configuration,
-    clock: Clock): AuthenticatorService[JWTRS256Authenticator, HatServer] = {
+    clock: Clock
+  ): AuthenticatorService[JWTRS256Authenticator, HatServer] = {
 
     val config = configuration.underlying.as[JWTRS256AuthenticatorSettings]("silhouette.authenticator")
     val encoder = new Base64AuthenticatorEncoder()
@@ -179,7 +182,8 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     fingerprintGenerator: FingerprintGenerator,
     idGenerator: IDGenerator,
     configuration: Configuration,
-    clock: Clock): AuthenticatorService[CookieAuthenticator, HatServer] = {
+    clock: Clock
+  ): AuthenticatorService[CookieAuthenticator, HatServer] = {
 
     val config = configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator")
     val encoder = new CrypterAuthenticatorEncoder(crypter)

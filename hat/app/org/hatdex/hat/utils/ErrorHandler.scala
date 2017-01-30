@@ -28,7 +28,8 @@ class ErrorHandler @Inject() (
   config: Configuration,
   sourceMapper: OptionalSourceMapper,
   router: Provider[Router],
-  val messagesApi: MessagesApi) extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
+  val messagesApi: MessagesApi
+) extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
     with SecuredErrorHandler with UnsecuredErrorHandler with I18nSupport with ContentTypes with RequestExtractors with Rendering {
 
   // 401 - Unauthorized
@@ -73,7 +74,8 @@ class ErrorHandler @Inject() (
         case Accepts.Json() =>
           InternalServerError(Json.obj(
             "error" -> "Internal Server error",
-            "message" -> s"A server error occurred, please report this error code to our admins: ${exception.id}"))
+            "message" -> s"A server error occurred, please report this error code to our admins: ${exception.id}"
+          ))
         case _ =>
           InternalServerError(views.html.defaultpages.error(exception))
       }
@@ -104,7 +106,8 @@ class ErrorHandler @Inject() (
           }
           InternalServerError(Json.obj(
             "error" -> "Internal Server error",
-            "message" -> message))
+            "message" -> message
+          ))
         case _ =>
           exception match {
             case e: HatServerDiscoveryException =>
