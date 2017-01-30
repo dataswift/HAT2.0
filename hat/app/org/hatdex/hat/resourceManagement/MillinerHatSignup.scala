@@ -13,8 +13,15 @@ trait MillinerHatSignup {
   val logger: Logger
   val ws: WSClient
   val configuration: Configuration
-  val schema = configuration.getString("resourceManagement.millinerSchema").get
+  val schema = configuration.getString("resourceManagement.millinerAddress") match {
+    case Some(address) if address.startsWith("https") => "https://"
+    case Some(address) if address.startsWith("http") => "http://"
+    case _ => "http://"
+  }
+
   val millinerAddress = configuration.getString("resourceManagement.millinerAddress").get
+    .stripPrefix("http://")
+    .stripPrefix("https://")
   val hatSharedSecret = configuration.getString("resourceManagement.hatSharedSecret").get
 
   val cache: CacheApi
