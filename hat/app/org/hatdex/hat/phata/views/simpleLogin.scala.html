@@ -26,7 +26,7 @@
             </div>
             <div class="row">
                 <div class="col-xs-10 col-sm-6 col-xs-offset-1 col-sm-offset-3">
-                @b3.checkbox(signinForm("remember"), '_text -> "Remember Me")
+                @b3.checkbox(signinForm("remember"), '_text -> "Remember Me", '_default -> true)
                 </div>
             </div>
             <div class="row">
@@ -40,7 +40,7 @@
         }
 
         <p class="subtext">
-            <a href="@hatRoutes.Authentication.passwordResetStart()">
+            <a href="@hatRoutes.Authentication.forgotPassword()">
                 Forgot Password
             </a>
         </p>

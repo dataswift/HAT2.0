@@ -62,7 +62,7 @@ GET           /hatlogin                                   org.hatdex.hat.phata.c
 GET           /logout                                     org.hatdex.hat.phata.controllers.Authentication.logout
 GET           /password                                   org.hatdex.hat.phata.controllers.Authentication.passwordChangeStart
 POST          /password                                   org.hatdex.hat.phata.controllers.Authentication.passwordChangeProcess
-GET           /passwordreset                              org.hatdex.hat.phata.controllers.Authentication.passwordResetStart
-POST          /passwordreset                              org.hatdex.hat.phata.controllers.Authentication.passwordResetProcess
-GET           /passwordreset/confirm                      org.hatdex.hat.phata.controllers.Authentication.passwordResetConfirmStart
-POST          /passwordreset/confirm                      org.hatdex.hat.phata.controllers.Authentication.passwordResetConfirmProcess
+GET           /passwordreset                              org.hatdex.hat.phata.controllers.Authentication.forgotPassword
+POST          /passwordreset                              org.hatdex.hat.phata.controllers.Authentication.handleForgotPassword
+GET           /passwordreset/confirm/:token               org.hatdex.hat.phata.controllers.Authentication.resetPassword(token: String)
+POST          /passwordreset/confirm/:token               org.hatdex.hat.phata.controllers.Authentication.handleResetPassword(token: String)

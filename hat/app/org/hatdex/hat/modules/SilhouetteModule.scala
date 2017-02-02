@@ -27,6 +27,8 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.authentication._
+import org.hatdex.hat.phata.models.MailTokenUser
+import org.hatdex.hat.phata.service.{ MailTokenService, MailTokenUserService }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider }
 import org.hatdex.hat.utils.ErrorHandler
 import play.api.Configuration
@@ -46,6 +48,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
     bind[Silhouette[HatApiAuthEnvironment]].to[SilhouetteProvider[HatApiAuthEnvironment]]
     bind[Silhouette[HatFrontendAuthEnvironment]].to[SilhouetteProvider[HatFrontendAuthEnvironment]]
+    bind[MailTokenService[MailTokenUser]].to[MailTokenUserService]
 
     bind[SecuredErrorHandler].to[ErrorHandler]
     bind[UnsecuredErrorHandler].to[ErrorHandler]

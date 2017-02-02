@@ -13,7 +13,7 @@ cd hat/target/docker/stage
 zip -q -r ${APPLICATION_NAME}-${VERSION}.zip * .ebextensions
 
 echo "Upload package"
-aws s3api put-object --bucket $BUCKET --key apps/${APPLICATION_NAME}-${VERSION} --body ${APPLICATION_NAME}-${VERSION}.zip
+aws s3 cp  ${APPLICATION_NAME}-${VERSION}.zip s3://$BUCKET/apps/${APPLICATION_NAME}-${VERSION}
 
 echo "Cleanup"
 rm ${APPLICATION_NAME}-${VERSION}.zip

@@ -20,6 +20,8 @@ trait HatKeyProvider {
 
   def privateKey(hat: String)(implicit ec: ExecutionContext): Future[RSAPrivateKey]
 
+  def ownerEmail(hat: String)(implicit ec: ExecutionContext): Future[String]
+
   def toString(rsaPublicKey: RSAPublicKey): String = {
     val pemObject = new PemObject("PUBLIC KEY", rsaPublicKey.getEncoded)
     val stringPemWriter = new StringWriter()
@@ -72,6 +74,14 @@ class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatK
       Future.failed(new HatServerDiscoveryException(s"Private Key for $hat not found"))
     }
   }
+
+  def ownerEmail(hat: String)(implicit ec: ExecutionContext): Future[String] = {
+    configuration.getString(s"hat.$hat.ownerEmail") map { email =>
+      Future.successful(email)
+    } getOrElse {
+      Future.failed(new HatServerDiscoveryException(s"Owner email for $hat not found"))
+    }
+  }
 }
 
 @Singleton
@@ -98,6 +108,15 @@ class HatKeyProviderMilliner @Inject() (
     } recoverWith {
       case e =>
         Future.failed(new HatServerDiscoveryException(s"Private Key for $hat not found"))
+    }
+  }
+
+  def ownerEmail(hat: String)(implicit ec: ExecutionContext): Future[String] = {
+    getHatSignup(hat) map { signup =>
+      signup.email
+    } recoverWith {
+      case e =>
+        Future.failed(new HatServerDiscoveryException(s"Owner email for $hat not found"))
     }
   }
 }

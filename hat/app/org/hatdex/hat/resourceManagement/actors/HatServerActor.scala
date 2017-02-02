@@ -101,8 +101,9 @@ class HatServerActor @Inject() (
       privateKey <- hatKeyProvider.privateKey(hat)
       publicKey <- hatKeyProvider.publicKey(hat)
       db <- hatDatabaseProvider.database(hat)
+      ownerEmail <- hatKeyProvider.ownerEmail(hat)
     } yield {
-      val hatServer = HatServer(hat, hat.split('.').headOption.getOrElse(hat), "andrius.aucinas@gmail.com", privateKey, publicKey, db)
+      val hatServer = HatServer(hat, hat.split('.').headOption.getOrElse(hat), ownerEmail, privateKey, publicKey, db)
       log.debug(s"HAT connection info $hatServer")
       hatServer
     }

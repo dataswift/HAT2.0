@@ -3,6 +3,7 @@ package org.hatdex.hat.dal
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.phata.models.MailTokenUser
 import play.api.libs.json.Json
 
 object ModelTranslation {
@@ -105,5 +106,10 @@ object ModelTranslation {
     ApiDataDebitOut(Some(dataDebitRow.dataDebitKey), Some(dataDebitRow.dateCreated), Some(dataDebitRow.lastUpdated),
       dataDebitRow.name, dataDebitRow.startDate, dataDebitRow.endDate, Some(dataDebitRow.enabled), dataDebitRow.rolling, dataDebitRow.sellRent,
       dataDebitRow.price, dataDebitRow.kind, apiBundleContextlessData, apiBundleContextualData)
+  }
+
+  def fromDbModel(
+    userMailTokensRow: UserMailTokensRow): MailTokenUser = {
+    MailTokenUser(userMailTokensRow.id, userMailTokensRow.email, userMailTokensRow.expirationTime.toDateTime, userMailTokensRow.isSignup)
   }
 }

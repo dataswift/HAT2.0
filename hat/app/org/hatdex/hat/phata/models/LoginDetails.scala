@@ -23,27 +23,25 @@ object LoginDetails {
 }
 
 case class PasswordChange(
-  oldPassword: String,
   newPassword: String,
   confirmPassword: String
 )
 
 object PasswordChange {
   private val passwordChangeMapping: Mapping[PasswordChange] = Forms.mapping(
-    "oldPassword" -> Forms.nonEmptyText,
     "newPassword" -> Forms.tuple(
-      "password" -> Forms.nonEmptyText(minLength = 12),
-      "confirm" -> Forms.nonEmptyText(minLength = 12)
+      "password" -> Forms.nonEmptyText(minLength = 8),
+      "confirm" -> Forms.nonEmptyText(minLength = 8)
     ).verifying(
         "constraints.passwords.match",
         passConfirm => passConfirm._1 == passConfirm._2
       )
   )({
-      case (oldPassword, (password, confirm)) =>
-        PasswordChange(oldPassword, password, confirm)
+      case ((password, confirm)) =>
+        PasswordChange(password, confirm)
     })({
       case passwordChange: PasswordChange =>
-        Some((passwordChange.oldPassword, (passwordChange.newPassword, passwordChange.confirmPassword)))
+        Some(((passwordChange.newPassword, passwordChange.confirmPassword)))
     })
 
   val passwordChangeForm = Form(passwordChangeMapping)

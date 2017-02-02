@@ -25,17 +25,19 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.api.util.{ Clock, Credentials, PasswordHasherRegistry }
-import com.mohiva.play.silhouette.api.{ LoginEvent, LogoutEvent, Silhouette }
+import com.mohiva.play.silhouette.api.{ LoginEvent, LoginInfo, LogoutEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import org.hatdex.hat.api.actors.{ EmailMessage, EmailService }
 import org.hatdex.hat.api.json.HatJsonFormats
+import org.hatdex.hat.api.models.HatService
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.authentication.{ HasFrontendRole, HatFrontendAuthEnvironment, HatFrontendController, WithRole }
-import org.hatdex.hat.phata.models.{ LoginDetails, PasswordChange }
-import org.hatdex.hat.phata.service.{ HatServicesService, NotablesService, UserProfileService }
+import org.hatdex.hat.authentication.{ HasFrontendRole, HatFrontendAuthEnvironment, HatFrontendController }
+import org.hatdex.hat.phata.models.{ LoginDetails, MailTokenUser, PasswordChange }
+import org.hatdex.hat.phata.service.{ HatServicesService, MailTokenService, NotablesService, UserProfileService }
+import org.hatdex.hat.phata.{ views => phataViews }
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
 import play.api.data.Form
 import play.api.data.Forms._
@@ -46,8 +48,6 @@ import play.api.{ Configuration, Logger }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
-
-import org.hatdex.hat.phata.{ views => phataViews }
 
 class Authentication @Inject() (
     val messagesApi: MessagesApi,
@@ -62,6 +62,7 @@ class Authentication @Inject() (
     emailService: EmailService,
     notablesService: NotablesService,
     passwordHasherRegistry: PasswordHasherRegistry,
+    tokenService: MailTokenService[MailTokenUser],
     jwtAuthenticatorService: AuthenticatorService[JWTRS256Authenticator, HatServer],
     authInfoRepository: AuthInfoRepository[HatServer]
 ) extends HatFrontendController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
@@ -70,6 +71,13 @@ class Authentication @Inject() (
 
   private val logger = Logger(this.getClass)
   private val emailForm = Form(single("email" -> email))
+
+  private val protocol = if (configuration.getBoolean("hat.tls").get) {
+    "https://"
+  }
+  else {
+    "http://"
+  }
 
   def signin: Action[AnyContent] = UserAwareAction { implicit request =>
     Ok(phataViews.html.simpleLogin(LoginDetails.loginForm))
@@ -145,14 +153,14 @@ class Authentication @Inject() (
   }
 
   def passwordChangeStart() = SecuredAction(HasFrontendRole("owner")).async { implicit request =>
-    Future.successful(Ok(phataViews.html.passwordChange(request.identity, Seq())))
+    Future.successful(Ok(phataViews.html.passwordChange(request.identity, PasswordChange.passwordChangeForm, Seq())))
   }
 
   def passwordChangeProcess() = SecuredAction(HasFrontendRole("owner")).async { implicit request =>
     PasswordChange.passwordChangeForm.bindFromRequest.fold(
       formWithErrors => {
         Logger.debug(s"Form with errors: $formWithErrors")
-        Future.successful(BadRequest(phataViews.html.passwordChange(request.identity, Seq("Passwords do not match"))))
+        Future.successful(BadRequest(phataViews.html.passwordChange(request.identity, formWithErrors, Seq("Passwords do not match"))))
       },
 
       loginDetails => {
@@ -161,7 +169,7 @@ class Authentication @Inject() (
           authenticator <- env.authenticatorService.create(request.identity.loginInfo)
           result <- env.authenticatorService.renew(
             authenticator,
-            Ok(phataViews.html.passwordChange(request.identity, Seq(), changed = true))
+            Ok(phataViews.html.passwordChange(request.identity, PasswordChange.passwordChangeForm.fill(loginDetails), Seq(), changed = true))
           )
         } yield {
           env.eventBus.publish(LoginEvent(request.identity, request))
@@ -171,82 +179,99 @@ class Authentication @Inject() (
     )
   }
 
-  def passwordResetStart = UserAwareAction { implicit request =>
-    request.identity map { identity =>
-      Redirect(routes.Phata.home().url)
-    } getOrElse {
-      Ok(phataViews.html.passwordReset(emailForm))
-    }
+  /**
+   * Starts the reset password mechanism if the user has forgot his password. It shows a form to insert his email address.
+   */
+  def forgotPassword: Action[AnyContent] = UserAwareAction.async { implicit request =>
+    Future.successful(request.identity match {
+      case Some(_) => Redirect(routes.Phata.home().url)
+      case None    => Ok(phataViews.html.passwordForgot(emailForm))
+    })
   }
 
-  def passwordResetProcess = UserAwareAction.async { implicit request =>
+  /**
+   * Sends an email to the user with a link to reset the password
+   */
+  def handleForgotPassword: Action[AnyContent] = UserAwareAction.async { implicit request =>
     emailForm.bindFromRequest.fold(
-      formWithErrors => Future.successful(BadRequest(phataViews.html.passwordReset(emailForm))),
-      email => {
-        logger.error(s"PAssword reset for email $email")
+      formWithErrors => Future.successful(BadRequest(phataViews.html.passwordForgot(formWithErrors))),
+      email =>
         if (email == request.dynamicEnvironment.ownerEmail) {
-          usersService.listUsers.map(_.find(_.role == "owner")).map(_.get) map {
-            case user =>
-              logger.error(s"Found owner user $user")
-              val protocol = if (configuration.getBoolean("hat.tls").get) {
-                "https://"
-              }
-              else {
-                "http://"
-              }
-              val resetLink = s"$protocol${request.dynamicEnvironment.domain}/passwordreset/confirm?X-Auth-Token="
-              val message = EmailMessage(
-                "HAT - reset your password",
-                email, // to
-                s"owner@${request.dynamicEnvironment.domain}", // from
-                phataViews.txt.emailPasswordReset.render(user, resetLink).toString(),
-                phataViews.html.emailPasswordReset.render(user, resetLink).toString(),
-                1 minute, 5
-              )
+          usersService.listUsers.map(_.find(_.role == "owner")).flatMap {
+            case Some(user) =>
+              val token = MailTokenUser(email, isSignUp = false)
+              tokenService.create(token).map { _ =>
+                val resetLink = routes.Authentication.resetPassword(token.id).absoluteURL()
+                val message = EmailMessage(
+                  "HAT - reset your password",
+                  email, // to
+                  s"owner@${request.dynamicEnvironment.domain}", // from
+                  phataViews.txt.emailPasswordReset.render(user, resetLink).toString(),
+                  phataViews.html.emailPasswordReset.render(user, resetLink).toString(),
+                  1 minute, 5)
 
-              logger.error(s"Sending password reset email $message")
-              emailService.send(message)
-          } recover {
-            case e =>
-              logger.error(s"Finding user failed ${e.getMessage}")
+                logger.error(s"Sending password reset email $message")
+                emailService.send(message)
+
+                Ok(phataViews.html.simpleMessage("If the email you have entered is correct, you will shortly receive an email with password reset instructions"))
+              }
+
+            case None => Future.successful(Ok(phataViews.html.simpleMessage("If the email you have entered is correct, you will shortly receive an email with password reset instructions")))
           }
-
-          Future.successful(Ok(phataViews.html.simpleMessage("If the email you have entered is correct, you will shortly receive an email with password reset instructions")))
         }
         else {
           logger.error(s"email doesn't match: $email ${request.dynamicEnvironment.ownerEmail}")
           Future.successful(Ok(phataViews.html.simpleMessage("If the email you have entered is correct, you will shortly receive an email with password reset instructions")))
         }
-      }
     )
   }
 
-  def passwordResetConfirmStart = SecuredAction { implicit request =>
-    Ok(phataViews.html.passwordResetConfirm(request.identity, Seq(), token = request.getQueryString("X-Auth-Token").getOrElse("")))
+  /**
+   * Confirms the user's link based on the token and shows him a form to reset the password
+   */
+  def resetPassword(tokenId: String): Action[AnyContent] = UserAwareAction.async { implicit request =>
+    tokenService.retrieve(tokenId).flatMap {
+      case Some(token) if !token.isSignUp && !token.isExpired =>
+        Future.successful(Ok(phataViews.html.passwordReset(tokenId, PasswordChange.passwordChangeForm)))
+      case Some(token) =>
+        tokenService.consume(tokenId)
+        Future.successful(Redirect(routes.Phata.home().url))
+      case None => Future.successful(Redirect(routes.Phata.home().url))
+    }
   }
 
-  def passwordResetConfirmProcess = SecuredAction { implicit request =>
+  /**
+   * Saves the new password and authenticates the user
+   */
+  def handleResetPassword(tokenId: String): Action[AnyContent] = UserAwareAction.async { implicit request =>
     PasswordChange.passwordChangeForm.bindFromRequest.fold(
-      formWithErrors => {
-        Logger.debug(s"Form with errors: $formWithErrors")
-        Ok(phataViews.html.passwordResetConfirm(request.identity, Seq("Passwords do not match"), token = request.getQueryString("X-Auth-Token").getOrElse("")))
-      },
-
-      loginDetails => {
-        for {
-          _ <- authInfoRepository.update(request.identity.loginInfo, passwordHasherRegistry.current.hash(loginDetails.newPassword))
-          authenticator <- env.authenticatorService.create(request.identity.loginInfo)
-          result <- env.authenticatorService.renew(
-            authenticator,
-            Ok(phataViews.html.passwordResetConfirm(request.identity, Seq(), changed = true, token = request.getQueryString("X-Auth-Token").get))
-          )
-        } yield {
-          env.eventBus.publish(LoginEvent(request.identity, request))
-          result
+      formWithErrors => Future.successful(BadRequest(phataViews.html.passwordReset(tokenId, formWithErrors))),
+      passwords => {
+        tokenService.retrieve(tokenId).flatMap {
+          case Some(token) if !token.isSignUp && !token.isExpired =>
+            if (token.email == request.dynamicEnvironment.ownerEmail) {
+              usersService.listUsers.map(_.find(_.role == "owner")).flatMap {
+                case Some(user) =>
+                  for {
+                    _ <- authInfoRepository.update(user.loginInfo, passwordHasherRegistry.current.hash(passwords.newPassword))
+                    authenticator <- env.authenticatorService.create(user.loginInfo)
+                    result <- env.authenticatorService.renew(authenticator, Ok(phataViews.html.passwordResetSuccess(user)))
+                  } yield {
+                    tokenService.consume(tokenId)
+                    env.eventBus.publish(LoginEvent(user, request))
+                    result
+                  }
+                case None => Future.failed(new IdentityNotFoundException("Couldn't find user"))
+              }
+            }
+            else {
+              Future.successful(Redirect(routes.Phata.home().url))
+            }
+          case Some(token) =>
+            tokenService.consume(tokenId)
+            Future.successful(Redirect(routes.Phata.home().url))
+          case None => Future.successful(Redirect(routes.Phata.home().url))
         }
-
-        Ok(phataViews.html.passwordResetConfirm(request.identity, Seq(), changed = true, token = request.getQueryString("X-Auth-Token").get))
-      }
-    )
+      })
   }
 }

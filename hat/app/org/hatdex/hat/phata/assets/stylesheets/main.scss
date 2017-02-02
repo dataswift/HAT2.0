@@ -709,3 +709,11 @@ a.active {
 
 @import "notables";
 
+.alert {
+  text-align: left;
+  font-size: 2em;
+
+  a {
+    color: $text-dark;
+  }
+}

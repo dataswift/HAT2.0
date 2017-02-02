@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{ GetResult => GR }
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -568,8 +568,12 @@ trait Tables {
     /** Database column deleted SqlType(bool), Default(false) */
     val deleted: Rep[Boolean] = column[Boolean]("deleted", O.Default(false))
 
+    /** Index over (name) (database name data_table_name) */
+    val index1 = index("data_table_name", name)
     /** Uniqueness Index over (name,sourceName) (database name data_table_name_source) */
-    val index1 = index("data_table_name_source", (name, sourceName), unique = true)
+    val index2 = index("data_table_name_source", (name, sourceName), unique = true)
+    /** Index over (sourceName) (database name data_table_source_name) */
+    val index3 = index("data_table_source_name", sourceName)
   }
   /** Collection-like TableQuery object for table DataTable */
   lazy val DataTable = new TableQuery(tag => new DataTable(tag))
@@ -3095,6 +3099,38 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table UserAccessToken */
   lazy val UserAccessToken = new TableQuery(tag => new UserAccessToken(tag))
+
+  /**
+   * Entity class storing rows of table UserMailTokens
+   *  @param id Database column id SqlType(varchar), PrimaryKey
+   *  @param email Database column email SqlType(varchar)
+   *  @param expirationTime Database column expiration_time SqlType(timestamp)
+   *  @param isSignup Database column is_signup SqlType(bool)
+   */
+  case class UserMailTokensRow(id: String, email: String, expirationTime: org.joda.time.LocalDateTime, isSignup: Boolean)
+  /** GetResult implicit for fetching UserMailTokensRow objects using plain SQL queries */
+  implicit def GetResultUserMailTokensRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime], e2: GR[Boolean]): GR[UserMailTokensRow] = GR {
+    prs =>
+      import prs._
+      UserMailTokensRow.tupled((<<[String], <<[String], <<[org.joda.time.LocalDateTime], <<[Boolean]))
+  }
+  /** Table description of table user_mail_tokens. Objects of this class serve as prototypes for rows in queries. */
+  class UserMailTokens(_tableTag: Tag) extends Table[UserMailTokensRow](_tableTag, "user_mail_tokens") {
+    def * = (id, email, expirationTime, isSignup) <> (UserMailTokensRow.tupled, UserMailTokensRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(id), Rep.Some(email), Rep.Some(expirationTime), Rep.Some(isSignup)).shaped.<>({ r => import r._; _1.map(_ => UserMailTokensRow.tupled((_1.get, _2.get, _3.get, _4.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column id SqlType(varchar), PrimaryKey */
+    val id: Rep[String] = column[String]("id", O.PrimaryKey)
+    /** Database column email SqlType(varchar) */
+    val email: Rep[String] = column[String]("email")
+    /** Database column expiration_time SqlType(timestamp) */
+    val expirationTime: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("expiration_time")
+    /** Database column is_signup SqlType(bool) */
+    val isSignup: Rep[Boolean] = column[Boolean]("is_signup")
+  }
+  /** Collection-like TableQuery object for table UserMailTokens */
+  lazy val UserMailTokens = new TableQuery(tag => new UserMailTokens(tag))
 
   /**
    * Entity class storing rows of table UserUser

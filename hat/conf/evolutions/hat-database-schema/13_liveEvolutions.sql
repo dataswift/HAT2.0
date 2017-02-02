@@ -197,10 +197,23 @@ CREATE INDEX data_table_source_name ON hat.data_table(source_name);
 --rollback DROP INDEX IF EXISTS hat.data_table_name;
 --rollback DROP INDEX IF EXISTS hat.data_table_source_name;
 
---changeset hubofallthings:rumpelLiteApp
+--changeset hubofallthings:rumpelLiteApp context:structuresonly runOnChange:true
+
+DELETE FROM hat.applications WHERE title = 'RumpelLite';
 
 INSERT INTO hat.applications (title, description, logo_url, url, auth_url, browser, category, setup, login_available)
 VALUES ('RumpelLite', 'Mobile hyperdata browser for your HAT data', '/assets/images/Rumpel-logo.svg',
         'rumpellocationtrackerapp://rumpellocationtrackerapphost', '/', TRUE, 'app', TRUE, TRUE);
 
 --rollback DELETE FROM hat.applications WHERE title = 'RumpelLite';
+
+--changeset hubofallthings:userMailTokens context:structuresonly runOnChange:true
+
+CREATE TABLE IF NOT EXISTS user_mail_tokens (
+  id              VARCHAR   NOT NULL PRIMARY KEY,
+  email           VARCHAR   NOT NULL,
+  expiration_time TIMESTAMP NOT NULL,
+  is_signup       BOOLEAN   NOT NULL
+);
+
+--rollback DROP TABLE user_mail_tokens;
