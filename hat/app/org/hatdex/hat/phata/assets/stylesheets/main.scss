@@ -88,6 +88,10 @@ h1, h2, h3, h4, h5 {
   color: white;
   border: none;
   border-radius: 0;
+
+  span.icon-bar {
+    background-color: $text-light;
+  }
 }
 
 .navbar .navbar-brand {
@@ -107,6 +111,16 @@ h1, h2, h3, h4, h5 {
   height: 2.4em;
 }
 
+.navbar-nav>li {
+  @media (max-width: $screen-sm-max) {
+    a {
+      text-align: right;
+      font-size: 1.6em;
+    }
+  }
+}
+
+
 /*.navbar-default, footer {*/
 /*background-image: url("/assets/images/concrete_wall_2.png");*/
 /*background-repeat: repeat;*/
@@ -125,6 +139,10 @@ h1, h2, h3, h4, h5 {
   margin: 0;
   padding: 0;
   color: $text-light;
+}
+
+.navbar-header:after {
+  display: inline;
 }
 
 .navbar li {
@@ -220,8 +238,6 @@ footer {
   font-size: 1em;
   padding: 2em;
   color: #333232;
-  padding-right: 10em;
-  padding-left: 10em;
   min-height: 10em;
   background: white;
 }
@@ -244,10 +260,13 @@ footer .certified img {
   height: auto;
 }
 
-footer .copyright a {
-  color: rgb(17, 134, 117);
-  font-weight: bold;
-  font-size: 1.2em;
+footer .copyright {
+  max-width: calc(100% - 6em);
+  a {
+    color: rgb(17, 134, 117);
+    font-weight: bold;
+    font-size: 1.2em;
+  }
 }
 
 .menubar-left {
@@ -460,7 +479,10 @@ a.active {
 
 .launcher-content {
   min-height: 75vh;
-  margin: 10em;
+  margin: 2em;
+  @media (min-width: $screen-md-min) {
+    margin: 10em;
+  }
   .nav-tabs.nav-justified {
     //@media (min-width: $screen-xs-min) {
     > li {
@@ -488,6 +510,9 @@ a.active {
       span.title {
         min-width: 3em;
         display: block;
+        @media (max-width: $screen-sm-max) {
+          font-size: 0.5em;
+        }
       }
 
       &:hover {
@@ -524,10 +549,14 @@ a.active {
   $item-height: 17em;
   @include make-row();
   text-align:center;
-  padding-left: 3em;
-  padding-right: 3em;
-  padding-bottom: 3em;
-  padding-top: 15em;
+  padding-top: 10em;
+  @media (min-width: $screen-md-min) {
+    padding-left: 3em;
+    padding-right: 3em;
+    padding-bottom: 3em;
+    padding-top: 15em;
+  }
+
   margin-left: 0;
   margin-right: 0;
 
@@ -544,6 +573,10 @@ a.active {
     @include make-md-column(4);
     @include make-lg-column(4);
     margin-bottom: 10em;
+
+    @media (max-width: $screen-sm-max) {
+      font-size: 0.8em;
+    }
 
     h1, h2, h3, h4, h5 {
       font-family: 'Open Sans Condensed', sans-serif;

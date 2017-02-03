@@ -106,6 +106,10 @@
   font-size: 1em;
   margin: 1em 0;
   padding: 0.75em 4em;
+  @media (max-width: $screen-sm-max) {
+    margin: 0;
+    padding: 0.75em 0.5em;
+  }
   background-color: #018675;
   text-transform: uppercase;
   color: #ffffff;
