@@ -20,7 +20,6 @@
  */
 package org.hatdex.hat.api.service
 
-import org.hatdex.hat.api.actors.DalExecutionContext
 import org.hatdex.hat.api.models.{ ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _ }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._

@@ -25,8 +25,8 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
-import org.hatdex.hat.api.actors.DalExecutionContext
 import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SlickPostgresDriver.api._

@@ -25,13 +25,11 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.api.util.{ Clock, Credentials, PasswordHasherRegistry }
-import com.mohiva.play.silhouette.api.{ LoginEvent, LoginInfo, LogoutEvent, Silhouette }
+import com.mohiva.play.silhouette.api.{ LoginEvent, LogoutEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import org.hatdex.hat.api.actors.{ EmailMessage, EmailService }
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.HatService
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.authentication.{ HasFrontendRole, HatFrontendAuthEnvironment, HatFrontendController }
@@ -39,6 +37,7 @@ import org.hatdex.hat.phata.models.{ LoginDetails, MailTokenUser, PasswordChange
 import org.hatdex.hat.phata.service.{ HatServicesService, MailTokenService, NotablesService, UserProfileService }
 import org.hatdex.hat.phata.{ views => phataViews }
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
+import org.hatdex.hat.utils.HatMailer
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.MessagesApi
@@ -47,7 +46,6 @@ import play.api.{ Configuration, Logger }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class Authentication @Inject() (
     val messagesApi: MessagesApi,
@@ -59,13 +57,12 @@ class Authentication @Inject() (
     hatServicesService: HatServicesService,
     userProfileService: UserProfileService,
     usersService: UsersService,
-    emailService: EmailService,
+    mailer: HatMailer,
     notablesService: NotablesService,
     passwordHasherRegistry: PasswordHasherRegistry,
     tokenService: MailTokenService[MailTokenUser],
     jwtAuthenticatorService: AuthenticatorService[JWTRS256Authenticator, HatServer],
-    authInfoRepository: AuthInfoRepository[HatServer]
-) extends HatFrontendController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    authInfoRepository: AuthInfoRepository[HatServer]) extends HatFrontendController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   import org.hatdex.hat.phata.models.HatPublicInfo.hatServer2PublicInfo
 
@@ -139,8 +136,7 @@ class Authentication @Inject() (
           } recover {
             case e =>
               Ok(phataViews.html.simpleLogin(LoginDetails.loginForm, Some("Invalid Credentials!")))
-          }
-    )
+          })
   }
 
   def logout: Action[AnyContent] = UserAwareAction.async { implicit request =>
@@ -169,14 +165,12 @@ class Authentication @Inject() (
           authenticator <- env.authenticatorService.create(request.identity.loginInfo)
           result <- env.authenticatorService.renew(
             authenticator,
-            Ok(phataViews.html.passwordChange(request.identity, PasswordChange.passwordChangeForm.fill(loginDetails), Seq(), changed = true))
-          )
+            Ok(phataViews.html.passwordChange(request.identity, PasswordChange.passwordChangeForm.fill(loginDetails), Seq(), changed = true)))
         } yield {
           env.eventBus.publish(LoginEvent(request.identity, request))
           result
         }
-      }
-    )
+      })
   }
 
   /**
@@ -195,35 +189,27 @@ class Authentication @Inject() (
   def handleForgotPassword: Action[AnyContent] = UserAwareAction.async { implicit request =>
     emailForm.bindFromRequest.fold(
       formWithErrors => Future.successful(BadRequest(phataViews.html.passwordForgot(formWithErrors))),
-      email =>
+      email => {
+        val response = Ok(phataViews.html.simpleMessage("If the email you have entered is correct, you will shortly receive an email with password reset instructions"))
         if (email == request.dynamicEnvironment.ownerEmail) {
           usersService.listUsers.map(_.find(_.role == "owner")).flatMap {
             case Some(user) =>
               val token = MailTokenUser(email, isSignUp = false)
               tokenService.create(token).map { _ =>
                 val resetLink = routes.Authentication.resetPassword(token.id).absoluteURL()
-                val message = EmailMessage(
-                  "HAT - reset your password",
-                  email, // to
-                  s"owner@${request.dynamicEnvironment.domain}", // from
-                  phataViews.txt.emailPasswordReset.render(user, resetLink).toString(),
-                  phataViews.html.emailPasswordReset.render(user, resetLink).toString(),
-                  1 minute, 5)
-
-                logger.error(s"Sending password reset email $message")
-                emailService.send(message)
-
-                Ok(phataViews.html.simpleMessage("If the email you have entered is correct, you will shortly receive an email with password reset instructions"))
+                logger.error(s"Sending password reset email for $email")
+                mailer.passwordReset(email, user, resetLink)
+                response
               }
 
-            case None => Future.successful(Ok(phataViews.html.simpleMessage("If the email you have entered is correct, you will shortly receive an email with password reset instructions")))
+            case None => Future.successful(response)
           }
         }
         else {
           logger.error(s"email doesn't match: $email ${request.dynamicEnvironment.ownerEmail}")
-          Future.successful(Ok(phataViews.html.simpleMessage("If the email you have entered is correct, you will shortly receive an email with password reset instructions")))
+          Future.successful(response)
         }
-    )
+      })
   }
 
   /**

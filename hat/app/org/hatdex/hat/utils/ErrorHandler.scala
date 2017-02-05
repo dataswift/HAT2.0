@@ -28,6 +28,7 @@ class ErrorHandler @Inject() (
   config: Configuration,
   sourceMapper: OptionalSourceMapper,
   router: Provider[Router],
+  hatMailer: HatMailer,
   val messagesApi: MessagesApi
 ) extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
     with SecuredErrorHandler with UnsecuredErrorHandler with I18nSupport with ContentTypes with RequestExtractors with Rendering {
@@ -68,7 +69,7 @@ class ErrorHandler @Inject() (
   override def onProdServerError(request: RequestHeader, exception: UsefulException): Future[Result] = {
     implicit val _request = request
     implicit val noUser: Option[HatUser] = None
-    //    mailer.serverErrorNotify(request, exception)
+    hatMailer.serverErrorNotify(request, exception)
     Future.successful {
       render {
         case Accepts.Json() =>
@@ -85,15 +86,6 @@ class ErrorHandler @Inject() (
   override def onServerError(request: RequestHeader, exception: Throwable): Future[Result] = {
     implicit val _request = request
     implicit val noUser: Option[HatUser] = None
-    //      mailer.serverErrorNotify(request, exception)
-    //    val message = exception match {
-    //      //      case e: SQLTransientConnectionException =>
-    //      //        "HAT unavailable"
-    //      case e: HatServerDiscoveryException =>
-    //        NotFound(org.hatdex.hat.phata.views.html.hatNotFound())
-    //      case e =>
-    //        s"A server error occurred, please report this error code to our admins: ${e.getMessage}"
-    //    }
 
     Future.successful {
       render {

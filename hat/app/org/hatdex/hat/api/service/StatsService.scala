@@ -22,7 +22,6 @@ package org.hatdex.hat.api.service
 
 import javax.inject.Inject
 
-import org.hatdex.hat.api.actors.DalExecutionContext
 import org.hatdex.hat.api.models.DataDebitOperations.DataDebitOperation
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.dal.SlickPostgresDriver.api._

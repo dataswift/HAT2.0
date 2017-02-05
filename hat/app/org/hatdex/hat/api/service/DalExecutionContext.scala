@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-package org.hatdex.hat.api.actors
+package org.hatdex.hat.api.service
 
 trait DalExecutionContext {
   import IoExecutionContext.ioThreadPool

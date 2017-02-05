@@ -7,7 +7,7 @@
 
 package org.hatdex.hat.phata.service
 
-import org.hatdex.hat.api.actors.DalExecutionContext
+import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._

@@ -23,10 +23,9 @@ package org.hatdex.hat.phata.service
 
 import javax.inject.Inject
 
-import org.hatdex.hat.api.actors.DalExecutionContext
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models.{ ApiDataRecord, ApiDataTable }
-import org.hatdex.hat.api.service.{ BundleService, DataService }
+import org.hatdex.hat.api.service.{ BundleService, DalExecutionContext, DataService }
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
 import org.hatdex.hat.phata.models._
 import org.hatdex.hat.resourceManagement.HatServer

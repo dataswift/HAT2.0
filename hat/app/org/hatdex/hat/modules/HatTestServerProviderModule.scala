@@ -7,14 +7,10 @@
 
 package org.hatdex.hat.modules
 
-import com.google.inject.{ AbstractModule, Provides }
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.actors.SmtpConfig
-import org.hatdex.hat.resourceManagement.actors.{ HatServerActor, HatServerProviderActor }
 import org.hatdex.hat.resourceManagement._
-import play.api.Configuration
+import org.hatdex.hat.resourceManagement.actors.{ HatServerActor, HatServerProviderActor }
 import play.api.libs.concurrent.AkkaGuiceSupport
 
 class HatTestServerProviderModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
@@ -27,10 +23,4 @@ class HatTestServerProviderModule extends AbstractModule with ScalaModule with A
     bind[HatKeyProvider].to[HatKeyProviderConfig]
   }
 
-  @Provides
-  def provideSmtpConfiguration(
-    configuration: Configuration
-  ): SmtpConfig = {
-    configuration.underlying.as[SmtpConfig]("mail.smtp")
-  }
 }

@@ -28,7 +28,7 @@ import liquibase.database.DatabaseFactory
 import liquibase.database.jvm.JdbcConnection
 import liquibase.resource.ClassLoaderResourceAccessor
 import liquibase.{ Contexts, LabelExpression, Liquibase }
-import org.hatdex.hat.api.actors.DalExecutionContext
+import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.SlickPostgresDriver.api.Database
 import play.api.{ Configuration, Logger }
 

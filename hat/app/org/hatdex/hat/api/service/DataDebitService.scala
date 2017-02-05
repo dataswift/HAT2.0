@@ -23,7 +23,6 @@ package org.hatdex.hat.api.service
 import java.util.UUID
 import javax.inject.Inject
 
-import org.hatdex.hat.api.actors.DalExecutionContext
 import org.hatdex.hat.api.models.{ User, _ }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
