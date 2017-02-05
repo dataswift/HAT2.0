@@ -1,13 +1,3 @@
-/*
-* Symbolset
-* www.symbolset.com
-* Copyright © 2014 Oak Studios LLC
-*
-* Upload this file to your web server
-* and place this before the closing </body> tag.
-* <script src="webfonts/ss-glyphish-outlined.js"></script>
-*/
-
 if (/(MSIE [7-9]\.|Opera.*Version\/(10\.[5-9]|(11|12)\.)|Chrome\/([1-9]|10)\.|Version\/[2-4][\.0-9]+ Safari\/|Version\/(4\.0\.[4-9]|4\.[1-9]|5\.0)[\.0-9]+? Mobile\/.*Safari\/|Android ([1-2]|4\.[2-9].*Version\/4)\.|BlackBerry.*WebKit)/.test(navigator.userAgent) && !/(IEMobile)/.test(navigator.userAgent)) {
 
   if (/Android 4\.[2-9].*Version\/4/.test(navigator.userAgent)) {

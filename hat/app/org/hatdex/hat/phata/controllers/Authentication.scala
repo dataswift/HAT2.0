@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Andrius Aucinas <andrius.aucinas@hatdex.org>
+ * Copyright (C) 2017 HAT Data Exchange Ltd
  * SPDX-License-Identifier: AGPL-3.0
  *
  * This file is part of the Hub of All Things project (HAT).
@@ -17,7 +17,11 @@
  * You should have received a copy of the GNU Affero General
  * Public License along with this program. If not, see
  * <http://www.gnu.org/licenses/>.
+ *
+ * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
+ * 2 / 2017
  */
+
 package org.hatdex.hat.phata.controllers
 
 import javax.inject.Inject
