@@ -25,9 +25,9 @@ package org.hatdex.hat.phata.service
 
 import javax.inject.Inject
 
+import akka.http.impl.util._
+import akka.http.scaladsl.model.Uri
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.services.AuthenticatorService
-import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
@@ -38,7 +38,6 @@ import org.hatdex.hat.resourceManagement.HatServer
 import play.api.Logger
 import play.api.libs.json.{ JsObject, Json }
 import play.api.mvc.RequestHeader
-import spray.http.Uri
 
 import scala.concurrent.Future
 
@@ -90,10 +89,17 @@ class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment
       .map(AccessToken(_, user.userId))
   }
 
-  def hatServiceLink(user: HatUser, service: HatService)(implicit hatServer: HatServer, requestHeader: RequestHeader): Future[HatService] = {
+  def hatServiceLink(user: HatUser, service: HatService, maybeRedirect: Option[String] = None)(implicit hatServer: HatServer, requestHeader: RequestHeader): Future[HatService] = {
     val eventualUri = if (service.loginAvailable) {
       hatServiceToken(user, service) map { token =>
-        Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(Uri.Query("token" -> token.accessToken))
+        val query = maybeRedirect map { redirect =>
+          val originalQuery: Map[String, String] = Uri(redirect).query().toMap + ("token" -> token.accessToken)
+          Uri.Query(originalQuery)
+        } getOrElse {
+          Uri.Query("token" -> token.accessToken)
+        }
+
+        Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(query)
       }
     }
     else {

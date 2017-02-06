@@ -97,7 +97,7 @@ class Authentication @Inject() (
     hatServicesService.hatServices(Set("app", "dataplug", "testapp")) flatMap { approvedHatServices =>
       for {
         service <- hatServicesService.findOrCreateHatService(name, redirectUrl)
-        linkedService <- hatServicesService.hatServiceLink(identity, service)
+        linkedService <- hatServicesService.hatServiceLink(identity, service, Some(redirectUrl))
       } yield {
         if (service.setup) {
           Redirect(linkedService.url)
