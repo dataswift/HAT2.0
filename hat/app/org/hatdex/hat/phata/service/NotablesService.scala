@@ -68,12 +68,12 @@ class NotablesService @Inject() (bundleService: BundleService, dataService: Data
 
     someNotables map { notables =>
       if (notables.nonEmpty) {
-        logger.info(s"Found some notables")
+        logger.debug(s"Found some notables")
       }
       notables map { notable =>
         notable recover {
           case e =>
-            logger.info(s"Notable parsing failed $e")
+            logger.debug(s"Notable parsing failed $e")
         }
       }
     }

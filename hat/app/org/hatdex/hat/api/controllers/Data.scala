@@ -54,7 +54,7 @@ class Data @Inject() (
     clock: Clock,
     dataService: DataService) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
-  val logger = Logger("org.hatdex.hat.api.controllers.Data")
+  val logger = Logger(this.getClass)
 
   /**
    * Creates a new virtual table for storing arbitrary incoming data

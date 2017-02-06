@@ -35,7 +35,7 @@ import scala.concurrent.Future
 
 // this trait defines our service behavior independently from the service actor
 class DataService extends DalExecutionContext {
-  val logger = Logger("org.hatdex.hat.api.service.DataService")
+  val logger = Logger(this.getClass)
 
   def getTableValues(
     tableId: Int,
@@ -395,7 +395,6 @@ class DataService extends DalExecutionContext {
     fieldset: Set[Int],
     startTime: LocalDateTime, endTime: LocalDateTime,
     maybeLimit: Option[Int] = None)(implicit db: Database): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
-    logger.info(s"Getting values for fieldset: ${fieldset}, ${startTime} to ${endTime}, limited to $maybeLimit")
     val fieldValues = DataValue.filter(_.fieldId inSet fieldset)
     val valuesQuery = fieldValues.filter(v => v.lastUpdated <= endTime && v.lastUpdated >= startTime && v.deleted === false)
       .sortBy(_.recordId.desc)
@@ -416,7 +415,6 @@ class DataService extends DalExecutionContext {
     fieldset: Query[DataField, DataField#TableElementType, Seq],
     startTime: LocalDateTime, endTime: LocalDateTime,
     limit: Int)(implicit db: Database): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
-    logger.info(s"Getting values for fieldset: ${fieldset}, ${startTime} to ${endTime}, limited to $limit")
     val fieldValues = DataValue.filter(_.fieldId in fieldset.map(_.id))
     val valuesQuery = fieldValues.filter(v => v.lastUpdated <= endTime && v.lastUpdated >= startTime && v.deleted === false)
       .sortBy(_.recordId.desc)

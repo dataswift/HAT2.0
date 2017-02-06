@@ -37,7 +37,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class PasswordInfoService @Inject() (userService: AuthUserServiceImpl) extends DelegableAuthInfoDAO[PasswordInfo, HatServer] {
-  val logger = Logger("org.hatdex.hat.authentication")
+  val logger = Logger(this.getClass)
   def add(loginInfo: LoginInfo, authInfo: PasswordInfo)(implicit hat: HatServer): Future[PasswordInfo] =
     update(loginInfo, authInfo)
 

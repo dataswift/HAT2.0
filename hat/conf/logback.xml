@@ -36,66 +36,48 @@
         <appender-ref ref="CONSOLE" />
     </appender>
 
+    <logger name="http" level="INFO">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
     <logger name="akka" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <root level="INFO">
-        <appender-ref ref="ASYNCCONSOLE"/>
-    </root>
-
-    <logger name="API-Access" LEVEL="INFO">
+    <logger name="SchemaMigration" level="DEBUG">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="Stats" LEVEL="INFO">
+    <logger name="scala.slick.session" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="tests" LEVEL="DEBUG">
+    <logger name="akka.event.slf4j.Slf4jLogger" level="WARN">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="SchemaMigration" LEVEL="DEBUG">
+    <logger name="org.hatdex.hat" level="WARN" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="scala.slick.session" LEVEL="INFO">
+    <logger name="org.hatdex.hat.resourceManagement" level="WARN" />
+    <logger name="org.hatdex.hat.api.service" level="INFO" />
+    <logger name="org.hatdex.hat.api.service.UsersService" level="WARN" />
+
+    <logger name="org.hatdex.marketsquare" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="akka.event.slf4j.Slf4jLogger" LEVEL="WARN">
+    <logger name="com.ning.http.client" level="DEBUG" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="JwtPhataAuthentication" LEVEL="DEBUG">
+    <logger name="play.api.libs.ws" level="DEBUG" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
-
-
-    <logger name="org.hatdex.hat.api.controllers.Users" LEVEL="DEBUG">
+    
+    <logger name="org.asynchttpclient" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
-
-    <logger name="org.hatdex.hat.authentication" LEVEL="DEBUG">
-        <appender-ref ref="ASYNCCONSOLE"/>
-    </logger>
-
-    <logger name="com.mohiva.play.silhouette" LEVEL="DEBUG">
-        <appender-ref ref="ASYNCCONSOLE"/>
-    </logger>
-
-    <logger name="HatServerProvider" LEVEL="DEBUG">
-        <appender-ref ref="ASYNCCONSOLE"/>
-    </logger>
-
-    <logger name="http" LEVEL="INFO">
-        <appender-ref ref="ASYNCCONSOLE"/>
-    </logger>
-
-    <logger name="org.hatdex.hat" LEVEL="DEBUG">
-        <appender-ref ref="ASYNCCONSOLE"/>
-    </logger>
-
 
 </configuration>

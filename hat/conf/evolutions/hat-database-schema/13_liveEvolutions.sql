@@ -209,7 +209,7 @@ VALUES ('RumpelLite', 'Mobile hyperdata browser for your HAT data', '/assets/ima
 
 --changeset hubofallthings:userMailTokens context:structuresonly runOnChange:true
 
-CREATE TABLE IF NOT EXISTS user_mail_tokens (
+CREATE TABLE IF NOT EXISTS hat.user_mail_tokens (
   id              VARCHAR   NOT NULL PRIMARY KEY,
   email           VARCHAR   NOT NULL,
   expiration_time TIMESTAMP NOT NULL,

@@ -42,7 +42,7 @@ import scala.concurrent.duration._
 class HatServerProvider @Inject() (@Named("hatServerProviderActor") serverProviderActor: ActorRef, hatKeyProvider: HatKeyProvider) extends DynamicEnvironmentProviderService[HatServer] {
   import play.api.libs.concurrent.Execution.Implicits._
 
-  private val logger = Logger("HatServerProvider")
+  private val logger = Logger(this.getClass)
 
   def retrieve[B](request: Request[B]): Future[Option[HatServer]] = {
     val hatAddress = request.host.split(':').headOption.getOrElse(request.host)

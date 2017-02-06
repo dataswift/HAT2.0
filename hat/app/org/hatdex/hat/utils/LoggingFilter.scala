@@ -26,26 +26,16 @@ package org.hatdex.hat.utils
 
 import javax.inject.{ Inject, Named }
 
-import play.api.mvc.{ Filter, RequestHeader, Result }
-import play.api.Logger
-import play.api.routing.Router.Tags
-
-import scala.concurrent.Future
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import javax.inject.Inject
-
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.stream.Materializer
 import org.hatdex.hat.resourceManagement.actors.HatServerProviderActor
-import play.api.http.DefaultHttpFilters
-import play.filters.gzip.GzipFilter
-import scala.concurrent.duration._
+import play.api.Logger
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.mvc.{ Filter, RequestHeader, Result }
 
-class Filters @Inject() (
-  gzip: GzipFilter,
-  log: LoggingFilter
-) extends DefaultHttpFilters(gzip, log)
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class LoggingFilter @Inject() (@Named("hatServerProviderActor") serverProviderActor: ActorRef, implicit val mat: Materializer) extends Filter {
   val logger = Logger("http")
@@ -62,7 +52,7 @@ class LoggingFilter @Inject() (@Named("hatServerProviderActor") serverProviderAc
       val endTime = System.currentTimeMillis
       val requestTime = endTime - startTime
 
-      logger.info(s"[${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] [${result.header.status}] [TIME ${requestTime}ms] [HATs ${activeHats.active}]")
+      logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] [${result.header.status}] [TIME ${requestTime}ms] [HATs ${activeHats.active}]")
 
       result.withHeaders("Request-Time" -> requestTime.toString)
     }

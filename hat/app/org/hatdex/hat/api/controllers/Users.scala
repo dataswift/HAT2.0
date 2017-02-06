@@ -129,7 +129,7 @@ class Users @Inject() (
       username <- request.getQueryString("username").orElse(request.headers.get("username"))
       password <- request.getQueryString("password").orElse(request.headers.get("password"))
     } yield {
-      Logger("org.hatdex.hat.authentication").info(s"Authenticating $username:$password")
+      logger.info(s"Authenticating $username:$password")
       credentialsProvider.authenticate(Credentials(username, password))
         .flatMap { loginInfo =>
           usersService.getUser(loginInfo.providerKey).flatMap {

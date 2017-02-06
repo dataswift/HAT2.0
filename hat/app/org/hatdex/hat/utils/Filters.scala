@@ -22,21 +22,15 @@
  * 2 / 2017
  */
 
-package org.hatdex.hat
+package org.hatdex.hat.utils
 
 import javax.inject.Inject
 
-import play.api.http.HttpFilters
-import play.api.mvc.EssentialFilter
+import play.api.http.DefaultHttpFilters
 import play.filters.cors.CORSFilter
-import play.filters.csrf.CSRFFilter
 import play.filters.gzip.GzipFilter
 
 class Filters @Inject() (
-  gzipFilter: GzipFilter,
-  cSRFFilter: CSRFFilter,
-  corsFilter: CORSFilter)
-    extends HttpFilters {
-
-  override def filters: Seq[EssentialFilter] = Seq(corsFilter, gzipFilter)
-}
+  gzip: GzipFilter,
+  corsFilter: CORSFilter,
+  log: LoggingFilter) extends DefaultHttpFilters(gzip, corsFilter, log)

@@ -46,7 +46,7 @@ class Updates @Inject() (
     clock: Clock,
     hatDatabaseProvider: HatDatabaseProvider) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
-  val logger = Logger("org.hatdex.hat.api.controllers.Users")
+  val logger = Logger(this.getClass)
 
   configuration.getStringSeq("databaseServers.serverUrls") map { testlist =>
     logger.warn(s"Got testlist")

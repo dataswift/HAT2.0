@@ -36,7 +36,7 @@ import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.FutureRetries
 import org.hatdex.marketsquare.api.services.MarketsquareClient
-import play.api.Configuration
+import play.api.{ Configuration, Logger }
 import play.api.libs.json.{ JsObject, Json }
 import play.api.libs.ws.WSClient
 import play.api.mvc.RequestHeader
@@ -48,6 +48,7 @@ import scala.concurrent.duration._
 @Singleton
 class StatsReporter @Inject() (wsClient: WSClient, configuration: Configuration, system: ActorSystem,
     authenticatorService: AuthenticatorService[JWTRS256Authenticator, HatServer]) {
+  val logger = Logger(this.getClass)
 
   implicit val scheduler = system.scheduler
   val retryLimit = configuration.underlying.getInt("exchange.retryLimit")
@@ -61,11 +62,17 @@ class StatsReporter @Inject() (wsClient: WSClient, configuration: Configuration,
   //  val defaultSsslConfig = AkkaSSLConfig()
 
   def reportStatistics(stats: Seq[DataStats])(implicit server: HatServer, request: RequestHeader): Future[Unit] = {
-    for {
+    logger.debug(s"Reporting statistics: $stats")
+    val logged = for {
       _ <- persistStats(stats)
       outstanding <- retrieveOutstandingStats()
       result <- reportPendingStatistics(outstanding)
     } yield result
+
+    logged recover {
+      case e =>
+        logger.error(s"Error while reporting stats: ${e.getMessage}")
+    }
   }
 
   protected def reportPendingStatistics(batch: Seq[DataStatsLogRow])(implicit server: HatServer, request: RequestHeader): Future[Unit] = {
@@ -91,6 +98,7 @@ class StatsReporter @Inject() (wsClient: WSClient, configuration: Configuration,
 
   private def persistStats(stats: Seq[DataStats])(implicit server: HatServer): Future[Seq[Long]] = {
     import org.hatdex.hat.api.json.DataStatsFormat.dataStatsFormat
+    logger.debug(s"Persisting stats $stats")
     val dataStatsLogs = stats map { item =>
       DataStatsLogRow(0, Json.toJson(item))
     }
@@ -105,11 +113,19 @@ class StatsReporter @Inject() (wsClient: WSClient, configuration: Configuration,
     }
   }
 
-  private def uploadStats(stats: Seq[DataStats])(implicit server: HatServer, request: RequestHeader) = {
-    for {
+  private def uploadStats(stats: Seq[DataStats])(implicit server: HatServer, request: RequestHeader): Future[Unit] = {
+    logger.debug(s"Uploading stats $stats")
+    val uploaded = for {
       token <- applicationToken()
       result <- msClient.postStats(token, stats)
-    } yield result
+    } yield {
+      result
+    }
+    uploaded recover {
+      case e =>
+        logger.error(s"Failed to upload stats: ${e.getMessage}")
+        Future.failed(e)
+    }
   }
 
   private def platformUser()(implicit server: HatServer): Future[HatUser] = {

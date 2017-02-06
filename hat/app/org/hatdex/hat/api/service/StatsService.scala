@@ -39,7 +39,7 @@ import scala.collection.immutable.HashMap
 import scala.concurrent.Future
 
 class StatsService @Inject() (statsReporter: StatsReporter) extends DalExecutionContext {
-  val logger = Logger("StatsService")
+  val logger = Logger(this.getClass)
 
   implicit def hatServer2db(implicit hatServer: HatServer): Database = hatServer.db
 
@@ -107,9 +107,6 @@ class StatsService @Inject() (statsReporter: StatsReporter) extends DalExecution
     })
 
     getFieldsetStats(allFields) map { fieldsetStats =>
-      //logger.info(s"For data records $records")
-      //logger.info(s"And fields $allFields")
-      //logger.info(s"Posting stats $stats")
       val stats = DataCreditStats("datacredit", "Data Record Inbound", LocalDateTime.now(), userInfo, Some(fieldsetStats), logEntry)
       statsReporter.reportStatistics(Seq(stats))
     }

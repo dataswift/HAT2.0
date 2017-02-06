@@ -13,7 +13,6 @@ libraryDependencies ++= Seq(
   Library.Akka.slf4j,
   Library.Akka.httpCore,
   Library.Akka.akkaStream,
-  Library.Akka.akkaHttpSprayJson,
   Library.Akka.akkaActor,
   Library.Akka.akkaTestkit,
   Library.Utils.jodaTime,
@@ -26,13 +25,10 @@ libraryDependencies ++= Seq(
   Library.Specs2.core,
   Library.Specs2.matcherExtra,
   Library.Specs2.mock,
-  Library.Spray.sprayCan,
   Library.Play.Silhouette.passwordBcrypt,
   Library.Play.Silhouette.persistence,
   Library.Play.Silhouette.cryptoJca,
   Library.Play.Silhouette.silhouette,
-  Library.Spray.sprayRouting,
-  Library.Spray.sprayTestkit,
   Library.Play.Jwt.nimbusDsJwt,
   Library.Play.Jwt.atlassianJwtCore,
   Library.Play.Jwt.atlassianJwtApi,
@@ -48,7 +44,6 @@ libraryDependencies ++= Seq(
   Library.Play.Specs2.mock,
   Library.Play.Utils.playBootstrap,
   Library.scalaGuice,
-  Library.jbcrypt,
   filters
 )
 
