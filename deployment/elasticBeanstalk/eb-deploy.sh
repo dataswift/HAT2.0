@@ -1,10 +1,12 @@
 #!/bin/bash
 
+set -e
+
 BUCKET="hat-cloud-formation-eu"
 VERSION=`git log --format="%H" -n 1`
 APPLICATION_NAME="hat"
 
-echo "Build"
+echo "Build version ${APPLICATION_NAME}-${VERSION}"
 sbt "project hat" docker:stage
 
 echo "Create package"

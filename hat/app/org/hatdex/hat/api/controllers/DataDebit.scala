@@ -150,21 +150,21 @@ class DataDebit @Inject() (
   }
 
   def retrieveDataDebitValues(dataDebitKey: UUID, limit: Option[Int], startTime: Option[Long], endTime: Option[Long],
-    pretty: Option[Boolean]) = SecuredAction(WithRole("owner")).async { implicit request =>
+    pretty: Option[Boolean]) = SecuredAction(WithRole("owner", "dataDebit")).async { implicit request =>
     val maybeStartTime = startTime.map(t => new DateTime(t * 1000L).toLocalDateTime)
     val maybeEndTime = endTime.map(t => new DateTime(t * 1000L).toLocalDateTime)
 
-    // TODO check permissions
-    dataDebitService.findDataDebitByKey(dataDebitKey) flatMap { maybeDataDebit =>
-      maybeDataDebit map { dataDebit =>
-        val apiDataDebit = ModelTranslation.fromDbModel(dataDebit)
-        (dataDebit.kind, dataDebit.bundleContextlessId, dataDebit.bundleContextId) match {
-          case ("contextless", Some(bundleId), None) => getContextlessDataDebitValues(dataDebit, bundleId, limit, maybeStartTime, maybeEndTime)
-          case ("contextual", None, Some(bundleId))  => getContextualDataDebitValues(dataDebit, bundleId, limit, maybeStartTime, maybeEndTime)
-          case _                                     => Future.failed(new RuntimeException(s"Data Debit ${dataDebit.dataDebitKey} is malformed"))
-        }
-      } getOrElse {
-        Future.failed(new RuntimeException("No such Data Debit exists"))
+    dataDebitService.findDataDebitByKey(dataDebitKey) flatMap {
+      case Some(dataDebit) if dataDebit.recipientId == request.identity.userId.toString || WithRole.isAuthorized(request.identity, "owner") =>
+        Future.successful(dataDebit)
+      case Some(dataDebit) => Future.failed(new SecurityException("No permissions to access the DataDebit"))
+      case None            => Future.failed(new RuntimeException("No such Data Debit exists"))
+    } flatMap { dataDebit =>
+      val apiDataDebit = ModelTranslation.fromDbModel(dataDebit)
+      (dataDebit.kind, dataDebit.bundleContextlessId, dataDebit.bundleContextId) match {
+        case ("contextless", Some(bundleId), None) => getContextlessDataDebitValues(dataDebit, bundleId, limit, maybeStartTime, maybeEndTime)
+        case ("contextual", None, Some(bundleId))  => getContextualDataDebitValues(dataDebit, bundleId, limit, maybeStartTime, maybeEndTime)
+        case _                                     => Future.failed(new RuntimeException(s"Data Debit ${dataDebit.dataDebitKey} is malformed"))
       }
     } map {
       case data => Ok(Json.toJson(data))
