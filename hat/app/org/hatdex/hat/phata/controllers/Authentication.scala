@@ -139,7 +139,7 @@ class Authentication @Inject() (
             }
           } recover {
             case e =>
-              Ok(phataViews.html.simpleLogin(LoginDetails.loginForm, Some("Invalid Credentials!")))
+              Ok(phataViews.html.simpleLogin(LoginDetails.loginForm.fill(loginDetails), Some("Invalid Credentials!")))
           })
   }
 

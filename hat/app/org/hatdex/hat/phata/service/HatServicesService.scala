@@ -64,7 +64,7 @@ class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment
 
     hatServices(Set("app", "dataplug", "testapp")) map { approvedHatServices =>
       approvedHatServices.find(s => s.title == name && redirectUrl.startsWith(s.url))
-        .map(_.copy(url = s"${redirectUri.scheme}:${redirectUri.authority.toString}", authUrl = redirectUri.toRelative.toString()))
+        .map(_.copy(url = s"${redirectUri.scheme}:${redirectUri.authority.toString}", authUrl = redirectUri.path.toString()))
         .getOrElse(
           HatService(name, redirectUrl, "/assets/images/haticon.png",
             redirectUrl, redirectUri.path.toString(),
