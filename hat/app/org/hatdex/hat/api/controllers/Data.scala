@@ -196,14 +196,14 @@ class Data @Inject() (
     SecuredAction(WithRole("owner", "platform", "dataCredit")).async(BodyParsers.parse.json) { implicit request =>
       val recordValues = request.body
       val insertedRecord = recordValues.validate[ApiRecordValues] match {
-        case recordValues: JsSuccess[ApiRecordValues] => dataService.storeRecordValues(Seq(recordValues.value)).map(_.head)
+        case recordValues: JsSuccess[ApiRecordValues] => dataService.storeRecordValues(Seq(recordValues.value)).map(v => Json.toJson(v.head))
         case e: JsError                               => Future.failed(new RuntimeException(s"Record value parsing failed: ${e.toString}"))
       }
 
       val insertedRecords = insertedRecord.recoverWith {
         case e: RuntimeException =>
           recordValues.validate[Seq[ApiRecordValues]] match {
-            case recordValues: JsSuccess[Seq[ApiRecordValues]] => dataService.storeRecordValues(recordValues.value).map(_.head)
+            case recordValues: JsSuccess[Seq[ApiRecordValues]] => dataService.storeRecordValues(recordValues.value).map(v => Json.toJson(v))
             case e: JsError                                    => Future.failed(new RuntimeException(s"Record value parsing failed: ${e.toString}"))
           }
       }
@@ -212,7 +212,7 @@ class Data @Inject() (
       //        recordDataInbound(Seq(record), user, "Single Data Record Values set posted")
       //      }
       insertedRecords map {
-        case record => Created(Json.toJson(record))
+        case json => Created(json)
       } recover {
         case e => BadRequest(Json.toJson(ErrorMessage("Error creating Record with Values", e.getMessage)))
       }
