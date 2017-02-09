@@ -44,7 +44,9 @@ libraryDependencies ++= Seq(
   Library.Play.Specs2.mock,
   Library.Play.Utils.playBootstrap,
   Library.scalaGuice,
-  filters
+  filters,
+  Library.HATDeX.hatClient,
+  Library.HATDeX.marketsquareClient
 )
 
 enablePlugins(PlayScala)
