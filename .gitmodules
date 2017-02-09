@@ -1,5 +1,5 @@
 [submodule "hat-database-schema"]
-	path = hat-database-schema
+	path = hat/conf/evolutions/hat-database-schema
 	url = https://github.com/Hub-of-all-Things/hat-database-schema.git
 [submodule "hat-client-scala-play"]
 	path = hat-client-scala-play
