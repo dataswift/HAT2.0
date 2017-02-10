@@ -1,27 +1,3 @@
-/*
- * Copyright (C) 2017 HAT Data Exchange Ltd
- * SPDX-License-Identifier: AGPL-3.0
- *
- * This file is part of the Hub of All Things project (HAT).
- *
- * HAT is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License
- * as published by the Free Software Foundation, version 3 of
- * the License.
- *
- * HAT is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
- * the GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General
- * Public License along with this program. If not, see
- * <http://www.gnu.org/licenses/>.
- *
- * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 2 / 2017
- */
-
 package org.hatdex.hat.dal
 // AUTO-GENERATED Slick data model
 /** Stand-alone Slick data model for immediate use */
@@ -3139,7 +3115,7 @@ trait Tables {
       UserMailTokensRow.tupled((<<[String], <<[String], <<[org.joda.time.LocalDateTime], <<[Boolean]))
   }
   /** Table description of table user_mail_tokens. Objects of this class serve as prototypes for rows in queries. */
-  class UserMailTokens(_tableTag: Tag) extends Table[UserMailTokensRow](_tableTag, "user_mail_tokens") {
+  class UserMailTokens(_tableTag: Tag) extends Table[UserMailTokensRow](_tableTag, Some("hat"), "user_mail_tokens") {
     def * = (id, email, expirationTime, isSignup) <> (UserMailTokensRow.tupled, UserMailTokensRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
     def ? = (Rep.Some(id), Rep.Some(email), Rep.Some(expirationTime), Rep.Some(isSignup)).shaped.<>({ r => import r._; _1.map(_ => UserMailTokensRow.tupled((_1.get, _2.get, _3.get, _4.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
