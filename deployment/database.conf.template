@@ -1,9 +1,0 @@
-devdb = {
-  dataSourceClass = "org.postgresql.ds.PGSimpleDataSource"
-  properties = {
-    databaseName = "%DATABASE%"
-    user = "%DBUSER%"
-    password = "%DBPASS%"
-  }
-  numThreads = 3
-}
