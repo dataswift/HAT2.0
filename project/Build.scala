@@ -27,17 +27,6 @@ import sbt._
 
 object Build extends Build {
 
-  //  lazy val hatClientPlay = Project(
-  //    id = "hat-client-play",
-  //    base = file("hat-client-scala-play")
-  //  )
-
-  //  lazy val marketsquareClientPlay = Project(
-  //    id = "marketsquare-client-play",
-  //    base = file("marketsquare-client-scala-play"),
-  //    dependencies = Seq(hatClientPlay % "compile->compile;test->test")
-  //  )
-
   lazy val codegen = Project(
     id = "codegen",
     base = file("codegen"))
@@ -46,16 +35,12 @@ object Build extends Build {
     id = "hat",
     base = file("hat"),
     dependencies = Seq(
-      //      marketsquareClientPlay % "compile->compile;test->test",
-      //      hatClientPlay % "compile->compile;test->test"),
       codegen % "compile->compile;test->test"))
 
   val root = Project(
     id = "hat-project",
     base = file("."),
     aggregate = Seq(
-      //      hatClientPlay,
-      //      marketsquareClientPlay,
       codegen,
       hat),
     settings = Defaults.coreDefaultSettings ++
