@@ -1,0 +1,247 @@
+@charset "utf-8";
+/* CSS Document */
+
+@font-face {
+  font-family: 'creativeverse_social';
+  src: url('/assets/font/creativeverse_social.eot?74606279');
+  src: url('/assets/font/creativeverse_social.eot?74606279#iefix') format('embedded-opentype'),
+  url('/assets/font/creativeverse_social.woff?74606279') format('woff'),
+  url('/assets/font/creativeverse_social.ttf?74606279') format('truetype'),
+  url('/assets/font/creativeverse_social.svg?74606279#creativeverse_social') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Chrome hack: SVG is rendered more smooth in Windozze. 100% magic, uncomment if you need it. */
+/* Note, that will break hinting! In other OS-es font will be not as sharp as it could be */
+/*
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  @font-face {
+    font-family: 'creativeverse_social';
+    src: url('../font/creativeverse_social.svg?74606279#creativeverse_social') format('svg');
+  }
+}
+*/
+
+[class^="icon-"]:before, [class*=" icon-"]:before {
+  font-family: "creativeverse_social";
+  font-style: normal;
+  font-weight: normal;
+  speak: none;
+
+  display: inline-block;
+  text-decoration: inherit;
+  width: 1em;
+  margin-right: .2em;
+  text-align: center;
+  /* opacity: .8; */
+
+  /* For safety - reset parent styles, that can break glyph codes*/
+  font-variant: normal;
+  text-transform: none;
+
+  /* fix buttons height, for twitter bootstrap */
+  line-height: 1em;
+
+  /* Animation center compensation - margins should be symmetric */
+  /* remove if not needed */
+  margin-left: .2em;
+
+  /* you can be more comfortable with increased icons size */
+  /* font-size: 120%; */
+
+  /* Uncomment for 3D effect */
+  /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
+}
+
+.contact .icon {
+  vertical-align: middle;
+}
+
+.icon-delicious:before {
+  content: '\e811';
+}
+
+/* '' */
+.icon-smashmag:before {
+  content: '\e812';
+}
+
+/* '' */
+.icon-stumbleupon:before {
+  content: '\e813';
+}
+
+/* '' */
+.icon-digg:before {
+  content: '\e80f';
+}
+
+/* '' */
+.icon-reddit:before {
+  content: '\e810';
+}
+
+/* '' */
+.icon-yahoo:before {
+  content: '\e814';
+}
+
+/* '' */
+.icon-email:before {
+  content: '\e815';
+}
+
+/* '' */
+.icon-statusnet:before {
+  content: '\e816';
+}
+
+/* '' */
+.icon-stackoverflow:before {
+  content: '\e817';
+}
+
+/* '' */
+.icon-flickr:before {
+  content: '\e80a';
+}
+
+/* '' */
+.icon-lastfm:before {
+  content: '\e80b';
+}
+
+/* '' */
+.icon-pinterest:before {
+  content: '\e80c';
+}
+
+/* '' */
+.icon-vimeo:before {
+  content: '\e80d';
+}
+
+/* '' */
+.icon-twitter:before {
+  content: '\e808';
+}
+
+/* '' */
+.icon-facebook:before {
+  content: '\e802';
+}
+
+/* '' */
+.icon-blog:before {
+  content: '\270e';
+  font-family: "SSGlyphish";
+}
+
+/* '' */
+.icon-pinterest-circled:before {
+  content: '\e805';
+}
+
+/* '' */
+.icon-gplus:before {
+  content: '\e801';
+}
+
+/* '' */
+.icon-youtube:before {
+  content: '\e809';
+}
+
+/* '' */
+.icon-dropbox:before {
+  content: '\e804';
+}
+
+/* '' */
+.icon-tumblr:before {
+  content: '\e807';
+}
+
+/* '' */
+.icon-dribbble:before {
+  content: '\e803';
+}
+
+/* '' */
+.icon-skype:before {
+  content: '\e806';
+}
+
+/* '' */
+.icon-deviantart:before {
+  content: '\e80e';
+}
+
+/* '' */
+
+.icon-web:before {
+  content: '\1f30e';
+  font-family: "SSGlyphish";
+}
+
+/* '' */
+
+/*** Social Media ****************************************************/
+.cv-social-media {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+}
+
+.cv-social-media li {
+  width: 42px;
+  height: 35px;
+  display: inline-block;
+  font-size: 26px;
+  background: #CCC;
+  float: left;
+  padding: 8px 0px 0px 4px;
+  margin: 0px 0px 0px 1px;
+  border-radius: 50%;
+}
+
+.cv-social-media a {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0px 10px 0px 0px;
+  color: #FFF;
+
+  -webkit-animation-duration: 2s;
+  -moz-animation-duration: 2s;
+  -o-animation-duration: 2s;
+  animation-duration: 2s;
+
+  -webkit-animation-fill-mode: both;
+  -moz-animation-fill-mode: both;
+  -o-animation-fill-mode: both;
+  animation-fill-mode: both;
+}
+
+.cv-social-media a:hover {
+  display: block;
+
+  -webkit-animation-name: fadeInUp;
+  -moz-animation-name: fadeInUp;
+  -o-animation-name: fadeInUp;
+  animation-name: fadeInUp;
+
+  -webkit-animation-duration: 1s;
+  -moz-animation-duration: 1s;
+  -o-animation-duration: 1s;
+  animation-duration: 1s;
+
+  -webkit-animation-fill-mode: both;
+  -moz-animation-fill-mode: both;
+  -o-animation-fill-mode: both;
+  animation-fill-mode: both;
+}
+

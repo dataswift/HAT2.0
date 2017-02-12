@@ -1,0 +1,80 @@
+@(
+        maybeUser: Option[org.hatdex.hat.authentication.models.HatUser] = None,
+        selectedNotable: Option[org.hatdex.hat.phata.models.Notable],
+        notables: Seq[org.hatdex.hat.phata.models.Notable]
+)(implicit hatPublicInfo: org.hatdex.hat.phata.models.HatPublicInfo, requestHeader: RequestHeader, messages: Messages)
+
+@import org.hatdex.hat.phata.views.html._
+@import scala.util.matching.Regex
+
+@metaIllustration = @{
+    selectedNotable.flatMap { notable =>
+        val imgPattern = new Regex("<img src=\"(.*)\" .*/>")
+        imgPattern.findFirstIn(notable.message) match {
+            case Some(imgPattern(imageUrl)) => Some(imageUrl)
+            case _ => None
+        }
+    } getOrElse {
+        s"https://${hatPublicInfo.domain}/assets/images/hat_logo.png"
+    }
+}
+
+@meta = {
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@@thehatdex">
+    <meta name="twitter:title" content="HAT Notables - @hatPublicInfo.hatName">
+    <meta name="twitter:description" content="@selectedNotable.map(_.message).getOrElse(s"Notables by ${hatPublicInfo.hatName}")">
+    <meta name="twitter:image:src" content="@metaIllustration">
+    <meta name="twitter:domain" content="@hatPublicInfo.domain">
+    <meta property="og:url" content="@hatPublicInfo.domain/notables?id=@selectedNotable.map(_.id).getOrElse("")" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="HAT Notables - @hatPublicInfo.domain" />
+    <meta property="og:description" content="@selectedNotable.map(_.message).getOrElse(s"Notables by ${hatPublicInfo.hatName}")" />
+    <meta property="og:image" content="@metaIllustration" />
+    <meta property="og:site_name" content="@hatPublicInfo.hatName HAT Notables" />
+    <meta property="og:app_id" content="158753364485419" />
+}
+
+@menubarcontent = @{
+    components.menubarLeft(None, Some(hatPublicInfo.hatName), hatAddress = Some(hatPublicInfo.domain), tab = "notables")
+}
+
+@notablesscripts = {
+    <script>
+            $(".notable-item").click(function () {
+                var id = $(".header-content", this).data("id");
+                window.location.href = "/notables?id=" + id;
+            })
+    </script>
+}
+
+
+@main(s"Welcome to ${hatPublicInfo.hatName} HAT", maybeUser, hatName = Some(hatPublicInfo.hatName), menubarContent = menubarcontent, meta = meta, scripts = notablesscripts) {
+    <div class="grid">
+        @selectedNotable.map { note =>
+            <div class="wrapper grid-item item-wide">
+                @*<div class="box-square aspect-ratio"></div>*@
+                <div class="box-content notable-full-view" id="notable-full-view">
+                    <h1><span class="icon ss-write"></span>&nbsp;Notable <span class="notable-id">@note.id</span></h1>
+                    @components.notable(note)
+                </div>
+            </div>
+        }
+        <div class="wrapper grid-item item-wide">
+            @*<div class="box-square aspect-ratio"></div>*@
+            <div class="box-content notes">
+                <h1><span class="icon ss-write"></span>&nbsp;More of My Public Notables</h1>
+                @notables.map { note =>
+                    @if(selectedNotable.map(_.id).contains(note.id)) {
+                        <div class="active">
+                        @components.notable(note)
+                        </div>
+                    } else {
+                        @components.notable(note, preview = true)
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+}

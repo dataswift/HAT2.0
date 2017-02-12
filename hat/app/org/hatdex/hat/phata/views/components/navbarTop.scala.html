@@ -1,0 +1,28 @@
+@(maybeUser: Option[org.hatdex.hat.authentication.models.HatUser] = None, hatName: Option[String] = None)
+
+<nav class="navbar">
+    <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header navbar-left">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#hat-menu-collapse" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand navbar-brand-main" href="http://hatdex.org"><img src="@routes.Assets.versioned("/images/hat-original.svg")" alt="Original HAT" class="img"></a>
+        </div>
+        <div class="collapse navbar-collapse" id="hat-menu-collapse">
+        <ul class="nav navbar-nav navbar-right">
+        @maybeUser.map { user =>
+        <li><a href="@org.hatdex.hat.phata.controllers.routes.Phata.home()">Welcome back, @user.name</a></li>
+        <li><a href="@org.hatdex.hat.phata.controllers.routes.Authentication.logout()">Sign Out</a></li>
+        <li><a href="@org.hatdex.hat.phata.controllers.routes.Authentication.passwordChangeStart()">Change Password</a></li>
+        }.getOrElse {
+            <li><a href="@org.hatdex.hat.phata.controllers.routes.Authentication.signin()">Sign In</a></li>
+        }
+        </ul>
+        </div>
+
+    </div>
+</nav>

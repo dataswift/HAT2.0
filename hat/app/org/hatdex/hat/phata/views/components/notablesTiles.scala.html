@@ -1,0 +1,10 @@
+@(notables: Seq[org.hatdex.hat.phata.models.Notable])
+<div class="wrapper grid-item item-wide">
+    <div class="box-content notes">
+
+        <h1><span class="icon ss-write"></span>&nbsp;My Public Notables</h1>
+        @notables.take(5).map { note =>
+            @notable(note, preview = true)
+        }
+    </div>
+</div>

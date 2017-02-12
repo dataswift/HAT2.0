@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (C) 2017 HAT Data Exchange Ltd
+  ~ SPDX-License-Identifier: AGPL-3.0
+  ~
+  ~ This file is part of the Hub of All Things project (HAT).
+  ~
+  ~ HAT is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU Affero General Public License
+  ~ as published by the Free Software Foundation, version 3 of
+  ~ the License.
+  ~
+  ~ HAT is distributed in the hope that it will be useful, but
+  ~ WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+  ~ the GNU Affero General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Affero General
+  ~ Public License along with this program. If not, see
+  ~ <http://www.gnu.org/licenses/>.
+  ~
+  ~ Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
+  ~ 2 / 2017
+  -->
+
+<configuration>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.out</target>
+        <encoder>
+            <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] %logger{1} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNCCONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="CONSOLE" />
+    </appender>
+
+    <logger name="http" level="INFO">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
+    <logger name="akka" level="INFO">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
+    <logger name="SchemaMigration" level="DEBUG">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
+    <logger name="scala.slick.session" level="INFO">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
+    <logger name="akka.event.slf4j.Slf4jLogger" level="WARN">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
+    <logger name="org.hatdex.hat" level="WARN" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
+    <logger name="org.hatdex.hat.resourceManagement" level="WARN" />
+    <logger name="org.hatdex.hat.api.service" level="INFO" />
+    <logger name="org.hatdex.hat.api.service.UsersService" level="WARN" />
+
+    <logger name="org.hatdex.marketsquare" level="INFO">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
+    <logger name="com.ning.http.client" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
+    <logger name="play.api.libs.ws" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+    
+    <logger name="org.asynchttpclient" level="INFO">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
+</configuration>

@@ -1,0 +1,16 @@
+@(message: String)(implicit hatPublicInfo: org.hatdex.hat.phata.models.HatPublicInfo, requestHeader: RequestHeader, messages: Messages)
+@import org.hatdex.hat.api.models.{AccessToken}
+
+@import org.hatdex.hat.phata.views.html._
+
+@menubarcontent = @{
+    components.menubarLeft(None, Some(hatPublicInfo.hatName), hatAddress = Some(hatPublicInfo.domain), tab = "login")
+}
+
+@main(s"HAT - ${message}", hatName = Some(hatPublicInfo.hatName), menubarContent = menubarcontent) {
+    <div class="row simpleMessage">
+        <div class="col-md-10 col-md-offset-1">
+            <h1 class="text-center">@message</h1>
+        </div>
+    </div>
+}
