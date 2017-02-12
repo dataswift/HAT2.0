@@ -1,7 +1,7 @@
 ![Hub of All things](http://hubofallthings.com/wp-content/uploads/banner21.png)
 
-[![Build Status](https://travis-ci.org/Hub-of-all-Things/HAT2.0.svg?branch=master)](https://travis-ci.org/Hub-of-all-Things/HAT2.0)
-[![Coverage Status](https://coveralls.io/repos/Hub-of-all-Things/HAT2.0/badge.svg?branch=master&service=github)](https://coveralls.io/github/Hub-of-all-Things/HAT2.0?branch=master)
+<!--[![Build Status](https://travis-ci.org/Hub-of-all-Things/HAT2.0.svg?branch=master)](https://travis-ci.org/Hub-of-all-Things/HAT2.0)-->
+<!--[![Coverage Status](https://coveralls.io/repos/Hub-of-all-Things/HAT2.0/badge.svg?branch=master&service=github)](https://coveralls.io/github/Hub-of-all-Things/HAT2.0?branch=master)-->
 
 # HAT 2.0
 
@@ -11,6 +11,23 @@ This repository contains an implementation of the [Hub-of-All-Things](http://hub
 
 The current project version is 2.2.0 [HAT 2.2.0](https://github.com/Hub-of-all-Things/HAT2.0/releases/tag/v2.2.0).
 
+### News
+
+HAT has undergone a major architectural rebuild for v2.2.0, the defining
+change being the software stack's ability to now serve multiple HAT databases.
+Assumed identity of a HAT is determined by the host address set in the incoming
+connection, and the rest of the operations remain the same: each request is
+authenticated using a JWT token signed by the specific HAT's private key
+and every user authenticates with their database through the HAT stack.
+
+HAT was also migrated from Akka Spray HTTP Framework to Play Framework due to
+higher relative maturity.
+
+Finally, contextual data APIs have not been ported over to the new version 
+as it has been decided that they require a significant redesign to be 
+sufficiently convenient for stronger adoption for developers. Therefore 
+v2.2.0 only offers raw data APIs and contextless Data Debit data sharing
+mechanisms.
 
 ## About the project
 
@@ -98,15 +115,10 @@ but are initialised with the right schema at start time
 you could change the HAT domain name, owner's email address or public/private
 keypair used by the HAT for its token operations
 
-### API
-
-API documentation can be found at [http://hub-of-all-things.github.io/doc/](http://hub-of-all-things.github.io/doc/) 
-
-### Schema
-[HAT Database Schema](https://github.com/Hub-of-all-Things/hat-database-schema) has been split up into a separate project for easier reuse across different environments.
-
 ### Additional information
 
+- API documentation can be found at [http://hub-of-all-things.github.io/doc/](http://hub-of-all-things.github.io/doc/)
+- [HAT Database Schema](https://github.com/Hub-of-all-Things/hat-database-schema) has been split up into a separate project for easier reuse across different environments.
 - [Auto-generated Database interface for Slick](https://github.com/Hub-of-all-Things/HAT2.0/wiki/Auto-generated-Database-interface-for-Slick)
 
 ## License
