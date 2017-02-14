@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{ GetResult => GR }
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -1225,6 +1225,56 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table EventsSystemtypecrossref */
   lazy val EventsSystemtypecrossref = new TableQuery(tag => new EventsSystemtypecrossref(tag))
+
+  /**
+   * Entity class storing rows of table HatFile
+   *  @param id Database column id SqlType(varchar), PrimaryKey
+   *  @param name Database column name SqlType(varchar)
+   *  @param source Database column source SqlType(varchar)
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param lastUpdated Database column last_updated SqlType(timestamp)
+   *  @param tags Database column tags SqlType(_text), Length(2147483647,false), Default(None)
+   *  @param title Database column title SqlType(varchar), Default(None)
+   *  @param description Database column description SqlType(varchar), Default(None)
+   *  @param sourceUrl Database column source_url SqlType(varchar), Default(None)
+   *  @param status Database column status SqlType(varchar)
+   */
+  case class HatFileRow(id: String, name: String, source: String, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, tags: Option[List[String]] = None, title: Option[String] = None, description: Option[String] = None, sourceUrl: Option[String] = None, status: String)
+  /** GetResult implicit for fetching HatFileRow objects using plain SQL queries */
+  implicit def GetResultHatFileRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime], e2: GR[Option[List[String]]], e3: GR[Option[String]]): GR[HatFileRow] = GR {
+    prs =>
+      import prs._
+      HatFileRow.tupled((<<[String], <<[String], <<[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<?[List[String]], <<?[String], <<?[String], <<?[String], <<[String]))
+  }
+  /** Table description of table hat_file. Objects of this class serve as prototypes for rows in queries. */
+  class HatFile(_tableTag: Tag) extends Table[HatFileRow](_tableTag, Some("hat"), "hat_file") {
+    def * = (id, name, source, dateCreated, lastUpdated, tags, title, description, sourceUrl, status) <> (HatFileRow.tupled, HatFileRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(id), Rep.Some(name), Rep.Some(source), Rep.Some(dateCreated), Rep.Some(lastUpdated), tags, title, description, sourceUrl, Rep.Some(status)).shaped.<>({ r => import r._; _1.map(_ => HatFileRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7, _8, _9, _10.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column id SqlType(varchar), PrimaryKey */
+    val id: Rep[String] = column[String]("id", O.PrimaryKey)
+    /** Database column name SqlType(varchar) */
+    val name: Rep[String] = column[String]("name")
+    /** Database column source SqlType(varchar) */
+    val source: Rep[String] = column[String]("source")
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column last_updated SqlType(timestamp) */
+    val lastUpdated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("last_updated")
+    /** Database column tags SqlType(_text), Length(2147483647,false), Default(None) */
+    val tags: Rep[Option[List[String]]] = column[Option[List[String]]]("tags", O.Length(2147483647, varying = false), O.Default(None))
+    /** Database column title SqlType(varchar), Default(None) */
+    val title: Rep[Option[String]] = column[Option[String]]("title", O.Default(None))
+    /** Database column description SqlType(varchar), Default(None) */
+    val description: Rep[Option[String]] = column[Option[String]]("description", O.Default(None))
+    /** Database column source_url SqlType(varchar), Default(None) */
+    val sourceUrl: Rep[Option[String]] = column[Option[String]]("source_url", O.Default(None))
+    /** Database column status SqlType(varchar) */
+    val status: Rep[String] = column[String]("status")
+  }
+  /** Collection-like TableQuery object for table HatFile */
+  lazy val HatFile = new TableQuery(tag => new HatFile(tag))
 
   /**
    * Entity class storing rows of table LocationsLocation

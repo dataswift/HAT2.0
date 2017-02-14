@@ -66,3 +66,11 @@ GET           /passwordreset                              org.hatdex.hat.phata.c
 POST          /passwordreset                              org.hatdex.hat.phata.controllers.Authentication.handleForgotPassword
 GET           /passwordreset/confirm/:token               org.hatdex.hat.phata.controllers.Authentication.resetPassword(token: String)
 POST          /passwordreset/confirm/:token               org.hatdex.hat.phata.controllers.Authentication.handleResetPassword(token: String)
+
+# FILE roues
+POST          /file/upload                                org.hatdex.hat.api.controllers.Files.startUpload
+POST          /file/search                                org.hatdex.hat.api.controllers.Files.listFiles()
+GET           /file/:fileId/complete                      org.hatdex.hat.api.controllers.Files.completeUpload(fileId)
+GET           /file/:fileId                               org.hatdex.hat.api.controllers.Files.getContents(fileId)
+PUT           /file/:fileId                               org.hatdex.hat.api.controllers.Files.updateFile(fileId)
+DELETE        /file/:fileId                               org.hatdex.hat.api.controllers.Files.deleteFile(fileId)

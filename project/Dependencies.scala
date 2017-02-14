@@ -103,6 +103,7 @@ object Dependencies {
       val logbackV = "1.1.2"
       val logbackCore = "ch.qos.logback" % "logback-core" % logbackV
       val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackV
+      val awsJavaSdk = "com.amazonaws" % "aws-java-sdk" % "1.10.64"
     }
 
     object Db {
@@ -144,7 +145,7 @@ object Dependencies {
 
     object HATDeX {
       private val version = "2.2.0"
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.3.0-SNAPSHOT"
       val marketsquareClient = "org.hatdex" %% "marketsquare-client-scala-play" % version
     }
 

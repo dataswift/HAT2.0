@@ -46,7 +46,8 @@ libraryDependencies ++= Seq(
   Library.scalaGuice,
   filters,
   Library.HATDeX.hatClient,
-  Library.HATDeX.marketsquareClient
+  Library.HATDeX.marketsquareClient,
+  Library.Utils.awsJavaSdk
 )
 
 enablePlugins(PlayScala)

@@ -28,6 +28,7 @@ import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.phata.models.MailTokenUser
+import play.api.Logger
 import play.api.libs.json.Json
 
 object ModelTranslation {
@@ -135,5 +136,20 @@ object ModelTranslation {
   def fromDbModel(
     userMailTokensRow: UserMailTokensRow): MailTokenUser = {
     MailTokenUser(userMailTokensRow.id, userMailTokensRow.email, userMailTokensRow.expirationTime.toDateTime, userMailTokensRow.isSignup)
+  }
+
+  def fromDbModel(hatFileRow: HatFileRow): ApiHatFile = {
+    println(s"converting $hatFileRow")
+    val fileStatus = hatFileRow.status match {
+      case "New"         => Some(HatFileStatus.New)
+      case "Initialized" => Some(HatFileStatus.Initialized)
+      case "Completed"   => Some(HatFileStatus.Completed)
+      case "Deleted"     => Some(HatFileStatus.Deleted)
+      case _             => None
+    }
+
+    ApiHatFile(Some(hatFileRow.id), hatFileRow.name, hatFileRow.source,
+      Some(hatFileRow.dateCreated.toDateTime), Some(hatFileRow.lastUpdated.toDateTime),
+      hatFileRow.tags, hatFileRow.title, hatFileRow.description, hatFileRow.sourceUrl, fileStatus)
   }
 }
