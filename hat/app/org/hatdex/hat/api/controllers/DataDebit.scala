@@ -160,7 +160,6 @@ class DataDebit @Inject() (
       case Some(dataDebit) => Future.failed(new SecurityException("No permissions to access the DataDebit"))
       case None            => Future.failed(new RuntimeException("No such Data Debit exists"))
     } flatMap { dataDebit =>
-      val apiDataDebit = ModelTranslation.fromDbModel(dataDebit)
       (dataDebit.kind, dataDebit.bundleContextlessId, dataDebit.bundleContextId) match {
         case ("contextless", Some(bundleId), None) => getContextlessDataDebitValues(dataDebit, bundleId, limit, maybeStartTime, maybeEndTime)
         case ("contextual", None, Some(bundleId))  => getContextualDataDebitValues(dataDebit, bundleId, limit, maybeStartTime, maybeEndTime)
