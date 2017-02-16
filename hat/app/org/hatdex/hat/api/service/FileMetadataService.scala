@@ -27,12 +27,14 @@ package org.hatdex.hat.api.service
 import java.text.Normalizer
 import javax.inject.Inject
 
+import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models.{ ApiHatFile, HatFileStatus }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 import play.api.Logger
+import play.api.libs.json.Json
 
 import scala.concurrent.Future
 
@@ -68,10 +70,11 @@ class FileMetadataService @Inject() () extends DalExecutionContext {
   }
 
   def save(file: ApiHatFile)(implicit db: Database): Future[ApiHatFile] = {
+    import HatJsonFormats.apiHatFileStatusFormat
     val dbFile = HatFileRow(file.fileId.get, file.name, file.source,
       file.dateCreated.map(_.toLocalDateTime).getOrElse(LocalDateTime.now()),
       file.lastUpdated.map(_.toLocalDateTime).getOrElse(LocalDateTime.now()),
-      file.tags.map(_.toList), file.title, file.description, file.sourceURL, file.status.map(_.toString).getOrElse(""))
+      file.tags.map(_.toList), file.title, file.description, file.sourceURL, Json.toJson(file.status))
 
     db.run {
       for {
@@ -79,16 +82,16 @@ class FileMetadataService @Inject() () extends DalExecutionContext {
         updated <- HatFile.filter(_.id === file.fileId.get).result
       } yield updated
     } map { file =>
-      logger.debug(s"eh? $file")
       ModelTranslation.fromDbModel(file.head)
     }
   }
 
   def delete(fileId: String)(implicit db: Database): Future[ApiHatFile] = {
+    import HatJsonFormats.apiHatFileStatusFormat
     val query = for {
       _ <- HatFile.filter(_.id === fileId)
         .map(v => (v.status, v.lastUpdated))
-        .update((HatFileStatus.Deleted.toString, LocalDateTime.now()))
+        .update((Json.toJson(HatFileStatus.Deleted()), LocalDateTime.now()))
       updatedFile <- HatFile.filter(_.id === fileId).result
     } yield updatedFile
     db.run(query).map(updated => ModelTranslation.fromDbModel(updated.head))
@@ -101,30 +104,12 @@ class FileMetadataService @Inject() () extends DalExecutionContext {
 
   def search(fileTemplate: ApiHatFile)(implicit db: Database): Future[Seq[ApiHatFile]] = {
     val searchQuery = HatFile.filter { t =>
-      if (fileTemplate.name.nonEmpty) {
-        tsVector(t.name) @@ tsQuery(fileTemplate.name)
-      }
-      else {
-        slick.lifted.LiteralColumn(true)
-      } &&
-        (if (fileTemplate.source.nonEmpty) {
-          tsVector(t.source) @@ tsQuery(fileTemplate.source)
-        }
-        else {
-          slick.lifted.LiteralColumn(true)
-        }) &&
-        (fileTemplate.status map {
-          status => t.status === status.toString
-        } getOrElse slick.lifted.LiteralColumn(true)) &&
-        (fileTemplate.title map {
-          title => tsVector(t.title.getOrElse("")) @@ tsQuery(title)
-        } getOrElse slick.lifted.LiteralColumn(true)) &&
-        (fileTemplate.description map {
-          description => tsVector(t.description.getOrElse("")) @@ tsQuery(description)
-        } getOrElse slick.lifted.LiteralColumn(true)) &&
-        (fileTemplate.tags map {
-          tags => t.tags.getOrElse(List[String]()) @> tags.toList
-        } getOrElse slick.lifted.LiteralColumn(true))
+      Some(fileTemplate.name).filterNot(_.isEmpty).fold(true.bind)(tsVector(t.name) @@ tsQuery(_)) &&
+        Some(fileTemplate.source).filterNot(_.isEmpty).fold(true.bind)(tsVector(t.source) @@ tsQuery(_)) &&
+        fileTemplate.status.fold(true.bind)(t.status.+>>("status") === _.status) &&
+        fileTemplate.title.fold(true.bind)(tsVector(t.title.getOrElse("")) @@ tsQuery(_)) &&
+        fileTemplate.description.fold(true.bind)(tsVector(t.description.getOrElse("")) @@ tsQuery(_)) &&
+        fileTemplate.tags.fold(true.bind)(t.tags.getOrElse(List[String]()) @> _.toList)
     }
 
     db.run(searchQuery.result)

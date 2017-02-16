@@ -57,7 +57,7 @@ class Files @Inject() (
 
   def startUpload: Action[ApiHatFile] = SecuredAction.async(BodyParsers.parse.json[ApiHatFile]) { implicit request =>
     val eventualUploadUrl = for {
-      fileWithId <- fileMetadataService.getUniqueFileId(request.body.copy(fileId = None, status = Some(HatFileStatus.New), contentUrl = None))
+      fileWithId <- fileMetadataService.getUniqueFileId(request.body.copy(fileId = None, status = Some(HatFileStatus.New()), contentUrl = None))
       savedFile <- fileMetadataService.save(fileWithId)
       uploadUrl <- fileManager.getUploadUrl(fileWithId.fileId.get)
     } yield (savedFile, uploadUrl)
@@ -74,8 +74,8 @@ class Files @Inject() (
     fileMetadataService.getById(fileId) flatMap {
       case Some(file) =>
         (for {
-          exists <- fileManager.fileExists(file.fileId.get)
-          completed <- fileMetadataService.save(file.copy(status = Some(HatFileStatus.Completed))) if exists
+          fileSize <- fileManager.getFileSize(file.fileId.get)
+          completed <- fileMetadataService.save(file.copy(status = Some(HatFileStatus.Completed(fileSize)))) if fileSize > 0
         } yield {
           Ok(Json.toJson(completed))
         }) recover {
@@ -89,7 +89,7 @@ class Files @Inject() (
 
   def getContents(fileId: String): Action[AnyContent] = SecuredAction.async { implicit request =>
     fileMetadataService.getById(fileId) flatMap {
-      case Some(file) if file.status.contains(HatFileStatus.Completed) =>
+      case Some(file) if file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) =>
         fileManager.getContentUrl(file.fileId.get).map(url => Ok(Json.toJson(file.copy(contentUrl = Some(url)))))
       case Some(file) =>
         logger.debug(s"Found file $file")
@@ -102,7 +102,7 @@ class Files @Inject() (
   def listFiles(): Action[ApiHatFile] = SecuredAction.async(BodyParsers.parse.json[ApiHatFile]) { implicit request =>
     fileMetadataService.search(request.body) flatMap { foundFiles =>
       val fileContentsEventual = foundFiles map { file =>
-        if (file.status.contains(HatFileStatus.Completed)) {
+        if (file.status.exists(_.isInstanceOf[HatFileStatus.Completed])) {
           fileManager.getContentUrl(file.fileId.get).map(url => file.copy(contentUrl = Some(url)))
         }
         else {
@@ -134,7 +134,7 @@ class Files @Inject() (
       case Some(file) =>
         val eventuallyDeleted = for {
           _ <- fileManager.deleteContents(file.fileId.get)
-          deleted <- fileMetadataService.save(file.copy(status = Some(HatFileStatus.Deleted)))
+          deleted <- fileMetadataService.save(file.copy(status = Some(HatFileStatus.Deleted())))
         } yield deleted
         eventuallyDeleted.map(file => Ok(Json.toJson(file)))
       case None =>

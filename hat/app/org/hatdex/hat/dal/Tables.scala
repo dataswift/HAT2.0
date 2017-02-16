@@ -1237,14 +1237,14 @@ trait Tables {
    *  @param title Database column title SqlType(varchar), Default(None)
    *  @param description Database column description SqlType(varchar), Default(None)
    *  @param sourceUrl Database column source_url SqlType(varchar), Default(None)
-   *  @param status Database column status SqlType(varchar)
+   *  @param status Database column status SqlType(jsonb), Length(2147483647,false)
    */
-  case class HatFileRow(id: String, name: String, source: String, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, tags: Option[List[String]] = None, title: Option[String] = None, description: Option[String] = None, sourceUrl: Option[String] = None, status: String)
+  case class HatFileRow(id: String, name: String, source: String, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, tags: Option[List[String]] = None, title: Option[String] = None, description: Option[String] = None, sourceUrl: Option[String] = None, status: play.api.libs.json.JsValue)
   /** GetResult implicit for fetching HatFileRow objects using plain SQL queries */
-  implicit def GetResultHatFileRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime], e2: GR[Option[List[String]]], e3: GR[Option[String]]): GR[HatFileRow] = GR {
+  implicit def GetResultHatFileRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime], e2: GR[Option[List[String]]], e3: GR[Option[String]], e4: GR[play.api.libs.json.JsValue]): GR[HatFileRow] = GR {
     prs =>
       import prs._
-      HatFileRow.tupled((<<[String], <<[String], <<[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<?[List[String]], <<?[String], <<?[String], <<?[String], <<[String]))
+      HatFileRow.tupled((<<[String], <<[String], <<[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<?[List[String]], <<?[String], <<?[String], <<?[String], <<[play.api.libs.json.JsValue]))
   }
   /** Table description of table hat_file. Objects of this class serve as prototypes for rows in queries. */
   class HatFile(_tableTag: Tag) extends Table[HatFileRow](_tableTag, Some("hat"), "hat_file") {
@@ -1270,8 +1270,8 @@ trait Tables {
     val description: Rep[Option[String]] = column[Option[String]]("description", O.Default(None))
     /** Database column source_url SqlType(varchar), Default(None) */
     val sourceUrl: Rep[Option[String]] = column[Option[String]]("source_url", O.Default(None))
-    /** Database column status SqlType(varchar) */
-    val status: Rep[String] = column[String]("status")
+    /** Database column status SqlType(jsonb), Length(2147483647,false) */
+    val status: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("status", O.Length(2147483647, varying = false))
   }
   /** Collection-like TableQuery object for table HatFile */
   lazy val HatFile = new TableQuery(tag => new HatFile(tag))
