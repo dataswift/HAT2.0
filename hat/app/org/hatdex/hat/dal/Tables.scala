@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{ GetResult => GR }
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, HatFileAccess.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -1275,6 +1275,43 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table HatFile */
   lazy val HatFile = new TableQuery(tag => new HatFile(tag))
+
+  /**
+   * Entity class storing rows of table HatFileAccess
+   *  @param fileId Database column file_id SqlType(varchar)
+   *  @param userId Database column user_id SqlType(uuid)
+   *  @param content Database column content SqlType(bool), Default(false)
+   */
+  case class HatFileAccessRow(fileId: String, userId: java.util.UUID, content: Boolean = false)
+  /** GetResult implicit for fetching HatFileAccessRow objects using plain SQL queries */
+  implicit def GetResultHatFileAccessRow(implicit e0: GR[String], e1: GR[java.util.UUID], e2: GR[Boolean]): GR[HatFileAccessRow] = GR {
+    prs =>
+      import prs._
+      HatFileAccessRow.tupled((<<[String], <<[java.util.UUID], <<[Boolean]))
+  }
+  /** Table description of table hat_file_access. Objects of this class serve as prototypes for rows in queries. */
+  class HatFileAccess(_tableTag: Tag) extends Table[HatFileAccessRow](_tableTag, Some("hat"), "hat_file_access") {
+    def * = (fileId, userId, content) <> (HatFileAccessRow.tupled, HatFileAccessRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(fileId), Rep.Some(userId), Rep.Some(content)).shaped.<>({ r => import r._; _1.map(_ => HatFileAccessRow.tupled((_1.get, _2.get, _3.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column file_id SqlType(varchar) */
+    val fileId: Rep[String] = column[String]("file_id")
+    /** Database column user_id SqlType(uuid) */
+    val userId: Rep[java.util.UUID] = column[java.util.UUID]("user_id")
+    /** Database column content SqlType(bool), Default(false) */
+    val content: Rep[Boolean] = column[Boolean]("content", O.Default(false))
+
+    /** Primary key of HatFileAccess (database name hat_file_access_pkey) */
+    val pk = primaryKey("hat_file_access_pkey", (fileId, userId))
+
+    /** Foreign key referencing HatFile (database name hat_file_access_file_id_fkey) */
+    lazy val hatFileFk = foreignKey("hat_file_access_file_id_fkey", fileId, HatFile)(r => r.id, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+    /** Foreign key referencing UserUser (database name hat_file_access_user_id_fkey) */
+    lazy val userUserFk = foreignKey("hat_file_access_user_id_fkey", userId, UserUser)(r => r.userId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table HatFileAccess */
+  lazy val HatFileAccess = new TableQuery(tag => new HatFileAccess(tag))
 
   /**
    * Entity class storing rows of table LocationsLocation

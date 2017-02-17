@@ -28,9 +28,9 @@ import javax.inject.Inject
 
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.s3.AmazonS3Client
-import com.amazonaws.services.s3.model.{GeneratePresignedUrlRequest, SSEAlgorithm}
+import com.amazonaws.services.s3.model.{ GeneratePresignedUrlRequest, SSEAlgorithm }
 import org.hatdex.hat.resourceManagement.HatServer
-import play.api.{Configuration, Logger}
+import play.api.{ Configuration, Logger }
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration

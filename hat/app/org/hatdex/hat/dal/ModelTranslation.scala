@@ -142,6 +142,11 @@ object ModelTranslation {
     import HatJsonFormats.apiHatFileStatusFormat
     ApiHatFile(Some(hatFileRow.id), hatFileRow.name, hatFileRow.source,
       Some(hatFileRow.dateCreated.toDateTime), Some(hatFileRow.lastUpdated.toDateTime),
-      hatFileRow.tags, hatFileRow.title, hatFileRow.description, hatFileRow.sourceUrl, Some(hatFileRow.status.as[HatFileStatus.Status]))
+      hatFileRow.tags, hatFileRow.title, hatFileRow.description, hatFileRow.sourceUrl,
+      Some(hatFileRow.status.as[HatFileStatus.Status]), None, None)
+  }
+
+  def fromDbModel(hatFileAccessRow: HatFileAccessRow): ApiHatFilePermissions = {
+    ApiHatFilePermissions(hatFileAccessRow.userId, hatFileAccessRow.content)
   }
 }

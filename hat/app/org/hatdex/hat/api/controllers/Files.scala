@@ -24,14 +24,16 @@
 
 package org.hatdex.hat.api.controllers
 
+import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models.{ ApiHatFile, ErrorMessage, HatFileStatus }
-import org.hatdex.hat.api.service.{ FileManager, FileMetadataService }
-import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
+import org.hatdex.hat.api.service.{ FileManager, FileMetadataService, UsersService }
+import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.joda.time.DateTime
 import play.api.i18n.MessagesApi
@@ -50,29 +52,32 @@ class Files @Inject() (
     clock: Clock,
     hatDatabaseProvider: HatDatabaseProvider,
     fileMetadataService: FileMetadataService,
-    fileManager: FileManager
+    fileManager: FileManager,
+    usersService: UsersService
 ) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   val logger = Logger(this.getClass)
 
-  def startUpload: Action[ApiHatFile] = SecuredAction.async(BodyParsers.parse.json[ApiHatFile]) { implicit request =>
+  def startUpload: Action[ApiHatFile] = SecuredAction(WithRole("dataCredit", "owner")).async(BodyParsers.parse.json[ApiHatFile]) { implicit request =>
+    val cleanFile = request.body.copy(fileId = None, status = Some(HatFileStatus.New()), contentUrl = None, permissions = None)
     val eventualUploadUrl = for {
-      fileWithId <- fileMetadataService.getUniqueFileId(request.body.copy(fileId = None, status = Some(HatFileStatus.New()), contentUrl = None))
+      fileWithId <- fileMetadataService.getUniqueFileId(cleanFile)
       savedFile <- fileMetadataService.save(fileWithId)
       uploadUrl <- fileManager.getUploadUrl(fileWithId.fileId.get)
+      _ <- fileMetadataService.grantAccess(savedFile, request.identity, content = true)
     } yield (savedFile, uploadUrl)
 
     eventualUploadUrl.map { case (savedFile, url) => Ok(Json.toJson(savedFile.copy(contentUrl = Some(url)))) }
       .recoverWith {
         case e =>
-          logger.error(s"Error uploading file: ${e.getMessage}")
+          logger.error(s"Error uploading file: ${e.getMessage}", e)
           Future.successful(BadRequest(Json.toJson(ErrorMessage("Error uploading file", e.getMessage))))
       }
   }
 
-  def completeUpload(fileId: String): Action[AnyContent] = SecuredAction.async { implicit request =>
+  def completeUpload(fileId: String): Action[AnyContent] = SecuredAction(WithRole("dataCredit", "owner")).async { implicit request =>
     fileMetadataService.getById(fileId) flatMap {
-      case Some(file) =>
+      case Some(file) if fileContentAccessAllowed(file) =>
         (for {
           fileSize <- fileManager.getFileSize(file.fileId.get)
           completed <- fileMetadataService.save(file.copy(status = Some(HatFileStatus.Completed(fileSize)))) if fileSize > 0
@@ -82,54 +87,88 @@ class Files @Inject() (
           case _ => BadRequest(Json.toJson(ErrorMessage("File not available", s"Not fully uploaded file can not be completed")))
         }
 
-      case None =>
+      case _ =>
         Future.successful(NotFound(Json.toJson(ErrorMessage("No such file", s"File $fileId not found"))))
     }
   }
 
+  private def fileContentAccessAllowed(file: ApiHatFile)(implicit user: HatUser): Boolean = {
+    WithRole.isAuthorized(user, "owner") ||
+      (file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) &&
+        file.permissions.isDefined &&
+        file.permissions.get.exists(p => p.userId == user.userId && p.contentReadable))
+  }
+
   def getContents(fileId: String): Action[AnyContent] = SecuredAction.async { implicit request =>
+    logger.debug(s"Getting contents for $fileId")
     fileMetadataService.getById(fileId) flatMap {
-      case Some(file) if file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) =>
-        fileManager.getContentUrl(file.fileId.get).map(url => Ok(Json.toJson(file.copy(contentUrl = Some(url)))))
-      case Some(file) =>
-        logger.debug(s"Found file $file")
-        Future.successful(NotFound(Json.toJson(ErrorMessage("File not available", s"File $fileId not available - has uploading the file been completed?"))))
+      case Some(file) if fileContentAccessAllowed(file) =>
+        fileManager.getContentUrl(file.fileId.get)
+          .map(url => file.copy(contentUrl = Some(url)))
+          .map(filePermissionsCleaned)
+          .map(file => Ok(Json.toJson(file)))
+      case Some(file) if file.status.exists(_.isInstanceOf[HatFileStatus.New]) =>
+        fileManager.getUploadUrl(file.fileId.get)
+          .map(url => file.copy(contentUrl = Some(url)))
+          .map(file => Ok(Json.toJson(file)))
+      case Some(_) =>
+        Future.successful(NotFound(Json.toJson(ErrorMessage("File not available", s"File $fileId not available - unauthorized or file incomplete"))))
       case None =>
         Future.successful(NotFound(Json.toJson(ErrorMessage("No such file", s"File $fileId not found"))))
     }
   }
 
   def listFiles(): Action[ApiHatFile] = SecuredAction.async(BodyParsers.parse.json[ApiHatFile]) { implicit request =>
-    fileMetadataService.search(request.body) flatMap { foundFiles =>
-      val fileContentsEventual = foundFiles map { file =>
-        if (file.status.exists(_.isInstanceOf[HatFileStatus.Completed])) {
-          fileManager.getContentUrl(file.fileId.get).map(url => file.copy(contentUrl = Some(url)))
+    fileMetadataService.search(request.body)
+      .map(_.filter(fileAccessAllowed))
+      .flatMap { foundFiles =>
+        val fileContentsEventual = foundFiles map { file =>
+          if (fileContentAccessAllowed(file)) {
+            fileManager.getContentUrl(file.fileId.get)
+              .map(url => file.copy(contentUrl = Some(url)))
+              .map(filePermissionsCleaned)
+          }
+          else {
+            Future.successful(filePermissionsCleaned(file))
+          }
         }
-        else {
-          Future.successful(file)
-        }
+        Future.sequence(fileContentsEventual).map(files => Ok(Json.toJson(files)))
       }
-      Future.sequence(fileContentsEventual).map(files => Ok(Json.toJson(files)))
+  }
+
+  private def fileAccessAllowed(file: ApiHatFile)(implicit user: HatUser): Boolean = {
+    WithRole.isAuthorized(user, "owner") ||
+      (file.permissions.isDefined &&
+        file.permissions.get.exists(_.userId == user.userId))
+  }
+
+  private def filePermissionsCleaned(file: ApiHatFile)(implicit user: HatUser): ApiHatFile = {
+    if (WithRole.isAuthorized(user, "owner")) {
+      file
+    }
+    else {
+      file.copy(permissions = None)
     }
   }
 
   def updateFile(fileId: String): Action[ApiHatFile] = SecuredAction.async(BodyParsers.parse.json[ApiHatFile]) { implicit request =>
     fileMetadataService.getById(fileId) flatMap {
-      case Some(file) =>
+      case Some(file) if fileContentAccessAllowed(file) =>
         val updatedFile = file.copy(
           name = request.body.name,
           lastUpdated = request.body.lastUpdated.orElse(Some(DateTime.now())),
           tags = request.body.tags,
           title = request.body.title,
-          description = request.body.description)
+          description = request.body.description
+        )
 
         fileMetadataService.save(updatedFile).map(f => Ok(Json.toJson(f)))
-      case None =>
+      case _ =>
         Future.successful(NotFound(Json.toJson(ErrorMessage("No such file", s"File $fileId not found"))))
     }
   }
 
-  def deleteFile(fileId: String): Action[AnyContent] = SecuredAction.async { implicit request =>
+  def deleteFile(fileId: String): Action[AnyContent] = SecuredAction(WithRole("owner")).async { implicit request =>
     fileMetadataService.getById(fileId) flatMap {
       case Some(file) =>
         val eventuallyDeleted = for {
@@ -139,6 +178,35 @@ class Files @Inject() (
         eventuallyDeleted.map(file => Ok(Json.toJson(file)))
       case None =>
         Future.successful(NotFound(Json.toJson(ErrorMessage("No such file", s"File $fileId not found"))))
+    }
+  }
+
+  def allowAccess(fileId: String, userId: UUID, content: Boolean) = SecuredAction(WithRole("owner")).async { implicit request =>
+    fileMetadataService.getById(fileId) flatMap {
+      case Some(file) if fileAccessAllowed(file) =>
+        val eventuallyGranted = for {
+          user <- usersService.getUser(userId) if user.isDefined
+          _ <- fileMetadataService.grantAccess(file, user.get, content)
+          updated <- fileMetadataService.getById(fileId).map(_.get)
+        } yield (updated)
+        eventuallyGranted.map(f => Ok(Json.toJson(f)))
+      case None => Future.successful(NotFound(Json.toJson(ErrorMessage("No such file", s"File $fileId not found"))))
+    }
+  }
+
+  def allowAccessPattern(userId: UUID, content: Boolean) = SecuredAction(WithRole("owner")).async(BodyParsers.parse.json[ApiHatFile]) { implicit request =>
+    val eventuallyAllowedFiles = for {
+      user <- usersService.getUser(userId) if user.isDefined
+      _ <- fileMetadataService.grantAccessPattern(request.body, user.get, content)
+      matchingFiles <- fileMetadataService.search(request.body)
+    } yield matchingFiles
+
+    eventuallyAllowedFiles map { files =>
+      Ok(Json.toJson(files))
+    } recover {
+      case e =>
+        logger.error(s"Error while granting access to a pattern of files: ${e.getMessage}", e)
+        BadRequest(Json.toJson(ErrorMessage("Could not grant access", "No such user or unexpected error while granting access")))
     }
   }
 

@@ -68,9 +68,11 @@ GET           /passwordreset/confirm/:token               org.hatdex.hat.phata.c
 POST          /passwordreset/confirm/:token               org.hatdex.hat.phata.controllers.Authentication.handleResetPassword(token: String)
 
 # FILE roues
-POST          /file/upload                                org.hatdex.hat.api.controllers.Files.startUpload
-POST          /file/search                                org.hatdex.hat.api.controllers.Files.listFiles()
-GET           /file/:fileId/complete                      org.hatdex.hat.api.controllers.Files.completeUpload(fileId)
-GET           /file/:fileId                               org.hatdex.hat.api.controllers.Files.getContents(fileId)
-PUT           /file/:fileId                               org.hatdex.hat.api.controllers.Files.updateFile(fileId)
-DELETE        /file/:fileId                               org.hatdex.hat.api.controllers.Files.deleteFile(fileId)
+POST          /api/v2/files/upload                                  org.hatdex.hat.api.controllers.Files.startUpload
+POST          /api/v2/files/search                                  org.hatdex.hat.api.controllers.Files.listFiles()
+POST          /api/v2/files/allowAccess/:userId                     org.hatdex.hat.api.controllers.Files.allowAccessPattern(userId: java.util.UUID, content: Boolean)
+GET           /api/v2/files/file/:fileId/complete                   org.hatdex.hat.api.controllers.Files.completeUpload(fileId)
+GET           /api/v2/files/file/:fileId/allowAccess/:userId        org.hatdex.hat.api.controllers.Files.allowAccess(fileId, userId: java.util.UUID, content: Boolean)
+GET           /api/v2/files/file/:fileId                            org.hatdex.hat.api.controllers.Files.getContents(fileId)
+PUT           /api/v2/files/file/:fileId                            org.hatdex.hat.api.controllers.Files.updateFile(fileId)
+DELETE        /api/v2/files/file/:fileId                            org.hatdex.hat.api.controllers.Files.deleteFile(fileId)
