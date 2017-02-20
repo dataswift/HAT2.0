@@ -27,7 +27,7 @@ package org.hatdex.hat.api.service
 import java.text.Normalizer
 
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ApiHatFile, HatFileStatus}
+import org.hatdex.hat.api.models.{ ApiHatFile, HatFileStatus }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._

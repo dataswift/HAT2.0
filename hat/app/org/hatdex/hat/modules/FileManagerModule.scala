@@ -24,7 +24,10 @@
 
 package org.hatdex.hat.modules
 
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.services.s3.AmazonS3Client
 import com.google.inject.{ AbstractModule, Provides }
+import com.google.inject.name.Named
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
@@ -41,6 +44,12 @@ class FileManagerModule extends AbstractModule with ScalaModule with AkkaGuiceSu
   @Provides
   def provideCookieAuthenticatorService(configuration: Configuration): AwsS3Configuration = {
     configuration.underlying.as[AwsS3Configuration]("storage.s3Configuration")
+  }
+
+  @Provides @Named("s3client-file-manager")
+  def provides3Client(configuration: AwsS3Configuration): AmazonS3Client = {
+    val awsCreds: BasicAWSCredentials = new BasicAWSCredentials(configuration.accessKeyId, configuration.secretKey)
+    new AmazonS3Client(awsCreds)
   }
 
 }

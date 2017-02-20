@@ -26,9 +26,9 @@ package org.hatdex.hat.api.service
 
 import javax.inject.Inject
 
-import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.{ GeneratePresignedUrlRequest, SSEAlgorithm }
+import com.google.inject.name.Named
 import org.hatdex.hat.resourceManagement.HatServer
 import play.api.{ Configuration, Logger }
 
@@ -50,8 +50,8 @@ case class AwsS3Configuration(
 )
 
 class FileManagerS3 @Inject() (
-    configuration: Configuration,
-    awsS3Configuration: AwsS3Configuration
+    awsS3Configuration: AwsS3Configuration,
+    @Named("s3client-file-manager") s3client: AmazonS3Client
 ) extends FileManager with RemoteApiExecutionContext {
 
   private val logger = Logger(this.getClass)
@@ -61,8 +61,6 @@ class FileManagerS3 @Inject() (
   //  logger.info(s"Generated SSE key: ${sseKey.getKey}")
 
   private val bucketName = awsS3Configuration.bucketName
-  private val awsCreds: BasicAWSCredentials = new BasicAWSCredentials(awsS3Configuration.accessKeyId, awsS3Configuration.secretKey)
-  val s3client = new AmazonS3Client(awsCreds)
 
   def getUploadUrl(fileName: String)(implicit hatServer: HatServer): Future[String] = {
     val expiration = org.joda.time.DateTime.now().plus(awsS3Configuration.signedUrlExpiry.toMillis)
@@ -88,6 +86,7 @@ class FileManagerS3 @Inject() (
   }
 
   def getFileSize(fileName: String)(implicit hatServer: HatServer): Future[Long] = {
+    logger.info(s"Getting file size for $bucketName ${hatServer.domain}/$fileName")
     Future(s3client.getObjectMetadata(bucketName, s"${hatServer.domain}/$fileName"))
       .map { metadata => Option(metadata.getContentLength).getOrElse(0L) }
       .recover { case e => 0L }
