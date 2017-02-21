@@ -50,12 +50,6 @@ GET           /system/update                              org.hatdex.hat.api.con
 
 # PHATA routes
 GET           /assets/*file                               @controllers.Assets.versioned(path="/public", file: Asset)
-GET           /                                           org.hatdex.hat.phata.controllers.Phata.home
-GET           /launcher                                   org.hatdex.hat.phata.controllers.Phata.launcher
-GET           /profile                                    org.hatdex.hat.phata.controllers.Phata.profile
-GET           /notables                                   org.hatdex.hat.phata.controllers.Phata.notables(id: Option[Int])
-GET           /hat                                        org.hatdex.hat.phata.controllers.Phata.profile
-
 POST          /                                           org.hatdex.hat.phata.controllers.Authentication.login
 GET           /signin                                     org.hatdex.hat.phata.controllers.Authentication.signin
 GET           /hatlogin                                   org.hatdex.hat.phata.controllers.Authentication.hatLogin(name: String, redirect: String)
@@ -66,3 +60,7 @@ GET           /passwordreset                              org.hatdex.hat.phata.c
 POST          /passwordreset                              org.hatdex.hat.phata.controllers.Authentication.handleForgotPassword
 GET           /passwordreset/confirm/:token               org.hatdex.hat.phata.controllers.Authentication.resetPassword(token: String)
 POST          /passwordreset/confirm/:token               org.hatdex.hat.phata.controllers.Authentication.handleResetPassword(token: String)
+
+GET           /                                           org.hatdex.hat.phata.controllers.Phata.rumpelIndex
+GET           /api/profile                                org.hatdex.hat.phata.controllers.Phata.profile
+GET           /api/notables                               org.hatdex.hat.phata.controllers.Phata.notables(id: Option[Int])
