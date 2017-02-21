@@ -146,9 +146,9 @@ class Authentication @Inject() (
   def logout: Action[AnyContent] = UserAwareAction.async { implicit request =>
     request.identity map { identity =>
       env.eventBus.publish(LogoutEvent(identity, request))
-      env.authenticatorService.discard(request.authenticator.get, Redirect(routes.Phata.home().url))
+      env.authenticatorService.discard(request.authenticator.get, Redirect(routes.Phata.rumpelIndex()))
     } getOrElse {
-      Future.successful(Redirect(routes.Phata.home().url))
+      Future.successful(Redirect(routes.Phata.rumpelIndex()))
     }
   }
 
