@@ -123,7 +123,7 @@ class Authentication @Inject() (
               case Some(user) =>
                 val eventualLoginResult = loginDetails match {
                   case LoginDetails(_, _, _, Some(name), Some(redirect)) => processHatLogin(name, redirect, user)
-                  case _ => Future.successful(Redirect(routes.Phata.home().url))
+                  case _ => Future.successful(Redirect(routes.Phata.rumpelIndex()))
                 }
 
                 for {
@@ -182,7 +182,7 @@ class Authentication @Inject() (
    */
   def forgotPassword: Action[AnyContent] = UserAwareAction.async { implicit request =>
     Future.successful(request.identity match {
-      case Some(_) => Redirect(routes.Phata.home().url)
+      case Some(_) => Redirect(routes.Phata.rumpelIndex())
       case None    => Ok(phataViews.html.passwordForgot(emailForm))
     })
   }
@@ -225,8 +225,8 @@ class Authentication @Inject() (
         Future.successful(Ok(phataViews.html.passwordReset(tokenId, PasswordChange.passwordChangeForm)))
       case Some(token) =>
         tokenService.consume(tokenId)
-        Future.successful(Redirect(routes.Phata.home().url))
-      case None => Future.successful(Redirect(routes.Phata.home().url))
+        Future.successful(Redirect(routes.Phata.rumpelIndex()))
+      case None => Future.successful(Redirect(routes.Phata.rumpelIndex()))
     }
   }
 
@@ -255,12 +255,12 @@ class Authentication @Inject() (
               }
             }
             else {
-              Future.successful(Redirect(routes.Phata.home().url))
+              Future.successful(Redirect(routes.Phata.rumpelIndex()))
             }
           case Some(token) =>
             tokenService.consume(tokenId)
-            Future.successful(Redirect(routes.Phata.home().url))
-          case None => Future.successful(Redirect(routes.Phata.home().url))
+            Future.successful(Redirect(routes.Phata.rumpelIndex()))
+          case None => Future.successful(Redirect(routes.Phata.rumpelIndex()))
         }
       })
   }

@@ -56,7 +56,7 @@ class ErrorHandler @Inject() (
     Future.successful {
       render {
         case Accepts.Json() => Unauthorized(Json.obj("error" -> "Not Authenticated", "message" -> s"Not Authenticated"))
-        case _              => Redirect(org.hatdex.hat.phata.controllers.routes.Authentication.signin().url)
+        case _              => Redirect(org.hatdex.hat.phata.controllers.routes.Phata.rumpelIndex())
       }
     }
   }
@@ -67,7 +67,7 @@ class ErrorHandler @Inject() (
     Future.successful {
       render {
         case Accepts.Json() => Forbidden(Json.obj("error" -> "Forbidden", "message" -> s"Access Denied"))
-        case _              => Redirect(org.hatdex.hat.phata.controllers.routes.Authentication.signin().url)
+        case _              => Redirect(org.hatdex.hat.phata.controllers.routes.Phata.rumpelIndex())
       }
     }
   }

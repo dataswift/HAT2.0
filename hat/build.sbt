@@ -53,9 +53,9 @@ enablePlugins(PlayScala)
 
 enablePlugins(JavaAppPackaging)
 
-enablePlugins(SbtWeb, SbtSassify)
+enablePlugins(SbtWeb, SbtSassify, SbtGzip, SbtDigest)
 
-//pipelineStages in Assets := Seq(uglify)
+pipelineStages in Assets := Seq(digest)
 sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets"
 
 aggregate in update := false
