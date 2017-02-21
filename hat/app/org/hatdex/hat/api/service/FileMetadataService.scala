@@ -70,7 +70,6 @@ class FileMetadataService extends DalExecutionContext {
   }
 
   def save(file: ApiHatFile)(implicit db: Database): Future[ApiHatFile] = {
-    logger.info(s"Saving file $file")
     import HatJsonFormats.apiHatFileStatusFormat
     val dbFile = HatFileRow(file.fileId.get, file.name, file.source,
       file.dateCreated.map(_.toLocalDateTime).getOrElse(LocalDateTime.now()),
@@ -103,8 +102,12 @@ class FileMetadataService extends DalExecutionContext {
 
   def grantAccess(file: ApiHatFile, user: HatUser, content: Boolean)(implicit db: Database): Future[Unit] = {
     val filePermissionRow = HatFileAccessRow(file.fileId.get, user.userId, content)
-    logger.debug(s"Inserting file permissions: $filePermissionRow")
     db.run(HatFileAccess.forceInsert(filePermissionRow)).map(_ => ())
+  }
+
+  def restrictAccess(file: ApiHatFile, user: HatUser)(implicit db: Database): Future[Unit] = {
+    val filePermissionRemove = HatFileAccess.filter(f => f.fileId === file.fileId.get && f.userId === user.userId).delete
+    db.run(filePermissionRemove).map(_ => ())
   }
 
   def grantAccessPattern(fileTemplate: ApiHatFile, user: HatUser, content: Boolean)(implicit db: Database): Future[Unit] = {
@@ -120,6 +123,15 @@ class FileMetadataService extends DalExecutionContext {
     } map { _ => () }
   }
 
+  def restrictAccessPattern(fileTemplate: ApiHatFile, user: HatUser)(implicit db: Database): Future[Unit] = {
+    val matchingFileQuery = for {
+      file <- findFilesQuery(fileTemplate)
+    } yield file.id
+
+    val filePermissionRemove = HatFileAccess.filter(_.fileId in matchingFileQuery).delete
+    db.run(filePermissionRemove).map(_ => ())
+  }
+
   def delete(fileId: String)(implicit db: Database): Future[ApiHatFile] = {
     import HatJsonFormats.apiHatFileStatusFormat
     val query = for {
@@ -133,11 +145,11 @@ class FileMetadataService extends DalExecutionContext {
 
   private def findFilesQuery(fileTemplate: ApiHatFile): Query[HatFile, HatFileRow, Seq] = {
     HatFile.filter { t =>
-      Some(fileTemplate.name).filterNot(_.isEmpty).fold(true.bind)(tsVector(t.name) @@ tsQuery(_)) &&
-        Some(fileTemplate.source).filterNot(_.isEmpty).fold(true.bind)(tsVector(t.source) @@ tsQuery(_)) &&
+      Some(fileTemplate.name).filterNot(_.isEmpty).fold(true.bind)(toTsVector(t.name) @@ plainToTsQuery(_)) &&
+        Some(fileTemplate.source).filterNot(_.isEmpty).fold(true.bind)(toTsVector(t.source) @@ plainToTsQuery(_)) &&
         fileTemplate.status.fold(true.bind)(t.status.+>>("status") === _.status) &&
-        fileTemplate.title.fold(true.bind)(tsVector(t.title.getOrElse("")) @@ tsQuery(_)) &&
-        fileTemplate.description.fold(true.bind)(tsVector(t.description.getOrElse("")) @@ tsQuery(_)) &&
+        fileTemplate.title.fold(true.bind)(someTitle => toTsVector(t.title.getOrElse("")) @@ plainToTsQuery(someTitle)) &&
+        fileTemplate.description.fold(true.bind)(toTsVector(t.description.getOrElse("")) @@ plainToTsQuery(_)) &&
         fileTemplate.tags.fold(true.bind)(t.tags.getOrElse(List[String]()) @> _.toList)
     }
   }

@@ -1238,19 +1238,20 @@ trait Tables {
    *  @param description Database column description SqlType(varchar), Default(None)
    *  @param sourceUrl Database column source_url SqlType(varchar), Default(None)
    *  @param status Database column status SqlType(jsonb), Length(2147483647,false)
+   *  @param contentPublic Database column content_public SqlType(bool), Default(false)
    */
-  case class HatFileRow(id: String, name: String, source: String, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, tags: Option[List[String]] = None, title: Option[String] = None, description: Option[String] = None, sourceUrl: Option[String] = None, status: play.api.libs.json.JsValue)
+  case class HatFileRow(id: String, name: String, source: String, dateCreated: org.joda.time.LocalDateTime, lastUpdated: org.joda.time.LocalDateTime, tags: Option[List[String]] = None, title: Option[String] = None, description: Option[String] = None, sourceUrl: Option[String] = None, status: play.api.libs.json.JsValue, contentPublic: Boolean = false)
   /** GetResult implicit for fetching HatFileRow objects using plain SQL queries */
-  implicit def GetResultHatFileRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime], e2: GR[Option[List[String]]], e3: GR[Option[String]], e4: GR[play.api.libs.json.JsValue]): GR[HatFileRow] = GR {
+  implicit def GetResultHatFileRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime], e2: GR[Option[List[String]]], e3: GR[Option[String]], e4: GR[play.api.libs.json.JsValue], e5: GR[Boolean]): GR[HatFileRow] = GR {
     prs =>
       import prs._
-      HatFileRow.tupled((<<[String], <<[String], <<[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<?[List[String]], <<?[String], <<?[String], <<?[String], <<[play.api.libs.json.JsValue]))
+      HatFileRow.tupled((<<[String], <<[String], <<[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<?[List[String]], <<?[String], <<?[String], <<?[String], <<[play.api.libs.json.JsValue], <<[Boolean]))
   }
   /** Table description of table hat_file. Objects of this class serve as prototypes for rows in queries. */
   class HatFile(_tableTag: Tag) extends Table[HatFileRow](_tableTag, Some("hat"), "hat_file") {
-    def * = (id, name, source, dateCreated, lastUpdated, tags, title, description, sourceUrl, status) <> (HatFileRow.tupled, HatFileRow.unapply)
+    def * = (id, name, source, dateCreated, lastUpdated, tags, title, description, sourceUrl, status, contentPublic) <> (HatFileRow.tupled, HatFileRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(name), Rep.Some(source), Rep.Some(dateCreated), Rep.Some(lastUpdated), tags, title, description, sourceUrl, Rep.Some(status)).shaped.<>({ r => import r._; _1.map(_ => HatFileRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7, _8, _9, _10.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(name), Rep.Some(source), Rep.Some(dateCreated), Rep.Some(lastUpdated), tags, title, description, sourceUrl, Rep.Some(status), Rep.Some(contentPublic)).shaped.<>({ r => import r._; _1.map(_ => HatFileRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7, _8, _9, _10.get, _11.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(varchar), PrimaryKey */
     val id: Rep[String] = column[String]("id", O.PrimaryKey)
@@ -1272,6 +1273,8 @@ trait Tables {
     val sourceUrl: Rep[Option[String]] = column[Option[String]]("source_url", O.Default(None))
     /** Database column status SqlType(jsonb), Length(2147483647,false) */
     val status: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("status", O.Length(2147483647, varying = false))
+    /** Database column content_public SqlType(bool), Default(false) */
+    val contentPublic: Rep[Boolean] = column[Boolean]("content_public", O.Default(false))
   }
   /** Collection-like TableQuery object for table HatFile */
   lazy val HatFile = new TableQuery(tag => new HatFile(tag))

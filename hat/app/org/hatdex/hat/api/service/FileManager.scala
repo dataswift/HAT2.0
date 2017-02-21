@@ -46,20 +46,13 @@ case class AwsS3Configuration(
   bucketName: String,
   accessKeyId: String,
   secretKey: String,
-  signedUrlExpiry: FiniteDuration
-)
+  signedUrlExpiry: FiniteDuration)
 
 class FileManagerS3 @Inject() (
     awsS3Configuration: AwsS3Configuration,
-    @Named("s3client-file-manager") s3client: AmazonS3Client
-) extends FileManager with RemoteApiExecutionContext {
+    @Named("s3client-file-manager") s3client: AmazonS3Client) extends FileManager with RemoteApiExecutionContext {
 
   private val logger = Logger(this.getClass)
-  //  private val sseKey = new SSECustomerKey(generateSecretKey())
-  logger.info(s"AWS configuration: $awsS3Configuration")
-
-  //  logger.info(s"Generated SSE key: ${sseKey.getKey}")
-
   private val bucketName = awsS3Configuration.bucketName
 
   def getUploadUrl(fileName: String)(implicit hatServer: HatServer): Future[String] = {
