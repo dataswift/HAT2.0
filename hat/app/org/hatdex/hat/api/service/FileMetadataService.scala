@@ -74,7 +74,8 @@ class FileMetadataService extends DalExecutionContext {
     val dbFile = HatFileRow(file.fileId.get, file.name, file.source,
       file.dateCreated.map(_.toLocalDateTime).getOrElse(LocalDateTime.now()),
       file.lastUpdated.map(_.toLocalDateTime).getOrElse(LocalDateTime.now()),
-      file.tags.map(_.toList), file.title, file.description, file.sourceURL, Json.toJson(file.status))
+      file.tags.map(_.toList), file.title, file.description, file.sourceURL,
+      Json.toJson(file.status), file.contentPublic.getOrElse(false))
 
     val updatedFileQuery = HatFile.joinLeft(HatFileAccess).on(_.id === _.fileId).filter(_._1.id === file.fileId.get)
 

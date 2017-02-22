@@ -32,13 +32,12 @@ import play.api.test.PlaySpecification
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class FileManagerS3Spec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito {
+class FileManagerS3Spec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with FileManagerContext {
 
   val logger = Logger(this.getClass)
 
   "The `getUploadUrl` method" should {
-    "return a signed url for a provided key" in new Context {
-      val mockS3client = FileManagerS3Mock().mockS3client
+    "return a signed url for a provided key" in {
       val fileManager = new FileManagerS3(s3Configuration, mockS3client)
       val result: Future[String] = fileManager.getUploadUrl("testFile")
 
@@ -47,8 +46,7 @@ class FileManagerS3Spec(implicit ee: ExecutionEnv) extends PlaySpecification wit
   }
 
   "The `getContentUrl` method" should {
-    "return a signed url for a provided key" in new Context {
-      val mockS3client = FileManagerS3Mock().mockS3client
+    "return a signed url for a provided key" in {
       val fileManager = new FileManagerS3(s3Configuration, mockS3client)
       val result: Future[String] = fileManager.getContentUrl("testFile")
 
@@ -57,8 +55,7 @@ class FileManagerS3Spec(implicit ee: ExecutionEnv) extends PlaySpecification wit
   }
 
   "The `deleteContents` method" should {
-    "return quietly when deleting any file" in new Context {
-      val mockS3client = FileManagerS3Mock().mockS3client
+    "return quietly when deleting any file" in {
       val fileManager = new FileManagerS3(s3Configuration, mockS3client)
       val result: Future[Unit] = fileManager.deleteContents("deleteFile")
 
@@ -68,16 +65,14 @@ class FileManagerS3Spec(implicit ee: ExecutionEnv) extends PlaySpecification wit
   }
 
   "The `getFileSize` method" should {
-    "return 0 for files that do not exist" in new Context {
-      val mockS3client = FileManagerS3Mock().mockS3client
+    "return 0 for files that do not exist" in {
       val fileManager = new FileManagerS3(s3Configuration, mockS3client)
       val result: Future[Long] = fileManager.getFileSize("nonExistentFile")
 
       result must equalTo(0L).await(3, 10.seconds)
     }
 
-    "extract file size for files that do exist" in new Context {
-      val mockS3client = FileManagerS3Mock().mockS3client
+    "extract file size for files that do exist" in {
       val fileManager = new FileManagerS3(s3Configuration, mockS3client)
       val result: Future[Long] = fileManager.getFileSize("testFile")
 

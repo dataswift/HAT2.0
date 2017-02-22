@@ -35,9 +35,7 @@ object FakeHatConfiguration {
           "properties" -> Map(
             "databaseName" -> "testhatdb2",
             "user" -> "testhatdb2",
-            "password" -> "testing"
-          )
-        ),
+            "password" -> "testing")),
         "publicKey" -> """-----BEGIN PUBLIC KEY-----
           |MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAznT9VIjovMEB/hoZ9j+j
           |z9G+WWAsfj9IB7mAMQEICoLMWHC1ZnO4nrqTrRiQFKKrWekjhXFRp8jQZmGhv/sw
@@ -73,8 +71,5 @@ object FakeHatConfiguration {
           |vllZLQKBgEuos9IFTnXvF5+NpwQJ54t4YQW/StgPL7sPVA86irXnuT3VwdVNg2VF
           |AZa/LU3jAXt2iTziR0LTKueamj/V+YM4qVyc/LhUPvjKlsCjyLBb647p3C/ogYbj
           |mO9kGhALaD5okBcI/VuAQiFvBXdK0ii/nVcBApXEu47PG4oYUgPI
-          |-----END RSA PRIVATE KEY-----""".stripMargin
-      )
-    )
-  )
+          |-----END RSA PRIVATE KEY-----""".stripMargin)))
 }

@@ -22,14 +22,16 @@
  * 2 / 2017
  */
 
-package org.hatdex.hat.phata.controllers
+package org.hatdex.hat.api.service
 
 import java.io.StringReader
 import java.util.UUID
 
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.services.s3.AmazonS3Client
 import com.atlassian.jwt.core.keys.KeyUtils
 import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.{ Environment, LoginInfo }
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.authentication.HatFrontendAuthEnvironment
@@ -37,65 +39,38 @@ import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
-import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.mvc.Result
-import play.api.test.{ FakeRequest, PlaySpecification }
-import play.api.{ Application, Configuration, Logger }
+import play.api.{ Application, Configuration }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
-class PhataSpec extends PlaySpecification with Mockito {
-
-  val logger = Logger(this.getClass)
-
-  "The `launcher` method" should {
-    "return status 401 if authenticator but no identity was found" in new Context {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(LoginInfo("xing", "comedian@watchmen.com"))
-
-      val controller = application.injector.instanceOf[Phata]
-      val result: Future[Result] = databaseReady.flatMap(_ => controller.launcher().apply(request))
-
-      status(result) must equalTo(UNAUTHORIZED)
-    }
-
-    "return OK if authenticator for matching identity" in new Context {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
-
-      val controller = application.injector.instanceOf[Phata]
-      val result: Future[Result] = databaseReady.flatMap(_ => controller.launcher().apply(request))
-
-      status(result) must equalTo(OK)
-      contentAsString(result) must contain("MarketSquare")
-      contentAsString(result) must contain("Rumpel")
-    }
-  }
-
-}
-
-trait Context extends Scope {
-  // Initialize configuration
+trait FileManagerContext extends Scope {
   val hatAddress = "hat.hubofallthings.net"
   val hatUrl = s"http://$hatAddress"
+  private val keyUtils = new KeyUtils()
   private val configuration = Configuration.from(FakeHatConfiguration.config)
   private val hatConfig = configuration.getConfig(s"hat.$hatAddress").get
 
-  // Build up the FakeEnvironment for authentication testing
-  private val keyUtils = new KeyUtils()
-  private def hatDatabase: Database = Database.forConfig("", hatConfig.getConfig("database").get.underlying)
+  implicit protected def hatDatabase: Database = Database.forConfig("", hatConfig.getConfig("database").get.underlying)
+
   implicit val hatServer: HatServer = HatServer(hatAddress, "hat", "user@hat.org",
     keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.getString("privateKey").get)),
     keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.getString("publicKey").get)), hatDatabase)
 
-  // Setup default users for testing
   val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", "owner", enabled = true)
-  implicit val env: Environment[HatFrontendAuthEnvironment] = FakeEnvironment[HatFrontendAuthEnvironment](
+  implicit val environment: Environment[HatFrontendAuthEnvironment] = FakeEnvironment[HatFrontendAuthEnvironment](
     Seq(owner.loginInfo -> owner),
     hatServer)
+
+  val s3Configuration = AwsS3Configuration("hat-storage-test", "testAwsAccessKey", "testAwsSecret", 5.minutes)
+
+  def provides3Client(configuration: AwsS3Configuration): AmazonS3Client = {
+    val awsCreds: BasicAWSCredentials = new BasicAWSCredentials(configuration.accessKeyId, configuration.secretKey)
+    new AmazonS3Client(awsCreds)
+  }
 
   // Helpers to (re-)initialize the test database and await for it to be ready
   val devHatMigrations = Seq(
@@ -105,8 +80,8 @@ trait Context extends Scope {
 
   def databaseReady: Future[Unit] = {
     val schemaMigration = application.injector.instanceOf[SchemaMigration]
-    schemaMigration.resetDatabase()(hatDatabase)
-      .flatMap(_ => schemaMigration.run(devHatMigrations)(hatDatabase))
+    schemaMigration.resetDatabase()
+      .flatMap(_ => schemaMigration.run(devHatMigrations))
   }
 
   /**
@@ -114,7 +89,7 @@ trait Context extends Scope {
    */
   class FakeModule extends AbstractModule with ScalaModule {
     def configure() = {
-      bind[Environment[HatFrontendAuthEnvironment]].toInstance(env)
+      bind[Environment[HatFrontendAuthEnvironment]].toInstance(environment)
       bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
     }
   }
@@ -123,4 +98,6 @@ trait Context extends Scope {
     .configure(FakeHatConfiguration.config)
     .overrides(new FakeModule)
     .build()
+
+  val mockS3client = FileManagerS3Mock().mockS3client
 }

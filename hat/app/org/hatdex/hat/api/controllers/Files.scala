@@ -65,7 +65,8 @@ class Files @Inject() (
       savedFile <- fileMetadataService.save(fileWithId)
       uploadUrl <- fileManager.getUploadUrl(fileWithId.fileId.get)
       _ <- fileMetadataService.grantAccess(savedFile, request.identity, content = true)
-    } yield (savedFile, uploadUrl)
+      file <- fileMetadataService.getById(savedFile.fileId.get).map(_.get)
+    } yield (file, uploadUrl)
 
     eventualUploadUrl.map { case (savedFile, url) => Ok(Json.toJson(savedFile.copy(contentUrl = Some(url)))) }
       .recoverWith {
@@ -78,13 +79,18 @@ class Files @Inject() (
   def completeUpload(fileId: String): Action[AnyContent] = SecuredAction(WithRole("dataCredit", "owner")).async { implicit request =>
     fileMetadataService.getById(fileId) flatMap {
       case Some(file) if fileContentAccessAllowed(file) =>
-        (for {
+        logger.info(s"Marking $file complete ")
+        val completed = for {
           fileSize <- fileManager.getFileSize(file.fileId.get)
           completed <- fileMetadataService.save(file.copy(status = Some(HatFileStatus.Completed(fileSize)))) if fileSize > 0
-        } yield {
+        } yield completed
+
+        completed map { completed =>
           Ok(Json.toJson(completed))
-        }) recover {
-          case _ => BadRequest(Json.toJson(ErrorMessage("File not available", s"Not fully uploaded file can not be completed")))
+        } recover {
+          case e =>
+            logger.info(s"Could not complete file upload: ${e.getMessage}", e)
+            BadRequest(Json.toJson(ErrorMessage("File not available", s"Not fully uploaded file can not be completed")))
         }
 
       case _ =>
@@ -100,17 +106,14 @@ class Files @Inject() (
   }
 
   def getDetail(fileId: String): Action[AnyContent] = SecuredAction.async { implicit request =>
-    logger.debug(s"Getting details for $fileId")
     fileMetadataService.getById(fileId) flatMap {
       case Some(file) if fileContentAccessAllowed(file) =>
         fileManager.getContentUrl(file.fileId.get)
           .map(url => file.copy(contentUrl = Some(url)))
           .map(filePermissionsCleaned)
           .map(file => Ok(Json.toJson(file)))
-      case Some(file) if file.status.exists(_.isInstanceOf[HatFileStatus.New]) =>
-        fileManager.getUploadUrl(file.fileId.get)
-          .map(url => file.copy(contentUrl = Some(url)))
-          .map(file => Ok(Json.toJson(file)))
+      case Some(file) if fileAccessAllowed(file) =>
+        Future.successful(Ok(Json.toJson(filePermissionsCleaned(file))))
       case Some(_) =>
         Future.successful(NotFound(Json.toJson(ErrorMessage("File not available", s"File $fileId not available - unauthorized or file incomplete"))))
       case None =>
@@ -120,6 +123,9 @@ class Files @Inject() (
 
   def getContent(fileId: String): Action[AnyContent] = UserAwareAction.async { implicit request =>
     logger.debug(s"Getting contents for $fileId")
+    fileMetadataService.search(ApiHatFile(None, "", "", None, None, None, None, None, None, None)) map { allFiles =>
+      logger.debug(s"All potential files: $allFiles")
+    }
     fileMetadataService.getById(fileId).map(file => (file, request.identity)) flatMap {
       case (Some(file), _) if file.contentPublic.contains(true) =>
         fileManager.getContentUrl(file.fileId.get)

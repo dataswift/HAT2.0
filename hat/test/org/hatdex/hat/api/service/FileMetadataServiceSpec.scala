@@ -24,75 +24,60 @@
 
 package org.hatdex.hat.api.service
 
-import java.io.StringReader
 import java.util.UUID
 
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.services.s3.AmazonS3Client
-import com.atlassian.jwt.core.keys.KeyUtils
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.test._
-import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.models.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus }
-import org.hatdex.hat.authentication.HatFrontendAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
-import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.Scope
-import play.api.inject.guice.GuiceApplicationBuilder
+import org.specs2.specification.BeforeEach
+import play.api.Logger
 import play.api.test.PlaySpecification
-import play.api.{ Application, Configuration, Logger }
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito {
+class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with FileManagerContext with BeforeEach {
 
   val logger = Logger(this.getClass)
+
+  def before: Unit = {
+    await(databaseReady)(10.seconds)
+  }
 
   sequential
 
   "The `getUniqueFileId` method" should {
-    "return a ApiHatFile with fileId appended" in new Context {
+    "return a ApiHatFile with fileId appended" in {
       val service = application.injector.instanceOf[FileMetadataService]
 
-      val fileWithId = databaseReady.flatMap { _ =>
-        service.getUniqueFileId(ApiHatFile(None, "testFile", "test", None, None, None, None, None, None, None, None, None))
-      }
+      val fileWithId = service.getUniqueFileId(ApiHatFile(None, "testFile", "test", None, None, None, None, None, None, None, None, None))
 
       fileWithId.map(_.fileId) must beSome.await(3, 10.seconds)
       fileWithId.map(_.fileId.get) must equalTo("testtestfile").await(3, 10.seconds)
     }
 
-    "keep file extension when creating file" in new Context {
+    "keep file extension when creating file" in {
       val service = application.injector.instanceOf[FileMetadataService]
 
-      val fileWithId = databaseReady.flatMap { _ =>
-        service.getUniqueFileId(ApiHatFile(None, "testFile.png", "test", None, None, None, None, None, None, None, None, None))
-      }
+      val fileWithId = service.getUniqueFileId(ApiHatFile(None, "testFile.png", "test", None, None, None, None, None, None, None, None, None))
 
       fileWithId.map(_.fileId) must beSome.await(3, 10.seconds)
       fileWithId.map(_.fileId.get) must equalTo("testtestfile.png").await(3, 10.seconds)
     }
 
-    "deduplicate file IDs by adding numbers to the end of the filename" in new Context {
+    "deduplicate file IDs by adding numbers to the end of the filename" in {
       val service = application.injector.instanceOf[FileMetadataService]
 
-      val fileWithId = databaseReady.flatMap { _ =>
-        val file = ApiHatFile(None, "testFile.png", "test", None, None, None, None, None, None, Some(HatFileStatus.New()), None, None)
-        for {
-          first <- service.getUniqueFileId(file)
-          _ <- service.save(first)
-          second <- service.getUniqueFileId(file)
-          _ <- service.save(second)
-          third <- service.getUniqueFileId(file)
-        } yield third
-      }
+      val file = ApiHatFile(None, "testFile.png", "test", None, None, None, None, None, None, Some(HatFileStatus.New()), None, None)
+
+      val fileWithId = for {
+        first <- service.getUniqueFileId(file)
+        _ <- service.save(first)
+        second <- service.getUniqueFileId(file)
+        _ <- service.save(second)
+        third <- service.getUniqueFileId(file)
+      } yield third
 
       fileWithId.map(_.fileId) must beSome.await(3, 10.seconds)
       fileWithId.map(_.fileId.get) must equalTo("testtestfile-2.png").await(3, 10.seconds)
@@ -100,14 +85,12 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   }
 
   "The `save` method" should {
-    "insert new files into the database" in new Context {
+    "insert new files into the database" in {
       val service = application.injector.instanceOf[FileMetadataService]
       val file = ApiHatFile(Some("testtestfile.png"), "testFile.png", "test",
         None, None, None, None, None, None, Some(HatFileStatus.New()), None, None)
 
-      val saved = databaseReady.flatMap { _ =>
-        service.save(file)
-      }
+      val saved = service.save(file)
 
       saved map { savedFile =>
         savedFile.dateCreated must beSome
@@ -116,14 +99,12 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       } await (3, 10.seconds)
     }
 
-    "upsert file information for existing files" in new Context {
+    "upsert file information for existing files" in {
       val service = application.injector.instanceOf[FileMetadataService]
       val file = ApiHatFile(Some("testtestfile.png"), "testFile.png", "test",
         None, None, None, None, None, None, Some(HatFileStatus.New()), None, None)
 
-      val saved = databaseReady.flatMap { _ =>
-        service.save(file)
-      }
+      val saved = service.save(file)
 
       saved flatMap { savedFile =>
         savedFile.dateCreated must beSome
@@ -143,12 +124,11 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   }
 
   "The `delete` method" should {
-    "Change file status to `Deleted`" in new Context {
+    "Change file status to `Deleted`" in {
       val service = application.injector.instanceOf[FileMetadataService]
       val file = ApiHatFile(Some("testtestfile.png"), "testFile.png", "test",
         None, None, None, None, None, None, Some(HatFileStatus.New()), None, None)
       val deleted = for {
-        _ <- databaseReady
         _ <- service.save(file)
         deleted <- service.delete("testtestfile.png")
       } yield deleted
@@ -156,7 +136,7 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       deleted.map(_.status) must equalTo(Some(HatFileStatus.Deleted())).await(3, 10.seconds)
     }
 
-    "Throw error when deleting file that does not exist" in new Context {
+    "Throw error when deleting file that does not exist" in {
       val service = application.injector.instanceOf[FileMetadataService]
 
       databaseReady.flatMap { _ =>
@@ -166,47 +146,38 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   }
 
   "The `getById` method" should {
-    "Return file information for an existing file" in new Context {
+    "Return file information for an existing file" in {
       val service = application.injector.instanceOf[FileMetadataService]
       val file = ApiHatFile(Some("testtestfile.png"), "testFile.png", "test",
         None, None, None, None, None, None, Some(HatFileStatus.New()), None, None)
 
-      val saved = databaseReady.flatMap { _ =>
-        service.save(file)
-      }
+      val saved = service.save(file)
 
       saved flatMap { savedFile =>
         service.getById("testtestfile.png")
       } map { foundFile =>
         foundFile must beSome
         foundFile.get.fileId must beSome("testtestfile.png")
-      }
+      } await (3, 10.seconds)
     }
 
-    "Return `None` for file that does not exist" in new Context {
+    "Return `None` for file that does not exist" in {
       val service = application.injector.instanceOf[FileMetadataService]
-
-      databaseReady.flatMap { _ =>
-        service.getById("testtestfile.png")
-      } must beNone.await(3, 10.seconds)
+      service.getById("testtestfile.png") must beNone.await(3, 10.seconds)
     }
   }
 
   "The `search` method" should {
-    "Return empty list when no files exist" in new Context {
+    "Return empty list when no files exist" in {
       val service = application.injector.instanceOf[FileMetadataService]
-      val found = for {
-        _ <- databaseReady
-        found <- service.search(ApiHatFile(None, "", "", None, None, None, None, None, None, None, None, None))
-      } yield found
+      val found = service.search(ApiHatFile(None, "", "", None, None, None, None, None, None, None, None, None))
 
       found must haveSize[Seq[ApiHatFile]](0).await(3, 10.seconds)
     }
 
-    "Look up a single file by Id" in new Context {
+    "Look up a single file by Id" in {
       val service = application.injector.instanceOf[FileMetadataService]
       val found = for {
-        _ <- databaseReady
         _ <- service.save(ApiHatFile(Some("testtestfile.png"), "testFile.png", "test",
           None, None, None, None, None, None, Some(HatFileStatus.New()), None, None))
         found <- service.search(ApiHatFile(Some("testtestfile.png"), "", "", None, None, None, None, None, None, None, None, None))
@@ -215,10 +186,9 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       found must haveSize[Seq[ApiHatFile]](1).await(3, 10.seconds)
     }
 
-    "Look up files by exact source" in new Context {
+    "Look up files by exact source" in {
       val service = application.injector.instanceOf[FileMetadataService]
       val found = for {
-        _ <- databaseReady
         _ <- service.save(ApiHatFile(Some("testtestfile.png"), "testFile.png", "test",
           None, None, None, None, None, None, Some(HatFileStatus.New()), None, None))
         _ <- service.save(ApiHatFile(Some("testtestfile-1.png"), "testFile.png", "test",
@@ -231,10 +201,9 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       found must haveSize[Seq[ApiHatFile]](3).await(3, 10.seconds)
     }
 
-    "Look up files by exact name" in new Context {
+    "Look up files by exact name" in {
       val service = application.injector.instanceOf[FileMetadataService]
       val found = for {
-        _ <- databaseReady
         _ <- service.save(ApiHatFile(Some("testtestfile.png"), "testFile.png", "test",
           None, None, None, None, None, None, Some(HatFileStatus.New()), None, None))
         _ <- service.save(ApiHatFile(Some("testtestfile-1.png"), "testFile.png", "test",
@@ -259,10 +228,9 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       found2 must haveSize[Seq[ApiHatFile]](1).await(3, 10.seconds)
     }
 
-    "Look up files by tags" in new Context {
+    "Look up files by tags" in {
       val service = application.injector.instanceOf[FileMetadataService]
       val found = for {
-        _ <- databaseReady
         _ <- service.save(ApiHatFile(Some("testtestfile.png"), "testFile.png", "test",
           None, None, Some(Seq("tag1")), None, None, None, Some(HatFileStatus.New()), None, None))
         _ <- service.save(ApiHatFile(Some("testtestfile-1.png"), "testFile1.png", "test",
@@ -285,10 +253,9 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       found.await(3, 10.seconds)
     }
 
-    "Look up files by status" in new Context {
+    "Look up files by status" in {
       val service = application.injector.instanceOf[FileMetadataService]
       val found = for {
-        _ <- databaseReady
         _ <- service.save(ApiHatFile(Some("testtestfile.png"), "testFile.png", "test",
           None, None, None, None, None, None, Some(HatFileStatus.New()), None, None))
         _ <- service.save(ApiHatFile(Some("testtestfile-1.png"), "testFile1.png", "test",
@@ -307,10 +274,9 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       found.await(3, 10.seconds)
     }
 
-    "Search files by description" in new Context {
+    "Search files by description" in {
       val service = application.injector.instanceOf[FileMetadataService]
       val found = for {
-        _ <- databaseReady
         _ <- service.save(ApiHatFile(Some("testtestfile.png"), "testFile.png", "test",
           None, None, None, None, Some("A rather short description"), None, Some(HatFileStatus.New()), None, None))
         _ <- service.save(ApiHatFile(Some("testtestfile-1.png"), "testFile1.png", "test",
@@ -331,7 +297,7 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   }
 
   "The `grantAccess` method" should {
-    "Grant file detail access to an existing user" in new Context {
+    "Grant file detail access to an existing user" in {
       val service = application.injector.instanceOf[FileMetadataService]
       val usersService = application.injector.instanceOf[UsersService]
 
@@ -339,7 +305,6 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       val dataDebitUser = HatUser(UUID.fromString("6507ae16-13d7-479b-8ebc-65c28fec1634"), "dataDebit", Some(""), "dataDebit", "owner", enabled = true)
 
       val granted = for {
-        _ <- databaseReady
         user <- usersService.saveUser(hatUser)
         dduser <- usersService.saveUser(dataDebitUser)
         file <- service.save(ApiHatFile(Some("testtestfile.png"), "testFile.png", "test",
@@ -352,8 +317,8 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
         granted.get.contentPublic must beSome(false)
         granted.get.permissions must beSome
         granted.get.permissions.get must haveSize[Seq[ApiHatFilePermissions]](2)
-        granted.get.permissions.get must contain(ApiHatFilePermissions(user.userId, false))
-        granted.get.permissions.get must contain(ApiHatFilePermissions(dduser.userId, true))
+        granted.get.permissions.get must contain(ApiHatFilePermissions(user.userId, contentReadable = false))
+        granted.get.permissions.get must contain(ApiHatFilePermissions(dduser.userId, contentReadable = true))
       }
 
       granted.await(3, 10.seconds)
@@ -361,7 +326,7 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   }
 
   "The `restrictAccess` method" should {
-    "Restrict file access" in new Context {
+    "Restrict file access" in {
       val service = application.injector.instanceOf[FileMetadataService]
       val usersService = application.injector.instanceOf[UsersService]
 
@@ -369,7 +334,6 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       val dataDebitUser = HatUser(UUID.fromString("6507ae16-13d7-479b-8ebc-65c28fec1634"), "dataDebit", Some(""), "dataDebit", "owner", enabled = true)
 
       val granted = for {
-        _ <- databaseReady
         user <- usersService.saveUser(hatUser)
         dduser <- usersService.saveUser(dataDebitUser)
         file <- service.save(ApiHatFile(Some("testtestfile.png"), "testFile.png", "test",
@@ -383,7 +347,7 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
         granted.get.contentPublic must beSome(false)
         granted.get.permissions must beSome
         granted.get.permissions.get must haveSize[Seq[ApiHatFilePermissions]](1)
-        granted.get.permissions.get must contain(ApiHatFilePermissions(dduser.userId, true))
+        granted.get.permissions.get must contain(ApiHatFilePermissions(dduser.userId, contentReadable = true))
       }
 
       granted.await(3, 10.seconds)
@@ -391,14 +355,13 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   }
 
   "The `grantAccessPattern` method" should {
-    "Grant file access to an existing user for a matching file access pattern" in new Context {
+    "Grant file access to an existing user for a matching file access pattern" in {
       val service = application.injector.instanceOf[FileMetadataService]
       val usersService = application.injector.instanceOf[UsersService]
 
       val hatUser = HatUser(UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42"), "hatUser", Some(""), "hatUser", "owner", enabled = true)
 
       val granted = for {
-        _ <- databaseReady
         user <- usersService.saveUser(hatUser)
         file1 <- service.save(ApiHatFile(Some("testtestfile-1.png"), "testFile.png", "test",
           None, None, Some(Seq("tag1", "tag2")), None, None, None, Some(HatFileStatus.New()), None, None))
@@ -418,12 +381,12 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
         val gfile1 = granted.find(_.fileId.contains("testtestfile-1.png"))
         gfile1 must beSome
         gfile1.get.permissions.get must haveSize[Seq[ApiHatFilePermissions]](1)
-        gfile1.get.permissions.get must contain(ApiHatFilePermissions(user.userId, false))
+        gfile1.get.permissions.get must contain(ApiHatFilePermissions(user.userId, contentReadable = false))
 
         val gfile2 = granted.find(_.fileId.contains("testtestfile-2.png"))
         gfile2 must beSome
         gfile2.get.permissions.get must haveSize[Seq[ApiHatFilePermissions]](1)
-        gfile2.get.permissions.get must contain(ApiHatFilePermissions(user.userId, false))
+        gfile2.get.permissions.get must contain(ApiHatFilePermissions(user.userId, contentReadable = false))
 
         val gfile3 = granted.find(_.fileId.contains("testtestfile-3.png"))
         gfile3 must beSome
@@ -435,14 +398,13 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   }
 
   "The `restrictAccessPattern` method" should {
-    "Restrict file access to an existing user for a matching file access pattern" in new Context {
+    "Restrict file access to an existing user for a matching file access pattern" in {
       val service = application.injector.instanceOf[FileMetadataService]
       val usersService = application.injector.instanceOf[UsersService]
 
       val hatUser = HatUser(UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42"), "hatUser", Some(""), "hatUser", "owner", enabled = true)
 
       val granted = for {
-        _ <- databaseReady
         user <- usersService.saveUser(hatUser)
         file1 <- service.save(ApiHatFile(Some("testtestfile-1.png"), "testFile.png", "test",
           None, None, Some(Seq("tag1", "tag2")), None, None, None, Some(HatFileStatus.New()), None, None))
@@ -474,7 +436,7 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
         val gfile3 = granted.find(_.fileId.contains("testtestfile-3.png"))
         gfile3 must beSome
         gfile3.get.permissions.get must haveSize[Seq[ApiHatFilePermissions]](1)
-        gfile3.get.permissions.get must contain(ApiHatFilePermissions(user.userId, false))
+        gfile3.get.permissions.get must contain(ApiHatFilePermissions(user.userId, contentReadable = false))
       }
 
       granted.await(3, 10.seconds)
@@ -482,57 +444,3 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   }
 }
 
-trait Context extends Scope {
-  val hatAddress = "hat.hubofallthings.net"
-  val hatUrl = s"http://$hatAddress"
-  private val keyUtils = new KeyUtils()
-  private val configuration = Configuration.from(FakeHatConfiguration.config)
-  private val hatConfig = configuration.getConfig(s"hat.$hatAddress").get
-
-  implicit protected def hatDatabase: Database = Database.forConfig("", hatConfig.getConfig("database").get.underlying)
-
-  implicit val hatServer: HatServer = HatServer(hatAddress, "hat", "user@hat.org",
-    keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.getString("privateKey").get)),
-    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.getString("publicKey").get)), hatDatabase)
-
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", "owner", true)
-  implicit val env: Environment[HatFrontendAuthEnvironment] = FakeEnvironment[HatFrontendAuthEnvironment](
-    Seq(owner.loginInfo -> owner),
-    hatServer
-  )
-
-  val s3Configuration = AwsS3Configuration("hat-storage-test", "testAwsAccessKey", "testAwsSecret", 5.minutes)
-
-  def provides3Client(configuration: AwsS3Configuration): AmazonS3Client = {
-    val awsCreds: BasicAWSCredentials = new BasicAWSCredentials(configuration.accessKeyId, configuration.secretKey)
-    new AmazonS3Client(awsCreds)
-  }
-
-  // Helpers to (re-)initialize the test database and await for it to be ready
-  val devHatMigrations = Seq(
-    "evolutions/hat-database-schema/11_hat.sql",
-    "evolutions/hat-database-schema/12_hatEvolutions.sql",
-    "evolutions/hat-database-schema/13_liveEvolutions.sql"
-  )
-
-  def databaseReady: Future[Unit] = {
-    val schemaMigration = application.injector.instanceOf[SchemaMigration]
-    schemaMigration.resetDatabase()
-      .flatMap(_ => schemaMigration.run(devHatMigrations))
-  }
-
-  /**
-   * A fake Guice module.
-   */
-  class FakeModule extends AbstractModule with ScalaModule {
-    def configure() = {
-      bind[Environment[HatFrontendAuthEnvironment]].toInstance(env)
-      bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
-    }
-  }
-
-  lazy val application: Application = new GuiceApplicationBuilder()
-    .configure(FakeHatConfiguration.config)
-    .overrides(new FakeModule)
-    .build()
-}

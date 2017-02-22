@@ -32,7 +32,7 @@ import org.specs2.mock.Mockito
 import scala.concurrent.duration._
 
 case class FileManagerS3Mock() extends Mockito {
-  private val s3Configuration = AwsS3Configuration("hat-storage-test", "testAwsAccessKey", "testAwsSecret", 5.minutes)
+  val s3Configuration = AwsS3Configuration("hat-storage-test", "testAwsAccessKey", "testAwsSecret", 5.minutes)
   private val awsCreds: BasicAWSCredentials = new BasicAWSCredentials(s3Configuration.accessKeyId, s3Configuration.secretKey)
   val mockS3client: AmazonS3Client = spy(new AmazonS3Client(awsCreds))
 
