@@ -81,7 +81,7 @@ object CodeFormatter extends AutoPlugin {
       .setPreference(DoubleIndentClassDeclaration, true)
       .setPreference(AlignSingleLineCaseStatements, true)
       .setPreference(CompactControlReadability, true)
-      .setPreference(DanglingCloseParenthesis, Preserve)
+      .setPreference(DanglingCloseParenthesis, Prevent)
   )
 
   override def trigger = allRequirements
