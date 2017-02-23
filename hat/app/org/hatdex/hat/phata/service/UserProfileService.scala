@@ -69,7 +69,7 @@ class UserProfileService @Inject() (bundleService: BundleService, dataService: D
     } yield {
       val flattenedValues = flattenTableValues(valueTable)
       // Profile is public by default
-      val publicProfile = !(flattenedValues \ "private").asOpt[Boolean].getOrElse(false)
+      val publicProfile = !(flattenedValues \ "private").asOpt[String].contains("true")
 
       val profileFields: Iterable[ProfileField] = flattenedValues match {
         case profileObject: JsObject =>
