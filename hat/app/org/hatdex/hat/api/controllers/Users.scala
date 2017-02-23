@@ -105,7 +105,7 @@ class Users @Inject() (
   }
 
   def publicKey(): Action[AnyContent] = UserAwareAction.async { implicit request =>
-    val publicKey = hatServerProvider.toString(request.dynamicEnvironment.asInstanceOf[HatServer].publicKey)
+    val publicKey = hatServerProvider.toString(request.dynamicEnvironment.publicKey)
     Future.successful(Ok(publicKey))
   }
 

@@ -24,11 +24,11 @@
 
 package org.hatdex.hat.dal
 
+import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.phata.models.MailTokenUser
-import play.api.libs.json.Json
 
 object ModelTranslation {
   def fromDbModel(user: UserUserRow): HatUser = {
@@ -133,7 +133,20 @@ object ModelTranslation {
   }
 
   def fromDbModel(
-    userMailTokensRow: UserMailTokensRow): MailTokenUser = {
+    userMailTokensRow: UserMailTokensRow
+  ): MailTokenUser = {
     MailTokenUser(userMailTokensRow.id, userMailTokensRow.email, userMailTokensRow.expirationTime.toDateTime, userMailTokensRow.isSignup)
+  }
+
+  def fromDbModel(hatFileRow: HatFileRow): ApiHatFile = {
+    import HatJsonFormats.apiHatFileStatusFormat
+    ApiHatFile(Some(hatFileRow.id), hatFileRow.name, hatFileRow.source,
+      Some(hatFileRow.dateCreated.toDateTime), Some(hatFileRow.lastUpdated.toDateTime),
+      hatFileRow.tags, hatFileRow.title, hatFileRow.description, hatFileRow.sourceUrl,
+      Some(hatFileRow.status.as[HatFileStatus.Status]), None, Some(hatFileRow.contentPublic), None)
+  }
+
+  def fromDbModel(hatFileAccessRow: HatFileAccessRow): ApiHatFilePermissions = {
+    ApiHatFilePermissions(hatFileAccessRow.userId, hatFileAccessRow.content)
   }
 }

@@ -80,9 +80,12 @@ class UsersService extends DalExecutionContext {
       user.name, user.role, enabled = user.enabled)
 
     db.run {
-      (UserUser returning UserUser).insertOrUpdate(userRow)
+      for {
+        _ <- (UserUser returning UserUser).insertOrUpdate(userRow)
+        updated <- UserUser.filter(_.userId === user.userId).result
+      } yield updated
     } map { user =>
-      ModelTranslation.fromDbModel(user.get)
+      ModelTranslation.fromDbModel(user.head)
     }
   }
 

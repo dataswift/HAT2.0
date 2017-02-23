@@ -22,18 +22,17 @@
  * 2 / 2017
  */
 
-package org.hatdex.hat.authentication
+package org.hatdex.hat.resourceManagement
 
-import spray.http.HttpHeaders.RawHeader
+import play.api.mvc.Request
 
-trait TestAuthCredentials {
-  val ownerAuthToken = HatAuthTestHandler.validUsers.find(_.role == "owner").map(_.userId).flatMap { ownerId =>
-    HatAuthTestHandler.validAccessTokens.find(_.userId == ownerId).map(_.accessToken)
-  } getOrElse ("")
-  val ownerAuthHeader = RawHeader("X-Auth-Token", ownerAuthToken)
+import scala.concurrent.Future
 
-  val dataDebitAuthToken = HatAuthTestHandler.validUsers.find(_.role == "dataDebit").map(_.userId).flatMap { ownerId =>
-    HatAuthTestHandler.validAccessTokens.find(_.userId == ownerId).map(_.accessToken)
-  } getOrElse ("")
-  val dataDebitAuthHeader = RawHeader("X-Auth-Token", dataDebitAuthToken)
+class FakeHatServerProvider(fakeHatServer: HatServer) extends HatServerProvider {
+  def retrieve[B](request: Request[B]): Future[Option[HatServer]] = {
+    Future.successful(Some(fakeHatServer))
+  }
+  def retrieve(hatAddress: String): Future[Option[HatServer]] = {
+    Future.successful(Some(fakeHatServer))
+  }
 }

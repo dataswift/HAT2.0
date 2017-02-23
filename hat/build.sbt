@@ -29,6 +29,7 @@ libraryDependencies ++= Seq(
   Library.Play.Silhouette.persistence,
   Library.Play.Silhouette.cryptoJca,
   Library.Play.Silhouette.silhouette,
+  Library.Play.Silhouette.silhouetteTestkit,
   Library.Play.Jwt.nimbusDsJwt,
   Library.Play.Jwt.atlassianJwtCore,
   Library.Play.Jwt.atlassianJwtApi,
@@ -46,7 +47,8 @@ libraryDependencies ++= Seq(
   Library.scalaGuice,
   filters,
   Library.HATDeX.hatClient,
-  Library.HATDeX.marketsquareClient
+  Library.HATDeX.marketsquareClient,
+  Library.Utils.awsJavaSdk
 )
 
 enablePlugins(PlayScala)
