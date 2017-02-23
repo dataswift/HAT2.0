@@ -52,8 +52,7 @@ class HatServerActor @Inject() (
     @Assisted hat: String,
     configuration: Configuration,
     hatDatabaseProvider: HatDatabaseProvider,
-    hatKeyProvider: HatKeyProvider
-) extends Actor with ActorLogging with Stash {
+    hatKeyProvider: HatKeyProvider) extends Actor with ActorLogging with Stash {
   import HatServerActor._
   import IoExecutionContext.ioThreadPool
   val idleTimeout = configuration.underlying.as[FiniteDuration]("resourceManagement.serverIdleTimeout")

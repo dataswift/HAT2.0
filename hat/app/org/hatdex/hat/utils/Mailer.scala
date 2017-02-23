@@ -56,8 +56,7 @@ class HatMailer @Inject() (configuration: play.api.Configuration, ms: MailServic
       ms.sendEmailAsync(adminEmails: _*)(
         subject = s"HAT server ${request.host} errorr #${exception.id}",
         bodyHtml = views.html.mails.emailServerError(request, exception),
-        bodyText = views.html.mails.emailServerError(request, exception).toString()
-      )
+        bodyText = views.html.mails.emailServerError(request, exception).toString())
     }
   }
 
@@ -69,8 +68,7 @@ class HatMailer @Inject() (configuration: play.api.Configuration, ms: MailServic
       ms.sendEmailAsync(adminEmails: _*)(
         subject = s"HAT server ${request.host} error: ${exception.getMessage} for ${request.path + request.rawQueryString}",
         bodyHtml = views.html.mails.emailServerThrowable(request, exception),
-        bodyText = views.html.mails.emailServerThrowable(request, exception).toString()
-      )
+        bodyText = views.html.mails.emailServerThrowable(request, exception).toString())
     }
   }
 
@@ -80,8 +78,7 @@ class HatMailer @Inject() (configuration: play.api.Configuration, ms: MailServic
       ms.sendEmailAsync(email)(
         subject = s"HAT ${server.hatName}.${server.domain} - reset your password",
         bodyHtml = views.html.mails.emailPasswordReset(user, resetLink),
-        bodyText = views.txt.mails.emailPasswordReset(user, resetLink).toString()
-      )
+        bodyText = views.txt.mails.emailPasswordReset(user, resetLink).toString())
     }
   }
 }

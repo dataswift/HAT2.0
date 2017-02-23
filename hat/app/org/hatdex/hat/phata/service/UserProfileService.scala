@@ -187,8 +187,7 @@ class UserProfileService @Inject() (bundleService: BundleService, dataService: D
 
     val about = Map[String, String](
       "title" -> profileFields.find(_.name == "about").map(_.values.getOrElse("title", "")).getOrElse(""),
-      "body" -> profileFields.find(_.name == "about").map(_.values.getOrElse("body", "")).getOrElse("")
-    )
+      "body" -> profileFields.find(_.name == "about").map(_.values.getOrElse("body", "")).getOrElse(""))
 
     //    val profile = hatParameters ++ profileParameters.filterNot(_._2 == "")
 
@@ -196,8 +195,7 @@ class UserProfileService @Inject() (bundleService: BundleService, dataService: D
       "links" -> links,
       "contact" -> contact,
       "profile" -> personal,
-      "about" -> about
-    ).filterNot(_._2.isEmpty)
+      "about" -> about).filterNot(_._2.isEmpty)
 
     profile
   }

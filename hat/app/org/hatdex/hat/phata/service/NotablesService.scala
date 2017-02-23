@@ -110,9 +110,7 @@ class NotablesService @Inject() (bundleService: BundleService, dataService: Data
           (__ \ 'shared).json.update(of[JsString].map { // remap "shared" string property to boolean
             case JsString("true") => JsBoolean(true)
             case _                => JsBoolean(false)
-          }) reduce
-
-      ) andThen
+          }) reduce) andThen
         (__ \ 'shared_on).json.update(of[JsString].map {
           case JsString(sharedOn) =>
             val sharedNetworks = sharedOn.split(',').map(_.trim)
@@ -120,8 +118,7 @@ class NotablesService @Inject() (bundleService: BundleService, dataService: Data
             JsArray(sharedNetworks.map(v => Json.toJson(v)))
           case _ =>
             JsArray(Seq[JsValue]())
-        })
-    )
+        }))
 
   private def renderNoteText(markdown: String, mdProcessor: PegDownProcessor) = {
     mdProcessor.synchronized {

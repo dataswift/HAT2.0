@@ -46,8 +46,7 @@ abstract class HatController[T <: HatAuthEnvironment](
     silhouette: Silhouette[T],
     clock: Clock,
     hatServerProvider: HatServerProvider,
-    configuration: Configuration
-) extends Controller with I18nSupport {
+    configuration: Configuration) extends Controller with I18nSupport {
 
   def env: Environment[T] = silhouette.env
   def SecuredAction = silhouette.securedAction(env)
@@ -66,15 +65,13 @@ abstract class HatApiController(
   silhouette: Silhouette[HatApiAuthEnvironment],
   clock: Clock,
   hatServerProvider: HatServerProvider,
-  configuration: Configuration
-) extends HatController[HatApiAuthEnvironment](silhouette, clock, hatServerProvider, configuration)
+  configuration: Configuration) extends HatController[HatApiAuthEnvironment](silhouette, clock, hatServerProvider, configuration)
 
 abstract class HatFrontendController(
     silhouette: Silhouette[HatFrontendAuthEnvironment],
     clock: Clock,
     hatServerProvider: HatServerProvider,
-    configuration: Configuration
-) extends HatController[HatFrontendAuthEnvironment](silhouette, clock, hatServerProvider, configuration) {
+    configuration: Configuration) extends HatController[HatFrontendAuthEnvironment](silhouette, clock, hatServerProvider, configuration) {
 
   def authenticatorWithRememberMe(authenticator: CookieAuthenticator, rememberMe: Boolean): CookieAuthenticator = {
     if (rememberMe) {
@@ -82,8 +79,7 @@ abstract class HatFrontendController(
       authenticator.copy(
         expirationDateTime = expirationTime,
         idleTimeout = rememberMeParams._2,
-        cookieMaxAge = rememberMeParams._3
-      )
+        cookieMaxAge = rememberMeParams._3)
     }
     else {
       authenticator
@@ -95,7 +91,6 @@ abstract class HatFrontendController(
     (
       cfg.as[FiniteDuration]("authenticatorExpiry"),
       cfg.getAs[FiniteDuration]("authenticatorIdleTimeout"),
-      cfg.getAs[FiniteDuration]("cookieMaxAge")
-    )
+      cfg.getAs[FiniteDuration]("cookieMaxAge"))
   }
 }
