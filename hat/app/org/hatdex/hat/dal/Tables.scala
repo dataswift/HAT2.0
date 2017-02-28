@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{ GetResult => GR }
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, HatFileAccess.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessToken.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, HatFileAccess.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessLog.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -577,6 +577,30 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table DataTable */
   lazy val DataTable = new TableQuery(tag => new DataTable(tag))
+
+  /**
+   * Entity class storing rows of table DataTableSize
+   *  @param relation Database column relation SqlType(text), Default(None)
+   *  @param totalSize Database column total_size SqlType(int8), Default(None)
+   */
+  case class DataTableSizeRow(relation: Option[String] = None, totalSize: Option[Long] = None)
+  /** GetResult implicit for fetching DataTableSizeRow objects using plain SQL queries */
+  implicit def GetResultDataTableSizeRow(implicit e0: GR[Option[String]], e1: GR[Option[Long]]): GR[DataTableSizeRow] = GR {
+    prs =>
+      import prs._
+      DataTableSizeRow.tupled((<<?[String], <<?[Long]))
+  }
+  /** Table description of table data_table_size. Objects of this class serve as prototypes for rows in queries. */
+  class DataTableSize(_tableTag: Tag) extends Table[DataTableSizeRow](_tableTag, Some("hat"), "data_table_size") {
+    def * = (relation, totalSize) <> (DataTableSizeRow.tupled, DataTableSizeRow.unapply)
+
+    /** Database column relation SqlType(text), Default(None) */
+    val relation: Rep[Option[String]] = column[Option[String]]("relation", O.Default(None))
+    /** Database column total_size SqlType(int8), Default(None) */
+    val totalSize: Rep[Option[Long]] = column[Option[Long]]("total_size", O.Default(None))
+  }
+  /** Collection-like TableQuery object for table DataTableSize */
+  lazy val DataTableSize = new TableQuery(tag => new DataTableSize(tag))
 
   /**
    * Entity class storing rows of table DataTabletotablecrossref
@@ -3156,39 +3180,51 @@ trait Tables {
   lazy val ThingsThingtothingcrossref = new TableQuery(tag => new ThingsThingtothingcrossref(tag))
 
   /**
-   * Entity class storing rows of table UserAccessToken
-   *  @param accessToken Database column access_token SqlType(varchar), PrimaryKey
+   * Entity class storing rows of table UserAccessLog
+   *  @param date Database column date SqlType(timestamp)
    *  @param userId Database column user_id SqlType(uuid)
-   *  @param scope Database column scope SqlType(varchar), Default()
-   *  @param resource Database column resource SqlType(varchar), Default()
+   *  @param `type` Database column type SqlType(varchar)
+   *  @param scope Database column scope SqlType(varchar)
+   *  @param applicationName Database column application_name SqlType(varchar), Default(None)
+   *  @param applicationResource Database column application_resource SqlType(varchar), Default(None)
    */
-  case class UserAccessTokenRow(accessToken: String, userId: java.util.UUID, scope: String = "", resource: String = "")
-  /** GetResult implicit for fetching UserAccessTokenRow objects using plain SQL queries */
-  implicit def GetResultUserAccessTokenRow(implicit e0: GR[String], e1: GR[java.util.UUID]): GR[UserAccessTokenRow] = GR {
+  case class UserAccessLogRow(date: org.joda.time.LocalDateTime, userId: java.util.UUID, `type`: String, scope: String, applicationName: Option[String] = None, applicationResource: Option[String] = None)
+  /** GetResult implicit for fetching UserAccessLogRow objects using plain SQL queries */
+  implicit def GetResultUserAccessLogRow(implicit e0: GR[org.joda.time.LocalDateTime], e1: GR[java.util.UUID], e2: GR[String], e3: GR[Option[String]]): GR[UserAccessLogRow] = GR {
     prs =>
       import prs._
-      UserAccessTokenRow.tupled((<<[String], <<[java.util.UUID], <<[String], <<[String]))
+      UserAccessLogRow.tupled((<<[org.joda.time.LocalDateTime], <<[java.util.UUID], <<[String], <<[String], <<?[String], <<?[String]))
   }
-  /** Table description of table user_access_token. Objects of this class serve as prototypes for rows in queries. */
-  class UserAccessToken(_tableTag: Tag) extends Table[UserAccessTokenRow](_tableTag, Some("hat"), "user_access_token") {
-    def * = (accessToken, userId, scope, resource) <> (UserAccessTokenRow.tupled, UserAccessTokenRow.unapply)
+  /**
+   * Table description of table user_access_log. Objects of this class serve as prototypes for rows in queries.
+   *  NOTE: The following names collided with Scala keywords and were escaped: type
+   */
+  class UserAccessLog(_tableTag: Tag) extends Table[UserAccessLogRow](_tableTag, Some("hat"), "user_access_log") {
+    def * = (date, userId, `type`, scope, applicationName, applicationResource) <> (UserAccessLogRow.tupled, UserAccessLogRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(accessToken), Rep.Some(userId), Rep.Some(scope), Rep.Some(resource)).shaped.<>({ r => import r._; _1.map(_ => UserAccessTokenRow.tupled((_1.get, _2.get, _3.get, _4.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(date), Rep.Some(userId), Rep.Some(`type`), Rep.Some(scope), applicationName, applicationResource).shaped.<>({ r => import r._; _1.map(_ => UserAccessLogRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column access_token SqlType(varchar), PrimaryKey */
-    val accessToken: Rep[String] = column[String]("access_token", O.PrimaryKey)
+    /** Database column date SqlType(timestamp) */
+    val date: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date")
     /** Database column user_id SqlType(uuid) */
     val userId: Rep[java.util.UUID] = column[java.util.UUID]("user_id")
-    /** Database column scope SqlType(varchar), Default() */
-    val scope: Rep[String] = column[String]("scope", O.Default(""))
-    /** Database column resource SqlType(varchar), Default() */
-    val resource: Rep[String] = column[String]("resource", O.Default(""))
+    /**
+     * Database column type SqlType(varchar)
+     *  NOTE: The name was escaped because it collided with a Scala keyword.
+     */
+    val `type`: Rep[String] = column[String]("type")
+    /** Database column scope SqlType(varchar) */
+    val scope: Rep[String] = column[String]("scope")
+    /** Database column application_name SqlType(varchar), Default(None) */
+    val applicationName: Rep[Option[String]] = column[Option[String]]("application_name", O.Default(None))
+    /** Database column application_resource SqlType(varchar), Default(None) */
+    val applicationResource: Rep[Option[String]] = column[Option[String]]("application_resource", O.Default(None))
 
-    /** Foreign key referencing UserUser (database name user_fk) */
-    lazy val userUserFk = foreignKey("user_fk", userId, UserUser)(r => r.userId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+    /** Foreign key referencing UserUser (database name user_access_log_user_id_fkey) */
+    lazy val userUserFk = foreignKey("user_access_log_user_id_fkey", userId, UserUser)(r => r.userId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
   }
-  /** Collection-like TableQuery object for table UserAccessToken */
-  lazy val UserAccessToken = new TableQuery(tag => new UserAccessToken(tag))
+  /** Collection-like TableQuery object for table UserAccessLog */
+  lazy val UserAccessLog = new TableQuery(tag => new UserAccessLog(tag))
 
   /**
    * Entity class storing rows of table UserMailTokens

@@ -27,7 +27,7 @@ package org.hatdex.hat.dal
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.phata.models.MailTokenUser
 
 object ModelTranslation {
@@ -139,5 +139,10 @@ object ModelTranslation {
 
   def fromDbModel(hatFileAccessRow: HatFileAccessRow): ApiHatFilePermissions = {
     ApiHatFilePermissions(hatFileAccessRow.userId, hatFileAccessRow.content)
+  }
+
+  def fromDbModel(userAccessLogRow: UserAccessLogRow, user: HatUser) = {
+    HatAccessLog(userAccessLogRow.date.toDateTime, user, userAccessLogRow.`type`,
+      userAccessLogRow.scope, userAccessLogRow.applicationName, userAccessLogRow.applicationResource)
   }
 }

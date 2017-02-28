@@ -1,6 +1,7 @@
 import Dependencies._
 
 libraryDependencies ++= Seq(
+  filters,
   Library.Db.postgres,
   Library.Db.liquibase,
   Library.Slick.slickPgCore,
@@ -45,10 +46,10 @@ libraryDependencies ++= Seq(
   Library.Play.Specs2.mock,
   Library.Play.Utils.playBootstrap,
   Library.scalaGuice,
-  filters,
   Library.HATDeX.hatClient,
   Library.HATDeX.marketsquareClient,
-  Library.Utils.awsJavaSdk
+  Library.Utils.awsJavaSdk,
+  Library.Utils.prettyTime
 )
 
 enablePlugins(PlayScala)

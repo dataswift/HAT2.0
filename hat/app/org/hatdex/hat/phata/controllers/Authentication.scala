@@ -98,6 +98,7 @@ class Authentication @Inject() (
       for {
         service <- hatServicesService.findOrCreateHatService(name, redirectUrl)
         linkedService <- hatServicesService.hatServiceLink(identity, service, Some(redirectUrl))
+        - <- usersService.logLogin(identity, "hatLogin", linkedService.category, Some(name), Some(redirectUrl))
       } yield {
         if (service.setup) {
           Redirect(linkedService.url)

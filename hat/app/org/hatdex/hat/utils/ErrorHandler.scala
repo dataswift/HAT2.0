@@ -75,10 +75,17 @@ class ErrorHandler @Inject() (
   override def onNotFound(request: RequestHeader, message: String): Future[Result] = Future.successful {
     implicit val _request = request
     implicit val noUser: Option[HatUser] = None
-    NotFound(env.mode match {
-      case Mode.Prod => views.html.defaultpages.notFound(request.method, request.uri)
-      case _         => views.html.defaultpages.devNotFound(request.method, request.uri, Some(router.get))
-    })
+    render {
+      case Accepts.Json() =>
+        NotFound(Json.obj(
+          "error" -> "Handler Not Found",
+          "message" -> s"Request handler at ${request.method}:${request.path} does not exist"))
+      case _ =>
+        NotFound(env.mode match {
+          case Mode.Prod => views.html.defaultpages.notFound(request.method, request.uri)
+          case _         => views.html.defaultpages.devNotFound(request.method, request.uri, Some(router.get))
+        })
+    }
   }
 
   // 500 - internal server error

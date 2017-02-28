@@ -26,7 +26,7 @@ package org.hatdex.hat.api.service
 
 import java.util.UUID
 
-import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.dal.ModelTranslation
@@ -94,9 +94,7 @@ class UsersService extends DalExecutionContext {
       .filterNot(_.role === "owner")
       .filterNot(_.role === "platform")
 
-    val deleteTokensQuery = UserAccessToken.filter(_.userId in deleteUserQuery.map(_.userId)).delete
-
-    db.run(DBIO.seq(deleteTokensQuery, deleteUserQuery.delete))
+    db.run(deleteUserQuery.delete).map(_ => ())
   }
 
   def changeUserState(userId: UUID, enabled: Boolean)(implicit db: Database): Future[Unit] = {
@@ -107,9 +105,24 @@ class UsersService extends DalExecutionContext {
   }
 
   def removeUser(username: String)(implicit db: Database): Future[Unit] = {
-    logger.info(s"Get user by username: ${username}")
     db.run {
       UserUser.filter(_.email === username).delete
     } map { _ => () }
   }
+
+  def previousLogin(user: HatUser)(implicit db: Database): Future[Option[HatAccessLog]] = {
+    val query = for {
+      access <- UserAccessLog.filter(l => l.userId === user.userId).sortBy(_.date.desc).take(2).drop(1)
+      user <- access.userUserFk
+    } yield (access, user)
+    db.run(query.result)
+      .map(_.headOption)
+      .map(_.map(au => ModelTranslation.fromDbModel(au._1, ModelTranslation.fromDbModel(au._2))))
+  }
+
+  def logLogin(user: HatUser, loginType: String, scope: String, appName: Option[String], appResource: Option[String])(implicit db: Database): Future[Unit] = {
+    val accessLog = UserAccessLogRow(LocalDateTime.now(), user.userId, loginType, scope, appName, appResource)
+    db.run(UserAccessLog += accessLog).map(_ => ())
+  }
+
 }
