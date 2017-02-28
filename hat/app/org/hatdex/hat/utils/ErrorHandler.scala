@@ -96,11 +96,22 @@ class ErrorHandler @Inject() (
     Future.successful {
       render {
         case Accepts.Json() =>
+          val message = exception match {
+            case e: SQLTransientConnectionException =>
+              "HAT unavailable"
+            case e =>
+              s"A server error occurred, please report this error code to our admins: ${e.getMessage}"
+          }
           InternalServerError(Json.obj(
             "error" -> "Internal Server error",
-            "message" -> s"A server error occurred, please report this error code to our admins: ${exception.id}"))
+            "message" -> message))
         case _ =>
-          InternalServerError(views.html.defaultpages.error(exception))
+          exception match {
+            case e: HatServerDiscoveryException =>
+              NotFound(org.hatdex.hat.phata.views.html.hatNotFound())
+            case e =>
+              InternalServerError(s"A server error occurred, please report this error code to our admins: ${e.getMessage}")
+          }
       }
     }
   }

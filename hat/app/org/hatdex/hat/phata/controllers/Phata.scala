@@ -56,8 +56,8 @@ class Phata @Inject() (
 
   private val logger = Logger(this.getClass)
 
-  def rumpelIndex(): Action[AnyContent] = Action { implicit request =>
-    Ok(phataViews.html.rumpelIndex())
+  def rumpelIndex(): Action[AnyContent] = UserAwareAction.async { implicit request =>
+    Future.successful(Ok(phataViews.html.rumpelIndex()))
   }
 
   private def getProfile(maybeUser: Option[HatUser])(implicit server: HatServer, request: RequestHeader): Future[Result] = {

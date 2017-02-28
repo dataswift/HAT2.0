@@ -52,7 +52,7 @@ trait HatDatabaseProvider {
 class HatDatabaseProviderConfig @Inject() (configuration: Configuration, val schemaMigration: SchemaMigration) extends HatDatabaseProvider {
   def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {
     Future {
-      Database.forConfig(s"hat.$hat.database")
+      Database.forConfig(s"hat.${hat.replace(':', '.')}.database")
     } recoverWith {
       case e =>
         Future.failed(new HatServerDiscoveryException(s"Database configuration for $hat incorrect or unavailable", e))

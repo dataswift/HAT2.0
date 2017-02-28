@@ -58,14 +58,7 @@ class SystemStatus @Inject() (
 
   val logger = Logger(this.getClass)
 
-  configuration.getStringSeq("databaseServers.serverUrls") map { testlist =>
-    logger.warn(s"Got testlist")
-    testlist.foreach { item =>
-      logger.warn(s"Item $item")
-    }
-  }
-
-  def update(): Action[AnyContent] = SecuredAction.async { implicit request =>
+  def update(): Action[AnyContent] = UserAwareAction.async { implicit request =>
     hatDatabaseProvider.update(request.dynamicEnvironment.db) map {
       case _ =>
         Ok(Json.toJson(SuccessResponse("Database updated")))

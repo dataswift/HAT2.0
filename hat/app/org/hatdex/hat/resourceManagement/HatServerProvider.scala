@@ -61,7 +61,7 @@ class HatServerProviderImpl @Inject() (@Named("hatServerProviderActor") serverPr
   private val logger = Logger(this.getClass)
 
   def retrieve[B](request: Request[B]): Future[Option[HatServer]] = {
-    val hatAddress = request.host.split(':').headOption.getOrElse(request.host)
+    val hatAddress = request.host //.split(':').headOption.getOrElse(request.host)
     retrieve(hatAddress)
   }
 
