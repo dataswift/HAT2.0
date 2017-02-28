@@ -25,6 +25,9 @@
 package org.hatdex.hat.phata.models
 
 import play.api.data.{ Form, Forms, Mapping }
+import me.gosimple.nbvcxz._
+import play.api.data.validation.{ Constraint, Invalid, Valid, ValidationError }
+import collection.JavaConverters._
 
 case class LoginDetails(
   username: String,
@@ -49,17 +52,50 @@ case class PasswordChange(
   confirmPassword: String)
 
 object PasswordChange {
+  private val nbvcxzDictionaryList = resources.ConfigurationBuilder.getDefaultDictionaries
+
+  private val nbvcxzConfiguration = new resources.ConfigurationBuilder()
+    .setMinimumEntropy(40d)
+    .setDictionaries(nbvcxzDictionaryList)
+    .createConfiguration()
+
+  private val nbvcxz = new Nbvcxz(nbvcxzConfiguration)
+
+  val passwordCheckConstraint: Constraint[String] = Constraint("constraints.passwordcheck")({
+    plainText =>
+      val strengthEstimate = nbvcxz.estimate(plainText)
+      val errors = if (!strengthEstimate.isMinimumEntropyMet) {
+        val timeToCrackOff = scoring.TimeEstimate.getTimeToCrackFormatted(strengthEstimate, "OFFLINE_BCRYPT_14")
+        val feedback = strengthEstimate.getFeedback.getSuggestion.asScala.toList.map { suggestion =>
+          ValidationError(suggestion)
+        }
+
+        Seq(
+          ValidationError("Password is too weak"),
+          ValidationError(s"Estimated time to crack this password - $timeToCrackOff")) ++ feedback
+      }
+      else {
+        Nil
+      }
+
+      if (errors.isEmpty) {
+        Valid
+      }
+      else {
+        Invalid(errors)
+      }
+  })
+
   private val passwordChangeMapping: Mapping[PasswordChange] = Forms.mapping(
     "newPassword" -> Forms.tuple(
-      "password" -> Forms.nonEmptyText(minLength = 8),
-      "confirm" -> Forms.nonEmptyText(minLength = 8)).verifying(
+      "password" -> Forms.nonEmptyText().verifying(passwordCheckConstraint),
+      "confirm" -> Forms.nonEmptyText())
+      .verifying(
         "constraints.passwords.match",
         passConfirm => passConfirm._1 == passConfirm._2))({
-      case ((password, confirm)) =>
-        PasswordChange(password, confirm)
+      case ((password, confirm)) => PasswordChange(password, confirm)
     })({
-      case passwordChange: PasswordChange =>
-        Some(((passwordChange.newPassword, passwordChange.confirmPassword)))
+      passwordChange: PasswordChange => Some((passwordChange.newPassword, passwordChange.confirmPassword))
     })
 
   val passwordChangeForm = Form(passwordChangeMapping)

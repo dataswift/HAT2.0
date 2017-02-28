@@ -75,7 +75,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     bind[AuthUserService].to[AuthUserServiceImpl]
     bind[DelegableAuthInfoDAO[PasswordInfo, HatServer]].to[PasswordInfoService]
     bind[IDGenerator].toInstance(new SecureRandomIDGenerator())
-    bind[PasswordHasher].toInstance(new BCryptPasswordHasher)
+    bind[PasswordHasher].toInstance(new BCryptPasswordHasher(logRounds = 14))
     bind[FingerprintGenerator].toInstance(new DefaultFingerprintGenerator(false))
 
     bind[EventBus].toInstance(EventBus())

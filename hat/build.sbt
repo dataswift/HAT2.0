@@ -49,7 +49,8 @@ libraryDependencies ++= Seq(
   Library.HATDeX.hatClient,
   Library.HATDeX.marketsquareClient,
   Library.Utils.awsJavaSdk,
-  Library.Utils.prettyTime
+  Library.Utils.prettyTime,
+  Library.Utils.nbvcxz
 )
 
 enablePlugins(PlayScala)

@@ -105,6 +105,7 @@ object Dependencies {
       val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackV
       val awsJavaSdk = "com.amazonaws" % "aws-java-sdk" % "1.10.64"
       val prettyTime = "org.ocpsoft.prettytime" % "prettytime" % "3.2.7.Final"
+      val nbvcxz = "me.gosimple" % "nbvcxz" % "1.3.4"
     }
 
     object Db {

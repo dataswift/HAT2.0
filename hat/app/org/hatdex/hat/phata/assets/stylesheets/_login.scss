@@ -124,3 +124,10 @@
     font-weight: normal;
   }
 }
+
+.form-group.has-error {
+  padding: 15px;
+  background-color: #f2dede;
+  border-color: #ebccd1;
+  border-radius: 4px;
+}
