@@ -82,6 +82,7 @@ class Authentication @Inject() (
       result <- env.authenticatorService.renew(authenticator, Ok(Json.toJson(SuccessResponse("Password changed"))))
     } yield {
       env.eventBus.publish(LoginEvent(request.identity, request))
+      mailer.passwordChanged(request.identity.email, request.identity)
       result
     }
 
@@ -132,6 +133,7 @@ class Authentication @Inject() (
               } yield {
                 tokenService.consume(tokenId)
                 env.eventBus.publish(LoginEvent(user, request))
+                mailer.passwordChanged(token.email, user)
                 result
               }
             case None => Future.successful(Unauthorized(Json.toJson(ErrorMessage("Password reset unauthorized", "No user matching token"))))

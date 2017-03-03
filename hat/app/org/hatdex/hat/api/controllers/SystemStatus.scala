@@ -87,6 +87,7 @@ class SystemStatus @Inject() (
         HatStatus("Previous Login", StatusKind.Text("Never", None))
       }
       login :: List(
+        HatStatus("Owner Email", StatusKind.Text(request.dynamicEnvironment.ownerEmail, None)),
         HatStatus("Database Storage", StatusKind.Numeric(dbsa._1, Some(dbsa._2))),
         HatStatus("File Storage", StatusKind.Numeric(fsa._1, Some(fsa._2))),
         HatStatus("Database Storage Used", StatusKind.Numeric(dbsu._1, Some(dbsu._2))),

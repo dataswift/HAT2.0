@@ -173,6 +173,7 @@ class Authentication @Inject() (
             Ok(phataViews.html.passwordChange(request.identity, PasswordChange.passwordChangeForm.fill(loginDetails), Seq(), changed = true)))
         } yield {
           env.eventBus.publish(LoginEvent(request.identity, request))
+          mailer.passwordChanged(request.identity.email, request.identity)
           result
         }
       })
@@ -250,6 +251,7 @@ class Authentication @Inject() (
                   } yield {
                     tokenService.consume(tokenId)
                     env.eventBus.publish(LoginEvent(user, request))
+                    mailer.passwordChanged(token.email, user)
                     result
                   }
                 case None => Future.failed(new IdentityNotFoundException("Couldn't find user"))
