@@ -24,6 +24,8 @@
 
 package org.hatdex.hat.authentication
 
+import javax.inject.Inject
+
 import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.actions._
 import com.mohiva.play.silhouette.api.util.Clock
@@ -36,10 +38,14 @@ import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api.Database
 import org.hatdex.hat.resourceManagement._
 import org.joda.time.DateTime
-import play.api.Configuration
+import play.api.{ Configuration, Logger, Play }
+import play.api.http.{ DefaultHttpErrorHandler, HttpErrorHandler, LazyHttpErrorHandler, Status }
 import play.api.i18n.I18nSupport
-import play.api.mvc.Controller
+import play.api.libs.json.{ JsError, Reads }
+import play.api.mvc.BodyParsers.parse
+import play.api.mvc.{ BodyParser, Controller, RequestHeader, Result }
 
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 abstract class HatController[T <: HatAuthEnvironment](

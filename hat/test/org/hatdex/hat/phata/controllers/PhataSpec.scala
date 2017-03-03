@@ -51,29 +51,29 @@ class PhataSpec extends PlaySpecification with Mockito {
 
   val logger = Logger(this.getClass)
 
-  "The `launcher` method" should {
-    "return status 401 if authenticator but no identity was found" in new Context {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(LoginInfo("xing", "comedian@watchmen.com"))
-
-      val controller = application.injector.instanceOf[Phata]
-      val result: Future[Result] = databaseReady.flatMap(_ => controller.launcher().apply(request))
-
-      status(result) must equalTo(UNAUTHORIZED)
-    }
-
-    "return OK if authenticator for matching identity" in new Context {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
-
-      val controller = application.injector.instanceOf[Phata]
-      val result: Future[Result] = databaseReady.flatMap(_ => controller.launcher().apply(request))
-
-      status(result) must equalTo(OK)
-      contentAsString(result) must contain("MarketSquare")
-      contentAsString(result) must contain("Rumpel")
-    }
-  }
+  //  "The `launcher` method" should {
+  //    "return status 401 if authenticator but no identity was found" in new Context {
+  //      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+  //        .withAuthenticator(LoginInfo("xing", "comedian@watchmen.com"))
+  //
+  //      val controller = application.injector.instanceOf[Phata]
+  //      val result: Future[Result] = databaseReady.flatMap(_ => controller.launcher().apply(request))
+  //
+  //      status(result) must equalTo(UNAUTHORIZED)
+  //    }
+  //
+  //    "return OK if authenticator for matching identity" in new Context {
+  //      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+  //        .withAuthenticator(owner.loginInfo)
+  //
+  //      val controller = application.injector.instanceOf[Phata]
+  //      val result: Future[Result] = databaseReady.flatMap(_ => controller.launcher().apply(request))
+  //
+  //      status(result) must equalTo(OK)
+  //      contentAsString(result) must contain("MarketSquare")
+  //      contentAsString(result) must contain("Rumpel")
+  //    }
+  //  }
 
 }
 

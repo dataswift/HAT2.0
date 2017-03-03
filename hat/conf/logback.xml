@@ -37,11 +37,11 @@
     </appender>
 
 
-    <root level="ERROR">
+    <root level="WARN">
         <appender-ref ref="ASYNCCONSOLE" />
     </root>
 
-    <logger name="http" level="INFO">
+    <logger name="http" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 

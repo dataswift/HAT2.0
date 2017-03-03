@@ -82,3 +82,10 @@ GET           /api/v2/files/allowAccess/:fileId/:userId           org.hatdex.hat
 GET           /api/v2/files/restrictAccess/:fileId/:userId        org.hatdex.hat.api.controllers.Files.restrictAccess(fileId, userId: java.util.UUID)
 GET           /api/v2/files/allowAccessPublic/:fileId             org.hatdex.hat.api.controllers.Files.changePublicAccess(fileId, public: Boolean = true)
 GET           /api/v2/files/restrictAccessPublic/:fileId          org.hatdex.hat.api.controllers.Files.changePublicAccess(fileId, public: Boolean = true)
+
+# AUTHENTICATION routes
+
+GET           /control/v2/auth/hatlogin                           org.hatdex.hat.api.controllers.Authentication.hatLogin(name: String, redirect: String)
+POST          /control/v2/auth/password                           org.hatdex.hat.api.controllers.Authentication.passwordChangeProcess
+POST          /control/v2/auth/passwordReset                      org.hatdex.hat.api.controllers.Authentication.handleForgotPassword
+POST          /control/v2/auth/passwordreset/confirm:token        org.hatdex.hat.api.controllers.Authentication.handleResetPassword(token: String)

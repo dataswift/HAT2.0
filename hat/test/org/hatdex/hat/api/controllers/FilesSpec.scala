@@ -61,8 +61,10 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
   import org.hatdex.hat.api.json.HatJsonFormats._
 
   def before: Unit = {
-    await(databaseReady)(10.seconds)
+    await(databaseReady)(30.seconds)
   }
+
+  sequential
 
   "The `startUpload` method" should {
     "return status 401 if authenticator but no identity was found" in {

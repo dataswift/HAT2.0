@@ -36,7 +36,9 @@ import org.hatdex.hat.phata.views
 
 import scala.util.Try
 
-abstract class Mailer @Inject() (configuration: play.api.Configuration, ms: MailService) {
+trait Mailer {
+  protected val configuration: play.api.Configuration
+  protected val ms: MailService
 
   import scala.language.implicitConversions
 
@@ -47,7 +49,18 @@ abstract class Mailer @Inject() (configuration: play.api.Configuration, ms: Mail
   def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Unit
 }
 
-class HatMailer @Inject() (configuration: play.api.Configuration, ms: MailService) extends Mailer(configuration, ms) {
+trait HatMailer extends Mailer {
+  import scala.language.implicitConversions
+
+  protected val configuration: play.api.Configuration
+  protected val ms: MailService
+
+  def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Unit
+  def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Unit
+  def passwordReset(email: String, user: HatUser, resetLink: String)(implicit m: Messages, server: HatServer): Unit
+}
+
+class HatMailerImpl @Inject() (val configuration: play.api.Configuration, val ms: MailService) extends HatMailer {
   def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Unit = {
     // wrap any errors
     Try {

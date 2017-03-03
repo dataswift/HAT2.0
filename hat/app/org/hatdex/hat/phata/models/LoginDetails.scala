@@ -26,7 +26,10 @@ package org.hatdex.hat.phata.models
 
 import play.api.data.{ Form, Forms, Mapping }
 import me.gosimple.nbvcxz._
+import play.api.Logger
 import play.api.data.validation.{ Constraint, Invalid, Valid, ValidationError }
+import play.api.libs.json.JsError
+
 import collection.JavaConverters._
 
 case class LoginDetails(
@@ -52,6 +55,7 @@ case class PasswordChange(
   confirmPassword: String)
 
 object PasswordChange {
+  val logger = Logger(this.getClass)
   private val nbvcxzDictionaryList = resources.ConfigurationBuilder.getDefaultDictionaries
 
   private val nbvcxzConfiguration = new resources.ConfigurationBuilder()
@@ -59,7 +63,7 @@ object PasswordChange {
     .setDictionaries(nbvcxzDictionaryList)
     .createConfiguration()
 
-  private val nbvcxz = new Nbvcxz(nbvcxzConfiguration)
+  val nbvcxz = new Nbvcxz(nbvcxzConfiguration)
 
   val passwordCheckConstraint: Constraint[String] = Constraint("constraints.passwordcheck")({
     plainText =>
@@ -101,3 +105,45 @@ object PasswordChange {
   val passwordChangeForm = Form(passwordChangeMapping)
 }
 
+case class ApiPasswordChange(
+  newPassword: String,
+  password: Option[String])
+
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
+
+object ApiPasswordChange {
+  def passwordStrength(implicit reads: Reads[String], p: String => scala.collection.TraversableLike[_, String]) =
+    Reads[String] { js =>
+      reads.reads(js)
+        .flatMap { a =>
+          val estimate = PasswordChange.nbvcxz.estimate(a)
+          if (estimate.isMinimumEntropyMet) {
+            JsSuccess(a)
+          }
+          else {
+            JsError(ValidationError(
+              "Minimum password requirement strength not met",
+              estimate.getFeedback.getSuggestion.asScala.toList: _*))
+          }
+        }
+    }
+
+  Reads.filter[String](ValidationError("Minimum password requirement strength not met")) { p =>
+    PasswordChange.nbvcxz.estimate(p).isMinimumEntropyMet
+  }
+
+  implicit val passwordChangeApiReads: Reads[ApiPasswordChange] = (
+    (JsPath \ "newPassword").read[String](passwordStrength) and
+    (JsPath \ "password").readNullable[String])(ApiPasswordChange.apply _)
+  implicit val passwordChangeApiWrites: Writes[ApiPasswordChange] = Json.format[ApiPasswordChange]
+}
+
+case class ApiPasswordResetRequest(
+  email: String)
+
+object ApiPasswordResetRequest {
+  implicit val passwordResetApiReads: Reads[ApiPasswordResetRequest] =
+    (__ \ 'email).read[String](Reads.email).map { email => ApiPasswordResetRequest(email) }
+  implicit val passwordResetApiWrites: Writes[ApiPasswordResetRequest] = Json.format[ApiPasswordResetRequest]
+}

@@ -66,8 +66,6 @@ aggregate in update := false
 
 testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "exclude", "REMOTE")
 
-//publishArtifact in(Compile, packageDoc) := false
-
 routesGenerator := InjectedRoutesGenerator
 
 import com.typesafe.sbt.packager.docker._

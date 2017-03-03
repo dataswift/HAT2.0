@@ -35,6 +35,7 @@ import org.hatdex.hat.api.service.{ FileManager, FileMetadataService, UsersServi
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
+import org.hatdex.hat.utils.HatBodyParsers
 import org.joda.time.DateTime
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
@@ -47,6 +48,7 @@ import scala.concurrent.Future
 class Files @Inject() (
     val messagesApi: MessagesApi,
     configuration: Configuration,
+    parsers: HatBodyParsers,
     silhouette: Silhouette[HatApiAuthEnvironment],
     hatServerProvider: HatServerProvider,
     clock: Clock,
@@ -57,7 +59,7 @@ class Files @Inject() (
 
   val logger = Logger(this.getClass)
 
-  def startUpload: Action[ApiHatFile] = SecuredAction(WithRole("dataCredit", "owner")).async(BodyParsers.parse.json[ApiHatFile]) { implicit request =>
+  def startUpload: Action[ApiHatFile] = SecuredAction(WithRole("dataCredit", "owner")).async(parsers.json[ApiHatFile]) { implicit request =>
     val cleanFile = request.body.copy(fileId = None, status = Some(HatFileStatus.New()),
       contentUrl = None, contentPublic = Some(false), permissions = None)
     val eventualUploadUrl = for {
@@ -138,7 +140,7 @@ class Files @Inject() (
     }
   }
 
-  def listFiles(): Action[ApiHatFile] = SecuredAction.async(BodyParsers.parse.json[ApiHatFile]) { implicit request =>
+  def listFiles(): Action[ApiHatFile] = SecuredAction.async(parsers.json[ApiHatFile]) { implicit request =>
     fileMetadataService.search(request.body)
       .map(_.filter(fileAccessAllowed))
       .flatMap { foundFiles =>
@@ -171,7 +173,7 @@ class Files @Inject() (
     }
   }
 
-  def updateFile(fileId: String): Action[ApiHatFile] = SecuredAction.async(BodyParsers.parse.json[ApiHatFile]) { implicit request =>
+  def updateFile(fileId: String): Action[ApiHatFile] = SecuredAction.async(parsers.json[ApiHatFile]) { implicit request =>
     fileMetadataService.getById(fileId) flatMap {
       case Some(file) if fileContentAccessAllowed(file) =>
         val updatedFile = file.copy(
@@ -238,7 +240,7 @@ class Files @Inject() (
     }
   }
 
-  def allowAccessPattern(userId: UUID, content: Boolean): Action[ApiHatFile] = SecuredAction(WithRole("owner")).async(BodyParsers.parse.json[ApiHatFile]) { implicit request =>
+  def allowAccessPattern(userId: UUID, content: Boolean): Action[ApiHatFile] = SecuredAction(WithRole("owner")).async(parsers.json[ApiHatFile]) { implicit request =>
     val eventuallyAllowedFiles = for {
       user <- usersService.getUser(userId) if user.isDefined
       _ <- fileMetadataService.grantAccessPattern(request.body, user.get, content)
@@ -254,7 +256,7 @@ class Files @Inject() (
     }
   }
 
-  def restrictAccessPattern(userId: UUID): Action[ApiHatFile] = SecuredAction(WithRole("owner")).async(BodyParsers.parse.json[ApiHatFile]) { implicit request =>
+  def restrictAccessPattern(userId: UUID): Action[ApiHatFile] = SecuredAction(WithRole("owner")).async(parsers.json[ApiHatFile]) { implicit request =>
     val eventuallyAllowedFiles = for {
       user <- usersService.getUser(userId) if user.isDefined
       _ <- fileMetadataService.restrictAccessPattern(request.body, user.get)

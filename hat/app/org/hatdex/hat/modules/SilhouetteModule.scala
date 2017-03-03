@@ -47,8 +47,9 @@ import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models.MailTokenUser
 import org.hatdex.hat.phata.service.{ MailTokenService, MailTokenUserService }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider, HatServerProviderImpl }
-import org.hatdex.hat.utils.ErrorHandler
+import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, HatMailerImpl }
 import play.api.Configuration
+import play.api.http.HttpErrorHandler
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
 
@@ -67,7 +68,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     bind[Silhouette[HatApiAuthEnvironment]].to[SilhouetteProvider[HatApiAuthEnvironment]]
     bind[Silhouette[HatFrontendAuthEnvironment]].to[SilhouetteProvider[HatFrontendAuthEnvironment]]
     bind[MailTokenService[MailTokenUser]].to[MailTokenUserService]
+    bind[HatMailer].to[HatMailerImpl]
 
+    bind[HttpErrorHandler].to[ErrorHandler]
     bind[SecuredErrorHandler].to[ErrorHandler]
     bind[UnsecuredErrorHandler].to[ErrorHandler]
     bind[CacheLayer].to[PlayCacheLayer]
@@ -202,9 +205,8 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
     val config = configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator")
     val encoder = new CrypterAuthenticatorEncoder(crypter)
-    val simpleEncoder = new Base64AuthenticatorEncoder()
 
-    new CookieAuthenticatorService[HatServer](config, None, cookieSigner, simpleEncoder, fingerprintGenerator, idGenerator, clock)
+    new CookieAuthenticatorService[HatServer](config, None, cookieSigner, encoder, fingerprintGenerator, idGenerator, clock)
   }
 
   /**
