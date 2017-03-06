@@ -26,10 +26,9 @@ package org.hatdex.hat.api.service
 import org.hatdex.hat.api.models.{ ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _ }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
-import org.hatdex.hat.dal.Tables._
+import org.hatdex.hat.dal.Tables.{ DataTabletotablecrossref, _ }
 import org.joda.time.LocalDateTime
 import play.api.Logger
-import play.api.libs.json.{ JsObject, JsUndefined, JsValue, Json }
 
 import scala.concurrent.Future
 
@@ -43,9 +42,9 @@ class DataService extends DalExecutionContext {
     maybeStartTime: Option[LocalDateTime] = None,
     maybeEndTime: Option[LocalDateTime] = None)(implicit db: Database): Future[Seq[ApiDataRecord]] = {
 
-    //    val t0 = System.nanoTime()
     val startTime = maybeStartTime.getOrElse(LocalDateTime.now().minusDays(7))
     val endTime = maybeEndTime.getOrElse(LocalDateTime.now())
+    val limit = maybeLimit.getOrElse(1000)
 
     // Get All Data Table trees matchinf source and name
     val dataTableTreesQuery = for {
@@ -54,8 +53,9 @@ class DataService extends DalExecutionContext {
     } yield tree
 
     val eventualTables = buildDataTreeStructures(dataTableTreesQuery, Set(tableId))
-    val fieldsetQuery = DataField.filter(_.tableIdFk in dataTableTreesQuery.map(_.id))
-    val eventualValues = fieldsetValues(fieldsetQuery, startTime, endTime, maybeLimit.getOrElse(1000))
+
+    val fieldsetQuery = dataTableTreesQuery.join(DataField).map(_._2).filter(_.deleted === false)
+    val eventualValues = fieldsetValues(fieldsetQuery, startTime, endTime, limit)
 
     for {
       tables <- eventualTables
@@ -65,11 +65,7 @@ class DataService extends DalExecutionContext {
         throw new RuntimeException("No such table exists")
       }
       else {
-        maybeLimit.map { limit =>
-          restructureTableValuesToRecords(values, tables).take(limit)
-        } getOrElse {
-          restructureTableValuesToRecords(values, tables)
-        }
+        restructureTableValuesToRecords(values, tables).take(limit)
       }
     }
   }
@@ -96,45 +92,49 @@ class DataService extends DalExecutionContext {
     }
   }
 
-  def updateValue(value: ApiDataValue)(implicit db: Database): Future[ApiDataValue] = {
-    val valueUpdateQuery = DataValue.filter(_.id === value.id.get)
-      .map(v => (v.value, v.lastUpdated, v.dateCreated))
-      .update((value.value, value.lastUpdated.getOrElse(LocalDateTime.now()), LocalDateTime.now()))
+  protected def createFieldsAction(fields: Seq[ApiDataField], tableId: Int): DBIOAction[Seq[DataFieldRow], NoStream, Effect.Write] = {
+    val t = LocalDateTime.now()
+    (DataField returning DataField) ++= fields.map(f => DataFieldRow(0, t, t, f.name, tableId))
+  }
 
-    val getValue = DataValue.filter(_.id === value.id.get)
-    val updateRecordDate = DataRecord.filter(_.id in getValue.map(_.recordId))
-      .map(r => r.lastUpdated)
-      .update(LocalDateTime.now())
+  protected def linkTablesAction(subTables: Seq[DataTableRow], tableId: Int): DBIOAction[Seq[Int], NoStream, Effect.Write] = {
+    val t = LocalDateTime.now()
+    DataTabletotablecrossref returning DataTabletotablecrossref.map(_.id) ++=
+      subTables.map(s => DataTabletotablecrossrefRow(1, t, t, "parent child", tableId, s.id))
+  }
 
-    val updateSteps = DBIO.seq(valueUpdateQuery, updateRecordDate)
-
-    db.run(updateSteps) map { _ =>
-      value
+  protected def createTableAction(table: ApiDataTable): DBIOAction[DataTableRow, NoStream, Effect.Write] = {
+    val t = LocalDateTime.now()
+    val query = for {
+      dbTable <- (DataTable returning DataTable) += DataTableRow(0, t, t, table.name, table.source)
+      _ <- createFieldsAction(table.fields.getOrElse(Seq()), dbTable.id)
+      subTables <- DBIO.sequence(table.subTables.getOrElse(Seq()).map(createTableAction))
+      _ <- linkTablesAction(subTables, dbTable.id)
+    } yield {
+      dbTable
     }
+    query
   }
 
   def createTable(table: ApiDataTable)(implicit db: Database): Future[ApiDataTable] = {
-    //logger.debug(s"Creating new table for $table")
-    val newTable = new DataTableRow(0, LocalDateTime.now(), LocalDateTime.now(), table.name, table.source)
     for {
-      insertedTable <- db.run((DataTable returning DataTable) += newTable)
-      apiDataFields <- Future.sequence(table.fields.getOrElse(Seq()).map(createField(_, Some(insertedTable.id))))
-      apiSubtables <- Future.sequence(table.subTables.getOrElse(Seq()).map(createTable))
-      links <- Future.sequence(apiSubtables.map(x => linkTables(insertedTable.id, x.id.get, ApiRelationship("parent child"))))
+      created <- db.run(createTableAction(table).transactionally)
+      table <- getTableStructure(created.id).map(_.get)
     } yield {
-      ModelTranslation.fromDbModel(insertedTable, Some(apiDataFields), Some(apiSubtables))
+      table
     }
   }
 
   def linkTables(parentId: Int, childId: Int, relationship: ApiRelationship)(implicit db: Database): Future[Int] = {
-    val dataTableToTableCrossRefRow = new DataTabletotablecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
+    val dataTableToTableCrossRefRow = DataTabletotablecrossrefRow(1, LocalDateTime.now(), LocalDateTime.now(),
       relationship.relationshipType, parentId, childId)
     db.run((DataTabletotablecrossref returning DataTabletotablecrossref.map(_.id)) += dataTableToTableCrossRefRow)
   }
 
   def createField(field: ApiDataField, maybeTableId: Option[Int] = None)(implicit db: Database): Future[ApiDataField] = {
     val eventuallyNewField = maybeTableId.orElse(field.tableId) map { tableId =>
-      db.run((DataField returning DataField) += DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.name, tableId))
+      val query = (DataField returning DataField) += DataFieldRow(0, LocalDateTime.now(), LocalDateTime.now(), field.name, tableId)
+      db.run(query)
     } getOrElse {
       Future.failed(new IllegalArgumentException("Table ID for field being inserted must be set"))
     }
@@ -147,7 +147,7 @@ class DataService extends DalExecutionContext {
   def getFieldValues(fieldId: Int)(implicit db: Database): Future[Option[ApiDataField]] = {
     for {
       maybeField <- retrieveDataFieldId(fieldId)
-      maybeValues <- maybeField.map { field =>
+      maybeValues <- maybeField.map { _ =>
         db.run {
           DataValue.filter(v => v.fieldId === fieldId && v.deleted === false)
             .sortBy(_.lastUpdated.desc)
@@ -170,26 +170,8 @@ class DataService extends DalExecutionContext {
     eventualField.map(_.map(ModelTranslation.fromDbModel))
   }
 
-  def getFieldRecordValue(fieldId: Int, recordId: Int)(implicit db: Database): Future[Option[ApiDataField]] = {
-    for {
-      maybeField <- retrieveDataFieldId(fieldId)
-      maybeValues <- maybeField.map { field =>
-        db.run {
-          DataValue.filter(v => v.fieldId === fieldId && v.recordId === recordId && v.deleted === false)
-            .sortBy(_.lastUpdated.desc)
-            .result
-        } map (v => Some(v))
-      } getOrElse { Future.successful(None) }
-    } yield {
-      val apiDataValues = maybeValues.map { values =>
-        values.map(ModelTranslation.fromDbModel)
-      }
-      maybeField.map(_.copy(values = apiDataValues))
-    }
-  }
-
   def createRecord(record: ApiDataRecord)(implicit db: Database): Future[ApiDataRecord] = {
-    val newRecord = new DataRecordRow(0, LocalDateTime.now(), record.lastUpdated.getOrElse(LocalDateTime.now()), record.name)
+    val newRecord = DataRecordRow(0, LocalDateTime.now(), record.lastUpdated.getOrElse(LocalDateTime.now()), record.name)
     db.run {
       (DataRecord returning DataRecord) += newRecord
     } map { record =>
@@ -252,12 +234,15 @@ class DataService extends DalExecutionContext {
   protected[api] def buildDataTreeStructures(
     dataTableTrees: Query[DataTableTree, DataTableTreeRow, Seq],
     roots: Set[Int] = Set())(implicit db: Database): Future[Seq[ApiDataTable]] = {
+
     // Another round of field filtering to only get those within the returned trees
     val treeFieldQuery = for {
       (tree, maybeField) <- dataTableTrees joinLeft DataField.filter(_.deleted === false)
     } yield (tree, maybeField)
 
-    db.run(treeFieldQuery.result).map { treeFields =>
+    val eventualTreeFields = db.run(treeFieldQuery.result)
+
+    eventualTreeFields.map { treeFields =>
       val tablesWithParents = treeFields.map(_._1) // Get the trees
         .map(tree => (ModelTranslation.fromDbModel(tree, None, None), tree.table1)) // Use the API data model for each tree
         .distinct // Take only distinct trees (duplicates are returned with each field
@@ -285,7 +270,7 @@ class DataService extends DalExecutionContext {
    */
   def storeRecordValues(recordValues: Seq[ApiRecordValues])(implicit db: Database): Future[Seq[ApiRecordValues]] = {
     val records = recordValues map { apiRecordValues =>
-      val newRecord = new DataRecordRow(0, LocalDateTime.now(), apiRecordValues.record.lastUpdated.getOrElse(LocalDateTime.now()), apiRecordValues.record.name)
+      val newRecord = DataRecordRow(0, LocalDateTime.now(), apiRecordValues.record.lastUpdated.getOrElse(LocalDateTime.now()), apiRecordValues.record.name)
       val maybeRecord = db.run((DataRecord returning DataRecord) += newRecord)
 
       maybeRecord flatMap { insertedRecord =>
@@ -323,13 +308,16 @@ class DataService extends DalExecutionContext {
   /*
    * Fills ApiDataTable with values grouped by field ID
    */
-  def fillStructure(table: ApiDataTable)(values: Map[Int, Seq[ApiDataValue]]): ApiDataTable = {
+  protected def fillStructure(table: ApiDataTable)(values: Map[Int, Seq[ApiDataValue]]): ApiDataTable = {
     val filledFields = table.fields map { fields =>
       // For each field, insert values
       fields flatMap {
-        case ApiDataField(Some(fieldId), dateCreated, lastUpdated, tableId, fieldName, maybeValues) =>
+        case ApiDataField(Some(fieldId), dateCreated, lastUpdated, tableId, fieldName, _) =>
           val fieldValues = values.get(fieldId)
-          fieldValues.map { fValues => ApiDataField(Some(fieldId), dateCreated, lastUpdated, tableId, fieldName, values.get(fieldId)) } // Create a new field with only the values updated
+          fieldValues.map { fValues =>
+            // Create a new field with only the values updated
+            ApiDataField(Some(fieldId), dateCreated, lastUpdated, tableId, fieldName, Some(fValues))
+          }
       }
     }
 
@@ -355,21 +343,20 @@ class DataService extends DalExecutionContext {
 
     val records = byRecord flatMap {
       case (record, recordValues: Seq[(DataRecordRow, DataFieldRow, DataValueRow)]) =>
-        val fieldValues = recordValues.map { case (r, f, v) => (f, v) }
+        val fieldValues = recordValues.map { case (_, f, v) => (f, v) }
           .groupBy(_._1.id) // Group values by field
           .map { case (k, v) => (k, v.unzip._2.map(ModelTranslation.fromDbModel)) }
 
-        val filledRecords = tables.flatMap {
-          case table => // if recordValueTables.contains(table.id.get) =>
-            val filledValues = fillStructure(table)(fieldValues)
-            if (filledValues.fields.isDefined && filledValues.fields.get.nonEmpty ||
-              filledValues.subTables.isDefined && filledValues.subTables.get.nonEmpty) {
-              // Keep records separate for each root table
-              Some(ModelTranslation.fromDbModel(record, Some(Seq(filledValues))))
-            }
-            else {
-              None
-            }
+        val filledRecords = tables.flatMap { table =>
+          val filledValues = fillStructure(table)(fieldValues)
+          if (filledValues.fields.isDefined && filledValues.fields.get.nonEmpty ||
+            filledValues.subTables.isDefined && filledValues.subTables.get.nonEmpty) {
+            // Keep records separate for each root table
+            Some(ModelTranslation.fromDbModel(record, Some(Seq(filledValues))))
+          }
+          else {
+            None
+          }
         }
         filledRecords
     }
@@ -378,14 +365,12 @@ class DataService extends DalExecutionContext {
   }
 
   protected[hat] def getStructureFields(structure: ApiDataTable): Set[Int] = {
-    val fieldSet = structure.fields.map(_.flatMap(_.id).toSet).getOrElse(Set[Int]())
+    val fieldSet = structure.fields.getOrElse(Seq()).flatMap(_.id).toSet
 
     structure.subTables
-      .map { subtables =>
-        subtables.map(getStructureFields)
-          .fold(fieldSet)((fieldset, subtableFieldset) => fieldset ++ subtableFieldset)
-      }
-      .getOrElse(fieldSet)
+      .getOrElse(Seq())
+      .map(getStructureFields)
+      .fold(fieldSet)((fieldset, subtableFieldset) => fieldset ++ subtableFieldset)
   }
 
   /*
@@ -415,11 +400,13 @@ class DataService extends DalExecutionContext {
     fieldset: Query[DataField, DataField#TableElementType, Seq],
     startTime: LocalDateTime, endTime: LocalDateTime,
     limit: Int)(implicit db: Database): Future[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]] = {
-    val fieldValues = DataValue.filter(_.fieldId in fieldset.map(_.id))
-    val valuesQuery = fieldValues.filter(v => v.lastUpdated <= endTime && v.lastUpdated >= startTime && v.deleted === false)
+
+    val valuesQuery = fieldset.join(DataValue).on(_.id === _.fieldId).map(_._2)
+      .filter { v => v.lastUpdated <= endTime && v.lastUpdated >= startTime && v.deleted === false }
       .sortBy(_.recordId.desc)
+
     val valueQuery = for {
-      (record, value) <- DataRecord.filter(_.id in valuesQuery.map(_.recordId))
+      (record, value) <- DataRecord.filter(_.id in valuesQuery.map(_.recordId).distinct)
         .filter(r => r.lastUpdated <= endTime && r.lastUpdated >= startTime && r.deleted === false)
         .sortBy(_.lastUpdated.desc)
         .take(limit)
@@ -460,21 +447,20 @@ class DataService extends DalExecutionContext {
 
   def getRecordValues(recordId: Int)(implicit db: Database): Future[Option[ApiDataRecord]] = {
     val eventualValues = recordValues(recordId)
-    val eventualFielset = eventualValues.map { recordValues =>
+    val eventualFieldset = eventualValues.map { recordValues =>
       // logger.debug(s"Getting record values $recordValues")
       recordValues.unzip3._2.map(_.id).toSet
     }
 
-    val eventualTables = eventualFielset flatMap {
-      case fieldset: Set[Int] =>
-        // logger.debug(s"Getting tables for fieldset $fieldset")
-        val dataTableTreesQuery = for {
-          field <- DataField.filter(_.id inSet fieldset) if field.deleted === false
-          rootTable <- DataTableTree.filter(field.tableIdFk === _.path.any)
-          tree <- DataTableTree.filter(_.rootTable === rootTable.path.any)
-        } yield tree
+    val eventualTables = eventualFieldset flatMap { fieldset: Set[Int] =>
+      // logger.debug(s"Getting tables for fieldset $fieldset")
+      val dataTableTreesQuery = for {
+        field <- DataField.filter(_.id inSet fieldset) if field.deleted === false
+        rootTable <- DataTableTree.filter(field.tableIdFk === _.path.any)
+        tree <- DataTableTree.filter(_.rootTable === rootTable.path.any)
+      } yield tree
 
-        buildDataTreeStructures(dataTableTreesQuery)
+      buildDataTreeStructures(dataTableTreesQuery)
     }
 
     eventualTables flatMap { tables =>

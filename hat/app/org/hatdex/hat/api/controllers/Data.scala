@@ -73,8 +73,8 @@ class Data @Inject() (
    */
   def linkTables(parentId: Int, childId: Int): Action[ApiRelationship] =
     SecuredAction(WithRole("owner", "platform", "dataCredit")).async(BodyParsers.parse.json[ApiRelationship]) { implicit request =>
-      dataService.linkTables(parentId, childId, request.body) map {
-        case id => Created(Json.toJson(ApiGenericId(id)))
+      dataService.linkTables(parentId, childId, request.body) map { id =>
+        Created(Json.toJson(ApiGenericId(id)))
       } recover {
         case e => BadRequest(Json.toJson(ErrorMessage(s"Error linking Tables $parentId and $childId", e.getMessage)))
       }
