@@ -88,4 +88,4 @@ GET           /api/v2/files/restrictAccessPublic/:fileId          org.hatdex.hat
 GET           /control/v2/auth/hatlogin                           org.hatdex.hat.api.controllers.Authentication.hatLogin(name: String, redirect: String)
 POST          /control/v2/auth/password                           org.hatdex.hat.api.controllers.Authentication.passwordChangeProcess
 POST          /control/v2/auth/passwordReset                      org.hatdex.hat.api.controllers.Authentication.handleForgotPassword
-POST          /control/v2/auth/passwordreset/confirm:token        org.hatdex.hat.api.controllers.Authentication.handleResetPassword(token: String)
+POST          /control/v2/auth/passwordreset/confirm/:token       org.hatdex.hat.api.controllers.Authentication.handleResetPassword(token: String)
