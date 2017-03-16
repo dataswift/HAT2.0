@@ -75,19 +75,23 @@ class Authentication @Inject() (
   }
 
   def passwordChangeProcess: Action[ApiPasswordChange] = SecuredAction(WithRole("owner")).async(parsers.json[ApiPasswordChange]) { implicit request =>
-    val eventualResult = for {
-      _ <- credentialsProvider.authenticate(Credentials(request.identity.email, request.body.password.get))
-      _ <- authInfoRepository.update(request.identity.loginInfo, passwordHasherRegistry.current.hash(request.body.newPassword))
-      authenticator <- env.authenticatorService.create(request.identity.loginInfo)
-      result <- env.authenticatorService.renew(authenticator, Ok(Json.toJson(SuccessResponse("Password changed"))))
-    } yield {
-      env.eventBus.publish(LoginEvent(request.identity, request))
-      mailer.passwordChanged(request.identity.email, request.identity)
-      result
-    }
+    request.body.password map { oldPassword =>
+      val eventualResult = for {
+        _ <- credentialsProvider.authenticate(Credentials(request.identity.email, oldPassword))
+        _ <- authInfoRepository.update(request.identity.loginInfo, passwordHasherRegistry.current.hash(request.body.newPassword))
+        authenticator <- env.authenticatorService.create(request.identity.loginInfo)
+        result <- env.authenticatorService.renew(authenticator, Ok(Json.toJson(SuccessResponse("Password changed"))))
+      } yield {
+        env.eventBus.publish(LoginEvent(request.identity, request))
+        mailer.passwordChanged(request.identity.email, request.identity)
+        result
+      }
 
-    eventualResult recover {
-      case e: InvalidPasswordException => Forbidden(Json.toJson(ErrorMessage("Invalid password", "Old password invalid")))
+      eventualResult recover {
+        case e: InvalidPasswordException => Forbidden(Json.toJson(ErrorMessage("Invalid password", "Old password invalid")))
+      }
+    } getOrElse {
+      Future.successful(Forbidden(Json.toJson(ErrorMessage("Invalid password", "Old password missing"))))
     }
   }
 
