@@ -65,10 +65,30 @@ object PasswordChange {
 
   val nbvcxz = new Nbvcxz(nbvcxzConfiguration)
 
+  def passwordGuessesToScore(guesses: BigDecimal) = {
+    val DELTA = 5
+    if (guesses < 1e3 + DELTA) {
+      0
+    }
+    else if (guesses < 1e6 + DELTA) {
+      1
+    }
+    else if (guesses < 1e8 + DELTA) {
+      2
+    }
+    else if (guesses < 1e10 + DELTA) {
+      3
+    }
+    else {
+      4
+    }
+  }
+
   val passwordCheckConstraint: Constraint[String] = Constraint("constraints.passwordcheck")({
     plainText =>
       val strengthEstimate = nbvcxz.estimate(plainText)
-      val errors = if (!strengthEstimate.isMinimumEntropyMet) {
+
+      val errors = if (passwordGuessesToScore(strengthEstimate.getGuesses) < 3) {
         val timeToCrackOff = scoring.TimeEstimate.getTimeToCrackFormatted(strengthEstimate, "OFFLINE_BCRYPT_14")
         val feedback = strengthEstimate.getFeedback.getSuggestion.asScala.toList.map { suggestion =>
           ValidationError(suggestion)
@@ -130,7 +150,7 @@ object ApiPasswordChange {
     }
 
   Reads.filter[String](ValidationError("Minimum password requirement strength not met")) { p =>
-    PasswordChange.nbvcxz.estimate(p).isMinimumEntropyMet
+    PasswordChange.passwordGuessesToScore(PasswordChange.nbvcxz.estimate(p).getGuesses) >= 3
   }
 
   implicit val passwordChangeApiReads: Reads[ApiPasswordChange] = (
