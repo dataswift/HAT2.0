@@ -107,7 +107,13 @@ class Authentication @Inject() (
           val token = MailTokenUser(email, isSignUp = false)
           tokenService.create(token).map { _ =>
             // TODO generate password reset link for frontend to handle
-            val resetLink = "" //routes.Authentication.resetPassword(token.id).absoluteURL()
+            val scheme = if (request.secure) {
+              "https://"
+            }
+            else {
+              "http://"
+            }
+            val resetLink = s"${scheme}${request.host}/#/user/password/change/${token.id}"
             mailer.passwordReset(email, user, resetLink)
             response
           }
