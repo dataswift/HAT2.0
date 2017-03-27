@@ -413,7 +413,7 @@ class DataService extends DalExecutionContext {
         .filter(r => r.lastUpdated <= endTime && r.lastUpdated >= startTime && r.deleted === false)
         .sortBy(_.lastUpdated.desc)
         .take(limit)
-        .join(valuesQuery)
+        .join(fieldset.join(DataValue).on(_.id === _.fieldId).map(_._2).sortBy(_.recordId.desc))
         .on(_.id === _.recordId)
       field <- value.dataFieldFk if field.deleted === false
     } yield (record, field, value)
