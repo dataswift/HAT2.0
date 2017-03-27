@@ -406,15 +406,15 @@ class DataService extends DalExecutionContext {
 
     val valuesQuery = fieldset.join(DataValue).on(_.id === _.fieldId).map(_._2)
       .filter { v => v.lastUpdated <= endTime && v.lastUpdated >= startTime && v.deleted === false }
-      .sortBy(_.recordId.desc)
+
+    val recordsQuery = DataRecord.filter(_.id in valuesQuery.sortBy(_.recordId.desc).map(_.recordId).distinct)
+      .filter(r => r.lastUpdated <= endTime && r.lastUpdated >= startTime && r.deleted === false)
+      .sortBy(_.lastUpdated.desc)
+      .take(limit)
 
     val valueQuery = for {
-      (record, value) <- DataRecord.filter(_.id in valuesQuery.map(_.recordId).distinct)
-        .filter(r => r.lastUpdated <= endTime && r.lastUpdated >= startTime && r.deleted === false)
-        .sortBy(_.lastUpdated.desc)
-        .take(limit)
-        .join(fieldset.join(DataValue).on(_.id === _.fieldId).map(_._2).sortBy(_.recordId.desc))
-        .on(_.id === _.recordId)
+      record <- recordsQuery
+      value <- valuesQuery.filter(_.recordId === record.id)
       field <- value.dataFieldFk if field.deleted === false
     } yield (record, field, value)
 
