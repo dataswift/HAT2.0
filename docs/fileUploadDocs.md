@@ -61,7 +61,7 @@ Only `name` and `source` properties are mandatory - all others are optional. You
 }
 ```
 
-Importantly, it includes the unique file identifier for the HAT `fileId` and `contentUrl` indicating where the file should be uploaded. The upload `contentUrl` is signed and has limited duration validity, most likely 5 minutes, after which it becomes invalid. Then uploading itself could be done as (*note:* `x-amz-server-side-encryption` hearder is mandatory):
+Importantly, it includes the unique file identifier for the HAT `fileId` and `contentUrl` indicating where the file should be uploaded. The upload `contentUrl` is signed and has limited duration validity, most likely 5 minutes, after which it becomes invalid. Then uploading itself could be done as (*note:* `x-amz-server-side-encryption` header is mandatory):
 
 ```curl
 curl -v -T ${LOCAL_FILE} \
