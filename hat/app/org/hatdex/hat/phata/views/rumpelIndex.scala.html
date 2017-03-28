@@ -1,14 +1,4 @@
-@()
-
-@script = {
-    <script src="@routes.Assets.versioned("js/packery.pkgd.min.js")"></script>
-    <script>
-            var http = location.protocol;
-            var slashes = http.concat("//");
-            var BulletinBaseUrl = slashes.concat(window.location.host);
-    </script>
-
-}
+@(protocol: String)
 
 <!DOCTYPE html>
 <html>
@@ -16,6 +6,10 @@
         <meta charset="utf-8">
         <title>Rumpel</title>
         <base href="/">
+        <script>
+            var httpProtocol = "@protocol";
+            var baseUrl = httpProtocol.concat('//').concat(window.location.host);
+        </script>
 
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="twitter:card" content="summary_large_image">
@@ -45,7 +39,7 @@
         <link rel="icon" type="image/x-icon" href="favicon.ico">
     </head>
     <body>
-        <rumpel>Loading...</rumpel>
+        <rump-app>Loading...</rump-app>
     </body>
 
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0-rc.1/leaflet-src.js"></script>
