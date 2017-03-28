@@ -54,7 +54,7 @@ class DataService extends DalExecutionContext {
 
     val eventualTables = buildDataTreeStructures(dataTableTreesQuery, Set(tableId))
 
-    val fieldsetQuery = dataTableTreesQuery.join(DataField)
+    val fieldsetQuery = dataTableTreesQuery.join(DataField).on(_.id === _.tableIdFk)
       .map(_._2) // Only fields
       .filter(_.deleted === false) // That have not been deleted
       .distinct // And are distinct
