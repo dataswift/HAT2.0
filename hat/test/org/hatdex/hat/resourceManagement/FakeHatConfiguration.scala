@@ -33,8 +33,8 @@ object FakeHatConfiguration {
           "dataSourceClass" -> "org.postgresql.ds.PGSimpleDataSource",
           "connectionPool" -> "disabled",
           "properties" -> Map(
-            "databaseName" -> "testhatdb2",
-            "user" -> "testhatdb2",
+            "databaseName" -> "testhatdb1",
+            "user" -> "testhatdb1",
             "password" -> "testing")),
         "publicKey" -> """-----BEGIN PUBLIC KEY-----
           |MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAznT9VIjovMEB/hoZ9j+j

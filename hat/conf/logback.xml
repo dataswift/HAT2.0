@@ -67,6 +67,7 @@
 
     <logger name="org.hatdex.hat.resourceManagement" level="WARN" />
     <logger name="org.hatdex.hat.api.service" level="INFO" />
+    <logger name="org.hatdex.hat.api.service.DataService" level="INFO" />
     <logger name="org.hatdex.hat.api.service.UsersService" level="WARN" />
     <logger name="org.hatdex.hat.api.controllers" level="DEBUG" />
 

@@ -48,8 +48,8 @@ class FlexiDataApi(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
         (__ \ 'data \ 'newField).json.copyFrom((__ \ 'field).json.pick) and // copy record id into the notable data
           (__ \ 'data \ 'newField).json.copyFrom((__ \ 'anotherField).json.pick) and
-          (__ \ 'data \ 'arrayField).json.copyFrom((__ \ 'object \ 'objectFieldArray).json.pick) and
-          (__ \ 'data \ 'subObjectArray).json.copyFrom((__ \ 'object \ 'objectFieldObjectArray(0) \ 'subObjectName).json.pick) reduce
+          (__ \ 'data \ 'arrayField).json.copyFrom((__ \ 'object \ 'objectFieldArray).json.pick) reduce //and
+        //          (__ \ 'data \ 'subObjectArray).json.copyFrom((__ \ 'object \ 'objectFieldObjectArray(0) \ 'subObjectName).json.pick) reduce
       }
 
       val resultJson = simpleJson.transform(transform)
