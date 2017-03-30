@@ -17,3 +17,5 @@ cp ./frontend/dist/main.*.bundle.js ./hat/app/org/hatdex/hat/phata/assets/js/mai
 cp ./frontend/dist/vendor.*.bundle.js ./hat/app/org/hatdex/hat/phata/assets/js/vendor.bundle.js
 
 cp ./frontend/dist/styles.*.bundle.css ./hat/app/org/hatdex/hat/phata/assets/stylesheets/styles.bundle.css
+
+gzip --keep --force ./hat/app/org/hatdex/hat/phata/assets/js/*.bundle.js
