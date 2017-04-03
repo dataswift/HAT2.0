@@ -99,7 +99,7 @@ class ErrorHandler @Inject() (
   def onHatUnavailable(implicit request: RequestHeader): Future[Result] = {
     Future.successful {
       render {
-        case Accepts.Json() => InternalServerError(Json.obj("error" -> "Internal Server error", "message" -> "HAT unavailable"))
+        case Accepts.Json() => NotFound(Json.obj("error" -> "Not Found", "message" -> "HAT unavailable"))
         case _              => NotFound(org.hatdex.hat.phata.views.html.hatNotFound())
       }
     }
