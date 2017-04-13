@@ -28,10 +28,10 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.Logger
-import play.api.libs.json.{ Json, _ }
+import play.api.data.validation.ValidationError
+import play.api.libs.json.{ JsValue, Json, _ }
 import play.api.test.PlaySpecification
 import play.api.libs.functional.syntax._
-import play.api.libs.json._
 import play.api.libs.json.Reads._
 
 class FlexiDataApi(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito {
@@ -40,79 +40,58 @@ class FlexiDataApi(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
   sequential
 
-  def generateCopyFrom(from: String) = {
+  def parseJsPath(from: String): JsPath = {
     val fromPathNodes: List[PathNode] = from.split('.').map { node =>
-      logger.info(s"Path node: ${node}")
       KeyPathNode(node)
     }.toList
-    val fromPath = JsPath(fromPathNodes)
-
-    fromPath
+    JsPath(fromPathNodes)
   }
 
-  def generateSourceReads(node: String, path: JsPath): Reads[JsValue] = {
-    val nodesLeft = node.split('.')
-    val remainingPath = nodesLeft.tail.mkString(".")
-    nodesLeft.headOption map {
-      case currentNode if currentNode.endsWith("[]") =>
-        path.json.pick.map {
-          case elementList: JsArray => Json.toJson {
-            elementList.value
-              .map {
-                element => element.transform(generateSourceReads(remainingPath, path))
-              }
-              .collect {
-                case JsSuccess(decoded, _) => decoded
-              }
-          }
+  def nestedDataPicker(destination: String, source: JsValue): Reads[JsObject] = {
+    source match {
+      case simpleSource: JsString =>
+        parseJsPath(destination).json.copyFrom(parseJsPath(simpleSource.value).json.pick)
+
+      case source: JsObject =>
+        val nestedMappingPrefix = (source \ "source").get.as[JsString]
+        val sourceJson = parseJsPath(nestedMappingPrefix.value.stripSuffix("[]")).json
+
+        val transformation = (source \ "mappings").get.as[JsObject].fields.map {
+          case (subDestination, subSource) =>
+            nestedDataPicker(subDestination, subSource)
+        } reduceLeft { (reads, addedReads) => reads and addedReads reduce }
+
+        val transformed = if (destination.endsWith("[]")) {
+          sourceJson.pick[JsArray].map(arr => JsArray(arr.value.map(_.transform(transformation).get)))
         }
-      case currentNode => generateSourceReads(remainingPath, path \ currentNode)
-    } getOrElse {
-      path.json.pick
+        else {
+          sourceJson.pick.map(_.transform(transformation).get)
+        }
+
+        parseJsPath(destination.stripSuffix("[]")).json.copyFrom(transformed)
+      case _ =>
+        Reads[JsObject](json => JsError("Invalid mapping template - mappings can only be simple strings or well-structured objects"))
     }
-
-
-//    (__ \ "object" \ "objectFieldObjectArray").json.pick
-//      .map {
-//        case v: JsArray =>
-//          val elements = v.value.map(_.transform(generateDataPicker("subObjectName", "")))
-//            .collect {
-//              case s: JsSuccess[JsValue] => s.get
-//            }
-//          Json.toJson(elements)
-//      }
   }
 
-  def generateDataPicker(from: String, to: String): Reads[JsObject] = {
-    val fromPath = generateCopyFrom(from)
-
-    val toPathNodes = to.split('.').map { node =>
-      //      case node if node.endsWith("[]") =>
-      //      case node => KeyPathNode(node)
-      KeyPathNode(node)
-    }.toList
-    val toPath = JsPath(toPathNodes)
-
-    logger.info(s"From Path: $fromPath")
-    logger.info(s"To Path: $toPath")
-
-    toPath.json.copyFrom(fromPath.json.pick)
+  def mappingTransformer(mapping: JsObject): Reads[JsObject] = {
+    mapping.fields
+      .map(f => nestedDataPicker(f._1, f._2))
+      .reduceLeft((reads, addedReads) => reads and addedReads reduce)
   }
 
   "JSON mappers" should {
     "remap from simple fields to flat json" in new FlexiDataApiContext {
-      val temp = generateCopyFrom("object.array").json.copyFrom{
-        generateSourceReads("")
-      }
+      val transformation = Json.parse("""
+                                        | {
+                                        |   "data.newField": "field",
+                                        |   "data.newField": "anotherField",
+                                        |   "data.arrayField": "object.objectFieldArray"
+                                        | }
+                                      """.stripMargin).as[JsObject]
 
-      val transform = {
-        generateDataPicker("field", "data.newField") and
-          generateDataPicker("anotherField", "data.newField") and
-          generateDataPicker("object.objectFieldArray", "data.arrayField") and
-          temp
-      }
-
-      val resultJson = simpleJson.transform(transform reduce)
+      val transform = mappingTransformer(transformation)
+      val resultJson = simpleJson.transform(transform)
 
       logger.info(s"JSON transformation: $resultJson")
       logger.info(s"Transformed JSON: ${Json.prettyPrint(resultJson.get)}")
@@ -121,6 +100,32 @@ class FlexiDataApi(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
       true must equalTo(false)
     }
+
+    "remap array objects" in new FlexiDataApiContext {
+      val transformation = Json.parse("""
+                                        | {
+                                        |   "data.newField": "field",
+                                        |   "data.simpleArray": "object.objectFieldArray",
+                                        |   "newArray[]": {
+                                        |     "source": "object.objectFieldObjectArray[]",
+                                        |     "mappings": {
+                                        |       "mapTo": "subObjectName",
+                                        |       "mapcopy": "subObjectName",
+                                        |       "anotherProperty": "subObjectName2"
+                                        |     }
+                                        |   }
+                                        | }
+                                      """.stripMargin).as[JsObject]
+
+      val transform = mappingTransformer(transformation)
+      val resultJson = simpleJson.transform(transform)
+
+      logger.info(s"JSON transformation: $resultJson")
+      logger.info(s"Transformed JSON: ${Json.prettyPrint(resultJson.get)}")
+
+      resultJson.get.toString must equalTo("what")
+    }
+
   }
 
 }
@@ -135,8 +140,8 @@ trait FlexiDataApiContext extends Scope {
       |     "objectField": "objectFieldValue",
       |     "objectFieldArray": ["objectFieldArray1", "objectFieldArray2", "objectFieldArray3"],
       |     "objectFieldObjectArray": [
-      |       {"subObjectName": "subObject1"},
-      |       {"subObjectName": "subObject2"}
+      |       {"subObjectName": "subObject1", "subObjectName2": "subObject1-2"},
+      |       {"subObjectName": "subObject2", "subObjectName2": "subObject2-2"}
       |     ]
       |   }
       | }
