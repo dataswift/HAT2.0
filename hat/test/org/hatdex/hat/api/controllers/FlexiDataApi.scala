@@ -28,29 +28,36 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.Logger
-import play.api.data.validation.ValidationError
-import play.api.libs.json.{ JsValue, Json, _ }
-import play.api.test.PlaySpecification
-import play.api.libs.functional.syntax._
+import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.Reads._
+import play.api.libs.json.{JsArray, JsPath, JsValue, Json, Reads, _}
+import play.api.test.PlaySpecification
 
-class FlexiDataApi(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito {
-
+object FlexiDataApi {
   val logger = Logger(this.getClass)
 
-  sequential
+  // How array elements could be accessed by index
+  private val arrayaccessPattern = "(\\w+)(\\[([0-9]+)?\\])?".r
 
   def parseJsPath(from: String): JsPath = {
-    val fromPathNodes: List[PathNode] = from.split('.').map { node =>
-      KeyPathNode(node)
-    }.toList
-    JsPath(fromPathNodes)
+    val pathNodes = from.split('.').map { node =>
+      // the (possibly) extracted array index is the 3rd item in the regex groups
+      val arrayaccessPattern(nodeName, _, item) = node
+      (nodeName, item) match {
+        case (name, null)  => __ \ name
+        case (name, index) => (__ \ name)(index.toInt)
+      }
+    }
+
+    pathNodes.reduceLeft((path, node) => path.compose(node))
   }
 
   def nestedDataPicker(destination: String, source: JsValue): Reads[JsObject] = {
     source match {
       case simpleSource: JsString =>
-        parseJsPath(destination).json.copyFrom(parseJsPath(simpleSource.value).json.pick)
+        parseJsPath(destination).json
+          .copyFrom(parseJsPath(simpleSource.value).json.pick)
+          .orElse(Reads.pure(Json.obj())) // empty object (skipped) if nothing to copy from
 
       case source: JsObject =>
         val nestedMappingPrefix = (source \ "source").get.as[JsString]
@@ -62,15 +69,20 @@ class FlexiDataApi(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
         } reduceLeft { (reads, addedReads) => reads and addedReads reduce }
 
         val transformed = if (destination.endsWith("[]")) {
-          sourceJson.pick[JsArray].map(arr => JsArray(arr.value.map(_.transform(transformation).get)))
+          sourceJson.pick[JsArray].map { arr =>
+            JsArray(arr.value.flatMap(_.transform(transformation).map(Some(_)).getOrElse(None)))
+          }
         }
         else {
           sourceJson.pick.map(_.transform(transformation).get)
         }
 
-        parseJsPath(destination.stripSuffix("[]")).json.copyFrom(transformed)
+        parseJsPath(destination.stripSuffix("[]")).json
+          .copyFrom(transformed)
+          .orElse(Reads.pure(Json.obj()))
+
       case _ =>
-        Reads[JsObject](json => JsError("Invalid mapping template - mappings can only be simple strings or well-structured objects"))
+        Reads[JsObject](_ => JsError("Invalid mapping template - mappings can only be simple strings or well-structured objects"))
     }
   }
 
@@ -79,30 +91,34 @@ class FlexiDataApi(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       .map(f => nestedDataPicker(f._1, f._2))
       .reduceLeft((reads, addedReads) => reads and addedReads reduce)
   }
+}
+
+class FlexiDataApiSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito {
+
+  val logger = Logger(this.getClass)
+
+  sequential
 
   "JSON mappers" should {
     "remap from simple fields to flat json" in new FlexiDataApiContext {
-      val transformation = Json.parse("""
+      val transformation: JsObject = Json.parse("""
                                         | {
                                         |   "data.newField": "field",
                                         |   "data.newField": "anotherField",
-                                        |   "data.arrayField": "object.objectFieldArray"
+                                        |   "data.arrayField": "object.objectFieldArray",
+                                        |   "data.onemore": "object.objectFieldArray[1]"
                                         | }
                                       """.stripMargin).as[JsObject]
 
-      val transform = mappingTransformer(transformation)
-      val resultJson = simpleJson.transform(transform)
+      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataApi.mappingTransformer(transformation))
 
-      logger.info(s"JSON transformation: $resultJson")
-      logger.info(s"Transformed JSON: ${Json.prettyPrint(resultJson.get)}")
-
-      resultJson.get.toString must equalTo("what")
-
-      true must equalTo(false)
+      (resultJson.get \ "data" \ "newField").as[String] must equalTo("anotherFieldValue")
+      (resultJson.get \ "data" \ "arrayField").as[List[String]] must contain("objectFieldArray3")
+      (resultJson.get \ "data" \ "onemore").as[String] must equalTo("objectFieldArray2")
     }
 
     "remap array objects" in new FlexiDataApiContext {
-      val transformation = Json.parse("""
+      val transformation: JsObject = Json.parse("""
                                         | {
                                         |   "data.newField": "field",
                                         |   "data.simpleArray": "object.objectFieldArray",
@@ -117,15 +133,59 @@ class FlexiDataApi(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
                                         | }
                                       """.stripMargin).as[JsObject]
 
-      val transform = mappingTransformer(transformation)
-      val resultJson = simpleJson.transform(transform)
+      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataApi.mappingTransformer(transformation))
 
-      logger.info(s"JSON transformation: $resultJson")
-      logger.info(s"Transformed JSON: ${Json.prettyPrint(resultJson.get)}")
-
-      resultJson.get.toString must equalTo("what")
+      (resultJson.get \ "data" \ "newField").as[String] must equalTo("value")
+      (resultJson.get \ "data" \ "simpleArray").as[List[String]] must contain("objectFieldArray3")
+      ((resultJson.get \ "newArray")(0) \ "mapTo").as[String] must equalTo("subObject1")
+      ((resultJson.get \ "newArray")(1) \ "anotherProperty").as[String] must equalTo("subObject2-2")
     }
 
+    "silently ignore missing fields" in new FlexiDataApiContext {
+      val transformation: JsObject = Json.parse("""
+                                        | {
+                                        |   "data.newField": "field",
+                                        |   "data.otherField": "missingField",
+                                        |   "data.onemore": "object.objectFieldArray[4]"
+                                        | }
+                                      """.stripMargin).as[JsObject]
+
+      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataApi.mappingTransformer(transformation))
+
+      (resultJson.get \ "data" \ "newField").as[String] must equalTo("value")
+      (resultJson.get \ "data" \ "otherField").toOption must beNone
+    }
+
+    "silently ignore missing arrays" in new FlexiDataApiContext {
+      val transformation: JsObject = Json.parse("""
+                                        | {
+                                        |   "data.newField": "field",
+                                        |   "newArray[]": {
+                                        |     "source": "object.missingArray[]",
+                                        |     "mappings": {
+                                        |       "mapTo": "subObjectName"
+                                        |     }
+                                        |   }
+                                        | }
+                                      """.stripMargin).as[JsObject]
+
+      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataApi.mappingTransformer(transformation))
+
+      (resultJson.get \ "data" \ "newField").as[String] must equalTo("value")
+      (resultJson.get \ "newArray").toOption must beNone
+    }
+
+    "return an error for an invalid mapping" in new FlexiDataApiContext {
+      val transformation: JsObject = Json.parse("""
+                                        | {
+                                        |   "data.newField": true
+                                        | }
+                                      """.stripMargin).as[JsObject]
+
+      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataApi.mappingTransformer(transformation))
+
+      resultJson must beAnInstanceOf[JsError]
+    }
   }
 
 }
