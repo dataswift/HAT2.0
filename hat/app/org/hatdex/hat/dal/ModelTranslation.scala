@@ -27,6 +27,7 @@ package org.hatdex.hat.dal
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.service.EndpointData
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.phata.models.MailTokenUser
 
@@ -144,5 +145,9 @@ object ModelTranslation {
   def fromDbModel(userAccessLogRow: UserAccessLogRow, user: HatUser) = {
     HatAccessLog(userAccessLogRow.date.toDateTime, user, userAccessLogRow.`type`,
       userAccessLogRow.scope, userAccessLogRow.applicationName, userAccessLogRow.applicationResource)
+  }
+
+  def fromDbModel(dataJsonRow: DataJsonRow): EndpointData = {
+    EndpointData(dataJsonRow.source, Some(dataJsonRow.recordId), dataJsonRow.data)
   }
 }

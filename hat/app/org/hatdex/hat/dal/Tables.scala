@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{ GetResult => GR }
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, HatFileAccess.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessLog.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataJson.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, HatFileAccess.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessLog.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -471,6 +471,50 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table DataField */
   lazy val DataField = new TableQuery(tag => new DataField(tag))
+
+  /**
+   * Entity class storing rows of table DataJson
+   *  @param recordId Database column record_id SqlType(uuid), PrimaryKey
+   *  @param source Database column source SqlType(varchar)
+   *  @param owner Database column owner SqlType(uuid)
+   *  @param date Database column date SqlType(timestamp)
+   *  @param data Database column data SqlType(jsonb), Length(2147483647,false)
+   *  @param hash Database column hash SqlType(bytea)
+   */
+  case class DataJsonRow(recordId: java.util.UUID, source: String, owner: java.util.UUID, date: org.joda.time.LocalDateTime, data: play.api.libs.json.JsValue, hash: Array[Byte])
+  /** GetResult implicit for fetching DataJsonRow objects using plain SQL queries */
+  implicit def GetResultDataJsonRow(implicit e0: GR[java.util.UUID], e1: GR[String], e2: GR[org.joda.time.LocalDateTime], e3: GR[play.api.libs.json.JsValue], e4: GR[Array[Byte]]): GR[DataJsonRow] = GR {
+    prs =>
+      import prs._
+      DataJsonRow.tupled((<<[java.util.UUID], <<[String], <<[java.util.UUID], <<[org.joda.time.LocalDateTime], <<[play.api.libs.json.JsValue], <<[Array[Byte]]))
+  }
+  /** Table description of table data_json. Objects of this class serve as prototypes for rows in queries. */
+  class DataJson(_tableTag: Tag) extends Table[DataJsonRow](_tableTag, Some("hat"), "data_json") {
+    def * = (recordId, source, owner, date, data, hash) <> (DataJsonRow.tupled, DataJsonRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(recordId), Rep.Some(source), Rep.Some(owner), Rep.Some(date), Rep.Some(data), Rep.Some(hash)).shaped.<>({ r => import r._; _1.map(_ => DataJsonRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column record_id SqlType(uuid), PrimaryKey */
+    val recordId: Rep[java.util.UUID] = column[java.util.UUID]("record_id", O.PrimaryKey)
+    /** Database column source SqlType(varchar) */
+    val source: Rep[String] = column[String]("source")
+    /** Database column owner SqlType(uuid) */
+    val owner: Rep[java.util.UUID] = column[java.util.UUID]("owner")
+    /** Database column date SqlType(timestamp) */
+    val date: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date")
+    /** Database column data SqlType(jsonb), Length(2147483647,false) */
+    val data: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("data", O.Length(2147483647, varying = false))
+    /** Database column hash SqlType(bytea) */
+    val hash: Rep[Array[Byte]] = column[Array[Byte]]("hash")
+
+    /** Foreign key referencing UserUser (database name data_json_owner_fkey) */
+    lazy val userUserFk = foreignKey("data_json_owner_fkey", owner, UserUser)(r => r.userId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+
+    /** Uniqueness Index over (hash) (database name data_json_hash_key) */
+    val index1 = index("data_json_hash_key", hash, unique = true)
+  }
+  /** Collection-like TableQuery object for table DataJson */
+  lazy val DataJson = new TableQuery(tag => new DataJson(tag))
 
   /**
    * Entity class storing rows of table DataRecord

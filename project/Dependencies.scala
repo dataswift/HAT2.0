@@ -119,7 +119,7 @@ object Dependencies {
       val slick = "com.typesafe.slick" %% "slick" % slickVersion
       val slickHikari = "com.typesafe.slick" %% "slick-hikaricp" % slickVersion
       val slickCodegen = "com.typesafe.slick" %% "slick-codegen" % slickVersion
-      val slick_pgV = "0.14.2"
+      val slick_pgV = "0.14.6"
       val slickPgCore = "com.github.tminglei" % "slick-pg_core_2.11" % slick_pgV
       val slickPg = "com.github.tminglei" %% "slick-pg" % slick_pgV
       val slickPgJoda = "com.github.tminglei" %% "slick-pg_joda-time" % slick_pgV

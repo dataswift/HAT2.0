@@ -19,79 +19,18 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 3 / 2017
+ * 4 / 2017
  */
 
-package org.hatdex.hat.api.controllers
+package org.hatdex.hat.api.service
 
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.Logger
-import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json.Reads._
-import play.api.libs.json.{JsArray, JsPath, JsValue, Json, Reads, _}
+import play.api.libs.json.{ JsValue, Json, _ }
 import play.api.test.PlaySpecification
-
-object FlexiDataApi {
-  val logger = Logger(this.getClass)
-
-  // How array elements could be accessed by index
-  private val arrayaccessPattern = "(\\w+)(\\[([0-9]+)?\\])?".r
-
-  def parseJsPath(from: String): JsPath = {
-    val pathNodes = from.split('.').map { node =>
-      // the (possibly) extracted array index is the 3rd item in the regex groups
-      val arrayaccessPattern(nodeName, _, item) = node
-      (nodeName, item) match {
-        case (name, null)  => __ \ name
-        case (name, index) => (__ \ name)(index.toInt)
-      }
-    }
-
-    pathNodes.reduceLeft((path, node) => path.compose(node))
-  }
-
-  def nestedDataPicker(destination: String, source: JsValue): Reads[JsObject] = {
-    source match {
-      case simpleSource: JsString =>
-        parseJsPath(destination).json
-          .copyFrom(parseJsPath(simpleSource.value).json.pick)
-          .orElse(Reads.pure(Json.obj())) // empty object (skipped) if nothing to copy from
-
-      case source: JsObject =>
-        val nestedMappingPrefix = (source \ "source").get.as[JsString]
-        val sourceJson = parseJsPath(nestedMappingPrefix.value.stripSuffix("[]")).json
-
-        val transformation = (source \ "mappings").get.as[JsObject].fields.map {
-          case (subDestination, subSource) =>
-            nestedDataPicker(subDestination, subSource)
-        } reduceLeft { (reads, addedReads) => reads and addedReads reduce }
-
-        val transformed = if (destination.endsWith("[]")) {
-          sourceJson.pick[JsArray].map { arr =>
-            JsArray(arr.value.flatMap(_.transform(transformation).map(Some(_)).getOrElse(None)))
-          }
-        }
-        else {
-          sourceJson.pick.map(_.transform(transformation).get)
-        }
-
-        parseJsPath(destination.stripSuffix("[]")).json
-          .copyFrom(transformed)
-          .orElse(Reads.pure(Json.obj()))
-
-      case _ =>
-        Reads[JsObject](_ => JsError("Invalid mapping template - mappings can only be simple strings or well-structured objects"))
-    }
-  }
-
-  def mappingTransformer(mapping: JsObject): Reads[JsObject] = {
-    mapping.fields
-      .map(f => nestedDataPicker(f._1, f._2))
-      .reduceLeft((reads, addedReads) => reads and addedReads reduce)
-  }
-}
 
 class FlexiDataApiSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito {
 
@@ -110,7 +49,7 @@ class FlexiDataApiSpec(implicit ee: ExecutionEnv) extends PlaySpecification with
                                         | }
                                       """.stripMargin).as[JsObject]
 
-      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataApi.mappingTransformer(transformation))
+      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataMapping.mappingTransformer(transformation))
 
       (resultJson.get \ "data" \ "newField").as[String] must equalTo("anotherFieldValue")
       (resultJson.get \ "data" \ "arrayField").as[List[String]] must contain("objectFieldArray3")
@@ -133,7 +72,7 @@ class FlexiDataApiSpec(implicit ee: ExecutionEnv) extends PlaySpecification with
                                         | }
                                       """.stripMargin).as[JsObject]
 
-      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataApi.mappingTransformer(transformation))
+      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataMapping.mappingTransformer(transformation))
 
       (resultJson.get \ "data" \ "newField").as[String] must equalTo("value")
       (resultJson.get \ "data" \ "simpleArray").as[List[String]] must contain("objectFieldArray3")
@@ -150,7 +89,7 @@ class FlexiDataApiSpec(implicit ee: ExecutionEnv) extends PlaySpecification with
                                         | }
                                       """.stripMargin).as[JsObject]
 
-      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataApi.mappingTransformer(transformation))
+      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataMapping.mappingTransformer(transformation))
 
       (resultJson.get \ "data" \ "newField").as[String] must equalTo("value")
       (resultJson.get \ "data" \ "otherField").toOption must beNone
@@ -169,7 +108,7 @@ class FlexiDataApiSpec(implicit ee: ExecutionEnv) extends PlaySpecification with
                                         | }
                                       """.stripMargin).as[JsObject]
 
-      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataApi.mappingTransformer(transformation))
+      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataMapping.mappingTransformer(transformation))
 
       (resultJson.get \ "data" \ "newField").as[String] must equalTo("value")
       (resultJson.get \ "newArray").toOption must beNone
@@ -182,7 +121,7 @@ class FlexiDataApiSpec(implicit ee: ExecutionEnv) extends PlaySpecification with
                                         | }
                                       """.stripMargin).as[JsObject]
 
-      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataApi.mappingTransformer(transformation))
+      val resultJson: JsResult[JsObject] = simpleJson.transform(FlexiDataMapping.mappingTransformer(transformation))
 
       resultJson must beAnInstanceOf[JsError]
     }
