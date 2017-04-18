@@ -40,20 +40,81 @@ class FlexiDataApi(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
   sequential
 
+  def generateCopyFrom(from: String) = {
+    val fromPathNodes: List[PathNode] = from.split('.').map { node =>
+      logger.info(s"Path node: ${node}")
+      KeyPathNode(node)
+    }.toList
+    val fromPath = JsPath(fromPathNodes)
+
+    fromPath
+  }
+
+  def generateSourceReads(node: String, path: JsPath): Reads[JsValue] = {
+    val nodesLeft = node.split('.')
+    val remainingPath = nodesLeft.tail.mkString(".")
+    nodesLeft.headOption map {
+      case currentNode if currentNode.endsWith("[]") =>
+        path.json.pick.map {
+          case elementList: JsArray => Json.toJson {
+            elementList.value
+              .map {
+                element => element.transform(generateSourceReads(remainingPath, path))
+              }
+              .collect {
+                case JsSuccess(decoded, _) => decoded
+              }
+          }
+        }
+      case currentNode => generateSourceReads(remainingPath, path \ currentNode)
+    } getOrElse {
+      path.json.pick
+    }
+
+
+//    (__ \ "object" \ "objectFieldObjectArray").json.pick
+//      .map {
+//        case v: JsArray =>
+//          val elements = v.value.map(_.transform(generateDataPicker("subObjectName", "")))
+//            .collect {
+//              case s: JsSuccess[JsValue] => s.get
+//            }
+//          Json.toJson(elements)
+//      }
+  }
+
+  def generateDataPicker(from: String, to: String): Reads[JsObject] = {
+    val fromPath = generateCopyFrom(from)
+
+    val toPathNodes = to.split('.').map { node =>
+      //      case node if node.endsWith("[]") =>
+      //      case node => KeyPathNode(node)
+      KeyPathNode(node)
+    }.toList
+    val toPath = JsPath(toPathNodes)
+
+    logger.info(s"From Path: $fromPath")
+    logger.info(s"To Path: $toPath")
+
+    toPath.json.copyFrom(fromPath.json.pick)
+  }
+
   "JSON mappers" should {
     "remap from simple fields to flat json" in new FlexiDataApiContext {
-      val transform = {
-        val jsPath = __ \ 'data \ 'newField
-        val jsPathFrom = __ \ 'field
-
-        (__ \ 'data \ 'newField).json.copyFrom((__ \ 'field).json.pick) and // copy record id into the notable data
-          (__ \ 'data \ 'newField).json.copyFrom((__ \ 'anotherField).json.pick) and
-          (__ \ 'data \ 'arrayField).json.copyFrom((__ \ 'object \ 'objectFieldArray).json.pick) reduce //and
-        //          (__ \ 'data \ 'subObjectArray).json.copyFrom((__ \ 'object \ 'objectFieldObjectArray(0) \ 'subObjectName).json.pick) reduce
+      val temp = generateCopyFrom("object.array").json.copyFrom{
+        generateSourceReads("")
       }
 
-      val resultJson = simpleJson.transform(transform)
+      val transform = {
+        generateDataPicker("field", "data.newField") and
+          generateDataPicker("anotherField", "data.newField") and
+          generateDataPicker("object.objectFieldArray", "data.arrayField") and
+          temp
+      }
 
+      val resultJson = simpleJson.transform(transform reduce)
+
+      logger.info(s"JSON transformation: $resultJson")
       logger.info(s"Transformed JSON: ${Json.prettyPrint(resultJson.get)}")
 
       resultJson.get.toString must equalTo("what")
