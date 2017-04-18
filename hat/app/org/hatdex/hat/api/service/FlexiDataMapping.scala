@@ -39,13 +39,15 @@ import org.joda.time.LocalDateTime
 import scala.concurrent.Future
 
 case class EndpointData(
-  endpoint: String,
-  recordId: Option[UUID],
-  data: JsValue)
+    endpoint: String,
+    recordId: Option[UUID],
+    data: JsValue,
+    links: Option[Seq[EndpointData]])
 
 case class EndpointQuery(
     endpoint: String,
-    mapping: JsValue) {
+    mapping: JsValue,
+    links: Option[Seq[EndpointQuery]]) {
   def originalField(field: String): List[String] = {
     (mapping \ field)
       .toOption
@@ -63,12 +65,12 @@ object FlexiDataMapping {
   val logger = Logger(this.getClass)
 
   // How array elements could be accessed by index
-  private val arrayaccessPattern = "(\\w+)(\\[([0-9]+)?\\])?".r
+  private val arrayAccessPattern = "(\\w+)(\\[([0-9]+)?\\])?".r
 
   def parseJsPath(from: String): JsPath = {
     val pathNodes = from.split('.').map { node =>
       // the (possibly) extracted array index is the 3rd item in the regex groups
-      val arrayaccessPattern(nodeName, _, item) = node
+      val arrayAccessPattern(nodeName, _, item) = node
       (nodeName, item) match {
         case (name, null)  => __ \ name
         case (name, index) => (__ \ name)(index.toInt)
@@ -140,10 +142,37 @@ class FlexiDataObject extends DalExecutionContext {
   }
 
   def saveData(userId: UUID, endpointData: List[EndpointData])(implicit db: Database): Future[Seq[EndpointData]] = {
-    val query = (DataJson returning DataJson) ++= endpointData.map(i => dbDataRow(i.endpoint, userId, i.data))
-    db.run(query.transactionally)
-      .map { inserted =>
-        inserted.map(ModelTranslation.fromDbModel)
+    val queries = endpointData map { endpointDataGroup =>
+      val endpointRow = dbDataRow(endpointDataGroup.endpoint, userId, endpointDataGroup.data)
+
+      val linkedRows = endpointDataGroup.links
+        .map(_.toList).getOrElse(List())
+        .map(i => dbDataRow(i.endpoint, userId, i.data))
+
+      val recordIds = endpointRow.recordId :: linkedRows.map(_.recordId)
+
+      val (groupRow, groupRecordRows) = if (recordIds.length > 1) {
+        val groupRow = DataJsonGroupsRow(UUID.randomUUID(), userId, LocalDateTime.now())
+        val groupRecordRows = recordIds.map(DataJsonGroupRecordsRow(groupRow.groupId, _))
+        (Seq(groupRow), groupRecordRows)
+      }
+      else {
+        (Seq(), Seq())
+      }
+
+      for {
+        endpointData <- (DataJson returning DataJson) += endpointRow
+        linkedData <- (DataJson returning DataJson) ++= linkedRows
+        group <- DataJsonGroups ++= groupRow
+        groupRecords <- DataJsonGroupRecords ++= groupRecordRows
+      } yield (endpointData, linkedData, group, groupRecords)
+    }
+
+    db.run(DBIO.sequence(queries).transactionally)
+      .map {
+        _.map { inserted =>
+          ModelTranslation.fromDbModel(inserted._1, inserted._2)
+        }
       }
   }
 
@@ -182,8 +211,11 @@ class FlexiDataObject extends DalExecutionContext {
     db.run(queryWithMappers._1.result).map { results =>
       results map {
         case (data, mapperIndex) =>
-          EndpointData(data.source, Some(data.recordId), data.data.transform(mappers(mapperIndex))
-            .getOrElse(Json.obj()))
+          EndpointData(
+            data.source,
+            Some(data.recordId),
+            data.data.transform(mappers(mapperIndex)).getOrElse(Json.obj()),
+            None)
       }
     }
   }

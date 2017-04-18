@@ -148,6 +148,10 @@ object ModelTranslation {
   }
 
   def fromDbModel(dataJsonRow: DataJsonRow): EndpointData = {
-    EndpointData(dataJsonRow.source, Some(dataJsonRow.recordId), dataJsonRow.data)
+    EndpointData(dataJsonRow.source, Some(dataJsonRow.recordId), dataJsonRow.data, None)
+  }
+
+  def fromDbModel(dataJsonRow: DataJsonRow, linkedDataJsonRows: Seq[DataJsonRow]): EndpointData = {
+    EndpointData(dataJsonRow.source, Some(dataJsonRow.recordId), dataJsonRow.data, Some(linkedDataJsonRows.map(fromDbModel)))
   }
 }

@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{ GetResult => GR }
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataJson.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, HatFileAccess.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessLog.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataJson.schema, DataJsonGroupRecords.schema, DataJsonGroups.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, HatFileAccess.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessLog.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -515,6 +515,72 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table DataJson */
   lazy val DataJson = new TableQuery(tag => new DataJson(tag))
+
+  /**
+   * Entity class storing rows of table DataJsonGroupRecords
+   *  @param groupId Database column group_id SqlType(uuid)
+   *  @param recordId Database column record_id SqlType(uuid)
+   */
+  case class DataJsonGroupRecordsRow(groupId: java.util.UUID, recordId: java.util.UUID)
+  /** GetResult implicit for fetching DataJsonGroupRecordsRow objects using plain SQL queries */
+  implicit def GetResultDataJsonGroupRecordsRow(implicit e0: GR[java.util.UUID]): GR[DataJsonGroupRecordsRow] = GR {
+    prs =>
+      import prs._
+      DataJsonGroupRecordsRow.tupled((<<[java.util.UUID], <<[java.util.UUID]))
+  }
+  /** Table description of table data_json_group_records. Objects of this class serve as prototypes for rows in queries. */
+  class DataJsonGroupRecords(_tableTag: Tag) extends Table[DataJsonGroupRecordsRow](_tableTag, Some("hat"), "data_json_group_records") {
+    def * = (groupId, recordId) <> (DataJsonGroupRecordsRow.tupled, DataJsonGroupRecordsRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(groupId), Rep.Some(recordId)).shaped.<>({ r => import r._; _1.map(_ => DataJsonGroupRecordsRow.tupled((_1.get, _2.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column group_id SqlType(uuid) */
+    val groupId: Rep[java.util.UUID] = column[java.util.UUID]("group_id")
+    /** Database column record_id SqlType(uuid) */
+    val recordId: Rep[java.util.UUID] = column[java.util.UUID]("record_id")
+
+    /** Primary key of DataJsonGroupRecords (database name data_json_group_records_pkey) */
+    val pk = primaryKey("data_json_group_records_pkey", (groupId, recordId))
+
+    /** Foreign key referencing DataJson (database name data_json_group_records_record_id_fkey) */
+    lazy val dataJsonFk = foreignKey("data_json_group_records_record_id_fkey", recordId, DataJson)(r => r.recordId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+    /** Foreign key referencing DataJsonGroups (database name data_json_group_records_group_id_fkey) */
+    lazy val dataJsonGroupsFk = foreignKey("data_json_group_records_group_id_fkey", groupId, DataJsonGroups)(r => r.groupId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table DataJsonGroupRecords */
+  lazy val DataJsonGroupRecords = new TableQuery(tag => new DataJsonGroupRecords(tag))
+
+  /**
+   * Entity class storing rows of table DataJsonGroups
+   *  @param groupId Database column group_id SqlType(uuid), PrimaryKey
+   *  @param owner Database column owner SqlType(uuid)
+   *  @param date Database column date SqlType(timestamp)
+   */
+  case class DataJsonGroupsRow(groupId: java.util.UUID, owner: java.util.UUID, date: org.joda.time.LocalDateTime)
+  /** GetResult implicit for fetching DataJsonGroupsRow objects using plain SQL queries */
+  implicit def GetResultDataJsonGroupsRow(implicit e0: GR[java.util.UUID], e1: GR[org.joda.time.LocalDateTime]): GR[DataJsonGroupsRow] = GR {
+    prs =>
+      import prs._
+      DataJsonGroupsRow.tupled((<<[java.util.UUID], <<[java.util.UUID], <<[org.joda.time.LocalDateTime]))
+  }
+  /** Table description of table data_json_groups. Objects of this class serve as prototypes for rows in queries. */
+  class DataJsonGroups(_tableTag: Tag) extends Table[DataJsonGroupsRow](_tableTag, Some("hat"), "data_json_groups") {
+    def * = (groupId, owner, date) <> (DataJsonGroupsRow.tupled, DataJsonGroupsRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(groupId), Rep.Some(owner), Rep.Some(date)).shaped.<>({ r => import r._; _1.map(_ => DataJsonGroupsRow.tupled((_1.get, _2.get, _3.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column group_id SqlType(uuid), PrimaryKey */
+    val groupId: Rep[java.util.UUID] = column[java.util.UUID]("group_id", O.PrimaryKey)
+    /** Database column owner SqlType(uuid) */
+    val owner: Rep[java.util.UUID] = column[java.util.UUID]("owner")
+    /** Database column date SqlType(timestamp) */
+    val date: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date")
+
+    /** Foreign key referencing UserUser (database name data_json_groups_owner_fkey) */
+    lazy val userUserFk = foreignKey("data_json_groups_owner_fkey", owner, UserUser)(r => r.userId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table DataJsonGroups */
+  lazy val DataJsonGroups = new TableQuery(tag => new DataJsonGroups(tag))
 
   /**
    * Entity class storing rows of table DataRecord

@@ -64,7 +64,7 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "Save a single JSON datapoint and add ID" in {
       val service = application.injector.instanceOf[FlexiDataObject]
 
-      val saved = service.saveData(owner.userId, List(EndpointData("test", None, simpleJson)))
+      val saved = service.saveData(owner.userId, List(EndpointData("test", None, simpleJson, None)))
 
       saved map { record =>
         record.length must equalTo(1)
@@ -76,9 +76,9 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val service = application.injector.instanceOf[FlexiDataObject]
 
       val data = List(
-        EndpointData("test", None, simpleJson),
-        EndpointData("test", None, simpleJson2),
-        EndpointData("complex", None, complexJson))
+        EndpointData("test", None, simpleJson, None),
+        EndpointData("test", None, simpleJson2, None),
+        EndpointData("complex", None, complexJson, None))
       val saved = service.saveData(owner.userId, data)
 
       saved map { record =>
@@ -90,16 +90,32 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val service = application.injector.instanceOf[FlexiDataObject]
 
       val data = List(
-        EndpointData("test", None, simpleJson),
-        EndpointData("test", None, simpleJson2),
-        EndpointData("complex", None, complexJson))
+        EndpointData("test", None, simpleJson, None),
+        EndpointData("test", None, simpleJson2, None),
+        EndpointData("complex", None, complexJson, None))
 
       val saved = for {
-        _ <- service.saveData(owner.userId, List(EndpointData("test", None, simpleJson)))
+        _ <- service.saveData(owner.userId, List(EndpointData("test", None, simpleJson, None)))
         saved <- service.saveData(owner.userId, data)
       } yield saved
 
       saved must throwA[Exception].await(3, 10.seconds)
+    }
+
+    "Save linked JSON datapoints" in {
+      val service = application.injector.instanceOf[FlexiDataObject]
+
+      val data = List(
+        EndpointData("test", None, simpleJson,
+          Some(List(EndpointData("test", None, simpleJson2, None)))))
+      val saved = service.saveData(owner.userId, data)
+
+      saved map { record =>
+        record.length must equalTo(1)
+        record.head.links must beSome
+        record.head.links.get.length must equalTo(1)
+        (record.head.links.get.head.data \ "field").as[String] must equalTo("value2")
+      } await (3, 10.seconds)
     }
   }
 
@@ -108,13 +124,13 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val service = application.injector.instanceOf[FlexiDataObject]
 
       val data = List(
-        EndpointData("test", None, simpleJson),
-        EndpointData("test", None, simpleJson2),
-        EndpointData("complex", None, complexJson))
+        EndpointData("test", None, simpleJson, None),
+        EndpointData("test", None, simpleJson2, None),
+        EndpointData("complex", None, complexJson, None))
 
       val result = for {
         _ <- service.saveData(owner.userId, data)
-        retrieved <- service.propertyData(List(EndpointQuery("test", simpleTransformation)), "data.newField", 1)
+        retrieved <- service.propertyData(List(EndpointQuery("test", simpleTransformation, None)), "data.newField", 1)
       } yield retrieved
 
       result map { result =>
@@ -127,15 +143,15 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val service = application.injector.instanceOf[FlexiDataObject]
 
       val data = List(
-        EndpointData("test", None, simpleJson),
-        EndpointData("test", None, simpleJson2),
-        EndpointData("complex", None, complexJson))
+        EndpointData("test", None, simpleJson, None),
+        EndpointData("test", None, simpleJson2, None),
+        EndpointData("complex", None, complexJson, None))
 
       val result = for {
         _ <- service.saveData(owner.userId, data)
         retrieved <- service.propertyData(List(
-          EndpointQuery("test", simpleTransformation),
-          EndpointQuery("complex", complexTransformation)), "data.newField", 3)
+          EndpointQuery("test", simpleTransformation, None),
+          EndpointQuery("complex", complexTransformation, None)), "data.newField", 3)
       } yield retrieved
 
       result map { result =>
@@ -151,13 +167,13 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val service = application.injector.instanceOf[FlexiDataObject]
 
       val data = List(
-        EndpointData("test", None, simpleJson),
-        EndpointData("test", None, simpleJson2),
-        EndpointData("complex", None, complexJson))
+        EndpointData("test", None, simpleJson, None),
+        EndpointData("test", None, simpleJson2, None),
+        EndpointData("complex", None, complexJson, None))
 
       val query = Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test", simpleTransformation)), "data.newField", 3),
-        "complex" -> PropertyQuery(List(EndpointQuery("complex", complexTransformation)), "data.newField", 1))
+        "test" -> PropertyQuery(List(EndpointQuery("test", simpleTransformation, None)), "data.newField", 3),
+        "complex" -> PropertyQuery(List(EndpointQuery("complex", complexTransformation, None)), "data.newField", 1))
       val result = for {
         _ <- service.saveData(owner.userId, data)
         retrieved <- service.bundleData(query)
