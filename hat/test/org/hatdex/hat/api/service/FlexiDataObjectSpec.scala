@@ -130,7 +130,7 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       val result = for {
         _ <- service.saveData(owner.userId, data)
-        retrieved <- service.propertyData(List(EndpointQuery("test", simpleTransformation, None)), "data.newField", 1)
+        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None)), "data.newField", 1)
       } yield retrieved
 
       result map { result =>
@@ -150,14 +150,36 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val result = for {
         _ <- service.saveData(owner.userId, data)
         retrieved <- service.propertyData(List(
-          EndpointQuery("test", simpleTransformation, None),
-          EndpointQuery("complex", complexTransformation, None)), "data.newField", 3)
+          EndpointQuery("test", Some(simpleTransformation), None),
+          EndpointQuery("complex", Some(complexTransformation), None)), "data.newField", 3)
       } yield retrieved
 
       result map { result =>
         result.length must equalTo(3)
         (result.head.data \ "data" \ "newField").as[String] must equalTo("anotherFieldDifferentValue")
-        (result(2).data \ "data" \ "newField").as[String] must equalTo("london, uk")
+      } await (3, 10.seconds)
+    }
+
+    "Retrieved linked object records" in {
+      val service = application.injector.instanceOf[FlexiDataObject]
+
+      val data = List(
+        EndpointData("test", None, simpleJson,
+          Some(List(EndpointData("testlinked", None, simpleJson2, None)))))
+
+      val result = for {
+        _ <- service.saveData(owner.userId, data)
+        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation),
+          Some(List(EndpointQuery("testlinked", None, None))))), "data.newField", 1)
+      } yield retrieved
+
+      result map { result =>
+        //        logger.info(s"The whole result: ${result.mkString("\n")}")
+        result.length must equalTo(1)
+        (result.head.data \ "data" \ "newField").as[String] must equalTo("anotherFieldValue")
+        result.head.links must beSome
+        result.head.links.get.length must equalTo(1)
+        (result.head.links.get.head.data \ "field").as[String] must equalTo("value2")
       } await (3, 10.seconds)
     }
   }
@@ -172,8 +194,8 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         EndpointData("complex", None, complexJson, None))
 
       val query = Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test", simpleTransformation, None)), "data.newField", 3),
-        "complex" -> PropertyQuery(List(EndpointQuery("complex", complexTransformation, None)), "data.newField", 1))
+        "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None)), "data.newField", 3),
+        "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None)), "data.newField", 1))
       val result = for {
         _ <- service.saveData(owner.userId, data)
         retrieved <- service.bundleData(query)

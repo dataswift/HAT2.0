@@ -36,23 +36,26 @@ import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
 
+import scala.annotation.tailrec
+import scala.collection.immutable.HashMap
 import scala.concurrent.Future
 
 case class EndpointData(
-    endpoint: String,
-    recordId: Option[UUID],
-    data: JsValue,
-    links: Option[Seq[EndpointData]])
+  endpoint: String,
+  recordId: Option[UUID],
+  data: JsValue,
+  links: Option[Seq[EndpointData]])
 
 case class EndpointQuery(
     endpoint: String,
-    mapping: JsValue,
+    mapping: Option[JsValue],
     links: Option[Seq[EndpointQuery]]) {
-  def originalField(field: String): List[String] = {
-    (mapping \ field)
-      .toOption
-      .map(_.as[String].split('.').toList)
-      .getOrElse(List())
+  def originalField(field: String): Option[List[String]] = {
+    mapping.flatMap { m =>
+      (m \ field)
+        .toOption
+        .map(_.as[String].split('.').toList)
+    }
   }
 }
 
@@ -176,46 +179,115 @@ class FlexiDataObject extends DalExecutionContext {
       }
   }
 
-  def saveRecordGroup(userId: UUID, endpointData: List[EndpointData])(implicit db: Database): Future[UUID] = {
-    // TODO: method to mark a group of records as belonging to the same "group"
-    val group = endpointData.flatMap(_.recordId)
-    val groupId = UUID.randomUUID()
-    Future.failed(new RuntimeException("Not implemented"))
+  def saveRecordGroup(userId: UUID, recordIds: List[UUID])(implicit db: Database): Future[UUID] = {
+    val groupRow = DataJsonGroupsRow(UUID.randomUUID(), userId, LocalDateTime.now())
+    val groupRecordRows = recordIds.map(DataJsonGroupRecordsRow(groupRow.groupId, _))
+
+    val query = for {
+      group <- DataJsonGroups += groupRow
+      groupRecords <- DataJsonGroupRecords ++= groupRecordRows
+    } yield (group, groupRecords)
+
+    db.run(query.transactionally)
+      .map { _ =>
+        groupRow.groupId
+      }
   }
 
-  private def propertyDataQuery(endpointQueries: List[EndpointQuery], orderBy: String, limit: Int): (Query[(DataJson, ConstColumn[Int]), (DataJsonRow, Int), Seq], List[Reads[JsObject]]) = {
+  private def propertyDataQuery(endpointQueries: Seq[EndpointQuery], orderBy: String, limit: Int): (Query[((DataJson, ConstColumn[String]), Rep[Option[DataJson]]), ((DataJsonRow, String), Option[DataJsonRow]), Seq], HashMap[String, Reads[JsObject]]) = {
+    val mappers = endpointQueries.zipWithIndex flatMap {
+      case (endpointQuery, index) =>
+        val id = index.toString
+        val transformer = endpointQuery.mapping collect {
+          case m: JsObject => FlexiDataMapping.mappingTransformer(m)
+        }
+        val subTransformers = endpointQuery.links.getOrElse(Seq()).zipWithIndex.map {
+          case (link, subIndex) =>
+            val transformer = link.mapping collect {
+              case m: JsObject => FlexiDataMapping.mappingTransformer(m)
+            }
+            (s"$id-$subIndex", transformer)
+        }
+
+        id -> transformer :: subTransformers.toList
+    } collect {
+      case (id, Some(transformer)) => id -> transformer
+    }
+
     val queriesWithMappers = endpointQueries.zipWithIndex map {
       case (endpointQuery, index) =>
-        val transformer = FlexiDataMapping.mappingTransformer(endpointQuery.mapping.as[JsObject])
-        val query = for {
+        for {
           data <- DataJson.filter(_.source === endpointQuery.endpoint)
-        } yield (data, data.data #> endpointQuery.originalField(orderBy), index)
-
-        (query, transformer)
+        } yield (data, data.data #> endpointQuery.originalField(orderBy), index.toString)
     }
 
-    val queryUnion = queriesWithMappers.unzip._1.reduce { (aggregate, query) =>
-      aggregate.unionAll(query)
-    }
+    val queryUnion = queriesWithMappers.reduce((aggregate, query) => aggregate.unionAll(query))
 
-    val resultQuery = queryUnion.sortBy(_._2)
+    val endpointDataQuery = queryUnion.sortBy(_._2)
       .take(limit)
       .map(r => (r._1, r._3))
 
-    (resultQuery, queriesWithMappers.unzip._2)
+    val linkedRecordQueries = endpointQueries.zipWithIndex flatMap {
+      case (endpointQuery, index) =>
+        endpointQuery.links map { links =>
+          links.zipWithIndex map {
+            case (link, linkIndex) =>
+              for {
+                group <- DataJsonGroupRecords
+                groupLinks <- DataJsonGroupRecords.map(v => (v.groupId, v.recordId)) if group.groupId === groupLinks._1 && group.recordId =!= groupLinks._2
+                linkedRecords <- DataJson.filter(_.source === link.endpoint).filter(_.recordId === groupLinks._2)
+              } yield (index.toString, s"$index-$linkIndex", group.recordId, linkedRecords)
+          }
+        }
+    }
+
+    val maybeGroupRecords = linkedRecordQueries.flatten
+      .reduceLeftOption((aggregate, query) => aggregate.unionAll(query))
+
+    val resultQuery = maybeGroupRecords map { groupRecords =>
+      for {
+        ((endpointData, group), linkedRecord) <- endpointDataQuery.joinLeft(groupRecords)
+          .on((l, r) => l._1.recordId === r._3)
+      } yield ((endpointData, group), linkedRecord.map(_._4))
+    } getOrElse {
+      for {
+        ((endpointData, group), linkedRecord) <- endpointDataQuery.joinLeft(DataJson.take(0))
+      } yield ((endpointData, group), linkedRecord)
+    }
+
+    (resultQuery, HashMap(mappers: _*))
+  }
+
+  implicit def equalDataJsonRowIdentity(a: (DataJsonRow, String), b: (DataJsonRow, String)): Boolean = {
+    a._1.recordId == b._1.recordId
+  }
+
+  @tailrec
+  private def groupRecords[T, U](list: Seq[(T, Option[U])], groups: Seq[(T, Seq[U])] = Seq())(implicit equalIdentity: ((T, T) => Boolean)): Seq[(T, Seq[U])] = {
+    if (list.isEmpty) {
+      groups
+    }
+    else {
+      groupRecords(
+        list.dropWhile(v => equalIdentity(v._1, list.head._1)),
+        groups :+ ((list.head._1, list.takeWhile(v => equalIdentity(v._1, list.head._1)).unzip._2.flatten)))
+    }
   }
 
   def propertyData(endpointQueries: List[EndpointQuery], orderBy: String, limit: Int)(implicit db: Database): Future[Seq[EndpointData]] = {
     val queryWithMappers = propertyDataQuery(endpointQueries, orderBy, limit)
     val mappers = queryWithMappers._2
     db.run(queryWithMappers._1.result).map { results =>
-      results map {
-        case (data, mapperIndex) =>
+      groupRecords[(DataJsonRow, String), DataJsonRow](results).map {
+        case ((record, queryId), linkedResults) =>
           EndpointData(
-            data.source,
-            Some(data.recordId),
-            data.data.transform(mappers(mapperIndex)).getOrElse(Json.obj()),
-            None)
+            record.source,
+            Some(record.recordId),
+            mappers.get(queryId)
+              .map(record.data.transform) // apply JSON transformation if it is present
+              .map(_.getOrElse(Json.obj())) // quietly empty object of transformation fails
+              .getOrElse(record.data), // if no mapper, return data as-is
+            Some(linkedResults.map(ModelTranslation.fromDbModel)))
       }
     }
   }

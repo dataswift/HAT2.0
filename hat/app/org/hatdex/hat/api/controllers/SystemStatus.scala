@@ -92,8 +92,8 @@ class SystemStatus @Inject() (
         HatStatus("File Storage", StatusKind.Numeric(fsa._1, Some(fsa._2))),
         HatStatus("Database Storage Used", StatusKind.Numeric(dbsu._1, Some(dbsu._2))),
         HatStatus("File Storage Used", StatusKind.Numeric(fsu._1, Some(fsu._2))),
-        HatStatus("Database Storage Used Share", StatusKind.Numeric(Math.round(dbsize.toDouble / dbStorageAllowance), Some("%"))),
-        HatStatus("File Storage Used Share", StatusKind.Numeric(Math.round(fileSize.toDouble / fileStorageAllowance), Some("%"))))
+        HatStatus("Database Storage Used Share", StatusKind.Numeric(Math.round(dbsize.toDouble * 100 / dbStorageAllowance), Some("%"))),
+        HatStatus("File Storage Used Share", StatusKind.Numeric(Math.round(fileSize.toDouble * 100 / fileStorageAllowance), Some("%"))))
     }
 
     eventualStatus map { stats =>
