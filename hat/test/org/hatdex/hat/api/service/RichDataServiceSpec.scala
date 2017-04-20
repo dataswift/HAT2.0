@@ -50,7 +50,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with FlexiDataObjectContext with BeforeEach {
+class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichDataServiceContext with BeforeEach {
 
   val logger = Logger(this.getClass)
 
@@ -62,7 +62,7 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
   "The `saveData` method" should {
     "Save a single JSON datapoint and add ID" in {
-      val service = application.injector.instanceOf[FlexiDataObject]
+      val service = application.injector.instanceOf[RichDataService]
 
       val saved = service.saveData(owner.userId, List(EndpointData("test", None, simpleJson, None)))
 
@@ -73,7 +73,7 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     }
 
     "Save multiple JSON datapoints" in {
-      val service = application.injector.instanceOf[FlexiDataObject]
+      val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
         EndpointData("test", None, simpleJson, None),
@@ -87,7 +87,7 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     }
 
     "Refuse to save data with duplicate records" in {
-      val service = application.injector.instanceOf[FlexiDataObject]
+      val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
         EndpointData("test", None, simpleJson, None),
@@ -103,7 +103,7 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     }
 
     "Save linked JSON datapoints" in {
-      val service = application.injector.instanceOf[FlexiDataObject]
+      val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
         EndpointData("test", None, simpleJson,
@@ -121,7 +121,7 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
   "The `propertyData` method" should {
     "Find test endpoint values and map them to expected json output" in {
-      val service = application.injector.instanceOf[FlexiDataObject]
+      val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
         EndpointData("test", None, simpleJson, None),
@@ -140,7 +140,7 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     }
 
     "Correctly sort retrieved results" in {
-      val service = application.injector.instanceOf[FlexiDataObject]
+      val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
         EndpointData("test", None, simpleJson, None),
@@ -163,7 +163,7 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     }
 
     "Apply different mappers converting from different endpoints into a single format" in {
-      val service = application.injector.instanceOf[FlexiDataObject]
+      val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
         EndpointData("test", None, simpleJson, None),
@@ -184,7 +184,7 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     }
 
     "Retrieved linked object records" in {
-      val service = application.injector.instanceOf[FlexiDataObject]
+      val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
         EndpointData("test", None, simpleJson,
@@ -211,7 +211,7 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     }
 
     "Leave out unrequested object records" in {
-      val service = application.injector.instanceOf[FlexiDataObject]
+      val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
         EndpointData("test", None, simpleJson,
@@ -235,7 +235,7 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     }
 
     "Apply mappers to linked objects if provided" in {
-      val service = application.injector.instanceOf[FlexiDataObject]
+      val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
         EndpointData("test", None, simpleJson,
@@ -259,9 +259,48 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     }
   }
 
+  "The `saveRecordGroup` method" should {
+    "Link up inserted records for retrieval" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val data = List(
+        EndpointData("test", None, simpleJson, None),
+        EndpointData("test", None, simpleJson2, None),
+        EndpointData("complex", None, complexJson, None))
+
+      val result = for {
+        saved <- service.saveData(owner.userId, data)
+        linked <- service.saveRecordGroup(owner.userId, saved.flatMap(_.recordId))
+        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation),
+          Some(List(
+            EndpointQuery("test", None, None),
+            EndpointQuery("complex", None, None))))), "data.newField", 3)
+      } yield retrieved
+
+      result map { result =>
+        result.length must equalTo(2)
+        (result.head.data \ "data" \ "newField").as[String] must equalTo("anotherFieldDifferentValue")
+        result.head.links must beSome
+        result.head.links.get.length must equalTo(2)
+        result.head.links.get(0).endpoint must equalTo("test")
+        result.head.links.get(1).endpoint must equalTo("complex")
+      } await (3, 10.seconds)
+    }
+
+    "Throw an error if linked records do not exist" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val result = for {
+        linked <- service.saveRecordGroup(owner.userId, Seq(UUID.randomUUID(), UUID.randomUUID()))
+      } yield linked
+
+      result must throwA[Exception].await(3, 10.seconds)
+    }
+  }
+
   "The `bundleData` method" should {
     "retrieve values into corresponding properties" in {
-      val service = application.injector.instanceOf[FlexiDataObject]
+      val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
         EndpointData("test", None, simpleJson, None),
@@ -290,7 +329,7 @@ class FlexiDataObjectSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
 }
 
-trait FlexiDataObjectContext extends Scope {
+trait RichDataServiceContext extends Scope {
   // Initialize configuration
   val hatAddress = "hat.hubofallthings.net"
   val hatUrl = s"http://$hatAddress"

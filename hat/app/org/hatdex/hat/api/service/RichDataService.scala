@@ -27,14 +27,12 @@ package org.hatdex.hat.api.service
 import java.security.MessageDigest
 import java.util.UUID
 
-import play.api.Logger
-import play.api.libs.functional.syntax.toFunctionalBuilderOps
-import play.api.libs.json.Reads._
-import play.api.libs.json.{ JsArray, JsPath, JsValue, Json, Reads, _ }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
 import org.joda.time.LocalDateTime
+import play.api.Logger
+import play.api.libs.json._
 
 import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
@@ -64,77 +62,7 @@ case class PropertyQuery(
   orderBy: String,
   limit: Int)
 
-object FlexiDataMapping {
-  val logger = Logger(this.getClass)
-
-  // How array elements could be accessed by index
-  private val arrayAccessPattern = "(\\w+)(\\[([0-9]+)?\\])?".r
-
-  def parseJsPath(from: String): JsPath = {
-    val pathNodes = from.split('.').map { node =>
-      // the (possibly) extracted array index is the 3rd item in the regex groups
-      val arrayAccessPattern(nodeName, _, item) = node
-      (nodeName, item) match {
-        case (name, null)  => __ \ name
-        case (name, index) => (__ \ name)(index.toInt)
-      }
-    }
-
-    pathNodes.reduceLeft((path, node) => path.compose(node))
-  }
-
-  def nestedDataPicker(destination: String, source: JsValue): Reads[JsObject] = {
-    source match {
-      case simpleSource: JsString =>
-        parseJsPath(destination).json
-          .copyFrom(parseJsPath(simpleSource.value).json.pick)
-          .orElse(Reads.pure(Json.obj())) // empty object (skipped) if nothing to copy from
-
-      case source: JsObject =>
-        val nestedMappingPrefix = (source \ "source").get.as[JsString]
-        val sourceJson = parseJsPath(nestedMappingPrefix.value.stripSuffix("[]")).json
-
-        val transformation = (source \ "mappings").get.as[JsObject].fields.map {
-          case (subDestination, subSource) =>
-            nestedDataPicker(subDestination, subSource)
-        } reduceLeft { (reads, addedReads) => reads and addedReads reduce }
-
-        val transformed = if (destination.endsWith("[]")) {
-          sourceJson.pick[JsArray].map { arr =>
-            JsArray(arr.value.flatMap(_.transform(transformation).map(Some(_)).getOrElse(None)))
-          }
-        }
-        else {
-          sourceJson.pick.map(_.transform(transformation).get)
-        }
-
-        parseJsPath(destination.stripSuffix("[]")).json
-          .copyFrom(transformed)
-          .orElse(Reads.pure(Json.obj()))
-
-      case _ =>
-        Reads[JsObject](_ => JsError("Invalid mapping template - mappings can only be simple strings or well-structured objects"))
-    }
-  }
-
-  //  private def sumFieldsTogether(): Unit = {
-  //    // TODO: example future code to potentially do more complex transformations based on operators
-  //    (__ \ 'sum).json
-  //      .copyFrom(
-  //        ((__ \ 'key1).read[Int] and (__ \ 'key2).read[Int])
-  //          .tupled
-  //          .map { t => t.productIterator.reduce((acc: Int, b: Int) => acc + b) }
-  //          .map(JsNumber(_)))
-  //  }
-
-  def mappingTransformer(mapping: JsObject): Reads[JsObject] = {
-    mapping.fields
-      .map(f => nestedDataPicker(f._1, f._2))
-      .reduceLeft((reads, addedReads) => reads and addedReads reduce)
-  }
-}
-
-class FlexiDataObject extends DalExecutionContext {
+class RichDataService extends DalExecutionContext {
 
   val logger = Logger(this.getClass)
 
@@ -179,7 +107,7 @@ class FlexiDataObject extends DalExecutionContext {
       }
   }
 
-  def saveRecordGroup(userId: UUID, recordIds: List[UUID])(implicit db: Database): Future[UUID] = {
+  def saveRecordGroup(userId: UUID, recordIds: Seq[UUID])(implicit db: Database): Future[UUID] = {
     val groupRow = DataJsonGroupsRow(UUID.randomUUID(), userId, LocalDateTime.now())
     val groupRecordRows = recordIds.map(DataJsonGroupRecordsRow(groupRow.groupId, _))
 
@@ -199,12 +127,12 @@ class FlexiDataObject extends DalExecutionContext {
       case (endpointQuery, index) =>
         val id = index.toString
         val transformer = endpointQuery.mapping collect {
-          case m: JsObject => id -> FlexiDataMapping.mappingTransformer(m)
+          case m: JsObject => id -> JsonDataTransformer.mappingTransformer(m)
         }
         val subTransformers = endpointQuery.links.getOrElse(Seq()).zipWithIndex.map {
           case (link, subIndex) =>
             link.mapping collect {
-              case m: JsObject => s"$id-$subIndex" -> FlexiDataMapping.mappingTransformer(m)
+              case m: JsObject => s"$id-$subIndex" -> JsonDataTransformer.mappingTransformer(m)
             }
         }
         (subTransformers :+ transformer).flatten
