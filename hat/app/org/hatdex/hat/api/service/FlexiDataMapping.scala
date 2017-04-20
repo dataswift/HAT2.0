@@ -194,68 +194,66 @@ class FlexiDataObject extends DalExecutionContext {
       }
   }
 
-  private def propertyDataQuery(endpointQueries: Seq[EndpointQuery], orderBy: String, limit: Int): (Query[((DataJson, ConstColumn[String]), Rep[Option[DataJson]]), ((DataJsonRow, String), Option[DataJsonRow]), Seq], HashMap[String, Reads[JsObject]]) = {
+  private def queryMappers(endpointQueries: Seq[EndpointQuery]): HashMap[String, Reads[JsObject]] = {
     val mappers = endpointQueries.zipWithIndex flatMap {
       case (endpointQuery, index) =>
         val id = index.toString
         val transformer = endpointQuery.mapping collect {
-          case m: JsObject => FlexiDataMapping.mappingTransformer(m)
+          case m: JsObject => id -> FlexiDataMapping.mappingTransformer(m)
         }
         val subTransformers = endpointQuery.links.getOrElse(Seq()).zipWithIndex.map {
           case (link, subIndex) =>
-            val transformer = link.mapping collect {
-              case m: JsObject => FlexiDataMapping.mappingTransformer(m)
+            link.mapping collect {
+              case m: JsObject => s"$id-$subIndex" -> FlexiDataMapping.mappingTransformer(m)
             }
-            (s"$id-$subIndex", transformer)
         }
-
-        id -> transformer :: subTransformers.toList
-    } collect {
-      case (id, Some(transformer)) => id -> transformer
+        (subTransformers :+ transformer).flatten
     }
+    HashMap(mappers: _*)
+  }
 
+  private def propertyDataQuery(endpointQueries: Seq[EndpointQuery], orderBy: String, limit: Int): Query[((DataJson, ConstColumn[String]), Rep[Option[(DataJson, ConstColumn[String])]]), ((DataJsonRow, String), Option[(DataJsonRow, String)]), Seq] = {
     val queriesWithMappers = endpointQueries.zipWithIndex map {
-      case (endpointQuery, index) =>
+      case (endpointQuery, endpointQueryIndex) =>
         for {
           data <- DataJson.filter(_.source === endpointQuery.endpoint)
-        } yield (data, data.data #> endpointQuery.originalField(orderBy), index.toString)
+        } yield (data, data.data #> endpointQuery.originalField(orderBy), endpointQueryIndex.toString)
     }
 
-    val queryUnion = queriesWithMappers.reduce((aggregate, query) => aggregate.unionAll(query))
+    val endpointDataQuery = queriesWithMappers
+      .reduce((aggregate, query) => aggregate.unionAll(query)) // merge all the queries together
+      .sortBy(_._2) // order all the results by the chosen column
+      .take(limit) // take the desired number of records
 
-    val endpointDataQuery = queryUnion.sortBy(_._2)
-      .take(limit)
-      .map(r => (r._1, r._3))
-
-    val linkedRecordQueries = endpointQueries.zipWithIndex flatMap {
-      case (endpointQuery, index) =>
+    val linkedRecordQueries = endpointQueries.zipWithIndex map {
+      case (endpointQuery, endpointQueryIndex) =>
         endpointQuery.links map { links =>
           links.zipWithIndex map {
             case (link, linkIndex) =>
               for {
-                group <- DataJsonGroupRecords
-                groupLinks <- DataJsonGroupRecords.map(v => (v.groupId, v.recordId)) if group.groupId === groupLinks._1 && group.recordId =!= groupLinks._2
-                linkedRecords <- DataJson.filter(_.source === link.endpoint).filter(_.recordId === groupLinks._2)
-              } yield (index.toString, s"$index-$linkIndex", group.recordId, linkedRecords)
+                endpointQueryRecordGroup <- DataJsonGroupRecords
+                (linkedGroupId, linkedRecordId) <- DataJsonGroupRecords.map(v => (v.groupId, v.recordId)) if endpointQueryRecordGroup.groupId === linkedGroupId && endpointQueryRecordGroup.recordId =!= linkedRecordId
+                linkedRecord <- DataJson.filter(_.source === link.endpoint).filter(_.recordId === linkedRecordId)
+              } yield (endpointQueryIndex.toString, s"$endpointQueryIndex-$linkIndex", endpointQueryRecordGroup.recordId, linkedRecord)
           }
+        } getOrElse {
+          Seq(for {
+            noGroup <- DataJsonGroupRecords.take(0)
+            noLinkedRecord <- DataJson.take(0)
+          } yield (endpointQueryIndex.toString, s"$endpointQueryIndex-", noGroup.recordId, noLinkedRecord))
         }
     }
 
-    val maybeGroupRecords = linkedRecordQueries.flatten
-      .reduceLeftOption((aggregate, query) => aggregate.unionAll(query))
+    val groupRecords = linkedRecordQueries.flatten
+      .reduce((aggregate, query) => aggregate.unionAll(query))
 
-    val resultQuery = maybeGroupRecords map { groupRecords =>
-      for {
-        ((endpointData, group), linkedRecord) <- endpointDataQuery.joinLeft(groupRecords)
-          .on((l, r) => l._1.recordId === r._3)
-      } yield ((endpointData, group), linkedRecord.map(_._4))
-    } getOrElse {
-      for {
-        ((endpointData, group), linkedRecord) <- endpointDataQuery.joinLeft(DataJson.take(0))
-      } yield ((endpointData, group), linkedRecord)
-    }
+    val resultQuery = endpointDataQuery
+      .joinLeft(groupRecords)
+      .on((l, r) => l._1.recordId === r._3 && l._3.asColumnOf[String] === r._1.asColumnOf[String])
+      .sortBy(_._1._2)
+      .map(v => ((v._1._1, v._1._3), v._2.map(lr => (lr._4, lr._2))))
 
-    (resultQuery, HashMap(mappers: _*))
+    resultQuery
   }
 
   implicit def equalDataJsonRowIdentity(a: (DataJsonRow, String), b: (DataJsonRow, String)): Boolean = {
@@ -275,21 +273,35 @@ class FlexiDataObject extends DalExecutionContext {
   }
 
   def propertyData(endpointQueries: List[EndpointQuery], orderBy: String, limit: Int)(implicit db: Database): Future[Seq[EndpointData]] = {
-    val queryWithMappers = propertyDataQuery(endpointQueries, orderBy, limit)
-    val mappers = queryWithMappers._2
-    db.run(queryWithMappers._1.result).map { results =>
-      groupRecords[(DataJsonRow, String), DataJsonRow](results).map {
+    val query = propertyDataQuery(endpointQueries, orderBy, limit)
+    val mappers = queryMappers(endpointQueries)
+    db.run(query.result).map { results =>
+      groupRecords[(DataJsonRow, String), (DataJsonRow, String)](results).map {
         case ((record, queryId), linkedResults) =>
-          EndpointData(
-            record.source,
-            Some(record.recordId),
-            mappers.get(queryId)
-              .map(record.data.transform) // apply JSON transformation if it is present
-              .map(_.getOrElse(Json.obj())) // quietly empty object of transformation fails
-              .getOrElse(record.data), // if no mapper, return data as-is
-            Some(linkedResults.map(ModelTranslation.fromDbModel)))
+          val linked = linkedResults.map {
+            case (linkedRecord, linkedQueryId) =>
+              endpointDataWithMappers(linkedRecord, linkedQueryId, mappers)
+          }
+          val endpointData = endpointDataWithMappers(record, queryId, mappers)
+          if (linked.nonEmpty) {
+            endpointData.copy(links = Some(linked))
+          }
+          else {
+            endpointData
+          }
       }
     }
+  }
+
+  private def endpointDataWithMappers(record: DataJsonRow, queryId: String, mappers: HashMap[String, Reads[JsObject]]): EndpointData = {
+    EndpointData(
+      record.source,
+      Some(record.recordId),
+      mappers.get(queryId)
+        .map(record.data.transform) // apply JSON transformation if it is present
+        .map(_.getOrElse(Json.obj())) // quietly empty object of transformation fails
+        .getOrElse(record.data), // if no mapper, return data as-is
+      None)
   }
 
   def bundleData(bundle: Map[String, PropertyQuery])(implicit db: Database): Future[Map[String, Seq[EndpointData]]] = {
