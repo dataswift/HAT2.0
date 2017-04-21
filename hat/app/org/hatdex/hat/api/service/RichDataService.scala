@@ -44,9 +44,35 @@ case class EndpointData(
   data: JsValue,
   links: Option[Seq[EndpointData]])
 
+object FilterOperator {
+  trait Operator {
+    val operator: String
+  }
+
+  case class In(value: JsValue) extends Operator {
+    val operator = "in"
+  }
+  case class Contains(value: JsValue) extends Operator {
+    val operator = "contains"
+  }
+  case class Between(lower: JsValue, upper: JsValue) extends Operator {
+    val operator = "between"
+  }
+}
+
+case class EndpointQueryFilter(
+    field: String,
+    transformation: Option[String],
+    operator: FilterOperator.Operator) {
+  def originalField: List[String] = {
+    field.split('.').toList
+  }
+}
+
 case class EndpointQuery(
     endpoint: String,
     mapping: Option[JsValue],
+    filters: Option[Seq[EndpointQueryFilter]],
     links: Option[Seq[EndpointQuery]]) {
   def originalField(field: String): Option[List[String]] = {
     mapping.flatMap { m =>
@@ -140,11 +166,37 @@ class RichDataService extends DalExecutionContext {
     HashMap(mappers: _*)
   }
 
+  protected[service] def generatedDataQuery(endpointQuery: EndpointQuery, query: Query[DataJson, DataJsonRow, Seq]): Query[DataJson, DataJsonRow, Seq] = {
+    val q = query.filter(_.source === endpointQuery.endpoint)
+    endpointQuery.filters map { filters =>
+      generateDataQueryFiltered(filters, q)
+    } getOrElse {
+      q
+    }
+  }
+
+  private def generateDataQueryFiltered(filters: Seq[EndpointQueryFilter], query: Query[DataJson, DataJsonRow, Seq]): Query[DataJson, DataJsonRow, Seq] = {
+    import FilterOperator._
+    if (filters.isEmpty) {
+      query
+    }
+    else {
+      val currentFilter = filters.head
+      val currentQuery = currentFilter.operator match {
+        case Contains(value)       => query.filter(d => (d.data #> currentFilter.originalField) @> value)
+        case In(value)             => query.filter(d => value <@: (d.data #> currentFilter.originalField))
+        case Between(lower, upper) => query.filter(d => (d.data #> currentFilter.originalField) between (lower, upper))
+        case _                     => query
+      }
+      generateDataQueryFiltered(filters.tail, currentQuery)
+    }
+  }
+
   private def propertyDataQuery(endpointQueries: Seq[EndpointQuery], orderBy: String, limit: Int): Query[((DataJson, ConstColumn[String]), Rep[Option[(DataJson, ConstColumn[String])]]), ((DataJsonRow, String), Option[(DataJsonRow, String)]), Seq] = {
     val queriesWithMappers = endpointQueries.zipWithIndex map {
       case (endpointQuery, endpointQueryIndex) =>
         for {
-          data <- DataJson.filter(_.source === endpointQuery.endpoint)
+          data <- generatedDataQuery(endpointQuery, DataJson)
         } yield (data, data.data #> endpointQuery.originalField(orderBy), endpointQueryIndex.toString)
     }
 
@@ -161,7 +213,7 @@ class RichDataService extends DalExecutionContext {
               for {
                 endpointQueryRecordGroup <- DataJsonGroupRecords
                 (linkedGroupId, linkedRecordId) <- DataJsonGroupRecords.map(v => (v.groupId, v.recordId)) if endpointQueryRecordGroup.groupId === linkedGroupId && endpointQueryRecordGroup.recordId =!= linkedRecordId
-                linkedRecord <- DataJson.filter(_.source === link.endpoint).filter(_.recordId === linkedRecordId)
+                linkedRecord <- generatedDataQuery(link, DataJson.filter(_.recordId === linkedRecordId))
               } yield (endpointQueryIndex.toString, s"$endpointQueryIndex-$linkIndex", endpointQueryRecordGroup.recordId, linkedRecord)
           }
         } getOrElse {

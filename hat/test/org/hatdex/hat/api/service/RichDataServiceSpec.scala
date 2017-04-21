@@ -37,6 +37,7 @@ import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
+import org.hatdex.hat.dal.Tables.DataJson
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -130,7 +131,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       val result = for {
         _ <- service.saveData(owner.userId, data)
-        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None)), "data.newField", 1)
+        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None, None)), "data.newField", 1)
       } yield retrieved
 
       result map { result =>
@@ -150,8 +151,8 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val result = for {
         _ <- service.saveData(owner.userId, data)
         retrieved <- service.propertyData(List(
-          EndpointQuery("test", Some(simpleTransformation), None),
-          EndpointQuery("complex", Some(complexTransformation), None)), "data.newField", 3)
+          EndpointQuery("test", Some(simpleTransformation), None, None),
+          EndpointQuery("complex", Some(complexTransformation), None, None)), "data.newField", 3)
       } yield retrieved
 
       result map { result =>
@@ -173,8 +174,8 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val result = for {
         _ <- service.saveData(owner.userId, data)
         retrieved <- service.propertyData(List(
-          EndpointQuery("test", Some(simpleTransformation), None),
-          EndpointQuery("complex", Some(complexTransformation), None)), "data.newField", 3)
+          EndpointQuery("test", Some(simpleTransformation), None, None),
+          EndpointQuery("complex", Some(complexTransformation), None, None)), "data.newField", 3)
       } yield retrieved
 
       result map { result =>
@@ -194,10 +195,10 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       val result = for {
         _ <- service.saveData(owner.userId, data)
-        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation),
+        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None,
           Some(List(
-            EndpointQuery("testlinked", None, None),
-            EndpointQuery("complex", None, None))))), "data.newField", 1)
+            EndpointQuery("testlinked", None, None, None),
+            EndpointQuery("complex", None, None, None))))), "data.newField", 1)
       } yield retrieved
 
       result map { result =>
@@ -221,8 +222,8 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       val result = for {
         _ <- service.saveData(owner.userId, data)
-        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation),
-          Some(List(EndpointQuery("testlinked", None, None))))), "data.newField", 1)
+        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None,
+          Some(List(EndpointQuery("testlinked", None, None, None))))), "data.newField", 1)
       } yield retrieved
 
       result map { result =>
@@ -245,8 +246,8 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       val result = for {
         _ <- service.saveData(owner.userId, data)
-        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation),
-          Some(List(EndpointQuery("testlinked", Some(simpleTransformation), None))))), "data.newField", 1)
+        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None,
+          Some(List(EndpointQuery("testlinked", Some(simpleTransformation), None, None))))), "data.newField", 1)
       } yield retrieved
 
       result map { result =>
@@ -271,10 +272,10 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val result = for {
         saved <- service.saveData(owner.userId, data)
         linked <- service.saveRecordGroup(owner.userId, saved.flatMap(_.recordId))
-        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation),
+        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None,
           Some(List(
-            EndpointQuery("test", None, None),
-            EndpointQuery("complex", None, None))))), "data.newField", 3)
+            EndpointQuery("test", None, None, None),
+            EndpointQuery("complex", None, None, None))))), "data.newField", 3)
       } yield retrieved
 
       result map { result =>
@@ -298,6 +299,98 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     }
   }
 
+  "The `generatedDataQuery` method" should {
+
+    val data = List(
+      EndpointData("test", None, simpleJson, None),
+      EndpointData("test", None, simpleJson2, None),
+      EndpointData("complex", None, complexJson, None))
+
+    import org.hatdex.hat.dal.SlickPostgresDriver.api._
+
+    "retrieve all results without any additional filters" in {
+      val service = application.injector.instanceOf[RichDataService]
+      val query = service.generatedDataQuery(EndpointQuery("test", None, None, None), DataJson)
+
+      val result = for {
+        _ <- service.saveData(owner.userId, data)
+        retrieved <- hatDatabase.run(query.result)
+      } yield retrieved
+
+      result map { retrievedRows =>
+        retrievedRows.length should equalTo(2)
+      } await (3, 10.seconds)
+    }
+
+    "retrieve results with a `Contains` filter " in {
+      val service = application.injector.instanceOf[RichDataService]
+      val query = service.generatedDataQuery(EndpointQuery("test", None,
+        Some(Seq(
+          EndpointQueryFilter("object.objectFieldArray", None, FilterOperator.Contains(Json.toJson("objectFieldArray2"))))), None), DataJson)
+
+      val result = for {
+        _ <- service.saveData(owner.userId, data)
+        retrieved <- hatDatabase.run(query.result)
+      } yield retrieved
+
+      result map { retrievedRows =>
+        retrievedRows.length should equalTo(2)
+      } await (3, 10.seconds)
+    }
+
+    "use `Contains` filter for equality" in {
+      val service = application.injector.instanceOf[RichDataService]
+      val query = service.generatedDataQuery(EndpointQuery("test", None,
+        Some(Seq(
+          EndpointQueryFilter("field", None, FilterOperator.Contains(Json.toJson("value2"))))), None), DataJson)
+
+      val result = for {
+        _ <- service.saveData(owner.userId, data)
+        retrieved <- hatDatabase.run(query.result)
+      } yield retrieved
+
+      result map { retrievedRows =>
+        retrievedRows.length should equalTo(1)
+        (retrievedRows.head.data \ "anotherField").as[String] must equalTo("anotherFieldDifferentValue")
+      } await (3, 10.seconds)
+    }
+
+    "retrieve results with a `Between` filter" in {
+      val service = application.injector.instanceOf[RichDataService]
+      val query = service.generatedDataQuery(EndpointQuery("test", None,
+        Some(Seq(
+          EndpointQueryFilter("date", None, FilterOperator.Between(Json.toJson(1492699000), Json.toJson(1492799000))))), None), DataJson)
+
+      val result = for {
+        _ <- service.saveData(owner.userId, data)
+        retrieved <- hatDatabase.run(query.result)
+      } yield retrieved
+
+      result map { retrievedRows =>
+        retrievedRows.length should equalTo(1)
+        (retrievedRows.head.data \ "anotherField").as[String] must equalTo("anotherFieldValue")
+      } await (3, 10.seconds)
+    }
+
+    "Use the `In` filter for a 'one-of' matching " in {
+      val service = application.injector.instanceOf[RichDataService]
+      val query = service.generatedDataQuery(EndpointQuery("test", None,
+        Some(Seq(
+          EndpointQueryFilter("field", None, FilterOperator.In(Json.parse("""["value", "value2"]"""))))), None), DataJson)
+
+      logger.info(s"Generated query: \n ${query.result.statements.mkString("\n")}")
+
+      val result = for {
+        _ <- service.saveData(owner.userId, data)
+        retrieved <- hatDatabase.run(query.result)
+      } yield retrieved
+
+      result map { retrievedRows =>
+        retrievedRows.length should equalTo(2)
+      } await (3, 10.seconds)
+    }
+  }
+
   "The `bundleData` method" should {
     "retrieve values into corresponding properties" in {
       val service = application.injector.instanceOf[RichDataService]
@@ -308,8 +401,8 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         EndpointData("complex", None, complexJson, None))
 
       val query = Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None)), "data.newField", 3),
-        "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None)), "data.newField", 1))
+        "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), "data.newField", 3),
+        "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None, None)), "data.newField", 1))
       val result = for {
         _ <- service.saveData(owner.userId, data)
         retrieved <- service.bundleData(query)
@@ -395,6 +488,7 @@ trait RichDataServiceContext extends Scope {
     """
       | {
       |   "field": "value",
+      |   "date": 1492699047,
       |   "anotherField": "anotherFieldValue",
       |   "object": {
       |     "objectField": "objectFieldValue",
@@ -411,6 +505,7 @@ trait RichDataServiceContext extends Scope {
     """
       | {
       |   "field": "value2",
+      |   "date": 1492799047,
       |   "anotherField": "anotherFieldDifferentValue",
       |   "object": {
       |     "objectField": "objectFieldValue",
