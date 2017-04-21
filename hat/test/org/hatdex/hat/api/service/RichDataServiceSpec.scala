@@ -389,6 +389,46 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         retrievedRows.length should equalTo(2)
       } await (3, 10.seconds)
     }
+
+    "Use transformation operator for date conversion combined with a `Between` filter" in {
+      val service = application.injector.instanceOf[RichDataService]
+      val query = service.generatedDataQuery(EndpointQuery("test", None,
+        Some(Seq(
+          EndpointQueryFilter(
+            "date_iso",
+            Some(FieldTransformation.DateTimeExtract("hour")),
+            FilterOperator.Between(Json.toJson(14), Json.toJson(17))))), None), DataJson)
+
+      val result = for {
+        _ <- service.saveData(owner.userId, data)
+        retrieved <- hatDatabase.run(query.result)
+      } yield retrieved
+
+      result map { retrievedRows =>
+        retrievedRows.length should equalTo(1)
+        (retrievedRows.head.data \ "anotherField").as[String] must equalTo("anotherFieldValue")
+      } await (3, 10.seconds)
+    }
+
+    "Run search with a `Find` filter" in {
+      val service = application.injector.instanceOf[RichDataService]
+      val query = service.generatedDataQuery(EndpointQuery("complex", None,
+        Some(Seq(
+          EndpointQueryFilter(
+            "hometown.name",
+            None,
+            FilterOperator.Find(Json.toJson("london"))))), None), DataJson)
+
+      val result = for {
+        _ <- service.saveData(owner.userId, data)
+        retrieved <- hatDatabase.run(query.result)
+      } yield retrieved
+
+      result map { retrievedRows =>
+        retrievedRows.length should equalTo(1)
+        (retrievedRows.head.data \ "email").as[String] must equalTo("email@example.com")
+      } await (3, 10.seconds)
+    }
   }
 
   "The `bundleData` method" should {
@@ -489,6 +529,7 @@ trait RichDataServiceContext extends Scope {
       | {
       |   "field": "value",
       |   "date": 1492699047,
+      |   "date_iso": "2017-04-20T14:37:27+00:00",
       |   "anotherField": "anotherFieldValue",
       |   "object": {
       |     "objectField": "objectFieldValue",
@@ -506,6 +547,7 @@ trait RichDataServiceContext extends Scope {
       | {
       |   "field": "value2",
       |   "date": 1492799047,
+      |   "date_iso": "2017-04-21T18:24:07+00:00",
       |   "anotherField": "anotherFieldDifferentValue",
       |   "object": {
       |     "objectField": "objectFieldValue",

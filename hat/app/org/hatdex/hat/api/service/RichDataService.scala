@@ -25,12 +25,14 @@
 package org.hatdex.hat.api.service
 
 import java.security.MessageDigest
+import java.sql.Timestamp
 import java.util.UUID
 
+import com.github.tminglei.slickpg.TsVector
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
-import org.joda.time.LocalDateTime
+import org.joda.time.{ DateTime, LocalDateTime }
 import play.api.Logger
 import play.api.libs.json._
 
@@ -58,11 +60,45 @@ object FilterOperator {
   case class Between(lower: JsValue, upper: JsValue) extends Operator {
     val operator = "between"
   }
+  case class Find(search: JsValue) extends Operator {
+    val operator = "matches"
+  }
+}
+
+object FieldTransformation {
+  trait Transformation {
+    def transform(value: Rep[JsValue]): Rep[JsValue] = value
+  }
+
+  case class Identity() extends Transformation
+
+  case class DateTimeExtract(part: String) extends Transformation {
+    override def transform(value: Rep[JsValue]): Rep[JsValue] = {
+      toJson(datePart(part, value.asColumnOf[String].asColumnOf[DateTime]))
+    }
+  }
+
+  case class TimestampExtract(part: String) extends Transformation {
+    override def transform(value: Rep[JsValue]): Rep[JsValue] = {
+      toJson(datePartTimestamp(part, toTimestamp(value.asColumnOf[Double])))
+    }
+  }
+
+  case class Searchable() extends Transformation {
+    def transformCustom(value: Rep[JsValue]): Rep[TsVector] = {
+      toTsVector(value.asColumnOf[String])
+    }
+  }
+
+  private val toJson = SimpleFunction.unary[String, JsValue]("to_jsonb")
+  private val toTimestamp = SimpleFunction.unary[Double, Timestamp]("to_timestamp")
+  private val datePart = SimpleFunction.binary[String, DateTime, String]("date_part")
+  private val datePartTimestamp = SimpleFunction.binary[String, Timestamp, String]("date_part")
 }
 
 case class EndpointQueryFilter(
     field: String,
-    transformation: Option[String],
+    transformation: Option[FieldTransformation.Transformation],
     operator: FilterOperator.Operator) {
   def originalField: List[String] = {
     field.split('.').toList
@@ -182,10 +218,12 @@ class RichDataService extends DalExecutionContext {
     }
     else {
       val currentFilter = filters.head
+      val currentTransformation = currentFilter.transformation.getOrElse(FieldTransformation.Identity())
       val currentQuery = currentFilter.operator match {
-        case Contains(value)       => query.filter(d => (d.data #> currentFilter.originalField) @> value)
-        case In(value)             => query.filter(d => value <@: (d.data #> currentFilter.originalField))
-        case Between(lower, upper) => query.filter(d => (d.data #> currentFilter.originalField) between (lower, upper))
+        case Contains(value)       => query.filter(d => currentTransformation.transform(d.data #> currentFilter.originalField) @> value)
+        case In(value)             => query.filter(d => value <@: currentTransformation.transform(d.data #> currentFilter.originalField))
+        case Between(lower, upper) => query.filter(d => currentTransformation.transform(d.data #> currentFilter.originalField) between (lower, upper))
+        case Find(searchTerm)      => query.filter(d => FieldTransformation.Searchable().transformCustom(d.data #> currentFilter.originalField) @@ plainToTsQuery(searchTerm.asColumnOf[String]))
         case _                     => query
       }
       generateDataQueryFiltered(filters.tail, currentQuery)
