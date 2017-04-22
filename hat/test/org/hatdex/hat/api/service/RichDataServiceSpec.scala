@@ -36,8 +36,9 @@ import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
+import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
-import org.hatdex.hat.dal.Tables.DataJson
+import org.hatdex.hat.dal.Tables.{ DataJson, DataJsonGroups }
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -378,8 +379,6 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         Some(Seq(
           EndpointQueryFilter("field", None, FilterOperator.In(Json.parse("""["value", "value2"]"""))))), None), DataJson)
 
-      logger.info(s"Generated query: \n ${query.result.statements.mkString("\n")}")
-
       val result = for {
         _ <- service.saveData(owner.userId, data)
         retrieved <- hatDatabase.run(query.result)
@@ -457,6 +456,155 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         result("complex").length must equalTo(1)
         (result("complex")(0).data \ "data" \ "newField").as[String] must equalTo("london, uk")
       } await (3, 10.seconds)
+    }
+  }
+
+  "The `deleteRecords` method" should {
+    "delete all required records" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val data = List(
+        EndpointData("test", None, simpleJson, None),
+        EndpointData("test", None, simpleJson2, None),
+        EndpointData("complex", None, complexJson, None))
+
+      val result = for {
+        saved <- service.saveData(owner.userId, data)
+        deleted <- service.deleteRecords(owner.userId, Seq(saved(1).recordId.get))
+        retrieved <- service.propertyData(List(
+          EndpointQuery("test", Some(simpleTransformation), None, None),
+          EndpointQuery("complex", Some(complexTransformation), None, None)), "data.newField", 3)
+      } yield retrieved
+
+      result map { result =>
+        result.length must equalTo(2)
+        (result(0).data \ "data" \ "newField").as[String] must equalTo("anotherFieldValue")
+        (result(1).data \ "data" \ "newField").as[String] must equalTo("london, uk")
+      } await (3, 10.seconds)
+    }
+
+    "not delete any records if some requested records do not exist" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val data = List(
+        EndpointData("test", None, simpleJson, None),
+        EndpointData("test", None, simpleJson2, None),
+        EndpointData("complex", None, complexJson, None))
+
+      val result = for {
+        saved <- service.saveData(owner.userId, data)
+        _ <- service.deleteRecords(owner.userId, Seq(saved(1).recordId.get, UUID.randomUUID())).recover { case e => Future.successful(()) }
+        retrieved <- service.propertyData(List(
+          EndpointQuery("test", Some(simpleTransformation), None, None),
+          EndpointQuery("complex", Some(complexTransformation), None, None)), "data.newField", 3)
+      } yield retrieved
+
+      result map { result =>
+        result.length must equalTo(3)
+      } await (3, 10.seconds)
+    }
+
+    "not delete records if provided user Id doesn't match" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val data = List(
+        EndpointData("test", None, simpleJson, None),
+        EndpointData("test", None, simpleJson2, None),
+        EndpointData("complex", None, complexJson, None))
+
+      val result = for {
+        saved <- service.saveData(owner.userId, data)
+        deleted <- service.deleteRecords(dataDebitUser.userId, Seq(saved(1).recordId.get))
+      } yield deleted
+
+      result must throwA[Exception].await(3, 10.seconds)
+    }
+
+    "delete groups if all records in those groups are deleted" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val data = List(
+        EndpointData("test", None, simpleJson,
+          Some(List(
+            EndpointData("testlinked", None, simpleJson2, None),
+            EndpointData("complex", None, complexJson, None)))))
+
+      val result = for {
+        saved <- service.saveData(owner.userId, data)
+        deleted <- service.deleteRecords(owner.userId, saved.head.links.get.map(_.recordId.get) :+ saved.head.recordId.get)
+        groups <- hatDatabase.run(DataJsonGroups.take(1).result)
+      } yield groups
+
+      result map { groups =>
+        groups.isEmpty must beTrue
+      } await (3, 10.seconds)
+    }
+  }
+
+  "The `updateRecords` method" should {
+    "update all required records" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val data = List(
+        EndpointData("test", None, simpleJson, None),
+        EndpointData("test", None, simpleJson2, None),
+        EndpointData("complex", None, complexJson, None))
+
+      val result = for {
+        saved <- service.saveData(owner.userId, data)
+        updated <- service.updateRecords(owner.userId, Seq(saved(1).copy(data = simpleJson2Updated)))
+        retrieved <- service.propertyData(List(
+          EndpointQuery("test", Some(simpleTransformation), None, None),
+          EndpointQuery("complex", Some(complexTransformation), None, None)), "data.newField", 3)
+      } yield retrieved
+
+      result map { result =>
+        logger.info(s"Got results: $result")
+        result.length must equalTo(3)
+        (result(0).data \ "data" \ "newField").as[String] must equalTo("aaa")
+        (result(1).data \ "data" \ "newField").as[String] must equalTo("anotherFieldValue")
+        (result(2).data \ "data" \ "newField").as[String] must equalTo("london, uk")
+      } await (3, 10.seconds)
+    }
+
+    "not update any records if some requested records do not exist" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val data = List(
+        EndpointData("test", None, simpleJson, None),
+        EndpointData("test", None, simpleJson2, None))
+
+      val result = for {
+        saved <- service.saveData(owner.userId, data)
+        _ <- service.updateRecords(owner.userId, Seq(
+          saved(1).copy(data = simpleJson2Updated),
+          EndpointData("complex", None, complexJson, None))).recover { case e => Future.successful(()) }
+        retrieved <- service.propertyData(List(
+          EndpointQuery("test", Some(simpleTransformation), None, None),
+          EndpointQuery("complex", Some(complexTransformation), None, None)), "data.newField", 3)
+      } yield retrieved
+
+      result map { result =>
+        result.length must equalTo(2)
+        (result(0).data \ "data" \ "newField").as[String] must equalTo("anotherFieldDifferentValue")
+        (result(1).data \ "data" \ "newField").as[String] must equalTo("anotherFieldValue")
+      } await (3, 10.seconds)
+    }
+
+    "not update records if provided user Id doesn't match" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val data = List(
+        EndpointData("test", None, simpleJson, None),
+        EndpointData("test", None, simpleJson2, None),
+        EndpointData("complex", None, complexJson, None))
+
+      val result = for {
+        saved <- service.saveData(owner.userId, data)
+        deleted <- service.updateRecords(dataDebitUser.userId, Seq(saved(1).copy(data = simpleJson2Updated)))
+      } yield deleted
+
+      result must throwA[Exception].await(3, 10.seconds)
     }
   }
 
@@ -557,6 +705,17 @@ trait RichDataServiceContext extends Scope {
       |       {"subObjectName": "subObject2", "subObjectName2": "subObject2-2"}
       |     ]
       |   }
+      | }
+    """.stripMargin)
+
+  val simpleJson2Updated = Json.parse(
+    """
+      | {
+      |   "field": "value2",
+      |   "date": 1492799047,
+      |   "date_iso": "2017-04-21T18:24:07+00:00",
+      |   "anotherField": "aaa",
+      |   "differentField": "new"
       | }
     """.stripMargin)
 

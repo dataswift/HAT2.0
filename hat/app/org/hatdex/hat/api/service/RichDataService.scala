@@ -124,14 +124,41 @@ case class PropertyQuery(
   orderBy: String,
   limit: Int)
 
+/*
+
+  {
+    "name": {
+      "endpoints": [
+        {
+          "endpoint": "/rumpel/profile",
+          "mapping": {
+            "name": "owner.name.firstName",
+            "date": "record.lastUpdated"
+          }
+        },
+        {
+          "endpoint": "/bheard/profile",
+          "mapping": {
+            "name": "user.name",
+            "date": "profile.updated"
+          }
+        },
+      ],
+      "orderBy": "date",
+      limit: 1
+    }
+  }
+
+ */
+
 class RichDataService extends DalExecutionContext {
 
   val logger = Logger(this.getClass)
 
-  private def dbDataRow(endpoint: String, userId: UUID, data: JsValue): DataJsonRow = {
+  private def dbDataRow(endpoint: String, userId: UUID, data: JsValue, recordId: Option[UUID] = None): DataJsonRow = {
     val md = MessageDigest.getInstance("SHA-256")
     val digest = md.digest(data.toString.getBytes)
-    DataJsonRow(UUID.randomUUID(), endpoint, userId, LocalDateTime.now(), data, digest)
+    DataJsonRow(recordId.getOrElse(UUID.randomUUID()), endpoint, userId, LocalDateTime.now(), data, digest)
   }
 
   def saveData(userId: UUID, endpointData: List[EndpointData])(implicit db: Database): Future[Seq[EndpointData]] = {
@@ -167,6 +194,34 @@ class RichDataService extends DalExecutionContext {
           ModelTranslation.fromDbModel(inserted._1, inserted._2)
         }
       }
+  }
+
+  def deleteRecords(userId: UUID, recordIds: Seq[UUID])(implicit db: Database): Future[Unit] = {
+    val query = for {
+      deletedGroupRecords <- DataJsonGroupRecords.filter(_.recordId inSet recordIds).delete // delete links between records and groups
+      deletedGroups <- DataJsonGroups.filterNot(g => (g.owner === userId) && (g.groupId in DataJsonGroupRecords.map(_.groupId))).delete // delete any groups that have become empty
+      deletedRecords <- DataJson.filter(r => (r.owner === userId) && (r.recordId inSet recordIds)).delete if deletedRecords == recordIds.length // delete the records, but only if all requested records are found
+    } yield (deletedGroupRecords, deletedGroups, deletedRecords)
+
+    db.run(query.transactionally).map(_ => ())
+  }
+
+  def updateRecords(userId: UUID, records: Seq[EndpointData])(implicit db: Database): Future[Seq[EndpointData]] = {
+    val updateRows = records.map { record =>
+      dbDataRow(record.endpoint, userId, record.data, record.recordId)
+    }
+
+    val updateQueries = updateRows map { record =>
+      for {
+        updated <- DataJson.filter(r => r.recordId === record.recordId && r.owner === userId)
+          .map(r => (r.data, r.date, r.hash))
+          .update((record.data, record.date, record.hash)) if updated == 1
+      } yield updated
+    }
+
+    db.run(DBIO.sequence(updateQueries).transactionally).map { _ =>
+      updateRows.map(ModelTranslation.fromDbModel)
+    }
   }
 
   def saveRecordGroup(userId: UUID, recordIds: Seq[UUID])(implicit db: Database): Future[UUID] = {
