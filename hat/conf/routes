@@ -83,6 +83,10 @@ GET           /api/v2/files/restrictAccess/:fileId/:userId        org.hatdex.hat
 GET           /api/v2/files/allowAccessPublic/:fileId             org.hatdex.hat.api.controllers.Files.changePublicAccess(fileId, public: Boolean = true)
 GET           /api/v2/files/restrictAccessPublic/:fileId          org.hatdex.hat.api.controllers.Files.changePublicAccess(fileId, public: Boolean = true)
 
+# RICH DATA routes
+
+GET           /api/v2/data/*endpoint                            org.hatdex.hat.api.controllers.RichData.getEndpointData(endpoint, recordId: Option[java.util.UUID], orderBy: Option[String], take: Option[Int])
+
 # AUTHENTICATION routes
 
 GET           /control/v2/auth/hatlogin                           org.hatdex.hat.api.controllers.Authentication.hatLogin(name: String, redirect: String)
