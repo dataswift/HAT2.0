@@ -61,7 +61,7 @@ Only `name` and `source` properties are mandatory - all others are optional. You
 }
 ```
 
-Importantly, it includes the unique file identifier for the HAT `fileId` and `contentUrl` indicating where the file should be uploaded. The upload `contentUrl` is signed and has limited duration validity, most likely 5 minutes, after which it becomes invalid. Then uploading itself could be done as (*note:* `x-amz-server-side-encryption` hearder is mandatory):
+Importantly, it includes the unique file identifier for the HAT `fileId` and `contentUrl` indicating where the file should be uploaded. The upload `contentUrl` is signed and has limited duration validity, most likely 5 minutes, after which it becomes invalid. Then uploading itself could be done as (*note:* `x-amz-server-side-encryption` header is mandatory):
 
 ```curl
 curl -v -T ${LOCAL_FILE} \
@@ -123,7 +123,7 @@ By default, the user who saved the file onto the HAT is allowed to see the file'
 HAT files can be looked up by any part of metadata attached to them:
 
 - `fileId` for an exact match, where one or no files are returned
-- `fileName` for an exact match on the original name, but multiple files could potentially be returned. *Empty* string if you do not want to match against `fileName`
+- `name` for an exact match on the original name, but multiple files could potentially be returned. *Empty* string if you do not want to match against `name`
 - `source` matching all files from a specific source such as `facebook`. *Empty* string if you do not want to match against `source`
 - `tags` a set of all tags matching files need to have attached
 - `title` and `description` for an approximate, text-based search matching the fields

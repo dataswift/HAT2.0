@@ -182,7 +182,7 @@ class UserProfileService @Inject() (bundleService: BundleService, dataService: D
 
       case ProfileField("nick", values, true)   => "nick" -> values.getOrElse("type", "")
       case ProfileField("age", values, true)    => "age" -> values.getOrElse("group", "")
-      case ProfileField("birth", values, true)  => "brithDate" -> values.getOrElse("date", "")
+      case ProfileField("birth", values, true)  => "birthDate" -> values.getOrElse("date", "")
     }: _*).filterNot(_._2 == "")
 
     val about = Map[String, String](
