@@ -36,7 +36,9 @@ import org.hatdex.hat.phata.views
 
 import scala.util.Try
 
-abstract class Mailer @Inject() (configuration: play.api.Configuration, ms: MailService) {
+trait Mailer {
+  protected val configuration: play.api.Configuration
+  protected val ms: MailService
 
   import scala.language.implicitConversions
 
@@ -47,7 +49,19 @@ abstract class Mailer @Inject() (configuration: play.api.Configuration, ms: Mail
   def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Unit
 }
 
-class HatMailer @Inject() (configuration: play.api.Configuration, ms: MailService) extends Mailer(configuration, ms) {
+trait HatMailer extends Mailer {
+  import scala.language.implicitConversions
+
+  protected val configuration: play.api.Configuration
+  protected val ms: MailService
+
+  def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Unit
+  def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Unit
+  def passwordReset(email: String, user: HatUser, resetLink: String)(implicit m: Messages, server: HatServer): Unit
+  def passwordChanged(email: String, user: HatUser)(implicit m: Messages, server: HatServer): Unit
+}
+
+class HatMailerImpl @Inject() (val configuration: play.api.Configuration, val ms: MailService) extends HatMailer {
   def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Unit = {
     // wrap any errors
     Try {
@@ -56,8 +70,7 @@ class HatMailer @Inject() (configuration: play.api.Configuration, ms: MailServic
       ms.sendEmailAsync(adminEmails: _*)(
         subject = s"HAT server ${request.host} errorr #${exception.id}",
         bodyHtml = views.html.mails.emailServerError(request, exception),
-        bodyText = views.html.mails.emailServerError(request, exception).toString()
-      )
+        bodyText = views.html.mails.emailServerError(request, exception).toString())
     }
   }
 
@@ -69,8 +82,7 @@ class HatMailer @Inject() (configuration: play.api.Configuration, ms: MailServic
       ms.sendEmailAsync(adminEmails: _*)(
         subject = s"HAT server ${request.host} error: ${exception.getMessage} for ${request.path + request.rawQueryString}",
         bodyHtml = views.html.mails.emailServerThrowable(request, exception),
-        bodyText = views.html.mails.emailServerThrowable(request, exception).toString()
-      )
+        bodyText = views.html.mails.emailServerThrowable(request, exception).toString())
     }
   }
 
@@ -80,8 +92,17 @@ class HatMailer @Inject() (configuration: play.api.Configuration, ms: MailServic
       ms.sendEmailAsync(email)(
         subject = s"HAT ${server.hatName}.${server.domain} - reset your password",
         bodyHtml = views.html.mails.emailPasswordReset(user, resetLink),
-        bodyText = views.txt.mails.emailPasswordReset(user, resetLink).toString()
-      )
+        bodyText = views.txt.mails.emailPasswordReset(user, resetLink).toString())
+    }
+  }
+
+  def passwordChanged(email: String, user: HatUser)(implicit m: Messages, server: HatServer): Unit = {
+    Try {
+      val emailFrom = configuration.getString("play.mailer.from").get
+      ms.sendEmailAsync(email)(
+        subject = s"HAT ${server.hatName}.${server.domain} - password changed",
+        bodyHtml = views.html.mails.emailPasswordChanged(user),
+        bodyText = views.txt.mails.emailPasswordChanged(user).toString())
     }
   }
 }

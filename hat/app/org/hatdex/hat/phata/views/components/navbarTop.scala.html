@@ -12,17 +12,5 @@
             </button>
             <a class="navbar-brand navbar-brand-main" href="http://hatdex.org"><img src="@routes.Assets.versioned("/images/hat-original.svg")" alt="Original HAT" class="img"></a>
         </div>
-        <div class="collapse navbar-collapse" id="hat-menu-collapse">
-        <ul class="nav navbar-nav navbar-right">
-        @maybeUser.map { user =>
-        <li><a href="@org.hatdex.hat.phata.controllers.routes.Phata.home()">Welcome back, @user.name</a></li>
-        <li><a href="@org.hatdex.hat.phata.controllers.routes.Authentication.logout()">Sign Out</a></li>
-        <li><a href="@org.hatdex.hat.phata.controllers.routes.Authentication.passwordChangeStart()">Change Password</a></li>
-        }.getOrElse {
-            <li><a href="@org.hatdex.hat.phata.controllers.routes.Authentication.signin()">Sign In</a></li>
-        }
-        </ul>
-        </div>
-
     </div>
 </nav>

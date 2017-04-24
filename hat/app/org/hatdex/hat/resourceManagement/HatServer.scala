@@ -35,8 +35,7 @@ case class HatServer(
     ownerEmail: String,
     privateKey: RSAPrivateKey,
     publicKey: RSAPublicKey,
-    db: Database
-) extends DynamicSecureEnvironment {
+    db: Database) extends DynamicSecureEnvironment {
   def id = domain
 }
 

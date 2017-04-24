@@ -84,7 +84,7 @@ trait HatKeyProvider {
 @Singleton
 class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatKeyProvider {
   def publicKey(hat: String)(implicit ec: ExecutionContext): Future[RSAPublicKey] = {
-    configuration.getString(s"hat.$hat.publicKey") map { confPublicKey =>
+    configuration.getString(s"hat.${hat.replace(':', '.')}.publicKey") map { confPublicKey =>
       readRsaPublicKey(confPublicKey)
     } getOrElse {
       Future.failed(new HatServerDiscoveryException(s"Public Key for $hat not found"))
@@ -92,7 +92,7 @@ class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatK
   }
 
   def privateKey(hat: String)(implicit ec: ExecutionContext): Future[RSAPrivateKey] = {
-    configuration.getString(s"hat.$hat.privateKey") map { confPrivateKey =>
+    configuration.getString(s"hat.${hat.replace(':', '.')}.privateKey") map { confPrivateKey =>
       readRsaPrivateKey(confPrivateKey)
     } getOrElse {
       Future.failed(new HatServerDiscoveryException(s"Private Key for $hat not found"))
@@ -100,7 +100,7 @@ class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatK
   }
 
   def ownerEmail(hat: String)(implicit ec: ExecutionContext): Future[String] = {
-    configuration.getString(s"hat.$hat.ownerEmail") map { email =>
+    configuration.getString(s"hat.${hat.replace(':', '.')}.ownerEmail") map { email =>
       Future.successful(email)
     } getOrElse {
       Future.failed(new HatServerDiscoveryException(s"Owner email for $hat not found"))

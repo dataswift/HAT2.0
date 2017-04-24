@@ -46,16 +46,11 @@ PUT           /dataDebit/:dataDebitKey/roll               org.hatdex.hat.api.con
 GET           /dataDebit/:dataDebitKey/values             org.hatdex.hat.api.controllers.DataDebit.retrieveDataDebitValues(dataDebitKey: java.util.UUID, limit: Option[Int], starttime: Option[Long], endtime: Option[Long], pretty: Option[Boolean])
 
 # SYSTEM routes
-GET           /system/update                              org.hatdex.hat.api.controllers.Updates.update()
+GET           /system/update                              org.hatdex.hat.api.controllers.SystemStatus.update()
+GET           /api/v2/system/status                       org.hatdex.hat.api.controllers.SystemStatus.status()
 
 # PHATA routes
 GET           /assets/*file                               @controllers.Assets.versioned(path="/public", file: Asset)
-GET           /                                           org.hatdex.hat.phata.controllers.Phata.home
-GET           /launcher                                   org.hatdex.hat.phata.controllers.Phata.launcher
-GET           /profile                                    org.hatdex.hat.phata.controllers.Phata.profile
-GET           /notables                                   org.hatdex.hat.phata.controllers.Phata.notables(id: Option[Int])
-GET           /hat                                        org.hatdex.hat.phata.controllers.Phata.profile
-
 POST          /                                           org.hatdex.hat.phata.controllers.Authentication.login
 GET           /signin                                     org.hatdex.hat.phata.controllers.Authentication.signin
 GET           /hatlogin                                   org.hatdex.hat.phata.controllers.Authentication.hatLogin(name: String, redirect: String)
@@ -66,3 +61,31 @@ GET           /passwordreset                              org.hatdex.hat.phata.c
 POST          /passwordreset                              org.hatdex.hat.phata.controllers.Authentication.handleForgotPassword
 GET           /passwordreset/confirm/:token               org.hatdex.hat.phata.controllers.Authentication.resetPassword(token: String)
 POST          /passwordreset/confirm/:token               org.hatdex.hat.phata.controllers.Authentication.handleResetPassword(token: String)
+
+GET           /                                           org.hatdex.hat.phata.controllers.Phata.rumpelIndex
+GET           /api/profile                                org.hatdex.hat.phata.controllers.Phata.profile
+GET           /api/notables                               org.hatdex.hat.phata.controllers.Phata.notables(id: Option[Int])
+
+# FILE routes
+POST          /api/v2/files/upload                                org.hatdex.hat.api.controllers.Files.startUpload
+POST          /api/v2/files/search                                org.hatdex.hat.api.controllers.Files.listFiles()
+PUT           /api/v2/files/file/:fileId/complete                 org.hatdex.hat.api.controllers.Files.completeUpload(fileId)
+GET           /api/v2/files/file/:fileId                          org.hatdex.hat.api.controllers.Files.getDetail(fileId)
+PUT           /api/v2/files/file/:fileId                          org.hatdex.hat.api.controllers.Files.updateFile(fileId)
+DELETE        /api/v2/files/file/:fileId                          org.hatdex.hat.api.controllers.Files.deleteFile(fileId)
+GET           /api/v2/files/content/:fileId                       org.hatdex.hat.api.controllers.Files.getContent(fileId)
+
+# FILE permissions
+POST          /api/v2/files/allowAccess/:userId                   org.hatdex.hat.api.controllers.Files.allowAccessPattern(userId: java.util.UUID, content: Boolean)
+POST          /api/v2/files/restrictAccess/:userId                org.hatdex.hat.api.controllers.Files.restrictAccessPattern(userId: java.util.UUID)
+GET           /api/v2/files/allowAccess/:fileId/:userId           org.hatdex.hat.api.controllers.Files.allowAccess(fileId, userId: java.util.UUID, content: Boolean)
+GET           /api/v2/files/restrictAccess/:fileId/:userId        org.hatdex.hat.api.controllers.Files.restrictAccess(fileId, userId: java.util.UUID)
+GET           /api/v2/files/allowAccessPublic/:fileId             org.hatdex.hat.api.controllers.Files.changePublicAccess(fileId, public: Boolean = true)
+GET           /api/v2/files/restrictAccessPublic/:fileId          org.hatdex.hat.api.controllers.Files.changePublicAccess(fileId, public: Boolean = true)
+
+# AUTHENTICATION routes
+
+GET           /control/v2/auth/hatlogin                           org.hatdex.hat.api.controllers.Authentication.hatLogin(name: String, redirect: String)
+POST          /control/v2/auth/password                           org.hatdex.hat.api.controllers.Authentication.passwordChangeProcess
+POST          /control/v2/auth/passwordReset                      org.hatdex.hat.api.controllers.Authentication.handleForgotPassword
+POST          /control/v2/auth/passwordreset/confirm/:token       org.hatdex.hat.api.controllers.Authentication.handleResetPassword(token: String)

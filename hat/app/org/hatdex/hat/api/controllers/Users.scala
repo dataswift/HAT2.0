@@ -105,7 +105,7 @@ class Users @Inject() (
   }
 
   def publicKey(): Action[AnyContent] = UserAwareAction.async { implicit request =>
-    val publicKey = hatServerProvider.toString(request.dynamicEnvironment.asInstanceOf[HatServer].publicKey)
+    val publicKey = hatServerProvider.toString(request.dynamicEnvironment.publicKey)
     Future.successful(Ok(publicKey))
   }
 
@@ -134,11 +134,11 @@ class Users @Inject() (
         .flatMap { loginInfo =>
           usersService.getUser(loginInfo.providerKey).flatMap {
             case Some(user) =>
-              // FIXME: resource asd??
               val customClaims = Map("resource" -> Json.toJson(request.dynamicEnvironment.domain), "accessScope" -> Json.toJson(user.role))
               for {
                 authenticator <- env.authenticatorService.create(loginInfo)
                 token <- env.authenticatorService.init(authenticator.copy(customClaims = Some(JsObject(customClaims))))
+                _ <- usersService.logLogin(user, "api", user.role, None, None)
                 result <- env.authenticatorService.embed(token, Ok(Json.toJson(AccessToken(token, user.userId))))
               } yield {
                 env.eventBus.publish(LoginEvent(user, request))

@@ -24,6 +24,8 @@
 
 package org.hatdex.hat.authentication
 
+import javax.inject.Inject
+
 import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.actions._
 import com.mohiva.play.silhouette.api.util.Clock
@@ -36,18 +38,21 @@ import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api.Database
 import org.hatdex.hat.resourceManagement._
 import org.joda.time.DateTime
-import play.api.Configuration
+import play.api.{ Configuration, Logger, Play }
+import play.api.http.{ DefaultHttpErrorHandler, HttpErrorHandler, LazyHttpErrorHandler, Status }
 import play.api.i18n.I18nSupport
-import play.api.mvc.Controller
+import play.api.libs.json.{ JsError, Reads }
+import play.api.mvc.BodyParsers.parse
+import play.api.mvc.{ BodyParser, Controller, RequestHeader, Result }
 
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 abstract class HatController[T <: HatAuthEnvironment](
     silhouette: Silhouette[T],
     clock: Clock,
     hatServerProvider: HatServerProvider,
-    configuration: Configuration
-) extends Controller with I18nSupport {
+    configuration: Configuration) extends Controller with I18nSupport {
 
   def env: Environment[T] = silhouette.env
   def SecuredAction = silhouette.securedAction(env)
@@ -66,15 +71,13 @@ abstract class HatApiController(
   silhouette: Silhouette[HatApiAuthEnvironment],
   clock: Clock,
   hatServerProvider: HatServerProvider,
-  configuration: Configuration
-) extends HatController[HatApiAuthEnvironment](silhouette, clock, hatServerProvider, configuration)
+  configuration: Configuration) extends HatController[HatApiAuthEnvironment](silhouette, clock, hatServerProvider, configuration)
 
 abstract class HatFrontendController(
     silhouette: Silhouette[HatFrontendAuthEnvironment],
     clock: Clock,
     hatServerProvider: HatServerProvider,
-    configuration: Configuration
-) extends HatController[HatFrontendAuthEnvironment](silhouette, clock, hatServerProvider, configuration) {
+    configuration: Configuration) extends HatController[HatFrontendAuthEnvironment](silhouette, clock, hatServerProvider, configuration) {
 
   def authenticatorWithRememberMe(authenticator: CookieAuthenticator, rememberMe: Boolean): CookieAuthenticator = {
     if (rememberMe) {
@@ -82,8 +85,7 @@ abstract class HatFrontendController(
       authenticator.copy(
         expirationDateTime = expirationTime,
         idleTimeout = rememberMeParams._2,
-        cookieMaxAge = rememberMeParams._3
-      )
+        cookieMaxAge = rememberMeParams._3)
     }
     else {
       authenticator
@@ -95,7 +97,6 @@ abstract class HatFrontendController(
     (
       cfg.as[FiniteDuration]("authenticatorExpiry"),
       cfg.getAs[FiniteDuration]("authenticatorIdleTimeout"),
-      cfg.getAs[FiniteDuration]("cookieMaxAge")
-    )
+      cfg.getAs[FiniteDuration]("cookieMaxAge"))
   }
 }

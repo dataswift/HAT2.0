@@ -24,6 +24,7 @@
 
 package org.hatdex.hat.resourceManagement
 
+import java.io.StringWriter
 import java.security.interfaces.RSAPublicKey
 import javax.inject.{ Inject, Named, Singleton }
 
@@ -31,6 +32,7 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
 import com.mohiva.play.silhouette.api.services.DynamicEnvironmentProviderService
+import org.bouncycastle.util.io.pem.{ PemObject, PemWriter }
 import org.hatdex.hat.resourceManagement.actors.HatServerProviderActor
 import play.api.Logger
 import play.api.mvc.Request
@@ -38,14 +40,28 @@ import play.api.mvc.Request
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+trait HatServerProvider extends DynamicEnvironmentProviderService[HatServer] {
+  def retrieve[B](request: Request[B]): Future[Option[HatServer]]
+  def retrieve(hatAddress: String): Future[Option[HatServer]]
+  def toString(publicKey: RSAPublicKey): String = {
+    val pemObject = new PemObject("PUBLIC KEY", publicKey.getEncoded)
+    val stringPemWriter = new StringWriter()
+    val pemWriter: PemWriter = new PemWriter(stringPemWriter)
+    pemWriter.writeObject(pemObject)
+    pemWriter.flush()
+    val pemPublicKey = stringPemWriter.toString
+    pemPublicKey
+  }
+}
+
 @Singleton
-class HatServerProvider @Inject() (@Named("hatServerProviderActor") serverProviderActor: ActorRef, hatKeyProvider: HatKeyProvider) extends DynamicEnvironmentProviderService[HatServer] {
+class HatServerProviderImpl @Inject() (@Named("hatServerProviderActor") serverProviderActor: ActorRef, hatKeyProvider: HatKeyProvider) extends HatServerProvider {
   import play.api.libs.concurrent.Execution.Implicits._
 
   private val logger = Logger(this.getClass)
 
   def retrieve[B](request: Request[B]): Future[Option[HatServer]] = {
-    val hatAddress = request.host.split(':').headOption.getOrElse(request.host)
+    val hatAddress = request.host //.split(':').headOption.getOrElse(request.host)
     retrieve(hatAddress)
   }
 
@@ -68,8 +84,6 @@ class HatServerProvider @Inject() (@Named("hatServerProviderActor") serverProvid
         Future.failed(new HatServerDiscoveryException("HAT Server info retrieval failed", e))
     }
   }
-
-  def toString(publicKey: RSAPublicKey) = hatKeyProvider.toString(publicKey)
 
 }
 

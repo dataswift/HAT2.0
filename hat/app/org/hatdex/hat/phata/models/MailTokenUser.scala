@@ -28,13 +28,11 @@ import java.util.UUID
 
 import org.joda.time.DateTime
 
-import org.joda.time.DateTime
-
 trait MailToken {
   def id: String
   def email: String
   def expirationTime: DateTime
-  def isExpired = expirationTime.isBeforeNow
+  def isExpired: Boolean = expirationTime.isBeforeNow
 }
 
 case class MailTokenUser(id: String, email: String, expirationTime: DateTime, isSignUp: Boolean) extends MailToken

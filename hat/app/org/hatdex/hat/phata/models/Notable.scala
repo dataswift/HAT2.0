@@ -33,8 +33,7 @@ case class NotableAuthor(
   name: Option[String],
   nick: Option[String],
   phata: String,
-  photo_url: Option[String]
-)
+  photo_url: Option[String])
 
 case class NotableLocation(
   latitude: String,
@@ -44,15 +43,13 @@ case class NotableLocation(
   altitude_accuracy: Option[String],
   heading: Option[String],
   speed: Option[String],
-  shared: Option[String]
-)
+  shared: Option[String])
 
 case class NotablePhoto(
   link: String,
   source: String,
   caption: String,
-  shared: String
-)
+  shared: String)
 
 case class Notable(
   id: Int,
@@ -66,8 +63,7 @@ case class Notable(
   shared_on: Option[List[String]],
   author: NotableAuthor,
   location: Option[NotableLocation],
-  photo: Option[NotablePhoto]
-)
+  photo: Option[NotablePhoto])
 
 object Notable extends DateTimeMarshalling {
   implicit val notableAuthorFormat = Json.format[NotableAuthor]

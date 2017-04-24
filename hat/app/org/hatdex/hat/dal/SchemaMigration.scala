@@ -70,6 +70,41 @@ class SchemaMigration @Inject() (configuration: Configuration) extends DalExecut
     changeLogFiles.foldLeft(Future.successful(())) { (execution, evolution) => execution.flatMap { _ => updateDb(evolution) } }
   }
 
+  def resetDatabase()(implicit db: Database): Future[Unit] = {
+    val eventuallyEvolved = Future {
+      Try {
+        db.createSession().conn
+      } map { dbConnection =>
+        val liquibase = blocking {
+          createLiquibase(dbConnection, "")
+        }
+        liquibase.getLog.setLogLevel("severe")
+        blocking {
+          Try(liquibase.dropAll())
+            .recover {
+              case e =>
+                liquibase.forceReleaseLocks()
+                logger.error(s"Error dropping all database information")
+                throw e
+            }
+          liquibase.forceReleaseLocks()
+        }
+      } get
+    }
+
+    eventuallyEvolved onFailure {
+      case e =>
+        logger.error(s"Error updating database: ${e.getMessage}")
+    }
+
+    eventuallyEvolved
+  }
+
+  def rollback(changeLogFiles: Seq[String])(implicit db: Database): Future[Unit] = {
+    logger.info(s"Rolling back schema migrations: ${changeLogFiles.mkString(", ")}")
+    changeLogFiles.foldLeft(Future.successful(())) { (execution, evolution) => execution.flatMap { _ => updateDb(evolution) } }
+  }
+
   private def updateDb(diffFilePath: String)(implicit db: Database): Future[Unit] = {
     val eventuallyEvolved = Future {
       Try {
@@ -80,9 +115,43 @@ class SchemaMigration @Inject() (configuration: Configuration) extends DalExecut
         val liquibase = blocking {
           createLiquibase(dbConnection, diffFilePath)
         }
+        liquibase.getLog.setLogLevel("severe")
         blocking {
           listChangesets(liquibase, new Contexts(changesets))
           Try(liquibase.update(changesets))
+            .recover {
+              case e =>
+                liquibase.forceReleaseLocks()
+                logger.error(s"Error executing schema evolutions: ${e.getMessage}")
+                throw e
+            }
+          liquibase.forceReleaseLocks()
+        }
+      } get
+    }
+
+    eventuallyEvolved onFailure {
+      case e =>
+        logger.error(s"Error updating database: ${e.getMessage}")
+    }
+
+    eventuallyEvolved
+  }
+
+  private def rollbackDb(diffFilePath: String)(implicit db: Database): Future[Unit] = {
+    val eventuallyEvolved = Future {
+      Try {
+        db.createSession().conn
+      } map { dbConnection =>
+        logger.info(s"Liquibase rolling back evolutions $diffFilePath on db: [${dbConnection.getMetaData.getURL}]")
+        val changesets = "structuresonly,data"
+        val liquibase = blocking {
+          createLiquibase(dbConnection, diffFilePath)
+        }
+        blocking {
+          val contexts = new Contexts(changesets)
+          val changesetsExecuted = liquibase.getChangeSetStatuses(contexts, new LabelExpression()).asScala.filterNot(_.getWillRun)
+          Try(liquibase.rollback(changesetsExecuted.length, contexts, new LabelExpression()))
             .recover {
               case e =>
                 liquibase.forceReleaseLocks()

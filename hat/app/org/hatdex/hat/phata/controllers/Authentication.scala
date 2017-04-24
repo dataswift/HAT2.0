@@ -98,6 +98,7 @@ class Authentication @Inject() (
       for {
         service <- hatServicesService.findOrCreateHatService(name, redirectUrl)
         linkedService <- hatServicesService.hatServiceLink(identity, service, Some(redirectUrl))
+        - <- usersService.logLogin(identity, "hatLogin", linkedService.category, Some(name), Some(redirectUrl))
       } yield {
         if (service.setup) {
           Redirect(linkedService.url)
@@ -123,7 +124,7 @@ class Authentication @Inject() (
               case Some(user) =>
                 val eventualLoginResult = loginDetails match {
                   case LoginDetails(_, _, _, Some(name), Some(redirect)) => processHatLogin(name, redirect, user)
-                  case _ => Future.successful(Redirect(routes.Phata.home().url))
+                  case _ => Future.successful(Redirect(routes.Phata.rumpelIndex()))
                 }
 
                 for {
@@ -146,9 +147,9 @@ class Authentication @Inject() (
   def logout: Action[AnyContent] = UserAwareAction.async { implicit request =>
     request.identity map { identity =>
       env.eventBus.publish(LogoutEvent(identity, request))
-      env.authenticatorService.discard(request.authenticator.get, Redirect(routes.Phata.home().url))
+      env.authenticatorService.discard(request.authenticator.get, Redirect(routes.Phata.rumpelIndex()))
     } getOrElse {
-      Future.successful(Redirect(routes.Phata.home().url))
+      Future.successful(Redirect(routes.Phata.rumpelIndex()))
     }
   }
 
@@ -172,6 +173,7 @@ class Authentication @Inject() (
             Ok(phataViews.html.passwordChange(request.identity, PasswordChange.passwordChangeForm.fill(loginDetails), Seq(), changed = true)))
         } yield {
           env.eventBus.publish(LoginEvent(request.identity, request))
+          mailer.passwordChanged(request.identity.email, request.identity)
           result
         }
       })
@@ -182,7 +184,7 @@ class Authentication @Inject() (
    */
   def forgotPassword: Action[AnyContent] = UserAwareAction.async { implicit request =>
     Future.successful(request.identity match {
-      case Some(_) => Redirect(routes.Phata.home().url)
+      case Some(_) => Redirect(routes.Phata.rumpelIndex())
       case None    => Ok(phataViews.html.passwordForgot(emailForm))
     })
   }
@@ -225,8 +227,8 @@ class Authentication @Inject() (
         Future.successful(Ok(phataViews.html.passwordReset(tokenId, PasswordChange.passwordChangeForm)))
       case Some(token) =>
         tokenService.consume(tokenId)
-        Future.successful(Redirect(routes.Phata.home().url))
-      case None => Future.successful(Redirect(routes.Phata.home().url))
+        Future.successful(Redirect(routes.Phata.rumpelIndex()))
+      case None => Future.successful(Redirect(routes.Phata.rumpelIndex()))
     }
   }
 
@@ -249,18 +251,19 @@ class Authentication @Inject() (
                   } yield {
                     tokenService.consume(tokenId)
                     env.eventBus.publish(LoginEvent(user, request))
+                    mailer.passwordChanged(token.email, user)
                     result
                   }
                 case None => Future.failed(new IdentityNotFoundException("Couldn't find user"))
               }
             }
             else {
-              Future.successful(Redirect(routes.Phata.home().url))
+              Future.successful(Redirect(routes.Phata.rumpelIndex()))
             }
           case Some(token) =>
             tokenService.consume(tokenId)
-            Future.successful(Redirect(routes.Phata.home().url))
-          case None => Future.successful(Redirect(routes.Phata.home().url))
+            Future.successful(Redirect(routes.Phata.rumpelIndex()))
+          case None => Future.successful(Redirect(routes.Phata.rumpelIndex()))
         }
       })
   }

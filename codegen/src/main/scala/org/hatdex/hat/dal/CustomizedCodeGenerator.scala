@@ -50,8 +50,7 @@ object CustomizedCodeGenerator {
           args(0),
           args(1),
           "Tables",
-          "Tables.scala"
-        )
+          "Tables.scala")
     }
 
     codegenFuture.onFailure {
@@ -89,6 +88,7 @@ object CustomizedCodeGenerator {
             case "int4[]"   => "List[Int]"
             case "text[]"   => "List[String]"
             case "_int4"    => "List[Int]"
+            case "_text"    => "List[String]"
             case "jsonb"    => "play.api.libs.json.JsValue"
             case _          => "String"
           }).getOrElse("String")

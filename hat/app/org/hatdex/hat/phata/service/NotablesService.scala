@@ -66,18 +66,6 @@ class NotablesService @Inject() (bundleService: BundleService, dataService: Data
 
     val someNotables = eventualNotables recover { case e => Iterable() }
 
-    someNotables map { notables =>
-      if (notables.nonEmpty) {
-        logger.debug(s"Found some notables")
-      }
-      notables map { notable =>
-        notable recover {
-          case e =>
-            logger.debug(s"Notable parsing failed $e")
-        }
-      }
-    }
-
     someNotables.map(_.collect {
       case Success(notable) if notable.shared && notable.shared_on.exists(_.contains("marketsquare")) && notable.public_until.nonEmpty && notable.public_until.get.isAfter(DateTime.now()) => notable
       case Success(notable) if notable.shared && notable.shared_on.exists(_.contains("marketsquare")) && notable.public_until.isEmpty => notable
@@ -110,9 +98,7 @@ class NotablesService @Inject() (bundleService: BundleService, dataService: Data
           (__ \ 'shared).json.update(of[JsString].map { // remap "shared" string property to boolean
             case JsString("true") => JsBoolean(true)
             case _                => JsBoolean(false)
-          }) reduce
-
-      ) andThen
+          }) reduce) andThen
         (__ \ 'shared_on).json.update(of[JsString].map {
           case JsString(sharedOn) =>
             val sharedNetworks = sharedOn.split(',').map(_.trim)
@@ -120,8 +106,7 @@ class NotablesService @Inject() (bundleService: BundleService, dataService: Data
             JsArray(sharedNetworks.map(v => Json.toJson(v)))
           case _ =>
             JsArray(Seq[JsValue]())
-        })
-    )
+        }))
 
   private def renderNoteText(markdown: String, mdProcessor: PegDownProcessor) = {
     mdProcessor.synchronized {

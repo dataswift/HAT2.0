@@ -1,6 +1,7 @@
 import Dependencies._
 
 libraryDependencies ++= Seq(
+  filters,
   Library.Db.postgres,
   Library.Db.liquibase,
   Library.Slick.slickPgCore,
@@ -29,6 +30,7 @@ libraryDependencies ++= Seq(
   Library.Play.Silhouette.persistence,
   Library.Play.Silhouette.cryptoJca,
   Library.Play.Silhouette.silhouette,
+  Library.Play.Silhouette.silhouetteTestkit,
   Library.Play.Jwt.nimbusDsJwt,
   Library.Play.Jwt.atlassianJwtCore,
   Library.Play.Jwt.atlassianJwtApi,
@@ -44,25 +46,25 @@ libraryDependencies ++= Seq(
   Library.Play.Specs2.mock,
   Library.Play.Utils.playBootstrap,
   Library.scalaGuice,
-  filters,
   Library.HATDeX.hatClient,
-  Library.HATDeX.marketsquareClient
+  Library.HATDeX.marketsquareClient,
+  Library.Utils.awsJavaSdk,
+  Library.Utils.prettyTime,
+  Library.Utils.nbvcxz
 )
 
 enablePlugins(PlayScala)
 
 enablePlugins(JavaAppPackaging)
 
-enablePlugins(SbtWeb, SbtSassify)
+enablePlugins(SbtWeb, SbtSassify, SbtGzip, SbtDigest)
 
-//pipelineStages in Assets := Seq(uglify)
+pipelineStages in Assets := Seq(digest)
 sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets"
 
 aggregate in update := false
 
 testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "exclude", "REMOTE")
-
-//publishArtifact in(Compile, packageDoc) := false
 
 routesGenerator := InjectedRoutesGenerator
 

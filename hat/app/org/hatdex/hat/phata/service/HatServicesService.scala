@@ -69,8 +69,7 @@ class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment
           HatService(name, redirectUrl, "/assets/images/haticon.png",
             redirectUrl, redirectUri.path.toString(),
             browser = false, category = "app", setup = true,
-            loginAvailable = true)
-        )
+            loginAvailable = true))
     }
   }
 
@@ -80,8 +79,7 @@ class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment
 
     val customClaims = JsObject(Map(
       "resource" -> Json.toJson(resource),
-      "accessScope" -> Json.toJson(accessScope)
-    ))
+      "accessScope" -> Json.toJson(accessScope)))
 
     silhouette.env.authenticatorService.create(user.loginInfo)
       .map(_.copy(customClaims = Some(customClaims)))

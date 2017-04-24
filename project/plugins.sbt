@@ -34,3 +34,8 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.1.0")
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.0")
 addSbtPlugin("com.typesafe.sbt" % "sbt-uglify" % "1.0.3")
 addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.6")
+
+// S3 based SBT resolver
+resolvers += "Era7 maven releases" at "https://s3-eu-west-1.amazonaws.com/releases.era7.com"
+
+addSbtPlugin("ohnosequences" % "sbt-s3-resolver" % "0.15.0")

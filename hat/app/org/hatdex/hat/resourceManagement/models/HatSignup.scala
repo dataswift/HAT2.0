@@ -35,8 +35,7 @@ case class DatabaseServer(id: Int, host: String, port: Int, dateCreated: DateTim
 
 case class HatKeys(
   privateKey: String,
-  publicKey: String
-)
+  publicKey: String)
 
 case class HatSignup(
   id: UUID,

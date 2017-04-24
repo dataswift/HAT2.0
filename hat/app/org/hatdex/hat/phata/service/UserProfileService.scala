@@ -69,7 +69,7 @@ class UserProfileService @Inject() (bundleService: BundleService, dataService: D
     } yield {
       val flattenedValues = flattenTableValues(valueTable)
       // Profile is public by default
-      val publicProfile = !(flattenedValues \ "private").asOpt[Boolean].getOrElse(false)
+      val publicProfile = !(flattenedValues \ "private").asOpt[String].contains("true")
 
       val profileFields: Iterable[ProfileField] = flattenedValues match {
         case profileObject: JsObject =>
@@ -182,13 +182,12 @@ class UserProfileService @Inject() (bundleService: BundleService, dataService: D
 
       case ProfileField("nick", values, true)   => "nick" -> values.getOrElse("type", "")
       case ProfileField("age", values, true)    => "age" -> values.getOrElse("group", "")
-      case ProfileField("birth", values, true)  => "brithDate" -> values.getOrElse("date", "")
+      case ProfileField("birth", values, true)  => "birthDate" -> values.getOrElse("date", "")
     }: _*).filterNot(_._2 == "")
 
     val about = Map[String, String](
       "title" -> profileFields.find(_.name == "about").map(_.values.getOrElse("title", "")).getOrElse(""),
-      "body" -> profileFields.find(_.name == "about").map(_.values.getOrElse("body", "")).getOrElse("")
-    )
+      "body" -> profileFields.find(_.name == "about").map(_.values.getOrElse("body", "")).getOrElse(""))
 
     //    val profile = hatParameters ++ profileParameters.filterNot(_._2 == "")
 
@@ -196,8 +195,7 @@ class UserProfileService @Inject() (bundleService: BundleService, dataService: D
       "links" -> links,
       "contact" -> contact,
       "profile" -> personal,
-      "about" -> about
-    ).filterNot(_._2.isEmpty)
+      "about" -> about).filterNot(_._2.isEmpty)
 
     profile
   }

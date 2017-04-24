@@ -52,8 +52,7 @@ trait SlickPostgresDriver extends ExPostgresDriver
       new AdvancedArrayJdbcType[JsValue](
         pgjson,
         (s) => utils.SimpleArrayUtils.fromString[JsValue](Json.parse(_))(s).orNull,
-        (v) => utils.SimpleArrayUtils.mkString[JsValue](_.toString())(v)
-      ).to(_.toList)
+        (v) => utils.SimpleArrayUtils.mkString[JsValue](_.toString())(v)).to(_.toList)
   }
 
 }

@@ -24,11 +24,11 @@
 
 package org.hatdex.hat.dal
 
+import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.phata.models.MailTokenUser
-import play.api.libs.json.Json
 
 object ModelTranslation {
   def fromDbModel(user: UserUserRow): HatUser = {
@@ -42,15 +42,13 @@ object ModelTranslation {
   def fromDbModel(field: DataFieldRow) = {
     ApiDataField(
       Some(field.id), Some(field.dateCreated), Some(field.lastUpdated),
-      Some(field.tableIdFk), field.name, None
-    )
+      Some(field.tableIdFk), field.name, None)
   }
 
   def fromDbModel(record: DataRecordRow, tables: Option[Seq[ApiDataTable]]) = {
     new ApiDataRecord(
       Some(record.id), Some(record.dateCreated), Some(record.lastUpdated),
-      record.name, tables
-    )
+      record.name, tables)
   }
 
   def fromDbModel(table: DataTableRow, fields: Option[Seq[ApiDataField]], subTables: Option[Seq[ApiDataTable]]) = {
@@ -61,8 +59,7 @@ object ModelTranslation {
       table.name,
       table.sourceName,
       fields,
-      subTables
-    )
+      subTables)
   }
 
   def fromDbModel(table: DataTableTreeRow, fields: Option[Seq[ApiDataField]], subTables: Option[Seq[ApiDataTable]]) = {
@@ -73,15 +70,13 @@ object ModelTranslation {
       table.name.getOrElse(""),
       table.sourceName.getOrElse(""),
       fields,
-      subTables
-    )
+      subTables)
   }
 
   def fromDbModel(value: DataValueRow): ApiDataValue = {
     ApiDataValue(
       Some(value.id), Some(value.dateCreated), Some(value.lastUpdated),
-      value.value, None, None
-    )
+      value.value, None, None)
   }
 
   def fromDbModel(value: DataValueRow, field: DataFieldRow, record: DataRecordRow): ApiDataValue = {
@@ -104,16 +99,14 @@ object ModelTranslation {
     new ApiBundleContextless(
       Some(bundleContextless.id),
       Some(bundleContextless.dateCreated), Some(bundleContextless.lastUpdated),
-      bundleContextless.name, None
-    )
+      bundleContextless.name, None)
   }
 
   def fromDbModel(bundleContextless: BundleContextlessRow, sources: Option[Seq[ApiBundleDataSourceStructure]]): ApiBundleContextless = {
     ApiBundleContextless(
       Some(bundleContextless.id),
       Some(bundleContextless.dateCreated), Some(bundleContextless.lastUpdated),
-      bundleContextless.name, sources
-    )
+      bundleContextless.name, sources)
   }
 
   def fromDbModel(dataDebitRow: DataDebitRow): ApiDataDebit = {
@@ -125,8 +118,7 @@ object ModelTranslation {
   def fromDbModel(
     dataDebitRow: DataDebitRow,
     apiBundleContextlessData: Option[ApiBundleContextlessData],
-    apiBundleContextualData: Option[Seq[ApiEntity]]
-  ): ApiDataDebitOut = {
+    apiBundleContextualData: Option[Seq[ApiEntity]]): ApiDataDebitOut = {
     ApiDataDebitOut(Some(dataDebitRow.dataDebitKey), Some(dataDebitRow.dateCreated), Some(dataDebitRow.lastUpdated),
       dataDebitRow.name, dataDebitRow.startDate, dataDebitRow.endDate, Some(dataDebitRow.enabled), dataDebitRow.rolling, dataDebitRow.sellRent,
       dataDebitRow.price, dataDebitRow.kind, apiBundleContextlessData, apiBundleContextualData)
@@ -135,5 +127,22 @@ object ModelTranslation {
   def fromDbModel(
     userMailTokensRow: UserMailTokensRow): MailTokenUser = {
     MailTokenUser(userMailTokensRow.id, userMailTokensRow.email, userMailTokensRow.expirationTime.toDateTime, userMailTokensRow.isSignup)
+  }
+
+  def fromDbModel(hatFileRow: HatFileRow): ApiHatFile = {
+    import HatJsonFormats.apiHatFileStatusFormat
+    ApiHatFile(Some(hatFileRow.id), hatFileRow.name, hatFileRow.source,
+      Some(hatFileRow.dateCreated.toDateTime), Some(hatFileRow.lastUpdated.toDateTime),
+      hatFileRow.tags, hatFileRow.title, hatFileRow.description, hatFileRow.sourceUrl,
+      Some(hatFileRow.status.as[HatFileStatus.Status]), None, Some(hatFileRow.contentPublic), None)
+  }
+
+  def fromDbModel(hatFileAccessRow: HatFileAccessRow): ApiHatFilePermissions = {
+    ApiHatFilePermissions(hatFileAccessRow.userId, hatFileAccessRow.content)
+  }
+
+  def fromDbModel(userAccessLogRow: UserAccessLogRow, user: HatUser) = {
+    HatAccessLog(userAccessLogRow.date.toDateTime, user, userAccessLogRow.`type`,
+      userAccessLogRow.scope, userAccessLogRow.applicationName, userAccessLogRow.applicationResource)
   }
 }

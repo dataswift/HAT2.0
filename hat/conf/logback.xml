@@ -24,9 +24,9 @@
   -->
 
 <configuration>
+    <!--<statusListener class="ch.qos.logback.core.status.NopStatusListener" />-->
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <target>System.out</target>
         <encoder>
             <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] %logger{1} - %msg%n</pattern>
         </encoder>
@@ -36,11 +36,16 @@
         <appender-ref ref="CONSOLE" />
     </appender>
 
-    <logger name="http" level="INFO">
+
+    <root level="WARN">
+        <appender-ref ref="ASYNCCONSOLE" />
+    </root>
+
+    <logger name="http" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="akka" level="INFO">
+    <logger name="akka" level="WARN">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
@@ -62,17 +67,19 @@
 
     <logger name="org.hatdex.hat.resourceManagement" level="WARN" />
     <logger name="org.hatdex.hat.api.service" level="INFO" />
+    <logger name="org.hatdex.hat.api.service.DataService" level="INFO" />
     <logger name="org.hatdex.hat.api.service.UsersService" level="WARN" />
+    <logger name="org.hatdex.hat.api.controllers" level="DEBUG" />
 
     <logger name="org.hatdex.marketsquare" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="com.ning.http.client" level="DEBUG" additivity="false">
+    <logger name="com.ning.http.client" level="WARN" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="play.api.libs.ws" level="DEBUG" additivity="false">
+    <logger name="play.api.libs.ws" level="ERROR" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
     

@@ -31,9 +31,11 @@ import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.authentication.{ HasFrontendRole, HatFrontendAuthEnvironment, HatFrontendController }
 import org.hatdex.hat.phata.service.{ HatServicesService, NotablesService, UserProfileService }
+import org.hatdex.hat.phata.models.{ Notable, PublicProfileResponse }
 import org.hatdex.hat.phata.{ views => phataViews }
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
 import play.api.i18n.MessagesApi
+import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
@@ -48,48 +50,29 @@ class Phata @Inject() (
     clock: Clock,
     hatServicesService: HatServicesService,
     userProfileService: UserProfileService,
-    notablesService: NotablesService
-) extends HatFrontendController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    notablesService: NotablesService) extends HatFrontendController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   import org.hatdex.hat.phata.models.HatPublicInfo.hatServer2PublicInfo
 
   private val logger = Logger(this.getClass)
 
-  def home: Action[AnyContent] = UserAwareAction.async { implicit request =>
-    request.identity map { implicit identity =>
-      Future.successful(Redirect(org.hatdex.hat.phata.controllers.routes.Phata.launcher()))
-    } getOrElse {
-      getProfile(None)
-    }
-  }
-
-  def launcher: Action[AnyContent] = SecuredAction(HasFrontendRole("owner")).async { implicit request =>
-    val user = request.identity
-    val futureCredentials = for {
-      services <- hatServicesService.hatServices(Set("app", "dataplug", "testapp"))
-      serviceCredentials <- Future.sequence(services.map(hatServicesService.hatServiceLink(user, _)))
-    } yield serviceCredentials
-
-    futureCredentials map { credentials =>
-      Ok(phataViews.html.authenticated(user, credentials))
-    } recover {
-      case e =>
-        logger.warn(s"Error resolving access tokens for auth page: ${e.getMessage}")
-        Ok(phataViews.html.authenticated(user, Seq()))
-    }
+  def rumpelIndex(): Action[AnyContent] = UserAwareAction.async { implicit request =>
+    Future.successful(Ok(phataViews.html.rumpelIndex(configuration.getString("frontend.protocol").getOrElse("https:"))))
   }
 
   private def getProfile(maybeUser: Option[HatUser])(implicit server: HatServer, request: RequestHeader): Future[Result] = {
     val eventualProfileData = for {
       (profilePublic, profileInfo) <- userProfileService.getPublicProfile()
       notables <- notablesService.getPublicNotes()
-    } yield (profilePublic, profileInfo, notables)
+    } yield {
+      (profilePublic, profileInfo, notables)
+    }
 
     eventualProfileData map {
-      case (true, publicProfile, notables) => Ok(phataViews.html.index(publicProfile, maybeUser, notables))
-      case (false, publicProfile, _)       => Ok(phataViews.html.indexPrivate(maybeUser))
+      case (true, publicProfile, notables) => Ok(Json.toJson(PublicProfileResponse(true, Some(publicProfile), Some(notables))))
+      case (false, publicProfile, _)       => Ok(Json.toJson(PublicProfileResponse(false, None, None)))
     } recover {
-      case e => Ok(phataViews.html.indexPrivate(maybeUser))
+      case e => Ok(Json.toJson(PublicProfileResponse(false, None, None)))
     }
   }
 
@@ -99,11 +82,10 @@ class Phata @Inject() (
 
   def notables(id: Option[Int]): Action[AnyContent] = UserAwareAction.async { implicit request =>
     notablesService.getPublicNotes() map { notables =>
-      val selectedNotable = notables.find(_.id == id).orElse(notables.headOption)
-      Ok(phataViews.html.notablesPage(request.identity, selectedNotable, notables))
+      Ok(Json.toJson(notables))
     } recover {
       case e =>
-        Ok(phataViews.html.indexPrivate(request.identity))
+        Ok("Failed to retrieve notables")
     }
   }
 }

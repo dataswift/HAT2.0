@@ -28,10 +28,11 @@ import java.sql.SQLTransientConnectionException
 import javax.inject._
 
 import com.mohiva.play.silhouette.api.actions.{ SecuredErrorHandler, UnsecuredErrorHandler }
+import com.mohiva.play.silhouette.impl.exceptions.{ IdentityNotFoundException, InvalidPasswordException }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.HatServerDiscoveryException
 import play.api._
-import play.api.http.{ ContentTypes, DefaultHttpErrorHandler }
+import play.api.http.{ ContentTypes, DefaultHttpErrorHandler, HttpErrorHandlerExceptions }
 import play.api.i18n.{ I18nSupport, MessagesApi }
 import play.api.libs.json.Json
 import play.api.mvc.Results._
@@ -39,6 +40,7 @@ import play.api.mvc._
 import play.api.routing.Router
 
 import scala.concurrent.Future
+import scala.util.Try
 
 class ErrorHandler @Inject() (
   env: Environment,
@@ -46,28 +48,59 @@ class ErrorHandler @Inject() (
   sourceMapper: OptionalSourceMapper,
   router: Provider[Router],
   hatMailer: HatMailer,
-  val messagesApi: MessagesApi
-) extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
+  val messagesApi: MessagesApi) extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
     with SecuredErrorHandler with UnsecuredErrorHandler with I18nSupport with ContentTypes with RequestExtractors with Rendering {
+
+  /**
+   * Exception handler which chains the exceptions handlers from the sub types.
+   *
+   * @param request The request header.
+   * @return A partial function which maps an exception to a Play result.
+   */
+  override def exceptionHandler(implicit request: RequestHeader): PartialFunction[Throwable, Future[Result]] = {
+    hatExceptionHandler orElse
+      super[SecuredErrorHandler].exceptionHandler orElse
+      super[UnsecuredErrorHandler].exceptionHandler
+  }
+
+  /**
+   * Exception handler which handles the specific errors expected in our context
+   *
+   * @param request The request header.
+   * @return A partial function which maps an exception to a Play result.
+   */
+  def hatExceptionHandler(implicit request: RequestHeader): PartialFunction[Throwable, Future[Result]] = {
+    case _: InvalidPasswordException        => onNotAuthenticated
+    case _: IdentityNotFoundException       => onNotAuthenticated
+    case _: SQLTransientConnectionException => onHatUnavailable
+    case _: HatServerDiscoveryException     => onHatUnavailable
+  }
 
   // 401 - Unauthorized
   override def onNotAuthenticated(implicit request: RequestHeader): Future[Result] = {
-    Logger.warn("[Silhouette] Not authenticated")
     Future.successful {
       render {
         case Accepts.Json() => Unauthorized(Json.obj("error" -> "Not Authenticated", "message" -> s"Not Authenticated"))
-        case _              => Redirect(org.hatdex.hat.phata.controllers.routes.Authentication.signin().url)
+        case _              => Redirect(org.hatdex.hat.phata.controllers.routes.Phata.rumpelIndex())
       }
     }
   }
 
   // 403 - Forbidden
   override def onNotAuthorized(implicit request: RequestHeader): Future[Result] = {
-    Logger.warn("[Silhouette] Not authorized")
     Future.successful {
       render {
         case Accepts.Json() => Forbidden(Json.obj("error" -> "Forbidden", "message" -> s"Access Denied"))
-        case _              => Redirect(org.hatdex.hat.phata.controllers.routes.Authentication.signin().url)
+        case _              => Redirect(org.hatdex.hat.phata.controllers.routes.Phata.rumpelIndex())
+      }
+    }
+  }
+
+  def onHatUnavailable(implicit request: RequestHeader): Future[Result] = {
+    Future.successful {
+      render {
+        case Accepts.Json() => NotFound(Json.obj("error" -> "Not Found", "message" -> "HAT unavailable"))
+        case _              => NotFound(org.hatdex.hat.phata.views.html.hatNotFound())
       }
     }
   }
@@ -76,54 +109,43 @@ class ErrorHandler @Inject() (
   override def onNotFound(request: RequestHeader, message: String): Future[Result] = Future.successful {
     implicit val _request = request
     implicit val noUser: Option[HatUser] = None
-    NotFound(env.mode match {
-      case Mode.Prod => views.html.defaultpages.notFound(request.method, request.uri)
-      case _         => views.html.defaultpages.devNotFound(request.method, request.uri, Some(router.get))
-    })
-  }
-
-  // 500 - internal server error
-  override def onProdServerError(request: RequestHeader, exception: UsefulException): Future[Result] = {
-    implicit val _request = request
-    implicit val noUser: Option[HatUser] = None
-    hatMailer.serverErrorNotify(request, exception)
-    Future.successful {
-      render {
-        case Accepts.Json() =>
-          InternalServerError(Json.obj(
-            "error" -> "Internal Server error",
-            "message" -> s"A server error occurred, please report this error code to our admins: ${exception.id}"
-          ))
-        case _ =>
-          InternalServerError(views.html.defaultpages.error(exception))
-      }
+    render {
+      case Accepts.Json() =>
+        NotFound(Json.obj(
+          "error" -> "Handler Not Found",
+          "message" -> s"Request handler at ${request.method}:${request.path} does not exist"))
+      case _ =>
+        NotFound(env.mode match {
+          case Mode.Prod => views.html.defaultpages.notFound(request.method, request.uri)
+          case _         => views.html.defaultpages.devNotFound(request.method, request.uri, Some(router.get))
+        })
     }
   }
 
+  // 500 - internal server error
   override def onServerError(request: RequestHeader, exception: Throwable): Future[Result] = {
+    exceptionHandler(request).applyOrElse(exception, onGenericServerError(request))
+  }
+
+  def onGenericServerError(request: RequestHeader)(exception: Throwable): Future[Result] = {
     implicit val _request = request
-    implicit val noUser: Option[HatUser] = None
+
+    val usefulException = HttpErrorHandlerExceptions.throwableToUsefulException(
+      sourceMapper.sourceMapper,
+      env.mode == Mode.Prod, exception)
+
+    Logger.error(s"Server Error ${usefulException.id}", usefulException)
+
+    hatMailer.serverErrorNotify(request, usefulException)
 
     Future.successful {
       render {
         case Accepts.Json() =>
-          val message = exception match {
-            case e: SQLTransientConnectionException =>
-              "HAT unavailable"
-            case e =>
-              s"A server error occurred, please report this error code to our admins: ${e.getMessage}"
-          }
           InternalServerError(Json.obj(
             "error" -> "Internal Server error",
-            "message" -> message
-          ))
+            "message" -> s"Server error occurred: ${usefulException.id}"))
         case _ =>
-          exception match {
-            case e: HatServerDiscoveryException =>
-              NotFound(org.hatdex.hat.phata.views.html.hatNotFound())
-            case e =>
-              InternalServerError(s"A server error occurred, please report this error code to our admins: ${e.getMessage}")
-          }
+          InternalServerError(s"A server error occurred, please report this error code to our admins: ${usefulException.id}")
       }
     }
   }
@@ -133,8 +155,15 @@ class ErrorHandler @Inject() (
     implicit val noUser: Option[HatUser] = None
     Future.successful {
       render {
-        case Accepts.Json() => BadRequest(Json.obj("error" -> "Bad Request", "message" -> message))
-        case _              => InternalServerError(views.html.defaultpages.badRequest(request.method, request.uri, message))
+        case Accepts.Json() =>
+          val jsonMessage = Try(Json.parse(message))
+          jsonMessage map { parsed =>
+            BadRequest(Json.obj("error" -> "Bad Request", "message" -> parsed))
+          } recover {
+            case _ =>
+              BadRequest(Json.obj("error" -> "Bad Request", "message" -> message))
+          } get
+        case _ => BadRequest(views.html.defaultpages.badRequest(request.method, request.uri, message))
       }
     }
   }

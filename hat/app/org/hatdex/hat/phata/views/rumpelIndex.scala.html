@@ -1,0 +1,62 @@
+@(protocol: String)
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Rumpel</title>
+        <base href="/">
+        <script>
+            var httpProtocol = "@protocol";
+            var baseUrl = httpProtocol.concat('//').concat(window.location.host);
+        </script>
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:site" content="@@thehatdex">
+        <meta name="twitter:title" content="Rumpel">
+        <meta name="twitter:description" content="Welcome to Rumpel, the personal hyperdata browser for your HAT data. Rumpel is a service that allows you to acquire, visualise and exchange your HAT data.">
+        <meta name="twitter:image:src" content="https://rumpel.hubofallthings.com/assets/icons/rumpel-plug.png">
+        <meta name="twitter:domain" content="https://rumpel.hubofallthings.com">
+        <meta property="og:url" content="https://rumpel.hubofallthings.com" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Rumpel" />
+        <meta property="og:description" content="Welcome to Rumpel, the personal hyperdata browser for your HAT data. Rumpel is a service that allows you to acquire, visualise and exchange your HAT data." />
+        <meta property="og:image" content="https://rumpel.hubofallthings.com/assets/icons/rumpel-plug.png" />
+        <meta property="og:site_name" content="Rumpel" />
+        <meta property="og:app_id" content="158753364485419" />
+        <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,300italic,700">
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0-rc.1/leaflet.css">
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0-rc.1.0/MarkerCluster.css">
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0-rc.1.0/MarkerCluster.Default.css">
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.9.0/fullcalendar.min.css">
+        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.3.0/introjs.min.css">
+        <link rel="stylesheet" type="text/css" href="assets/webfonts/filled/ss-glyphish-filled.css">
+        <link rel="stylesheet" type="text/css" href="assets/webfonts/outlined/ss-glyphish-outlined.css">
+        <link rel="stylesheet" type="text/css" href="@routes.Assets.versioned("stylesheets/styles.bundle.css")">
+        <link rel="icon" type="image/x-icon" href="favicon.ico">
+    </head>
+    <body>
+        <rump-app>Loading...</rump-app>
+    </body>
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0-rc.1/leaflet-src.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0-rc.1.0/leaflet.markercluster-src.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"></script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script type="text/javascript" src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/packery/2.1.1/packery.pkgd.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-ui-timepicker-addon/1.6.1/jquery-ui-timepicker-addon.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.9.0/fullcalendar.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.3.0/intro.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.js"></script>
+    <script type="text/javascript" src="@routes.Assets.versioned("js/zxcvbn.min.js")"></script>
+
+    <script type="text/javascript" src="@routes.Assets.versioned("js/inline.bundle.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.versioned("js/polyfills.bundle.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.versioned("js/vendor.bundle.js")"></script>
+    <script type="text/javascript" src="@routes.Assets.versioned("js/main.bundle.js")"></script>
+</html>

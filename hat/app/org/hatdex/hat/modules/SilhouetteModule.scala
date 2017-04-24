@@ -46,9 +46,10 @@ import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models.MailTokenUser
 import org.hatdex.hat.phata.service.{ MailTokenService, MailTokenUserService }
-import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider }
-import org.hatdex.hat.utils.ErrorHandler
+import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider, HatServerProviderImpl }
+import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, HatMailerImpl }
 import play.api.Configuration
+import play.api.http.HttpErrorHandler
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
 
@@ -61,12 +62,15 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * Configures the module.
    */
   def configure() {
+    bind[HatServerProvider].to[HatServerProviderImpl]
     bind[DynamicEnvironmentProviderService[HatServer]].to[HatServerProvider]
 
     bind[Silhouette[HatApiAuthEnvironment]].to[SilhouetteProvider[HatApiAuthEnvironment]]
     bind[Silhouette[HatFrontendAuthEnvironment]].to[SilhouetteProvider[HatFrontendAuthEnvironment]]
     bind[MailTokenService[MailTokenUser]].to[MailTokenUserService]
+    bind[HatMailer].to[HatMailerImpl]
 
+    bind[HttpErrorHandler].to[ErrorHandler]
     bind[SecuredErrorHandler].to[ErrorHandler]
     bind[UnsecuredErrorHandler].to[ErrorHandler]
     bind[CacheLayer].to[PlayCacheLayer]
@@ -74,7 +78,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     bind[AuthUserService].to[AuthUserServiceImpl]
     bind[DelegableAuthInfoDAO[PasswordInfo, HatServer]].to[PasswordInfoService]
     bind[IDGenerator].toInstance(new SecureRandomIDGenerator())
-    bind[PasswordHasher].toInstance(new BCryptPasswordHasher)
+    bind[PasswordHasher].toInstance(new BCryptPasswordHasher(logRounds = 14))
     bind[FingerprintGenerator].toInstance(new DefaultFingerprintGenerator(false))
 
     bind[EventBus].toInstance(EventBus())
@@ -103,16 +107,14 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     userService: AuthUserService,
     authenticatorService: AuthenticatorService[JWTRS256Authenticator, HatServer],
     dynamicEnvironmentProviderService: DynamicEnvironmentProviderService[HatServer],
-    eventBus: EventBus
-  ): Environment[HatApiAuthEnvironment] = {
+    eventBus: EventBus): Environment[HatApiAuthEnvironment] = {
 
     Environment[HatApiAuthEnvironment](
       userService,
       authenticatorService,
       Seq(),
       dynamicEnvironmentProviderService,
-      eventBus
-    )
+      eventBus)
   }
 
   @Provides
@@ -120,16 +122,14 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     userService: AuthUserService,
     authenticatorService: AuthenticatorService[CookieAuthenticator, HatServer],
     dynamicEnvironmentProviderService: DynamicEnvironmentProviderService[HatServer],
-    eventBus: EventBus
-  ): Environment[HatFrontendAuthEnvironment] = {
+    eventBus: EventBus): Environment[HatFrontendAuthEnvironment] = {
 
     Environment[HatFrontendAuthEnvironment](
       userService,
       authenticatorService,
       Seq(),
       dynamicEnvironmentProviderService,
-      eventBus
-    )
+      eventBus)
   }
 
   /**
@@ -186,8 +186,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     fingerprintGenerator: FingerprintGenerator,
     idGenerator: IDGenerator,
     configuration: Configuration,
-    clock: Clock
-  ): AuthenticatorService[JWTRS256Authenticator, HatServer] = {
+    clock: Clock): AuthenticatorService[JWTRS256Authenticator, HatServer] = {
 
     val config = configuration.underlying.as[JWTRS256AuthenticatorSettings]("silhouette.authenticator")
     val encoder = new Base64AuthenticatorEncoder()
@@ -202,8 +201,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     fingerprintGenerator: FingerprintGenerator,
     idGenerator: IDGenerator,
     configuration: Configuration,
-    clock: Clock
-  ): AuthenticatorService[CookieAuthenticator, HatServer] = {
+    clock: Clock): AuthenticatorService[CookieAuthenticator, HatServer] = {
 
     val config = configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator")
     val encoder = new CrypterAuthenticatorEncoder(crypter)
@@ -232,8 +230,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   @Provides
   def provideCredentialsProvider(
     authInfoRepository: AuthInfoRepository[HatServer],
-    passwordHasherRegistry: PasswordHasherRegistry
-  ): CredentialsProvider[HatServer] = {
+    passwordHasherRegistry: PasswordHasherRegistry): CredentialsProvider[HatServer] = {
     new CredentialsProvider(authInfoRepository, passwordHasherRegistry)
   }
 }
