@@ -27,8 +27,6 @@ package org.hatdex.hat.api.service
 import java.io.StringReader
 import java.util.UUID
 
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.services.s3.AmazonS3Client
 import com.atlassian.jwt.core.keys.KeyUtils
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
@@ -37,7 +35,9 @@ import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.authentication.HatFrontendAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
+import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
+import org.hatdex.hat.dal.Tables.{ DataField, DataTableTree }
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -45,7 +45,6 @@ import play.api.{ Application, Configuration }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 trait DataServiceContext extends Scope {
   val hatAddress = "hat.hubofallthings.net"
@@ -91,4 +90,18 @@ trait DataServiceContext extends Scope {
     .configure(FakeHatConfiguration.config)
     .overrides(new FakeModule)
     .build()
+
+  def fieldsetQuery(tableId: Int): Query[DataField, DataField#TableElementType, Seq] = {
+    val dataTableTreesQuery = for {
+      rootTable <- DataTableTree.filter(_.id === tableId)
+      tree <- DataTableTree.filter(t => t.rootTable === rootTable.id && t.deleted === false)
+    } yield tree
+
+    val fieldsetQuery = dataTableTreesQuery.join(DataField)
+      .map(_._2) // Only fields
+      .filter(_.deleted === false) // That have not been deleted
+      .distinct // And are distinct
+
+    fieldsetQuery
+  }
 }

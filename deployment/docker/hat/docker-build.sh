@@ -3,7 +3,7 @@
 set -e
 
 #typically Docker HAT container folder is in HAT2.0/deployment/docker/hat
-HAT_HOME=${HAT_HOME:-"$PWD"} #if executing from deployment/  : "$PWD/../.."
+HAT_HOME=${HAT_HOME:-"$PWD/hat"} #if executing from deployment/  : "$PWD/../.."
 DOCKER=${DOCKER:-"$PWD/deployment/docker/hat"}
 DOCKER_DEPLOY=$DOCKER/docker-deploy
 

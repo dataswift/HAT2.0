@@ -65,10 +65,33 @@ object PasswordChange {
 
   val nbvcxz = new Nbvcxz(nbvcxzConfiguration)
 
+  def passwordGuessesToScore(guesses: BigDecimal) = {
+    val DELTA = 5
+    if (guesses < 1e3 + DELTA) {
+      0
+    }
+    else if (guesses < 1e6 + DELTA) {
+      1
+    }
+    else if (guesses < 1e8 + DELTA) {
+      2
+    }
+    else if (guesses < 1e10 + DELTA) {
+      3
+    }
+    else {
+      4
+    }
+  }
+
   val passwordCheckConstraint: Constraint[String] = Constraint("constraints.passwordcheck")({
     plainText =>
       val strengthEstimate = nbvcxz.estimate(plainText)
-      val errors = if (!strengthEstimate.isMinimumEntropyMet) {
+
+      val errors = if (passwordGuessesToScore(strengthEstimate.getGuesses) >= 3) {
+        Nil
+      }
+      else {
         val timeToCrackOff = scoring.TimeEstimate.getTimeToCrackFormatted(strengthEstimate, "OFFLINE_BCRYPT_14")
         val feedback = strengthEstimate.getFeedback.getSuggestion.asScala.toList.map { suggestion =>
           ValidationError(suggestion)
@@ -77,9 +100,6 @@ object PasswordChange {
         Seq(
           ValidationError("Password is too weak"),
           ValidationError(s"Estimated time to crack this password - $timeToCrackOff")) ++ feedback
-      }
-      else {
-        Nil
       }
 
       if (errors.isEmpty) {
@@ -113,12 +133,32 @@ import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
 object ApiPasswordChange {
+
+  def passwordGuessesToScore(guesses: BigDecimal) = {
+    val DELTA = 5
+    if (guesses < 1e3 + DELTA) {
+      0
+    }
+    else if (guesses < 1e6 + DELTA) {
+      1
+    }
+    else if (guesses < 1e8 + DELTA) {
+      2
+    }
+    else if (guesses < 1e10 + DELTA) {
+      3
+    }
+    else {
+      4
+    }
+  }
+
   def passwordStrength(implicit reads: Reads[String], p: String => scala.collection.TraversableLike[_, String]) =
     Reads[String] { js =>
       reads.reads(js)
         .flatMap { a =>
           val estimate = PasswordChange.nbvcxz.estimate(a)
-          if (estimate.isMinimumEntropyMet) {
+          if (passwordGuessesToScore(estimate.getGuesses) >= 3) {
             JsSuccess(a)
           }
           else {
@@ -128,10 +168,6 @@ object ApiPasswordChange {
           }
         }
     }
-
-  Reads.filter[String](ValidationError("Minimum password requirement strength not met")) { p =>
-    PasswordChange.nbvcxz.estimate(p).isMinimumEntropyMet
-  }
 
   implicit val passwordChangeApiReads: Reads[ApiPasswordChange] = (
     (JsPath \ "newPassword").read[String](passwordStrength) and
