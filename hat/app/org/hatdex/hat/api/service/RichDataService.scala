@@ -29,10 +29,11 @@ import java.sql.Timestamp
 import java.util.UUID
 
 import com.github.tminglei.slickpg.TsVector
-import org.hatdex.hat.api.json.{ HatJsonUtilities, LocalDateTimeMarshalling, UuidMarshalling }
+import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
+import org.hatdex.hat.dal.SlickPostgresDriver.api._
+import org.hatdex.hat.dal.SlickPostgresDriver.api.Database
 import org.joda.time.{ DateTime, LocalDateTime }
 import play.api.Logger
 import play.api.libs.functional.syntax._
@@ -42,7 +43,7 @@ import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
 import scala.concurrent.Future
 
-trait RichDataJsonFormats extends HatJsonUtilities with UuidMarshalling with LocalDateTimeMarshalling {
+trait RichDataJsonFormats extends HatJsonFormats {
 
   implicit val endpointDataFormat: Format[EndpointData] = (
     (__ \ "endpoint").format[String] and
@@ -50,10 +51,10 @@ trait RichDataJsonFormats extends HatJsonUtilities with UuidMarshalling with Loc
     (__ \ "data").format[JsValue] and
     (__ \ "links").lazyFormatNullable(implicitly[Format[Seq[EndpointData]]]))(EndpointData.apply, unlift(EndpointData.unapply))
 
-  val fieldTransDateTimeExtractFormat = Json.format[FieldTransformation.DateTimeExtract]
-  val fieldTransTimestampExtractFormat = Json.format[FieldTransformation.TimestampExtract]
+  private val fieldTransDateTimeExtractFormat = Json.format[FieldTransformation.DateTimeExtract]
+  private val fieldTransTimestampExtractFormat = Json.format[FieldTransformation.TimestampExtract]
 
-  implicit val apiFieldTransformationFormat: Format[FieldTransformation.Transformation] = new Format[FieldTransformation.Transformation] {
+  private implicit val apiFieldTransformationFormat: Format[FieldTransformation.Transformation] = new Format[FieldTransformation.Transformation] {
     def reads(json: JsValue): JsResult[FieldTransformation.Transformation] = (json \ "transformation").as[String] match {
       case "identity"         => JsSuccess(FieldTransformation.Identity())
       case "datetimeExtract"  => Json.fromJson[FieldTransformation.DateTimeExtract](json)(fieldTransDateTimeExtractFormat)
@@ -64,21 +65,21 @@ trait RichDataJsonFormats extends HatJsonUtilities with UuidMarshalling with Loc
 
     def writes(transformation: FieldTransformation.Transformation): JsValue = {
       val (transformed, tType) = transformation match {
-        case ds: FieldTransformation.Identity         => (Json.obj(), JsString("identity"))
+        case _: FieldTransformation.Identity          => (Json.obj(), JsString("identity"))
         case ds: FieldTransformation.DateTimeExtract  => (Json.toJson(ds)(fieldTransDateTimeExtractFormat), JsString("datetimeExtract"))
         case ds: FieldTransformation.TimestampExtract => (Json.toJson(ds)(fieldTransTimestampExtractFormat), JsString("timestampExtract"))
-        case ds: FieldTransformation.Searchable       => (Json.obj(), JsString("searchable"))
+        case _: FieldTransformation.Searchable        => (Json.obj(), JsString("searchable"))
       }
       transformed.as[JsObject] + (("transformation", tType))
     }
   }
 
-  val filterOperatorContainsFormat = Json.format[FilterOperator.Contains]
-  val filterOperatorInFormat = Json.format[FilterOperator.In]
-  val filterOperatorBetweenFormat = Json.format[FilterOperator.Between]
-  val filterOperatorFindFormat = Json.format[FilterOperator.Find]
+  private val filterOperatorContainsFormat = Json.format[FilterOperator.Contains]
+  private val filterOperatorInFormat = Json.format[FilterOperator.In]
+  private val filterOperatorBetweenFormat = Json.format[FilterOperator.Between]
+  private val filterOperatorFindFormat = Json.format[FilterOperator.Find]
 
-  implicit val apiFilterOperatorFormat: Format[FilterOperator.Operator] = new Format[FilterOperator.Operator] {
+  private implicit val apiFilterOperatorFormat: Format[FilterOperator.Operator] = new Format[FilterOperator.Operator] {
     def reads(json: JsValue): JsResult[FilterOperator.Operator] = (json \ "operator").as[String] match {
       case "contains"     => Json.fromJson[FilterOperator.Contains](json)(filterOperatorContainsFormat)
       case "in"           => Json.fromJson[FilterOperator.In](json)(filterOperatorInFormat)
@@ -105,6 +106,8 @@ trait RichDataJsonFormats extends HatJsonUtilities with UuidMarshalling with Loc
     (__ \ "mapping").formatNullable[JsValue] and
     (__ \ "filters").formatNullable[Seq[EndpointQueryFilter]] and
     (__ \ "links").lazyFormatNullable(implicitly[Format[Seq[EndpointQuery]]]))(EndpointQuery.apply, unlift(EndpointQuery.unapply))
+
+  implicit val propertyQueryFormat: Format[PropertyQuery] = Json.format[PropertyQuery]
 }
 
 case class EndpointData(
@@ -132,7 +135,7 @@ object FilterOperator {
   }
 }
 
-object FieldTransformation {
+object FieldTransformation extends PgFunctions {
   trait Transformation {
     def transform(value: Rep[JsValue]): Rep[JsValue] = value
   }
@@ -157,10 +160,13 @@ object FieldTransformation {
     }
   }
 
-  private val toJson = SimpleFunction.unary[String, JsValue]("to_jsonb")
-  private val toTimestamp = SimpleFunction.unary[Double, Timestamp]("to_timestamp")
-  private val datePart = SimpleFunction.binary[String, DateTime, String]("date_part")
-  private val datePartTimestamp = SimpleFunction.binary[String, Timestamp, String]("date_part")
+}
+
+trait PgFunctions {
+  val toJson = SimpleFunction.unary[String, JsValue]("to_jsonb")
+  val toTimestamp = SimpleFunction.unary[Double, Timestamp]("to_timestamp")
+  val datePart = SimpleFunction.binary[String, DateTime, String]("date_part")
+  val datePartTimestamp = SimpleFunction.binary[String, Timestamp, String]("date_part")
 }
 
 case class EndpointQueryFilter(
@@ -218,7 +224,7 @@ case class PropertyQuery(
 
  */
 
-class RichDataService extends DalExecutionContext {
+class RichDataService extends DalExecutionContext with PgFunctions {
 
   val logger = Logger(this.getClass)
 
@@ -228,7 +234,7 @@ class RichDataService extends DalExecutionContext {
     DataJsonRow(recordId.getOrElse(UUID.randomUUID()), endpoint, userId, LocalDateTime.now(), data, digest)
   }
 
-  def saveData(userId: UUID, endpointData: List[EndpointData])(implicit db: Database): Future[Seq[EndpointData]] = {
+  def saveData(userId: UUID, endpointData: Seq[EndpointData])(implicit db: Database): Future[Seq[EndpointData]] = {
     val queries = endpointData map { endpointDataGroup =>
       val endpointRow = dbDataRow(endpointDataGroup.endpoint, userId, endpointDataGroup.data)
 
@@ -353,18 +359,22 @@ class RichDataService extends DalExecutionContext {
   }
 
   private def propertyDataQuery(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], limit: Int): Query[((DataJson, ConstColumn[String]), Rep[Option[(DataJson, ConstColumn[String])]]), ((DataJsonRow, String), Option[(DataJsonRow, String)]), Seq] = {
-    val queriesWithMappers = endpointQueries.zipWithIndex map {
-      case (endpointQuery, endpointQueryIndex) =>
-        orderBy map { orderBy =>
-          for {
-            data <- generatedDataQuery(endpointQuery, DataJson)
-          } yield (data, data.data #> endpointQuery.originalField(orderBy), endpointQueryIndex.toString)
-        } getOrElse {
-          for {
-            data <- generatedDataQuery(endpointQuery, DataJson)
-          } yield (data, data.date.asColumnOf[Option[JsValue]], endpointQueryIndex.toString)
-        }
-    }
+    val queriesWithMappers = //: Seq[Query[(DataJson, Rep[Option[JsValue]], ConstColumn[String]), (DataJsonRow, Option[JsValue], String), Seq]] =
+      endpointQueries.zipWithIndex map {
+        case (endpointQuery, endpointQueryIndex) =>
+          orderBy map { orderBy =>
+            for {
+              data <- generatedDataQuery(endpointQuery, DataJson)
+            } yield (data, data.data #> endpointQuery.originalField(orderBy), endpointQueryIndex.toString)
+          } getOrElse {
+            //          for {
+            //            data <- generatedDataQuery(endpointQuery, DataJson)
+            //          } yield (data, data.data #> endpointQuery.originalField(""), endpointQueryIndex.toString)
+            for {
+              data <- generatedDataQuery(endpointQuery, DataJson)
+            } yield (data, toJson(data.date.asColumnOf[String]).asColumnOf[Option[JsValue]], endpointQueryIndex.toString)
+          }
+      }
 
     val endpointDataQuery = queriesWithMappers
       .reduce((aggregate, query) => aggregate.unionAll(query)) // merge all the queries together

@@ -1,95 +1,104 @@
 
 # USER Routes
-GET           /users/user                                 org.hatdex.hat.api.controllers.Users.listUsers
-POST          /users/user                                 org.hatdex.hat.api.controllers.Users.createUser
-GET           /publickey                                  org.hatdex.hat.api.controllers.Users.publicKey
-GET           /users/access_token/validate                org.hatdex.hat.api.controllers.Users.validateToken
-GET           /users/application_token                    org.hatdex.hat.api.controllers.Users.applicationToken(name: String, resource: String)
-GET           /users/access_token                         org.hatdex.hat.api.controllers.Users.accessToken
-PUT           /users/user/:userId/enable                  org.hatdex.hat.api.controllers.Users.enableUser(userId: java.util.UUID)
-PUT           /users/user/:userId/disable                 org.hatdex.hat.api.controllers.Users.disableUser(userId: java.util.UUID)
-PUT           /users/user/:userId/delete                  org.hatdex.hat.api.controllers.Users.deleteUser(userId: java.util.UUID)
+GET           /users/user                                          org.hatdex.hat.api.controllers.Users.listUsers
+POST          /users/user                                          org.hatdex.hat.api.controllers.Users.createUser
+GET           /publickey                                           org.hatdex.hat.api.controllers.Users.publicKey
+GET           /users/access_token/validate                         org.hatdex.hat.api.controllers.Users.validateToken
+GET           /users/application_token                             org.hatdex.hat.api.controllers.Users.applicationToken(name: String, resource: String)
+GET           /users/access_token                                  org.hatdex.hat.api.controllers.Users.accessToken
+PUT           /users/user/:userId/enable                           org.hatdex.hat.api.controllers.Users.enableUser(userId: java.util.UUID)
+PUT           /users/user/:userId/disable                          org.hatdex.hat.api.controllers.Users.disableUser(userId: java.util.UUID)
+PUT           /users/user/:userId/delete                           org.hatdex.hat.api.controllers.Users.deleteUser(userId: java.util.UUID)
 
 # DATA Routes
-GET           /data/sources                               org.hatdex.hat.api.controllers.Data.getDataSources
+GET           /data/sources                                        org.hatdex.hat.api.controllers.Data.getDataSources
 
-POST          /data/table                                 org.hatdex.hat.api.controllers.Data.createTable
-POST          /data/table/:parentId/table/:childId        org.hatdex.hat.api.controllers.Data.linkTables(parentId: Int, childId: Int)
-GET           /data/table/:tableId                        org.hatdex.hat.api.controllers.Data.getTable(tableId: Int)
-GET           /data/table                                 org.hatdex.hat.api.controllers.Data.findTable(name: Option[String], nameLike: Option[String], nameUnlike: Option[String], source: String)
-GET           /data/table/:tableId/values                 org.hatdex.hat.api.controllers.Data.getTableValues(tableId: Int, limit: Option[Int], starttime: Option[Long], endtime: Option[Long], pretty: Option[Boolean])
+POST          /data/table                                          org.hatdex.hat.api.controllers.Data.createTable
+POST          /data/table/:parentId/table/:childId                 org.hatdex.hat.api.controllers.Data.linkTables(parentId: Int, childId: Int)
+GET           /data/table/:tableId                                 org.hatdex.hat.api.controllers.Data.getTable(tableId: Int)
+GET           /data/table                                          org.hatdex.hat.api.controllers.Data.findTable(name: Option[String], nameLike: Option[String], nameUnlike: Option[String], source: String)
+GET           /data/table/:tableId/values                          org.hatdex.hat.api.controllers.Data.getTableValues(tableId: Int, limit: Option[Int], starttime: Option[Long], endtime: Option[Long], pretty: Option[Boolean])
 
-POST          /data/field                                 org.hatdex.hat.api.controllers.Data.createField
-GET           /data/field/:fieldId                        org.hatdex.hat.api.controllers.Data.getField(fieldId: Int)
-GET           /data/field/:fieldId/values                 org.hatdex.hat.api.controllers.Data.getFieldValues(fieldId: Int)
+POST          /data/field                                          org.hatdex.hat.api.controllers.Data.createField
+GET           /data/field/:fieldId                                 org.hatdex.hat.api.controllers.Data.getField(fieldId: Int)
+GET           /data/field/:fieldId/values                          org.hatdex.hat.api.controllers.Data.getFieldValues(fieldId: Int)
 
-POST          /data/record                                org.hatdex.hat.api.controllers.Data.createRecord
-POST          /data/record/values                         org.hatdex.hat.api.controllers.Data.createRecordValues
-GET           /data/record/:recordId/values               org.hatdex.hat.api.controllers.Data.getRecordValues(recordId: Int)
-POST          /data/record/:recordId/values               org.hatdex.hat.api.controllers.Data.storeValueList(recordId: Int)
+POST          /data/record                                         org.hatdex.hat.api.controllers.Data.createRecord
+POST          /data/record/values                                  org.hatdex.hat.api.controllers.Data.createRecordValues
+GET           /data/record/:recordId/values                        org.hatdex.hat.api.controllers.Data.getRecordValues(recordId: Int)
+POST          /data/record/:recordId/values                        org.hatdex.hat.api.controllers.Data.storeValueList(recordId: Int)
 
-POST          /data/value                                 org.hatdex.hat.api.controllers.Data.createValue
+POST          /data/value                                          org.hatdex.hat.api.controllers.Data.createValue
 
-DELETE        /data/value/:valueId                        org.hatdex.hat.api.controllers.Data.deleteDataValue(valueId: Int)
-DELETE        /data/field/:fieldId                        org.hatdex.hat.api.controllers.Data.deleteDataField(fieldId: Int)
-DELETE        /data/table/:tableId                        org.hatdex.hat.api.controllers.Data.deleteDataTable(tableId: Int)
-DELETE        /data/record/:recordId                      org.hatdex.hat.api.controllers.Data.deleteDataRecord(recordId: Int)
+DELETE        /data/value/:valueId                                 org.hatdex.hat.api.controllers.Data.deleteDataValue(valueId: Int)
+DELETE        /data/field/:fieldId                                 org.hatdex.hat.api.controllers.Data.deleteDataField(fieldId: Int)
+DELETE        /data/table/:tableId                                 org.hatdex.hat.api.controllers.Data.deleteDataTable(tableId: Int)
+DELETE        /data/record/:recordId                               org.hatdex.hat.api.controllers.Data.deleteDataRecord(recordId: Int)
 
 # DATA DEBIT routes
 
-GET           /dataDebit                                  org.hatdex.hat.api.controllers.DataDebit.listDataDebits()
-POST          /dataDebit/propose                          org.hatdex.hat.api.controllers.DataDebit.proposeDataDebit
-GET           /dataDebit/:dataDebitKey                    org.hatdex.hat.api.controllers.DataDebit.getDataDebit(dataDebitKey: java.util.UUID)
-PUT           /dataDebit/:dataDebitKey/enable             org.hatdex.hat.api.controllers.DataDebit.enableDataDebit(dataDebitKey: java.util.UUID)
-PUT           /dataDebit/:dataDebitKey/disable            org.hatdex.hat.api.controllers.DataDebit.disableDataDebit(dataDebitKey: java.util.UUID)
-PUT           /dataDebit/:dataDebitKey/roll               org.hatdex.hat.api.controllers.DataDebit.rollDataDebitApi(dataDebitKey: java.util.UUID)
-GET           /dataDebit/:dataDebitKey/values             org.hatdex.hat.api.controllers.DataDebit.retrieveDataDebitValues(dataDebitKey: java.util.UUID, limit: Option[Int], starttime: Option[Long], endtime: Option[Long], pretty: Option[Boolean])
+GET           /dataDebit                                           org.hatdex.hat.api.controllers.DataDebit.listDataDebits()
+POST          /dataDebit/propose                                   org.hatdex.hat.api.controllers.DataDebit.proposeDataDebit
+GET           /dataDebit/:dataDebitKey                             org.hatdex.hat.api.controllers.DataDebit.getDataDebit(dataDebitKey: java.util.UUID)
+PUT           /dataDebit/:dataDebitKey/enable                      org.hatdex.hat.api.controllers.DataDebit.enableDataDebit(dataDebitKey: java.util.UUID)
+PUT           /dataDebit/:dataDebitKey/disable                     org.hatdex.hat.api.controllers.DataDebit.disableDataDebit(dataDebitKey: java.util.UUID)
+PUT           /dataDebit/:dataDebitKey/roll                        org.hatdex.hat.api.controllers.DataDebit.rollDataDebitApi(dataDebitKey: java.util.UUID)
+GET           /dataDebit/:dataDebitKey/values                      org.hatdex.hat.api.controllers.DataDebit.retrieveDataDebitValues(dataDebitKey: java.util.UUID, limit: Option[Int], starttime: Option[Long], endtime: Option[Long], pretty: Option[Boolean])
 
 # SYSTEM routes
-GET           /system/update                              org.hatdex.hat.api.controllers.SystemStatus.update()
-GET           /api/v2/system/status                       org.hatdex.hat.api.controllers.SystemStatus.status()
+GET           /system/update                                       org.hatdex.hat.api.controllers.SystemStatus.update()
+GET           /api/v2/system/status                                org.hatdex.hat.api.controllers.SystemStatus.status()
 
 # PHATA routes
-GET           /assets/*file                               @controllers.Assets.versioned(path="/public", file: Asset)
-POST          /                                           org.hatdex.hat.phata.controllers.Authentication.login
-GET           /signin                                     org.hatdex.hat.phata.controllers.Authentication.signin
-GET           /hatlogin                                   org.hatdex.hat.phata.controllers.Authentication.hatLogin(name: String, redirect: String)
-GET           /logout                                     org.hatdex.hat.phata.controllers.Authentication.logout
-GET           /password                                   org.hatdex.hat.phata.controllers.Authentication.passwordChangeStart
-POST          /password                                   org.hatdex.hat.phata.controllers.Authentication.passwordChangeProcess
-GET           /passwordreset                              org.hatdex.hat.phata.controllers.Authentication.forgotPassword
-POST          /passwordreset                              org.hatdex.hat.phata.controllers.Authentication.handleForgotPassword
-GET           /passwordreset/confirm/:token               org.hatdex.hat.phata.controllers.Authentication.resetPassword(token: String)
-POST          /passwordreset/confirm/:token               org.hatdex.hat.phata.controllers.Authentication.handleResetPassword(token: String)
+GET           /assets/*file                                        @controllers.Assets.versioned(path="/public", file: Asset)
+POST          /                                                    org.hatdex.hat.phata.controllers.Authentication.login
+GET           /signin                                              org.hatdex.hat.phata.controllers.Authentication.signin
+GET           /hatlogin                                            org.hatdex.hat.phata.controllers.Authentication.hatLogin(name: String, redirect: String)
+GET           /logout                                              org.hatdex.hat.phata.controllers.Authentication.logout
+GET           /password                                            org.hatdex.hat.phata.controllers.Authentication.passwordChangeStart
+POST          /password                                            org.hatdex.hat.phata.controllers.Authentication.passwordChangeProcess
+GET           /passwordreset                                       org.hatdex.hat.phata.controllers.Authentication.forgotPassword
+POST          /passwordreset                                       org.hatdex.hat.phata.controllers.Authentication.handleForgotPassword
+GET           /passwordreset/confirm/:token                        org.hatdex.hat.phata.controllers.Authentication.resetPassword(token: String)
+POST          /passwordreset/confirm/:token                        org.hatdex.hat.phata.controllers.Authentication.handleResetPassword(token: String)
 
-GET           /                                           org.hatdex.hat.phata.controllers.Phata.rumpelIndex
-GET           /api/profile                                org.hatdex.hat.phata.controllers.Phata.profile
-GET           /api/notables                               org.hatdex.hat.phata.controllers.Phata.notables(id: Option[Int])
+GET           /                                                    org.hatdex.hat.phata.controllers.Phata.rumpelIndex
+GET           /api/profile                                         org.hatdex.hat.phata.controllers.Phata.profile
+GET           /api/notables                                        org.hatdex.hat.phata.controllers.Phata.notables(id: Option[Int])
 
 # FILE routes
-POST          /api/v2/files/upload                                org.hatdex.hat.api.controllers.Files.startUpload
-POST          /api/v2/files/search                                org.hatdex.hat.api.controllers.Files.listFiles()
-PUT           /api/v2/files/file/:fileId/complete                 org.hatdex.hat.api.controllers.Files.completeUpload(fileId)
-GET           /api/v2/files/file/:fileId                          org.hatdex.hat.api.controllers.Files.getDetail(fileId)
-PUT           /api/v2/files/file/:fileId                          org.hatdex.hat.api.controllers.Files.updateFile(fileId)
-DELETE        /api/v2/files/file/:fileId                          org.hatdex.hat.api.controllers.Files.deleteFile(fileId)
-GET           /api/v2/files/content/:fileId                       org.hatdex.hat.api.controllers.Files.getContent(fileId)
+POST          /api/v2/files/upload                                 org.hatdex.hat.api.controllers.Files.startUpload
+POST          /api/v2/files/search                                 org.hatdex.hat.api.controllers.Files.listFiles()
+PUT           /api/v2/files/file/:fileId/complete                  org.hatdex.hat.api.controllers.Files.completeUpload(fileId)
+GET           /api/v2/files/file/:fileId                           org.hatdex.hat.api.controllers.Files.getDetail(fileId)
+PUT           /api/v2/files/file/:fileId                           org.hatdex.hat.api.controllers.Files.updateFile(fileId)
+DELETE        /api/v2/files/file/:fileId                           org.hatdex.hat.api.controllers.Files.deleteFile(fileId)
+GET           /api/v2/files/content/:fileId                        org.hatdex.hat.api.controllers.Files.getContent(fileId)
 
 # FILE permissions
-POST          /api/v2/files/allowAccess/:userId                   org.hatdex.hat.api.controllers.Files.allowAccessPattern(userId: java.util.UUID, content: Boolean)
-POST          /api/v2/files/restrictAccess/:userId                org.hatdex.hat.api.controllers.Files.restrictAccessPattern(userId: java.util.UUID)
-GET           /api/v2/files/allowAccess/:fileId/:userId           org.hatdex.hat.api.controllers.Files.allowAccess(fileId, userId: java.util.UUID, content: Boolean)
-GET           /api/v2/files/restrictAccess/:fileId/:userId        org.hatdex.hat.api.controllers.Files.restrictAccess(fileId, userId: java.util.UUID)
-GET           /api/v2/files/allowAccessPublic/:fileId             org.hatdex.hat.api.controllers.Files.changePublicAccess(fileId, public: Boolean = true)
-GET           /api/v2/files/restrictAccessPublic/:fileId          org.hatdex.hat.api.controllers.Files.changePublicAccess(fileId, public: Boolean = true)
+POST          /api/v2/files/allowAccess/:userId                    org.hatdex.hat.api.controllers.Files.allowAccessPattern(userId: java.util.UUID, content: Boolean)
+POST          /api/v2/files/restrictAccess/:userId                 org.hatdex.hat.api.controllers.Files.restrictAccessPattern(userId: java.util.UUID)
+GET           /api/v2/files/allowAccess/:fileId/:userId            org.hatdex.hat.api.controllers.Files.allowAccess(fileId, userId: java.util.UUID, content: Boolean)
+GET           /api/v2/files/restrictAccess/:fileId/:userId         org.hatdex.hat.api.controllers.Files.restrictAccess(fileId, userId: java.util.UUID)
+GET           /api/v2/files/allowAccessPublic/:fileId              org.hatdex.hat.api.controllers.Files.changePublicAccess(fileId, public: Boolean = true)
+GET           /api/v2/files/restrictAccessPublic/:fileId           org.hatdex.hat.api.controllers.Files.changePublicAccess(fileId, public: Boolean = true)
 
 # RICH DATA routes
 
-GET           /api/v2/data/*endpoint                            org.hatdex.hat.api.controllers.RichData.getEndpointData(endpoint, recordId: Option[java.util.UUID], orderBy: Option[String], take: Option[Int])
+POST          /api/v2/endpoint/*endpoint                           org.hatdex.hat.api.controllers.RichData.registerQueryEndpoint(endpoint)
+GET           /api/v2/endpoint/*endpoint                           org.hatdex.hat.api.controllers.RichData.getQueryEndpointData(endpoint, recordId: Option[java.util.UUID], orderBy: Option[String], take: Option[Int])
+GET           /api/v2/data/*endpoint                               org.hatdex.hat.api.controllers.RichData.getEndpointData(endpoint, recordId: Option[java.util.UUID], orderBy: Option[String], take: Option[Int])
+POST          /api/v2/data/*endpoint                               org.hatdex.hat.api.controllers.RichData.saveEndpointData(endpoint)
+PUT           /api/v2/data                                         org.hatdex.hat.api.controllers.RichData.updateRecords()
+DELETE        /api/v2/data                                         org.hatdex.hat.api.controllers.RichData.deleteDataRecords(records: Seq[java.util.UUID])
+POST          /api/v2/data-link                                    org.hatdex.hat.api.controllers.RichData.linkDataRecords(records: Seq[java.util.UUID])
+POST          /api/v2/data-batch                                   org.hatdex.hat.api.controllers.RichData.saveBatchData
+POST          /api/v2/data-bundle/:bundleId                        org.hatdex.hat.api.controllers.RichData.registerBundle(bundleId)
+GET           /api/v2/data-bundle/:bundleId                        org.hatdex.hat.api.controllers.RichData.fetchBundle(bundleId)
 
 # AUTHENTICATION routes
 
-GET           /control/v2/auth/hatlogin                           org.hatdex.hat.api.controllers.Authentication.hatLogin(name: String, redirect: String)
-POST          /control/v2/auth/password                           org.hatdex.hat.api.controllers.Authentication.passwordChangeProcess
-POST          /control/v2/auth/passwordReset                      org.hatdex.hat.api.controllers.Authentication.handleForgotPassword
-POST          /control/v2/auth/passwordreset/confirm/:token       org.hatdex.hat.api.controllers.Authentication.handleResetPassword(token: String)
+GET           /control/v2/auth/hatlogin                            org.hatdex.hat.api.controllers.Authentication.hatLogin(name: String, redirect: String)
+POST          /control/v2/auth/password                            org.hatdex.hat.api.controllers.Authentication.passwordChangeProcess
+POST          /control/v2/auth/passwordReset                       org.hatdex.hat.api.controllers.Authentication.handleForgotPassword
+POST          /control/v2/auth/passwordreset/confirm/:token        org.hatdex.hat.api.controllers.Authentication.handleResetPassword(token: String)
