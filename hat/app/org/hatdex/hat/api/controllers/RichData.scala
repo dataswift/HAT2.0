@@ -84,7 +84,7 @@ class RichData @Inject() (
   def saveBatchData: Action[Seq[EndpointData]] =
     SecuredAction(WithRole("dataCredit", "owner")).async(parsers.json[Seq[EndpointData]]) { implicit request =>
       dataService.saveData(request.identity.userId, request.body) map { saved =>
-        Created(Json.toJson(saved.head))
+        Created(Json.toJson(saved))
       }
     }
 

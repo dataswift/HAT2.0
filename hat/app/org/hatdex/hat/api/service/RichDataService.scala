@@ -188,6 +188,8 @@ case class EndpointQuery(
       (m \ field)
         .toOption
         .map(_.as[String].split('.').toList)
+    } orElse {
+      Some(field.split('.').toList)
     }
   }
 }
