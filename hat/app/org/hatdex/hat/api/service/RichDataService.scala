@@ -25,208 +25,76 @@
 package org.hatdex.hat.api.service
 
 import java.security.MessageDigest
-import java.sql.Timestamp
 import java.util.UUID
 
 import com.github.tminglei.slickpg.TsVector
-import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.SlickPostgresDriver.api.Database
+import org.hatdex.hat.api.models.FieldTransformation
+import org.hatdex.hat.api.models.FilterOperator
+import org.hatdex.hat.api.models.EndpointData
+import org.hatdex.hat.api.models.EndpointQueryFilter
+import org.hatdex.hat.api.models.EndpointQuery
+import org.hatdex.hat.api.models.PropertyQuery
 import org.joda.time.{ DateTime, LocalDateTime }
 import play.api.Logger
-import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
 import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
 import scala.concurrent.Future
 
-trait RichDataJsonFormats extends HatJsonFormats {
+trait FieldTransformable[In] {
+  type Out
+  def apply(in: In): Out
+}
 
-  implicit val endpointDataFormat: Format[EndpointData] = (
-    (__ \ "endpoint").format[String] and
-    (__ \ "recordId").formatNullable[UUID] and
-    (__ \ "data").format[JsValue] and
-    (__ \ "links").lazyFormatNullable(implicitly[Format[Seq[EndpointData]]]))(EndpointData.apply, unlift(EndpointData.unapply))
+object FieldTransformable {
+  import FieldTransformation._
+  type Aux[I, O] = FieldTransformable[I] { type Out = O }
 
-  private val fieldTransDateTimeExtractFormat = Json.format[FieldTransformation.DateTimeExtract]
-  private val fieldTransTimestampExtractFormat = Json.format[FieldTransformation.TimestampExtract]
+  implicit val generateIdentityTranslation: Aux[Identity, Rep[JsValue] => Rep[JsValue]] =
+    new FieldTransformable[Identity] {
+      type Out = Rep[JsValue] => Rep[JsValue]
 
-  private implicit val apiFieldTransformationFormat: Format[FieldTransformation.Transformation] = new Format[FieldTransformation.Transformation] {
-    def reads(json: JsValue): JsResult[FieldTransformation.Transformation] = (json \ "transformation").as[String] match {
-      case "identity"         => JsSuccess(FieldTransformation.Identity())
-      case "datetimeExtract"  => Json.fromJson[FieldTransformation.DateTimeExtract](json)(fieldTransDateTimeExtractFormat)
-      case "timestampExtract" => Json.fromJson[FieldTransformation.TimestampExtract](json)(fieldTransTimestampExtractFormat)
-      case "searchable"       => JsSuccess(FieldTransformation.Searchable())
-      case transformation     => JsError(s"Unexpected JSON value $transformation in $json")
-    }
-
-    def writes(transformation: FieldTransformation.Transformation): JsValue = {
-      val (transformed, tType) = transformation match {
-        case _: FieldTransformation.Identity          => (Json.obj(), JsString("identity"))
-        case ds: FieldTransformation.DateTimeExtract  => (Json.toJson(ds)(fieldTransDateTimeExtractFormat), JsString("datetimeExtract"))
-        case ds: FieldTransformation.TimestampExtract => (Json.toJson(ds)(fieldTransTimestampExtractFormat), JsString("timestampExtract"))
-        case _: FieldTransformation.Searchable        => (Json.obj(), JsString("searchable"))
+      def apply(in: Identity): Rep[JsValue] => Rep[JsValue] = {
+        value: Rep[JsValue] => value
       }
-      transformed.as[JsObject] + (("transformation", tType))
-    }
-  }
-
-  private val filterOperatorContainsFormat = Json.format[FilterOperator.Contains]
-  private val filterOperatorInFormat = Json.format[FilterOperator.In]
-  private val filterOperatorBetweenFormat = Json.format[FilterOperator.Between]
-  private val filterOperatorFindFormat = Json.format[FilterOperator.Find]
-
-  private implicit val apiFilterOperatorFormat: Format[FilterOperator.Operator] = new Format[FilterOperator.Operator] {
-    def reads(json: JsValue): JsResult[FilterOperator.Operator] = (json \ "operator").as[String] match {
-      case "contains"     => Json.fromJson[FilterOperator.Contains](json)(filterOperatorContainsFormat)
-      case "in"           => Json.fromJson[FilterOperator.In](json)(filterOperatorInFormat)
-      case "between"      => Json.fromJson[FilterOperator.Between](json)(filterOperatorBetweenFormat)
-      case "find"         => Json.fromJson[FilterOperator.Find](json)(filterOperatorFindFormat)
-      case transformation => JsError(s"Unexpected JSON value $transformation in $json")
     }
 
-    def writes(transformation: FilterOperator.Operator): JsValue = {
-      val (transformed, tType) = transformation match {
-        case ds: FilterOperator.Contains => (Json.toJson(ds)(filterOperatorContainsFormat), JsString("contains"))
-        case ds: FilterOperator.In       => (Json.toJson(ds)(filterOperatorInFormat), JsString("in"))
-        case ds: FilterOperator.Between  => (Json.toJson(ds)(filterOperatorBetweenFormat), JsString("between"))
-        case ds: FilterOperator.Find     => (Json.toJson(ds)(filterOperatorFindFormat), JsString("find"))
+  implicit val generateDateTimeExtractTranslation: Aux[DateTimeExtract, Rep[JsValue] => Rep[JsValue]] =
+    new FieldTransformable[DateTimeExtract] {
+      type Out = Rep[JsValue] => Rep[JsValue]
+
+      def apply(in: DateTimeExtract): Rep[JsValue] => Rep[JsValue] = {
+        value => toJson(datePart(in.part, value.asColumnOf[String].asColumnOf[DateTime]))
       }
-      transformed.as[JsObject] + (("operator", tType))
     }
-  }
 
-  implicit val endpointQueryFilterFormat: Format[EndpointQueryFilter] = Json.format[EndpointQueryFilter]
+  implicit val generateTimestampExtractTranslation: Aux[TimestampExtract, Rep[JsValue] => Rep[JsValue]] =
+    new FieldTransformable[TimestampExtract] {
+      type Out = Rep[JsValue] => Rep[JsValue]
 
-  implicit val endpointQueryFormat: Format[EndpointQuery] = (
-    (__ \ "endpoint").format[String] and
-    (__ \ "mapping").formatNullable[JsValue] and
-    (__ \ "filters").formatNullable[Seq[EndpointQueryFilter]] and
-    (__ \ "links").lazyFormatNullable(implicitly[Format[Seq[EndpointQuery]]]))(EndpointQuery.apply, unlift(EndpointQuery.unapply))
+      def apply(in: TimestampExtract): Rep[JsValue] => Rep[JsValue] = {
+        value => toJson(datePartTimestamp(in.part, toTimestamp(value.asColumnOf[Double])))
+      }
+    }
 
-  implicit val propertyQueryFormat: Format[PropertyQuery] = Json.format[PropertyQuery]
+  implicit val generateSearchableTranslation: Aux[Searchable, Rep[JsValue] => Rep[TsVector]] =
+    new FieldTransformable[Searchable] {
+      type Out = Rep[JsValue] => Rep[TsVector]
+
+      def apply(in: Searchable): Rep[JsValue] => Rep[TsVector] = {
+        value => toTsVector(value.asColumnOf[String])
+      }
+    }
+
+  def process[I](in: I)(implicit p: FieldTransformable[I]): p.Out = p(in)
 }
 
-case class EndpointData(
-  endpoint: String,
-  recordId: Option[UUID],
-  data: JsValue,
-  links: Option[Seq[EndpointData]])
-
-object FilterOperator {
-  trait Operator {
-    val operator: String
-  }
-
-  case class In(value: JsValue) extends Operator {
-    val operator = "in"
-  }
-  case class Contains(value: JsValue) extends Operator {
-    val operator = "contains"
-  }
-  case class Between(lower: JsValue, upper: JsValue) extends Operator {
-    val operator = "between"
-  }
-  case class Find(search: JsValue) extends Operator {
-    val operator = "matches"
-  }
-}
-
-object FieldTransformation extends PgFunctions {
-  trait Transformation {
-    def transform(value: Rep[JsValue]): Rep[JsValue] = value
-  }
-
-  case class Identity() extends Transformation
-
-  case class DateTimeExtract(part: String) extends Transformation {
-    override def transform(value: Rep[JsValue]): Rep[JsValue] = {
-      toJson(datePart(part, value.asColumnOf[String].asColumnOf[DateTime]))
-    }
-  }
-
-  case class TimestampExtract(part: String) extends Transformation {
-    override def transform(value: Rep[JsValue]): Rep[JsValue] = {
-      toJson(datePartTimestamp(part, toTimestamp(value.asColumnOf[Double])))
-    }
-  }
-
-  case class Searchable() extends Transformation {
-    def transformCustom(value: Rep[JsValue]): Rep[TsVector] = {
-      toTsVector(value.asColumnOf[String])
-    }
-  }
-
-}
-
-trait PgFunctions {
-  val toJson = SimpleFunction.unary[String, JsValue]("to_jsonb")
-  val toTimestamp = SimpleFunction.unary[Double, Timestamp]("to_timestamp")
-  val datePart = SimpleFunction.binary[String, DateTime, String]("date_part")
-  val datePartTimestamp = SimpleFunction.binary[String, Timestamp, String]("date_part")
-}
-
-case class EndpointQueryFilter(
-    field: String,
-    transformation: Option[FieldTransformation.Transformation],
-    operator: FilterOperator.Operator) {
-  def originalField: List[String] = {
-    field.split('.').toList
-  }
-}
-
-case class EndpointQuery(
-    endpoint: String,
-    mapping: Option[JsValue],
-    filters: Option[Seq[EndpointQueryFilter]],
-    links: Option[Seq[EndpointQuery]]) {
-  def originalField(field: String): Option[List[String]] = {
-    mapping.flatMap { m =>
-      (m \ field)
-        .toOption
-        .map(_.as[String].split('.').toList)
-    } orElse {
-      Some(field.split('.').toList)
-    }
-  }
-}
-
-case class PropertyQuery(
-  endpoints: List[EndpointQuery],
-  orderBy: Option[String],
-  limit: Int)
-
-/*
-
-  {
-    "name": {
-      "endpoints": [
-        {
-          "endpoint": "/rumpel/profile",
-          "mapping": {
-            "name": "owner.name.firstName",
-            "date": "record.lastUpdated"
-          }
-        },
-        {
-          "endpoint": "/bheard/profile",
-          "mapping": {
-            "name": "user.name",
-            "date": "profile.updated"
-          }
-        },
-      ],
-      "orderBy": "date",
-      limit: 1
-    }
-  }
-
- */
-
-class RichDataService extends DalExecutionContext with PgFunctions {
+class RichDataService extends DalExecutionContext {
 
   val logger = Logger(this.getClass)
 
@@ -342,21 +210,69 @@ class RichDataService extends DalExecutionContext with PgFunctions {
   }
 
   private def generateDataQueryFiltered(filters: Seq[EndpointQueryFilter], query: Query[DataJson, DataJsonRow, Seq]): Query[DataJson, DataJsonRow, Seq] = {
-    import FilterOperator._
     if (filters.isEmpty) {
       query
     }
     else {
-      val currentFilter = filters.head
-      val currentTransformation = currentFilter.transformation.getOrElse(FieldTransformation.Identity())
-      val currentQuery = currentFilter.operator match {
-        case Contains(value)       => query.filter(d => currentTransformation.transform(d.data #> currentFilter.originalField) @> value)
-        case In(value)             => query.filter(d => value <@: currentTransformation.transform(d.data #> currentFilter.originalField))
-        case Between(lower, upper) => query.filter(d => currentTransformation.transform(d.data #> currentFilter.originalField) between (lower, upper))
-        case Find(searchTerm)      => query.filter(d => FieldTransformation.Searchable().transformCustom(d.data #> currentFilter.originalField) @@ plainToTsQuery(searchTerm.asColumnOf[String]))
-        case _                     => query
-      }
+      val currentQuery = processQueryFilter(filters.head, query)
       generateDataQueryFiltered(filters.tail, currentQuery)
+    }
+  }
+  import FilterOperator._
+  import FieldTransformation._
+
+  def processQueryFilter(filter: EndpointQueryFilter, query: Query[DataJson, DataJsonRow, Seq]): Query[DataJson, DataJsonRow, Seq] = {
+    val currentTransformation = filter.transformation.getOrElse(FieldTransformation.Identity())
+    filter.operator match {
+      case Contains(value) =>
+        currentTransformation match {
+          case t: Identity =>
+            def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+            query.filter(d => f(d.data #> filter.originalField) @> value)
+          case t: DateTimeExtract =>
+            def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+            query.filter(d => f(d.data #> filter.originalField) @> value)
+          case t: TimestampExtract =>
+            def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+            query.filter(d => f(d.data #> filter.originalField) @> value)
+          case _ => query
+        }
+
+      case In(value) =>
+        currentTransformation match {
+          case t: Identity =>
+            def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+            query.filter(d => value <@: f(d.data #> filter.originalField))
+          case t: DateTimeExtract =>
+            def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+            query.filter(d => value <@: f(d.data #> filter.originalField))
+          case t: TimestampExtract =>
+            def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+            query.filter(d => value <@: f(d.data #> filter.originalField))
+          case _ => query
+        }
+
+      case Between(lower, upper) =>
+        currentTransformation match {
+          case t: Identity =>
+            def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+            query.filter(d => f(d.data #> filter.originalField) between (lower, upper))
+          case t: DateTimeExtract =>
+            def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+            query.filter(d => f(d.data #> filter.originalField) between (lower, upper))
+          case t: TimestampExtract =>
+            def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+            query.filter(d => f(d.data #> filter.originalField) between (lower, upper))
+          case _ => query
+        }
+
+      case Find(searchTerm) =>
+        currentTransformation match {
+          case t: Searchable =>
+            val f = FieldTransformable.process(t)
+            query.filter(d => f(d.data #> filter.originalField) @@ plainToTsQuery(searchTerm.asColumnOf[String]))
+          case _ => query
+        }
     }
   }
 
@@ -369,9 +285,6 @@ class RichDataService extends DalExecutionContext with PgFunctions {
               data <- generatedDataQuery(endpointQuery, DataJson)
             } yield (data, data.data #> endpointQuery.originalField(orderBy), endpointQueryIndex.toString)
           } getOrElse {
-            //          for {
-            //            data <- generatedDataQuery(endpointQuery, DataJson)
-            //          } yield (data, data.data #> endpointQuery.originalField(""), endpointQueryIndex.toString)
             for {
               data <- generatedDataQuery(endpointQuery, DataJson)
             } yield (data, toJson(data.date.asColumnOf[String]).asColumnOf[Option[JsValue]], endpointQueryIndex.toString)

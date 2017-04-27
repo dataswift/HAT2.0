@@ -147,7 +147,7 @@ object Dependencies {
 
     object HATDeX {
       private val version = "2.3.0-SNAPSHOT"
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.4.0-SNAPSHOT"
       val marketsquareClient = "org.hatdex" %% "marketsquare-client-scala-play" % version
     }
 

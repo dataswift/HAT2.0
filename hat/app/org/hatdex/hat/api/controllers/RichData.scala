@@ -29,11 +29,17 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
-import org.hatdex.hat.api.models.{ ErrorMessage, SuccessResponse }
+import org.hatdex.hat.api.models.{ ErrorMessage, RichDataJsonFormats, SuccessResponse }
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
+import org.hatdex.hat.api.models.FieldTransformation
+import org.hatdex.hat.api.models.FilterOperator
+import org.hatdex.hat.api.models.EndpointData
+import org.hatdex.hat.api.models.EndpointQueryFilter
+import org.hatdex.hat.api.models.EndpointQuery
+import org.hatdex.hat.api.models.PropertyQuery
 import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
