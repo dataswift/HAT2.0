@@ -70,6 +70,7 @@
     <logger name="org.hatdex.hat.api.service.DataService" level="INFO" />
     <logger name="org.hatdex.hat.api.service.UsersService" level="WARN" />
     <logger name="org.hatdex.hat.api.controllers" level="DEBUG" />
+    <logger name="org.hatdex.hat.api.service.monitoring" level="DEBUG" />
 
     <logger name="org.hatdex.marketsquare" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>

@@ -28,16 +28,10 @@ import java.security.MessageDigest
 import java.util.UUID
 
 import com.github.tminglei.slickpg.TsVector
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.dal.ModelTranslation
+import org.hatdex.hat.dal.SlickPostgresDriver.api.{ Database, _ }
 import org.hatdex.hat.dal.Tables._
-import org.hatdex.hat.dal.SlickPostgresDriver.api._
-import org.hatdex.hat.dal.SlickPostgresDriver.api.Database
-import org.hatdex.hat.api.models.FieldTransformation
-import org.hatdex.hat.api.models.FilterOperator
-import org.hatdex.hat.api.models.EndpointData
-import org.hatdex.hat.api.models.EndpointQueryFilter
-import org.hatdex.hat.api.models.EndpointQuery
-import org.hatdex.hat.api.models.PropertyQuery
 import org.joda.time.{ DateTime, LocalDateTime }
 import play.api.Logger
 import play.api.libs.json._
@@ -218,10 +212,11 @@ class RichDataService extends DalExecutionContext {
       generateDataQueryFiltered(filters.tail, currentQuery)
     }
   }
-  import FilterOperator._
-  import FieldTransformation._
 
   def processQueryFilter(filter: EndpointQueryFilter, query: Query[DataJson, DataJsonRow, Seq]): Query[DataJson, DataJsonRow, Seq] = {
+    import FieldTransformation._
+    import FilterOperator._
+
     val currentTransformation = filter.transformation.getOrElse(FieldTransformation.Identity())
     filter.operator match {
       case Contains(value) =>

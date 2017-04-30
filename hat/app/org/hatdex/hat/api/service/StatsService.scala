@@ -34,6 +34,7 @@ import org.hatdex.hat.utils.Utils
 import org.joda.time.LocalDateTime
 import play.api.Logger
 import play.api.mvc.RequestHeader
+import play.api.libs.json._
 
 import scala.collection.immutable.HashMap
 import scala.concurrent.Future

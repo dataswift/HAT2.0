@@ -33,6 +33,7 @@ import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import net.codingwell.scalaguice.ScalaModule
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
@@ -328,6 +329,22 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val query = service.generatedDataQuery(EndpointQuery("test", None,
         Some(Seq(
           EndpointQueryFilter("object.objectFieldArray", None, FilterOperator.Contains(Json.toJson("objectFieldArray2"))))), None), DataJson)
+
+      val result = for {
+        _ <- service.saveData(owner.userId, data)
+        retrieved <- hatDatabase.run(query.result)
+      } yield retrieved
+
+      result map { retrievedRows =>
+        retrievedRows.length should equalTo(2)
+      } await (3, 10.seconds)
+    }
+
+    "retrieve results with a `Contains` filter for complex objects " in {
+      val service = application.injector.instanceOf[RichDataService]
+      val query = service.generatedDataQuery(EndpointQuery("test", None,
+        Some(Seq(
+          EndpointQueryFilter("object", None, FilterOperator.Contains(simpleJsonFragment)))), None), DataJson)
 
       val result = for {
         _ <- service.saveData(owner.userId, data)
@@ -687,6 +704,17 @@ trait RichDataServiceContext extends Scope {
       |       {"subObjectName": "subObject2", "subObjectName2": "subObject2-2"}
       |     ]
       |   }
+      | }
+    """.stripMargin)
+
+  val simpleJsonFragment: JsValue = Json.parse(
+    """
+      | {
+      |     "objectField": "objectFieldValue",
+      |     "objectFieldObjectArray": [
+      |       {"subObjectName": "subObject1", "subObjectName2": "subObject1-2"},
+      |       {"subObjectName": "subObject2", "subObjectName2": "subObject2-2"}
+      |     ]
       | }
     """.stripMargin)
 
