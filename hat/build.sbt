@@ -48,7 +48,7 @@ libraryDependencies ++= Seq(
   Library.scalaGuice,
   Library.HATDeX.hatClient,
   Library.HATDeX.marketsquareClient,
-  Library.Utils.awsJavaSdk,
+  Library.Utils.awsJavaS3Sdk,
   Library.Utils.prettyTime,
   Library.Utils.nbvcxz
 )

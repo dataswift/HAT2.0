@@ -26,11 +26,11 @@ package org.hatdex.hat.api.service
 
 import javax.inject.Inject
 
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.{ GeneratePresignedUrlRequest, SSEAlgorithm }
 import com.google.inject.name.Named
 import org.hatdex.hat.resourceManagement.HatServer
-import play.api.{ Configuration, Logger }
+import play.api.Logger
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -50,7 +50,7 @@ case class AwsS3Configuration(
 
 class FileManagerS3 @Inject() (
     awsS3Configuration: AwsS3Configuration,
-    @Named("s3client-file-manager") s3client: AmazonS3Client) extends FileManager with RemoteApiExecutionContext {
+    @Named("s3client-file-manager") s3client: AmazonS3) extends FileManager with RemoteApiExecutionContext {
 
   private val logger = Logger(this.getClass)
   private val bucketName = awsS3Configuration.bucketName
@@ -82,7 +82,7 @@ class FileManagerS3 @Inject() (
     logger.info(s"Getting file size for $bucketName ${hatServer.domain}/$fileName")
     Future(s3client.getObjectMetadata(bucketName, s"${hatServer.domain}/$fileName"))
       .map { metadata => Option(metadata.getContentLength).getOrElse(0L) }
-      .recover { case e => 0L }
+      .recover { case _ => 0L }
   }
 
   def deleteContents(fileName: String)(implicit hatServer: HatServer): Future[Unit] = {
