@@ -41,19 +41,18 @@ import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
-import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 class RichData @Inject() (
   val messagesApi: MessagesApi,
   configuration: Configuration,
   parsers: HatBodyParsers,
   silhouette: Silhouette[HatApiAuthEnvironment],
-  hatServerProvider: HatServerProvider,
   clock: Clock,
-  hatDatabaseProvider: HatDatabaseProvider,
+  hatServerProvider: HatServerProvider,
   cache: CacheApi,
   dataService: RichDataService,
-  usersService: UsersService)
+  bundleService: RichBundleService)
     extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
 
   val logger = Logger(this.getClass)
@@ -103,22 +102,24 @@ class RichData @Inject() (
     }
 
   def registerCombinator(combinator: String): Action[Seq[EndpointQuery]] =
-    SecuredAction(WithRole("dataCredit", "owner"))(parsers.json[Seq[EndpointQuery]]) { implicit request =>
-      cache.get[Seq[EndpointQuery]](combinator) map { _ =>
-        BadRequest(Json.toJson(ErrorMessage("Endpoint exists", s"Endpoint $combinator already exists")))
-      } getOrElse {
-        cache.set(combinator, request.body)
+    SecuredAction(WithRole("dataCredit", "owner")).async(parsers.json[Seq[EndpointQuery]]) { implicit request =>
+      bundleService.saveCombinator(combinator, request.body) map { _ =>
         Created(Json.toJson(SuccessResponse(s"Endpoint $combinator registered")))
       }
     }
 
   def getCombinatorData(combinator: String, recordId: Option[UUID], orderBy: Option[String], take: Option[Int]): Action[AnyContent] =
     SecuredAction(WithRole("dataCredit", "owner")).async { implicit request =>
-      cache.get[List[EndpointQuery]](combinator) map { query =>
-        val data = dataService.propertyData(query, orderBy, take.getOrElse(1000))
-        data.map(d => Ok(Json.toJson(d)))
-      } getOrElse {
-        Future.successful(NotFound(Json.toJson(ErrorMessage("Not Found", "Endpoint query not found"))))
+      val result = for {
+        query <- bundleService.combinator(combinator).map(_.get)
+        data <- dataService.propertyData(query, orderBy, take.getOrElse(1000))
+      } yield data
+
+      result map { d =>
+        Ok(Json.toJson(d))
+      } recover {
+        case NonFatal(_) =>
+          NotFound(Json.toJson(ErrorMessage("Combinator Not Found", s"Combinator $combinator not found")))
       }
     }
 
@@ -128,7 +129,7 @@ class RichData @Inject() (
         Created(Json.toJson(SuccessResponse(s"Grouping registered")))
       } recover {
         case RichDataMissingException(message, _) =>
-          BadRequest(Json.toJson(ErrorMessage("Data Missing", s"Could not link records: ${message}")))
+          BadRequest(Json.toJson(ErrorMessage("Data Missing", s"Could not link records: $message")))
       }
     }
 
@@ -138,7 +139,7 @@ class RichData @Inject() (
         Ok(Json.toJson(SuccessResponse(s"All records deleted")))
       } recover {
         case RichDataMissingException(message, _) =>
-          BadRequest(Json.toJson(ErrorMessage("Data Missing", s"Could not delete records: ${message}")))
+          BadRequest(Json.toJson(ErrorMessage("Data Missing", s"Could not delete records: $message")))
       }
     }
 
@@ -148,28 +149,30 @@ class RichData @Inject() (
         Created(Json.toJson(saved))
       } recover {
         case RichDataMissingException(message, _) =>
-          BadRequest(Json.toJson(ErrorMessage("Data Missing", s"Could not update records: ${message}")))
+          BadRequest(Json.toJson(ErrorMessage("Data Missing", s"Could not update records: $message")))
       }
     }
 
   def registerBundle(bundleId: String): Action[Map[String, PropertyQuery]] =
-    SecuredAction(WithRole("dataCredit", "owner"))(parsers.json[Map[String, PropertyQuery]]) { implicit request =>
-      cache.get[EndpointDataBundle](bundleId) map { _ =>
-        BadRequest(Json.toJson(ErrorMessage("Bundle exists", s"Bundle $bundleId already exists")))
-      } getOrElse {
-        cache.set(bundleId, EndpointDataBundle(bundleId, request.body))
-        Created(Json.toJson(SuccessResponse(s"Bundle $bundleId registered")))
-      }
+    SecuredAction(WithRole("dataCredit", "owner")).async(parsers.json[Map[String, PropertyQuery]]) { implicit request =>
+      bundleService.saveBundle(EndpointDataBundle(bundleId, request.body))
+        .map { _ =>
+          Created(Json.toJson(SuccessResponse(s"Bundle $bundleId registered")))
+        }
     }
 
   def fetchBundle(bundleId: String): Action[AnyContent] =
     SecuredAction(WithRole("dataCredit", "owner")).async { implicit request =>
-      cache.get[EndpointDataBundle](bundleId) map { dataBundle =>
-        dataService.bundleData(dataBundle) map { result =>
-          Ok(Json.toJson(result))
-        }
-      } getOrElse {
-        Future.successful(NotFound(Json.toJson(ErrorMessage("Bundle Not Found", s"bundle $bundleId does not exist"))))
+      val result = for {
+        bundle <- bundleService.bundle(bundleId).map(_.get)
+        data <- dataService.bundleData(bundle)
+      } yield data
+
+      result map { d =>
+        Ok(Json.toJson(d))
+      } recover {
+        case NonFatal(_) =>
+          NotFound(Json.toJson(ErrorMessage("Bundle Not Found", s"Bundle $bundleId not found")))
       }
     }
 

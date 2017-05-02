@@ -24,8 +24,8 @@
 
 package org.hatdex.hat.api.service.monitoring
 
-import org.hatdex.hat.api.models.{ FilterOperator, _ }
-import org.hatdex.hat.api.service.{ DalExecutionContext, EndpointDataBundle, JsonDataTransformer }
+import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.service.JsonDataTransformer
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Reads._

@@ -153,4 +153,9 @@ object ModelTranslation {
   def fromDbModel(dataJsonRow: DataJsonRow, linkedDataJsonRows: Seq[DataJsonRow]): EndpointData = {
     EndpointData(dataJsonRow.source, Some(dataJsonRow.recordId), dataJsonRow.data, Some(linkedDataJsonRows.map(fromDbModel)))
   }
+
+  def fromDbModel(dataBundleRow: DataBundlesRow): EndpointDataBundle = {
+    import RichDataJsonFormats.propertyQueryFormat
+    EndpointDataBundle(dataBundleRow.bundleId, dataBundleRow.bundle.as[Map[String, PropertyQuery]])
+  }
 }

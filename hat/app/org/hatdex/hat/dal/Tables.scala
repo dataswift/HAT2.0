@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{ GetResult => GR }
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataJson.schema, DataJsonGroupRecords.schema, DataJsonGroups.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, HatFileAccess.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessLog.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataBundles.schema, DataCombinators.schema, DataDebit.schema, DataField.schema, DataJson.schema, DataJsonGroupRecords.schema, DataJsonGroups.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, HatFileAccess.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessLog.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -360,6 +360,58 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table BundleContextTree */
   lazy val BundleContextTree = new TableQuery(tag => new BundleContextTree(tag))
+
+  /**
+   * Entity class storing rows of table DataBundles
+   *  @param bundleId Database column bundle_id SqlType(varchar), PrimaryKey
+   *  @param bundle Database column bundle SqlType(jsonb), Length(2147483647,false)
+   */
+  case class DataBundlesRow(bundleId: String, bundle: play.api.libs.json.JsValue)
+  /** GetResult implicit for fetching DataBundlesRow objects using plain SQL queries */
+  implicit def GetResultDataBundlesRow(implicit e0: GR[String], e1: GR[play.api.libs.json.JsValue]): GR[DataBundlesRow] = GR {
+    prs =>
+      import prs._
+      DataBundlesRow.tupled((<<[String], <<[play.api.libs.json.JsValue]))
+  }
+  /** Table description of table data_bundles. Objects of this class serve as prototypes for rows in queries. */
+  class DataBundles(_tableTag: Tag) extends Table[DataBundlesRow](_tableTag, Some("hat"), "data_bundles") {
+    def * = (bundleId, bundle) <> (DataBundlesRow.tupled, DataBundlesRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(bundleId), Rep.Some(bundle)).shaped.<>({ r => import r._; _1.map(_ => DataBundlesRow.tupled((_1.get, _2.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column bundle_id SqlType(varchar), PrimaryKey */
+    val bundleId: Rep[String] = column[String]("bundle_id", O.PrimaryKey)
+    /** Database column bundle SqlType(jsonb), Length(2147483647,false) */
+    val bundle: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("bundle", O.Length(2147483647, varying = false))
+  }
+  /** Collection-like TableQuery object for table DataBundles */
+  lazy val DataBundles = new TableQuery(tag => new DataBundles(tag))
+
+  /**
+   * Entity class storing rows of table DataCombinators
+   *  @param combinatorId Database column combinator_id SqlType(varchar), PrimaryKey
+   *  @param combinator Database column combinator SqlType(jsonb), Length(2147483647,false)
+   */
+  case class DataCombinatorsRow(combinatorId: String, combinator: play.api.libs.json.JsValue)
+  /** GetResult implicit for fetching DataCombinatorsRow objects using plain SQL queries */
+  implicit def GetResultDataCombinatorsRow(implicit e0: GR[String], e1: GR[play.api.libs.json.JsValue]): GR[DataCombinatorsRow] = GR {
+    prs =>
+      import prs._
+      DataCombinatorsRow.tupled((<<[String], <<[play.api.libs.json.JsValue]))
+  }
+  /** Table description of table data_combinators. Objects of this class serve as prototypes for rows in queries. */
+  class DataCombinators(_tableTag: Tag) extends Table[DataCombinatorsRow](_tableTag, Some("hat"), "data_combinators") {
+    def * = (combinatorId, combinator) <> (DataCombinatorsRow.tupled, DataCombinatorsRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(combinatorId), Rep.Some(combinator)).shaped.<>({ r => import r._; _1.map(_ => DataCombinatorsRow.tupled((_1.get, _2.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column combinator_id SqlType(varchar), PrimaryKey */
+    val combinatorId: Rep[String] = column[String]("combinator_id", O.PrimaryKey)
+    /** Database column combinator SqlType(jsonb), Length(2147483647,false) */
+    val combinator: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("combinator", O.Length(2147483647, varying = false))
+  }
+  /** Collection-like TableQuery object for table DataCombinators */
+  lazy val DataCombinators = new TableQuery(tag => new DataCombinators(tag))
 
   /**
    * Entity class storing rows of table DataDebit

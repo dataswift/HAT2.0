@@ -28,7 +28,6 @@ import java.util.UUID
 
 import akka.stream.Materializer
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.service.EndpointDataBundle
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
 import org.specs2.concurrent.ExecutionEnv

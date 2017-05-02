@@ -30,7 +30,7 @@ import java.util.UUID
 import com.github.tminglei.slickpg.TsVector
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.SlickPostgresDriver.api.{ Database, _ }
+import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
 import org.joda.time.{ DateTime, LocalDateTime }
 import org.postgresql.util.PSQLException
@@ -355,7 +355,7 @@ class RichDataService extends DalExecutionContext {
     }
   }
 
-  def propertyData(endpointQueries: List[EndpointQuery], orderBy: Option[String], limit: Int)(implicit db: Database): Future[Seq[EndpointData]] = {
+  def propertyData(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], limit: Int)(implicit db: Database): Future[Seq[EndpointData]] = {
     val query = propertyDataQuery(endpointQueries, orderBy, limit)
     val mappers = queryMappers(endpointQueries)
     db.run(query.result).map { results =>
@@ -400,19 +400,3 @@ class RichDataService extends DalExecutionContext {
   }
 }
 
-case class EndpointDataBundle(
-    name: String,
-    bundle: Map[String, PropertyQuery]) {
-  def flatEndpointQueries: Seq[EndpointQuery] = {
-    bundle.flatMap {
-      case (k, v) =>
-        v.endpoints.flatMap(endpointQueries)
-    } toSeq
-  }
-
-  def endpointQueries(endpointQuery: EndpointQuery): Seq[EndpointQuery] = {
-    endpointQuery.links
-      .map(_.flatMap(endpointQueries))
-      .getOrElse(Seq()) :+ endpointQuery
-  }
-}
