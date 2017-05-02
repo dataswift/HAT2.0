@@ -25,7 +25,7 @@
 package org.hatdex.hat.api.service.monitoring
 
 import org.hatdex.hat.api.models.{ FilterOperator, _ }
-import org.hatdex.hat.api.service.{ DalExecutionContext, JsonDataTransformer }
+import org.hatdex.hat.api.service.{ DalExecutionContext, EndpointDataBundle, JsonDataTransformer }
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Reads._
@@ -34,14 +34,13 @@ import play.api.libs.json.{ JsArray, JsValue, Json, _ }
 case class EndpointQueryException(message: String = "", cause: Throwable = None.orNull)
   extends Exception(message, cause)
 
-class EndpointSubscriberService extends DalExecutionContext {
-  val logger = Logger(this.getClass)
+object EndpointSubscriberService {
+  private val logger = Logger(this.getClass)
 
-  def matchesBundle(data: EndpointData, bundle: Map[String, PropertyQuery]): Boolean = {
-    val endpointQueries = bundle flatMap {
-      case (_, v) =>
-        v.endpoints.filter(_.endpoint == data.endpoint)
-    }
+  def matchesBundle(data: EndpointData, bundle: EndpointDataBundle): Boolean = {
+    val endpointQueries = bundle.flatEndpointQueries
+      .filter(_.endpoint == data.endpoint)
+
     endpointQueries collectFirst {
       case q if q.filters.isEmpty                             => true
       case q if q.filters.exists(dataMatchesFilters(data, _)) => true
@@ -50,7 +49,7 @@ class EndpointSubscriberService extends DalExecutionContext {
     }
   }
 
-  implicit val dateReads: Reads[DateTime] = jodaDateReads("yyyy-MM-dd'T'HH:mm:ssZ")
+  private implicit val dateReads: Reads[DateTime] = jodaDateReads("yyyy-MM-dd'T'HH:mm:ssZ")
 
   private def dataMatchesFilters(data: EndpointData, filters: Seq[EndpointQueryFilter]): Boolean = {
     filters.exists { f =>
@@ -119,4 +118,3 @@ class EndpointSubscriberService extends DalExecutionContext {
     }
   }
 }
-

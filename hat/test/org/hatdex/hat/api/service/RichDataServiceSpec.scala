@@ -456,9 +456,9 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         EndpointData("test", None, simpleJson2, None),
         EndpointData("complex", None, complexJson, None))
 
-      val query = Map(
+      val query = EndpointDataBundle("testBundle", Map(
         "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), 3),
-        "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), 1))
+        "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), 1)))
       val result = for {
         _ <- service.saveData(owner.userId, data)
         retrieved <- service.bundleData(query)

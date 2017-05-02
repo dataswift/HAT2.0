@@ -29,17 +29,11 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
-import org.hatdex.hat.api.models.{ ErrorMessage, RichDataJsonFormats, SuccessResponse }
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
-import org.hatdex.hat.api.models.FieldTransformation
-import org.hatdex.hat.api.models.FilterOperator
-import org.hatdex.hat.api.models.EndpointData
-import org.hatdex.hat.api.models.EndpointQueryFilter
-import org.hatdex.hat.api.models.EndpointQuery
-import org.hatdex.hat.api.models.PropertyQuery
 import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
@@ -50,16 +44,17 @@ import play.api.{ Configuration, Logger }
 import scala.concurrent.Future
 
 class RichData @Inject() (
-    val messagesApi: MessagesApi,
-    configuration: Configuration,
-    parsers: HatBodyParsers,
-    silhouette: Silhouette[HatApiAuthEnvironment],
-    hatServerProvider: HatServerProvider,
-    clock: Clock,
-    hatDatabaseProvider: HatDatabaseProvider,
-    cache: CacheApi,
-    dataService: RichDataService,
-    usersService: UsersService) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
+  val messagesApi: MessagesApi,
+  configuration: Configuration,
+  parsers: HatBodyParsers,
+  silhouette: Silhouette[HatApiAuthEnvironment],
+  hatServerProvider: HatServerProvider,
+  clock: Clock,
+  hatDatabaseProvider: HatDatabaseProvider,
+  cache: CacheApi,
+  dataService: RichDataService,
+  usersService: UsersService)
+    extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
 
   val logger = Logger(this.getClass)
 
@@ -73,7 +68,7 @@ class RichData @Inject() (
 
   def saveEndpointData(endpoint: String): Action[JsValue] =
     SecuredAction(WithRole("dataCredit", "owner")).async(parsers.json[JsValue]) { implicit request =>
-      request.body match {
+      val response = request.body match {
         case array: JsArray =>
           val values = array.value.map(EndpointData(endpoint, None, _, None))
           dataService.saveData(request.identity.userId, values) map { saved =>
@@ -85,12 +80,25 @@ class RichData @Inject() (
             Created(Json.toJson(saved.head))
           }
       }
+
+      response recover {
+        case e: RichDataDuplicateException =>
+          BadRequest(Json.toJson(ErrorMessage("Duplicate Data", s"Could not insert data - ${e.getMessage}")))
+        case e: RichDataServiceException =>
+          BadRequest(Json.toJson(ErrorMessage("Bad Request", s"Could not insert data - ${e.getMessage}")))
+      }
     }
 
   def saveBatchData: Action[Seq[EndpointData]] =
     SecuredAction(WithRole("dataCredit", "owner")).async(parsers.json[Seq[EndpointData]]) { implicit request =>
-      dataService.saveData(request.identity.userId, request.body) map { saved =>
+      val response = dataService.saveData(request.identity.userId, request.body) map { saved =>
         Created(Json.toJson(saved))
+      }
+      response recover {
+        case e: RichDataDuplicateException =>
+          BadRequest(Json.toJson(ErrorMessage("Duplicate Data", s"Could not insert data - ${e.getMessage}")))
+        case e: RichDataServiceException =>
+          BadRequest(Json.toJson(ErrorMessage("Bad Request", s"Could not insert data - ${e.getMessage}")))
       }
     }
 
@@ -114,42 +122,56 @@ class RichData @Inject() (
       }
     }
 
-  def linkDataRecords(records: Seq[UUID]): Action[AnyContent] = SecuredAction(WithRole("dataCredit", "owner")).async { implicit request =>
-    dataService.saveRecordGroup(request.identity.userId, records) map { _ =>
-      Created(Json.toJson(SuccessResponse(s"Grouping registered")))
-    }
-  }
-
-  def deleteDataRecords(records: Seq[UUID]): Action[AnyContent] = SecuredAction(WithRole("dataCredit", "owner")).async { implicit request =>
-    dataService.deleteRecords(request.identity.userId, records) map { _ =>
-      Ok(Json.toJson(SuccessResponse(s"All records deleted")))
-    }
-  }
-
-  def updateRecords(): Action[Seq[EndpointData]] = SecuredAction(WithRole("dataCredit", "owner")).async(parsers.json[Seq[EndpointData]]) { implicit request =>
-    dataService.updateRecords(request.identity.userId, request.body) map { saved =>
-      Created(Json.toJson(saved))
-    }
-  }
-
-  def registerBundle(bundleId: String): Action[Map[String, PropertyQuery]] = SecuredAction(WithRole("dataCredit", "owner"))(parsers.json[Map[String, PropertyQuery]]) { implicit request =>
-    cache.get[Map[String, PropertyQuery]](bundleId) map { _ =>
-      BadRequest(Json.toJson(ErrorMessage("Bundle exists", s"Bundle $bundleId already exists")))
-    } getOrElse {
-      cache.set(bundleId, request.body)
-      Created(Json.toJson(SuccessResponse(s"Bundle $bundleId registered")))
-    }
-  }
-
-  def fetchBundle(bundleId: String): Action[AnyContent] = SecuredAction(WithRole("dataCredit", "owner")).async { implicit request =>
-    cache.get[Map[String, PropertyQuery]](bundleId) map { dataBundle =>
-      dataService.bundleData(dataBundle) map { result =>
-        Ok(Json.toJson(result))
+  def linkDataRecords(records: Seq[UUID]): Action[AnyContent] =
+    SecuredAction(WithRole("dataCredit", "owner")).async { implicit request =>
+      dataService.saveRecordGroup(request.identity.userId, records) map { _ =>
+        Created(Json.toJson(SuccessResponse(s"Grouping registered")))
+      } recover {
+        case RichDataMissingException(message, _) =>
+          BadRequest(Json.toJson(ErrorMessage("Data Missing", s"Could not link records: ${message}")))
       }
-    } getOrElse {
-      Future.successful(NotFound(Json.toJson(ErrorMessage("Bundle Not Found", s"bundle $bundleId does not exist"))))
     }
-  }
+
+  def deleteDataRecords(records: Seq[UUID]): Action[AnyContent] =
+    SecuredAction(WithRole("dataCredit", "owner")).async { implicit request =>
+      dataService.deleteRecords(request.identity.userId, records) map { _ =>
+        Ok(Json.toJson(SuccessResponse(s"All records deleted")))
+      } recover {
+        case RichDataMissingException(message, _) =>
+          BadRequest(Json.toJson(ErrorMessage("Data Missing", s"Could not delete records: ${message}")))
+      }
+    }
+
+  def updateRecords(): Action[Seq[EndpointData]] =
+    SecuredAction(WithRole("dataCredit", "owner")).async(parsers.json[Seq[EndpointData]]) { implicit request =>
+      dataService.updateRecords(request.identity.userId, request.body) map { saved =>
+        Created(Json.toJson(saved))
+      } recover {
+        case RichDataMissingException(message, _) =>
+          BadRequest(Json.toJson(ErrorMessage("Data Missing", s"Could not update records: ${message}")))
+      }
+    }
+
+  def registerBundle(bundleId: String): Action[Map[String, PropertyQuery]] =
+    SecuredAction(WithRole("dataCredit", "owner"))(parsers.json[Map[String, PropertyQuery]]) { implicit request =>
+      cache.get[EndpointDataBundle](bundleId) map { _ =>
+        BadRequest(Json.toJson(ErrorMessage("Bundle exists", s"Bundle $bundleId already exists")))
+      } getOrElse {
+        cache.set(bundleId, EndpointDataBundle(bundleId, request.body))
+        Created(Json.toJson(SuccessResponse(s"Bundle $bundleId registered")))
+      }
+    }
+
+  def fetchBundle(bundleId: String): Action[AnyContent] =
+    SecuredAction(WithRole("dataCredit", "owner")).async { implicit request =>
+      cache.get[EndpointDataBundle](bundleId) map { dataBundle =>
+        dataService.bundleData(dataBundle) map { result =>
+          Ok(Json.toJson(result))
+        }
+      } getOrElse {
+        Future.successful(NotFound(Json.toJson(ErrorMessage("Bundle Not Found", s"bundle $bundleId does not exist"))))
+      }
+    }
 
 }
 

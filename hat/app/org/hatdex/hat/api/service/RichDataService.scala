@@ -33,6 +33,7 @@ import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api.{ Database, _ }
 import org.hatdex.hat.dal.Tables._
 import org.joda.time.{ DateTime, LocalDateTime }
+import org.postgresql.util.PSQLException
 import play.api.Logger
 import play.api.libs.json._
 
@@ -88,6 +89,10 @@ object FieldTransformable {
   def process[I](in: I)(implicit p: FieldTransformable[I]): p.Out = p(in)
 }
 
+class RichDataServiceException(message: String = "", cause: Throwable = None.orNull) extends Exception(message, cause)
+case class RichDataDuplicateException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
+case class RichDataMissingException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
+
 class RichDataService extends DalExecutionContext {
 
   val logger = Logger(this.getClass)
@@ -130,6 +135,14 @@ class RichDataService extends DalExecutionContext {
         _.map { inserted =>
           ModelTranslation.fromDbModel(inserted._1, inserted._2)
         }
+      } recover {
+        case e: PSQLException if e.getMessage.startsWith("ERROR: duplicate key value violates unique constraint \"data_json_hash_key\"") =>
+          throw RichDataDuplicateException("Duplicate data", e)
+        case e: PSQLException =>
+          throw RichDataDuplicateException("Unexpected issue with inserting data", e)
+        case e =>
+          logger.error(s"Error inserting data: ${e.getMessage}")
+          throw e
       }
   }
 
@@ -140,7 +153,9 @@ class RichDataService extends DalExecutionContext {
       deletedRecords <- DataJson.filter(r => (r.owner === userId) && (r.recordId inSet recordIds)).delete if deletedRecords == recordIds.length // delete the records, but only if all requested records are found
     } yield (deletedGroupRecords, deletedGroups, deletedRecords)
 
-    db.run(query.transactionally).map(_ => ())
+    db.run(query.transactionally).map(_ => ()) recover {
+      case e: NoSuchElementException => throw RichDataMissingException("Records missing for deleting")
+    }
   }
 
   def updateRecords(userId: UUID, records: Seq[EndpointData])(implicit db: Database): Future[Seq[EndpointData]] = {
@@ -158,6 +173,8 @@ class RichDataService extends DalExecutionContext {
 
     db.run(DBIO.sequence(updateQueries).transactionally).map { _ =>
       updateRows.map(ModelTranslation.fromDbModel)
+    } recover {
+      case e: NoSuchElementException => throw RichDataMissingException("Records missing for updating")
     }
   }
 
@@ -370,8 +387,8 @@ class RichDataService extends DalExecutionContext {
       None)
   }
 
-  def bundleData(bundle: Map[String, PropertyQuery])(implicit db: Database): Future[Map[String, Seq[EndpointData]]] = {
-    val results = bundle map {
+  def bundleData(bundle: EndpointDataBundle)(implicit db: Database): Future[Map[String, Seq[EndpointData]]] = {
+    val results = bundle.bundle map {
       case (property, propertyQuery) =>
         propertyData(propertyQuery.endpoints, propertyQuery.orderBy, propertyQuery.limit)
           .map(property -> _)
@@ -380,5 +397,22 @@ class RichDataService extends DalExecutionContext {
     Future.fold(results)(Map[String, Seq[EndpointData]]()) { (propertyMap, response) =>
       propertyMap + response
     }
+  }
+}
+
+case class EndpointDataBundle(
+    name: String,
+    bundle: Map[String, PropertyQuery]) {
+  def flatEndpointQueries: Seq[EndpointQuery] = {
+    bundle.flatMap {
+      case (k, v) =>
+        v.endpoints.flatMap(endpointQueries)
+    } toSeq
+  }
+
+  def endpointQueries(endpointQuery: EndpointQuery): Seq[EndpointQuery] = {
+    endpointQuery.links
+      .map(_.flatMap(endpointQueries))
+      .getOrElse(Seq()) :+ endpointQuery
   }
 }
