@@ -22,9 +22,10 @@
  * 5 / 2017
  */
 
-package org.hatdex.hat.api.service
+package org.hatdex.hat.api.service.richData
 
 import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api.{ Database, _ }
 import org.hatdex.hat.dal.Tables._

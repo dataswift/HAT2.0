@@ -19,10 +19,10 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 4 / 2017
+ * 5 / 2017
  */
 
-package org.hatdex.hat.api.service
+package org.hatdex.hat.api.service.richData
 
 import java.io.StringReader
 import java.util.UUID
@@ -34,6 +34,7 @@ import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.service.{ FileManagerS3Mock, UsersService }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration

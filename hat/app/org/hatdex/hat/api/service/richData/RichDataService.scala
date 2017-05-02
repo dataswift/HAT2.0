@@ -19,16 +19,17 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 4 / 2017
+ * 5 / 2017
  */
 
-package org.hatdex.hat.api.service
+package org.hatdex.hat.api.service.richData
 
 import java.security.MessageDigest
 import java.util.UUID
 
 import com.github.tminglei.slickpg.TsVector
 import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
@@ -40,58 +41,6 @@ import play.api.libs.json._
 import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
 import scala.concurrent.Future
-
-trait FieldTransformable[In] {
-  type Out
-  def apply(in: In): Out
-}
-
-object FieldTransformable {
-  import FieldTransformation._
-  type Aux[I, O] = FieldTransformable[I] { type Out = O }
-
-  implicit val generateIdentityTranslation: Aux[Identity, Rep[JsValue] => Rep[JsValue]] =
-    new FieldTransformable[Identity] {
-      type Out = Rep[JsValue] => Rep[JsValue]
-
-      def apply(in: Identity): Rep[JsValue] => Rep[JsValue] = {
-        value: Rep[JsValue] => value
-      }
-    }
-
-  implicit val generateDateTimeExtractTranslation: Aux[DateTimeExtract, Rep[JsValue] => Rep[JsValue]] =
-    new FieldTransformable[DateTimeExtract] {
-      type Out = Rep[JsValue] => Rep[JsValue]
-
-      def apply(in: DateTimeExtract): Rep[JsValue] => Rep[JsValue] = {
-        value => toJson(datePart(in.part, value.asColumnOf[String].asColumnOf[DateTime]))
-      }
-    }
-
-  implicit val generateTimestampExtractTranslation: Aux[TimestampExtract, Rep[JsValue] => Rep[JsValue]] =
-    new FieldTransformable[TimestampExtract] {
-      type Out = Rep[JsValue] => Rep[JsValue]
-
-      def apply(in: TimestampExtract): Rep[JsValue] => Rep[JsValue] = {
-        value => toJson(datePartTimestamp(in.part, toTimestamp(value.asColumnOf[Double])))
-      }
-    }
-
-  implicit val generateSearchableTranslation: Aux[Searchable, Rep[JsValue] => Rep[TsVector]] =
-    new FieldTransformable[Searchable] {
-      type Out = Rep[JsValue] => Rep[TsVector]
-
-      def apply(in: Searchable): Rep[JsValue] => Rep[TsVector] = {
-        value => toTsVector(value.asColumnOf[String])
-      }
-    }
-
-  def process[I](in: I)(implicit p: FieldTransformable[I]): p.Out = p(in)
-}
-
-class RichDataServiceException(message: String = "", cause: Throwable = None.orNull) extends Exception(message, cause)
-case class RichDataDuplicateException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
-case class RichDataMissingException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
 
 class RichDataService extends DalExecutionContext {
 

@@ -19,10 +19,10 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 4 / 2017
+ * 5 / 2017
  */
 
-package org.hatdex.hat.api.service
+package org.hatdex.hat.api.service.richData
 
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito

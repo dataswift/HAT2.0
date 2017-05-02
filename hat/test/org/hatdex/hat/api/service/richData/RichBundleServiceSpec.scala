@@ -22,7 +22,7 @@
  * 5 / 2017
  */
 
-package org.hatdex.hat.api.service
+package org.hatdex.hat.api.service.richData
 
 import java.io.StringReader
 import java.util.UUID
@@ -34,6 +34,7 @@ import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.service.{ FileManagerS3Mock, UsersService }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
@@ -97,7 +98,7 @@ class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification
       } await (3, 10.seconds)
     }
 
-    "Return None if bombinator doesn't exist" in {
+    "Return None if combinator doesn't exist" in {
       val service = application.injector.instanceOf[RichBundleService]
       val saved = for {
         combinator <- service.combinator("testCombinator")

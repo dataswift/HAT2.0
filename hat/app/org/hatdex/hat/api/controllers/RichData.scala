@@ -31,6 +31,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service._
+import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
