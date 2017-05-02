@@ -52,7 +52,7 @@ class LoggingFilter @Inject() (@Named("hatServerProviderActor") serverProviderAc
       val endTime = System.currentTimeMillis
       val requestTime = endTime - startTime
 
-      logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] [${result.header.status}] [TIME ${requestTime}ms] [HATs ${activeHats.active}]")
+      logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] [${result.header.status}] TIME [${requestTime}]ms HATs [${activeHats.active}]")
 
       result.withHeaders("Request-Time" -> requestTime.toString)
     }
