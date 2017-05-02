@@ -85,8 +85,8 @@ GET           /api/v2/files/restrictAccessPublic/:fileId           org.hatdex.ha
 
 # RICH DATA routes
 
-POST          /api/v2/endpoint/*endpoint                           org.hatdex.hat.api.controllers.RichData.registerQueryEndpoint(endpoint)
-GET           /api/v2/endpoint/*endpoint                           org.hatdex.hat.api.controllers.RichData.getQueryEndpointData(endpoint, recordId: Option[java.util.UUID], orderBy: Option[String], take: Option[Int])
+POST          /api/v2/combinator/*combinator                       org.hatdex.hat.api.controllers.RichData.registerCombinator(combinator)
+GET           /api/v2/combinator/*combinator                       org.hatdex.hat.api.controllers.RichData.getCombinatorData(combinator, recordId: Option[java.util.UUID], orderBy: Option[String], take: Option[Int])
 GET           /api/v2/data/*endpoint                               org.hatdex.hat.api.controllers.RichData.getEndpointData(endpoint, recordId: Option[java.util.UUID], orderBy: Option[String], take: Option[Int])
 POST          /api/v2/data/*endpoint                               org.hatdex.hat.api.controllers.RichData.saveEndpointData(endpoint)
 PUT           /api/v2/data                                         org.hatdex.hat.api.controllers.RichData.updateRecords()

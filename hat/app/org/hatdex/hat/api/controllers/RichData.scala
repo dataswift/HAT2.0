@@ -102,19 +102,19 @@ class RichData @Inject() (
       }
     }
 
-  def registerQueryEndpoint(endpoint: String): Action[Seq[EndpointQuery]] =
+  def registerCombinator(combinator: String): Action[Seq[EndpointQuery]] =
     SecuredAction(WithRole("dataCredit", "owner"))(parsers.json[Seq[EndpointQuery]]) { implicit request =>
-      cache.get[Seq[EndpointQuery]](endpoint) map { _ =>
-        BadRequest(Json.toJson(ErrorMessage("Endpoint exists", s"Endpoint $endpoint already exists")))
+      cache.get[Seq[EndpointQuery]](combinator) map { _ =>
+        BadRequest(Json.toJson(ErrorMessage("Endpoint exists", s"Endpoint $combinator already exists")))
       } getOrElse {
-        cache.set(endpoint, request.body)
-        Created(Json.toJson(SuccessResponse(s"Endpoint $endpoint registered")))
+        cache.set(combinator, request.body)
+        Created(Json.toJson(SuccessResponse(s"Endpoint $combinator registered")))
       }
     }
 
-  def getQueryEndpointData(endpoint: String, recordId: Option[UUID], orderBy: Option[String], take: Option[Int]): Action[AnyContent] =
+  def getCombinatorData(combinator: String, recordId: Option[UUID], orderBy: Option[String], take: Option[Int]): Action[AnyContent] =
     SecuredAction(WithRole("dataCredit", "owner")).async { implicit request =>
-      cache.get[List[EndpointQuery]](endpoint) map { query =>
+      cache.get[List[EndpointQuery]](combinator) map { query =>
         val data = dataService.propertyData(query, orderBy, take.getOrElse(1000))
         data.map(d => Ok(Json.toJson(d)))
       } getOrElse {
