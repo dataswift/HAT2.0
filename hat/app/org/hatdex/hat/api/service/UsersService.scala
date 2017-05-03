@@ -26,12 +26,15 @@ package org.hatdex.hat.api.service
 
 import java.util.UUID
 
+import org.hatdex.hat.api.models.HatService
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.dal.ModelTranslation
+import org.hatdex.hat.resourceManagement.HatServer
 import org.joda.time.LocalDateTime
 import play.api.Logger
+import play.api.libs.json.{ JsObject, Json }
 
 import scala.concurrent.{ ExecutionContext, Future }
 

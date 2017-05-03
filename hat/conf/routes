@@ -37,13 +37,13 @@ DELETE        /data/record/:recordId                               org.hatdex.ha
 
 # DATA DEBIT routes
 
-GET           /dataDebit                                           org.hatdex.hat.api.controllers.DataDebit.listDataDebits()
-POST          /dataDebit/propose                                   org.hatdex.hat.api.controllers.DataDebit.proposeDataDebit
-GET           /dataDebit/:dataDebitKey                             org.hatdex.hat.api.controllers.DataDebit.getDataDebit(dataDebitKey: java.util.UUID)
-PUT           /dataDebit/:dataDebitKey/enable                      org.hatdex.hat.api.controllers.DataDebit.enableDataDebit(dataDebitKey: java.util.UUID)
-PUT           /dataDebit/:dataDebitKey/disable                     org.hatdex.hat.api.controllers.DataDebit.disableDataDebit(dataDebitKey: java.util.UUID)
-PUT           /dataDebit/:dataDebitKey/roll                        org.hatdex.hat.api.controllers.DataDebit.rollDataDebitApi(dataDebitKey: java.util.UUID)
-GET           /dataDebit/:dataDebitKey/values                      org.hatdex.hat.api.controllers.DataDebit.retrieveDataDebitValues(dataDebitKey: java.util.UUID, limit: Option[Int], starttime: Option[Long], endtime: Option[Long], pretty: Option[Boolean])
+GET           /dataDebit                                           org.hatdex.hat.api.controllers.DataDebitController.listDataDebits()
+POST          /dataDebit/propose                                   org.hatdex.hat.api.controllers.DataDebitController.proposeDataDebit
+GET           /dataDebit/:dataDebitKey                             org.hatdex.hat.api.controllers.DataDebitController.getDataDebit(dataDebitKey: java.util.UUID)
+PUT           /dataDebit/:dataDebitKey/enable                      org.hatdex.hat.api.controllers.DataDebitController.enableDataDebit(dataDebitKey: java.util.UUID)
+PUT           /dataDebit/:dataDebitKey/disable                     org.hatdex.hat.api.controllers.DataDebitController.disableDataDebit(dataDebitKey: java.util.UUID)
+PUT           /dataDebit/:dataDebitKey/roll                        org.hatdex.hat.api.controllers.DataDebitController.rollDataDebitApi(dataDebitKey: java.util.UUID)
+GET           /dataDebit/:dataDebitKey/values                      org.hatdex.hat.api.controllers.DataDebitController.retrieveDataDebitValues(dataDebitKey: java.util.UUID, limit: Option[Int], starttime: Option[Long], endtime: Option[Long], pretty: Option[Boolean])
 
 # SYSTEM routes
 GET           /system/update                                       org.hatdex.hat.api.controllers.SystemStatus.update()
@@ -77,8 +77,8 @@ GET           /api/v2/files/restrictAccessPublic/:fileId           org.hatdex.ha
 
 POST          /api/v2/combinator/*combinator                       org.hatdex.hat.api.controllers.RichData.registerCombinator(combinator)
 GET           /api/v2/combinator/*combinator                       org.hatdex.hat.api.controllers.RichData.getCombinatorData(combinator, recordId: Option[java.util.UUID], orderBy: Option[String], take: Option[Int])
-GET           /api/v2/data/*endpoint                               org.hatdex.hat.api.controllers.RichData.getEndpointData(endpoint, recordId: Option[java.util.UUID], orderBy: Option[String], take: Option[Int])
-POST          /api/v2/data/*endpoint                               org.hatdex.hat.api.controllers.RichData.saveEndpointData(endpoint)
+GET           /api/v2/data/:namespace/*endpoint                    org.hatdex.hat.api.controllers.RichData.getEndpointData(namespace, endpoint, recordId: Option[java.util.UUID], orderBy: Option[String], take: Option[Int])
+POST          /api/v2/data/:namespace/*endpoint                    org.hatdex.hat.api.controllers.RichData.saveEndpointData(namespace, endpoint)
 PUT           /api/v2/data                                         org.hatdex.hat.api.controllers.RichData.updateRecords()
 DELETE        /api/v2/data                                         org.hatdex.hat.api.controllers.RichData.deleteDataRecords(records: Seq[java.util.UUID])
 POST          /api/v2/data-link                                    org.hatdex.hat.api.controllers.RichData.linkDataRecords(records: Seq[java.util.UUID])

@@ -32,6 +32,7 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.DataService
+import org.hatdex.hat.authentication.models.{ DataCredit, Owner, Platform }
 import org.hatdex.hat.authentication.{ HatApiController, WithRole, _ }
 import org.hatdex.hat.resourceManagement._
 import org.joda.time.DateTime
@@ -60,7 +61,7 @@ class Data @Inject() (
    * Creates a new virtual table for storing arbitrary incoming data
    */
   def createTable(): Action[ApiDataTable] =
-    SecuredAction(WithRole("owner", "platform", "dataCredit")).async(BodyParsers.parse.json[ApiDataTable]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json[ApiDataTable]) { implicit request =>
       dataService.createTable(request.body) map {
         case structure => Created(Json.toJson(structure))
       } recover {
@@ -72,7 +73,7 @@ class Data @Inject() (
    * Marks provided table as a "child" of another, e.g. to created nested data structured
    */
   def linkTables(parentId: Int, childId: Int): Action[ApiRelationship] =
-    SecuredAction(WithRole("owner", "platform", "dataCredit")).async(BodyParsers.parse.json[ApiRelationship]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json[ApiRelationship]) { implicit request =>
       dataService.linkTables(parentId, childId, request.body) map { id =>
         Created(Json.toJson(ApiGenericId(id)))
       } recover {
@@ -84,7 +85,7 @@ class Data @Inject() (
    * Get specific table information. Includes all fields and sub-tables
    */
   def getTable(tableId: Int) =
-    SecuredAction(WithRole("owner", "platform", "dataCredit")).async { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async { implicit request =>
       dataService.getTableStructure(tableId) map {
         case Some(structure) => Ok(Json.toJson(structure))
         case None            => NotFound(Json.toJson(ErrorMessage(s"No such table", s"Table $tableId not found")))
@@ -99,7 +100,7 @@ class Data @Inject() (
    *
    */
   def findTable(name: Option[String], nameLike: Option[String], nameUnlike: Option[String], tableSource: String) =
-    SecuredAction(WithRole("owner", "platform", "dataCredit")).async { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async { implicit request =>
       logger.debug("GET /table")
       val tables = (name, nameLike, nameUnlike) match {
         case (Some(tableName), _, _)       => dataService.findTable(tableName, tableSource)
@@ -126,7 +127,7 @@ class Data @Inject() (
    * TBD
    */
   def getTableValues(tableId: Int, limit: Option[Int], startTime: Option[Long], endTime: Option[Long], pretty: Option[Boolean]) =
-    SecuredAction(WithRole("owner")).async { implicit request =>
+    SecuredAction(WithRole(Owner())).async { implicit request =>
       val maybeStartTime = startTime.map(t => new DateTime(t * 1000L).toLocalDateTime)
       val maybeEndTime = endTime.map(t => new DateTime(t * 1000L).toLocalDateTime)
       val eventualRecordValues = dataService.getTableValues(tableId, limit, maybeStartTime, maybeEndTime)
@@ -143,7 +144,7 @@ class Data @Inject() (
    * Create a new field in a virtual table
    */
   def createField(): Action[ApiDataField] =
-    SecuredAction(WithRole("owner", "platform", "dataCredit")).async(BodyParsers.parse.json[ApiDataField]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json[ApiDataField]) { implicit request =>
       logger.debug("POST /table")
       dataService.createField(request.body) map {
         case field => Created(Json.toJson(field))
@@ -156,7 +157,7 @@ class Data @Inject() (
    * Get field (information only) by ID
    */
   def getField(fieldId: Int) =
-    SecuredAction(WithRole("owner", "platform", "dataCredit")).async { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async { implicit request =>
       dataService.retrieveDataFieldId(fieldId) map {
         case Some(field) => Ok(Json.toJson(field))
         case None        => NotFound(Json.toJson(ErrorMessage("Field Not Found", s"Data field $fieldId not found")))
@@ -170,7 +171,7 @@ class Data @Inject() (
    * Returns all Data Values stored in the field
    */
   def getFieldValues(fieldId: Int) =
-    SecuredAction(WithRole("owner")).async { implicit request =>
+    SecuredAction(WithRole(Owner())).async { implicit request =>
       dataService.getFieldValues(fieldId) map {
         case Some(field) => Ok(Json.toJson(field))
         case None        => NotFound(Json.toJson(ErrorMessage("Field Not Found", s"Data field $fieldId not found")))
@@ -183,7 +184,7 @@ class Data @Inject() (
    * Insert a new, potentially named, data record
    */
   def createRecord(): Action[ApiDataRecord] =
-    SecuredAction(WithRole("owner", "platform", "dataCredit")).async(BodyParsers.parse.json[ApiDataRecord]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json[ApiDataRecord]) { implicit request =>
       logger.debug("POST /record")
       dataService.createRecord(request.body) map {
         case record => Created(Json.toJson(record))
@@ -193,7 +194,7 @@ class Data @Inject() (
     }
 
   def createRecordValues =
-    SecuredAction(WithRole("owner", "platform", "dataCredit")).async(BodyParsers.parse.json) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json) { implicit request =>
       val recordValues = request.body
       val insertedRecord = recordValues.validate[ApiRecordValues] match {
         case recordValues: JsSuccess[ApiRecordValues] => dataService.storeRecordValues(Seq(recordValues.value)).map(v => Json.toJson(v.head))
@@ -222,7 +223,7 @@ class Data @Inject() (
    * Get values associated with a record.
    * Constructs a hierarchy of fields and data within each field for the record
    */
-  def getRecordValues(recordId: Int) = SecuredAction(WithRole("owner")).async { implicit request =>
+  def getRecordValues(recordId: Int) = SecuredAction(WithRole(Owner())).async { implicit request =>
     dataService.getRecordValues(recordId) map {
       case Some(dataRecord) => Ok(Json.toJson(dataRecord))
       case None             => NotFound(Json.toJson(ErrorMessage("Record Not Found", s"Data Record $recordId not found")))
@@ -235,7 +236,7 @@ class Data @Inject() (
    * Batch-insert data values as a list
    */
   def storeValueList(recordId: Int): Action[Seq[ApiDataValue]] =
-    SecuredAction(WithRole("owner", "platform", "dataCredit")).async(BodyParsers.parse.json[Seq[ApiDataValue]]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json[Seq[ApiDataValue]]) { implicit request =>
       val eventualValues = Future.sequence(request.body.map(x => dataService.createValue(x, None, Some(recordId))))
 
       //      eventualValues map {
@@ -253,7 +254,7 @@ class Data @Inject() (
    * Create (insert) a new data value
    */
   def createValue: Action[ApiDataValue] =
-    SecuredAction(WithRole("owner", "platform", "dataCredit")).async(BodyParsers.parse.json[ApiDataValue]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json[ApiDataValue]) { implicit request =>
       val eventualValues = dataService.createValue(request.body, None, None)
       //      eventualValues map {
       //        case inserted => recordDataValuesInbound(Seq(insertedValue), user, s"Single data value posted")
@@ -265,7 +266,7 @@ class Data @Inject() (
       }
     }
 
-  def getDataSources = SecuredAction(WithRole("owner", "platform", "dataCredit")).async { implicit request =>
+  def getDataSources = SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async { implicit request =>
     dataService.dataSources() map {
       case dataSources => Ok(Json.toJson(dataSources))
     } recover {
@@ -273,7 +274,7 @@ class Data @Inject() (
     }
   }
 
-  def deleteDataValue(valueId: Int) = SecuredAction(WithRole("owner", "dataCredit")).async { implicit request =>
+  def deleteDataValue(valueId: Int) = SecuredAction(WithRole(Owner(), DataCredit(""))).async { implicit request =>
     dataService.deleteValue(valueId) map {
       case _ => Ok(Json.toJson(SuccessResponse(s"Value $valueId deleted")))
     } recover {
@@ -281,7 +282,7 @@ class Data @Inject() (
     }
   }
 
-  def deleteDataField(fieldId: Int) = SecuredAction(WithRole("owner", "dataCredit")).async { implicit request =>
+  def deleteDataField(fieldId: Int) = SecuredAction(WithRole(Owner(), DataCredit(""))).async { implicit request =>
     dataService.deleteField(fieldId) map {
       case _ => Ok(Json.toJson(SuccessResponse(s"Field $fieldId deleted")))
     } recover {
@@ -289,7 +290,7 @@ class Data @Inject() (
     }
   }
 
-  def deleteDataTable(tableId: Int) = SecuredAction(WithRole("owner", "dataCredit")).async { implicit request =>
+  def deleteDataTable(tableId: Int) = SecuredAction(WithRole(Owner(), DataCredit(""))).async { implicit request =>
     dataService.deleteTable(tableId) map {
       case _ => Ok(Json.toJson(SuccessResponse(s"Table $tableId deleted")))
     } recover {
@@ -297,7 +298,7 @@ class Data @Inject() (
     }
   }
 
-  def deleteDataRecord(recordId: Int) = SecuredAction(WithRole("owner", "dataCredit")).async { implicit request =>
+  def deleteDataRecord(recordId: Int) = SecuredAction(WithRole(Owner(), DataCredit(""))).async { implicit request =>
     dataService.deleteRecord(recordId) map {
       case _ => Ok(Json.toJson(SuccessResponse(s"Record $recordId deleted")))
     } recover {

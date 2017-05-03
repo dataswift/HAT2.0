@@ -24,19 +24,19 @@
 
 package org.hatdex.hat.authentication
 
-import com.mohiva.play.silhouette.api.{ Authenticator, Authorization }
-import com.mohiva.play.silhouette.impl.authenticators.{ CookieAuthenticator, JWTRS256Authenticator }
-import org.hatdex.hat.authentication.models.HatUser
+import com.mohiva.play.silhouette.api.Authorization
+import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
+import org.hatdex.hat.authentication.models._
 import play.api.mvc.Request
 
 import scala.concurrent.Future
 
-trait AccessScopeValidator {
-  def isValid(user: HatUser, authenticator: JWTRS256Authenticator, roles: String*)(isAuthorized: (HatUser, Seq[String]) => Boolean): Boolean = {
+object WithTokenParameters {
+  def roleMatchesToken(user: HatUser, authenticator: JWTRS256Authenticator, roles: UserRole*): Boolean = {
     authenticator.customClaims.flatMap { claims =>
       (claims \ "accessScope").validate[String].asOpt.map { scope =>
         if (scope == user.role) {
-          isAuthorized(user, roles)
+          true
         }
         else {
           false
@@ -46,6 +46,31 @@ trait AccessScopeValidator {
       false
     }
   }
+
+  def tokenRoles(user: HatUser, authenticator: JWTRS256Authenticator): Seq[UserRole] = {
+    val role = UserRole.userRoleDeserialize(user.role, None, approved = true)._1
+    val tokenRoles: Seq[UserRole] = role match {
+      case Owner() =>
+        val roles = authenticator.customClaims.flatMap { claims =>
+          (claims \ "namespace").validate[String].asOpt.map { namespace =>
+            DataCredit(namespace)
+          }
+        }
+        Seq(Some(DataDebit("")), roles).flatten
+      case DataDebit(namespace) =>
+        Seq(Some(DataDebit(namespace))).flatten
+      case DataCredit(namespace) =>
+        val roles = authenticator.customClaims.flatMap { claims =>
+          (claims \ "namespace").validate[String].asOpt.map { namespace =>
+            DataCredit(namespace)
+          }
+        }
+        Seq(Some(DataCredit(namespace)), roles).flatten
+      case _ => Seq()
+    }
+    val roles = tokenRoles :+ role
+    roles
+  }
 }
 
 /**
@@ -53,29 +78,24 @@ trait AccessScopeValidator {
  * Master service is always allowed.
  * Ex: WithService("serviceA", "serviceB") => only users with services "serviceA" OR "serviceB" (or "master") are allowed.
  */
-case class WithRole(anyOf: String*) extends Authorization[HatUser, JWTRS256Authenticator] with AccessScopeValidator {
+case class WithRole(anyOf: UserRole*) extends Authorization[HatUser, JWTRS256Authenticator] {
   def isAuthorized[B](user: HatUser, authenticator: JWTRS256Authenticator)(implicit r: Request[B]): Future[Boolean] = {
     Future.successful {
-      isValid(user, authenticator, anyOf: _*)(WithRole.isAuthorized)
+      WithRole.isAuthorized(user, authenticator, anyOf: _*)
     }
   }
 
 }
 object WithRole {
-  def isAuthorized(user: HatUser, anyOf: String*): Boolean =
-    anyOf.contains(user.role)
-}
-
-case class HasFrontendRole(anyOf: String*) extends Authorization[HatUser, CookieAuthenticator] {
-  def isAuthorized[B](user: HatUser, authenticator: CookieAuthenticator)(implicit r: Request[B]): Future[Boolean] = {
-    Future.successful {
-      WithRole.isAuthorized(user, anyOf: _*)
+  def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, anyOf: UserRole*): Boolean = {
+    if (WithTokenParameters.roleMatchesToken(user, authenticator)) {
+      anyOf.intersect(WithTokenParameters.tokenRoles(user, authenticator)).nonEmpty
+    }
+    else {
+      false
     }
   }
-}
-object HasFrontendRole {
-  def isAuthorized(user: HatUser, anyOf: String*): Boolean =
-    anyOf.contains(user.role)
+
 }
 
 /**
@@ -83,15 +103,20 @@ object HasFrontendRole {
  * Master service is always allowed.
  * Ex: Restrict("serviceA", "serviceB") => only users with services "serviceA" AND "serviceB" (or "master") are allowed.
  */
-case class WithRoles(allOf: String*) extends Authorization[HatUser, JWTRS256Authenticator] with AccessScopeValidator {
+case class WithRoles(allOf: UserRole*) extends Authorization[HatUser, JWTRS256Authenticator] {
   def isAuthorized[B](user: HatUser, authenticator: JWTRS256Authenticator)(implicit r: Request[B]): Future[Boolean] = {
     Future.successful {
-      isValid(user, authenticator, allOf: _*)(WithRoles.isAuthorized)
+      WithRoles.isAuthorized(user, authenticator, allOf: _*)
     }
   }
 }
 
 object WithRoles {
-  def isAuthorized(user: HatUser, allOf: String*): Boolean =
-    allOf.forall(_ == user.role)
+  def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, allOf: UserRole*): Boolean =
+    if (WithTokenParameters.roleMatchesToken(user, authenticator)) {
+      allOf.intersect(WithTokenParameters.tokenRoles(user, authenticator)).size == allOf.size
+    }
+    else {
+      false
+    }
 }

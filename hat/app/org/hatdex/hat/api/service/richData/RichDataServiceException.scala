@@ -25,7 +25,7 @@
 package org.hatdex.hat.api.service.richData
 
 class RichDataServiceException(message: String = "", cause: Throwable = None.orNull) extends Exception(message, cause)
-
+case class RichDataPermissionsException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
 case class RichDataDuplicateException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
 case class RichDataMissingException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
 

@@ -54,7 +54,7 @@ class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment
   }
 
   private def applicationFromDbModel(app: ApplicationsRow): HatService = {
-    HatService(app.title, app.description, app.logoUrl, app.url, app.authUrl, app.browser, app.category, app.setup, app.loginAvailable)
+    HatService(app.title, app.namespace, app.description, app.logoUrl, app.url, app.authUrl, app.browser, app.category, app.setup, app.loginAvailable)
   }
 
   def findOrCreateHatService(name: String, redirectUrl: String)(implicit hatServer: HatServer): Future[HatService] = {
@@ -64,20 +64,25 @@ class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment
       approvedHatServices.find(s => s.title == name && redirectUrl.startsWith(s.url))
         .map(_.copy(url = s"${redirectUri.scheme}:${redirectUri.authority.toString}", authUrl = redirectUri.path.toString()))
         .getOrElse(
-          HatService(name, redirectUrl, "/assets/images/haticon.png",
+          HatService(name, name.toLowerCase, redirectUrl, "/assets/images/haticon.png",
             redirectUrl, redirectUri.path.toString(),
             browser = false, category = "app", setup = true,
             loginAvailable = true))
     }
   }
 
-  protected def hatServiceToken(user: HatUser, service: HatService)(implicit hatServer: HatServer, requestHeader: RequestHeader): Future[AccessToken] = {
+  def generateUserTokenClaims(user: HatUser, service: HatService)(implicit hatServer: HatServer): JsObject = {
     val accessScope = if (service.browser) { user.role } else { "validate" }
     val resource = if (service.browser) { hatServer.domain } else { service.url }
 
-    val customClaims = JsObject(Map(
+    JsObject(Map(
       "resource" -> Json.toJson(resource),
-      "accessScope" -> Json.toJson(accessScope)))
+      "accessScope" -> Json.toJson(accessScope),
+      "namespace" -> Json.toJson(service.title.toLowerCase)))
+  }
+
+  def hatServiceToken(user: HatUser, service: HatService)(implicit hatServer: HatServer, requestHeader: RequestHeader): Future[AccessToken] = {
+    val customClaims = generateUserTokenClaims(user, service)
 
     silhouette.env.authenticatorService.create(user.loginInfo)
       .map(_.copy(customClaims = Some(customClaims)))

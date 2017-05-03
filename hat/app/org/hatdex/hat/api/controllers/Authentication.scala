@@ -35,6 +35,7 @@ import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models.{ ErrorMessage, SuccessResponse }
 import org.hatdex.hat.api.service.{ HatServicesService, MailTokenService, UsersService }
 import org.hatdex.hat.authentication._
+import org.hatdex.hat.authentication.models.Owner
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
 import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer }
@@ -63,7 +64,7 @@ class Authentication @Inject() (
 
   private val logger = Logger(this.getClass)
 
-  def hatLogin(name: String, redirectUrl: String): Action[AnyContent] = SecuredAction(WithRole("owner")).async { implicit request =>
+  def hatLogin(name: String, redirectUrl: String): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
     for {
       service <- hatServicesService.findOrCreateHatService(name, redirectUrl)
       linkedService <- hatServicesService.hatServiceLink(request.identity, service, Some(redirectUrl))
@@ -73,7 +74,7 @@ class Authentication @Inject() (
     }
   }
 
-  def passwordChangeProcess: Action[ApiPasswordChange] = SecuredAction(WithRole("owner")).async(parsers.json[ApiPasswordChange]) { implicit request =>
+  def passwordChangeProcess: Action[ApiPasswordChange] = SecuredAction(WithRole(Owner())).async(parsers.json[ApiPasswordChange]) { implicit request =>
     request.body.password map { oldPassword =>
       val eventualResult = for {
         _ <- credentialsProvider.authenticate(Credentials(request.identity.email, oldPassword))
@@ -101,7 +102,7 @@ class Authentication @Inject() (
     val email = request.body.email
     val response = Ok(Json.toJson(SuccessResponse("If the email you have entered is correct, you will shortly receive an email with password reset instructions")))
     if (email == request.dynamicEnvironment.ownerEmail) {
-      usersService.listUsers.map(_.find(_.role == "owner")).flatMap {
+      usersService.listUsers.map(_.find(_.role == Owner())).flatMap {
         case Some(user) =>
           val token = MailTokenUser(email, isSignUp = false)
           tokenService.create(token).map { _ =>
@@ -133,7 +134,7 @@ class Authentication @Inject() (
     tokenService.retrieve(tokenId).flatMap {
       case Some(token) if !token.isSignUp && !token.isExpired =>
         if (token.email == request.dynamicEnvironment.ownerEmail) {
-          usersService.listUsers.map(_.find(_.role == "owner")).flatMap {
+          usersService.listUsers.map(_.find(_.role == Owner())).flatMap {
             case Some(user) =>
               for {
                 _ <- authInfoRepository.update(user.loginInfo, passwordHasherRegistry.current.hash(request.body.newPassword))

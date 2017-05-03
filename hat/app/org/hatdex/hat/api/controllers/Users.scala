@@ -25,30 +25,26 @@
 package org.hatdex.hat.api.controllers
 
 import java.util.UUID
-import javax.inject.{ Inject, Named }
+import javax.inject.Inject
 
-import akka.actor.ActorRef
-import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
 import com.mohiva.play.silhouette.api.util.{ Clock, Credentials, PasswordHasherRegistry }
+import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ ErrorMessage, SuccessResponse, User }
-import org.hatdex.hat.api.service.UsersService
-import org.hatdex.hat.api.models.AccessToken
-import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.authentication.{ HatApiController, _ }
+import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.service.{ HatServicesService, UsersService }
+import org.hatdex.hat.authentication.models.{ HatUser, Owner, Platform }
+import org.hatdex.hat.authentication.{ HatApiController, WithRole, _ }
 import org.hatdex.hat.dal.ModelTranslation
+import org.hatdex.hat.resourceManagement._
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json.{ JsObject, Json }
-import play.api.{ Configuration, Logger }
-import org.hatdex.hat.authentication.WithRole
-import org.hatdex.hat.resourceManagement._
+import play.api.libs.json.Json
 import play.api.mvc._
+import play.api.{ Configuration, Logger }
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class Users @Inject() (
     val messagesApi: MessagesApi,
@@ -58,6 +54,7 @@ class Users @Inject() (
     silhouette: Silhouette[HatApiAuthEnvironment],
     hatServerProvider: HatServerProvider,
     clock: Clock,
+    hatServicesService: HatServicesService,
     usersService: UsersService) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   val logger = Logger(this.getClass)
@@ -70,7 +67,7 @@ class Users @Inject() (
 
   }
 
-  def createUser(): Action[User] = SecuredAction(WithRole("owner", "platform")).async(BodyParsers.parse.json[User]) { implicit request =>
+  def createUser(): Action[User] = SecuredAction(WithRole(Owner(), Platform())).async(BodyParsers.parse.json[User]) { implicit request =>
     val user = request.body
     val permittedRoles = Seq("dataDebit", "dataCredit")
     if (permittedRoles.contains(user.role)) {
@@ -95,7 +92,7 @@ class Users @Inject() (
     }
   }
 
-  def deleteUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole("owner", "platform")).async { implicit request =>
+  def deleteUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
     usersService.deleteUser(userId) map { _ =>
       Ok(Json.toJson(SuccessResponse(s"Account deleted")))
     } recover {
@@ -113,17 +110,13 @@ class Users @Inject() (
     Future.successful(Ok(Json.toJson(SuccessResponse("Authenticated"))))
   }
 
-  def applicationToken(name: String, resource: String): Action[AnyContent] = SecuredAction(WithRole("owner")).async { implicit request =>
-    val customClaims = Map("resource" -> Json.toJson(resource), "accessScope" -> Json.toJson("validate"))
-    for {
-      authenticator <- env.authenticatorService.create(request.identity.loginInfo)
-      token <- env.authenticatorService.init(authenticator.copy(customClaims = Some(JsObject(customClaims))))
-      result <- env.authenticatorService.embed(token, Ok(Json.toJson(AccessToken(token, request.identity.userId))))
-    } yield {
-      result
-    }
-  }
-
+  private val hatService = HatService(
+    "hat", "hat", "HAT API",
+    "", "", "",
+    browser = true,
+    category = "api",
+    setup = true,
+    loginAvailable = true)
   def accessToken(): Action[AnyContent] = UserAwareAction.async { implicit request =>
     val eventuallyAuthenticatedUser = for {
       username <- request.getQueryString("username").orElse(request.headers.get("username"))
@@ -134,10 +127,10 @@ class Users @Inject() (
         .flatMap { loginInfo =>
           usersService.getUser(loginInfo.providerKey).flatMap {
             case Some(user) =>
-              val customClaims = Map("resource" -> Json.toJson(request.dynamicEnvironment.domain), "accessScope" -> Json.toJson(user.role))
+              val customClaims = hatServicesService.generateUserTokenClaims(user, hatService)
               for {
                 authenticator <- env.authenticatorService.create(loginInfo)
-                token <- env.authenticatorService.init(authenticator.copy(customClaims = Some(JsObject(customClaims))))
+                token <- env.authenticatorService.init(authenticator.copy(customClaims = Some(customClaims)))
                 _ <- usersService.logLogin(user, "api", user.role, None, None)
                 result <- env.authenticatorService.embed(token, Ok(Json.toJson(AccessToken(token, user.userId))))
               } yield {
@@ -153,7 +146,17 @@ class Users @Inject() (
     }
   }
 
-  def enableUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole("owner", "platform")).async { implicit request =>
+  def applicationToken(name: String, resource: String): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
+    for {
+      service <- hatServicesService.findOrCreateHatService(name, resource)
+      token <- hatServicesService.hatServiceToken(request.identity, service)
+      result <- env.authenticatorService.embed(token.accessToken, Ok(Json.toJson(token)))
+    } yield {
+      result
+    }
+  }
+
+  def enableUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
     implicit val db = request.dynamicEnvironment.asInstanceOf[HatServer].db
     usersService.getUser(userId) flatMap { maybeUser =>
       maybeUser map { user =>
@@ -168,7 +171,7 @@ class Users @Inject() (
     }
   }
 
-  def disableUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole("owner", "platform")).async { implicit request =>
+  def disableUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
     implicit val db = request.dynamicEnvironment.asInstanceOf[HatServer].db
     usersService.getUser(userId) flatMap { maybeUser =>
       maybeUser map { user =>
