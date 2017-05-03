@@ -51,17 +51,7 @@ GET           /api/v2/system/status                                org.hatdex.ha
 
 # PHATA routes
 GET           /assets/*file                                        @controllers.Assets.versioned(path="/public", file: Asset)
-POST          /                                                    org.hatdex.hat.phata.controllers.Authentication.login
-GET           /signin                                              org.hatdex.hat.phata.controllers.Authentication.signin
-GET           /hatlogin                                            org.hatdex.hat.phata.controllers.Authentication.hatLogin(name: String, redirect: String)
-GET           /logout                                              org.hatdex.hat.phata.controllers.Authentication.logout
-GET           /password                                            org.hatdex.hat.phata.controllers.Authentication.passwordChangeStart
-POST          /password                                            org.hatdex.hat.phata.controllers.Authentication.passwordChangeProcess
-GET           /passwordreset                                       org.hatdex.hat.phata.controllers.Authentication.forgotPassword
-POST          /passwordreset                                       org.hatdex.hat.phata.controllers.Authentication.handleForgotPassword
-GET           /passwordreset/confirm/:token                        org.hatdex.hat.phata.controllers.Authentication.resetPassword(token: String)
-POST          /passwordreset/confirm/:token                        org.hatdex.hat.phata.controllers.Authentication.handleResetPassword(token: String)
-
+GET           /hatlogin                                            org.hatdex.hat.phata.controllers.Phata.hatLogin(name: String, redirect: String)
 GET           /                                                    org.hatdex.hat.phata.controllers.Phata.rumpelIndex
 GET           /api/profile                                         org.hatdex.hat.phata.controllers.Phata.profile
 GET           /api/notables                                        org.hatdex.hat.phata.controllers.Phata.notables(id: Option[Int])

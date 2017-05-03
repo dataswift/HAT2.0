@@ -40,7 +40,7 @@ import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
-import org.hatdex.hat.phata.service.{ MailTokenService, MailTokenUserService }
+import org.hatdex.hat.phata.service.MailTokenUserService
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer }
 import org.joda.time.DateTime

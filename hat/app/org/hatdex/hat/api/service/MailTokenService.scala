@@ -19,12 +19,11 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 2 / 2017
+ * 5 / 2017
  */
 
-package org.hatdex.hat.phata.service
+package org.hatdex.hat.api.service
 
-import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._

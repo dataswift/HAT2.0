@@ -33,10 +33,9 @@ import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models.{ ErrorMessage, SuccessResponse }
-import org.hatdex.hat.api.service.UsersService
+import org.hatdex.hat.api.service.{ HatServicesService, MailTokenService, UsersService }
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
-import org.hatdex.hat.phata.service.{ HatServicesService, MailTokenService }
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
 import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer }
 import play.api.i18n.MessagesApi

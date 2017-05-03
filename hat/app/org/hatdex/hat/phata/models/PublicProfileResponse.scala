@@ -1,6 +1,6 @@
 package org.hatdex.hat.phata.models
 
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json.{ Format, Json }
 
 case class PublicProfileResponse(
   public: Boolean,
@@ -8,5 +8,5 @@ case class PublicProfileResponse(
   notables: Option[Seq[Notable]])
 
 object PublicProfileResponse {
-  implicit val publicProfileResponseFormat = Json.format[PublicProfileResponse]
+  implicit val publicProfileResponseFormat: Format[PublicProfileResponse] = Json.format[PublicProfileResponse]
 }

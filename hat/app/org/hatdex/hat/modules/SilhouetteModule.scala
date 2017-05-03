@@ -43,9 +43,9 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
 import net.codingwell.scalaguice.ScalaModule
+import org.hatdex.hat.api.service.{ MailTokenService, MailTokenUserService }
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models.MailTokenUser
-import org.hatdex.hat.phata.service.{ MailTokenService, MailTokenUserService }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider, HatServerProviderImpl }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, HatMailerImpl }
 import play.api.Configuration
@@ -217,7 +217,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    */
   @Provides
   def providePasswordHasherRegistry(passwordHasher: PasswordHasher): PasswordHasherRegistry = {
-    new PasswordHasherRegistry(passwordHasher)
+    PasswordHasherRegistry(passwordHasher)
   }
 
   /**
