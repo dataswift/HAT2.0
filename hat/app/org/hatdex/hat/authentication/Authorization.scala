@@ -31,15 +31,32 @@ import play.api.mvc.Request
 
 import scala.concurrent.Future
 
+trait AccessScopeValidator {
+  def isValid(user: HatUser, authenticator: JWTRS256Authenticator, roles: String*)(isAuthorized: (HatUser, Seq[String]) => Boolean): Boolean = {
+    authenticator.customClaims.flatMap { claims =>
+      (claims \ "accessScope").validate[String].asOpt.map { scope =>
+        if (scope == user.role) {
+          isAuthorized(user, roles)
+        }
+        else {
+          false
+        }
+      }
+    } getOrElse {
+      false
+    }
+  }
+}
+
 /**
  * Only allows those users that have at least a service of the selected.
  * Master service is always allowed.
  * Ex: WithService("serviceA", "serviceB") => only users with services "serviceA" OR "serviceB" (or "master") are allowed.
  */
-case class WithRole(anyOf: String*) extends Authorization[HatUser, JWTRS256Authenticator] {
+case class WithRole(anyOf: String*) extends Authorization[HatUser, JWTRS256Authenticator] with AccessScopeValidator {
   def isAuthorized[B](user: HatUser, authenticator: JWTRS256Authenticator)(implicit r: Request[B]): Future[Boolean] = {
     Future.successful {
-      WithRole.isAuthorized(user, anyOf: _*)
+      isValid(user, authenticator, anyOf: _*)(WithRole.isAuthorized)
     }
   }
 
@@ -66,13 +83,14 @@ object HasFrontendRole {
  * Master service is always allowed.
  * Ex: Restrict("serviceA", "serviceB") => only users with services "serviceA" AND "serviceB" (or "master") are allowed.
  */
-case class WithRoles(allOf: String*) extends Authorization[HatUser, JWTRS256Authenticator] {
+case class WithRoles(allOf: String*) extends Authorization[HatUser, JWTRS256Authenticator] with AccessScopeValidator {
   def isAuthorized[B](user: HatUser, authenticator: JWTRS256Authenticator)(implicit r: Request[B]): Future[Boolean] = {
     Future.successful {
-      WithRoles.isAuthorized(user, allOf: _*)
+      isValid(user, authenticator, allOf: _*)(WithRoles.isAuthorized)
     }
   }
 }
+
 object WithRoles {
   def isAuthorized(user: HatUser, allOf: String*): Boolean =
     allOf.forall(_ == user.role)
