@@ -30,9 +30,11 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.service.monitoring.HatDataEventBus
 import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.models.{ DataCredit, HatUser, Owner, UserRole }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
+import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
 import play.api.cache.CacheApi
@@ -53,6 +55,7 @@ class RichData @Inject() (
   clock: Clock,
   hatServerProvider: HatServerProvider,
   cache: CacheApi,
+  dataEventBus: HatDataEventBus,
   dataService: RichDataService,
   bundleService: RichBundleService)
     extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
@@ -73,11 +76,17 @@ class RichData @Inject() (
         case array: JsArray =>
           val values = array.value.map(EndpointData(endpoint, None, _, None))
           dataService.saveData(request.identity.userId, values) map { saved =>
+            dataEventBus.publish(HatDataEventBus.DataCreatedEvent(
+              request.dynamicEnvironment.hatName,
+              ModelTranslation.fromInternalModel(request.identity), s"saved batch for $namespace/$endpoint", saved))
             Created(Json.toJson(saved))
           }
         case value: JsValue =>
           val values = Seq(EndpointData(endpoint, None, value, None))
           dataService.saveData(request.identity.userId, values) map { saved =>
+            dataEventBus.publish(HatDataEventBus.DataCreatedEvent(
+              request.dynamicEnvironment.hatName,
+              ModelTranslation.fromInternalModel(request.identity), s"saved data for $namespace/$endpoint", saved))
             Created(Json.toJson(saved.head))
           }
       }

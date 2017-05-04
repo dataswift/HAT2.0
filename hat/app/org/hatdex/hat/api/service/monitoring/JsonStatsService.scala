@@ -33,7 +33,7 @@ import play.api.libs.json._
 
 import scala.collection.immutable.HashMap
 
-class JsonStatsService @Inject() (statsReporter: StatsReporter) extends DalExecutionContext {
+object JsonStatsService {
   protected[service] def countJsonPaths(data: JsValue, path: Seq[String] = Seq()): HashMap[String, Long] = {
     data match {
       case v: JsArray =>

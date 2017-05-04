@@ -24,25 +24,16 @@
 
 package org.hatdex.hat.modules
 
-import com.amazonaws.auth.{ AWSStaticCredentialsProvider, BasicAWSCredentials }
-import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
-import com.google.inject.name.Named
-import com.google.inject.{ AbstractModule, Provides }
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.service.monitoring.{ EndpointSubscriberManagerActor, HatDataEventBus, InjectedEndpointSubscriberActor }
-import org.hatdex.hat.api.service.{ AwsS3Configuration, FileManager, FileManagerS3 }
-import org.hatdex.hat.resourceManagement.actors.{ HatServerActor, HatServerProviderActor }
-import play.api.Configuration
+import org.hatdex.hat.api.service.monitoring.{ HatDataEventBus, HatDataEventRouter, HatDataEventRouterImpl, HatDataStatsProcessor }
 import play.api.libs.concurrent.AkkaGuiceSupport
 
 class DataMonitoringModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
   def configure = {
-    bindActor[EndpointSubscriberManagerActor]("endpointSubscriberManager")
-    bindActorFactory[InjectedEndpointSubscriberActor, InjectedEndpointSubscriberActor.Factory]
-    bind[HatDataEventBus].to[HatDataEventBus]
+    bindActor[HatDataStatsProcessor]("hatDataStatsProcessor")
+    bind[HatDataEventRouter].to[HatDataEventRouterImpl].asEagerSingleton()
   }
 
 }
