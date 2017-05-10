@@ -47,9 +47,8 @@ class JsonStatsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification 
 
   "The `countJsonPaths` method" should {
     "Correctly count numbers of values for simple objects" in {
-      val service = application.injector.instanceOf[JsonStatsService]
 
-      val result = service.countJsonPaths(simpleJson)
+      val result = JsonStatsService.countJsonPaths(simpleJson)
       result("field") must equalTo(1)
       result("date") must equalTo(1)
       result("date_iso") must equalTo(1)
@@ -63,9 +62,8 @@ class JsonStatsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification 
 
   "The `countEndpointData` method" should {
     "Correctly count numbers of values for simple endpoint data objects" in {
-      val service = application.injector.instanceOf[JsonStatsService]
 
-      val counts = service.countEndpointData(EndpointData("test", None, simpleJson, None))
+      val counts = JsonStatsService.countEndpointData(EndpointData("test", None, simpleJson, None))
       val result = counts("test")
       result("field") must equalTo(1)
       result("date") must equalTo(1)
@@ -78,9 +76,8 @@ class JsonStatsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification 
     }
 
     "Correctly count numbers of values for linked endpoint data objects" in {
-      val service = application.injector.instanceOf[JsonStatsService]
 
-      val counts = service.countEndpointData(
+      val counts = JsonStatsService.countEndpointData(
         EndpointData("test", None, simpleJson, Some(Seq(EndpointData("test", None, simpleJson, None)))))
       val result = counts("test")
       result("field") must equalTo(2)
@@ -96,9 +93,8 @@ class JsonStatsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification 
 
   "The `endpointDataCounts` method" should {
     "correctly combine numbers of values from subsequent EndpointData records" in {
-      val service = application.injector.instanceOf[JsonStatsService]
 
-      val counts = service.endpointDataCounts(
+      val counts = JsonStatsService.endpointDataCounts(
         Seq(
           EndpointData("test", None, simpleJson, Some(Seq(EndpointData("test", None, simpleJson, None)))),
           EndpointData("test", None, simpleJson, None)),

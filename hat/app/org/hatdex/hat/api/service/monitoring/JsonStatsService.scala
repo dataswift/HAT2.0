@@ -24,11 +24,9 @@
 
 package org.hatdex.hat.api.service.monitoring
 
-import javax.inject.Inject
-
-import org.hatdex.hat.api.models.{ EndpointData, User }
-import org.hatdex.hat.api.service.{ DalExecutionContext, StatsReporter }
+import org.hatdex.hat.api.models.{ InboundDataStats, EndpointData, User }
 import org.hatdex.hat.utils.Utils
+import org.joda.time.LocalDateTime
 import play.api.libs.json._
 
 import scala.collection.immutable.HashMap
@@ -65,13 +63,7 @@ object JsonStatsService {
     val combined = Utils.mergeMap(counts)((v1, v2) => Utils.mergeMap(Seq(v1, v2))((v1, v2) => v1 + v2))
     combined map {
       case (endpoint, eCounts) =>
-        InboundDataStats(endpoint, logEntry, user, eCounts)
+        InboundDataStats("inbound", LocalDateTime.now(), user, endpoint, eCounts, logEntry)
     }
   }
 }
-
-case class InboundDataStats(
-  endpoint: String,
-  logEntry: String,
-  user: User,
-  counts: HashMap[String, Long])

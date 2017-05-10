@@ -56,9 +56,9 @@ object WithTokenParameters {
             DataCredit(namespace)
           }
         }
-        Seq(Some(DataDebit("")), roles).flatten
-      case DataDebit(namespace) =>
-        Seq(Some(DataDebit(namespace))).flatten
+        Seq(Some(DataDebitOwner("")), roles).flatten
+      case DataDebitOwner(namespace) =>
+        Seq(Some(DataDebitOwner(namespace))).flatten
       case DataCredit(namespace) =>
         val roles = authenticator.customClaims.flatMap { claims =>
           (claims \ "namespace").validate[String].asOpt.map { namespace =>

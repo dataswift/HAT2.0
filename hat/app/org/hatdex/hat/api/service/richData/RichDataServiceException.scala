@@ -28,4 +28,4 @@ class RichDataServiceException(message: String = "", cause: Throwable = None.orN
 case class RichDataPermissionsException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
 case class RichDataDuplicateException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
 case class RichDataMissingException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
-
+case class RichDataDuplicateBundleException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)

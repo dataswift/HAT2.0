@@ -40,6 +40,7 @@ import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
+import org.joda.time.LocalDateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeEach, Scope }
@@ -53,7 +54,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichBundleServiceContext with BeforeEach {
+class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with DataDebitContractServiceContext with BeforeEach {
 
   val logger = Logger(this.getClass)
 
@@ -63,158 +64,173 @@ class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification
 
   sequential
 
-  "The `saveCombinator` method" should {
-    "Save a combinator" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = service.saveCombinator("testCombinator", testEndpointQuery)
-      saved map { _ =>
-        true must beTrue
+  "The `createDataDebit` method" should {
+    "Save a data debit" in {
+      val service = application.injector.instanceOf[DataDebitContractService]
+      val saved = service.createDataDebit("dd", testDataDebitRequest, owner.userId)
+      saved map { debit =>
+        debit.client.email must be equalTo (owner.email)
+        debit.dataDebitKey must be equalTo ("dd")
+        debit.bundles.length must be equalTo (1)
+        debit.bundles.head.rolling must beFalse
+        debit.bundles.head.enabled must beFalse
       } await (3, 10.seconds)
     }
 
-    "Update a combinator if one already exists" in {
-      val service = application.injector.instanceOf[RichBundleService]
+    "Throw an error when a duplicate data debit is getting saved" in {
+      val service = application.injector.instanceOf[DataDebitContractService]
       val saved = for {
-        _ <- service.saveCombinator("testCombinator", testEndpointQueryUpdated)
-        saved <- service.saveCombinator("testCombinator", testEndpointQueryUpdated)
+        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
+        saved <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
       } yield saved
 
-      saved map { _ =>
-        true must beTrue
-      } await (3, 10.seconds)
+      saved must throwA[Exception].await(3, 10.seconds)
     }
   }
 
-  "The `combinator` method" should {
-    "Retrieve a combinator" in {
-      val service = application.injector.instanceOf[RichBundleService]
+  "The `dataDebit` method" should {
+    "Return a data debit by ID" in {
+      val service = application.injector.instanceOf[DataDebitContractService]
       val saved = for {
-        _ <- service.saveCombinator("testCombinator", testEndpointQuery)
-        combinator <- service.combinator("testCombinator")
-      } yield combinator
-
-      saved map { r =>
-        r must beSome
-        r.get.length must equalTo(2)
-      } await (3, 10.seconds)
-    }
-
-    "Return None if combinator doesn't exist" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = for {
-        combinator <- service.combinator("testCombinator")
-      } yield combinator
-
-      saved map { r =>
-        r must beNone
-      } await (3, 10.seconds)
-    }
-  }
-
-  "The `combinators` method" should {
-    "List all combinators" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = for {
-        _ <- service.saveCombinator("testCombinator", testEndpointQuery)
-        _ <- service.saveCombinator("testCombinator2", testEndpointQueryUpdated)
-        combinators <- service.combinators()
-      } yield combinators
-
-      saved map { r =>
-        r.length must equalTo(2)
-      } await (3, 10.seconds)
-    }
-  }
-
-  "The `deleteCombinator` method" should {
-    "Delete combinator by ID" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = for {
-        _ <- service.saveCombinator("testCombinator", testEndpointQuery)
-        _ <- service.saveCombinator("testCombinator2", testEndpointQueryUpdated)
-        _ <- service.deleteCombinator("testCombinator")
-        combinators <- service.combinators()
-      } yield combinators
-
-      saved map { r =>
-        r.length must equalTo(1)
-        r.head._1 must equalTo("testCombinator2")
-      } await (3, 10.seconds)
-    }
-  }
-
-  "The `saveBundle` method" should {
-    "Save a bundle" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = service.saveBundle(testBundle)
-      saved map { _ =>
-        true must beTrue
-      } await (3, 10.seconds)
-    }
-
-    "Update a bundle if one already exists" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = for {
-        _ <- service.saveBundle(testBundle)
-        saved <- service.saveBundle(testBundle)
+        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
+        saved <- service.dataDebit("dd")
       } yield saved
 
-      saved map { _ =>
-        true must beTrue
+      saved map { maybeDebit =>
+        maybeDebit must beSome
+        val debit = maybeDebit.get
+        debit.client.email must be equalTo (owner.email)
+        debit.dataDebitKey must be equalTo ("dd")
+        debit.bundles.length must be equalTo (1)
+        debit.bundles.head.enabled must beFalse
+      } await (3, 10.seconds)
+    }
+
+    "Return None when data debit doesn't exist" in {
+      val service = application.injector.instanceOf[DataDebitContractService]
+      val saved = for {
+        saved <- service.dataDebit("dd")
+      } yield saved
+
+      saved map { maybeDebit =>
+        maybeDebit must beNone
       } await (3, 10.seconds)
     }
   }
 
-  "The `bundle` method" should {
-    "Retrieve a bundle by ID" in {
-      val service = application.injector.instanceOf[RichBundleService]
+  "The `dataDebitEnable` method" should {
+    "Enable an existing data debit" in {
+      val service = application.injector.instanceOf[DataDebitContractService]
       val saved = for {
-        _ <- service.saveBundle(testBundle)
-        combinator <- service.bundle(testBundle.name)
-      } yield combinator
+        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
+        _ <- service.dataDebitEnableBundle("dd", testDataDebitRequest.bundle.name)
+        saved <- service.dataDebit("dd")
+      } yield saved
 
-      saved map { r =>
-        r must beSome
-        r.get.name must equalTo(testBundle.name)
+      saved map { maybeDebit =>
+        maybeDebit must beSome
+        val debit = maybeDebit.get
+        debit.client.email must be equalTo (owner.email)
+        debit.dataDebitKey must be equalTo ("dd")
+        debit.bundles.length must be equalTo (1)
+        debit.bundles.head.enabled must beTrue
+        debit.activeBundle must beSome
+      } await (3, 10.seconds)
+    }
+
+    "Enable a data debit after a few iterations of bundle adjustments" in {
+      val service = application.injector.instanceOf[DataDebitContractService]
+      val saved = for {
+        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
+        _ <- service.updateDataDebitBundle("dd", testDataDebitRequestUpdate, owner.userId)
+        _ <- service.dataDebitEnableBundle("dd", testDataDebitRequestUpdate.bundle.name)
+        saved <- service.dataDebit("dd")
+      } yield saved
+
+      saved map { maybeDebit =>
+        maybeDebit must beSome
+        val debit = maybeDebit.get
+        debit.client.email must be equalTo (owner.email)
+        debit.dataDebitKey must be equalTo ("dd")
+        debit.bundles.length must be equalTo (2)
+        debit.activeBundle must beSome
+        debit.activeBundle.get.bundle.name must be equalTo (testDataDebitRequestUpdate.bundle.name)
+        debit.bundles.exists(_.enabled == false) must beTrue
       } await (3, 10.seconds)
     }
   }
 
-  "The `bundles` method" should {
-    "Retrieve a list of bundles" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = for {
-        _ <- service.saveBundle(testBundle)
-        _ <- service.saveBundle(testBundle2)
-        combinator <- service.bundles()
-      } yield combinator
+  "The `dataDebitDisable` method" should {
+    "Disable all bundles linked to a data debit" in {
+      val service = application.injector.instanceOf[DataDebitContractService]
 
-      saved map { r =>
-        r.length must equalTo(2)
+      val saved = for {
+        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
+        _ <- service.dataDebitEnableBundle("dd", testDataDebitRequest.bundle.name)
+        _ <- service.updateDataDebitBundle("dd", testDataDebitRequestUpdate, owner.userId)
+        _ <- service.dataDebitEnableBundle("dd", testDataDebitRequestUpdate.bundle.name)
+        _ <- service.dataDebitDisable("dd")
+        saved <- service.dataDebit("dd")
+      } yield saved
+
+      saved map { maybeDebit =>
+        maybeDebit must beSome
+        val debit = maybeDebit.get
+        debit.bundles.length must be equalTo (2)
+        debit.bundles.exists(_.enabled == true) must beFalse
       } await (3, 10.seconds)
     }
   }
 
-  "The `deleteBundle` method" should {
-    "Delete bundle by ID" in {
-      val service = application.injector.instanceOf[RichBundleService]
+  "The `updateDataDebitBundle` method" should {
+    "Update a data debit by inserting an additional bundle" in {
+      val service = application.injector.instanceOf[DataDebitContractService]
       val saved = for {
-        _ <- service.saveBundle(testBundle)
-        _ <- service.saveBundle(testBundle2)
-        _ <- service.deleteBundle(testBundle.name)
-        combinators <- service.bundles()
-      } yield combinators
+        saved <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
+        updated <- service.updateDataDebitBundle("dd", testDataDebitRequestUpdate, owner.userId)
+      } yield updated
 
-      saved map { r =>
-        r.length must equalTo(1)
-        r.head.name must equalTo(testBundle2.name)
+      saved map { debit =>
+        debit.client.email must be equalTo (owner.email)
+        debit.dataDebitKey must be equalTo ("dd")
+        debit.bundles.length must be equalTo (2)
+        debit.bundles.head.enabled must beFalse
+        debit.currentBundle must beSome
+        debit.currentBundle.get.bundle.name must be equalTo (testBundle2.name)
+        debit.activeBundle must beNone
+      } await (3, 10.seconds)
+    }
+
+    "Throw an error when updating with an existing bundle" in {
+      val service = application.injector.instanceOf[DataDebitContractService]
+      val saved = for {
+        saved <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
+        updated <- service.updateDataDebitBundle("dd", testDataDebitRequestUpdate.copy(bundle = testDataDebitRequest.bundle), owner.userId)
+      } yield updated
+
+      saved must throwA[RichDataDuplicateBundleException].await(3, 10.seconds)
+    }
+  }
+
+  "The `all` method" should {
+    "List all setup data debits" in {
+      val service = application.injector.instanceOf[DataDebitContractService]
+
+      val saved = for {
+        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
+        _ <- service.createDataDebit("dd2", testDataDebitRequestUpdate, owner.userId)
+        saved <- service.all()
+      } yield saved
+
+      saved map { debits =>
+        debits.length must be equalTo 2
       } await (3, 10.seconds)
     }
   }
 
 }
 
-trait RichBundleServiceContext extends Scope with Mockito {
+trait DataDebitContractServiceContext extends Scope with Mockito {
   // Initialize configuration
   val hatAddress = "hat.hubofallthings.net"
   val hatUrl = s"http://$hatAddress"
@@ -311,4 +327,8 @@ trait RichBundleServiceContext extends Scope with Mockito {
   val testBundle2 = EndpointDataBundle("testBundle2", Map(
     "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), 3),
     "complex" -> PropertyQuery(List(EndpointQuery("anothertest", None, None, None)), Some("data.newField"), 1)))
+
+  val testDataDebitRequest = DataDebitRequest(testBundle, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
+
+  val testDataDebitRequestUpdate = DataDebitRequest(testBundle2, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
 }

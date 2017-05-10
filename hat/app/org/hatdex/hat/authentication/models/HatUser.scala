@@ -49,13 +49,13 @@ object UserRole {
         role match {
           case "owner"      => (Owner(), approved)
           case "validate"   => (Validate(), approved)
-          case "dataDebit"  => (DataDebit(""), approved)
+          case "dataDebit"  => (DataDebitOwner(""), approved)
           case "dataCredit" => (DataCredit(""), approved)
           case _            => (UnknownRole(), approved)
         }
       case (role, Some(extra)) =>
         role match {
-          case "dataDebit"  => (DataDebit(extra), approved)
+          case "dataDebit"  => (DataDebitOwner(extra), approved)
           case "dataCredit" => (DataCredit(extra), approved)
           case _            => (UnknownRole(), approved)
         }
@@ -72,7 +72,7 @@ case class Validate() extends UserRole("validate")
 case class UnknownRole() extends UserRole("unknown")
 
 // Clients
-case class DataDebit(dataDebitId: String) extends UserRole(s"dataDebit") {
+case class DataDebitOwner(dataDebitId: String) extends UserRole(s"dataDebit") {
   override def extra: Option[String] = Some(dataDebitId)
 }
 

@@ -31,7 +31,7 @@ import com.mohiva.play.silhouette.api.util.{ Clock, PasswordHasherRegistry }
 import org.hatdex.hat.api.json.DataDebitFormats
 import org.hatdex.hat.api.models.{ User, _ }
 import org.hatdex.hat.api.service.{ DataDebitService, StatsService }
-import org.hatdex.hat.authentication.models.{ DataDebit, Owner, Platform }
+import org.hatdex.hat.authentication.models.{ DataDebitOwner, Owner, Platform }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.dal.{ ModelTranslation, Tables }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider }
@@ -58,7 +58,7 @@ class DataDebitController @Inject() (
   val logger = Logger(this.getClass)
 
   def proposeDataDebit =
-    SecuredAction(WithRole(Owner(), Platform(), DataDebit(""))).async(BodyParsers.parse.json[ApiDataDebit]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataDebitOwner(""))).async(BodyParsers.parse.json[ApiDataDebit]) { implicit request =>
       val debit = request.body
       (debit.kind, debit.bundleContextless, debit.bundleContextual) match {
         case ("contextless", Some(bundle), None) => processContextlessDDProposal(debit, bundle)
@@ -151,7 +151,7 @@ class DataDebitController @Inject() (
   }
 
   def retrieveDataDebitValues(dataDebitKey: UUID, limit: Option[Int], startTime: Option[Long], endTime: Option[Long],
-    pretty: Option[Boolean]) = SecuredAction(WithRole(Owner(), DataDebit(""))).async { implicit request =>
+    pretty: Option[Boolean]) = SecuredAction(WithRole(Owner(), DataDebitOwner(""))).async { implicit request =>
     val maybeStartTime = startTime.map(t => new DateTime(t * 1000L).toLocalDateTime)
     val maybeEndTime = endTime.map(t => new DateTime(t * 1000L).toLocalDateTime)
 

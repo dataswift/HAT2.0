@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{ GetResult => GR }
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataBundles.schema, DataCombinators.schema, DataDebit.schema, DataField.schema, DataJson.schema, DataJsonGroupRecords.schema, DataJsonGroups.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, HatFileAccess.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessLog.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataBundles.schema, DataCombinators.schema, DataDebit.schema, DataDebitBundle.schema, DataDebitContract.schema, DataField.schema, DataJson.schema, DataJsonGroupRecords.schema, DataJsonGroups.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, HatFileAccess.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessLog.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -485,6 +485,87 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table DataDebit */
   lazy val DataDebit = new TableQuery(tag => new DataDebit(tag))
+
+  /**
+   * Entity class storing rows of table DataDebitBundle
+   *  @param dataDebitKey Database column data_debit_key SqlType(varchar)
+   *  @param bundleId Database column bundle_id SqlType(varchar)
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param startDate Database column start_date SqlType(timestamp)
+   *  @param endDate Database column end_date SqlType(timestamp)
+   *  @param rolling Database column rolling SqlType(bool)
+   *  @param enabled Database column enabled SqlType(bool)
+   */
+  case class DataDebitBundleRow(dataDebitKey: String, bundleId: String, dateCreated: org.joda.time.LocalDateTime, startDate: org.joda.time.LocalDateTime, endDate: org.joda.time.LocalDateTime, rolling: Boolean, enabled: Boolean)
+  /** GetResult implicit for fetching DataDebitBundleRow objects using plain SQL queries */
+  implicit def GetResultDataDebitBundleRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime], e2: GR[Boolean]): GR[DataDebitBundleRow] = GR {
+    prs =>
+      import prs._
+      DataDebitBundleRow.tupled((<<[String], <<[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Boolean], <<[Boolean]))
+  }
+  /** Table description of table data_debit_bundle. Objects of this class serve as prototypes for rows in queries. */
+  class DataDebitBundle(_tableTag: Tag) extends Table[DataDebitBundleRow](_tableTag, Some("hat"), "data_debit_bundle") {
+    def * = (dataDebitKey, bundleId, dateCreated, startDate, endDate, rolling, enabled) <> (DataDebitBundleRow.tupled, DataDebitBundleRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(dataDebitKey), Rep.Some(bundleId), Rep.Some(dateCreated), Rep.Some(startDate), Rep.Some(endDate), Rep.Some(rolling), Rep.Some(enabled)).shaped.<>({ r => import r._; _1.map(_ => DataDebitBundleRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column data_debit_key SqlType(varchar) */
+    val dataDebitKey: Rep[String] = column[String]("data_debit_key")
+    /** Database column bundle_id SqlType(varchar) */
+    val bundleId: Rep[String] = column[String]("bundle_id")
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column start_date SqlType(timestamp) */
+    val startDate: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("start_date")
+    /** Database column end_date SqlType(timestamp) */
+    val endDate: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("end_date")
+    /** Database column rolling SqlType(bool) */
+    val rolling: Rep[Boolean] = column[Boolean]("rolling")
+    /** Database column enabled SqlType(bool) */
+    val enabled: Rep[Boolean] = column[Boolean]("enabled")
+
+    /** Primary key of DataDebitBundle (database name data_debit_bundle_pkey) */
+    val pk = primaryKey("data_debit_bundle_pkey", (dataDebitKey, bundleId))
+
+    /** Foreign key referencing DataBundles (database name data_debit_bundle_bundle_id_fkey) */
+    lazy val dataBundlesFk = foreignKey("data_debit_bundle_bundle_id_fkey", bundleId, DataBundles)(r => r.bundleId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+    /** Foreign key referencing DataDebitContract (database name data_debit_bundle_data_debit_key_fkey) */
+    lazy val dataDebitContractFk = foreignKey("data_debit_bundle_data_debit_key_fkey", dataDebitKey, DataDebitContract)(r => r.dataDebitKey, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table DataDebitBundle */
+  lazy val DataDebitBundle = new TableQuery(tag => new DataDebitBundle(tag))
+
+  /**
+   * Entity class storing rows of table DataDebitContract
+   *  @param dataDebitKey Database column data_debit_key SqlType(varchar), PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param clientId Database column client_id SqlType(uuid)
+   */
+  case class DataDebitContractRow(dataDebitKey: String, dateCreated: org.joda.time.LocalDateTime, clientId: java.util.UUID)
+  /** GetResult implicit for fetching DataDebitContractRow objects using plain SQL queries */
+  implicit def GetResultDataDebitContractRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime], e2: GR[java.util.UUID]): GR[DataDebitContractRow] = GR {
+    prs =>
+      import prs._
+      DataDebitContractRow.tupled((<<[String], <<[org.joda.time.LocalDateTime], <<[java.util.UUID]))
+  }
+  /** Table description of table data_debit_contract. Objects of this class serve as prototypes for rows in queries. */
+  class DataDebitContract(_tableTag: Tag) extends Table[DataDebitContractRow](_tableTag, Some("hat"), "data_debit_contract") {
+    def * = (dataDebitKey, dateCreated, clientId) <> (DataDebitContractRow.tupled, DataDebitContractRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(dataDebitKey), Rep.Some(dateCreated), Rep.Some(clientId)).shaped.<>({ r => import r._; _1.map(_ => DataDebitContractRow.tupled((_1.get, _2.get, _3.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column data_debit_key SqlType(varchar), PrimaryKey */
+    val dataDebitKey: Rep[String] = column[String]("data_debit_key", O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column client_id SqlType(uuid) */
+    val clientId: Rep[java.util.UUID] = column[java.util.UUID]("client_id")
+
+    /** Foreign key referencing UserUser (database name data_debit_contract_client_id_fkey) */
+    lazy val userUserFk = foreignKey("data_debit_contract_client_id_fkey", clientId, UserUser)(r => r.userId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table DataDebitContract */
+  lazy val DataDebitContract = new TableQuery(tag => new DataDebitContract(tag))
 
   /**
    * Entity class storing rows of table DataField

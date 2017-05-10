@@ -45,6 +45,7 @@ import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerPr
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeEach, Scope }
+import play.api.cache.CacheApi
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.test.PlaySpecification
@@ -628,7 +629,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
 }
 
-trait RichDataServiceContext extends Scope {
+trait RichDataServiceContext extends Scope with Mockito {
   // Initialize configuration
   val hatAddress = "hat.hubofallthings.net"
   val hatUrl = s"http://$hatAddress"
@@ -676,10 +677,12 @@ trait RichDataServiceContext extends Scope {
    */
   class FakeModule extends AbstractModule with ScalaModule {
     val fileManagerS3Mock = FileManagerS3Mock()
+    lazy val cacheAPI = mock[CacheApi]
 
     def configure(): Unit = {
       bind[Environment[HatApiAuthEnvironment]].toInstance(environment)
       bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
+      bind[CacheApi].toInstance(cacheAPI)
     }
   }
 

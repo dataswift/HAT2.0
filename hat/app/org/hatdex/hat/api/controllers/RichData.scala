@@ -32,7 +32,7 @@ import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus
 import org.hatdex.hat.api.service.richData._
-import org.hatdex.hat.authentication.models.{ DataCredit, HatUser, Owner, UserRole }
+import org.hatdex.hat.authentication.models.{ DataCredit, DataDebitOwner, HatUser, Owner }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement._
@@ -57,7 +57,8 @@ class RichData @Inject() (
   cache: CacheApi,
   dataEventBus: HatDataEventBus,
   dataService: RichDataService,
-  bundleService: RichBundleService)
+  bundleService: RichBundleService,
+  dataDebitService: DataDebitContractService)
     extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
 
   val logger = Logger(this.getClass)
@@ -101,11 +102,12 @@ class RichData @Inject() (
 
   private def endpointDataNamespaces(data: EndpointData): Option[Set[String]] = {
     data.endpoint.split('/').headOption map { namespace =>
-      data.links map { linkedData =>
+      val namespaces = data.links map { linkedData =>
         linkedData.flatMap(endpointDataNamespaces)
           .reduce((set, namespaces) => set ++ namespaces)
 
-      } getOrElse (Set()) + namespace
+      } getOrElse Set()
+      namespaces + namespace
     }
   }
   private def authorizeEndpointDataWrite(data: Seq[EndpointData])(implicit user: HatUser, authenticator: HatApiAuthEnvironment#A) = {
@@ -207,6 +209,81 @@ class RichData @Inject() (
       } recover {
         case NonFatal(_) =>
           NotFound(Json.toJson(ErrorMessage("Bundle Not Found", s"Bundle $bundleId not found")))
+      }
+    }
+
+  def registerDataDebit(dataDebitId: String): Action[DataDebitRequest] =
+    SecuredAction(WithRole(Owner(), DataDebitOwner(""))).async(parsers.json[DataDebitRequest]) { implicit request =>
+      dataDebitService.createDataDebit(dataDebitId, request.body, request.identity.userId)
+        .map { debit =>
+          Created(Json.toJson(debit))
+        }
+        .recover {
+          case RichDataDuplicateBundleException(message, _) =>
+            BadRequest(Json.toJson(ErrorMessage("Bad Request", s"Data Debit request malformed: $message")))
+        }
+    }
+
+  def updateDataDebit(dataDebitId: String): Action[DataDebitRequest] =
+    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId))).async(parsers.json[DataDebitRequest]) { implicit request =>
+      dataDebitService.updateDataDebitBundle(dataDebitId, request.body, request.identity.userId)
+        .map { debit =>
+          Created(Json.toJson(debit))
+        }
+        .recover {
+          case RichDataDuplicateBundleException(message, _) =>
+            BadRequest(Json.toJson(ErrorMessage("Bad Request", s"Data Debit request malformed: $message")))
+        }
+    }
+
+  def getDataDebit(dataDebitId: String): Action[AnyContent] =
+    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId))).async { implicit request =>
+      dataDebitService.dataDebit(dataDebitId) map {
+        case Some(debit) => Ok(Json.toJson(debit))
+        case None        => NotFound(Json.toJson(ErrorMessage("Not Found", "Data Debit with this ID does not exist")))
+      }
+    }
+
+  def getDataDebitValues(dataDebitId: String): Action[AnyContent] =
+    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId))).async { implicit request =>
+      dataDebitService.dataDebit(dataDebitId) flatMap {
+        case Some(debit) if debit.activeBundle.isDefined =>
+          dataService.bundleData(debit.activeBundle.get.bundle) map { values =>
+            Ok(Json.toJson(values))
+          }
+        case Some(_) => Future.successful(NotFound(Json.toJson(ErrorMessage("Bad Request", s"Data Debit $dataDebitId not enabled"))))
+        case None    => Future.successful(NotFound(Json.toJson(ErrorMessage("Not Found", s"Data Debit $dataDebitId not found"))))
+      }
+    }
+
+  def listDataDebits(): Action[AnyContent] =
+    SecuredAction(WithRole(Owner())).async { implicit request =>
+      dataDebitService.all map { debits =>
+        Ok(Json.toJson(debits))
+      }
+    }
+
+  def enableDataDebit(dataDebitId: String, bundleId: String): Action[AnyContent] =
+    SecuredAction(WithRole(Owner())).async { implicit request =>
+      val enabled = for {
+        _ <- dataDebitService.dataDebitEnableBundle(dataDebitId, bundleId)
+        debit <- dataDebitService.dataDebit(dataDebitId)
+      } yield debit
+      enabled map {
+        case Some(debit) => Ok(Json.toJson(debit))
+        case None        => BadRequest(Json.toJson(ErrorMessage("Not Found", "Data Debit with this ID does not exist")))
+      }
+    }
+
+  def disableDataDebit(dataDebitId: String): Action[AnyContent] =
+    SecuredAction(WithRole(Owner())).async { implicit request =>
+      val disabled = for {
+        _ <- dataDebitService.dataDebitDisable(dataDebitId)
+        debit <- dataDebitService.dataDebit(dataDebitId)
+      } yield debit
+      disabled map {
+        case Some(debit) => Ok(Json.toJson(debit))
+        case None        => BadRequest(Json.toJson(ErrorMessage("Not Found", "Data Debit with this ID does not exist")))
       }
     }
 
