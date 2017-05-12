@@ -27,6 +27,7 @@ package org.hatdex.hat.authentication
 import com.mohiva.play.silhouette.api.Authorization
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
 import org.hatdex.hat.authentication.models._
+import play.api.Logger
 import play.api.mvc.Request
 
 import scala.concurrent.Future
@@ -35,7 +36,7 @@ object WithTokenParameters {
   def roleMatchesToken(user: HatUser, authenticator: JWTRS256Authenticator, roles: UserRole*): Boolean = {
     authenticator.customClaims.flatMap { claims =>
       (claims \ "accessScope").validate[String].asOpt.map { scope =>
-        if (user.roles.map(_.title).contains(scope)) {
+        if (user.roles.map(_.title.toLowerCase).contains(scope.toLowerCase)) {
           true
         }
         else {
@@ -43,34 +44,9 @@ object WithTokenParameters {
         }
       }
     } getOrElse {
-      false
+      true
     }
   }
-
-  //  def tokenRoles(user: HatUser, authenticator: JWTRS256Authenticator): Seq[UserRole] = {
-  //    val role = UserRole.userRoleDeserialize(user.role, None, approved = true)._1
-  //    val tokenRoles: Seq[UserRole] = role match {
-  //      case Owner() =>
-  //        val roles = authenticator.customClaims.flatMap { claims =>
-  //          (claims \ "namespace").validate[String].asOpt.map { namespace =>
-  //            DataCredit(namespace)
-  //          }
-  //        }
-  //        Seq(Some(DataDebitOwner("")), roles).flatten
-  //      case DataDebitOwner(namespace) =>
-  //        Seq(Some(DataDebitOwner(namespace))).flatten
-  //      case DataCredit(namespace) =>
-  //        val roles = authenticator.customClaims.flatMap { claims =>
-  //          (claims \ "namespace").validate[String].asOpt.map { namespace =>
-  //            DataCredit(namespace)
-  //          }
-  //        }
-  //        Seq(Some(DataCredit(namespace)), roles).flatten
-  //      case _ => Seq()
-  //    }
-  //    val roles = tokenRoles :+ role
-  //    roles
-  //  }
 }
 
 /**

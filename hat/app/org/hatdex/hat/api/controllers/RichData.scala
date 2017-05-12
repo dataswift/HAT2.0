@@ -32,7 +32,7 @@ import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus
 import org.hatdex.hat.api.service.richData._
-import org.hatdex.hat.authentication.models.{ DataCredit, DataDebitOwner, HatUser, Owner }
+import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement._
@@ -213,13 +213,15 @@ class RichData @Inject() (
     }
 
   def registerDataDebit(dataDebitId: String): Action[DataDebitRequest] =
-    SecuredAction(WithRole(Owner(), DataDebitOwner(""))).async(parsers.json[DataDebitRequest]) { implicit request =>
+    SecuredAction(WithRole(Owner(), DataDebitOwner(""), Platform())).async(parsers.json[DataDebitRequest]) { implicit request =>
       dataDebitService.createDataDebit(dataDebitId, request.body, request.identity.userId)
         .map { debit =>
           Created(Json.toJson(debit))
         }
         .recover {
           case RichDataDuplicateBundleException(message, _) =>
+            BadRequest(Json.toJson(ErrorMessage("Bad Request", s"Data Debit request malformed: $message")))
+          case RichDataDuplicateDebitException(message, _) =>
             BadRequest(Json.toJson(ErrorMessage("Bad Request", s"Data Debit request malformed: $message")))
         }
     }
@@ -228,11 +230,11 @@ class RichData @Inject() (
     SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId))).async(parsers.json[DataDebitRequest]) { implicit request =>
       dataDebitService.updateDataDebitBundle(dataDebitId, request.body, request.identity.userId)
         .map { debit =>
-          Created(Json.toJson(debit))
+          Ok(Json.toJson(debit))
         }
         .recover {
-          case RichDataDuplicateBundleException(message, _) =>
-            BadRequest(Json.toJson(ErrorMessage("Bad Request", s"Data Debit request malformed: $message")))
+          case err: RichDataServiceException =>
+            BadRequest(Json.toJson(ErrorMessage("Bad Request", s"Data Debit request malformed: ${err.getMessage}")))
         }
     }
 
@@ -251,7 +253,7 @@ class RichData @Inject() (
           dataService.bundleData(debit.activeBundle.get.bundle) map { values =>
             Ok(Json.toJson(values))
           }
-        case Some(_) => Future.successful(NotFound(Json.toJson(ErrorMessage("Bad Request", s"Data Debit $dataDebitId not enabled"))))
+        case Some(_) => Future.successful(BadRequest(Json.toJson(ErrorMessage("Bad Request", s"Data Debit $dataDebitId not enabled"))))
         case None    => Future.successful(NotFound(Json.toJson(ErrorMessage("Not Found", s"Data Debit $dataDebitId not found"))))
       }
     }

@@ -240,9 +240,8 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
       tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
       val usersService = application.injector.instanceOf[UsersService]
       val result: Future[Result] = usersService.saveUser(owner.copy(roles = Seq(DataDebitOwner("")))) // forcing owner user to a different role for the test
-        .flatMap {
-          case _ =>
-            Helpers.call(controller.handleResetPassword(tokenId), request)
+        .flatMap { _ =>
+          Helpers.call(controller.handleResetPassword(tokenId), request)
         }
 
       status(result) must equalTo(UNAUTHORIZED)

@@ -55,6 +55,8 @@ class DataDebitContractService extends DalExecutionContext with RichDataJsonForm
       .recover {
         case e: PSQLException if e.getMessage.contains("duplicate key value violates unique constraint \"data_bundles_pkey\"") =>
           throw RichDataDuplicateBundleException("Data bundle with such ID already exists")
+        case e: PSQLException if e.getMessage.contains("duplicate key value violates unique constraint \"data_debit_contract_pkey\"") =>
+          throw RichDataDuplicateDebitException("Data Debit with such ID already exists")
         case e =>
           throw e
       }
@@ -73,6 +75,8 @@ class DataDebitContractService extends DalExecutionContext with RichDataJsonForm
       .recover {
         case e: PSQLException if e.getMessage.contains("duplicate key value violates unique constraint \"data_bundles_pkey\"") =>
           throw RichDataDuplicateBundleException("Data bundle with such ID already exists")
+        case e: UnsupportedOperationException if e.getMessage.contains("empty.head") =>
+          throw RichDataDebitException("Data Debit being updated does not exist")
         case e =>
           throw e
       }
