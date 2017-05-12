@@ -102,7 +102,7 @@ class Authentication @Inject() (
     val email = request.body.email
     val response = Ok(Json.toJson(SuccessResponse("If the email you have entered is correct, you will shortly receive an email with password reset instructions")))
     if (email == request.dynamicEnvironment.ownerEmail) {
-      usersService.listUsers.map(_.find(_.role == Owner())).flatMap {
+      usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
         case Some(user) =>
           val token = MailTokenUser(email, isSignUp = false)
           tokenService.create(token).map { _ =>
@@ -134,7 +134,7 @@ class Authentication @Inject() (
     tokenService.retrieve(tokenId).flatMap {
       case Some(token) if !token.isSignUp && !token.isExpired =>
         if (token.email == request.dynamicEnvironment.ownerEmail) {
-          usersService.listUsers.map(_.find(_.role == Owner())).flatMap {
+          usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
             case Some(user) =>
               for {
                 _ <- authInfoRepository.update(user.loginInfo, passwordHasherRegistry.current.hash(request.body.newPassword))

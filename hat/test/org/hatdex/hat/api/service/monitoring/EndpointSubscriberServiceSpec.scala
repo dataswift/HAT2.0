@@ -28,7 +28,7 @@ import java.util.UUID
 
 import akka.stream.Materializer
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.authentication.models.{ DataCredit, DataDebitOwner, HatUser, Owner }
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -140,7 +140,7 @@ class EndpointSubscriberServiceSpec(implicit ee: ExecutionEnv) extends PlaySpeci
 
 trait EndpointSubscriberServiceContext extends Scope {
   // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", "owner", enabled = true)
+  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
 
   lazy val application: Application = new GuiceApplicationBuilder()
     .configure(FakeHatConfiguration.config)

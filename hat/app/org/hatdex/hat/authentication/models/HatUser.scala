@@ -29,12 +29,27 @@ import java.util.UUID
 import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
 import org.hatdex.hat.resourceManagement.HatServer
 
-case class HatUser(userId: UUID, email: String, pass: Option[String], name: String, role: String, enabled: Boolean) extends Identity {
+case class HatUser(userId: UUID, email: String, pass: Option[String], name: String, roles: Seq[UserRole], enabled: Boolean) extends Identity {
   def loginInfo(implicit hatServer: HatServer) = LoginInfo(hatServer.domain, email)
+
+  lazy val primaryRole: UserRole = {
+    if (roles.contains(Owner())) {
+      Owner()
+    }
+    else if (roles.contains(DataDebitOwner(""))) {
+      DataDebitOwner("")
+    }
+    else if (roles.contains(DataCredit(""))) {
+      DataCredit("")
+    }
+    else {
+      Validate()
+    }
+  }
 }
 
 sealed abstract class UserRole(roleTitle: String) {
-  def title: String = roleTitle
+  def title: String = roleTitle.toLowerCase
 
   def name: String = this.toString.replaceAll("\\(.*\\)", "")
 

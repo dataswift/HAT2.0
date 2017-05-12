@@ -27,16 +27,17 @@ package org.hatdex.hat.dal
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
+import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser, UserRole }
 import org.hatdex.hat.phata.models.MailTokenUser
 
 object ModelTranslation {
   def fromDbModel(user: UserUserRow): HatUser = {
-    HatUser(user.userId, user.email, user.pass, user.name, user.role, user.enabled)
+    HatUser(user.userId, user.email, user.pass, user.name,
+      Seq(UserRole.userRoleDeserialize(user.role, None, approved = true)._1), user.enabled)
   }
 
   def fromInternalModel(user: HatUser): User = {
-    User(user.userId, user.email, None, user.name, user.role)
+    User(user.userId, user.email, None, user.name, user.roles.headOption.map(_.title).getOrElse(""))
   }
 
   def fromDbModel(field: DataFieldRow): ApiDataField = {

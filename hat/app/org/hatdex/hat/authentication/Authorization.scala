@@ -35,7 +35,7 @@ object WithTokenParameters {
   def roleMatchesToken(user: HatUser, authenticator: JWTRS256Authenticator, roles: UserRole*): Boolean = {
     authenticator.customClaims.flatMap { claims =>
       (claims \ "accessScope").validate[String].asOpt.map { scope =>
-        if (scope == user.role) {
+        if (user.roles.map(_.title).contains(scope)) {
           true
         }
         else {
@@ -47,30 +47,30 @@ object WithTokenParameters {
     }
   }
 
-  def tokenRoles(user: HatUser, authenticator: JWTRS256Authenticator): Seq[UserRole] = {
-    val role = UserRole.userRoleDeserialize(user.role, None, approved = true)._1
-    val tokenRoles: Seq[UserRole] = role match {
-      case Owner() =>
-        val roles = authenticator.customClaims.flatMap { claims =>
-          (claims \ "namespace").validate[String].asOpt.map { namespace =>
-            DataCredit(namespace)
-          }
-        }
-        Seq(Some(DataDebitOwner("")), roles).flatten
-      case DataDebitOwner(namespace) =>
-        Seq(Some(DataDebitOwner(namespace))).flatten
-      case DataCredit(namespace) =>
-        val roles = authenticator.customClaims.flatMap { claims =>
-          (claims \ "namespace").validate[String].asOpt.map { namespace =>
-            DataCredit(namespace)
-          }
-        }
-        Seq(Some(DataCredit(namespace)), roles).flatten
-      case _ => Seq()
-    }
-    val roles = tokenRoles :+ role
-    roles
-  }
+  //  def tokenRoles(user: HatUser, authenticator: JWTRS256Authenticator): Seq[UserRole] = {
+  //    val role = UserRole.userRoleDeserialize(user.role, None, approved = true)._1
+  //    val tokenRoles: Seq[UserRole] = role match {
+  //      case Owner() =>
+  //        val roles = authenticator.customClaims.flatMap { claims =>
+  //          (claims \ "namespace").validate[String].asOpt.map { namespace =>
+  //            DataCredit(namespace)
+  //          }
+  //        }
+  //        Seq(Some(DataDebitOwner("")), roles).flatten
+  //      case DataDebitOwner(namespace) =>
+  //        Seq(Some(DataDebitOwner(namespace))).flatten
+  //      case DataCredit(namespace) =>
+  //        val roles = authenticator.customClaims.flatMap { claims =>
+  //          (claims \ "namespace").validate[String].asOpt.map { namespace =>
+  //            DataCredit(namespace)
+  //          }
+  //        }
+  //        Seq(Some(DataCredit(namespace)), roles).flatten
+  //      case _ => Seq()
+  //    }
+  //    val roles = tokenRoles :+ role
+  //    roles
+  //  }
 }
 
 /**
@@ -89,7 +89,7 @@ case class WithRole(anyOf: UserRole*) extends Authorization[HatUser, JWTRS256Aut
 object WithRole {
   def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, anyOf: UserRole*): Boolean = {
     if (WithTokenParameters.roleMatchesToken(user, authenticator)) {
-      anyOf.intersect(WithTokenParameters.tokenRoles(user, authenticator)).nonEmpty
+      anyOf.intersect(user.roles).nonEmpty
     }
     else {
       false
@@ -114,7 +114,7 @@ case class WithRoles(allOf: UserRole*) extends Authorization[HatUser, JWTRS256Au
 object WithRoles {
   def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, allOf: UserRole*): Boolean =
     if (WithTokenParameters.roleMatchesToken(user, authenticator)) {
-      allOf.intersect(WithTokenParameters.tokenRoles(user, authenticator)).size == allOf.size
+      allOf.intersect(user.roles).size == allOf.size
     }
     else {
       false

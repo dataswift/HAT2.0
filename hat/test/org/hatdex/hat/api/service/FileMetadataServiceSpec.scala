@@ -27,7 +27,7 @@ package org.hatdex.hat.api.service
 import java.util.UUID
 
 import org.hatdex.hat.api.models.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus }
-import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.authentication.models.{ HatUser, Owner }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.BeforeEach
@@ -301,8 +301,8 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       val service = application.injector.instanceOf[FileMetadataService]
       val usersService = application.injector.instanceOf[UsersService]
 
-      val hatUser = HatUser(UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42"), "hatUser", Some(""), "hatUser", "owner", enabled = true)
-      val dataDebitUser = HatUser(UUID.fromString("6507ae16-13d7-479b-8ebc-65c28fec1634"), "dataDebit", Some(""), "dataDebit", "owner", enabled = true)
+      val hatUser = HatUser(UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42"), "hatUser", Some(""), "hatUser", Seq(Owner()), enabled = true)
+      val dataDebitUser = HatUser(UUID.fromString("6507ae16-13d7-479b-8ebc-65c28fec1634"), "dataDebit", Some(""), "dataDebit", Seq(Owner()), enabled = true)
 
       val granted = for {
         user <- usersService.saveUser(hatUser)
@@ -330,8 +330,8 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       val service = application.injector.instanceOf[FileMetadataService]
       val usersService = application.injector.instanceOf[UsersService]
 
-      val hatUser = HatUser(UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42"), "hatUser", Some(""), "hatUser", "owner", enabled = true)
-      val dataDebitUser = HatUser(UUID.fromString("6507ae16-13d7-479b-8ebc-65c28fec1634"), "dataDebit", Some(""), "dataDebit", "owner", enabled = true)
+      val hatUser = HatUser(UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42"), "hatUser", Some(""), "hatUser", Seq(Owner()), enabled = true)
+      val dataDebitUser = HatUser(UUID.fromString("6507ae16-13d7-479b-8ebc-65c28fec1634"), "dataDebit", Some(""), "dataDebit", Seq(Owner()), enabled = true)
 
       val granted = for {
         user <- usersService.saveUser(hatUser)
@@ -359,7 +359,7 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       val service = application.injector.instanceOf[FileMetadataService]
       val usersService = application.injector.instanceOf[UsersService]
 
-      val hatUser = HatUser(UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42"), "hatUser", Some(""), "hatUser", "owner", enabled = true)
+      val hatUser = HatUser(UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42"), "hatUser", Some(""), "hatUser", Seq(Owner()), enabled = true)
 
       val granted = for {
         user <- usersService.saveUser(hatUser)
@@ -402,7 +402,7 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       val service = application.injector.instanceOf[FileMetadataService]
       val usersService = application.injector.instanceOf[UsersService]
 
-      val hatUser = HatUser(UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42"), "hatUser", Some(""), "hatUser", "owner", enabled = true)
+      val hatUser = HatUser(UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42"), "hatUser", Some(""), "hatUser", Seq(Owner()), enabled = true)
 
       val granted = for {
         user <- usersService.saveUser(hatUser)

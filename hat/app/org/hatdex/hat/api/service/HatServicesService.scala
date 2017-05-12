@@ -72,7 +72,7 @@ class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment
   }
 
   def generateUserTokenClaims(user: HatUser, service: HatService)(implicit hatServer: HatServer): JsObject = {
-    val accessScope = if (service.browser) { user.role } else { "validate" }
+    val accessScope = if (service.browser) { user.primaryRole.title } else { "validate" }
     val resource = if (service.browser) { hatServer.domain } else { service.url }
 
     JsObject(Map(

@@ -34,7 +34,7 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.{ HatServicesService, UsersService }
-import org.hatdex.hat.authentication.models.{ HatUser, Owner, Platform }
+import org.hatdex.hat.authentication.models.{ HatUser, Owner, Platform, UserRole }
 import org.hatdex.hat.authentication.{ HatApiController, WithRole, _ }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement._
@@ -76,7 +76,7 @@ class Users @Inject() (
           case _ =>
             Future.successful(BadRequest(Json.toJson(ErrorMessage("Error creating user", s"User ${user.email} already exists"))))
         } getOrElse {
-          val hatUser = HatUser(user.userId, user.email, user.pass, user.name, user.role, enabled = true)
+          val hatUser = HatUser(user.userId, user.email, user.pass, user.name, Seq(UserRole.userRoleDeserialize(user.role, None, true)._1), enabled = true)
           usersService.saveUser(hatUser).map { created =>
             Created(Json.toJson(ModelTranslation.fromInternalModel(created)))
           } recover {
@@ -131,7 +131,7 @@ class Users @Inject() (
               for {
                 authenticator <- env.authenticatorService.create(loginInfo)
                 token <- env.authenticatorService.init(authenticator.copy(customClaims = Some(customClaims)))
-                _ <- usersService.logLogin(user, "api", user.role, None, None)
+                _ <- usersService.logLogin(user, "api", user.roles.filter(_.extra.isEmpty).map(_.title).mkString(":"), None, None)
                 result <- env.authenticatorService.embed(token, Ok(Json.toJson(AccessToken(token, user.userId))))
               } yield {
                 env.eventBus.publish(LoginEvent(user, request))
@@ -160,10 +160,11 @@ class Users @Inject() (
     implicit val db = request.dynamicEnvironment.asInstanceOf[HatServer].db
     usersService.getUser(userId) flatMap { maybeUser =>
       maybeUser map { user =>
-        user.role match {
-          case "owner"    => Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Owner account can not be enabled or disabled"))))
-          case "platform" => Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Platform account can not be enabled or disabled"))))
-          case _          => usersService.changeUserState(userId, enabled = true).map { case _ => Ok(Json.toJson(SuccessResponse("Enabled"))) }
+        if (user.roles.intersect(Seq(Owner(), Platform())).nonEmpty) {
+          Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Owner account can not be enabled or disabled"))))
+        }
+        else {
+          usersService.changeUserState(userId, enabled = true).map { _ => Ok(Json.toJson(SuccessResponse("Enabled"))) }
         }
       } getOrElse {
         Future.successful(NotFound(Json.toJson(ErrorMessage("No such User", s"User $userId does not exist"))))
@@ -175,10 +176,11 @@ class Users @Inject() (
     implicit val db = request.dynamicEnvironment.asInstanceOf[HatServer].db
     usersService.getUser(userId) flatMap { maybeUser =>
       maybeUser map { user =>
-        user.role match {
-          case "owner"    => Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Owner account can not be enabled or disabled"))))
-          case "platform" => Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Platform account can not be enabled or disabled"))))
-          case _          => usersService.changeUserState(userId, enabled = false).map { case _ => Ok(Json.toJson(SuccessResponse("Enabled"))) }
+        if (user.roles.intersect(Seq(Owner(), Platform())).nonEmpty) {
+          Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Owner account can not be enabled or disabled"))))
+        }
+        else {
+          usersService.changeUserState(userId, enabled = true).map { _ => Ok(Json.toJson(SuccessResponse("Enabled"))) }
         }
       } getOrElse {
         Future.successful(NotFound(Json.toJson(ErrorMessage("No such User", s"User $userId does not exist"))))

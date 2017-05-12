@@ -28,7 +28,7 @@ import java.util.UUID
 
 import akka.stream.Materializer
 import org.hatdex.hat.api.models.EndpointData
-import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.authentication.models.{ DataCredit, DataDebitOwner, HatUser, Owner }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
 import org.specs2.concurrent.ExecutionEnv
@@ -119,7 +119,7 @@ class JsonStatsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification 
 
 trait JsonStatsServiceContext extends Scope {
   // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", "owner", enabled = true)
+  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
 
   lazy val application: Application = new GuiceApplicationBuilder()
     .configure(FakeHatConfiguration.config)
