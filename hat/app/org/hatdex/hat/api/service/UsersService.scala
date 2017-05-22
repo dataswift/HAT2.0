@@ -62,8 +62,6 @@ class UsersService extends DalExecutionContext {
     val debits2 = DataDebitContract.map(d => (d.clientId.asColumnOf[String], d.dataDebitKey))
     val dd = debits.unionAll(debits2)
 
-    val err = new RuntimeException("no problem")
-
     val userWithRoles = userFilter
       .joinLeft(dd)
       .on(_.userId.asColumnOf[String] === _._1)
@@ -76,7 +74,6 @@ class UsersService extends DalExecutionContext {
           hatUser.copy(roles = hatUser.roles ++ roles)
       } toSeq
 
-      logger.error(s"Retrieved users: $users", err)
       users
     }
   }
