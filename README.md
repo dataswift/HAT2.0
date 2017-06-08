@@ -79,7 +79,7 @@ To launch the HAT, follow these steps:
     ```
 4. Run the project:
     ```
-    sbt "project hat" run
+    sbt "project hat" -Dconfig.resource=dev.conf run
     ```
 5. Go to http://bobtheplumber.hat.org:9000
 

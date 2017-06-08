@@ -1,4 +1,4 @@
-FROM java:jre
+FROM openjdk:8-jre
 WORKDIR /opt/docker
 ADD opt /opt
 RUN ["chown", "-R", "daemon:daemon", "."]

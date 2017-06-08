@@ -29,10 +29,10 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.{ Clock, Credentials, PasswordHasherRegistry }
 import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
-import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
+import com.mohiva.play.silhouette.impl.exceptions.{ IdentityNotFoundException, InvalidPasswordException }
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ ErrorMessage, SuccessResponse }
+import org.hatdex.hat.api.models.{ AccessToken, ErrorMessage, HatService, SuccessResponse }
 import org.hatdex.hat.api.service.{ HatServicesService, MailTokenService, UsersService }
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.authentication.models.Owner
@@ -64,6 +64,15 @@ class Authentication @Inject() (
 
   private val logger = Logger(this.getClass)
 
+  def publicKey(): Action[AnyContent] = UserAwareAction.async { implicit request =>
+    val publicKey = hatServerProvider.toString(request.dynamicEnvironment.publicKey)
+    Future.successful(Ok(publicKey))
+  }
+
+  def validateToken(): Action[AnyContent] = SecuredAction.async { implicit request =>
+    Future.successful(Ok(Json.toJson(SuccessResponse("Authenticated"))))
+  }
+
   def hatLogin(name: String, redirectUrl: String): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
     for {
       service <- hatServicesService.findOrCreateHatService(name, redirectUrl)
@@ -71,6 +80,52 @@ class Authentication @Inject() (
       - <- usersService.logLogin(request.identity, "hatLogin", linkedService.category, Some(name), Some(redirectUrl))
     } yield {
       Ok(Json.toJson(SuccessResponse(linkedService.url)))
+    }
+  }
+
+  def applicationToken(name: String, resource: String): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
+    for {
+      service <- hatServicesService.findOrCreateHatService(name, resource)
+      token <- hatServicesService.hatServiceToken(request.identity, service)
+      result <- env.authenticatorService.embed(token.accessToken, Ok(Json.toJson(token)))
+    } yield {
+      result
+    }
+  }
+
+  private val hatService = HatService(
+    "hat", "hat", "HAT API",
+    "", "", "",
+    browser = true,
+    category = "api",
+    setup = true,
+    loginAvailable = true)
+  def accessToken(): Action[AnyContent] = UserAwareAction.async { implicit request =>
+    val eventuallyAuthenticatedUser = for {
+      username <- request.getQueryString("username").orElse(request.headers.get("username"))
+      password <- request.getQueryString("password").orElse(request.headers.get("password"))
+    } yield {
+      logger.info(s"Authenticating $username:$password")
+      credentialsProvider.authenticate(Credentials(username, password))
+        .flatMap { loginInfo =>
+          usersService.getUser(loginInfo.providerKey).flatMap {
+            case Some(user) =>
+              val customClaims = hatServicesService.generateUserTokenClaims(user, hatService)
+              for {
+                authenticator <- env.authenticatorService.create(loginInfo)
+                token <- env.authenticatorService.init(authenticator.copy(customClaims = Some(customClaims)))
+                _ <- usersService.logLogin(user, "api", user.roles.filter(_.extra.isEmpty).map(_.title).mkString(":"), None, None)
+                result <- env.authenticatorService.embed(token, Ok(Json.toJson(AccessToken(token, user.userId))))
+              } yield {
+                env.eventBus.publish(LoginEvent(user, request))
+                result
+              }
+            case None => Future.failed(new IdentityNotFoundException("Couldn't find user"))
+          }
+        }
+    }
+    eventuallyAuthenticatedUser getOrElse {
+      Future.successful(Unauthorized(Json.toJson(ErrorMessage("Credentials required", "No username or password provided to retrieve token"))))
     }
   }
 

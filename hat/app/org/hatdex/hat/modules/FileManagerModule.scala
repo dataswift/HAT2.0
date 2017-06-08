@@ -50,6 +50,7 @@ class FileManagerModule extends AbstractModule with ScalaModule with AkkaGuiceSu
   def provides3Client(configuration: AwsS3Configuration): AmazonS3 = {
     val awsCreds: BasicAWSCredentials = new BasicAWSCredentials(configuration.accessKeyId, configuration.secretKey)
     AmazonS3ClientBuilder.standard()
+      .withRegion(configuration.region)
       .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
       .build()
   }

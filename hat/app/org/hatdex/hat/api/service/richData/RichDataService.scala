@@ -237,7 +237,7 @@ class RichDataService extends DalExecutionContext {
     }
   }
 
-  private def propertyDataQuery(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], limit: Int): Query[((DataJson, ConstColumn[String]), Rep[Option[(DataJson, ConstColumn[String])]]), ((DataJsonRow, String), Option[(DataJsonRow, String)]), Seq] = {
+  private def propertyDataQuery(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], skip: Int, limit: Int): Query[((DataJson, ConstColumn[String]), Rep[Option[(DataJson, ConstColumn[String])]]), ((DataJsonRow, String), Option[(DataJsonRow, String)]), Seq] = {
     val queriesWithMappers = //: Seq[Query[(DataJson, Rep[Option[JsValue]], ConstColumn[String]), (DataJsonRow, Option[JsValue], String), Seq]] =
       endpointQueries.zipWithIndex map {
         case (endpointQuery, endpointQueryIndex) =>
@@ -255,7 +255,8 @@ class RichDataService extends DalExecutionContext {
     val endpointDataQuery = queriesWithMappers
       .reduce((aggregate, query) => aggregate.unionAll(query)) // merge all the queries together
       .sortBy(_._2) // order all the results by the chosen column
-      .take(limit) // take the desired number of records
+      .drop(skip) // skip the desired number of records
+      .take(limit) // take up to the desired number of records
 
     val linkedRecordQueries = endpointQueries.zipWithIndex map {
       case (endpointQuery, endpointQueryIndex) =>
@@ -264,7 +265,8 @@ class RichDataService extends DalExecutionContext {
             case (link, linkIndex) =>
               for {
                 endpointQueryRecordGroup <- DataJsonGroupRecords
-                (linkedGroupId, linkedRecordId) <- DataJsonGroupRecords.map(v => (v.groupId, v.recordId)) if endpointQueryRecordGroup.groupId === linkedGroupId && endpointQueryRecordGroup.recordId =!= linkedRecordId
+                (linkedGroupId, linkedRecordId) <- DataJsonGroupRecords.map(v => (v.groupId, v.recordId))
+                if endpointQueryRecordGroup.groupId === linkedGroupId && endpointQueryRecordGroup.recordId =!= linkedRecordId
                 linkedRecord <- generatedDataQuery(link, DataJson.filter(_.recordId === linkedRecordId))
               } yield (endpointQueryIndex.toString, s"$endpointQueryIndex-$linkIndex", endpointQueryRecordGroup.recordId, linkedRecord)
           }
@@ -304,8 +306,8 @@ class RichDataService extends DalExecutionContext {
     }
   }
 
-  def propertyData(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], limit: Int)(implicit db: Database): Future[Seq[EndpointData]] = {
-    val query = propertyDataQuery(endpointQueries, orderBy, limit)
+  def propertyData(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], skip: Int, limit: Int)(implicit db: Database): Future[Seq[EndpointData]] = {
+    val query = propertyDataQuery(endpointQueries, orderBy, skip, limit)
     val mappers = queryMappers(endpointQueries)
     db.run(query.result).map { results =>
       groupRecords[(DataJsonRow, String), (DataJsonRow, String)](results).map {
@@ -339,7 +341,7 @@ class RichDataService extends DalExecutionContext {
   def bundleData(bundle: EndpointDataBundle)(implicit db: Database): Future[Map[String, Seq[EndpointData]]] = {
     val results = bundle.bundle map {
       case (property, propertyQuery) =>
-        propertyData(propertyQuery.endpoints, propertyQuery.orderBy, propertyQuery.limit)
+        propertyData(propertyQuery.endpoints, propertyQuery.orderBy, 0, propertyQuery.limit)
           .map(property -> _)
     }
 

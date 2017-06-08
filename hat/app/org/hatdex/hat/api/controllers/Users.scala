@@ -101,61 +101,6 @@ class Users @Inject() (
     }
   }
 
-  def publicKey(): Action[AnyContent] = UserAwareAction.async { implicit request =>
-    val publicKey = hatServerProvider.toString(request.dynamicEnvironment.publicKey)
-    Future.successful(Ok(publicKey))
-  }
-
-  def validateToken(): Action[AnyContent] = SecuredAction.async { implicit request =>
-    Future.successful(Ok(Json.toJson(SuccessResponse("Authenticated"))))
-  }
-
-  private val hatService = HatService(
-    "hat", "hat", "HAT API",
-    "", "", "",
-    browser = true,
-    category = "api",
-    setup = true,
-    loginAvailable = true)
-  def accessToken(): Action[AnyContent] = UserAwareAction.async { implicit request =>
-    val eventuallyAuthenticatedUser = for {
-      username <- request.getQueryString("username").orElse(request.headers.get("username"))
-      password <- request.getQueryString("password").orElse(request.headers.get("password"))
-    } yield {
-      logger.info(s"Authenticating $username:$password")
-      credentialsProvider.authenticate(Credentials(username, password))
-        .flatMap { loginInfo =>
-          usersService.getUser(loginInfo.providerKey).flatMap {
-            case Some(user) =>
-              val customClaims = hatServicesService.generateUserTokenClaims(user, hatService)
-              for {
-                authenticator <- env.authenticatorService.create(loginInfo)
-                token <- env.authenticatorService.init(authenticator.copy(customClaims = Some(customClaims)))
-                _ <- usersService.logLogin(user, "api", user.roles.filter(_.extra.isEmpty).map(_.title).mkString(":"), None, None)
-                result <- env.authenticatorService.embed(token, Ok(Json.toJson(AccessToken(token, user.userId))))
-              } yield {
-                env.eventBus.publish(LoginEvent(user, request))
-                result
-              }
-            case None => Future.failed(new IdentityNotFoundException("Couldn't find user"))
-          }
-        }
-    }
-    eventuallyAuthenticatedUser getOrElse {
-      Future.successful(Unauthorized(Json.toJson(ErrorMessage("Credentials required", "No username or password provided to retrieve token"))))
-    }
-  }
-
-  def applicationToken(name: String, resource: String): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
-    for {
-      service <- hatServicesService.findOrCreateHatService(name, resource)
-      token <- hatServicesService.hatServiceToken(request.identity, service)
-      result <- env.authenticatorService.embed(token.accessToken, Ok(Json.toJson(token)))
-    } yield {
-      result
-    }
-  }
-
   def enableUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
     implicit val db = request.dynamicEnvironment.asInstanceOf[HatServer].db
     usersService.getUser(userId) flatMap { maybeUser =>
