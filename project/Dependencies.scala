@@ -48,7 +48,7 @@ object Dependencies {
       val test = "com.typesafe.play" %% "play-test" % version
       val specs2 = "com.typesafe.play" %% "play-specs2" % version
       val jsonDerivedCodecs = "org.julienrf" % "play-json-derived-codecs_2.11" % "3.3"
-      val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.2.6"
+      val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.3.4"
       val mailer = "com.typesafe.play" %% "play-mailer" % "5.0.0"
 
       object Specs2 {
