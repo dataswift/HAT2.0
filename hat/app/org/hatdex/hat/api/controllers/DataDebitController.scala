@@ -31,6 +31,7 @@ import com.mohiva.play.silhouette.api.util.{ Clock, PasswordHasherRegistry }
 import org.hatdex.hat.api.json.DataDebitFormats
 import org.hatdex.hat.api.models.{ User, _ }
 import org.hatdex.hat.api.service.{ DataDebitService, StatsService }
+import org.hatdex.hat.authentication.models.{ DataDebitOwner, Owner, Platform }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.dal.{ ModelTranslation, Tables }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider }
@@ -44,7 +45,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 // this trait defines our service behavior independently from the service actor
-class DataDebit @Inject() (
+class DataDebitController @Inject() (
     val messagesApi: MessagesApi,
     passwordHasherRegistry: PasswordHasherRegistry,
     configuration: Configuration,
@@ -57,7 +58,7 @@ class DataDebit @Inject() (
   val logger = Logger(this.getClass)
 
   def proposeDataDebit =
-    SecuredAction(WithRole("owner", "platform", "dataDebit")).async(BodyParsers.parse.json[ApiDataDebit]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataDebitOwner(""))).async(BodyParsers.parse.json[ApiDataDebit]) { implicit request =>
       val debit = request.body
       (debit.kind, debit.bundleContextless, debit.bundleContextual) match {
         case ("contextless", Some(bundle), None) => processContextlessDDProposal(debit, bundle)
@@ -99,7 +100,7 @@ class DataDebit @Inject() (
     }
   }
 
-  def enableDataDebit(dataDebitKey: UUID) = SecuredAction(WithRole("owner")).async { implicit request =>
+  def enableDataDebit(dataDebitKey: UUID) = SecuredAction(WithRole(Owner())).async { implicit request =>
     dataDebitService.findDataDebitByKey(dataDebitKey) flatMap { dataDebit =>
       // TODO check permissions
       val result = dataDebit.map(dataDebitService.enableDataDebit)
@@ -124,7 +125,7 @@ class DataDebit @Inject() (
     }
   }
 
-  def disableDataDebit(dataDebitKey: UUID) = SecuredAction(WithRole("owner")).async { implicit request =>
+  def disableDataDebit(dataDebitKey: UUID) = SecuredAction(WithRole(Owner())).async { implicit request =>
     dataDebitService.findDataDebitByKey(dataDebitKey) flatMap { dataDebit =>
       // TODO check permissions
       val result = dataDebit.map(dataDebitService.disableDataDebit)
@@ -150,12 +151,12 @@ class DataDebit @Inject() (
   }
 
   def retrieveDataDebitValues(dataDebitKey: UUID, limit: Option[Int], startTime: Option[Long], endTime: Option[Long],
-    pretty: Option[Boolean]) = SecuredAction(WithRole("owner", "dataDebit")).async { implicit request =>
+    pretty: Option[Boolean]) = SecuredAction(WithRole(Owner(), DataDebitOwner(""))).async { implicit request =>
     val maybeStartTime = startTime.map(t => new DateTime(t * 1000L).toLocalDateTime)
     val maybeEndTime = endTime.map(t => new DateTime(t * 1000L).toLocalDateTime)
 
     dataDebitService.findDataDebitByKey(dataDebitKey) flatMap {
-      case Some(dataDebit) if dataDebit.recipientId == request.identity.userId.toString || WithRole.isAuthorized(request.identity, "owner") =>
+      case Some(dataDebit) if dataDebit.recipientId == request.identity.userId.toString || WithRole.isAuthorized(request.identity, request.authenticator, Owner()) =>
         Future.successful(dataDebit)
       case Some(dataDebit) => Future.failed(new SecurityException("No permissions to access the DataDebit"))
       case None            => Future.failed(new RuntimeException("No such Data Debit exists"))
@@ -200,7 +201,7 @@ class DataDebit @Inject() (
     }
   }
 
-  def getDataDebit(dataDebitKey: UUID) = SecuredAction(WithRole("owner")).async { implicit request =>
+  def getDataDebit(dataDebitKey: UUID) = SecuredAction(WithRole(Owner())).async { implicit request =>
     dataDebitService.findDataDebitByKey(dataDebitKey)
       .map(dd => dd.map(ModelTranslation.fromDbModel))
       .map {
@@ -213,7 +214,7 @@ class DataDebit @Inject() (
       }
   }
 
-  def listDataDebits = SecuredAction(WithRole("owner")).async { implicit request =>
+  def listDataDebits = SecuredAction(WithRole(Owner())).async { implicit request =>
     dataDebitService.listDataDebits map {
       apiDataDebits => Ok(Json.toJson(apiDataDebits))
     } recover {
@@ -221,7 +222,7 @@ class DataDebit @Inject() (
     }
   }
 
-  def rollDataDebitApi(dataDebitKey: UUID) = SecuredAction(WithRole("owner", "platform")).async { implicit request =>
+  def rollDataDebitApi(dataDebitKey: UUID) = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
 
     val resp = dataDebitService.findDataDebitByKey(dataDebitKey) flatMap { dataDebit =>
       val result = dataDebit.map(dataDebitService.rollDataDebit)

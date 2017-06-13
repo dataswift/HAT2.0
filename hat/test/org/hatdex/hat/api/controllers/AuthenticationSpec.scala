@@ -36,11 +36,10 @@ import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
-import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.authentication.models.{ DataCredit, DataDebitOwner, HatUser, Owner }
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
-import org.hatdex.hat.phata.service.{ MailTokenService, MailTokenUserService }
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer }
 import org.joda.time.DateTime
@@ -240,10 +239,9 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
       val tokenId = UUID.randomUUID().toString
       tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
       val usersService = application.injector.instanceOf[UsersService]
-      val result: Future[Result] = usersService.saveUser(owner.copy(role = "dataDebit")) // forcing owner user to a different role for the test
-        .flatMap {
-          case _ =>
-            Helpers.call(controller.handleResetPassword(tokenId), request)
+      val result: Future[Result] = usersService.saveUser(owner.copy(roles = Seq(DataDebitOwner("")))) // forcing owner user to a different role for the test
+        .flatMap { _ =>
+          Helpers.call(controller.handleResetPassword(tokenId), request)
         }
 
       status(result) must equalTo(UNAUTHORIZED)
@@ -282,9 +280,9 @@ trait AuthenticationContext extends Scope with Mockito {
     keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.getString("publicKey").get)), hatDatabase)
 
   // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "hatuser", "owner", enabled = true)
-  val dataDebitUser = HatUser(UUID.randomUUID(), "dataDebitUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataDebitUser", "dataDebit", enabled = true)
-  val dataCreditUser = HatUser(UUID.randomUUID(), "dataCreditUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataCreditUser", "dataCredit", enabled = true)
+  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "hatuser", Seq(Owner()), enabled = true)
+  val dataDebitUser = HatUser(UUID.randomUUID(), "dataDebitUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataDebitUser", Seq(DataDebitOwner("")), enabled = true)
+  val dataCreditUser = HatUser(UUID.randomUUID(), "dataCreditUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataCreditUser", Seq(DataCredit("")), enabled = true)
   implicit val environment: Environment[HatApiAuthEnvironment] = FakeEnvironment[HatApiAuthEnvironment](
     Seq(owner.loginInfo -> owner, dataDebitUser.loginInfo -> dataDebitUser, dataCreditUser.loginInfo -> dataCreditUser),
     hatServer)

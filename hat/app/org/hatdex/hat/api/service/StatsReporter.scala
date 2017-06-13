@@ -36,32 +36,36 @@ import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.FutureRetries
 import org.hatdex.marketsquare.api.services.MarketsquareClient
-import play.api.{ Configuration, Logger }
 import play.api.libs.json.{ JsObject, Json }
 import play.api.libs.ws.WSClient
-import play.api.mvc.RequestHeader
+import play.api.test.FakeRequest
+import play.api.{ Configuration, Logger }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
 @Singleton
-class StatsReporter @Inject() (wsClient: WSClient, configuration: Configuration, system: ActorSystem,
+class StatsReporter @Inject() (
+    wsClient: WSClient,
+    configuration: Configuration,
+    system: ActorSystem,
     authenticatorService: AuthenticatorService[JWTRS256Authenticator, HatServer]) {
+
   val logger = Logger(this.getClass)
 
-  implicit val scheduler = system.scheduler
-  val retryLimit = configuration.underlying.getInt("exchange.retryLimit")
-  val retryTime = FiniteDuration(configuration.underlying.getDuration("exchange.retryTime").toMillis, "millis")
-  val statsBatchSize = 100
+  private implicit val scheduler = system.scheduler
+  private val retryLimit = configuration.underlying.getInt("exchange.retryLimit")
+  private val retryTime = FiniteDuration(configuration.underlying.getDuration("exchange.retryTime").toMillis, "millis")
+  private val statsBatchSize = 100
 
-  val msClient = new MarketsquareClient(
+  private val msClient = new MarketsquareClient(
     wsClient,
     configuration.underlying.getString("exchange.address"),
     configuration.underlying.getString("exchange.scheme"))
   //  val defaultSsslConfig = AkkaSSLConfig()
 
-  def reportStatistics(stats: Seq[DataStats])(implicit server: HatServer, request: RequestHeader): Future[Unit] = {
+  def reportStatistics(stats: Seq[DataStats])(implicit server: HatServer): Future[Unit] = {
     logger.debug(s"Reporting statistics: $stats")
     val logged = for {
       _ <- persistStats(stats)
@@ -75,7 +79,7 @@ class StatsReporter @Inject() (wsClient: WSClient, configuration: Configuration,
     }
   }
 
-  protected def reportPendingStatistics(batch: Seq[DataStatsLogRow])(implicit server: HatServer, request: RequestHeader): Future[Unit] = {
+  protected def reportPendingStatistics(batch: Seq[DataStatsLogRow])(implicit server: HatServer): Future[Unit] = {
     if (batch.isEmpty) {
       Future.successful(())
     }
@@ -93,7 +97,7 @@ class StatsReporter @Inject() (wsClient: WSClient, configuration: Configuration,
   private def clearUploadedStats(stats: Seq[DataStatsLogRow])(implicit server: HatServer): Future[Unit] = {
     server.db.run {
       DataStatsLog.filter(_.statsId inSet stats.map(_.statsId).toSet).delete
-    } map { case _ => () }
+    } map { _ => () }
   }
 
   private def persistStats(stats: Seq[DataStats])(implicit server: HatServer): Future[Seq[Long]] = {
@@ -113,7 +117,7 @@ class StatsReporter @Inject() (wsClient: WSClient, configuration: Configuration,
     }
   }
 
-  private def uploadStats(stats: Seq[DataStats])(implicit server: HatServer, request: RequestHeader): Future[Unit] = {
+  private def uploadStats(stats: Seq[DataStats])(implicit server: HatServer): Future[Unit] = {
     logger.debug(s"Uploading stats $stats")
     val uploaded = for {
       token <- applicationToken()
@@ -136,9 +140,11 @@ class StatsReporter @Inject() (wsClient: WSClient, configuration: Configuration,
     }
   }
 
-  private def applicationToken()(implicit server: HatServer, request: RequestHeader): Future[String] = {
+  private def applicationToken()(implicit server: HatServer): Future[String] = {
     val resource = configuration.underlying.getString("exchange.scheme") + configuration.underlying.getString("exchange.address")
     val customClaims = Map("resource" -> Json.toJson(resource), "accessScope" -> Json.toJson("validate"))
+    // Authentication service requires request header passed implicitly but does not use it for generating token
+    implicit val fakeRequest = FakeRequest()
     for {
       user <- platformUser()
       authenticator <- authenticatorService.create(user.loginInfo)

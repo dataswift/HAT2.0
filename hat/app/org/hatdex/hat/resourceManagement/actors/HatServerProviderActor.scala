@@ -59,7 +59,7 @@ class HatServerProviderActor @Inject() (hatServerActorFactory: HatServerActor.Fa
 
     case HatServerStarted(_) =>
       hatsActive += 1
-      log.warning(s"Total HATs active: $hatsActive")
+      log.debug(s"Total HATs active: $hatsActive")
 
     case HatServerStopped(_) =>
       hatsActive -= 1
@@ -69,7 +69,7 @@ class HatServerProviderActor @Inject() (hatServerActorFactory: HatServerActor.Fa
 
     case message =>
       log.debug(s"Received unexpected message $message")
-      log.warning(s"Total HATs active: $hatsActive")
+      log.debug(s"Total HATs active: $hatsActive")
   }
 
   private def getHatServerProviderActor(hat: String): Future[ActorRef] = {

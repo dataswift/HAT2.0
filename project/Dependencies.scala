@@ -104,6 +104,7 @@ object Dependencies {
       val logbackCore = "ch.qos.logback" % "logback-core" % logbackV
       val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackV
       val awsJavaSdk = "com.amazonaws" % "aws-java-sdk" % "1.10.64"
+      val awsJavaS3Sdk = "com.amazonaws" % "aws-java-sdk-s3" % "1.11.123"
       val prettyTime = "org.ocpsoft.prettytime" % "prettytime" % "3.2.7.Final"
       val nbvcxz = "me.gosimple" % "nbvcxz" % "1.3.4"
     }
@@ -119,7 +120,7 @@ object Dependencies {
       val slick = "com.typesafe.slick" %% "slick" % slickVersion
       val slickHikari = "com.typesafe.slick" %% "slick-hikaricp" % slickVersion
       val slickCodegen = "com.typesafe.slick" %% "slick-codegen" % slickVersion
-      val slick_pgV = "0.14.2"
+      val slick_pgV = "0.14.6"
       val slickPgCore = "com.github.tminglei" % "slick-pg_core_2.11" % slick_pgV
       val slickPg = "com.github.tminglei" %% "slick-pg" % slick_pgV
       val slickPgJoda = "com.github.tminglei" %% "slick-pg_joda-time" % slick_pgV
@@ -147,7 +148,7 @@ object Dependencies {
 
     object HATDeX {
       private val version = "2.3.0-SNAPSHOT"
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.4.0-SNAPSHOT"
       val marketsquareClient = "org.hatdex" %% "marketsquare-client-scala-play" % version
     }
 

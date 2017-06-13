@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{ GetResult => GR }
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataDebit.schema, DataField.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, HatFileAccess.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessLog.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContext.schema, BundleContextEntitySelection.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, BundleContextPropertySelection.schema, BundleContextToBundleCrossref.schema, BundleContextTree.schema, DataBundles.schema, DataCombinators.schema, DataDebit.schema, DataDebitBundle.schema, DataDebitContract.schema, DataField.schema, DataJson.schema, DataJsonGroupRecords.schema, DataJsonGroups.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, Entity.schema, EventsEvent.schema, EventsEventlocationcrossref.schema, EventsEventorganisationcrossref.schema, EventsEventpersoncrossref.schema, EventsEventthingcrossref.schema, EventsEventtoeventcrossref.schema, EventsSystempropertydynamiccrossref.schema, EventsSystempropertystaticcrossref.schema, EventsSystemtypecrossref.schema, HatFile.schema, HatFileAccess.schema, LocationsLocation.schema, LocationsLocationthingcrossref.schema, LocationsLocationtolocationcrossref.schema, LocationsSystempropertydynamiccrossref.schema, LocationsSystempropertystaticcrossref.schema, LocationsSystemtypecrossref.schema, OrganisationsOrganisation.schema, OrganisationsOrganisationlocationcrossref.schema, OrganisationsOrganisationthingcrossref.schema, OrganisationsOrganisationtoorganisationcrossref.schema, OrganisationsSystempropertydynamiccrossref.schema, OrganisationsSystempropertystaticcrossref.schema, OrganisationsSystemtypecrossref.schema, PeoplePerson.schema, PeoplePersonlocationcrossref.schema, PeoplePersonorganisationcrossref.schema, PeoplePersontopersoncrossref.schema, PeoplePersontopersonrelationshiptype.schema, PeopleSystempropertydynamiccrossref.schema, PeopleSystempropertystaticcrossref.schema, PeopleSystemtypecrossref.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, SystemProperty.schema, SystemPropertyrecord.schema, SystemRelationshiprecord.schema, SystemRelationshiprecordtorecordcrossref.schema, SystemType.schema, SystemTypetotypecrossref.schema, SystemUnitofmeasurement.schema, ThingsSystempropertydynamiccrossref.schema, ThingsSystempropertystaticcrossref.schema, ThingsSystemtypecrossref.schema, ThingsThing.schema, ThingsThingpersoncrossref.schema, ThingsThingtothingcrossref.schema, UserAccessLog.schema, UserMailTokens.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -31,19 +31,20 @@ trait Tables {
    *  @param category Database column category SqlType(varchar)
    *  @param setup Database column setup SqlType(bool)
    *  @param loginAvailable Database column login_available SqlType(bool)
+   *  @param namespace Database column namespace SqlType(varchar), Default()
    */
-  case class ApplicationsRow(applicationId: Int, dateCreated: org.joda.time.LocalDateTime, dateSetup: Option[org.joda.time.LocalDateTime] = None, title: String, description: String, logoUrl: String, url: String, authUrl: String, browser: Boolean, category: String, setup: Boolean, loginAvailable: Boolean)
+  case class ApplicationsRow(applicationId: Int, dateCreated: org.joda.time.LocalDateTime, dateSetup: Option[org.joda.time.LocalDateTime] = None, title: String, description: String, logoUrl: String, url: String, authUrl: String, browser: Boolean, category: String, setup: Boolean, loginAvailable: Boolean, namespace: String = "")
   /** GetResult implicit for fetching ApplicationsRow objects using plain SQL queries */
   implicit def GetResultApplicationsRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[Option[org.joda.time.LocalDateTime]], e3: GR[String], e4: GR[Boolean]): GR[ApplicationsRow] = GR {
     prs =>
       import prs._
-      ApplicationsRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<?[org.joda.time.LocalDateTime], <<[String], <<[String], <<[String], <<[String], <<[String], <<[Boolean], <<[String], <<[Boolean], <<[Boolean]))
+      ApplicationsRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<?[org.joda.time.LocalDateTime], <<[String], <<[String], <<[String], <<[String], <<[String], <<[Boolean], <<[String], <<[Boolean], <<[Boolean], <<[String]))
   }
   /** Table description of table applications. Objects of this class serve as prototypes for rows in queries. */
   class Applications(_tableTag: Tag) extends Table[ApplicationsRow](_tableTag, Some("hat"), "applications") {
-    def * = (applicationId, dateCreated, dateSetup, title, description, logoUrl, url, authUrl, browser, category, setup, loginAvailable) <> (ApplicationsRow.tupled, ApplicationsRow.unapply)
+    def * = (applicationId, dateCreated, dateSetup, title, description, logoUrl, url, authUrl, browser, category, setup, loginAvailable, namespace) <> (ApplicationsRow.tupled, ApplicationsRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(applicationId), Rep.Some(dateCreated), dateSetup, Rep.Some(title), Rep.Some(description), Rep.Some(logoUrl), Rep.Some(url), Rep.Some(authUrl), Rep.Some(browser), Rep.Some(category), Rep.Some(setup), Rep.Some(loginAvailable)).shaped.<>({ r => import r._; _1.map(_ => ApplicationsRow.tupled((_1.get, _2.get, _3, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get, _10.get, _11.get, _12.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(applicationId), Rep.Some(dateCreated), dateSetup, Rep.Some(title), Rep.Some(description), Rep.Some(logoUrl), Rep.Some(url), Rep.Some(authUrl), Rep.Some(browser), Rep.Some(category), Rep.Some(setup), Rep.Some(loginAvailable), Rep.Some(namespace)).shaped.<>({ r => import r._; _1.map(_ => ApplicationsRow.tupled((_1.get, _2.get, _3, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get, _10.get, _11.get, _12.get, _13.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column application_id SqlType(serial), AutoInc, PrimaryKey */
     val applicationId: Rep[Int] = column[Int]("application_id", O.AutoInc, O.PrimaryKey)
@@ -69,6 +70,8 @@ trait Tables {
     val setup: Rep[Boolean] = column[Boolean]("setup")
     /** Database column login_available SqlType(bool) */
     val loginAvailable: Rep[Boolean] = column[Boolean]("login_available")
+    /** Database column namespace SqlType(varchar), Default() */
+    val namespace: Rep[String] = column[String]("namespace", O.Default(""))
   }
   /** Collection-like TableQuery object for table Applications */
   lazy val Applications = new TableQuery(tag => new Applications(tag))
@@ -362,6 +365,58 @@ trait Tables {
   lazy val BundleContextTree = new TableQuery(tag => new BundleContextTree(tag))
 
   /**
+   * Entity class storing rows of table DataBundles
+   *  @param bundleId Database column bundle_id SqlType(varchar), PrimaryKey
+   *  @param bundle Database column bundle SqlType(jsonb), Length(2147483647,false)
+   */
+  case class DataBundlesRow(bundleId: String, bundle: play.api.libs.json.JsValue)
+  /** GetResult implicit for fetching DataBundlesRow objects using plain SQL queries */
+  implicit def GetResultDataBundlesRow(implicit e0: GR[String], e1: GR[play.api.libs.json.JsValue]): GR[DataBundlesRow] = GR {
+    prs =>
+      import prs._
+      DataBundlesRow.tupled((<<[String], <<[play.api.libs.json.JsValue]))
+  }
+  /** Table description of table data_bundles. Objects of this class serve as prototypes for rows in queries. */
+  class DataBundles(_tableTag: Tag) extends Table[DataBundlesRow](_tableTag, Some("hat"), "data_bundles") {
+    def * = (bundleId, bundle) <> (DataBundlesRow.tupled, DataBundlesRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(bundleId), Rep.Some(bundle)).shaped.<>({ r => import r._; _1.map(_ => DataBundlesRow.tupled((_1.get, _2.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column bundle_id SqlType(varchar), PrimaryKey */
+    val bundleId: Rep[String] = column[String]("bundle_id", O.PrimaryKey)
+    /** Database column bundle SqlType(jsonb), Length(2147483647,false) */
+    val bundle: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("bundle", O.Length(2147483647, varying = false))
+  }
+  /** Collection-like TableQuery object for table DataBundles */
+  lazy val DataBundles = new TableQuery(tag => new DataBundles(tag))
+
+  /**
+   * Entity class storing rows of table DataCombinators
+   *  @param combinatorId Database column combinator_id SqlType(varchar), PrimaryKey
+   *  @param combinator Database column combinator SqlType(jsonb), Length(2147483647,false)
+   */
+  case class DataCombinatorsRow(combinatorId: String, combinator: play.api.libs.json.JsValue)
+  /** GetResult implicit for fetching DataCombinatorsRow objects using plain SQL queries */
+  implicit def GetResultDataCombinatorsRow(implicit e0: GR[String], e1: GR[play.api.libs.json.JsValue]): GR[DataCombinatorsRow] = GR {
+    prs =>
+      import prs._
+      DataCombinatorsRow.tupled((<<[String], <<[play.api.libs.json.JsValue]))
+  }
+  /** Table description of table data_combinators. Objects of this class serve as prototypes for rows in queries. */
+  class DataCombinators(_tableTag: Tag) extends Table[DataCombinatorsRow](_tableTag, Some("hat"), "data_combinators") {
+    def * = (combinatorId, combinator) <> (DataCombinatorsRow.tupled, DataCombinatorsRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(combinatorId), Rep.Some(combinator)).shaped.<>({ r => import r._; _1.map(_ => DataCombinatorsRow.tupled((_1.get, _2.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column combinator_id SqlType(varchar), PrimaryKey */
+    val combinatorId: Rep[String] = column[String]("combinator_id", O.PrimaryKey)
+    /** Database column combinator SqlType(jsonb), Length(2147483647,false) */
+    val combinator: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("combinator", O.Length(2147483647, varying = false))
+  }
+  /** Collection-like TableQuery object for table DataCombinators */
+  lazy val DataCombinators = new TableQuery(tag => new DataCombinators(tag))
+
+  /**
    * Entity class storing rows of table DataDebit
    *  @param dataDebitKey Database column data_debit_key SqlType(uuid), PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
@@ -432,6 +487,87 @@ trait Tables {
   lazy val DataDebit = new TableQuery(tag => new DataDebit(tag))
 
   /**
+   * Entity class storing rows of table DataDebitBundle
+   *  @param dataDebitKey Database column data_debit_key SqlType(varchar)
+   *  @param bundleId Database column bundle_id SqlType(varchar)
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param startDate Database column start_date SqlType(timestamp)
+   *  @param endDate Database column end_date SqlType(timestamp)
+   *  @param rolling Database column rolling SqlType(bool)
+   *  @param enabled Database column enabled SqlType(bool)
+   */
+  case class DataDebitBundleRow(dataDebitKey: String, bundleId: String, dateCreated: org.joda.time.LocalDateTime, startDate: org.joda.time.LocalDateTime, endDate: org.joda.time.LocalDateTime, rolling: Boolean, enabled: Boolean)
+  /** GetResult implicit for fetching DataDebitBundleRow objects using plain SQL queries */
+  implicit def GetResultDataDebitBundleRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime], e2: GR[Boolean]): GR[DataDebitBundleRow] = GR {
+    prs =>
+      import prs._
+      DataDebitBundleRow.tupled((<<[String], <<[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Boolean], <<[Boolean]))
+  }
+  /** Table description of table data_debit_bundle. Objects of this class serve as prototypes for rows in queries. */
+  class DataDebitBundle(_tableTag: Tag) extends Table[DataDebitBundleRow](_tableTag, Some("hat"), "data_debit_bundle") {
+    def * = (dataDebitKey, bundleId, dateCreated, startDate, endDate, rolling, enabled) <> (DataDebitBundleRow.tupled, DataDebitBundleRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(dataDebitKey), Rep.Some(bundleId), Rep.Some(dateCreated), Rep.Some(startDate), Rep.Some(endDate), Rep.Some(rolling), Rep.Some(enabled)).shaped.<>({ r => import r._; _1.map(_ => DataDebitBundleRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column data_debit_key SqlType(varchar) */
+    val dataDebitKey: Rep[String] = column[String]("data_debit_key")
+    /** Database column bundle_id SqlType(varchar) */
+    val bundleId: Rep[String] = column[String]("bundle_id")
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column start_date SqlType(timestamp) */
+    val startDate: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("start_date")
+    /** Database column end_date SqlType(timestamp) */
+    val endDate: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("end_date")
+    /** Database column rolling SqlType(bool) */
+    val rolling: Rep[Boolean] = column[Boolean]("rolling")
+    /** Database column enabled SqlType(bool) */
+    val enabled: Rep[Boolean] = column[Boolean]("enabled")
+
+    /** Primary key of DataDebitBundle (database name data_debit_bundle_pkey) */
+    val pk = primaryKey("data_debit_bundle_pkey", (dataDebitKey, bundleId))
+
+    /** Foreign key referencing DataBundles (database name data_debit_bundle_bundle_id_fkey) */
+    lazy val dataBundlesFk = foreignKey("data_debit_bundle_bundle_id_fkey", bundleId, DataBundles)(r => r.bundleId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+    /** Foreign key referencing DataDebitContract (database name data_debit_bundle_data_debit_key_fkey) */
+    lazy val dataDebitContractFk = foreignKey("data_debit_bundle_data_debit_key_fkey", dataDebitKey, DataDebitContract)(r => r.dataDebitKey, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table DataDebitBundle */
+  lazy val DataDebitBundle = new TableQuery(tag => new DataDebitBundle(tag))
+
+  /**
+   * Entity class storing rows of table DataDebitContract
+   *  @param dataDebitKey Database column data_debit_key SqlType(varchar), PrimaryKey
+   *  @param dateCreated Database column date_created SqlType(timestamp)
+   *  @param clientId Database column client_id SqlType(uuid)
+   */
+  case class DataDebitContractRow(dataDebitKey: String, dateCreated: org.joda.time.LocalDateTime, clientId: java.util.UUID)
+  /** GetResult implicit for fetching DataDebitContractRow objects using plain SQL queries */
+  implicit def GetResultDataDebitContractRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime], e2: GR[java.util.UUID]): GR[DataDebitContractRow] = GR {
+    prs =>
+      import prs._
+      DataDebitContractRow.tupled((<<[String], <<[org.joda.time.LocalDateTime], <<[java.util.UUID]))
+  }
+  /** Table description of table data_debit_contract. Objects of this class serve as prototypes for rows in queries. */
+  class DataDebitContract(_tableTag: Tag) extends Table[DataDebitContractRow](_tableTag, Some("hat"), "data_debit_contract") {
+    def * = (dataDebitKey, dateCreated, clientId) <> (DataDebitContractRow.tupled, DataDebitContractRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(dataDebitKey), Rep.Some(dateCreated), Rep.Some(clientId)).shaped.<>({ r => import r._; _1.map(_ => DataDebitContractRow.tupled((_1.get, _2.get, _3.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column data_debit_key SqlType(varchar), PrimaryKey */
+    val dataDebitKey: Rep[String] = column[String]("data_debit_key", O.PrimaryKey)
+    /** Database column date_created SqlType(timestamp) */
+    val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
+    /** Database column client_id SqlType(uuid) */
+    val clientId: Rep[java.util.UUID] = column[java.util.UUID]("client_id")
+
+    /** Foreign key referencing UserUser (database name data_debit_contract_client_id_fkey) */
+    lazy val userUserFk = foreignKey("data_debit_contract_client_id_fkey", clientId, UserUser)(r => r.userId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table DataDebitContract */
+  lazy val DataDebitContract = new TableQuery(tag => new DataDebitContract(tag))
+
+  /**
    * Entity class storing rows of table DataField
    *  @param id Database column id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
@@ -471,6 +607,116 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table DataField */
   lazy val DataField = new TableQuery(tag => new DataField(tag))
+
+  /**
+   * Entity class storing rows of table DataJson
+   *  @param recordId Database column record_id SqlType(uuid), PrimaryKey
+   *  @param source Database column source SqlType(varchar)
+   *  @param owner Database column owner SqlType(uuid)
+   *  @param date Database column date SqlType(timestamp)
+   *  @param data Database column data SqlType(jsonb), Length(2147483647,false)
+   *  @param hash Database column hash SqlType(bytea)
+   */
+  case class DataJsonRow(recordId: java.util.UUID, source: String, owner: java.util.UUID, date: org.joda.time.LocalDateTime, data: play.api.libs.json.JsValue, hash: Array[Byte])
+  /** GetResult implicit for fetching DataJsonRow objects using plain SQL queries */
+  implicit def GetResultDataJsonRow(implicit e0: GR[java.util.UUID], e1: GR[String], e2: GR[org.joda.time.LocalDateTime], e3: GR[play.api.libs.json.JsValue], e4: GR[Array[Byte]]): GR[DataJsonRow] = GR {
+    prs =>
+      import prs._
+      DataJsonRow.tupled((<<[java.util.UUID], <<[String], <<[java.util.UUID], <<[org.joda.time.LocalDateTime], <<[play.api.libs.json.JsValue], <<[Array[Byte]]))
+  }
+  /** Table description of table data_json. Objects of this class serve as prototypes for rows in queries. */
+  class DataJson(_tableTag: Tag) extends Table[DataJsonRow](_tableTag, Some("hat"), "data_json") {
+    def * = (recordId, source, owner, date, data, hash) <> (DataJsonRow.tupled, DataJsonRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(recordId), Rep.Some(source), Rep.Some(owner), Rep.Some(date), Rep.Some(data), Rep.Some(hash)).shaped.<>({ r => import r._; _1.map(_ => DataJsonRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column record_id SqlType(uuid), PrimaryKey */
+    val recordId: Rep[java.util.UUID] = column[java.util.UUID]("record_id", O.PrimaryKey)
+    /** Database column source SqlType(varchar) */
+    val source: Rep[String] = column[String]("source")
+    /** Database column owner SqlType(uuid) */
+    val owner: Rep[java.util.UUID] = column[java.util.UUID]("owner")
+    /** Database column date SqlType(timestamp) */
+    val date: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date")
+    /** Database column data SqlType(jsonb), Length(2147483647,false) */
+    val data: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("data", O.Length(2147483647, varying = false))
+    /** Database column hash SqlType(bytea) */
+    val hash: Rep[Array[Byte]] = column[Array[Byte]]("hash")
+
+    /** Foreign key referencing UserUser (database name data_json_owner_fkey) */
+    lazy val userUserFk = foreignKey("data_json_owner_fkey", owner, UserUser)(r => r.userId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+
+    /** Uniqueness Index over (hash) (database name data_json_hash_key) */
+    val index1 = index("data_json_hash_key", hash, unique = true)
+  }
+  /** Collection-like TableQuery object for table DataJson */
+  lazy val DataJson = new TableQuery(tag => new DataJson(tag))
+
+  /**
+   * Entity class storing rows of table DataJsonGroupRecords
+   *  @param groupId Database column group_id SqlType(uuid)
+   *  @param recordId Database column record_id SqlType(uuid)
+   */
+  case class DataJsonGroupRecordsRow(groupId: java.util.UUID, recordId: java.util.UUID)
+  /** GetResult implicit for fetching DataJsonGroupRecordsRow objects using plain SQL queries */
+  implicit def GetResultDataJsonGroupRecordsRow(implicit e0: GR[java.util.UUID]): GR[DataJsonGroupRecordsRow] = GR {
+    prs =>
+      import prs._
+      DataJsonGroupRecordsRow.tupled((<<[java.util.UUID], <<[java.util.UUID]))
+  }
+  /** Table description of table data_json_group_records. Objects of this class serve as prototypes for rows in queries. */
+  class DataJsonGroupRecords(_tableTag: Tag) extends Table[DataJsonGroupRecordsRow](_tableTag, Some("hat"), "data_json_group_records") {
+    def * = (groupId, recordId) <> (DataJsonGroupRecordsRow.tupled, DataJsonGroupRecordsRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(groupId), Rep.Some(recordId)).shaped.<>({ r => import r._; _1.map(_ => DataJsonGroupRecordsRow.tupled((_1.get, _2.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column group_id SqlType(uuid) */
+    val groupId: Rep[java.util.UUID] = column[java.util.UUID]("group_id")
+    /** Database column record_id SqlType(uuid) */
+    val recordId: Rep[java.util.UUID] = column[java.util.UUID]("record_id")
+
+    /** Primary key of DataJsonGroupRecords (database name data_json_group_records_pkey) */
+    val pk = primaryKey("data_json_group_records_pkey", (groupId, recordId))
+
+    /** Foreign key referencing DataJson (database name data_json_group_records_record_id_fkey) */
+    lazy val dataJsonFk = foreignKey("data_json_group_records_record_id_fkey", recordId, DataJson)(r => r.recordId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+    /** Foreign key referencing DataJsonGroups (database name data_json_group_records_group_id_fkey) */
+    lazy val dataJsonGroupsFk = foreignKey("data_json_group_records_group_id_fkey", groupId, DataJsonGroups)(r => r.groupId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table DataJsonGroupRecords */
+  lazy val DataJsonGroupRecords = new TableQuery(tag => new DataJsonGroupRecords(tag))
+
+  /**
+   * Entity class storing rows of table DataJsonGroups
+   *  @param groupId Database column group_id SqlType(uuid), PrimaryKey
+   *  @param owner Database column owner SqlType(uuid)
+   *  @param date Database column date SqlType(timestamp)
+   */
+  case class DataJsonGroupsRow(groupId: java.util.UUID, owner: java.util.UUID, date: org.joda.time.LocalDateTime)
+  /** GetResult implicit for fetching DataJsonGroupsRow objects using plain SQL queries */
+  implicit def GetResultDataJsonGroupsRow(implicit e0: GR[java.util.UUID], e1: GR[org.joda.time.LocalDateTime]): GR[DataJsonGroupsRow] = GR {
+    prs =>
+      import prs._
+      DataJsonGroupsRow.tupled((<<[java.util.UUID], <<[java.util.UUID], <<[org.joda.time.LocalDateTime]))
+  }
+  /** Table description of table data_json_groups. Objects of this class serve as prototypes for rows in queries. */
+  class DataJsonGroups(_tableTag: Tag) extends Table[DataJsonGroupsRow](_tableTag, Some("hat"), "data_json_groups") {
+    def * = (groupId, owner, date) <> (DataJsonGroupsRow.tupled, DataJsonGroupsRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(groupId), Rep.Some(owner), Rep.Some(date)).shaped.<>({ r => import r._; _1.map(_ => DataJsonGroupsRow.tupled((_1.get, _2.get, _3.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column group_id SqlType(uuid), PrimaryKey */
+    val groupId: Rep[java.util.UUID] = column[java.util.UUID]("group_id", O.PrimaryKey)
+    /** Database column owner SqlType(uuid) */
+    val owner: Rep[java.util.UUID] = column[java.util.UUID]("owner")
+    /** Database column date SqlType(timestamp) */
+    val date: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date")
+
+    /** Foreign key referencing UserUser (database name data_json_groups_owner_fkey) */
+    lazy val userUserFk = foreignKey("data_json_groups_owner_fkey", owner, UserUser)(r => r.userId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table DataJsonGroups */
+  lazy val DataJsonGroups = new TableQuery(tag => new DataJsonGroups(tag))
 
   /**
    * Entity class storing rows of table DataRecord

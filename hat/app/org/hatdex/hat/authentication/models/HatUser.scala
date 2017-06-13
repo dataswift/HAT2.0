@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 2 / 2017
+ * 5 / 2017
  */
 
 package org.hatdex.hat.authentication.models
@@ -30,7 +30,70 @@ import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import org.hatdex.hat.resourceManagement.HatServer
 
-case class HatUser(userId: UUID, email: String, pass: Option[String], name: String, role: String, enabled: Boolean) extends Identity {
-  def loginInfo(implicit hatServer: HatServer) = LoginInfo(CredentialsProvider.ID, email)
+case class HatUser(userId: UUID, email: String, pass: Option[String], name: String, roles: Seq[UserRole], enabled: Boolean) extends Identity {
+  def loginInfo(implicit hatServer: HatServer) = LoginInfo(hatServer.domain, email)
+
+  lazy val primaryRole: UserRole = {
+    if (roles.contains(Owner())) {
+      Owner()
+    }
+    else if (roles.contains(DataDebitOwner(""))) {
+      DataDebitOwner("")
+    }
+    else if (roles.contains(DataCredit(""))) {
+      DataCredit("")
+    }
+    else {
+      Validate()
+    }
+  }
 }
 
+sealed abstract class UserRole(roleTitle: String) {
+  def title: String = roleTitle.toLowerCase
+
+  def name: String = this.toString.replaceAll("\\(.*\\)", "")
+
+  def extra: Option[String] = None
+}
+
+object UserRole {
+  //noinspection ScalaStyle
+  def userRoleDeserialize(userRole: String, roleExtra: Option[String], approved: Boolean): (UserRole, Boolean) = {
+    (userRole, roleExtra) match {
+      case (role, None) =>
+        role match {
+          case "owner"      => (Owner(), approved)
+          case "validate"   => (Validate(), approved)
+          case "dataDebit"  => (DataDebitOwner(""), approved)
+          case "dataCredit" => (DataCredit(""), approved)
+          case _            => (UnknownRole(), approved)
+        }
+      case (role, Some(extra)) =>
+        role match {
+          case "dataDebit"  => (DataDebitOwner(extra), approved)
+          case "dataCredit" => (DataCredit(extra), approved)
+          case _            => (UnknownRole(), approved)
+        }
+
+    }
+  }
+}
+
+// Owner
+case class Owner() extends UserRole("owner")
+
+case class Validate() extends UserRole("validate")
+
+case class UnknownRole() extends UserRole("unknown")
+
+// Clients
+case class DataDebitOwner(dataDebitId: String) extends UserRole(s"dataDebit") {
+  override def extra: Option[String] = Some(dataDebitId)
+}
+
+case class DataCredit(endpoint: String) extends UserRole(s"dataCredit") {
+  override def extra: Option[String] = Some(endpoint)
+}
+
+case class Platform() extends UserRole("platform")

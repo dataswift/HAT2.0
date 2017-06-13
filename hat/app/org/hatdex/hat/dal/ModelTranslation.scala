@@ -27,31 +27,32 @@ package org.hatdex.hat.dal
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
+import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser, UserRole }
 import org.hatdex.hat.phata.models.MailTokenUser
 
 object ModelTranslation {
   def fromDbModel(user: UserUserRow): HatUser = {
-    HatUser(user.userId, user.email, user.pass, user.name, user.role, user.enabled)
+    HatUser(user.userId, user.email, user.pass, user.name,
+      Seq(UserRole.userRoleDeserialize(user.role, None, approved = true)._1), user.enabled)
   }
 
   def fromInternalModel(user: HatUser): User = {
-    User(user.userId, user.email, None, user.name, user.role)
+    User(user.userId, user.email, None, user.name, user.roles.headOption.map(_.title).getOrElse(""))
   }
 
-  def fromDbModel(field: DataFieldRow) = {
+  def fromDbModel(field: DataFieldRow): ApiDataField = {
     ApiDataField(
       Some(field.id), Some(field.dateCreated), Some(field.lastUpdated),
       Some(field.tableIdFk), field.name, None)
   }
 
-  def fromDbModel(record: DataRecordRow, tables: Option[Seq[ApiDataTable]]) = {
+  def fromDbModel(record: DataRecordRow, tables: Option[Seq[ApiDataTable]]): ApiDataRecord = {
     new ApiDataRecord(
       Some(record.id), Some(record.dateCreated), Some(record.lastUpdated),
       record.name, tables)
   }
 
-  def fromDbModel(table: DataTableRow, fields: Option[Seq[ApiDataField]], subTables: Option[Seq[ApiDataTable]]) = {
+  def fromDbModel(table: DataTableRow, fields: Option[Seq[ApiDataField]], subTables: Option[Seq[ApiDataTable]]): ApiDataTable = {
     new ApiDataTable(
       Some(table.id),
       Some(table.dateCreated),
@@ -62,7 +63,7 @@ object ModelTranslation {
       subTables)
   }
 
-  def fromDbModel(table: DataTableTreeRow, fields: Option[Seq[ApiDataField]], subTables: Option[Seq[ApiDataTable]]) = {
+  def fromDbModel(table: DataTableTreeRow, fields: Option[Seq[ApiDataField]], subTables: Option[Seq[ApiDataTable]]): ApiDataTable = {
     new ApiDataTable(
       table.id,
       table.dateCreated,
@@ -96,7 +97,7 @@ object ModelTranslation {
   }
 
   def fromDbModel(bundleContextless: BundleContextlessRow): ApiBundleContextless = {
-    new ApiBundleContextless(
+    ApiBundleContextless(
       Some(bundleContextless.id),
       Some(bundleContextless.dateCreated), Some(bundleContextless.lastUpdated),
       bundleContextless.name, None)
@@ -141,8 +142,36 @@ object ModelTranslation {
     ApiHatFilePermissions(hatFileAccessRow.userId, hatFileAccessRow.content)
   }
 
-  def fromDbModel(userAccessLogRow: UserAccessLogRow, user: HatUser) = {
+  def fromDbModel(userAccessLogRow: UserAccessLogRow, user: HatUser): HatAccessLog = {
     HatAccessLog(userAccessLogRow.date.toDateTime, user, userAccessLogRow.`type`,
       userAccessLogRow.scope, userAccessLogRow.applicationName, userAccessLogRow.applicationResource)
+  }
+
+  def fromDbModel(dataJsonRow: DataJsonRow): EndpointData = {
+    EndpointData(dataJsonRow.source, Some(dataJsonRow.recordId), dataJsonRow.data, None)
+  }
+
+  def fromDbModel(dataJsonRow: DataJsonRow, linkedDataJsonRows: Seq[DataJsonRow]): EndpointData = {
+    EndpointData(dataJsonRow.source, Some(dataJsonRow.recordId), dataJsonRow.data, Some(linkedDataJsonRows.map(fromDbModel)))
+  }
+
+  def fromDbModel(dataBundleRow: DataBundlesRow): EndpointDataBundle = {
+    import RichDataJsonFormats.propertyQueryFormat
+    EndpointDataBundle(dataBundleRow.bundleId, dataBundleRow.bundle.as[Map[String, PropertyQuery]])
+  }
+
+  def fromDbModel(dataDebitBundle: DataDebitBundleRow, bundle: DataBundlesRow): DebitBundle = {
+    DebitBundle(dataDebitBundle.dateCreated, dataDebitBundle.startDate, dataDebitBundle.endDate,
+      dataDebitBundle.rolling, dataDebitBundle.enabled,
+      ModelTranslation.fromDbModel(bundle))
+  }
+
+  def fromDbModel(dataDebit: DataDebitContractRow, client: UserUserRow, dataDebitBundle: Seq[(DataDebitBundleRow, DataBundlesRow)]): RichDataDebit = {
+    RichDataDebit(dataDebit.dataDebitKey, dataDebit.dateCreated,
+      userFromDbModel(client), dataDebitBundle.map(d => ModelTranslation.fromDbModel(d._1, d._2)))
+  }
+
+  def userFromDbModel(user: UserUserRow): User = {
+    fromInternalModel(fromDbModel(user))
   }
 }

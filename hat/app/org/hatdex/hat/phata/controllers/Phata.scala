@@ -28,14 +28,17 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.HatJsonFormats
+import org.hatdex.hat.api.models.ErrorMessage
+import org.hatdex.hat.api.service.HatServicesService
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.authentication.{ HasFrontendRole, HatFrontendAuthEnvironment, HatFrontendController }
-import org.hatdex.hat.phata.service.{ HatServicesService, NotablesService, UserProfileService }
-import org.hatdex.hat.phata.models.{ Notable, PublicProfileResponse }
+import org.hatdex.hat.authentication.{ HatFrontendAuthEnvironment, HatFrontendController }
+import org.hatdex.hat.phata.models.PublicProfileResponse
+import org.hatdex.hat.phata.service.{ NotablesService, UserProfileService }
 import org.hatdex.hat.phata.{ views => phataViews }
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
 import play.api.i18n.MessagesApi
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json.Json
+import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
@@ -48,11 +51,10 @@ class Phata @Inject() (
     silhouette: Silhouette[HatFrontendAuthEnvironment],
     hatServerProvider: HatServerProvider,
     clock: Clock,
+    wsClient: WSClient,
     hatServicesService: HatServicesService,
     userProfileService: UserProfileService,
     notablesService: NotablesService) extends HatFrontendController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
-
-  import org.hatdex.hat.phata.models.HatPublicInfo.hatServer2PublicInfo
 
   private val logger = Logger(this.getClass)
 
@@ -69,10 +71,10 @@ class Phata @Inject() (
     }
 
     eventualProfileData map {
-      case (true, publicProfile, notables) => Ok(Json.toJson(PublicProfileResponse(true, Some(publicProfile), Some(notables))))
-      case (false, publicProfile, _)       => Ok(Json.toJson(PublicProfileResponse(false, None, None)))
+      case (true, publicProfile, notables) => Ok(Json.toJson(PublicProfileResponse(public = true, Some(publicProfile), Some(notables))))
+      case (false, _, _)                   => Ok(Json.toJson(PublicProfileResponse(public = false, None, None)))
     } recover {
-      case e => Ok(Json.toJson(PublicProfileResponse(false, None, None)))
+      case _ => Ok(Json.toJson(PublicProfileResponse(public = false, None, None)))
     }
   }
 
@@ -85,7 +87,14 @@ class Phata @Inject() (
       Ok(Json.toJson(notables))
     } recover {
       case e =>
-        Ok("Failed to retrieve notables")
+        InternalServerError(Json.toJson(ErrorMessage("Server Error", "Failed to retrieve notables")))
     }
+  }
+
+  def hatLogin(name: String, redirectUrl: String) = UserAwareAction { implicit request =>
+    val uri = wsClient.url(routes.Phata.hatLogin(name, redirectUrl).absoluteURL()).uri
+    val newRedirectUrl = s"${uri.getScheme}://${uri.getAuthority}/#/hatlogin?${uri.getQuery}"
+    logger.debug(s"Redirect url from ${request.uri}: ${newRedirectUrl}")
+    Redirect(newRedirectUrl)
   }
 }

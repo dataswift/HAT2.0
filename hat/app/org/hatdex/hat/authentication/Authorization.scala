@@ -24,41 +24,75 @@
 
 package org.hatdex.hat.authentication
 
-import com.mohiva.play.silhouette.api.{ Authenticator, Authorization }
-import com.mohiva.play.silhouette.impl.authenticators.{ CookieAuthenticator, JWTRS256Authenticator }
-import org.hatdex.hat.authentication.models.HatUser
+import com.mohiva.play.silhouette.api.Authorization
+import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
+import org.hatdex.hat.authentication.models._
+import play.api.Logger
 import play.api.mvc.Request
 
 import scala.concurrent.Future
+
+object WithTokenParameters {
+  def roleMatchesToken(user: HatUser, authenticator: JWTRS256Authenticator, roles: UserRole*): Boolean = {
+    authenticator.customClaims.flatMap { claims =>
+      (claims \ "accessScope").validate[String].asOpt.map { scope =>
+        if (user.roles.map(_.title.toLowerCase).contains(scope.toLowerCase)) {
+          true
+        }
+        else {
+          false
+        }
+      }
+    } getOrElse {
+      true
+    }
+  }
+
+  def tokenExtraScopes(user: HatUser, authenticator: JWTRS256Authenticator): Seq[UserRole] = {
+    val creditRole = if (user.roles.exists(_.isInstanceOf[DataCredit] || user.roles.exists(_.isInstanceOf[Owner]))) {
+      authenticator.customClaims flatMap { claims =>
+        (claims \ "namespace").validate[String].asOpt.map { scope =>
+          DataCredit(scope)
+        }
+      }
+    }
+    else {
+      None
+    }
+
+    creditRole map { role =>
+      user.roles :+ role
+    } getOrElse {
+      user.roles
+    }
+  }
+}
 
 /**
  * Only allows those users that have at least a service of the selected.
  * Master service is always allowed.
  * Ex: WithService("serviceA", "serviceB") => only users with services "serviceA" OR "serviceB" (or "master") are allowed.
  */
-case class WithRole(anyOf: String*) extends Authorization[HatUser, JWTRS256Authenticator] {
+case class WithRole(anyOf: UserRole*) extends Authorization[HatUser, JWTRS256Authenticator] {
   def isAuthorized[B](user: HatUser, authenticator: JWTRS256Authenticator)(implicit r: Request[B]): Future[Boolean] = {
     Future.successful {
-      WithRole.isAuthorized(user, anyOf: _*)
+      WithRole.isAuthorized(user, authenticator, anyOf: _*)
     }
   }
 
 }
 object WithRole {
-  def isAuthorized(user: HatUser, anyOf: String*): Boolean =
-    anyOf.contains(user.role)
-}
+  def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, anyOf: UserRole*): Boolean = {
 
-case class HasFrontendRole(anyOf: String*) extends Authorization[HatUser, CookieAuthenticator] {
-  def isAuthorized[B](user: HatUser, authenticator: CookieAuthenticator)(implicit r: Request[B]): Future[Boolean] = {
-    Future.successful {
-      WithRole.isAuthorized(user, anyOf: _*)
+    if (WithTokenParameters.roleMatchesToken(user, authenticator)) {
+      val roles = WithTokenParameters.tokenExtraScopes(user, authenticator)
+      anyOf.intersect(roles).nonEmpty
+    }
+    else {
+      false
     }
   }
-}
-object HasFrontendRole {
-  def isAuthorized(user: HatUser, anyOf: String*): Boolean =
-    anyOf.contains(user.role)
+
 }
 
 /**
@@ -66,14 +100,20 @@ object HasFrontendRole {
  * Master service is always allowed.
  * Ex: Restrict("serviceA", "serviceB") => only users with services "serviceA" AND "serviceB" (or "master") are allowed.
  */
-case class WithRoles(allOf: String*) extends Authorization[HatUser, JWTRS256Authenticator] {
+case class WithRoles(allOf: UserRole*) extends Authorization[HatUser, JWTRS256Authenticator] {
   def isAuthorized[B](user: HatUser, authenticator: JWTRS256Authenticator)(implicit r: Request[B]): Future[Boolean] = {
     Future.successful {
-      WithRoles.isAuthorized(user, allOf: _*)
+      WithRoles.isAuthorized(user, authenticator, allOf: _*)
     }
   }
 }
+
 object WithRoles {
-  def isAuthorized(user: HatUser, allOf: String*): Boolean =
-    allOf.forall(_ == user.role)
+  def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, allOf: UserRole*): Boolean =
+    if (WithTokenParameters.roleMatchesToken(user, authenticator)) {
+      allOf.intersect(WithTokenParameters.tokenExtraScopes(user, authenticator)).size == allOf.size
+    }
+    else {
+      false
+    }
 }

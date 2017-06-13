@@ -32,7 +32,7 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.service.{ DalExecutionContext, UsersService }
-import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.authentication.models.{ HatUser, Owner, Platform }
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
 import play.api.libs.concurrent.AkkaGuiceSupport
@@ -85,8 +85,8 @@ class DevHatInitializer @Inject() (
     val ownerId = UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42")
     val platformId = UUID.fromString("6507ae16-13d7-479b-8ebc-65c28fec1634")
     for {
-      _ <- usersService.saveUser(HatUser(ownerId, hat.owner, Some(hat.ownerPasswordHash), hat.ownerName, "owner", enabled = true))
-      _ <- usersService.saveUser(HatUser(platformId, hat.platform, Some(hat.platformPasswordHash), hat.platformName, "platform", enabled = true))
+      _ <- usersService.saveUser(HatUser(ownerId, hat.owner, Some(hat.ownerPasswordHash), hat.ownerName, Seq(Owner()), enabled = true))
+      _ <- usersService.saveUser(HatUser(platformId, hat.platform, Some(hat.platformPasswordHash), hat.platformName, Seq(Platform()), enabled = true))
     } yield ()
   }
 }
