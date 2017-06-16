@@ -7,7 +7,7 @@ VERSION=`git log --format="%H" -n 1`
 APPLICATION_NAME="hat"
 
 echo "Build version ${APPLICATION_NAME} ${VERSION}"
-sbt "project hat" docker:stage
+# sbt "project hat" docker:stage
 
 echo "Create package"
 cp -r   deployment/elasticBeanstalk/Dockerrun.aws.json  deployment/elasticBeanstalk/.ebextensions hat/target/docker/stage

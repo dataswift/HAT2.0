@@ -2,7 +2,6 @@
 
 set -e
 
-BUCKET=${AWS_BUCKET:-hat-cloud-formation-eu}
 VERSION=`git log --format="%H" -n 1`
 
 echo "Create package"

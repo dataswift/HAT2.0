@@ -27,10 +27,8 @@ package org.hatdex.hat.api.controllers
 import java.util.UUID
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.util.{ Clock, Credentials, PasswordHasherRegistry }
-import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
-import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
+import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.{ HatServicesService, UsersService }
@@ -48,35 +46,44 @@ import scala.concurrent.Future
 
 class Users @Inject() (
     val messagesApi: MessagesApi,
-    passwordHasherRegistry: PasswordHasherRegistry,
     configuration: Configuration,
-    credentialsProvider: CredentialsProvider[HatServer],
     silhouette: Silhouette[HatApiAuthEnvironment],
     hatServerProvider: HatServerProvider,
     clock: Clock,
     hatServicesService: HatServicesService,
     usersService: UsersService) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
-  val logger = Logger(this.getClass)
+  private val logger = Logger(this.getClass)
 
   def listUsers(): Action[AnyContent] = SecuredAction.async { implicit request =>
-    logger.warn(s"Requesting users for ${request.host} ${request.identity}, ${request.dynamicEnvironment}")
     usersService.listUsers map { users =>
       Ok(Json.toJson(users.map(ModelTranslation.fromInternalModel)))
     }
-
   }
 
+  private def privilegedRole(user: HatUser): Boolean = {
+    val privileged = Seq(Platform(), Owner())
+    if (user.roles.intersect(privileged).nonEmpty) {
+      true
+    }
+    else {
+      false
+    }
+  }
+
+  // Need to do API versioning for phased transition:
+  // 1. Create new endpoint that handles users saved with proper roles
+  // 2. Create new data model for user info in HAT library - separate?
+  // 3. Change HAT library function to call the new endpoint
   def createUser(): Action[User] = SecuredAction(WithRole(Owner(), Platform())).async(BodyParsers.parse.json[User]) { implicit request =>
     val user = request.body
     val permittedRoles = Seq("dataDebit", "dataCredit")
     if (permittedRoles.contains(user.role)) {
       usersService.getUser(user.email).flatMap { maybeExistingUser =>
-        maybeExistingUser map {
-          case _ =>
-            Future.successful(BadRequest(Json.toJson(ErrorMessage("Error creating user", s"User ${user.email} already exists"))))
+        maybeExistingUser map { _ =>
+          Future.successful(BadRequest(Json.toJson(ErrorMessage("Error creating user", s"User ${user.email} already exists"))))
         } getOrElse {
-          val hatUser = HatUser(user.userId, user.email, user.pass, user.name, Seq(UserRole.userRoleDeserialize(user.role, None, true)._1), enabled = true)
+          val hatUser = HatUser(user.userId, user.email, user.pass, user.name, Seq(UserRole.userRoleDeserialize(user.role, None)), enabled = true)
           usersService.saveUser(hatUser).map { created =>
             Created(Json.toJson(ModelTranslation.fromInternalModel(created)))
           } recover {
@@ -85,7 +92,6 @@ class Users @Inject() (
           }
         }
       }
-
     }
     else {
       Future.successful(BadRequest(Json.toJson(ErrorMessage("Invalid User", s"Only users with certain roles can be created: ${permittedRoles.mkString(",")}"))))
@@ -93,11 +99,19 @@ class Users @Inject() (
   }
 
   def deleteUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
-    usersService.deleteUser(userId) map { _ =>
-      Ok(Json.toJson(SuccessResponse(s"Account deleted")))
-    } recover {
-      case e =>
-        BadRequest(Json.toJson(ErrorMessage("Error deleting account", e.getMessage)))
+    usersService.getUser(userId) flatMap { maybeUser =>
+      maybeUser map { user =>
+        if (privilegedRole(user)) {
+          Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Privileged account can not be enabled or disabled"))))
+        }
+        else {
+          usersService.deleteUser(userId) map { _ =>
+            Ok(Json.toJson(SuccessResponse(s"Account deleted")))
+          }
+        }
+      } getOrElse {
+        Future.successful(NotFound(Json.toJson(ErrorMessage("No such User", s"User $userId does not exist"))))
+      }
     }
   }
 
@@ -105,8 +119,8 @@ class Users @Inject() (
     implicit val db = request.dynamicEnvironment.asInstanceOf[HatServer].db
     usersService.getUser(userId) flatMap { maybeUser =>
       maybeUser map { user =>
-        if (user.roles.intersect(Seq(Owner(), Platform())).nonEmpty) {
-          Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Owner account can not be enabled or disabled"))))
+        if (privilegedRole(user)) {
+          Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Privileged account can not be enabled or disabled"))))
         }
         else {
           usersService.changeUserState(userId, enabled = true).map { _ => Ok(Json.toJson(SuccessResponse("Enabled"))) }
@@ -121,8 +135,8 @@ class Users @Inject() (
     implicit val db = request.dynamicEnvironment.asInstanceOf[HatServer].db
     usersService.getUser(userId) flatMap { maybeUser =>
       maybeUser map { user =>
-        if (user.roles.intersect(Seq(Owner(), Platform())).nonEmpty) {
-          Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Owner account can not be enabled or disabled"))))
+        if (privilegedRole(user)) {
+          Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Privileged account can not be enabled or disabled"))))
         }
         else {
           usersService.changeUserState(userId, enabled = true).map { _ => Ok(Json.toJson(SuccessResponse("Enabled"))) }
