@@ -30,9 +30,8 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.{ Clock, PasswordHasherRegistry }
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.models.{ DataCredit, Owner, Platform, _ }
 import org.hatdex.hat.api.service.DataService
-import org.hatdex.hat.authentication.models.{ DataCredit, Owner, Platform }
 import org.hatdex.hat.authentication.{ HatApiController, WithRole, _ }
 import org.hatdex.hat.resourceManagement._
 import org.joda.time.DateTime

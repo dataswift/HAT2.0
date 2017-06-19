@@ -30,9 +30,9 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ ApiHatFile, ErrorMessage, HatFileStatus }
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.{ FileManager, FileMetadataService, UsersService }
-import org.hatdex.hat.authentication.models.{ DataCredit, HatUser, Owner }
+import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers

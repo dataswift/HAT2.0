@@ -29,9 +29,8 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ HatStatus, StatusKind, SuccessResponse }
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.{ SystemStatusService, UsersService }
-import org.hatdex.hat.authentication.models.{ Owner, Platform }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.ocpsoft.prettytime.PrettyTime

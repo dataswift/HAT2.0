@@ -28,8 +28,8 @@ import javax.inject.{ Inject, Singleton }
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
-import org.hatdex.hat.api.models.DataStats
-import org.hatdex.hat.authentication.models.{ HatUser, Platform }
+import org.hatdex.hat.api.models.{ DataStats, Platform }
+import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
