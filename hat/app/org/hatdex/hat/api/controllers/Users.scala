@@ -30,9 +30,9 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.models.{ Owner, Platform, _ }
 import org.hatdex.hat.api.service.{ HatServicesService, UsersService }
-import org.hatdex.hat.authentication.models.{ HatUser, Owner, Platform, UserRole }
+import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.authentication.{ HatApiController, WithRole, _ }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement._
@@ -71,19 +71,17 @@ class Users @Inject() (
     }
   }
 
-  // Need to do API versioning for phased transition:
-  // 1. Create new endpoint that handles users saved with proper roles
-  // 2. Create new data model for user info in HAT library - separate?
-  // 3. Change HAT library function to call the new endpoint
   def createUser(): Action[User] = SecuredAction(WithRole(Owner(), Platform())).async(BodyParsers.parse.json[User]) { implicit request =>
     val user = request.body
-    val permittedRoles = Seq("dataDebit", "dataCredit")
-    if (permittedRoles.contains(user.role)) {
+    val hatUser = ModelTranslation.fromExternalModel(user, enabled = true)
+    if (privilegedRole(hatUser)) {
+      Future.successful(BadRequest(Json.toJson(ErrorMessage("Invalid User", s"Users with privileged roles may not be created"))))
+    }
+    else {
       usersService.getUser(user.email).flatMap { maybeExistingUser =>
         maybeExistingUser map { _ =>
           Future.successful(BadRequest(Json.toJson(ErrorMessage("Error creating user", s"User ${user.email} already exists"))))
         } getOrElse {
-          val hatUser = HatUser(user.userId, user.email, user.pass, user.name, Seq(UserRole.userRoleDeserialize(user.role, None)), enabled = true)
           usersService.saveUser(hatUser).map { created =>
             Created(Json.toJson(ModelTranslation.fromInternalModel(created)))
           } recover {
@@ -92,9 +90,6 @@ class Users @Inject() (
           }
         }
       }
-    }
-    else {
-      Future.successful(BadRequest(Json.toJson(ErrorMessage("Invalid User", s"Only users with certain roles can be created: ${permittedRoles.mkString(",")}"))))
     }
   }
 

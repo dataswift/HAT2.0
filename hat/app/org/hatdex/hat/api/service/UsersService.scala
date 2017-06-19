@@ -26,7 +26,8 @@ package org.hatdex.hat.api.service
 
 import java.util.UUID
 
-import org.hatdex.hat.authentication.models.{ UserRole, _ }
+import org.hatdex.hat.api.models.{ UserRole, _ }
+import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables.{ UserRole => UserRoleDb, _ }
@@ -103,7 +104,7 @@ class UsersService extends DalExecutionContext {
       user.email, user.pass, // The password is assumed to come in hashed, hence stored as is!
       user.name, enabled = user.enabled)
     val userRoleRows = user.roles map { role =>
-      UserRoleRow(user.userId, role.name, role.extra)
+      UserRoleRow(user.userId, role.title, role.extra)
     }
 
     val query = DBIO.seq(

@@ -26,8 +26,9 @@ package org.hatdex.hat.dal
 
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.dal.Tables._
-import org.hatdex.hat.api.models._
-import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser, UserRole }
+import org.hatdex.hat.api.models.{ UserRole, _ }
+import org.hatdex.hat.dal.Tables.{ UserRole => UserRoleDb }
+import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.phata.models.MailTokenUser
 
 import scala.annotation.tailrec
@@ -45,7 +46,10 @@ object ModelTranslation {
   }
 
   def fromInternalModel(user: HatUser): User = {
-    User(user.userId, user.email, None, user.name, user.roles.headOption.map(_.title).getOrElse(""))
+    User(user.userId, user.email, None, user.name, user.roles.headOption.map(_.title).getOrElse(""), user.roles)
+  }
+  def fromExternalModel(user: User, enabled: Boolean): HatUser = {
+    HatUser(user.userId, user.email, None, user.name, user.roles, enabled).withRoles(UserRole.userRoleDeserialize(user.role, None))
   }
 
   def fromDbModel(field: DataFieldRow): ApiDataField = {
