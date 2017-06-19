@@ -29,7 +29,7 @@ import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
 import org.hatdex.hat.api.models.DataStats
-import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.authentication.models.{ HatUser, Platform }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
@@ -50,6 +50,7 @@ class StatsReporter @Inject() (
     wsClient: WSClient,
     configuration: Configuration,
     system: ActorSystem,
+    usersService: UsersService,
     authenticatorService: AuthenticatorService[JWTRS256Authenticator, HatServer]) {
 
   val logger = Logger(this.getClass)
@@ -133,11 +134,7 @@ class StatsReporter @Inject() (
   }
 
   private def platformUser()(implicit server: HatServer): Future[HatUser] = {
-    val userQuery = UserUser.filter(_.role === "platform").filter(_.enabled === true).take(1)
-    val matchingUsers = server.db.run(userQuery.result)
-    matchingUsers.map { users =>
-      users.headOption.map(ModelTranslation.fromDbModel).get
-    }
+    usersService.getUserByRole(Platform())(server.db).map(_.head)
   }
 
   private def applicationToken()(implicit server: HatServer): Future[String] = {

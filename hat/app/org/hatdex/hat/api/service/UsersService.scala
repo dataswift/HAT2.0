@@ -26,10 +26,10 @@ package org.hatdex.hat.api.service
 
 import java.util.UUID
 
-import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser, UserRole }
+import org.hatdex.hat.authentication.models.{ UserRole, _ }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
-import org.hatdex.hat.dal.Tables._
+import org.hatdex.hat.dal.Tables.{ UserRole => UserRoleDb, _ }
 import org.joda.time.LocalDateTime
 import play.api.Logger
 
@@ -52,6 +52,12 @@ class UsersService extends DalExecutionContext {
       .map(_.headOption)
   }
 
+  def getUserByRole(role: UserRole)(implicit db: Database): Future[Seq[HatUser]] = {
+    val usersWithRole = UserRoleDb.filter(r => r.role === role.title && r.extra === role.extra).map(_.userId)
+    val query = UserUser.filter(_.userId in usersWithRole)
+    queryUser(query)
+  }
+
   def getUserForCredentials(username: String, passwordHash: String)(implicit db: Database): Future[Option[HatUser]] = {
     queryUser(UserUser.filter(_.email === username))
       .map(_.headOption)
@@ -62,43 +68,64 @@ class UsersService extends DalExecutionContext {
     val debits2 = DataDebitContract.map(d => (d.clientId.asColumnOf[String], d.dataDebitKey))
     val dd = debits.unionAll(debits2)
 
-    val userWithRoles = userFilter
+    val eventualUsers = queryUsers(userFilter)
+
+    val userDataDebits = userFilter
       .joinLeft(dd)
       .on(_.userId.asColumnOf[String] === _._1)
 
-    db.run(userWithRoles.result) map { roles =>
-      val users = roles.groupBy(_._1.userId) map {
-        case (userId, records) =>
-          val hatUser = ModelTranslation.fromDbModel(records.head._1)
-          val roles = records.flatMap(_._2).map(r => UserRole.userRoleDeserialize("dataDebit", Some(r._2), true)._1)
-          hatUser.copy(roles = hatUser.roles ++ roles)
-      } toSeq
+    for {
+      users <- eventualUsers
+      dataDebits <- db.run(userDataDebits.result)
+    } yield {
+      users map { user =>
+        val roles = dataDebits.filter(_._1.userId == user.userId) map { userDataDebit =>
+          UserRole.userRoleDeserialize("datadebit", userDataDebit._2.map(_._2))
+        }
+        user.withRoles(roles: _*)
+      }
+    }
+  }
 
-      users
+  implicit def equalDataJsonRowIdentity(a: UserUserRow, b: UserUserRow): Boolean = {
+    a.userId == b.userId
+  }
+
+  private def queryUsers(userFilter: Query[UserUser, UserUserRow, Seq])(implicit db: Database): Future[Seq[HatUser]] = {
+    val query = userFilter.joinLeft(UserRoleDb).on(_.userId === _.userId).sortBy(_._1.userId)
+    db.run(query.result) map { results =>
+      ModelTranslation.groupRecords(results).map(ModelTranslation.fromDbModel)
     }
   }
 
   def saveUser(user: HatUser)(implicit db: Database): Future[HatUser] = {
     val userRow = UserUserRow(user.userId, LocalDateTime.now(), LocalDateTime.now(),
       user.email, user.pass, // The password is assumed to come in hashed, hence stored as is!
-      user.name, user.primaryRole.title, enabled = user.enabled)
-
-    db.run {
-      for {
-        _ <- (UserUser returning UserUser).insertOrUpdate(userRow)
-        updated <- UserUser.filter(_.userId === user.userId).result
-      } yield updated
-    } map { user =>
-      ModelTranslation.fromDbModel(user.head)
+      user.name, enabled = user.enabled)
+    val userRoleRows = user.roles map { role =>
+      UserRoleRow(user.userId, role.name, role.extra)
     }
+
+    val query = DBIO.seq(
+      UserRoleDb.filter(_.userId === user.userId).delete,
+      UserUser.insertOrUpdate(userRow),
+      UserRoleDb ++= userRoleRows)
+
+    val upsertedUser = db.run(query.transactionally)
+
+    upsertedUser.map(_ => user)
   }
 
   def deleteUser(userId: UUID)(implicit db: Database): Future[Unit] = {
-    val deleteUserQuery = UserUser.filter(_.userId === userId)
-      .filterNot(_.role === "owner")
-      .filterNot(_.role === "platform")
-
-    db.run(deleteUserQuery.delete).map(_ => ())
+    getUser(userId) flatMap {
+      case Some(user) if user.roles.contains(Owner()) => Future.failed(new RuntimeException("Can not delete owner user"))
+      case Some(user) if user.roles.contains(Platform()) => Future.failed(new RuntimeException("Can not delete platform user"))
+      case None => Future.failed(new RuntimeException("User does not exist"))
+      case Some(user) =>
+        val deleteRoles = UserRoleDb.filter(_.userId === user.userId).delete
+        val deleteUsers = UserRoleDb.filter(_.userId === user.userId).delete
+        db.run(DBIO.seq(deleteRoles, deleteUsers).transactionally).map(_ => ())
+    }
   }
 
   def changeUserState(userId: UUID, enabled: Boolean)(implicit db: Database): Future[Unit] = {
@@ -109,9 +136,11 @@ class UsersService extends DalExecutionContext {
   }
 
   def removeUser(username: String)(implicit db: Database): Future[Unit] = {
-    db.run {
-      UserUser.filter(_.email === username).delete
-    } map { _ => () }
+    val eventualUserIds = db.run(UserUser.filter(_.email === username).map(_.userId).result)
+    eventualUserIds flatMap { userId =>
+      Future.sequence(userId.map(deleteUser))
+        .map(_ => ())
+    }
   }
 
   def previousLogin(user: HatUser)(implicit db: Database): Future[Option[HatAccessLog]] = {

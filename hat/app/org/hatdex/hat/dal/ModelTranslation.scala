@@ -30,10 +30,18 @@ import org.hatdex.hat.api.models._
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser, UserRole }
 import org.hatdex.hat.phata.models.MailTokenUser
 
+import scala.annotation.tailrec
+
 object ModelTranslation {
   def fromDbModel(user: UserUserRow): HatUser = {
     HatUser(user.userId, user.email, user.pass, user.name,
-      Seq(UserRole.userRoleDeserialize(user.role, None, approved = true)._1), user.enabled)
+      Seq(), user.enabled)
+  }
+
+  def fromDbModel(userInfo: (UserUserRow, Seq[UserRoleRow])): HatUser = {
+    val roles = userInfo._2.map(r => UserRole.userRoleDeserialize(r.role, r.extra))
+    val user = userInfo._1
+    HatUser(user.userId, user.email, user.pass, user.name, roles, user.enabled)
   }
 
   def fromInternalModel(user: HatUser): User = {
@@ -173,5 +181,17 @@ object ModelTranslation {
 
   def userFromDbModel(user: UserUserRow): User = {
     fromInternalModel(fromDbModel(user))
+  }
+
+  @tailrec
+  def groupRecords[T, U](list: Seq[(T, Option[U])], groups: Seq[(T, Seq[U])] = Seq())(implicit equalIdentity: ((T, T) => Boolean)): Seq[(T, Seq[U])] = {
+    if (list.isEmpty) {
+      groups
+    }
+    else {
+      groupRecords(
+        list.dropWhile(v => equalIdentity(v._1, list.head._1)),
+        groups :+ ((list.head._1, list.takeWhile(v => equalIdentity(v._1, list.head._1)).unzip._2.flatten)))
+    }
   }
 }
