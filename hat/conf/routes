@@ -76,8 +76,8 @@ GET           /api/v2/files/restrictAccessPublic/:fileId           org.hatdex.ha
 # RICH DATA routes
 
 POST          /api/v2/combinator/*combinator                       org.hatdex.hat.api.controllers.RichData.registerCombinator(combinator)
-GET           /api/v2/combinator/*combinator                       org.hatdex.hat.api.controllers.RichData.getCombinatorData(combinator, recordId: Option[java.util.UUID], orderBy: Option[String], skip: Option[Int], take: Option[Int])
-GET           /api/v2/data/:namespace/*endpoint                    org.hatdex.hat.api.controllers.RichData.getEndpointData(namespace, endpoint, recordId: Option[java.util.UUID], orderBy: Option[String], skip: Option[Int], take: Option[Int])
+GET           /api/v2/combinator/*combinator                       org.hatdex.hat.api.controllers.RichData.getCombinatorData(combinator, recordId: Option[java.util.UUID], orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
+GET           /api/v2/data/:namespace/*endpoint                    org.hatdex.hat.api.controllers.RichData.getEndpointData(namespace, endpoint, recordId: Option[java.util.UUID], orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
 POST          /api/v2/data/:namespace/*endpoint                    org.hatdex.hat.api.controllers.RichData.saveEndpointData(namespace, endpoint)
 PUT           /api/v2/data                                         org.hatdex.hat.api.controllers.RichData.updateRecords()
 DELETE        /api/v2/data                                         org.hatdex.hat.api.controllers.RichData.deleteDataRecords(records: Seq[java.util.UUID])
