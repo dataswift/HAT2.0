@@ -65,12 +65,13 @@ class RichData @Inject() (
   /**
    * Returns Data Records for a given endpoint
    *
-   * @namespace Namespace of the endpoint, typically restricted to a specific application
-   * @endpoint Endpoint name within the namespace, any valid URL path
-   * @recordId Optional UUID of the record to be retrieved
-   * @orderBy Data Field within a data record by which data should be ordered
-   * @skip How many records to skip (used for paging)
-   * @take How many data records to take - limits the number of results, could be used for paging responses
+   * @param namespace Namespace of the endpoint, typically restricted to a specific application
+   * @param endpoint Endpoint name within the namespace, any valid URL path
+   * @param recordId Optional UUID of the record to be retrieved
+   * @param orderBy Data Field within a data record by which data should be ordered
+   * @param ordering The ordering to use for data sorting - default is "ascending", set to "descending" for reverse order
+   * @param skip How many records to skip (used for paging)
+   * @param take How many data records to take - limits the number of results, could be used for paging responses
    * @return HTTP Response with JSON-serialized data records or an error message
    */
   def getEndpointData(namespace: String, endpoint: String, recordId: Option[UUID],
