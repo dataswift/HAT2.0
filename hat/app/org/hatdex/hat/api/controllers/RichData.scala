@@ -228,7 +228,7 @@ class RichData @Inject() (
   def updateDataDebit(dataDebitId: String): Action[DataDebitRequest] =
     SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId))).async(parsers.json[DataDebitRequest]) { implicit request =>
       dataDebitService.updateDataDebitBundle(dataDebitId, request.body, request.identity.userId)
-        .andThen(dataEventDispatcher.dispatchEventDataDebit(DataDebitOperations.Create()))
+        .andThen(dataEventDispatcher.dispatchEventDataDebit(DataDebitOperations.Change()))
         .map(debit => Ok(Json.toJson(debit)))
         .recover {
           case err: RichDataServiceException => BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
