@@ -101,10 +101,10 @@ class Files @Inject() (
   }
 
   private def fileContentAccessAllowed(file: ApiHatFile)(implicit user: HatUser, authenticator: HatApiAuthEnvironment#A): Boolean = {
-    file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) &&
-      (WithRole.isAuthorized(user, authenticator, Owner()) ||
-        (file.permissions.isDefined &&
-          file.permissions.get.exists(p => p.userId == user.userId && p.contentReadable)))
+    WithRole.isAuthorized(user, authenticator, Owner()) ||
+      (file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) &&
+        file.permissions.isDefined &&
+        file.permissions.get.exists(p => p.userId == user.userId && p.contentReadable))
   }
 
   def getDetail(fileId: String): Action[AnyContent] = SecuredAction.async { implicit request =>

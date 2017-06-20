@@ -30,11 +30,10 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.service.monitoring.HatDataEventBus
+import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
 import play.api.cache.CacheApi
@@ -55,7 +54,7 @@ class RichData @Inject() (
     clock: Clock,
     hatServerProvider: HatServerProvider,
     cache: CacheApi,
-    dataEventBus: HatDataEventBus,
+    dataEventDispatcher: HatDataEventDispatcher,
     dataService: RichDataService,
     bundleService: RichBundleService,
     dataDebitService: DataDebitContractService) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
@@ -63,43 +62,65 @@ class RichData @Inject() (
   private val logger = Logger(this.getClass)
   private val defaultRecordLimit = 1000
 
+  /**
+   * Returns Data Records for a given endpoint
+   *
+   * @namespace Namespace of the endpoint, typically restricted to a specific application
+   * @endpoint Endpoint name within the namespace, any valid URL path
+   * @recordId Optional UUID of the record to be retrieved
+   * @orderBy Data Field within a data record by which data should be ordered
+   * @skip How many records to skip (used for paging)
+   * @take How many data records to take - limits the number of results, could be used for paging responses
+   * @return HTTP Response with JSON-serialized data records or an error message
+   */
   def getEndpointData(namespace: String, endpoint: String, recordId: Option[UUID],
-    orderBy: Option[String], skip: Option[Int], take: Option[Int]): Action[AnyContent] =
-    SecuredAction(WithRole(Owner())).async { implicit request =>
+    orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int]): Action[AnyContent] =
+    SecuredAction(WithRole(Owner(), NamespaceRead(namespace))).async { implicit request =>
       val dataEndpoint = s"$namespace/$endpoint"
-      val query = cache.get[List[EndpointQuery]](endpoint)
-        .getOrElse(List(EndpointQuery(dataEndpoint, None, None, None)))
-      val data = dataService.propertyData(query, orderBy, skip.getOrElse(0), take.getOrElse(defaultRecordLimit))
+      val query = Seq(EndpointQuery(dataEndpoint, None, None, None))
+      val data = dataService.propertyData(query, orderBy, ordering.contains("descending"),
+        skip.getOrElse(0), take.getOrElse(defaultRecordLimit))
       data.map(d => Ok(Json.toJson(d)))
     }
 
   def saveEndpointData(namespace: String, endpoint: String): Action[JsValue] =
-    SecuredAction(WithRole(DataCredit(namespace))).async(parsers.json[JsValue]) { implicit request =>
+    SecuredAction(WithRole(NamespaceWrite(namespace))).async(parsers.json[JsValue]) { implicit request =>
       val dataEndpoint = s"$namespace/$endpoint"
       val response = request.body match {
         case array: JsArray =>
           val values = array.value.map(EndpointData(dataEndpoint, None, _, None))
-          dataService.saveData(request.identity.userId, values) map { saved =>
-            dataEventBus.publish(HatDataEventBus.DataCreatedEvent(
-              request.dynamicEnvironment.hatName,
-              ModelTranslation.fromInternalModel(request.identity),
-              s"saved batch for $dataEndpoint", saved))
-            Created(Json.toJson(saved))
-          }
+          dataService.saveData(request.identity.userId, values)
+            .andThen(dataEventDispatcher.dispatchEventDataCreated(s"saved batch for $dataEndpoint"))
+            .map(saved => Created(Json.toJson(saved)))
+
         case value: JsValue =>
           val values = Seq(EndpointData(dataEndpoint, None, value, None))
-          dataService.saveData(request.identity.userId, values) map { saved =>
-            dataEventBus.publish(HatDataEventBus.DataCreatedEvent(
-              request.dynamicEnvironment.hatName,
-              ModelTranslation.fromInternalModel(request.identity),
-              s"saved data for $dataEndpoint", saved))
-            Created(Json.toJson(saved.head))
-          }
+          dataService.saveData(request.identity.userId, values)
+            .andThen(dataEventDispatcher.dispatchEventDataCreated(s"saved data for $dataEndpoint"))
+            .map(saved => Created(Json.toJson(saved.head)))
       }
 
       response recover {
         case e: RichDataDuplicateException => BadRequest(Json.toJson(Errors.richDataDuplicate(e)))
         case e: RichDataServiceException   => BadRequest(Json.toJson(Errors.richDataError(e)))
+      }
+    }
+
+  def saveBatchData: Action[Seq[EndpointData]] =
+    SecuredAction(WithRole(DataCredit(""), Owner())).async(parsers.json[Seq[EndpointData]]) { implicit request =>
+      val response = if (authorizeEndpointDataWrite(request.body)) {
+        dataService.saveData(request.identity.userId, request.body)
+          .andThen(dataEventDispatcher.dispatchEventDataCreated(s"saved batch data"))
+          .map(d => Created(Json.toJson(d)))
+      }
+      else {
+        Future.failed(RichDataPermissionsException("No rights to insert some or all of the data in the batch"))
+      }
+
+      response recover {
+        case e: RichDataDuplicateException   => BadRequest(Json.toJson(Errors.richDataError(e)))
+        case e: RichDataPermissionsException => Forbidden(Json.toJson(Errors.forbidden(e)))
+        case e: RichDataServiceException     => BadRequest(Json.toJson(Errors.richDataError(e)))
       }
     }
 
@@ -113,27 +134,12 @@ class RichData @Inject() (
     } getOrElse Set()
   }
 
-  private def authorizeEndpointDataWrite(data: Seq[EndpointData])(implicit user: HatUser, authenticator: HatApiAuthEnvironment#A) = {
+  private def authorizeEndpointDataWrite(data: Seq[EndpointData])(implicit user: HatUser, authenticator: HatApiAuthEnvironment#A): Boolean = {
     data.map(endpointDataNamespaces)
       .reduce((set, namespaces) => set ++ namespaces)
-      .forall(namespace => WithRole.isAuthorized(user, authenticator, DataCredit(namespace)))
+      .map(namespace => NamespaceWrite(namespace))
+      .forall(role => WithRole.isAuthorized(user, authenticator, role))
   }
-
-  def saveBatchData: Action[Seq[EndpointData]] =
-    SecuredAction(WithRole(DataCredit(""), Owner())).async(parsers.json[Seq[EndpointData]]) { implicit request =>
-      val response = if (authorizeEndpointDataWrite(request.body)) {
-        dataService.saveData(request.identity.userId, request.body).map(d => Created(Json.toJson(d)))
-      }
-      else {
-        Future.failed(RichDataPermissionsException("No rights to insert some or all of the data in the batch"))
-      }
-
-      response recover {
-        case e: RichDataDuplicateException   => BadRequest(Json.toJson(Errors.richDataError(e)))
-        case e: RichDataPermissionsException => Forbidden(Json.toJson(Errors.forbidden(e)))
-        case e: RichDataServiceException     => BadRequest(Json.toJson(Errors.richDataError(e)))
-      }
-    }
 
   def registerCombinator(combinator: String): Action[Seq[EndpointQuery]] =
     SecuredAction(WithRole(Owner())).async(parsers.json[Seq[EndpointQuery]]) { implicit request =>
@@ -143,11 +149,12 @@ class RichData @Inject() (
     }
 
   def getCombinatorData(combinator: String, recordId: Option[UUID], orderBy: Option[String],
-    skip: Option[Int], take: Option[Int]): Action[AnyContent] =
+    ordering: Option[String], skip: Option[Int], take: Option[Int]): Action[AnyContent] =
     SecuredAction(WithRole(Owner())).async { implicit request =>
       val result = for {
         query <- bundleService.combinator(combinator).map(_.get)
-        data <- dataService.propertyData(query, orderBy, skip.getOrElse(0), take.getOrElse(defaultRecordLimit))
+        data <- dataService.propertyData(query, orderBy, ordering.contains("descending"),
+          skip.getOrElse(0), take.getOrElse(defaultRecordLimit))
       } yield data
 
       result map { d =>
@@ -210,9 +217,8 @@ class RichData @Inject() (
   def registerDataDebit(dataDebitId: String): Action[DataDebitRequest] =
     SecuredAction(WithRole(Owner(), DataDebitOwner(""), Platform())).async(parsers.json[DataDebitRequest]) { implicit request =>
       dataDebitService.createDataDebit(dataDebitId, request.body, request.identity.userId)
-        .map { debit =>
-          Created(Json.toJson(debit))
-        }
+        .andThen(dataEventDispatcher.dispatchEventDataDebit(DataDebitOperations.Create()))
+        .map(debit => Created(Json.toJson(debit)))
         .recover {
           case err: RichDataDuplicateBundleException => BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
           case err: RichDataDuplicateDebitException  => BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
@@ -222,9 +228,8 @@ class RichData @Inject() (
   def updateDataDebit(dataDebitId: String): Action[DataDebitRequest] =
     SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId))).async(parsers.json[DataDebitRequest]) { implicit request =>
       dataDebitService.updateDataDebitBundle(dataDebitId, request.body, request.identity.userId)
-        .map { debit =>
-          Ok(Json.toJson(debit))
-        }
+        .andThen(dataEventDispatcher.dispatchEventDataDebit(DataDebitOperations.Change()))
+        .map(debit => Ok(Json.toJson(debit)))
         .recover {
           case err: RichDataServiceException => BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
         }
@@ -232,22 +237,24 @@ class RichData @Inject() (
 
   def getDataDebit(dataDebitId: String): Action[AnyContent] =
     SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId))).async { implicit request =>
-      dataDebitService.dataDebit(dataDebitId) map {
-        case Some(debit) => Ok(Json.toJson(debit))
-        case None        => NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId)))
-      }
+      dataDebitService.dataDebit(dataDebitId)
+        .map {
+          case Some(debit) => Ok(Json.toJson(debit))
+          case None        => NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId)))
+        }
     }
 
   def getDataDebitValues(dataDebitId: String): Action[AnyContent] =
     SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId))).async { implicit request =>
-      dataDebitService.dataDebit(dataDebitId) flatMap {
-        case Some(debit) if debit.activeBundle.isDefined =>
-          dataService.bundleData(debit.activeBundle.get.bundle) map { values =>
-            Ok(Json.toJson(values))
-          }
-        case Some(_) => Future.successful(BadRequest(Json.toJson(Errors.dataDebitNotEnabled(dataDebitId))))
-        case None    => Future.successful(NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId))))
-      }
+      dataDebitService.dataDebit(dataDebitId)
+        .flatMap {
+          case Some(debit) if debit.activeBundle.isDefined =>
+            dataService.bundleData(debit.activeBundle.get.bundle)
+              .andThen(dataEventDispatcher.dispatchEventDataDebitValues(debit))
+              .map(values => Ok(Json.toJson(values)))
+          case Some(_) => Future.successful(BadRequest(Json.toJson(Errors.dataDebitNotEnabled(dataDebitId))))
+          case None    => Future.successful(NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId))))
+        }
     }
 
   def listDataDebits(): Action[AnyContent] =
@@ -263,10 +270,13 @@ class RichData @Inject() (
         _ <- dataDebitService.dataDebitEnableBundle(dataDebitId, bundleId)
         debit <- dataDebitService.dataDebit(dataDebitId)
       } yield debit
-      enabled map {
-        case Some(debit) => Ok(Json.toJson(debit))
-        case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
-      }
+
+      enabled
+        .andThen(dataEventDispatcher.dispatchEventMaybeDataDebit(DataDebitOperations.Enable()))
+        .map {
+          case Some(debit) => Ok(Json.toJson(debit))
+          case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
+        }
     }
 
   def disableDataDebit(dataDebitId: String): Action[AnyContent] =
@@ -275,10 +285,13 @@ class RichData @Inject() (
         _ <- dataDebitService.dataDebitDisable(dataDebitId)
         debit <- dataDebitService.dataDebit(dataDebitId)
       } yield debit
-      disabled map {
-        case Some(debit) => Ok(Json.toJson(debit))
-        case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
-      }
+
+      disabled
+        .andThen(dataEventDispatcher.dispatchEventMaybeDataDebit(DataDebitOperations.Disable()))
+        .map {
+          case Some(debit) => Ok(Json.toJson(debit))
+          case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
+        }
     }
 
   private object Errors {
@@ -298,9 +311,6 @@ class RichData @Inject() (
     def richDataDuplicate(error: Throwable) = ErrorMessage("Bad Request", s"Duplicate data - ${error.getMessage}")
     def richDataError(error: Throwable) = ErrorMessage("Bad Request", s"Could not insert data - ${error.getMessage}")
     def forbidden(error: Throwable) = ErrorMessage("Forbidden", s"Access Denied - ${error.getMessage}")
-
-    import scala.language.implicitConversions
-    implicit def jsonError(e: ErrorMessage): JsValue = Json.toJson(e)
   }
 }
 

@@ -27,7 +27,7 @@ package org.hatdex.hat.api.service.monitoring
 import javax.inject.Inject
 
 import akka.actor.{ Actor, ActorLogging }
-import org.hatdex.hat.api.models.InboundDataStats
+import org.hatdex.hat.api.models.{ DataStats, InboundDataStats, OutboundDataStats }
 import org.hatdex.hat.api.service.{ IoExecutionContext, StatsReporter }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerDiscoveryException, HatServerProvider }
 
@@ -40,30 +40,43 @@ class HatDataStatsProcessor @Inject() (
   import HatDataEventBus._
 
   def receive: Receive = {
-    case d: DataCreatedEvent =>
-      val computedStats = computeStats(d)
-      publishStats(d.hat, computedStats)
+    case d: DataCreatedEvent   => processBatchedStats(Seq(d))
+    case d: DataRetrievedEvent => processBatchedStats(Seq(d))
+    case d: Seq[_]             => processBatchedStats(d)
+    case m                     => log.warning(s"Received something else: $m")
+  }
 
-    case d: Seq[_] =>
-      d.filter(_.isInstanceOf[DataCreatedEvent])
-        .map(_.asInstanceOf[DataCreatedEvent])
-        .groupBy(_.hat) map {
-          case (hat, stats) =>
-            hat -> stats.flatMap(computeStats)
-        } foreach {
-          case (hat, hatStats) =>
+  private def processBatchedStats(d: Seq[Any]) = {
+    d.filter(_.isInstanceOf[HatDataEvent])
+      .map(_.asInstanceOf[HatDataEvent])
+      .groupBy(_.hat) map {
+        case (hat, stats) =>
+          val aggregated = stats.collect {
+            case s: DataCreatedEvent   => computeInboundStats(s)
+            case s: DataRetrievedEvent => computeOutboundStats(s)
+          }
+          hat -> aggregated
+      } foreach {
+        case (hat, hatStats) =>
+          if (hatStats.nonEmpty) {
             publishStats(hat, hatStats)
-        }
-
-    case m =>
-      log.warning(s"Received something else: $m")
+          }
+      }
   }
 
-  def computeStats(event: DataCreatedEvent): Iterable[InboundDataStats] = {
-    JsonStatsService.endpointDataCounts(event.data, event.user, event.logEntry)
+  def computeInboundStats(event: DataCreatedEvent): InboundDataStats = {
+    val endpointStats = JsonStatsService.endpointDataCounts(event.data)
+    InboundDataStats("inbound", event.time.toLocalDateTime, event.user,
+      endpointStats.toSeq, event.logEntry)
   }
 
-  def publishStats(hat: String, stats: Iterable[InboundDataStats]): Unit = {
+  def computeOutboundStats(event: DataRetrievedEvent): OutboundDataStats = {
+    val endpointStats = JsonStatsService.endpointDataCounts(event.data)
+    OutboundDataStats("outbound", event.time.toLocalDateTime, event.user,
+      event.dataDebit.dataDebitKey, endpointStats.toSeq, event.logEntry)
+  }
+
+  def publishStats(hat: String, stats: Iterable[DataStats]): Unit = {
     implicit val ec: ExecutionContext = IoExecutionContext.ioThreadPool
     log.debug(s"Publish stats for $hat: $stats")
 
@@ -77,65 +90,3 @@ class HatDataStatsProcessor @Inject() (
     }
   }
 }
-
-//class EndpointSubscriberManagerActor @Inject() (
-//  subscriberFactory: InjectedEndpointSubscriberActor.Factory,
-//  dataEventBus: HatDataEventBus)
-//  extends Actor with ActorLogging {
-//
-//  implicit val executionContext: ExecutionContext = context.dispatcher
-//  val scheduler: Scheduler = context.system.scheduler
-//
-//  def receive: Receive = {
-//    case HatDataEvent(hat, eventType, data) =>
-//      self ! HatDataSubscriber(hat)
-//    case HatDataSubscriber(hat) =>
-//      startSyncerActor(hat, hat.hatName) map { actor =>
-//        log.debug(s"Actor ${actor.path} created for data bundle ${hat.hatName}")
-//      } recover { case e =>
-//        log.warning(s"Creating actor for ${hat.hatName} failed: ${e.getMessage}")
-//      }
-//  }
-//
-//  private def startSyncerActor(hat: HatServer, actorKey: String): Future[ActorRef] = {
-//    context.actorSelection(s"$actorKey-supervisor").resolveOne(5.seconds) map { subscriberActorSupervisor =>
-//      subscriberActorSupervisor
-//    } recover {
-//      case ActorNotFound(selection) =>
-//        log.warning(s"Starting syncer actor $actorKey with supervisor - no existing $selection")
-//
-//        val supervisor = BackoffSupervisor.props(
-//          Backoff.onStop(
-//            Props(subscriberFactory(hat)),
-//            childName = actorKey,
-//            minBackoff = 3.seconds,
-//            maxBackoff = 30.seconds,
-//            randomFactor = 0.2 // adds 20% "noise" to vary the intervals slightly
-//          ))
-//
-//        context.actorOf(supervisor, s"$actorKey-supervisor")
-//    }
-//  }
-//}
-//
-//class EndpointSubscriberActor(wSClient: WSClient, hat: String) extends Actor with ActorLogging {
-//  def receive: Receive = {
-//    case HatDataEvent(hat, eventType, data) =>
-//      EndpointSubscriberService.matchesBundle(data, bundle)
-//      log.warning(s"Not implemented")
-//  }
-//}
-//
-//object InjectedEndpointSubscriberActor {
-//  trait Factory {
-//    def apply(hat: HatServer): Actor
-//  }
-//
-//  def props(wsClient: WSClient, hat: String, bundle: EndpointDataBundle): Props =
-//    Props(new EndpointSubscriberActor(wsClient, hat))
-//}
-//
-//class InjectedEndpointSubscriberActor @Inject() (
-//  wsClient: WSClient,
-//  @Assisted hat: String)
-//  extends EndpointSubscriberActor(wsClient, hat)

@@ -28,7 +28,6 @@ import com.mohiva.play.silhouette.api.Authorization
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
 import org.hatdex.hat.api.models.{ DataCredit, Owner, UserRole }
 import org.hatdex.hat.authentication.models._
-import play.api.Logger
 import play.api.mvc.Request
 
 import scala.concurrent.Future
