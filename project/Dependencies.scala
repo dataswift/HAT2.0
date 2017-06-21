@@ -47,17 +47,16 @@ object Dependencies {
       val cache = "com.typesafe.play" %% "play-cache" % version
       val test = "com.typesafe.play" %% "play-test" % version
       val specs2 = "com.typesafe.play" %% "play-specs2" % version
-      val jsonDerivedCodecs = "org.julienrf" % "play-json-derived-codecs_2.11" % "3.3"
-      val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.3.4"
+      val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.4.1"
       val mailer = "com.typesafe.play" %% "play-mailer" % "5.0.0"
 
       object Specs2 {
-        private val version = "3.6.6"
+        private val version = "3.9.1"
         val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
         val mock = "org.specs2" %% "specs2-mock" % version
       }
       object Jwt {
-        private val bouncyCastleVersion = "1.55"
+        private val bouncyCastleVersion = "1.57"
         val bouncyCastle = "org.bouncycastle" % "bcprov-jdk15on" % bouncyCastleVersion
         val bouncyCastlePkix = "org.bouncycastle" % "bcpkix-jdk15on" % bouncyCastleVersion
         val atlassianJwtVersion = "1.6.1"
@@ -68,7 +67,6 @@ object Dependencies {
       object Db {
         val jdbc = "com.typesafe.play" %% "play-jdbc" % version
         val postgres = Library.Db.postgres
-        val anorm = "com.typesafe.play" %% "anorm" % "2.5.2"
       }
 
       object Utils {
@@ -88,7 +86,7 @@ object Dependencies {
     }
 
     object Specs2 {
-      private val version = "3.6.6"
+      private val version = "3.9.1"
       val core = "org.specs2" %% "specs2-core" % version
       val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
       val mock = "org.specs2" %% "specs2-mock" % version
@@ -96,7 +94,7 @@ object Dependencies {
 
     object Utils {
       val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
-      val jodaTime = "joda-time" % "joda-time" % "2.9.2"
+      val jodaTime = "joda-time" % "joda-time" % "2.9.9"
       val jodaConvert = "org.joda" % "joda-convert" % "1.8"
       val jts = "com.vividsolutions" % "jts" % "1.13"
       val slf4j = "org.slf4j" % "slf4j-api" % "1.7.18"
@@ -110,7 +108,7 @@ object Dependencies {
     }
 
     object Db {
-      val liquibase = "org.liquibase" % "liquibase-maven-plugin" % "3.5.1"
+      val liquibase = "org.liquibase" % "liquibase-maven-plugin" % "3.5.3"
       val postgres = "org.postgresql" % "postgresql" % "9.4-1206-jdbc4"
       val hikariCP = "com.zaxxer" % "HikariCP" % "2.5.0"
     }
@@ -130,21 +128,21 @@ object Dependencies {
     }
 
     object Akka {
-      private val version = "2.4.7"
+      private val version = "2.4.19"
       val slf4j = "com.typesafe.akka" %% "akka-slf4j" % version
-      val httpCore = "com.typesafe.akka" %% "akka-http-core" % version
+      val httpCore = "com.typesafe.akka" % "akka-http-core_2.11" % "10.0.8"
       val akkaStream = "com.typesafe.akka" %% "akka-stream" % version
       val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json-experimental" % version
       val akkaActor = "com.typesafe.akka" %% "akka-actor" % version
       val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % version
     }
 
-    object Spray {
-      private val version = "1.3.3"
-      val sprayCan = "io.spray" %% "spray-can" % version
-      val sprayRouting = "io.spray" %% "spray-routing-shapeless2" % version
-      val sprayTestkit = "io.spray" %% "spray-testkit" % version % "test"
-    }
+//    object Spray {
+//      private val version = "1.3.3"
+//      val sprayCan = "io.spray" %% "spray-can" % version
+//      val sprayRouting = "io.spray" %% "spray-routing-shapeless2" % version
+//      val sprayTestkit = "io.spray" %% "spray-testkit" % version % "test"
+//    }
 
     object HATDeX {
       private val version = "2.3.0-SNAPSHOT"
