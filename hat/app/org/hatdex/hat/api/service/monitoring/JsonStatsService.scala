@@ -24,7 +24,7 @@
 
 package org.hatdex.hat.api.service.monitoring
 
-import org.hatdex.hat.api.models.{EndpointData, EndpointStats}
+import org.hatdex.hat.api.models.{ EndpointData, EndpointStats }
 import org.hatdex.hat.utils.Utils
 import play.api.libs.json._
 
