@@ -124,7 +124,7 @@ class UsersService extends DalExecutionContext {
       case None => Future.failed(new RuntimeException("User does not exist"))
       case Some(user) =>
         val deleteRoles = UserRoleDb.filter(_.userId === user.userId).delete
-        val deleteUsers = UserRoleDb.filter(_.userId === user.userId).delete
+        val deleteUsers = UserUser.filter(_.userId === user.userId).delete
         db.run(DBIO.seq(deleteRoles, deleteUsers).transactionally).map(_ => ())
     }
   }
