@@ -46,10 +46,10 @@ object ModelTranslation {
   }
 
   def fromInternalModel(user: HatUser): User = {
-    User(user.userId, user.email, None, user.name, user.roles.headOption.map(_.title).getOrElse(""), user.roles)
+    User(user.userId, user.email, user.pass, user.name, user.roles.headOption.map(_.title).getOrElse(""), user.roles)
   }
   def fromExternalModel(user: User, enabled: Boolean): HatUser = {
-    HatUser(user.userId, user.email, None, user.name, user.roles, enabled).withRoles(UserRole.userRoleDeserialize(user.role, None))
+    HatUser(user.userId, user.email, user.pass, user.name, user.roles, enabled).withRoles(UserRole.userRoleDeserialize(user.role, None))
   }
 
   def fromDbModel(field: DataFieldRow): ApiDataField = {
