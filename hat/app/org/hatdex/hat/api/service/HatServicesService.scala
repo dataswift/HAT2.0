@@ -62,7 +62,7 @@ class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment
 
     hatServices(Set("app", "dataplug", "testapp")) map { approvedHatServices =>
       approvedHatServices.find(s => s.title == name && redirectUrl.startsWith(s.url))
-        .map(_.copy(url = s"${redirectUri.scheme}:${redirectUri.authority.toString}", authUrl = redirectUri.path.toString()))
+        .map(_.copy(url = s"${redirectUri.scheme}://${redirectUri.authority.toString}", authUrl = redirectUri.path.toString()))
         .getOrElse(
           HatService(name, name.toLowerCase, redirectUrl, "/assets/images/haticon.png",
             redirectUrl, redirectUri.path.toString(),
@@ -91,16 +91,20 @@ class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment
   }
 
   def hatServiceLink(user: HatUser, service: HatService, maybeRedirect: Option[String] = None)(implicit hatServer: HatServer, requestHeader: RequestHeader): Future[HatService] = {
+    logger.info(s"Generating link for service $service, redirect $maybeRedirect")
     val eventualUri = if (service.loginAvailable) {
       hatServiceToken(user, service) map { token =>
         val query = maybeRedirect map { redirect =>
           val originalQuery: Map[String, String] = Uri(redirect).query().toMap + ("token" -> token.accessToken)
+          logger.info(s"Got redirect url: ${Uri(redirect)} ${originalQuery}")
           Uri.Query(originalQuery)
         } getOrElse {
           Uri.Query("token" -> token.accessToken)
         }
 
-        Uri(service.url).withPath(Uri.Path(service.authUrl)).withQuery(query)
+        maybeRedirect.map(Uri(_))
+          .getOrElse(Uri(service.url).withPath(Uri.Path(service.authUrl)))
+          .withQuery(query)
       }
     }
     else {
