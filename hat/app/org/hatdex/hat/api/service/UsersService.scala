@@ -54,7 +54,7 @@ class UsersService extends DalExecutionContext {
   }
 
   def getUserByRole(role: UserRole)(implicit db: Database): Future[Seq[HatUser]] = {
-    val usersWithRole = UserRoleDb.filter(r => r.role === role.title && r.extra === role.extra).map(_.userId)
+    val usersWithRole = UserRoleDb.filter(r => r.role === role.title && (r.extra.isEmpty || r.extra === role.extra)).map(_.userId)
     val query = UserUser.filter(_.userId in usersWithRole)
     queryUser(query)
   }
