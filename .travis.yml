@@ -30,7 +30,7 @@ before_install:
 script:
    - sbt clean
    - sbt ++$TRAVIS_SCALA_VERSION compile test:compile
-   - sbt coverage "testOnly hatdex.hat.api.*" -Dconfig.file=src/main/resources/application.test.conf
+   - sbt coverage "testOnly org.hatdex.hat.api.*" -Dconfig.file=src/main/resources/application.test.conf
 
 after_success:
   - sbt coveralls

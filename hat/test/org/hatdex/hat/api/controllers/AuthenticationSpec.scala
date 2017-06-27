@@ -28,7 +28,7 @@ import java.io.StringReader
 import java.util.UUID
 
 import akka.stream.Materializer
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.{ AmazonS3, AmazonS3Client }
 import com.atlassian.jwt.core.keys.KeyUtils
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.{ Environment, LoginInfo }
@@ -36,7 +36,8 @@ import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
-import org.hatdex.hat.authentication.models.{ DataCredit, DataDebitOwner, HatUser, Owner }
+import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
+import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
@@ -320,7 +321,7 @@ trait AuthenticationContext extends Scope with Mockito {
       bind[Environment[HatApiAuthEnvironment]].toInstance(environment)
       bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
       bind[AwsS3Configuration].toInstance(fileManagerS3Mock.s3Configuration)
-      bind[AmazonS3Client].toInstance(fileManagerS3Mock.mockS3client)
+      bind[AmazonS3].toInstance(fileManagerS3Mock.mockS3client)
       bind[FileManager].toInstance(new FileManagerS3(fileManagerS3Mock.s3Configuration, fileManagerS3Mock.mockS3client))
       bind[MailTokenService[MailTokenUser]].to[MailTokenUserService]
       bind[HatMailer].toInstance(mockMailer)

@@ -51,7 +51,7 @@ object Dependencies {
       val mailer = "com.typesafe.play" %% "play-mailer" % "5.0.0"
 
       object Specs2 {
-        private val version = "3.9.1"
+        private val version = "3.6.6"
         val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
         val mock = "org.specs2" %% "specs2-mock" % version
       }
@@ -86,7 +86,7 @@ object Dependencies {
     }
 
     object Specs2 {
-      private val version = "3.9.1"
+      private val version = "3.6.6"
       val core = "org.specs2" %% "specs2-core" % version
       val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
       val mock = "org.specs2" %% "specs2-mock" % version

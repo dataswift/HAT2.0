@@ -24,17 +24,20 @@
 
 package org.hatdex.hat.api.service
 
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.auth.{ AWSStaticCredentialsProvider, BasicAWSCredentials }
+import com.amazonaws.services.s3.{ AmazonS3, AmazonS3Client, AmazonS3ClientBuilder }
 import com.amazonaws.services.s3.model.ObjectMetadata
 import org.specs2.mock.Mockito
 
 import scala.concurrent.duration._
 
 case class FileManagerS3Mock() extends Mockito {
-  val s3Configuration = AwsS3Configuration("hat-storage-test", "testAwsAccessKey", "testAwsSecret", 5.minutes)
+  val s3Configuration = AwsS3Configuration("hat-storage-test", "testAwsAccessKey", "testAwsSecret", "eu-west-1", 5.minutes)
   private val awsCreds: BasicAWSCredentials = new BasicAWSCredentials(s3Configuration.accessKeyId, s3Configuration.secretKey)
-  val mockS3client: AmazonS3Client = spy(new AmazonS3Client(awsCreds))
+  val mockS3client: AmazonS3 = spy(AmazonS3ClientBuilder.standard()
+    .withRegion("eu-west-1")
+    .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+    .build())
 
   private val s3ObjectMetadata = new ObjectMetadata()
   s3ObjectMetadata.setContentLength(123456L)

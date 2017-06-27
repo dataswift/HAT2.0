@@ -28,7 +28,7 @@ import java.io.StringReader
 import java.util.UUID
 
 import akka.stream.Materializer
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.{ AmazonS3, AmazonS3Client }
 import com.atlassian.jwt.core.keys.KeyUtils
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
@@ -38,7 +38,8 @@ import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.api.service.richData.{ DataDebitContractService, RichDataService }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
-import org.hatdex.hat.authentication.models.{ DataCredit, DataDebitOwner, HatUser, Owner }
+import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
+import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
@@ -284,7 +285,7 @@ trait RichDataContext extends Scope {
       bind[Environment[HatApiAuthEnvironment]].toInstance(environment)
       bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
       bind[AwsS3Configuration].toInstance(fileManagerS3Mock.s3Configuration)
-      bind[AmazonS3Client].toInstance(fileManagerS3Mock.mockS3client)
+      bind[AmazonS3].toInstance(fileManagerS3Mock.mockS3client)
       bind[FileManager].toInstance(new FileManagerS3(fileManagerS3Mock.s3Configuration, fileManagerS3Mock.mockS3client))
     }
   }
@@ -408,12 +409,12 @@ trait RichDataContext extends Scope {
     EndpointQuery("anothertest", None, None, None))
 
   val testBundle = EndpointDataBundle("testBundle", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), 3),
-    "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), 1)))
+    "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), None, 3),
+    "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), None, 1)))
 
   val testBundle2 = EndpointDataBundle("testBundle2", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), 3),
-    "complex" -> PropertyQuery(List(EndpointQuery("anothertest", None, None, None)), Some("data.newField"), 1)))
+    "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), None, 3),
+    "complex" -> PropertyQuery(List(EndpointQuery("anothertest", None, None, None)), Some("data.newField"), None, 1)))
 
   val testDataDebitRequest = DataDebitRequest(testBundle, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
 

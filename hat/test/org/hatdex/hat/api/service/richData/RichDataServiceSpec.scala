@@ -36,7 +36,8 @@ import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.{ FileManagerS3Mock, UsersService }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
-import org.hatdex.hat.authentication.models.{ DataCredit, DataDebitOwner, HatUser, Owner }
+import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
+import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
@@ -135,7 +136,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       val result = for {
         _ <- service.saveData(owner.userId, data)
-        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), 1)
+        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), false, 0, 1)
       } yield retrieved
 
       result map { result =>
@@ -156,7 +157,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         _ <- service.saveData(owner.userId, data)
         retrieved <- service.propertyData(List(
           EndpointQuery("test", Some(simpleTransformation), None, None),
-          EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), 3)
+          EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), false, 0, 3)
       } yield retrieved
 
       result map { result =>
@@ -179,7 +180,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         _ <- service.saveData(owner.userId, data)
         retrieved <- service.propertyData(List(
           EndpointQuery("test", Some(simpleTransformation), None, None),
-          EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), 3)
+          EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), false, 0, 3)
       } yield retrieved
 
       result map { result =>
@@ -202,7 +203,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None,
           Some(List(
             EndpointQuery("testlinked", None, None, None),
-            EndpointQuery("complex", None, None, None))))), Some("data.newField"), 1)
+            EndpointQuery("complex", None, None, None))))), Some("data.newField"), false, 0, 1)
       } yield retrieved
 
       result map { result =>
@@ -227,7 +228,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val result = for {
         _ <- service.saveData(owner.userId, data)
         retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None,
-          Some(List(EndpointQuery("testlinked", None, None, None))))), Some("data.newField"), 1)
+          Some(List(EndpointQuery("testlinked", None, None, None))))), Some("data.newField"), false, 0, 1)
       } yield retrieved
 
       result map { result =>
@@ -251,7 +252,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val result = for {
         _ <- service.saveData(owner.userId, data)
         retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None,
-          Some(List(EndpointQuery("testlinked", Some(simpleTransformation), None, None))))), Some("data.newField"), 1)
+          Some(List(EndpointQuery("testlinked", Some(simpleTransformation), None, None))))), Some("data.newField"), false, 0, 1)
       } yield retrieved
 
       result map { result =>
@@ -279,7 +280,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None,
           Some(List(
             EndpointQuery("test", None, None, None),
-            EndpointQuery("complex", None, None, None))))), Some("data.newField"), 3)
+            EndpointQuery("complex", None, None, None))))), Some("data.newField"), false, 0, 3)
       } yield retrieved
 
       result map { result =>
@@ -459,8 +460,8 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         EndpointData("complex", None, complexJson, None))
 
       val query = EndpointDataBundle("testBundle", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), 3),
-        "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), 1)))
+        "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), None, 3),
+        "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), None, 1)))
       val result = for {
         _ <- service.saveData(owner.userId, data)
         retrieved <- service.bundleData(query)
@@ -492,7 +493,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         deleted <- service.deleteRecords(owner.userId, Seq(saved(1).recordId.get))
         retrieved <- service.propertyData(List(
           EndpointQuery("test", Some(simpleTransformation), None, None),
-          EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), 3)
+          EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), false, 0, 3)
       } yield retrieved
 
       result map { result =>
@@ -515,7 +516,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         _ <- service.deleteRecords(owner.userId, Seq(saved(1).recordId.get, UUID.randomUUID())).recover { case e => Future.successful(()) }
         retrieved <- service.propertyData(List(
           EndpointQuery("test", Some(simpleTransformation), None, None),
-          EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), 3)
+          EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), false, 0, 3)
       } yield retrieved
 
       result map { result =>
@@ -574,7 +575,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         updated <- service.updateRecords(owner.userId, Seq(saved(1).copy(data = simpleJson2Updated)))
         retrieved <- service.propertyData(List(
           EndpointQuery("test", Some(simpleTransformation), None, None),
-          EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), 3)
+          EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), false, 0, 3)
       } yield retrieved
 
       result map { result =>
@@ -600,7 +601,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
           EndpointData("complex", None, complexJson, None))).recover { case e => Future.successful(()) }
         retrieved <- service.propertyData(List(
           EndpointQuery("test", Some(simpleTransformation), None, None),
-          EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), 3)
+          EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), false, 0, 3)
       } yield retrieved
 
       result map { result =>

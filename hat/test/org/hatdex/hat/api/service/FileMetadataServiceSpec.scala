@@ -27,7 +27,8 @@ package org.hatdex.hat.api.service
 import java.util.UUID
 
 import org.hatdex.hat.api.models.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus }
-import org.hatdex.hat.authentication.models.{ HatUser, Owner }
+import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
+import org.hatdex.hat.authentication.models.HatUser
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.BeforeEach
