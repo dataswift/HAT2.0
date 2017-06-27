@@ -22,10 +22,14 @@ cache:
 # Handle git submodules yourself
 git:
     submodules: false
+
 # Use sed to replace the SSH URL with the public URL, then initialize submodules
 before_install:
     - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
     - git submodule update --init --recursive
+    - psql -c 'create database testhatdb1;' -U postgres
+    - psql -c 'create user testhatdb1;' -U postgres
+    - psql -c "GRANT CREATE ON DATABASE testhatdb1 TO testhatdb1" -U postgres
 
 script:
    - sbt clean
