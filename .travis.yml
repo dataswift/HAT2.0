@@ -23,13 +23,16 @@ cache:
 git:
     submodules: false
 
+before_script:
+  - psql -c "CREATE DATABASE testhatdb1;" -U postgres
+  - psql -c "CREATE USER testhatdb1 WITH PASSWORD 'testing';" -U postgres
+  - psql -c "GRANT CREATE ON DATABASE testhatdb1 TO testhatdb1" -U postgres
+
 # Use sed to replace the SSH URL with the public URL, then initialize submodules
 before_install:
-    - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
-    - git submodule update --init --recursive
-    - psql -c 'create database testhatdb1;' -U postgres
-    - psql -c 'create user testhatdb1;' -U postgres
-    - psql -c "GRANT CREATE ON DATABASE testhatdb1 TO testhatdb1" -U postgres
+  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+  - git submodule update --init --recursive
+
 
 script:
    - sbt clean
