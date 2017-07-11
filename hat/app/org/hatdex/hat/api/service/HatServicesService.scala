@@ -77,8 +77,7 @@ class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment
 
     JsObject(Map(
       "resource" -> Json.toJson(resource),
-      "accessScope" -> Json.toJson(accessScope),
-      "namespace" -> Json.toJson(service.title.toLowerCase)))
+      "accessScope" -> Json.toJson(accessScope)))
   }
 
   def hatServiceToken(user: HatUser, service: HatService)(implicit hatServer: HatServer, requestHeader: RequestHeader): Future[AccessToken] = {

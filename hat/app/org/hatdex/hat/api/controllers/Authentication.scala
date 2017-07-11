@@ -24,6 +24,7 @@
 
 package org.hatdex.hat.api.controllers
 
+import java.net.URLDecoder
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -101,9 +102,11 @@ class Authentication @Inject() (
     loginAvailable = true)
   def accessToken(): Action[AnyContent] = UserAwareAction.async { implicit request =>
     val eventuallyAuthenticatedUser = for {
-      username <- request.getQueryString("username").orElse(request.headers.get("username"))
-      password <- request.getQueryString("password").orElse(request.headers.get("password"))
+      usernameParam <- request.getQueryString("username").orElse(request.headers.get("username"))
+      passwordParam <- request.getQueryString("password").orElse(request.headers.get("password"))
     } yield {
+      val username = usernameParam
+      val password = URLDecoder.decode(passwordParam, "UTF-8")
       logger.info(s"Authenticating $username:$password")
       credentialsProvider.authenticate(Credentials(username, password))
         .flatMap { loginInfo =>

@@ -9,6 +9,7 @@ GET           /users/access_token                                  org.hatdex.ha
 PUT           /users/user/:userId/enable                           org.hatdex.hat.api.controllers.Users.enableUser(userId: java.util.UUID)
 PUT           /users/user/:userId/disable                          org.hatdex.hat.api.controllers.Users.disableUser(userId: java.util.UUID)
 PUT           /users/user/:userId/delete                           org.hatdex.hat.api.controllers.Users.deleteUser(userId: java.util.UUID)
+PUT           /users/user/:userId/update                           org.hatdex.hat.api.controllers.Users.updateUser(userId: java.util.UUID)
 
 # DATA Routes
 GET           /data/sources                                        org.hatdex.hat.api.controllers.Data.getDataSources
