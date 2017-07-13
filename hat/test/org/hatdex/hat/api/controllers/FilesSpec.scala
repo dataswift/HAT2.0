@@ -293,7 +293,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       }
 
       redirectLocation(result) must beSome
-      redirectLocation(result).get must startWith("https://hat-storage-test.s3.amazonaws.com/hat.hubofallthings.net/testFile?AWSAccessKeyId=testAwsAccessKey&Expires=")
+      redirectLocation(result).get must startWith("https://hat-storage-test.s3-eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile")
     }
 
     "Redirect to file url for permitted files files" in {
@@ -310,7 +310,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       } yield result
 
       redirectLocation(result) must beSome
-      redirectLocation(result).get must startWith("https://hat-storage-test.s3.amazonaws.com/hat.hubofallthings.net/testFile?AWSAccessKeyId=testAwsAccessKey&Expires=")
+      redirectLocation(result).get must startWith("https://hat-storage-test.s3-eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile")
     }
   }
 
@@ -391,7 +391,8 @@ trait FilesContext extends Scope {
   val devHatMigrations = Seq(
     "evolutions/hat-database-schema/11_hat.sql",
     "evolutions/hat-database-schema/12_hatEvolutions.sql",
-    "evolutions/hat-database-schema/13_liveEvolutions.sql")
+    "evolutions/hat-database-schema/13_liveEvolutions.sql",
+    "evolutions/hat-database-schema/14_newHat.sql")
 
   def databaseReady: Future[Unit] = {
     val schemaMigration = application.injector.instanceOf[SchemaMigration]

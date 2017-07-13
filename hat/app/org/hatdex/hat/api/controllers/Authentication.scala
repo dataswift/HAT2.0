@@ -163,7 +163,6 @@ class Authentication @Inject() (
         case Some(user) =>
           val token = MailTokenUser(email, isSignUp = false)
           tokenService.create(token).map { _ =>
-            // TODO generate password reset link for frontend to handle
             val scheme = if (request.secure) {
               "https://"
             }
@@ -207,6 +206,7 @@ class Authentication @Inject() (
           }
         }
         else {
+          logger.info(s"Token email: ${token.email}, while owner email is ${request.dynamicEnvironment.ownerEmail}")
           Future.successful(Unauthorized(Json.toJson(ErrorMessage("Password reset unauthorized", "Only HAT owner can reset their password"))))
         }
       case Some(_) =>
