@@ -42,6 +42,7 @@ trait SlickPostgresDriver extends ExPostgresDriver
 
   override val pgjson = "jsonb"
   override val api = MyAPI
+  override protected lazy val useTransactionForUpsert = false
 
   object MyAPI extends API with ArrayImplicits
       with DateTimeImplicits
