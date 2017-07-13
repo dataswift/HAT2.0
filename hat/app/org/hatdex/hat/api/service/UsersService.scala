@@ -26,88 +26,122 @@ package org.hatdex.hat.api.service
 
 import java.util.UUID
 
+import org.hatdex.hat.api.models.{ UserRole, _ }
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
-import org.hatdex.hat.dal.SlickPostgresDriver.api._
-import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.dal.ModelTranslation
+import org.hatdex.hat.dal.SlickPostgresDriver.api._
+import org.hatdex.hat.dal.Tables.{ UserRole => UserRoleDb, _ }
 import org.joda.time.LocalDateTime
 import play.api.Logger
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 class UsersService extends DalExecutionContext {
   val logger = Logger(this.getClass)
 
   def listUsers()(implicit db: Database): Future[Seq[HatUser]] = {
-    db.run {
-      UserUser.result
-    } map { users =>
-      users.map(ModelTranslation.fromDbModel)
-    }
+    queryUser(UserUser)
   }
 
   def getUser(userId: UUID)(implicit db: Database): Future[Option[HatUser]] = {
-    db.run {
-      UserUser.filter(_.userId === userId).result
-    } map { users =>
-      users.map(ModelTranslation.fromDbModel)
-        .headOption
-    }
+    queryUser(UserUser.filter(_.userId === userId))
+      .map(_.headOption)
   }
 
   def getUser(username: String)(implicit db: Database): Future[Option[HatUser]] = {
-    logger.info(s"Get user by username: ${username}")
-    db.run {
-      UserUser.filter(_.email === username).result
-    } map { users =>
-      users.map(ModelTranslation.fromDbModel)
-        .headOption
-    }
+    queryUser(UserUser.filter(_.email === username))
+      .map(_.headOption)
+  }
+
+  def getUserByRole(role: UserRole)(implicit db: Database): Future[Seq[HatUser]] = {
+    val usersWithRole = UserRoleDb.filter(r => r.role === role.title && (r.extra.isEmpty || r.extra === role.extra)).map(_.userId)
+    val query = UserUser.filter(_.userId in usersWithRole)
+    queryUser(query)
   }
 
   def getUserForCredentials(username: String, passwordHash: String)(implicit db: Database): Future[Option[HatUser]] = {
-    db.run {
-      UserUser.filter(_.email === username).result
-    } map { users =>
-      users.map(ModelTranslation.fromDbModel)
-        .headOption
+    queryUser(UserUser.filter(_.email === username))
+      .map(_.headOption)
+  }
+
+  private def queryUser(userFilter: Query[UserUser, UserUserRow, Seq])(implicit db: Database): Future[Seq[HatUser]] = {
+    val debits = DataDebit.map(d => (d.recipientId, d.dataDebitKey.asColumnOf[String]))
+    val debits2 = DataDebitContract.map(d => (d.clientId.asColumnOf[String], d.dataDebitKey))
+    val dd = debits.unionAll(debits2)
+
+    val eventualUsers = queryUsers(userFilter)
+
+    val userDataDebits = userFilter
+      .joinLeft(dd)
+      .on(_.userId.asColumnOf[String] === _._1)
+
+    for {
+      users <- eventualUsers
+      dataDebits <- db.run(userDataDebits.result)
+    } yield {
+      users map { user =>
+        val roles = dataDebits.filter(_._1.userId == user.userId) map { userDataDebit =>
+          UserRole.userRoleDeserialize("datadebit", userDataDebit._2.map(_._2))
+        }
+        user.withRoles(roles: _*)
+      }
+    }
+  }
+
+  implicit def equalDataJsonRowIdentity(a: UserUserRow, b: UserUserRow): Boolean = {
+    a.userId == b.userId
+  }
+
+  private def queryUsers(userFilter: Query[UserUser, UserUserRow, Seq])(implicit db: Database): Future[Seq[HatUser]] = {
+    val query = userFilter.joinLeft(UserRoleDb).on(_.userId === _.userId).sortBy(_._1.userId)
+    db.run(query.result) map { results =>
+      ModelTranslation.groupRecords(results).map(ModelTranslation.fromDbModel)
     }
   }
 
   def saveUser(user: HatUser)(implicit db: Database): Future[HatUser] = {
     val userRow = UserUserRow(user.userId, LocalDateTime.now(), LocalDateTime.now(),
       user.email, user.pass, // The password is assumed to come in hashed, hence stored as is!
-      user.name, user.role, enabled = user.enabled)
-
-    db.run {
-      for {
-        _ <- (UserUser returning UserUser).insertOrUpdate(userRow)
-        updated <- UserUser.filter(_.userId === user.userId).result
-      } yield updated
-    } map { user =>
-      ModelTranslation.fromDbModel(user.head)
+      user.name, enabled = user.enabled)
+    val userRoleRows = user.roles map { role =>
+      UserRoleRow(user.userId, role.title, role.extra)
     }
+
+    val query = DBIO.seq(
+      UserRoleDb.filter(_.userId === user.userId).delete,
+      UserUser.insertOrUpdate(userRow),
+      UserRoleDb ++= userRoleRows)
+
+    val upsertedUser = db.run(query.transactionally)
+
+    upsertedUser.map(_ => user)
   }
 
   def deleteUser(userId: UUID)(implicit db: Database): Future[Unit] = {
-    val deleteUserQuery = UserUser.filter(_.userId === userId)
-      .filterNot(_.role === "owner")
-      .filterNot(_.role === "platform")
-
-    db.run(deleteUserQuery.delete).map(_ => ())
+    getUser(userId) flatMap {
+      case Some(user) if user.roles.contains(Owner()) => Future.failed(new RuntimeException("Can not delete owner user"))
+      case Some(user) if user.roles.contains(Platform()) => Future.failed(new RuntimeException("Can not delete platform user"))
+      case None => Future.failed(new RuntimeException("User does not exist"))
+      case Some(user) =>
+        val deleteRoles = UserRoleDb.filter(_.userId === user.userId).delete
+        val deleteUsers = UserUser.filter(_.userId === user.userId).delete
+        db.run(DBIO.seq(deleteRoles, deleteUsers).transactionally).map(_ => ())
+    }
   }
 
   def changeUserState(userId: UUID, enabled: Boolean)(implicit db: Database): Future[Unit] = {
     val query = UserUser.filter(_.userId === userId)
-      .map(u => (u.enabled))
-      .update((enabled))
+      .map(u => (u.enabled, u.lastUpdated))
+      .update((enabled, LocalDateTime.now()))
     db.run(query).map(_ => ())
   }
 
   def removeUser(username: String)(implicit db: Database): Future[Unit] = {
-    db.run {
-      UserUser.filter(_.email === username).delete
-    } map { _ => () }
+    val eventualUserIds = db.run(UserUser.filter(_.email === username).map(_.userId).result)
+    eventualUserIds flatMap { userId =>
+      Future.sequence(userId.map(deleteUser))
+        .map(_ => ())
+    }
   }
 
   def previousLogin(user: HatUser)(implicit db: Database): Future[Option[HatAccessLog]] = {

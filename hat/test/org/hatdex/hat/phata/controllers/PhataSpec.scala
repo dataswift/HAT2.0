@@ -33,6 +33,7 @@ import com.mohiva.play.silhouette.api.{ Environment, LoginInfo }
 import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.authentication.HatFrontendAuthEnvironment
+import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
@@ -92,7 +93,7 @@ trait Context extends Scope {
     keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.getString("publicKey").get)), hatDatabase)
 
   // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", "owner", enabled = true)
+  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
   implicit val env: Environment[HatFrontendAuthEnvironment] = FakeEnvironment[HatFrontendAuthEnvironment](
     Seq(owner.loginInfo -> owner),
     hatServer)
@@ -101,7 +102,8 @@ trait Context extends Scope {
   val devHatMigrations = Seq(
     "evolutions/hat-database-schema/11_hat.sql",
     "evolutions/hat-database-schema/12_hatEvolutions.sql",
-    "evolutions/hat-database-schema/13_liveEvolutions.sql")
+    "evolutions/hat-database-schema/13_liveEvolutions.sql",
+    "evolutions/hat-database-schema/14_newHat.sql")
 
   def databaseReady: Future[Unit] = {
     val schemaMigration = application.injector.instanceOf[SchemaMigration]

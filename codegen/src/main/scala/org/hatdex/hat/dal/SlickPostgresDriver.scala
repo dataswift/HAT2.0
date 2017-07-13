@@ -24,8 +24,12 @@
 
 package org.hatdex.hat.dal
 
+import java.sql.Timestamp
+
 import com.github.tminglei.slickpg._
-import play.api.libs.json.{ JsValue, Json }
+import org.joda.time.DateTime
+import play.api.libs.json.{ JsNull, JsValue, Json }
+import slick.jdbc.JdbcType
 
 trait SlickPostgresDriver extends ExPostgresDriver
     with PgArraySupport
@@ -38,6 +42,7 @@ trait SlickPostgresDriver extends ExPostgresDriver
 
   override val pgjson = "jsonb"
   override val api = MyAPI
+  override protected lazy val useTransactionForUpsert = false
 
   object MyAPI extends API with ArrayImplicits
       with DateTimeImplicits
@@ -53,6 +58,36 @@ trait SlickPostgresDriver extends ExPostgresDriver
         pgjson,
         (s) => utils.SimpleArrayUtils.fromString[JsValue](Json.parse(_))(s).orNull,
         (v) => utils.SimpleArrayUtils.mkString[JsValue](_.toString())(v)).to(_.toList)
+
+    import scala.language.implicitConversions
+
+    override implicit val playJsonTypeMapper: JdbcType[JsValue] =
+      new GenericJdbcType[JsValue](
+        pgjson,
+        (v) => Json.parse(v),
+        (v) => Json.stringify(v),
+        zero = JsNull,
+        hasLiteralForm = false)
+
+    override implicit def playJsonColumnExtensionMethods(c: Rep[JsValue]) = {
+      new FixedJsonColumnExtensionMethods[JsValue, JsValue](c)
+    }
+    override implicit def playJsonOptionColumnExtensionMethods(c: Rep[Option[JsValue]]) = {
+      new FixedJsonColumnExtensionMethods[JsValue, Option[JsValue]](c)
+    }
+
+    class FixedJsonColumnExtensionMethods[JSONType, P1](override val c: Rep[P1])(
+        implicit
+        tm: JdbcType[JSONType]) extends JsonColumnExtensionMethods[JSONType, P1](c) {
+      override def <@:[P2, R](c2: Rep[P2])(implicit om: o#arg[JSONType, P2]#to[Boolean, R]) = {
+        om.column(jsonLib.ContainsBy, n, c2.toNode)
+      }
+    }
+
+    val toJson: Rep[String] => Rep[JsValue] = SimpleFunction.unary[String, JsValue]("to_jsonb")
+    val toTimestamp: Rep[Double] => Rep[Timestamp] = SimpleFunction.unary[Double, Timestamp]("to_timestamp")
+    val datePart: (Rep[String], Rep[DateTime]) => Rep[String] = SimpleFunction.binary[String, DateTime, String]("date_part")
+    val datePartTimestamp: (Rep[String], Rep[Timestamp]) => Rep[String] = SimpleFunction.binary[String, Timestamp, String]("date_part")
   }
 
 }

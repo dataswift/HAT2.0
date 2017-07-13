@@ -29,22 +29,16 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ HatStatus, StatusKind, SuccessResponse }
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.{ SystemStatusService, UsersService }
-import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.dal.Tables.UserAccessLogRow
 import org.hatdex.hat.resourceManagement._
-import org.joda.time.DateTime
+import org.ocpsoft.prettytime.PrettyTime
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
-import org.ocpsoft.prettytime.PrettyTime
-
-import scala.concurrent.Future
-import scala.math.BigDecimal.RoundingMode
 
 class SystemStatus @Inject() (
     val messagesApi: MessagesApi,
@@ -65,7 +59,7 @@ class SystemStatus @Inject() (
     }
   }
 
-  def status(): Action[AnyContent] = SecuredAction(WithRole("owner", "platform")).async { implicit request =>
+  def status(): Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
     val dbStorageAllowance = Math.pow(1000, 3).toLong
     val fileStorageAllowance = Math.pow(1000, 3).toLong
 

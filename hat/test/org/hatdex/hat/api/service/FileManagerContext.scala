@@ -27,14 +27,15 @@ package org.hatdex.hat.api.service
 import java.io.StringReader
 import java.util.UUID
 
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.auth.{ AWSStaticCredentialsProvider, BasicAWSCredentials }
+import com.amazonaws.services.s3.{ AmazonS3, AmazonS3Client, AmazonS3ClientBuilder }
 import com.atlassian.jwt.core.keys.KeyUtils
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.authentication.HatFrontendAuthEnvironment
+import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
@@ -60,23 +61,27 @@ trait FileManagerContext extends Scope {
     keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.getString("privateKey").get)),
     keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.getString("publicKey").get)), hatDatabase)
 
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", "owner", enabled = true)
+  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
   implicit val environment: Environment[HatFrontendAuthEnvironment] = FakeEnvironment[HatFrontendAuthEnvironment](
     Seq(owner.loginInfo -> owner),
     hatServer)
 
-  val s3Configuration = AwsS3Configuration("hat-storage-test", "testAwsAccessKey", "testAwsSecret", 5.minutes)
+  val s3Configuration = AwsS3Configuration("hat-storage-test", "testAwsAccessKey", "testAwsSecret", "eu-west-1", 5.minutes)
 
-  def provides3Client(configuration: AwsS3Configuration): AmazonS3Client = {
+  def provides3Client(configuration: AwsS3Configuration): AmazonS3 = {
     val awsCreds: BasicAWSCredentials = new BasicAWSCredentials(configuration.accessKeyId, configuration.secretKey)
-    new AmazonS3Client(awsCreds)
+    AmazonS3ClientBuilder.standard()
+      .withRegion(configuration.region)
+      .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+      .build()
   }
 
   // Helpers to (re-)initialize the test database and await for it to be ready
   val devHatMigrations = Seq(
     "evolutions/hat-database-schema/11_hat.sql",
     "evolutions/hat-database-schema/12_hatEvolutions.sql",
-    "evolutions/hat-database-schema/13_liveEvolutions.sql")
+    "evolutions/hat-database-schema/13_liveEvolutions.sql",
+    "evolutions/hat-database-schema/14_newHat.sql")
 
   def databaseReady: Future[Unit] = {
     val schemaMigration = application.injector.instanceOf[SchemaMigration]

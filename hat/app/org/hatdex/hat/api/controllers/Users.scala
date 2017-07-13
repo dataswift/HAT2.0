@@ -25,61 +25,63 @@
 package org.hatdex.hat.api.controllers
 
 import java.util.UUID
-import javax.inject.{ Inject, Named }
+import javax.inject.Inject
 
-import akka.actor.ActorRef
-import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
-import com.mohiva.play.silhouette.api.util.{ Clock, Credentials, PasswordHasherRegistry }
-import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
+import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ ErrorMessage, SuccessResponse, User }
-import org.hatdex.hat.api.service.UsersService
-import org.hatdex.hat.api.models.AccessToken
+import org.hatdex.hat.api.models.{ Owner, Platform, _ }
+import org.hatdex.hat.api.service.{ HatServicesService, UsersService }
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.authentication.{ HatApiController, _ }
+import org.hatdex.hat.authentication.{ HatApiController, WithRole, _ }
 import org.hatdex.hat.dal.ModelTranslation
+import org.hatdex.hat.resourceManagement._
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json.{ JsObject, Json }
-import play.api.{ Configuration, Logger }
-import org.hatdex.hat.authentication.WithRole
-import org.hatdex.hat.resourceManagement._
+import play.api.libs.json.Json
 import play.api.mvc._
+import play.api.{ Configuration, Logger }
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class Users @Inject() (
     val messagesApi: MessagesApi,
-    passwordHasherRegistry: PasswordHasherRegistry,
     configuration: Configuration,
-    credentialsProvider: CredentialsProvider[HatServer],
     silhouette: Silhouette[HatApiAuthEnvironment],
     hatServerProvider: HatServerProvider,
     clock: Clock,
+    hatServicesService: HatServicesService,
     usersService: UsersService) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
-  val logger = Logger(this.getClass)
+  private val logger = Logger(this.getClass)
 
   def listUsers(): Action[AnyContent] = SecuredAction.async { implicit request =>
-    logger.warn(s"Requesting users for ${request.host} ${request.identity}, ${request.dynamicEnvironment}")
     usersService.listUsers map { users =>
       Ok(Json.toJson(users.map(ModelTranslation.fromInternalModel)))
     }
-
   }
 
-  def createUser(): Action[User] = SecuredAction(WithRole("owner", "platform")).async(BodyParsers.parse.json[User]) { implicit request =>
+  private def privilegedRole(user: HatUser): Boolean = {
+    val privileged = Seq(Platform(), Owner())
+    if (user.roles.intersect(privileged).nonEmpty) {
+      true
+    }
+    else {
+      false
+    }
+  }
+
+  def createUser(): Action[User] = SecuredAction(WithRole(Owner(), Platform())).async(BodyParsers.parse.json[User]) { implicit request =>
     val user = request.body
-    val permittedRoles = Seq("dataDebit", "dataCredit")
-    if (permittedRoles.contains(user.role)) {
+    val hatUser = ModelTranslation.fromExternalModel(user, enabled = true)
+    if (privilegedRole(hatUser)) {
+      Future.successful(BadRequest(Json.toJson(ErrorMessage("Invalid User", s"Users with privileged roles may not be created"))))
+    }
+    else {
       usersService.getUser(user.email).flatMap { maybeExistingUser =>
-        maybeExistingUser map {
-          case _ =>
-            Future.successful(BadRequest(Json.toJson(ErrorMessage("Error creating user", s"User ${user.email} already exists"))))
+        maybeExistingUser map { _ =>
+          Future.successful(BadRequest(Json.toJson(ErrorMessage("Error creating user", s"User ${user.email} already exists"))))
         } getOrElse {
-          val hatUser = HatUser(user.userId, user.email, user.pass, user.name, user.role, enabled = true)
           usersService.saveUser(hatUser).map { created =>
             Created(Json.toJson(ModelTranslation.fromInternalModel(created)))
           } recover {
@@ -88,79 +90,19 @@ class Users @Inject() (
           }
         }
       }
-
-    }
-    else {
-      Future.successful(BadRequest(Json.toJson(ErrorMessage("Invalid User", s"Only users with certain roles can be created: ${permittedRoles.mkString(",")}"))))
     }
   }
 
-  def deleteUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole("owner", "platform")).async { implicit request =>
-    usersService.deleteUser(userId) map { _ =>
-      Ok(Json.toJson(SuccessResponse(s"Account deleted")))
-    } recover {
-      case e =>
-        BadRequest(Json.toJson(ErrorMessage("Error deleting account", e.getMessage)))
-    }
-  }
-
-  def publicKey(): Action[AnyContent] = UserAwareAction.async { implicit request =>
-    val publicKey = hatServerProvider.toString(request.dynamicEnvironment.publicKey)
-    Future.successful(Ok(publicKey))
-  }
-
-  def validateToken(): Action[AnyContent] = SecuredAction.async { implicit request =>
-    Future.successful(Ok(Json.toJson(SuccessResponse("Authenticated"))))
-  }
-
-  def applicationToken(name: String, resource: String): Action[AnyContent] = SecuredAction(WithRole("owner")).async { implicit request =>
-    val customClaims = Map("resource" -> Json.toJson(resource), "accessScope" -> Json.toJson("validate"))
-    for {
-      authenticator <- env.authenticatorService.create(request.identity.loginInfo)
-      token <- env.authenticatorService.init(authenticator.copy(customClaims = Some(JsObject(customClaims))))
-      result <- env.authenticatorService.embed(token, Ok(Json.toJson(AccessToken(token, request.identity.userId))))
-    } yield {
-      result
-    }
-  }
-
-  def accessToken(): Action[AnyContent] = UserAwareAction.async { implicit request =>
-    val eventuallyAuthenticatedUser = for {
-      username <- request.getQueryString("username").orElse(request.headers.get("username"))
-      password <- request.getQueryString("password").orElse(request.headers.get("password"))
-    } yield {
-      logger.info(s"Authenticating $username:$password")
-      credentialsProvider.authenticate(Credentials(username, password))
-        .flatMap { loginInfo =>
-          usersService.getUser(loginInfo.providerKey).flatMap {
-            case Some(user) =>
-              val customClaims = Map("resource" -> Json.toJson(request.dynamicEnvironment.domain), "accessScope" -> Json.toJson(user.role))
-              for {
-                authenticator <- env.authenticatorService.create(loginInfo)
-                token <- env.authenticatorService.init(authenticator.copy(customClaims = Some(JsObject(customClaims))))
-                _ <- usersService.logLogin(user, "api", user.role, None, None)
-                result <- env.authenticatorService.embed(token, Ok(Json.toJson(AccessToken(token, user.userId))))
-              } yield {
-                env.eventBus.publish(LoginEvent(user, request))
-                result
-              }
-            case None => Future.failed(new IdentityNotFoundException("Couldn't find user"))
-          }
-        }
-    }
-    eventuallyAuthenticatedUser getOrElse {
-      Future.successful(Unauthorized(Json.toJson(ErrorMessage("Credentials required", "No username or password provided to retrieve token"))))
-    }
-  }
-
-  def enableUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole("owner", "platform")).async { implicit request =>
-    implicit val db = request.dynamicEnvironment.asInstanceOf[HatServer].db
+  def deleteUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
     usersService.getUser(userId) flatMap { maybeUser =>
       maybeUser map { user =>
-        user.role match {
-          case "owner"    => Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Owner account can not be enabled or disabled"))))
-          case "platform" => Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Platform account can not be enabled or disabled"))))
-          case _          => usersService.changeUserState(userId, enabled = true).map { case _ => Ok(Json.toJson(SuccessResponse("Enabled"))) }
+        if (privilegedRole(user)) {
+          Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Privileged account can not be enabled or disabled"))))
+        }
+        else {
+          usersService.deleteUser(userId) map { _ =>
+            Ok(Json.toJson(SuccessResponse(s"Account deleted")))
+          }
         }
       } getOrElse {
         Future.successful(NotFound(Json.toJson(ErrorMessage("No such User", s"User $userId does not exist"))))
@@ -168,14 +110,52 @@ class Users @Inject() (
     }
   }
 
-  def disableUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole("owner", "platform")).async { implicit request =>
+  def updateUser(userId: UUID): Action[User] = SecuredAction(WithRole(Owner(), Platform())).async(BodyParsers.parse.json[User]) { implicit request =>
+    usersService.getUser(userId) flatMap { maybeUser =>
+      maybeUser.filter(_.userId == request.body.userId) map { user =>
+        val updatedUser = ModelTranslation.fromExternalModel(request.body, enabled = true)
+        if (privilegedRole(user) || privilegedRole(updatedUser)) {
+          Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Privileged account can not be enabled or disabled"))))
+        }
+        else {
+          for {
+            _ <- usersService.deleteUser(userId)
+            created <- usersService.saveUser(updatedUser)
+          } yield {
+            Created(Json.toJson(ModelTranslation.fromInternalModel(created)))
+          }
+        }
+      } getOrElse {
+        Future.successful(NotFound(Json.toJson(ErrorMessage("No such User", s"User $userId does not exist"))))
+      }
+    }
+  }
+
+  def enableUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
     implicit val db = request.dynamicEnvironment.asInstanceOf[HatServer].db
     usersService.getUser(userId) flatMap { maybeUser =>
       maybeUser map { user =>
-        user.role match {
-          case "owner"    => Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Owner account can not be enabled or disabled"))))
-          case "platform" => Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Platform account can not be enabled or disabled"))))
-          case _          => usersService.changeUserState(userId, enabled = false).map { case _ => Ok(Json.toJson(SuccessResponse("Enabled"))) }
+        if (privilegedRole(user)) {
+          Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Privileged account can not be enabled or disabled"))))
+        }
+        else {
+          usersService.changeUserState(userId, enabled = true).map { _ => Ok(Json.toJson(SuccessResponse("Enabled"))) }
+        }
+      } getOrElse {
+        Future.successful(NotFound(Json.toJson(ErrorMessage("No such User", s"User $userId does not exist"))))
+      }
+    }
+  }
+
+  def disableUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
+    implicit val db = request.dynamicEnvironment.asInstanceOf[HatServer].db
+    usersService.getUser(userId) flatMap { maybeUser =>
+      maybeUser map { user =>
+        if (privilegedRole(user)) {
+          Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Privileged account can not be enabled or disabled"))))
+        }
+        else {
+          usersService.changeUserState(userId, enabled = true).map { _ => Ok(Json.toJson(SuccessResponse("Enabled"))) }
         }
       } getOrElse {
         Future.successful(NotFound(Json.toJson(ErrorMessage("No such User", s"User $userId does not exist"))))

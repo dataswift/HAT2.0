@@ -26,9 +26,10 @@ package org.hatdex.hat.resourceManagement
 
 object FakeHatConfiguration {
   def config = Map(
+    "play.cache.createBoundCaches" -> "false",
     "hat" -> Map(
       "hat.hubofallthings.net" -> Map(
-        "ownerEmail" -> "hat@hat.org",
+        "ownerEmail" -> "user@hat.org",
         "database" -> Map(
           "dataSourceClass" -> "org.postgresql.ds.PGSimpleDataSource",
           "connectionPool" -> "disabled",

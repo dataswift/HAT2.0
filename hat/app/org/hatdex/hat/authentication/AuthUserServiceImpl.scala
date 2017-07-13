@@ -61,7 +61,7 @@ class AuthUserServiceImpl @Inject() (usersService: UsersService) extends AuthUse
    * Link user profiles together
    *
    * @param mainUser The user to link to.
-   * @param mainUser The linked user
+   * @param linkedUser The linked user
    */
   def link(mainUser: HatUser, linkedUser: HatUser)(implicit dyn: HatServer) = Future.failed(new RuntimeException("Profile linking not implemented"))
 }

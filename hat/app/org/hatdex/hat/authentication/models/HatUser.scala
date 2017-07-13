@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 2 / 2017
+ * 5 / 2017
  */
 
 package org.hatdex.hat.authentication.models
@@ -27,9 +27,36 @@ package org.hatdex.hat.authentication.models
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.resourceManagement.HatServer
 
-case class HatUser(userId: UUID, email: String, pass: Option[String], name: String, role: String, enabled: Boolean) extends Identity {
+case class HatUser(userId: UUID, email: String, pass: Option[String], name: String, roles: Seq[UserRole], enabled: Boolean) extends Identity {
   def loginInfo(implicit hatServer: HatServer) = LoginInfo(hatServer.domain, email)
+
+  def withRoles(roles: UserRole*): HatUser = {
+    this.copy(roles = (this.roles.toSet ++ roles.toSet).toSeq)
+  }
+
+  def withoutRoles(roles: UserRole*): HatUser = {
+    this.copy(roles = (this.roles.toSet -- roles.toSet).toSeq)
+  }
+
+  lazy val primaryRole: UserRole = {
+    if (roles.contains(Owner())) {
+      Owner()
+    }
+    else if (roles.contains(DataDebitOwner(""))) {
+      DataDebitOwner("")
+    }
+    else if (roles.contains(DataCredit(""))) {
+      DataCredit("")
+    }
+    else if (roles.contains(Platform())) {
+      Platform()
+    }
+    else {
+      Validate()
+    }
+  }
 }
 

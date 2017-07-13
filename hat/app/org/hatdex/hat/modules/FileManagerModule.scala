@@ -24,8 +24,8 @@
 
 package org.hatdex.hat.modules
 
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.auth.{ AWSStaticCredentialsProvider, BasicAWSCredentials }
+import com.amazonaws.services.s3.{ AmazonS3, AmazonS3Client, AmazonS3ClientBuilder }
 import com.google.inject.{ AbstractModule, Provides }
 import com.google.inject.name.Named
 import net.ceedubs.ficus.Ficus._
@@ -47,9 +47,12 @@ class FileManagerModule extends AbstractModule with ScalaModule with AkkaGuiceSu
   }
 
   @Provides @Named("s3client-file-manager")
-  def provides3Client(configuration: AwsS3Configuration): AmazonS3Client = {
+  def provides3Client(configuration: AwsS3Configuration): AmazonS3 = {
     val awsCreds: BasicAWSCredentials = new BasicAWSCredentials(configuration.accessKeyId, configuration.secretKey)
-    new AmazonS3Client(awsCreds)
+    AmazonS3ClientBuilder.standard()
+      .withRegion(configuration.region)
+      .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+      .build()
   }
 
 }

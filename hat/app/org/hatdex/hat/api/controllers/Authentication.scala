@@ -24,19 +24,19 @@
 
 package org.hatdex.hat.api.controllers
 
+import java.net.URLDecoder
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.{ Clock, Credentials, PasswordHasherRegistry }
 import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
-import com.mohiva.play.silhouette.impl.exceptions.InvalidPasswordException
+import com.mohiva.play.silhouette.impl.exceptions.{ IdentityNotFoundException, InvalidPasswordException }
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ ErrorMessage, SuccessResponse }
-import org.hatdex.hat.api.service.UsersService
+import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.service.{ HatServicesService, MailTokenService, UsersService }
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
-import org.hatdex.hat.phata.service.{ HatServicesService, MailTokenService }
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
 import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer }
 import play.api.i18n.MessagesApi
@@ -64,7 +64,16 @@ class Authentication @Inject() (
 
   private val logger = Logger(this.getClass)
 
-  def hatLogin(name: String, redirectUrl: String): Action[AnyContent] = SecuredAction(WithRole("owner")).async { implicit request =>
+  def publicKey(): Action[AnyContent] = UserAwareAction.async { implicit request =>
+    val publicKey = hatServerProvider.toString(request.dynamicEnvironment.publicKey)
+    Future.successful(Ok(publicKey))
+  }
+
+  def validateToken(): Action[AnyContent] = SecuredAction.async { implicit request =>
+    Future.successful(Ok(Json.toJson(SuccessResponse("Authenticated"))))
+  }
+
+  def hatLogin(name: String, redirectUrl: String): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
     for {
       service <- hatServicesService.findOrCreateHatService(name, redirectUrl)
       linkedService <- hatServicesService.hatServiceLink(request.identity, service, Some(redirectUrl))
@@ -74,7 +83,55 @@ class Authentication @Inject() (
     }
   }
 
-  def passwordChangeProcess: Action[ApiPasswordChange] = SecuredAction(WithRole("owner")).async(parsers.json[ApiPasswordChange]) { implicit request =>
+  def applicationToken(name: String, resource: String): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
+    for {
+      service <- hatServicesService.findOrCreateHatService(name, resource)
+      token <- hatServicesService.hatServiceToken(request.identity, service)
+      result <- env.authenticatorService.embed(token.accessToken, Ok(Json.toJson(token)))
+    } yield {
+      result
+    }
+  }
+
+  private val hatService = HatService(
+    "hat", "hat", "HAT API",
+    "", "", "",
+    browser = true,
+    category = "api",
+    setup = true,
+    loginAvailable = true)
+  def accessToken(): Action[AnyContent] = UserAwareAction.async { implicit request =>
+    val eventuallyAuthenticatedUser = for {
+      usernameParam <- request.getQueryString("username").orElse(request.headers.get("username"))
+      passwordParam <- request.getQueryString("password").orElse(request.headers.get("password"))
+    } yield {
+      val username = usernameParam
+      val password = URLDecoder.decode(passwordParam, "UTF-8")
+      logger.info(s"Authenticating $username:$password")
+      credentialsProvider.authenticate(Credentials(username, password))
+        .flatMap { loginInfo =>
+          usersService.getUser(loginInfo.providerKey).flatMap {
+            case Some(user) =>
+              val customClaims = hatServicesService.generateUserTokenClaims(user, hatService)
+              for {
+                authenticator <- env.authenticatorService.create(loginInfo)
+                token <- env.authenticatorService.init(authenticator.copy(customClaims = Some(customClaims)))
+                _ <- usersService.logLogin(user, "api", user.roles.filter(_.extra.isEmpty).map(_.title).mkString(":"), None, None)
+                result <- env.authenticatorService.embed(token, Ok(Json.toJson(AccessToken(token, user.userId))))
+              } yield {
+                env.eventBus.publish(LoginEvent(user, request))
+                result
+              }
+            case None => Future.failed(new IdentityNotFoundException("Couldn't find user"))
+          }
+        }
+    }
+    eventuallyAuthenticatedUser getOrElse {
+      Future.successful(Unauthorized(Json.toJson(ErrorMessage("Credentials required", "No username or password provided to retrieve token"))))
+    }
+  }
+
+  def passwordChangeProcess: Action[ApiPasswordChange] = SecuredAction(WithRole(Owner())).async(parsers.json[ApiPasswordChange]) { implicit request =>
     request.body.password map { oldPassword =>
       val eventualResult = for {
         _ <- credentialsProvider.authenticate(Credentials(request.identity.email, oldPassword))
@@ -102,11 +159,10 @@ class Authentication @Inject() (
     val email = request.body.email
     val response = Ok(Json.toJson(SuccessResponse("If the email you have entered is correct, you will shortly receive an email with password reset instructions")))
     if (email == request.dynamicEnvironment.ownerEmail) {
-      usersService.listUsers.map(_.find(_.role == "owner")).flatMap {
+      usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
         case Some(user) =>
           val token = MailTokenUser(email, isSignUp = false)
           tokenService.create(token).map { _ =>
-            // TODO generate password reset link for frontend to handle
             val scheme = if (request.secure) {
               "https://"
             }
@@ -134,7 +190,7 @@ class Authentication @Inject() (
     tokenService.retrieve(tokenId).flatMap {
       case Some(token) if !token.isSignUp && !token.isExpired =>
         if (token.email == request.dynamicEnvironment.ownerEmail) {
-          usersService.listUsers.map(_.find(_.role == "owner")).flatMap {
+          usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
             case Some(user) =>
               for {
                 _ <- authInfoRepository.update(user.loginInfo, passwordHasherRegistry.current.hash(request.body.newPassword))
@@ -150,6 +206,7 @@ class Authentication @Inject() (
           }
         }
         else {
+          logger.info(s"Token email: ${token.email}, while owner email is ${request.dynamicEnvironment.ownerEmail}")
           Future.successful(Unauthorized(Json.toJson(ErrorMessage("Password reset unauthorized", "Only HAT owner can reset their password"))))
         }
       case Some(_) =>

@@ -1,12 +1,6 @@
 [submodule "hat-database-schema"]
 	path = hat/conf/evolutions/hat-database-schema
 	url = https://github.com/Hub-of-all-Things/hat-database-schema.git
-[submodule "hat-client-scala-play"]
-	path = hat-client-scala-play
-	url = git@github.com:Hub-of-all-Things/hat-client-scala-play.git
-[submodule "marketsquare-client-scala-play"]
-	path = marketsquare-client-scala-play
-	url = git@github.com:Hub-of-all-Things/marketsquare-client-scala-play.git
 [submodule "frontend"]
   	path = frontend
    	url = git@github.com:Hub-of-all-Things/Rumpel.git

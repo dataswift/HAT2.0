@@ -28,7 +28,7 @@
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] %logger{1} - %msg%n</pattern>
+            <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] [%logger{1}] %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -70,6 +70,8 @@
     <logger name="org.hatdex.hat.api.service.DataService" level="INFO" />
     <logger name="org.hatdex.hat.api.service.UsersService" level="WARN" />
     <logger name="org.hatdex.hat.api.controllers" level="DEBUG" />
+    <logger name="org.hatdex.hat.api.service.monitoring" level="DEBUG" />
+    <logger name="org.hatdex.hat.modules" level="DEBUG" />
 
     <logger name="org.hatdex.marketsquare" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>

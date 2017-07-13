@@ -24,38 +24,19 @@
 
 package org.hatdex.hat.phata.models
 
-import play.api.data.{ Form, Forms, Mapping }
 import me.gosimple.nbvcxz._
-import play.api.Logger
-import play.api.data.validation.{ Constraint, Invalid, Valid, ValidationError }
-import play.api.libs.json.JsError
+import play.api.data.validation.ValidationError
+import play.api.libs.functional.syntax._
+import play.api.libs.json.{ JsError, _ }
 
-import collection.JavaConverters._
+import scala.collection.JavaConverters._
 
-case class LoginDetails(
-  username: String,
-  password: String,
-  remember: Option[Boolean],
-  name: Option[String],
-  redirect: Option[String])
-
-object LoginDetails {
-  private val loginDetailsMapping: Mapping[LoginDetails] = Forms.mapping(
-    "username" -> Forms.nonEmptyText,
-    "password" -> Forms.nonEmptyText,
-    "remember" -> Forms.optional(Forms.boolean),
-    "name" -> Forms.optional(Forms.text),
-    "redirect" -> Forms.optional(Forms.text))(LoginDetails.apply)(LoginDetails.unapply)
-
-  val loginForm: Form[LoginDetails] = Form(loginDetailsMapping)
-}
-
-case class PasswordChange(
+case class ApiPasswordChange(
   newPassword: String,
-  confirmPassword: String)
+  password: Option[String])
 
-object PasswordChange {
-  val logger = Logger(this.getClass)
+object ApiPasswordChange {
+
   private val nbvcxzDictionaryList = resources.ConfigurationBuilder.getDefaultDictionaries
 
   private val nbvcxzConfiguration = new resources.ConfigurationBuilder()
@@ -63,9 +44,9 @@ object PasswordChange {
     .setDictionaries(nbvcxzDictionaryList)
     .createConfiguration()
 
-  val nbvcxz = new Nbvcxz(nbvcxzConfiguration)
+  private val nbvcxz = new Nbvcxz(nbvcxzConfiguration)
 
-  def passwordGuessesToScore(guesses: BigDecimal) = {
+  private def passwordGuessesToScore(guesses: BigDecimal) = {
     val DELTA = 5
     if (guesses < 1e3 + DELTA) {
       0
@@ -84,80 +65,11 @@ object PasswordChange {
     }
   }
 
-  val passwordCheckConstraint: Constraint[String] = Constraint("constraints.passwordcheck")({
-    plainText =>
-      val strengthEstimate = nbvcxz.estimate(plainText)
-
-      val errors = if (passwordGuessesToScore(strengthEstimate.getGuesses) >= 3) {
-        Nil
-      }
-      else {
-        val timeToCrackOff = scoring.TimeEstimate.getTimeToCrackFormatted(strengthEstimate, "OFFLINE_BCRYPT_14")
-        val feedback = strengthEstimate.getFeedback.getSuggestion.asScala.toList.map { suggestion =>
-          ValidationError(suggestion)
-        }
-
-        Seq(
-          ValidationError("Password is too weak"),
-          ValidationError(s"Estimated time to crack this password - $timeToCrackOff")) ++ feedback
-      }
-
-      if (errors.isEmpty) {
-        Valid
-      }
-      else {
-        Invalid(errors)
-      }
-  })
-
-  private val passwordChangeMapping: Mapping[PasswordChange] = Forms.mapping(
-    "newPassword" -> Forms.tuple(
-      "password" -> Forms.nonEmptyText().verifying(passwordCheckConstraint),
-      "confirm" -> Forms.nonEmptyText())
-      .verifying(
-        "constraints.passwords.match",
-        passConfirm => passConfirm._1 == passConfirm._2))({
-      case ((password, confirm)) => PasswordChange(password, confirm)
-    })({
-      passwordChange: PasswordChange => Some((passwordChange.newPassword, passwordChange.confirmPassword))
-    })
-
-  val passwordChangeForm = Form(passwordChangeMapping)
-}
-
-case class ApiPasswordChange(
-  newPassword: String,
-  password: Option[String])
-
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
-
-object ApiPasswordChange {
-
-  def passwordGuessesToScore(guesses: BigDecimal) = {
-    val DELTA = 5
-    if (guesses < 1e3 + DELTA) {
-      0
-    }
-    else if (guesses < 1e6 + DELTA) {
-      1
-    }
-    else if (guesses < 1e8 + DELTA) {
-      2
-    }
-    else if (guesses < 1e10 + DELTA) {
-      3
-    }
-    else {
-      4
-    }
-  }
-
-  def passwordStrength(implicit reads: Reads[String], p: String => scala.collection.TraversableLike[_, String]) =
+  def passwordStrength(implicit reads: Reads[String], p: String => scala.collection.TraversableLike[_, String]): Reads[String] =
     Reads[String] { js =>
       reads.reads(js)
         .flatMap { a =>
-          val estimate = PasswordChange.nbvcxz.estimate(a)
+          val estimate = nbvcxz.estimate(a)
           if (passwordGuessesToScore(estimate.getGuesses) >= 3) {
             JsSuccess(a)
           }

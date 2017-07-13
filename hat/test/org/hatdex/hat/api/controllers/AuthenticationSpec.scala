@@ -28,7 +28,7 @@ import java.io.StringReader
 import java.util.UUID
 
 import akka.stream.Materializer
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.{ AmazonS3, AmazonS3Client }
 import com.atlassian.jwt.core.keys.KeyUtils
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.{ Environment, LoginInfo }
@@ -36,11 +36,11 @@ import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
+import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
-import org.hatdex.hat.phata.service.{ MailTokenService, MailTokenUserService }
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer }
 import org.joda.time.DateTime
@@ -240,10 +240,9 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
       val tokenId = UUID.randomUUID().toString
       tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
       val usersService = application.injector.instanceOf[UsersService]
-      val result: Future[Result] = usersService.saveUser(owner.copy(role = "dataDebit")) // forcing owner user to a different role for the test
-        .flatMap {
-          case _ =>
-            Helpers.call(controller.handleResetPassword(tokenId), request)
+      val result: Future[Result] = usersService.saveUser(owner.copy(roles = Seq(DataDebitOwner("")))) // forcing owner user to a different role for the test
+        .flatMap { _ =>
+          Helpers.call(controller.handleResetPassword(tokenId), request)
         }
 
       status(result) must equalTo(UNAUTHORIZED)
@@ -260,6 +259,8 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
       val tokenId = UUID.randomUUID().toString
       tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
       val result: Future[Result] = Helpers.call(controller.handleResetPassword(tokenId), request)
+
+      logger.warn(s"reset pass response: ${contentAsJson(result)}")
 
       status(result) must equalTo(OK)
     }
@@ -282,9 +283,9 @@ trait AuthenticationContext extends Scope with Mockito {
     keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.getString("publicKey").get)), hatDatabase)
 
   // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "hatuser", "owner", enabled = true)
-  val dataDebitUser = HatUser(UUID.randomUUID(), "dataDebitUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataDebitUser", "dataDebit", enabled = true)
-  val dataCreditUser = HatUser(UUID.randomUUID(), "dataCreditUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataCreditUser", "dataCredit", enabled = true)
+  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "hatuser", Seq(Owner()), enabled = true)
+  val dataDebitUser = HatUser(UUID.randomUUID(), "dataDebitUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataDebitUser", Seq(DataDebitOwner("")), enabled = true)
+  val dataCreditUser = HatUser(UUID.randomUUID(), "dataCreditUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataCreditUser", Seq(DataCredit("")), enabled = true)
   implicit val environment: Environment[HatApiAuthEnvironment] = FakeEnvironment[HatApiAuthEnvironment](
     Seq(owner.loginInfo -> owner, dataDebitUser.loginInfo -> dataDebitUser, dataCreditUser.loginInfo -> dataCreditUser),
     hatServer)
@@ -293,7 +294,8 @@ trait AuthenticationContext extends Scope with Mockito {
   val devHatMigrations = Seq(
     "evolutions/hat-database-schema/11_hat.sql",
     "evolutions/hat-database-schema/12_hatEvolutions.sql",
-    "evolutions/hat-database-schema/13_liveEvolutions.sql")
+    "evolutions/hat-database-schema/13_liveEvolutions.sql",
+    "evolutions/hat-database-schema/14_newHat.sql")
 
   def databaseReady: Future[Unit] = {
     val schemaMigration = application.injector.instanceOf[SchemaMigration]
@@ -322,7 +324,7 @@ trait AuthenticationContext extends Scope with Mockito {
       bind[Environment[HatApiAuthEnvironment]].toInstance(environment)
       bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
       bind[AwsS3Configuration].toInstance(fileManagerS3Mock.s3Configuration)
-      bind[AmazonS3Client].toInstance(fileManagerS3Mock.mockS3client)
+      bind[AmazonS3].toInstance(fileManagerS3Mock.mockS3client)
       bind[FileManager].toInstance(new FileManagerS3(fileManagerS3Mock.s3Configuration, fileManagerS3Mock.mockS3client))
       bind[MailTokenService[MailTokenUser]].to[MailTokenUserService]
       bind[HatMailer].toInstance(mockMailer)
