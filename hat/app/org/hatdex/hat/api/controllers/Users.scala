@@ -110,6 +110,27 @@ class Users @Inject() (
     }
   }
 
+  def updateUser(userId: UUID): Action[User] = SecuredAction(WithRole(Owner(), Platform())).async(BodyParsers.parse.json[User]) { implicit request =>
+    usersService.getUser(userId) flatMap { maybeUser =>
+      maybeUser.filter(_.userId == request.body.userId) map { user =>
+        val updatedUser = ModelTranslation.fromExternalModel(request.body, enabled = true)
+        if (privilegedRole(user) || privilegedRole(updatedUser)) {
+          Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Privileged account can not be enabled or disabled"))))
+        }
+        else {
+          for {
+            _ <- usersService.deleteUser(userId)
+            created <- usersService.saveUser(updatedUser)
+          } yield {
+            Created(Json.toJson(ModelTranslation.fromInternalModel(created)))
+          }
+        }
+      } getOrElse {
+        Future.successful(NotFound(Json.toJson(ErrorMessage("No such User", s"User $userId does not exist"))))
+      }
+    }
+  }
+
   def enableUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
     implicit val db = request.dynamicEnvironment.asInstanceOf[HatServer].db
     usersService.getUser(userId) flatMap { maybeUser =>

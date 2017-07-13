@@ -47,25 +47,6 @@ object WithTokenParameters {
       true
     }
   }
-
-  def tokenExtraScopes(user: HatUser, authenticator: JWTRS256Authenticator): Seq[UserRole] = {
-    val creditRole = if (user.roles.exists(_.isInstanceOf[DataCredit] || user.roles.exists(_.isInstanceOf[Owner]))) {
-      authenticator.customClaims flatMap { claims =>
-        (claims \ "namespace").validate[String].asOpt.map { scope =>
-          DataCredit(scope)
-        }
-      }
-    }
-    else {
-      None
-    }
-
-    creditRole map { role =>
-      user.roles :+ role
-    } getOrElse {
-      user.roles
-    }
-  }
 }
 
 /**
@@ -85,8 +66,7 @@ object WithRole {
   def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, anyOf: UserRole*): Boolean = {
 
     if (WithTokenParameters.roleMatchesToken(user, authenticator)) {
-      val roles = WithTokenParameters.tokenExtraScopes(user, authenticator)
-      anyOf.intersect(roles).nonEmpty
+      anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner())
     }
     else {
       false
@@ -111,7 +91,7 @@ case class WithRoles(allOf: UserRole*) extends Authorization[HatUser, JWTRS256Au
 object WithRoles {
   def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, allOf: UserRole*): Boolean =
     if (WithTokenParameters.roleMatchesToken(user, authenticator)) {
-      allOf.intersect(WithTokenParameters.tokenExtraScopes(user, authenticator)).size == allOf.size
+      allOf.intersect(user.roles).size == allOf.size || user.roles.contains(Owner())
     }
     else {
       false

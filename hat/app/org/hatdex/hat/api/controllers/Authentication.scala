@@ -24,6 +24,7 @@
 
 package org.hatdex.hat.api.controllers
 
+import java.net.URLDecoder
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -101,9 +102,11 @@ class Authentication @Inject() (
     loginAvailable = true)
   def accessToken(): Action[AnyContent] = UserAwareAction.async { implicit request =>
     val eventuallyAuthenticatedUser = for {
-      username <- request.getQueryString("username").orElse(request.headers.get("username"))
-      password <- request.getQueryString("password").orElse(request.headers.get("password"))
+      usernameParam <- request.getQueryString("username").orElse(request.headers.get("username"))
+      passwordParam <- request.getQueryString("password").orElse(request.headers.get("password"))
     } yield {
+      val username = usernameParam
+      val password = URLDecoder.decode(passwordParam, "UTF-8")
       logger.info(s"Authenticating $username:$password")
       credentialsProvider.authenticate(Credentials(username, password))
         .flatMap { loginInfo =>
@@ -160,7 +163,6 @@ class Authentication @Inject() (
         case Some(user) =>
           val token = MailTokenUser(email, isSignUp = false)
           tokenService.create(token).map { _ =>
-            // TODO generate password reset link for frontend to handle
             val scheme = if (request.secure) {
               "https://"
             }
@@ -204,6 +206,7 @@ class Authentication @Inject() (
           }
         }
         else {
+          logger.info(s"Token email: ${token.email}, while owner email is ${request.dynamicEnvironment.ownerEmail}")
           Future.successful(Unauthorized(Json.toJson(ErrorMessage("Password reset unauthorized", "Only HAT owner can reset their password"))))
         }
       case Some(_) =>

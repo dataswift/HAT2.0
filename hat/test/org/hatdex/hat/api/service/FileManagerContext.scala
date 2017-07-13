@@ -80,7 +80,8 @@ trait FileManagerContext extends Scope {
   val devHatMigrations = Seq(
     "evolutions/hat-database-schema/11_hat.sql",
     "evolutions/hat-database-schema/12_hatEvolutions.sql",
-    "evolutions/hat-database-schema/13_liveEvolutions.sql")
+    "evolutions/hat-database-schema/13_liveEvolutions.sql",
+    "evolutions/hat-database-schema/14_newHat.sql")
 
   def databaseReady: Future[Unit] = {
     val schemaMigration = application.injector.instanceOf[SchemaMigration]

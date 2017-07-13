@@ -9,6 +9,7 @@ GET           /users/access_token                                  org.hatdex.ha
 PUT           /users/user/:userId/enable                           org.hatdex.hat.api.controllers.Users.enableUser(userId: java.util.UUID)
 PUT           /users/user/:userId/disable                          org.hatdex.hat.api.controllers.Users.disableUser(userId: java.util.UUID)
 PUT           /users/user/:userId/delete                           org.hatdex.hat.api.controllers.Users.deleteUser(userId: java.util.UUID)
+PUT           /users/user/:userId/update                           org.hatdex.hat.api.controllers.Users.updateUser(userId: java.util.UUID)
 
 # DATA Routes
 GET           /data/sources                                        org.hatdex.hat.api.controllers.Data.getDataSources
@@ -75,24 +76,24 @@ GET           /api/v2/files/restrictAccessPublic/:fileId           org.hatdex.ha
 
 # RICH DATA routes
 
-POST          /api/v2/combinator/*combinator                       org.hatdex.hat.api.controllers.RichData.registerCombinator(combinator)
-GET           /api/v2/combinator/*combinator                       org.hatdex.hat.api.controllers.RichData.getCombinatorData(combinator, recordId: Option[java.util.UUID], orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
-GET           /api/v2/data/:namespace/*endpoint                    org.hatdex.hat.api.controllers.RichData.getEndpointData(namespace, endpoint, recordId: Option[java.util.UUID], orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
-POST          /api/v2/data/:namespace/*endpoint                    org.hatdex.hat.api.controllers.RichData.saveEndpointData(namespace, endpoint)
-PUT           /api/v2/data                                         org.hatdex.hat.api.controllers.RichData.updateRecords()
-DELETE        /api/v2/data                                         org.hatdex.hat.api.controllers.RichData.deleteDataRecords(records: Seq[java.util.UUID])
-POST          /api/v2/data-link                                    org.hatdex.hat.api.controllers.RichData.linkDataRecords(records: Seq[java.util.UUID])
-POST          /api/v2/data-batch                                   org.hatdex.hat.api.controllers.RichData.saveBatchData
-POST          /api/v2/data-bundle/:bundleId                        org.hatdex.hat.api.controllers.RichData.registerBundle(bundleId)
-GET           /api/v2/data-bundle/:bundleId                        org.hatdex.hat.api.controllers.RichData.fetchBundle(bundleId)
+POST          /api/v2/combinator/$combinator<[0-9a-z-/]+>                                           org.hatdex.hat.api.controllers.RichData.registerCombinator(combinator)
+GET           /api/v2/combinator/$combinator<[0-9a-z-/]+>                                           org.hatdex.hat.api.controllers.RichData.getCombinatorData(combinator, recordId: Option[java.util.UUID], orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
+GET           /api/v2/data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                            org.hatdex.hat.api.controllers.RichData.getEndpointData(namespace, endpoint, recordId: Option[java.util.UUID], orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
+POST          /api/v2/data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                            org.hatdex.hat.api.controllers.RichData.saveEndpointData(namespace, endpoint)
+PUT           /api/v2/data                                                                          org.hatdex.hat.api.controllers.RichData.updateRecords()
+DELETE        /api/v2/data                                                                          org.hatdex.hat.api.controllers.RichData.deleteDataRecords(records: Seq[java.util.UUID])
+POST          /api/v2/data-link                                                                     org.hatdex.hat.api.controllers.RichData.linkDataRecords(records: Seq[java.util.UUID])
+POST          /api/v2/data-batch                                                                    org.hatdex.hat.api.controllers.RichData.saveBatchData
+POST          /api/v2/data-bundle/$bundleId<[0-9a-zA-Z-]+>                                          org.hatdex.hat.api.controllers.RichData.registerBundle(bundleId)
+GET           /api/v2/data-bundle/$bundleId<[0-9a-zA-Z-]+>                                          org.hatdex.hat.api.controllers.RichData.fetchBundle(bundleId)
 
-GET           /api/v2/data-debit/:dataDebitId                      org.hatdex.hat.api.controllers.RichData.getDataDebit(dataDebitId: String)
-GET           /api/v2/data-debit/:dataDebitId/values               org.hatdex.hat.api.controllers.RichData.getDataDebitValues(dataDebitId: String)
-GET           /api/v2/data-debit                                   org.hatdex.hat.api.controllers.RichData.listDataDebits()
-GET           /api/v2/data-debit/:dataDebitId/enable/:bundleId     org.hatdex.hat.api.controllers.RichData.enableDataDebit(dataDebitId, bundleId)
-GET           /api/v2/data-debit/:dataDebitId/disable              org.hatdex.hat.api.controllers.RichData.disableDataDebit(dataDebitId)
-POST          /api/v2/data-debit/:dataDebitId                      org.hatdex.hat.api.controllers.RichData.registerDataDebit(dataDebitId)
-PUT           /api/v2/data-debit/:dataDebitId                      org.hatdex.hat.api.controllers.RichData.updateDataDebit(dataDebitId)
+GET           /api/v2/data-debit/$dataDebitId<[0-9a-zA-Z-]+>                                        org.hatdex.hat.api.controllers.RichData.getDataDebit(dataDebitId: String)
+GET           /api/v2/data-debit/$dataDebitId<[0-9a-zA-Z-]+>/values                                 org.hatdex.hat.api.controllers.RichData.getDataDebitValues(dataDebitId: String)
+GET           /api/v2/data-debit                                                                    org.hatdex.hat.api.controllers.RichData.listDataDebits()
+GET           /api/v2/data-debit/$dataDebitId<[0-9a-zA-Z-]+>/enable/$bundleId<[0-9a-zA-Z-]+>        org.hatdex.hat.api.controllers.RichData.enableDataDebit(dataDebitId, bundleId)
+GET           /api/v2/data-debit/$dataDebitId<[0-9a-zA-Z-]+>/disable                                org.hatdex.hat.api.controllers.RichData.disableDataDebit(dataDebitId)
+POST          /api/v2/data-debit/$dataDebitId<[0-9a-zA-Z-]+>                                        org.hatdex.hat.api.controllers.RichData.registerDataDebit(dataDebitId)
+PUT           /api/v2/data-debit/$dataDebitId<[0-9a-zA-Z-]+>                                        org.hatdex.hat.api.controllers.RichData.updateDataDebit(dataDebitId)
 
 # AUTHENTICATION routes
 
