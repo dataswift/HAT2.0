@@ -40,6 +40,8 @@ script:
    - sbt clean
    - sbt ++$TRAVIS_SCALA_VERSION compile test:compile
    - sbt coverage "testOnly org.hatdex.hat.api.*" -Dconfig.file=src/main/resources/application.test.conf
+   - sbt coverageReport
+   - sbt coverageAggregate
 
 after_success:
   - sbt coveralls
