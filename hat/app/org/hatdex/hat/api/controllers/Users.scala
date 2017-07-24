@@ -118,10 +118,7 @@ class Users @Inject() (
           Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Privileged account can not be enabled or disabled"))))
         }
         else {
-          for {
-            _ <- usersService.deleteUser(userId)
-            created <- usersService.saveUser(updatedUser)
-          } yield {
+          usersService.saveUser(updatedUser) map { created =>
             Created(Json.toJson(ModelTranslation.fromInternalModel(created)))
           }
         }

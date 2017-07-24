@@ -107,7 +107,6 @@ class Authentication @Inject() (
     } yield {
       val username = usernameParam
       val password = URLDecoder.decode(passwordParam, "UTF-8")
-      logger.info(s"Authenticating $username:$password")
       credentialsProvider.authenticate(Credentials(username, password))
         .flatMap { loginInfo =>
           usersService.getUser(loginInfo.providerKey).flatMap {
@@ -145,7 +144,7 @@ class Authentication @Inject() (
       }
 
       eventualResult recover {
-        case e: InvalidPasswordException => Forbidden(Json.toJson(ErrorMessage("Invalid password", "Old password invalid")))
+        case _: InvalidPasswordException => Forbidden(Json.toJson(ErrorMessage("Invalid password", "Old password invalid")))
       }
     } getOrElse {
       Future.successful(Forbidden(Json.toJson(ErrorMessage("Invalid password", "Old password missing"))))
@@ -169,7 +168,7 @@ class Authentication @Inject() (
             else {
               "http://"
             }
-            val resetLink = s"${scheme}${request.host}/#/user/password/change/${token.id}"
+            val resetLink = s"$scheme${request.host}/#/user/password/change/${token.id}"
             mailer.passwordReset(email, user, resetLink)
             response
           }
@@ -206,7 +205,6 @@ class Authentication @Inject() (
           }
         }
         else {
-          logger.info(s"Token email: ${token.email}, while owner email is ${request.dynamicEnvironment.ownerEmail}")
           Future.successful(Unauthorized(Json.toJson(ErrorMessage("Password reset unauthorized", "Only HAT owner can reset their password"))))
         }
       case Some(_) =>
