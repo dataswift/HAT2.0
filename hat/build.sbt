@@ -72,8 +72,9 @@ import com.typesafe.sbt.packager.docker._
 packageName in Docker := "hat"
 maintainer in Docker := "andrius.aucinas@hatdex.org"
 version in Docker := version.value
-dockerExposedPorts := Seq(9000)
+dockerExposedPorts := Seq(8080)
 dockerBaseImage := "java:8"
+dockerEntrypoint := Seq("bin/hat", "-Dhttp.port=8080")
 
 lazy val gentables = taskKey[Seq[File]]("Slick Code generation")
 
