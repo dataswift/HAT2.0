@@ -105,7 +105,8 @@ Specifically, it has 4 major sections:
     devhatMigrations = [
       "evolutions/hat-database-schema/11_hat.sql",
       "evolutions/hat-database-schema/12_hatEvolutions.sql",
-      "evolutions/hat-database-schema/13_liveEvolutions.sql"]
+      "evolutions/hat-database-schema/13_liveEvolutions.sql",
+      "evolutions/hat-database-schema/14_newHat.sql"]
     ```  
 - `devhats` list sets out the list of HATs that are served by the current server, for 
 each including owner details to be initialised with and database access
@@ -115,7 +116,29 @@ but are initialised with the right schema at start time
 you could change the HAT domain name, owner's email address or public/private
 keypair used by the HAT for its token operations
 
-### Additional information
+## Deployment
+
+HAT is intended to be run inside Docker containers. To build a new container, execute:
+
+```
+export REPOSITORY_NAME="hubofallthings"
+./deployment/ecs/docker-aws-deploy.sh
+```
+
+The script is a thin wrapper around a few basic Docker commands. It allows for changing
+the name of the repository you  want to deploy the container to and tags it with the git
+commit fingerprint for the current code version. Otherwise, it could be simplified to:
+
+```
+# Scala Build Tool to compile the code and prepare Dockerfile
+sbt "project hat" docker:stage
+# Build the Docker container
+docker build -t hubofallthings/hat
+```
+
+Uploading the container to a Docker repository is left out
+
+## Additional information
 
 - API documentation can be found at [http://hub-of-all-things.github.io/doc/](http://hub-of-all-things.github.io/doc/)
 - [HAT Database Schema](https://github.com/Hub-of-all-Things/hat-database-schema) has been split up into a separate project for easier reuse across different environments.
