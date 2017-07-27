@@ -19,10 +19,9 @@ trait Tables {
 
   /**
    * Entity class storing rows of table Applications
-   *  @param applicationId Database column application_id SqlType(serial), AutoInc, PrimaryKey
    *  @param dateCreated Database column date_created SqlType(timestamp)
    *  @param dateSetup Database column date_setup SqlType(timestamp), Default(None)
-   *  @param title Database column title SqlType(varchar)
+   *  @param title Database column title SqlType(varchar), PrimaryKey
    *  @param description Database column description SqlType(varchar)
    *  @param logoUrl Database column logo_url SqlType(varchar)
    *  @param url Database column url SqlType(varchar)
@@ -33,27 +32,25 @@ trait Tables {
    *  @param loginAvailable Database column login_available SqlType(bool)
    *  @param namespace Database column namespace SqlType(varchar), Default()
    */
-  case class ApplicationsRow(applicationId: Int, dateCreated: org.joda.time.LocalDateTime, dateSetup: Option[org.joda.time.LocalDateTime] = None, title: String, description: String, logoUrl: String, url: String, authUrl: String, browser: Boolean, category: String, setup: Boolean, loginAvailable: Boolean, namespace: String = "")
+  case class ApplicationsRow(dateCreated: org.joda.time.LocalDateTime, dateSetup: Option[org.joda.time.LocalDateTime] = None, title: String, description: String, logoUrl: String, url: String, authUrl: String, browser: Boolean, category: String, setup: Boolean, loginAvailable: Boolean, namespace: String = "")
   /** GetResult implicit for fetching ApplicationsRow objects using plain SQL queries */
-  implicit def GetResultApplicationsRow(implicit e0: GR[Int], e1: GR[org.joda.time.LocalDateTime], e2: GR[Option[org.joda.time.LocalDateTime]], e3: GR[String], e4: GR[Boolean]): GR[ApplicationsRow] = GR {
+  implicit def GetResultApplicationsRow(implicit e0: GR[org.joda.time.LocalDateTime], e1: GR[Option[org.joda.time.LocalDateTime]], e2: GR[String], e3: GR[Boolean]): GR[ApplicationsRow] = GR {
     prs =>
       import prs._
-      ApplicationsRow.tupled((<<[Int], <<[org.joda.time.LocalDateTime], <<?[org.joda.time.LocalDateTime], <<[String], <<[String], <<[String], <<[String], <<[String], <<[Boolean], <<[String], <<[Boolean], <<[Boolean], <<[String]))
+      ApplicationsRow.tupled((<<[org.joda.time.LocalDateTime], <<?[org.joda.time.LocalDateTime], <<[String], <<[String], <<[String], <<[String], <<[String], <<[Boolean], <<[String], <<[Boolean], <<[Boolean], <<[String]))
   }
   /** Table description of table applications. Objects of this class serve as prototypes for rows in queries. */
   class Applications(_tableTag: Tag) extends Table[ApplicationsRow](_tableTag, Some("hat"), "applications") {
-    def * = (applicationId, dateCreated, dateSetup, title, description, logoUrl, url, authUrl, browser, category, setup, loginAvailable, namespace) <> (ApplicationsRow.tupled, ApplicationsRow.unapply)
+    def * = (dateCreated, dateSetup, title, description, logoUrl, url, authUrl, browser, category, setup, loginAvailable, namespace) <> (ApplicationsRow.tupled, ApplicationsRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(applicationId), Rep.Some(dateCreated), dateSetup, Rep.Some(title), Rep.Some(description), Rep.Some(logoUrl), Rep.Some(url), Rep.Some(authUrl), Rep.Some(browser), Rep.Some(category), Rep.Some(setup), Rep.Some(loginAvailable), Rep.Some(namespace)).shaped.<>({ r => import r._; _1.map(_ => ApplicationsRow.tupled((_1.get, _2.get, _3, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get, _10.get, _11.get, _12.get, _13.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(dateCreated), dateSetup, Rep.Some(title), Rep.Some(description), Rep.Some(logoUrl), Rep.Some(url), Rep.Some(authUrl), Rep.Some(browser), Rep.Some(category), Rep.Some(setup), Rep.Some(loginAvailable), Rep.Some(namespace)).shaped.<>({ r => import r._; _1.map(_ => ApplicationsRow.tupled((_1.get, _2, _3.get, _4.get, _5.get, _6.get, _7.get, _8.get, _9.get, _10.get, _11.get, _12.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column application_id SqlType(serial), AutoInc, PrimaryKey */
-    val applicationId: Rep[Int] = column[Int]("application_id", O.AutoInc, O.PrimaryKey)
     /** Database column date_created SqlType(timestamp) */
     val dateCreated: Rep[org.joda.time.LocalDateTime] = column[org.joda.time.LocalDateTime]("date_created")
     /** Database column date_setup SqlType(timestamp), Default(None) */
     val dateSetup: Rep[Option[org.joda.time.LocalDateTime]] = column[Option[org.joda.time.LocalDateTime]]("date_setup", O.Default(None))
-    /** Database column title SqlType(varchar) */
-    val title: Rep[String] = column[String]("title")
+    /** Database column title SqlType(varchar), PrimaryKey */
+    val title: Rep[String] = column[String]("title", O.PrimaryKey)
     /** Database column description SqlType(varchar) */
     val description: Rep[String] = column[String]("description")
     /** Database column logo_url SqlType(varchar) */

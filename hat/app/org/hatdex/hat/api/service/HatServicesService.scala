@@ -33,6 +33,7 @@ import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.resourceManagement.HatServer
+import org.joda.time.LocalDateTime
 import play.api.Logger
 import play.api.libs.json.{ JsObject, Json }
 import play.api.mvc.RequestHeader
@@ -51,6 +52,14 @@ class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment
     eventualDbApps map { dbApps =>
       dbApps.map(applicationFromDbModel)
     }
+  }
+
+  def save(service: HatService)(implicit hatServer: HatServer): Future[HatService] = {
+    val app = ApplicationsRow(LocalDateTime.now(), None, service.title, service.description, service.logoUrl,
+      service.url, service.authUrl, service.browser, service.category, service.setup, service.loginAvailable,
+      service.namespace)
+
+    hatServer.db.run(Applications.insertOrUpdate(app)).map(_ => service)
   }
 
   private def applicationFromDbModel(app: ApplicationsRow): HatService = {
