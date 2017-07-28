@@ -132,8 +132,9 @@ commit fingerprint for the current code version. Otherwise, it could be simplifi
 ```
 # Scala Build Tool to compile the code and prepare Dockerfile
 sbt "project hat" docker:stage
+
 # Build the Docker container
-docker build -t hubofallthings/hat
+docker build -t hubofallthings/hat hat/target/docker/stage
 ```
 
 Uploading the container to a Docker repository is left out

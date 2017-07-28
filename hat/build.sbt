@@ -8,19 +8,18 @@ libraryDependencies ++= Seq(
   Library.Slick.slickPg,
   Library.Slick.slickPgJoda,
   Library.Slick.slickPgJts,
-  Library.Slick.slickPgSprayJson,
   Library.Slick.slickCodegen,
   Library.Slick.slickHikari,
-  Library.Akka.slf4j,
+//  Library.Akka.slf4j,
   Library.Akka.httpCore,
-  Library.Akka.akkaStream,
-  Library.Akka.akkaActor,
-  Library.Akka.akkaTestkit,
+//  Library.Akka.akkaStream,
+//  Library.Akka.akkaActor,
+//  Library.Akka.akkaTestkit,
   Library.Utils.jodaTime,
   Library.Utils.jodaConvert,
   Library.Utils.jts,
-  Library.Utils.slf4j,
-  Library.Utils.logbackCore,
+//  Library.Utils.slf4j,
+//  Library.Utils.logbackCore,
   Library.Utils.logbackClassic,
   Library.Utils.pegdown,
   Library.Specs2.core,
@@ -31,10 +30,10 @@ libraryDependencies ++= Seq(
   Library.Play.Silhouette.cryptoJca,
   Library.Play.Silhouette.silhouette,
   Library.Play.Silhouette.silhouetteTestkit,
-  Library.Play.Jwt.nimbusDsJwt,
-  Library.Play.Jwt.atlassianJwtCore,
-  Library.Play.Jwt.atlassianJwtApi,
-  Library.Play.Jwt.bouncyCastle,
+//  Library.Play.Jwt.nimbusDsJwt,
+//  Library.Play.Jwt.atlassianJwtCore,
+//  Library.Play.Jwt.atlassianJwtApi,
+//  Library.Play.Jwt.bouncyCastle,
   Library.Play.Jwt.bouncyCastlePkix,
   Library.Play.ws,
   Library.Play.cache,
@@ -68,13 +67,22 @@ testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "exclude", "REMOTE"
 
 routesGenerator := InjectedRoutesGenerator
 
+// Do not publish docs and source in compiled package
+publishArtifact in (Compile, packageDoc) := false
+publishArtifact in (Compile, packageSrc) := false
+
+// Use the alternative "Ash" script for running compiled project form inside Alpine-derived container
+// as Bash is incompatible with Alpine
+enablePlugins(AshScriptPlugin)
+javaOptions in Universal ++= Seq("-Dhttp.port=8080")
+
 import com.typesafe.sbt.packager.docker._
 packageName in Docker := "hat"
 maintainer in Docker := "andrius.aucinas@hatdex.org"
 version in Docker := version.value
 dockerExposedPorts := Seq(8080)
-dockerBaseImage := "java:8"
-dockerEntrypoint := Seq("bin/hat", "-Dhttp.port=8080")
+dockerBaseImage := "openjdk:8-jre-alpine"
+dockerEntrypoint := Seq("bin/hat")
 
 lazy val gentables = taskKey[Seq[File]]("Slick Code generation")
 
