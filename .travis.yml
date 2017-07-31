@@ -47,6 +47,7 @@ env:
     - REPOSITORY_NAME=surreycode RUMPEL=surreycode
     - REPOSITORY_NAME=xtiva RUMPEL=xtiva
     - REPOSITORY_NAME=hubat
+    - REPOSITORY_NAME=quensus RUMPEL=quensus
 
 # Use sed to replace the SSH URL with the public URL, then initialize submodules
 before_install:
@@ -66,6 +67,7 @@ before_script:
       cd ./hat/app/org/hatdex/hat/phata/assets/
       aws s3 cp s3://${RUMPEL_BUCKET}/${RUMPEL} rumpel --recursive
       cp rumpel/*.js* js/
+      cp rumpel/*.css stylesheets/
       gzip --keep --force js/*.bundle.js
       cp -r rumpel/assets/* .
       rm -r rumpel
