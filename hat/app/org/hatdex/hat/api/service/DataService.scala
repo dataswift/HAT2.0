@@ -23,10 +23,12 @@
  */
 package org.hatdex.hat.api.service
 
-import org.hatdex.hat.api.models.{ ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _ }
+import akka.NotUsed
+import akka.stream.scaladsl.Source
+import org.hatdex.hat.api.models.{ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _}
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api._
-import org.hatdex.hat.dal.Tables.{ DataTabletotablecrossref, _ }
+import org.hatdex.hat.dal.Tables.{DataTabletotablecrossref, _}
 import org.joda.time.LocalDateTime
 import play.api.Logger
 
@@ -46,7 +48,7 @@ class DataService extends DalExecutionContext {
     val endTime = maybeEndTime.getOrElse(LocalDateTime.now())
     val limit = maybeLimit.getOrElse(1000)
 
-    // Get All Data Table trees matchinf source and name
+    // Get All Data Table trees matching source and name
     val dataTableTreesQuery = for {
       rootTable <- DataTableTree.filter(_.id === tableId)
       tree <- DataTableTree.filter(t => t.rootTable === rootTable.id && t.deleted === false)
@@ -71,6 +73,49 @@ class DataService extends DalExecutionContext {
         restructureTableValuesToRecords(values, tables).take(limit)
       }
     }
+  }
+
+  def getTableValuesStreaming(tableId: Int)(implicit db: Database): Source[ApiDataRecord, NotUsed] = {
+    // Get All Data Table trees matching source and name
+    val dataTableTreesQuery = for {
+      rootTable <- DataTableTree.filter(_.id === tableId)
+      tree <- DataTableTree.filter(t => t.rootTable === rootTable.id && t.deleted === false)
+    } yield tree
+
+    val eventualTables = buildDataTreeStructures(dataTableTreesQuery, Set(tableId))
+
+    val fieldsetQuery = dataTableTreesQuery.join(DataField).on(_.id === _.tableIdFk)
+      .map(_._2) // Only fields
+      .filter(_.deleted === false) // That have not been deleted
+      .distinct // And are distinct
+
+    val valuesQuery = fieldsetQuery
+      .join(DataValue).on(_.id === _.fieldId)
+      .map(_._2)
+      .filter { v => v.deleted === false }
+
+    val recordsQuery = DataRecord.filter(_.id in valuesQuery.sortBy(_.recordId.desc).map(_.recordId).distinct)
+      .filter(r => r.deleted === false)
+      .sortBy(_.lastUpdated.asc)
+
+    val valueQuery = for {
+      record <- recordsQuery
+      value <- valuesQuery.filter(_.recordId === record.id)
+      field <- value.dataFieldFk if field.deleted === false
+    } yield (record, field, value)
+
+    val result = db.stream(valueQuery.result.transactionally.withStatementParameters(fetchSize = 1000))
+
+    val dataStream: Source[ApiDataRecord, NotUsed] = Source.fromPublisher(result)
+      .groupBy(10000, _._1.id)
+      .map(Seq(_))
+      .reduce[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]]((l, r) => l.++(r))
+      .mergeSubstreams
+      .mapAsync(10) { data =>
+        eventualTables.map(tables => restructureTableValuesToRecords(data, tables).head)
+      }
+
+    dataStream
   }
 
   def createValue(value: ApiDataValue, maybeFieldId: Option[Int], maybeRecordId: Option[Int])(implicit db: Database): Future[ApiDataValue] = {

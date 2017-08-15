@@ -26,7 +26,7 @@ package org.hatdex.hat.authentication
 
 import com.mohiva.play.silhouette.api.Authorization
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
-import org.hatdex.hat.api.models.{Owner, UserRole}
+import org.hatdex.hat.api.models.{ Owner, UserRole }
 import org.hatdex.hat.authentication.models._
 import play.api.mvc.Request
 

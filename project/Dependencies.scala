@@ -120,30 +120,23 @@ object Dependencies {
       val slickHikari = "com.typesafe.slick" %% "slick-hikaricp" % slickVersion
       val slickCodegen = "com.typesafe.slick" %% "slick-codegen" % slickVersion
       val slick_pgV = "0.14.6"
-      val slickPgCore = "com.github.tminglei" % "slick-pg_core_2.11" % slick_pgV
+      val slickPgCore = "com.github.tminglei" %% "slick-pg_core" % slick_pgV
       val slickPg = "com.github.tminglei" %% "slick-pg" % slick_pgV
       val slickPgJoda = "com.github.tminglei" %% "slick-pg_joda-time" % slick_pgV
       val slickPgJts = "com.github.tminglei" %% "slick-pg_jts" % slick_pgV
-      val slickPgSprayJson = "com.github.tminglei" % "slick-pg_spray-json_2.11" % slick_pgV
-      val slickPgPlayJson = "com.github.tminglei" % "slick-pg_play-json_2.11" % slick_pgV
+      val slickPgSprayJson = "com.github.tminglei" %% "slick-pg_spray-json" % slick_pgV
+      val slickPgPlayJson = "com.github.tminglei" %% "slick-pg_play-json" % slick_pgV
     }
 
     object Akka {
       private val version = "2.4.19"
       val slf4j = "com.typesafe.akka" %% "akka-slf4j" % version
-      val httpCore = "com.typesafe.akka" % "akka-http-core_2.11" % "10.0.8"
+      val httpCore = "com.typesafe.akka" %% "akka-http-core" % "10.0.8"
       val akkaStream = "com.typesafe.akka" %% "akka-stream" % version
       val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json-experimental" % version
       val akkaActor = "com.typesafe.akka" %% "akka-actor" % version
       val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % version
     }
-
-//    object Spray {
-//      private val version = "1.3.3"
-//      val sprayCan = "io.spray" %% "spray-can" % version
-//      val sprayRouting = "io.spray" %% "spray-routing-shapeless2" % version
-//      val sprayTestkit = "io.spray" %% "spray-testkit" % version % "test"
-//    }
 
     object HATDeX {
       private val version = "2.3.0-SNAPSHOT"
