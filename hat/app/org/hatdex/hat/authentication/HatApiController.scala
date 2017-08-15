@@ -24,15 +24,19 @@
 
 package org.hatdex.hat.authentication
 
+import java.util.UUID
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
+import com.digitaltangible.playguard.{ RateLimitActionFilter, RateLimiter, clientIp }
 import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.actions._
 import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import net.ceedubs.ficus.Ficus._
-import org.hatdex.hat.api.models.User
+import org.hatdex.hat.api.json.HatJsonFormats
+import org.hatdex.hat.api.models.{ ErrorMessage, User }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.SlickPostgresDriver.api.Database
@@ -41,9 +45,9 @@ import org.joda.time.DateTime
 import play.api.{ Configuration, Logger, Play }
 import play.api.http.{ DefaultHttpErrorHandler, HttpErrorHandler, LazyHttpErrorHandler, Status }
 import play.api.i18n.I18nSupport
-import play.api.libs.json.{ JsError, Reads }
+import play.api.libs.json.{ JsError, Json, Reads }
 import play.api.mvc.BodyParsers.parse
-import play.api.mvc.{ BodyParser, Controller, RequestHeader, Result }
+import play.api.mvc._
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -101,3 +105,86 @@ abstract class HatFrontendController(
       cfg.getAs[FiniteDuration]("cookieMaxAge"))
   }
 }
+
+/**
+ * A Limiter for user logic.
+ */
+class UserLimiter @Inject() (implicit val actorSystem: ActorSystem, implicit val configuration: Configuration) {
+  import scala.language.higherKinds
+
+  /**
+   * A Rate limiter Function for.
+   *
+   * @param rateLimiter The rate limiter implementation.
+   * @param reject The function to apply on reject.
+   * @param requestKeyExtractor The Request Parameter we want to filter from.
+   * @param actorSystem The implicit Akka Actor system.
+   * @tparam K the key by which to identify the user.
+   */
+  def createUserAware[T <: HatAuthEnvironment, R[_] <: UserAwareRequest[T, _], K](
+    rateLimiter: RateLimiter)(reject: R[_] => Result, requestKeyExtractor: R[_] => K)(
+    implicit
+    actorSystem: ActorSystem): RateLimitActionFilter[R] with ActionFunction[R, R] = {
+    new RateLimitActionFilter[R](rateLimiter)(reject, requestKeyExtractor) with ActionFunction[R, R]
+  }
+
+  def createSecured[T <: HatAuthEnvironment, R[_] <: SecuredRequest[T, _], K](
+    rateLimiter: RateLimiter)(reject: R[_] => Result, requestKeyExtractor: R[_] => K)(
+    implicit
+    actorSystem: ActorSystem): RateLimitActionFilter[R] with ActionFunction[R, R] = {
+    new RateLimitActionFilter[R](rateLimiter)(reject, requestKeyExtractor) with ActionFunction[R, R]
+  }
+
+  type Secured[B] = SecuredRequest[HatApiAuthEnvironment, B]
+  type UserAware[B] = UserAwareRequest[HatApiAuthEnvironment, B]
+
+  // allow 2 failures immediately and get a new token every 10 seconds
+  private val rl = new RateLimiter(5, 1f / 5, "test failure rate limit")
+
+  import HatJsonFormats.errorMessage
+  private def response(r: RequestHeader) = Results.BadRequest(
+    Json.toJson(ErrorMessage("Request rate exceeded", "Rate of requests from your IP exceeded")))
+
+  def UserAwareRateLimit: RateLimitActionFilter[UserAware] with ActionFunction[UserAware, UserAware] =
+    createUserAware[HatApiAuthEnvironment, UserAware, String](rl)(response, r => r.remoteAddress)
+
+  def SecureRateLimit: RateLimitActionFilter[Secured] with ActionFunction[Secured, Secured] =
+    createSecured[HatApiAuthEnvironment, Secured, String](rl)(response, r => r.remoteAddress)
+
+}
+
+///**
+// * A Limiter for user logic.
+// */
+//object UserLimiter2 {
+//
+//  /**
+//   * A Rate limiter Function for.
+//   *
+//   * @param rateLimiter The rate limiter implementation.
+//   * @param reject The function to apply on reject.
+//   * @param requestKeyExtractor The Request Parameter we want to filter from.
+//   * @param actorSystem The implicit Akka Actor system.
+//   * @tparam K the key by which to identify the user.
+//   */
+//  def apply[T <: HatAuthEnvironment, R[_] <: SecuredRequest[T, _], K](rateLimiter: RateLimiter)(
+//    reject: R[_] => Result, requestKeyExtractor: R[_] => K
+//  )(
+//    implicit
+//    actorSystem: ActorSystem
+//  ): RateLimitActionFilter[R] with ActionFunction[R, R] = {
+//    new RateLimitActionFilter[R](rateLimiter)(reject, requestKeyExtractor) with ActionFunction[R, R]
+//  }
+//
+//  type Secured[B] = SecuredRequest[HatAuthEnvironment, B]
+//
+//  /**
+//     * A default user filter implementation.
+//     *
+//     * @param ac The Akka Actor System implicitly provided.
+//     */
+//  def defaultUserFilter(implicit ac: ActorSystem): RateLimitActionFilter[Secured] with ActionFunction[Secured, Secured] = {
+//    (UserLimiter.apply[HatAuthEnvironment, Secured, UUID](new RateLimiter(10, 1f / 10, "Default User Limiter"))
+//      (_ => Results.TooManyRequests("You've been refreshing too much. Please try again in 10 seconds"), r => r.identity.userId))
+//  }
+//}

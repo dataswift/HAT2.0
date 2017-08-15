@@ -37,8 +37,7 @@ object Dependencies {
     Resolver.bintrayRepo("scalaz", "releases"),
     Resolver.sonatypeRepo("snapshots"),
     "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com",
-    "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com"
-  )
+    "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com")
 
   object Library {
 
@@ -71,9 +70,10 @@ object Dependencies {
       }
 
       object Utils {
-        val playBootstrap = "com.adrianhurt" %% "play-bootstrap" % "1.1-P25-B3" exclude("org.webjars", "jquery")
+        val playBootstrap = "com.adrianhurt" %% "play-bootstrap" % "1.1-P25-B3" exclude ("org.webjars", "jquery")
         val commonsValidator = "commons-validator" % "commons-validator" % "1.5.0"
         val htmlCompressor = "com.mohiva" %% "play-html-compressor" % "0.6.3"
+        val playGuard = "com.digitaltangible" %% "play-guard" % "2.0.0"
       }
 
       object Silhouette {

@@ -46,17 +46,18 @@ import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.service.{ MailTokenService, MailTokenUserService }
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models.MailTokenUser
-import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider, HatServerProviderImpl }
+import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider, HatServerProviderImpl, IoExecutionContext }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, HatMailerImpl }
 import play.api.Configuration
 import play.api.http.HttpErrorHandler
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
 
 /**
  * The Guice module which wires all Silhouette dependencies.
  */
 class SilhouetteModule extends AbstractModule with ScalaModule {
+
+  import IoExecutionContext.ioThreadPool
 
   /**
    * Configures the module.

@@ -58,6 +58,15 @@ class AuthUserServiceImpl @Inject() (usersService: UsersService) extends AuthUse
   def save(user: HatUser)(implicit dyn: HatServer) = usersService.saveUser(user)(dyn.db)
 
   /**
+   * Removes a user.
+   *
+   * @param user The user to save.
+   * @return The saved user.
+   */
+  def remove(loginInfo: LoginInfo)(implicit dyn: HatServer): Future[Unit] =
+    usersService.removeUser(loginInfo.providerKey)(dyn.db)
+
+  /**
    * Link user profiles together
    *
    * @param mainUser The user to link to.

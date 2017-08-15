@@ -99,12 +99,12 @@ class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment
   }
 
   def hatServiceLink(user: HatUser, service: HatService, maybeRedirect: Option[String] = None)(implicit hatServer: HatServer, requestHeader: RequestHeader): Future[HatService] = {
-    logger.info(s"Generating link for service $service, redirect $maybeRedirect")
+    logger.debug(s"Generating link for service $service, redirect $maybeRedirect")
     val eventualUri = if (service.loginAvailable) {
       hatServiceToken(user, service) map { token =>
         val query = maybeRedirect map { redirect =>
           val originalQuery: Map[String, String] = Uri(redirect).query().toMap + ("token" -> token.accessToken)
-          logger.info(s"Got redirect url: ${Uri(redirect)} ${originalQuery}")
+          logger.debug(s"Got redirect url: ${Uri(redirect)} ${originalQuery}")
           Uri.Query(originalQuery)
         } getOrElse {
           Uri.Query("token" -> token.accessToken)

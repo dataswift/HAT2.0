@@ -32,25 +32,27 @@ import play.api.libs.json.{ JsError, JsSuccess }
 import play.api.libs.ws.{ WSClient, WSRequest, WSResponse }
 
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.duration._
 
 trait MillinerHatSignup {
   val logger: Logger
   val ws: WSClient
   val configuration: Configuration
-  val schema = configuration.getString("resourceManagement.millinerAddress") match {
+  val schema: String = configuration.getString("resourceManagement.millinerAddress") match {
     case Some(address) if address.startsWith("https") => "https://"
     case Some(address) if address.startsWith("http") => "http://"
     case _ => "http://"
   }
 
-  val millinerAddress = configuration.getString("resourceManagement.millinerAddress").get
+  val millinerAddress: String = configuration.getString("resourceManagement.millinerAddress").get
     .stripPrefix("http://")
     .stripPrefix("https://")
-  val hatSharedSecret = configuration.getString("resourceManagement.hatSharedSecret").get
+  val hatSharedSecret: String = configuration.getString("resourceManagement.hatSharedSecret").get
 
   val cache: CacheApi
 
   def getHatSignup(hatAddress: String)(implicit ec: ExecutionContext): Future[HatSignup] = {
+    // Cache the signup information for subsequent calls (For private/public key and database details)
     cache.get[HatSignup](s"configuration:$hatAddress") map { signup =>
       logger.debug("Serving hat signup info from cache")
       Future.successful(signup)
@@ -66,7 +68,7 @@ trait MillinerHatSignup {
             response.json.validate[HatSignup] match {
               case signup: JsSuccess[HatSignup] =>
                 logger.debug(s"Got back configuration: ${signup.value}")
-                cache.set(s"configuration:$hatAddress", signup.value)
+                cache.set(s"configuration:$hatAddress", signup.value, 1.minute)
                 signup.value
               case e: JsError =>
                 logger.error(s"Parsing HAT configuration failed: ${e}")

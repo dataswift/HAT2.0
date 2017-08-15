@@ -28,15 +28,16 @@ import java.io.StringReader
 import java.util.UUID
 
 import akka.stream.Materializer
-import com.amazonaws.services.s3.{ AmazonS3, AmazonS3Client }
+import com.amazonaws.services.s3.AmazonS3
 import com.atlassian.jwt.core.keys.KeyUtils
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.{ Environment, LoginInfo }
 import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
+import org.hatdex.hat.FakeCache
+import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
-import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
@@ -47,6 +48,7 @@ import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeEach, Scope }
+import play.api.cache.CacheApi
 import play.api.http.HttpErrorHandler
 import play.api.i18n.Messages
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -54,6 +56,7 @@ import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Result
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers, PlaySpecification }
 import play.api.{ Application, Configuration, Logger }
+import play.cache.NamedCacheImpl
 import play.mvc.Http.{ HeaderNames, MimeTypes }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -63,8 +66,6 @@ import scala.concurrent.duration._
 class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with AuthenticationContext with BeforeEach {
 
   val logger = Logger(this.getClass)
-
-  import ApiPasswordChange.passwordChangeApiWrites
 
   def before: Unit = {
     await(databaseReady)(30.seconds)
@@ -329,7 +330,10 @@ trait AuthenticationContext extends Scope with Mockito {
       bind[MailTokenService[MailTokenUser]].to[MailTokenUserService]
       bind[HatMailer].toInstance(mockMailer)
       bind[HttpErrorHandler].to[ErrorHandler]
+      bind[CacheApi].annotatedWith(new NamedCacheImpl("user-cache")).to[FakeCache]
+      bind[CacheApi].to[FakeCache]
     }
+
   }
 
   lazy val application: Application = new GuiceApplicationBuilder()

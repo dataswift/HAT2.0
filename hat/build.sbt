@@ -36,6 +36,7 @@ libraryDependencies ++= Seq(
   Library.Play.Specs2.matcherExtra,
   Library.Play.Specs2.mock,
   Library.Play.Utils.playBootstrap,
+  Library.Play.Utils.playGuard,
   Library.scalaGuice,
   Library.HATDeX.hatClient,
   Library.HATDeX.marketsquareClient,
@@ -90,3 +91,13 @@ gentables := {
   val fname = outputDir + "/" + pkg.replace('.', '/') + "/Tables.scala"
   Seq(file(fname))
 }
+
+//com.typesafe.sbt.SbtScalariform.ScalariformKeys.preferences := {
+//  import scalariform.formatter.preferences._
+//  FormattingPreferences()
+//    .setPreference(FormatXml, false)
+//    .setPreference(DoubleIndentConstructorArguments, true)
+//    .setPreference(AlignSingleLineCaseStatements, true)
+//    .setPreference(CompactControlReadability, true)
+//    .setPreference(DanglingCloseParenthesis, Prevent)
+//}

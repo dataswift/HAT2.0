@@ -27,7 +27,7 @@ package org.hatdex.hat.api.controllers
 import javax.inject.Inject
 
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Keep, RunnableGraph, Sink}
+import akka.stream.scaladsl.{ Flow, Keep, RunnableGraph, Sink }
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.HatJsonFormats
@@ -35,7 +35,7 @@ import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.DataService
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData._
-import org.hatdex.hat.authentication.{HatApiAuthEnvironment, HatApiController, WithRole}
+import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
 import org.joda.time.LocalDateTime
@@ -43,7 +43,7 @@ import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc._
-import play.api.{Configuration, Logger}
+import play.api.{ Configuration, Logger }
 
 import scala.concurrent.Future
 

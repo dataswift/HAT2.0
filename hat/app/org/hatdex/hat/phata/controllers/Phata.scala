@@ -36,6 +36,7 @@ import org.hatdex.hat.phata.models.PublicProfileResponse
 import org.hatdex.hat.phata.service.{ NotablesService, UserProfileService }
 import org.hatdex.hat.phata.{ views => phataViews }
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
+import play.api.cache.Cached
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
@@ -47,6 +48,7 @@ import scala.concurrent.Future
 
 class Phata @Inject() (
     val messagesApi: MessagesApi,
+    cached: Cached,
     configuration: Configuration,
     silhouette: Silhouette[HatFrontendAuthEnvironment],
     hatServerProvider: HatServerProvider,
@@ -58,8 +60,14 @@ class Phata @Inject() (
 
   private val logger = Logger(this.getClass)
 
-  def rumpelIndex(): Action[AnyContent] = UserAwareAction.async { implicit request =>
-    Future.successful(Ok(phataViews.html.rumpelIndex(configuration.getString("frontend.protocol").getOrElse("https:"))))
+  val indefiniteSuccessCaching = cached
+    .status(req => s"${req.host}${req.path}", 200)
+    .includeStatus(404, 600)
+
+  def rumpelIndex(): EssentialAction = indefiniteSuccessCaching {
+    UserAwareAction.async { implicit request =>
+      Future.successful(Ok(phataViews.html.rumpelIndex(configuration.getString("frontend.protocol").getOrElse("https:"))))
+    }
   }
 
   private def getProfile(maybeUser: Option[HatUser])(implicit server: HatServer, request: RequestHeader): Future[Result] = {
@@ -91,10 +99,12 @@ class Phata @Inject() (
     }
   }
 
-  def hatLogin(name: String, redirectUrl: String) = UserAwareAction { implicit request =>
-    val uri = wsClient.url(routes.Phata.hatLogin(name, redirectUrl).absoluteURL()).uri
-    val newRedirectUrl = s"${uri.getScheme}://${uri.getAuthority}/#/hatlogin?${uri.getQuery}"
-    logger.debug(s"Redirect url from ${request.uri}: ${newRedirectUrl}")
-    Redirect(newRedirectUrl)
+  def hatLogin(name: String, redirectUrl: String) = indefiniteSuccessCaching {
+    UserAwareAction { implicit request =>
+      val uri = wsClient.url(routes.Phata.hatLogin(name, redirectUrl).absoluteURL()).uri
+      val newRedirectUrl = s"${uri.getScheme}://${uri.getAuthority}/#/hatlogin?${uri.getQuery}"
+      logger.debug(s"Redirect url from ${request.uri}: ${newRedirectUrl}")
+      Redirect(newRedirectUrl)
+    }
   }
 }

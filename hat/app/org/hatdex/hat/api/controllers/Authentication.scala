@@ -38,7 +38,8 @@ import org.hatdex.hat.api.service.{ HatServicesService, MailTokenService, UsersS
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
-import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer }
+import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer, Utils }
+import play.api.cache.{ Cached, CachedBuilder }
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc._
@@ -50,6 +51,7 @@ import scala.concurrent.Future
 class Authentication @Inject() (
     val messagesApi: MessagesApi,
     configuration: Configuration,
+    cached: Cached,
     parsers: HatBodyParsers,
     hatServerProvider: HatServerProvider,
     silhouette: Silhouette[HatApiAuthEnvironment],
@@ -60,13 +62,20 @@ class Authentication @Inject() (
     usersService: UsersService,
     clock: Clock,
     mailer: HatMailer,
-    tokenService: MailTokenService[MailTokenUser]) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    tokenService: MailTokenService[MailTokenUser],
+    limiter: UserLimiter) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   private val logger = Logger(this.getClass)
 
-  def publicKey(): Action[AnyContent] = UserAwareAction.async { implicit request =>
-    val publicKey = hatServerProvider.toString(request.dynamicEnvironment.publicKey)
-    Future.successful(Ok(publicKey))
+  private val indefiniteSuccessCaching: CachedBuilder = cached
+    .status(req => s"${req.host}${req.path}", 200)
+    .includeStatus(404, 600)
+
+  def publicKey(): EssentialAction = indefiniteSuccessCaching {
+    UserAwareAction.async { implicit request =>
+      val publicKey = hatServerProvider.toString(request.dynamicEnvironment.publicKey)
+      Future.successful(Ok(publicKey))
+    }
   }
 
   def validateToken(): Action[AnyContent] = SecuredAction.async { implicit request =>
@@ -100,7 +109,8 @@ class Authentication @Inject() (
     category = "api",
     setup = true,
     loginAvailable = true)
-  def accessToken(): Action[AnyContent] = UserAwareAction.async { implicit request =>
+
+  def accessToken(): Action[AnyContent] = (UserAwareAction andThen limiter.UserAwareRateLimit).async { implicit request =>
     val eventuallyAuthenticatedUser = for {
       usernameParam <- request.getQueryString("username").orElse(request.headers.get("username"))
       passwordParam <- request.getQueryString("password").orElse(request.headers.get("password"))
