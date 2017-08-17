@@ -142,6 +142,7 @@ object Dependencies {
       private val version = "2.3.0-SNAPSHOT"
       val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.4.0-SNAPSHOT"
       val marketsquareClient = "org.hatdex" %% "marketsquare-client-scala-play" % version
+      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.2-SNAPSHOT"
     }
 
     val jwtCore = Play.Jwt.atlassianJwtCore

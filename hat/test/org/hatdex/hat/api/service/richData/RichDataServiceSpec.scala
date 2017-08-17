@@ -39,8 +39,8 @@ import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.hat.dal.SlickPostgresDriver.api._
-import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
+import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import org.hatdex.libs.dal.SlickPostgresDriver.backend.Database
 import org.hatdex.hat.dal.Tables.{ DataJson, DataJsonGroups }
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.specs2.concurrent.ExecutionEnv
@@ -311,7 +311,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       EndpointData("test", None, simpleJson2, None),
       EndpointData("complex", None, complexJson, None))
 
-    import org.hatdex.hat.dal.SlickPostgresDriver.api._
+    import org.hatdex.libs.dal.SlickPostgresDriver.api._
 
     "retrieve all results without any additional filters" in {
       val service = application.injector.instanceOf[RichDataService]

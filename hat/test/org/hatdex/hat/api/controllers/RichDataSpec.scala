@@ -41,7 +41,7 @@ import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
+import org.hatdex.libs.dal.SlickPostgresDriver.backend.Database
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.joda.time.LocalDateTime
 import org.specs2.concurrent.ExecutionEnv

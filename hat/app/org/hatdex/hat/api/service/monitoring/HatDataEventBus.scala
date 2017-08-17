@@ -32,7 +32,7 @@ import akka.util.Subclassification
 import com.google.inject.Singleton
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, WithRole }
+import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement.HatServer

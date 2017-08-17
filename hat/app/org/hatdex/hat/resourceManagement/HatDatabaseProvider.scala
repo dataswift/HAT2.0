@@ -27,7 +27,7 @@ package org.hatdex.hat.resourceManagement
 import javax.inject.{ Inject, Singleton }
 
 import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
+import org.hatdex.libs.dal.SlickPostgresDriver.api.Database
 import play.api.cache.CacheApi
 import play.api.libs.ws.WSClient
 import play.api.{ Configuration, Logger }

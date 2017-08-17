@@ -38,7 +38,7 @@ import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models.{ ErrorMessage, User }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.SlickPostgresDriver.api.Database
+import org.hatdex.libs.dal.SlickPostgresDriver.api.Database
 import org.hatdex.hat.resourceManagement._
 import org.joda.time.DateTime
 import play.api.Configuration
@@ -55,9 +55,9 @@ abstract class HatController[T <: HatAuthEnvironment](
     configuration: Configuration) extends Controller with I18nSupport {
 
   def env: Environment[T] = silhouette.env
-  def SecuredAction = silhouette.securedAction(env)
-  def UnsecuredAction = silhouette.unsecuredAction(env)
-  def UserAwareAction = silhouette.userAwareAction(env)
+  def SecuredAction: SecuredActionBuilder[T] = silhouette.securedAction(env)
+  def UnsecuredAction: UnsecuredActionBuilder[T] = silhouette.unsecuredAction(env)
+  def UserAwareAction: UserAwareActionBuilder[T] = silhouette.userAwareAction(env)
 
   implicit def securedRequest2User[A](implicit request: SecuredRequest[T, A]): HatUser = request.identity
   implicit def userAwareRequest2UserOpt[A](implicit request: UserAwareRequest[T, A]): Option[HatUser] = request.identity

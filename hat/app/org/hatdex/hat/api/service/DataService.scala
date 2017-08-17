@@ -27,8 +27,8 @@ import akka.NotUsed
 import akka.stream.scaladsl.Source
 import org.hatdex.hat.api.models.{ ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _ }
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables.{ DataTabletotablecrossref, _ }
+import org.hatdex.libs.dal.SlickPostgresDriver.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
 

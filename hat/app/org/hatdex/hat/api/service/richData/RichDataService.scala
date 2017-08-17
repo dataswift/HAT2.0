@@ -30,8 +30,8 @@ import java.util.UUID
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
+import org.hatdex.libs.dal.SlickPostgresDriver.api._
 import org.joda.time.LocalDateTime
 import org.postgresql.util.PSQLException
 import play.api.Logger

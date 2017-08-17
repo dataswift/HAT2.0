@@ -40,6 +40,7 @@ libraryDependencies ++= Seq(
   Library.scalaGuice,
   Library.HATDeX.hatClient,
   Library.HATDeX.marketsquareClient,
+  Library.HATDeX.codegen,
   Library.Utils.awsJavaS3Sdk,
   Library.Utils.prettyTime,
   Library.Utils.nbvcxz
@@ -77,20 +78,29 @@ dockerExposedPorts := Seq(8080)
 dockerBaseImage := "openjdk:8-jre-alpine"
 dockerEntrypoint := Seq("bin/hat")
 
-lazy val gentables = taskKey[Seq[File]]("Slick Code generation")
+//lazy val gentables = taskKey[Seq[File]]("Slick Code generation")
+//
+//gentables := {
+//  val main = Project("root", file("."))
+//  val outputDir = (main.base.getAbsoluteFile / "hat/app").getPath
+//  streams.value.log.info("Output directory for codegen: " + outputDir.toString)
+//  val pkg = "org.hatdex.hat.dal"
+//  val jdbcDriver = "org.postgresql.Driver"
+//  val slickDriver = "slick.driver.PostgresDriver"
+//  streams.value.log.info("Dependency classpath: " + dependencyClasspath.toString)
+//  (runner in Compile).value.run("org.hatdex.hat.dal.CustomizedCodeGenerator", (dependencyClasspath in Compile).value.files, Array(outputDir, pkg), streams.value.log)
+//  val fname = outputDir + "/" + pkg.replace('.', '/') + "/Tables.scala"
+//  Seq(file(fname))
+//}
 
-gentables := {
-  val main = Project("root", file("."))
-  val outputDir = (main.base.getAbsoluteFile / "hat/app").getPath
-  streams.value.log.info("Output directory for codegen: " + outputDir.toString)
-  val pkg = "org.hatdex.hat.dal"
-  val jdbcDriver = "org.postgresql.Driver"
-  val slickDriver = "slick.driver.PostgresDriver"
-  streams.value.log.info("Dependency classpath: " + dependencyClasspath.toString)
-  (runner in Compile).value.run("org.hatdex.hat.dal.CustomizedCodeGenerator", (dependencyClasspath in Compile).value.files, Array(outputDir, pkg), streams.value.log)
-  val fname = outputDir + "/" + pkg.replace('.', '/') + "/Tables.scala"
-  Seq(file(fname))
-}
+enablePlugins(SlickCodeGeneratorPlugin)
+
+codegenPackageName in gentables := "org.hatdex.hat.dal"
+codegenOutputDir in gentables := (baseDirectory.value / "app").getPath
+codegenClassName in gentables := "Tables"
+codegenExcludedTables in gentables := Seq("databasechangelog", "databasechangeloglock")
+codegenDatabase in gentables := "devdb"
+
 
 //com.typesafe.sbt.SbtScalariform.ScalariformKeys.preferences := {
 //  import scalariform.formatter.preferences._

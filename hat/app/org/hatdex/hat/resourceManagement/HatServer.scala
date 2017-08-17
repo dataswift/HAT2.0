@@ -27,7 +27,7 @@ package org.hatdex.hat.resourceManagement
 import java.security.interfaces.{ RSAPrivateKey, RSAPublicKey }
 
 import com.mohiva.play.silhouette.api.DynamicSecureEnvironment
-import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
+import org.hatdex.libs.dal.SlickPostgresDriver.api.Database
 
 case class HatServer(
     domain: String,
