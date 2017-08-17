@@ -36,10 +36,11 @@ import org.hatdex.hat.resourceManagement._
 import org.ocpsoft.prettytime.PrettyTime
 import play.api.cache.{ CacheApi, Cached }
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
+
+import scala.concurrent.ExecutionContext
 
 class SystemStatus @Inject() (
     val messagesApi: MessagesApi,
@@ -50,7 +51,8 @@ class SystemStatus @Inject() (
     systemStatusService: SystemStatusService,
     usersService: UsersService,
     clock: Clock,
-    hatDatabaseProvider: HatDatabaseProvider) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    hatDatabaseProvider: HatDatabaseProvider,
+    implicit val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   val logger = Logger(this.getClass)
 

@@ -34,10 +34,11 @@ import org.hatdex.hat.api.service.HatServicesService
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
+
+import scala.concurrent.ExecutionContext
 
 class Applications @Inject() (
     val messagesApi: MessagesApi,
@@ -45,7 +46,7 @@ class Applications @Inject() (
     silhouette: Silhouette[HatApiAuthEnvironment],
     hatServerProvider: HatServerProvider,
     hatServicesService: HatServicesService,
-    clock: Clock) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    clock: Clock)(implicit val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   val logger = Logger(this.getClass)
 

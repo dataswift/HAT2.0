@@ -38,12 +38,11 @@ import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
 import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.NonFatal
 
 class RichData @Inject() (
@@ -57,7 +56,8 @@ class RichData @Inject() (
     dataEventDispatcher: HatDataEventDispatcher,
     dataService: RichDataService,
     bundleService: RichBundleService,
-    dataDebitService: DataDebitContractService) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
+    dataDebitService: DataDebitContractService,
+    implicit val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
 
   private val logger = Logger(this.getClass)
   private val defaultRecordLimit = 1000

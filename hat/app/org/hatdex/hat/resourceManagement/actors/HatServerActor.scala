@@ -56,7 +56,7 @@ class HatServerActor @Inject() (
     hatKeyProvider: HatKeyProvider,
     cacheApi: CacheApi) extends Actor with ActorLogging with Stash {
   import HatServerActor._
-  import IoExecutionContext.ioThreadPool
+  import org.hatdex.hat.api.service.IoExecutionContext.ioThreadPool
   val idleTimeout = configuration.underlying.as[FiniteDuration]("resourceManagement.serverIdleTimeout")
 
   def receive: Receive = {

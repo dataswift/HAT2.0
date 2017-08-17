@@ -30,7 +30,7 @@ import scala.concurrent.ExecutionContext
 
 object IoExecutionContext {
   private val concurrency = Runtime.getRuntime.availableProcessors()
-  private val factor = 5 // get from configuration  file
+  private val factor = 20 // get from configuration  file
   private val noOfThread = concurrency * factor
   implicit val ioThreadPool: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(noOfThread))
 }

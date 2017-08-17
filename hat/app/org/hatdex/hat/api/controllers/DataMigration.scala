@@ -40,12 +40,11 @@ import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
 import org.joda.time.LocalDateTime
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 
 class DataMigration @Inject() (
     val messagesApi: MessagesApi,
@@ -57,7 +56,8 @@ class DataMigration @Inject() (
     dataEventDispatcher: HatDataEventDispatcher,
     dataService: RichDataService,
     oldDataService: DataService,
-    implicit val materializer: Materializer) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
+    implicit val materializer: Materializer,
+    implicit val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
 
   private val logger = Logger(this.getClass)
 

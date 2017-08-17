@@ -38,12 +38,11 @@ import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
 import org.joda.time.DateTime
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 
 class Files @Inject() (
     val messagesApi: MessagesApi,
@@ -55,7 +54,8 @@ class Files @Inject() (
     hatDatabaseProvider: HatDatabaseProvider,
     fileMetadataService: FileMetadataService,
     fileManager: FileManager,
-    usersService: UsersService) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    usersService: UsersService,
+    implicit val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   val logger = Logger(this.getClass)
 

@@ -61,11 +61,11 @@ class HatServerProviderImpl @Inject() (
     @Named("hatServerProviderActor") serverProviderActor: ActorRef,
     val cache: CacheApi) extends HatServerProvider {
 
-  //  import play.api.libs.concurrent.Execution.Implicits._
-  import IoExecutionContext.ioThreadPool
+  import org.hatdex.hat.api.service.IoExecutionContext.ioThreadPool
 
   private val logger = Logger(this.getClass)
   private val serverInfoExpiry = 1.hour
+  private val serverErrorExpiry = 2.minutes
 
   def retrieve[B](request: Request[B]): Future[Option[HatServer]] = {
     val hatAddress = request.host //.split(':').headOption.getOrElse(request.host)
@@ -90,18 +90,16 @@ class HatServerProviderImpl @Inject() (
             Future.successful(Some(server))
           case error: HatServerDiscoveryException =>
             logger.debug(s"Got back error $error")
-            cache.set(cacheKeyError, error, serverInfoExpiry)
+            cache.set(cacheKeyError, error, serverErrorExpiry)
             Future.failed(error)
           case message =>
             logger.warn(s"Unknown message $message from HAT Server provider actor")
             val error = new HatServerDiscoveryException("Unknown message")
-            cache.set(cacheKeyError, error, serverInfoExpiry)
             Future.failed(error)
         } recoverWith {
           case e =>
             logger.warn(s"Error while retrieving HAT Server info: ${e.getMessage}")
             val error = new HatServerDiscoveryException("HAT Server info retrieval failed", e)
-            cache.set(cacheKeyError, error, serverInfoExpiry)
             Future.failed(error)
         }
       }
