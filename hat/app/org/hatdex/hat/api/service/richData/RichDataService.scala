@@ -26,9 +26,15 @@ package org.hatdex.hat.api.service.richData
 
 import java.security.MessageDigest
 import java.util.UUID
+import javax.inject.Inject
 
-import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.service.DalExecutionContext
+import akka.NotUsed
+import akka.stream.Materializer
+import akka.stream.scaladsl.{ Flow, Keep, RunnableGraph, Sink, Source }
+import org.hatdex.hat.api.json.HatJsonFormats
+import org.hatdex.hat.api.models.{ ApiDataRecord, _ }
+import org.hatdex.hat.api.service.DataService
+import org.hatdex.hat.api.service.{ DalExecutionContext, DataService }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.libs.dal.SlickPostgresDriver.api._
@@ -43,7 +49,7 @@ import scala.concurrent.Future
 
 class RichDataService extends DalExecutionContext {
 
-  val logger = Logger(this.getClass)
+  protected val logger = Logger(this.getClass)
 
   private def dbDataRow(endpoint: String, userId: UUID, data: JsValue, recordId: Option[UUID] = None): DataJsonRow = {
     val md = MessageDigest.getInstance("SHA-256")

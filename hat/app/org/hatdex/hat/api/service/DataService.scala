@@ -23,19 +23,22 @@
  */
 package org.hatdex.hat.api.service
 
-import akka.NotUsed
-import akka.stream.scaladsl.Source
+import java.util.UUID
+import javax.inject.Inject
+
 import org.hatdex.hat.api.models.{ ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _ }
+import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataTabletotablecrossref, _ }
 import org.hatdex.libs.dal.SlickPostgresDriver.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.Success
 
 // this trait defines our service behavior independently from the service actor
-class DataService extends DalExecutionContext {
+class DataService @Inject() (migrationService: MigrationService) extends DalExecutionContext {
   val logger = Logger(this.getClass)
 
   def getTableValues(
@@ -73,49 +76,6 @@ class DataService extends DalExecutionContext {
         restructureTableValuesToRecords(values, tables).take(limit)
       }
     }
-  }
-
-  def getTableValuesStreaming(tableId: Int)(implicit db: Database): Source[ApiDataRecord, NotUsed] = {
-    // Get All Data Table trees matching source and name
-    val dataTableTreesQuery = for {
-      rootTable <- DataTableTree.filter(_.id === tableId)
-      tree <- DataTableTree.filter(t => t.rootTable === rootTable.id && t.deleted === false)
-    } yield tree
-
-    val eventualTables = buildDataTreeStructures(dataTableTreesQuery, Set(tableId))
-
-    val fieldsetQuery = dataTableTreesQuery.join(DataField).on(_.id === _.tableIdFk)
-      .map(_._2) // Only fields
-      .filter(_.deleted === false) // That have not been deleted
-      .distinct // And are distinct
-
-    val valuesQuery = fieldsetQuery
-      .join(DataValue).on(_.id === _.fieldId)
-      .map(_._2)
-      .filter { v => v.deleted === false }
-
-    val recordsQuery = DataRecord.filter(_.id in valuesQuery.sortBy(_.recordId.desc).map(_.recordId).distinct)
-      .filter(r => r.deleted === false)
-      .sortBy(_.lastUpdated.asc)
-
-    val valueQuery = for {
-      record <- recordsQuery
-      value <- valuesQuery.filter(_.recordId === record.id)
-      field <- value.dataFieldFk if field.deleted === false
-    } yield (record, field, value)
-
-    val result = db.stream(valueQuery.result.transactionally.withStatementParameters(fetchSize = 1000))
-
-    val dataStream: Source[ApiDataRecord, NotUsed] = Source.fromPublisher(result)
-      .groupBy(10000, _._1.id)
-      .map(Seq(_))
-      .reduce[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]]((l, r) => l.++(r))
-      .mergeSubstreams
-      .mapAsync(10) { data =>
-        eventualTables.map(tables => restructureTableValuesToRecords(data, tables).head)
-      }
-
-    dataStream
   }
 
   def createValue(value: ApiDataValue, maybeFieldId: Option[Int], maybeRecordId: Option[Int])(implicit db: Database): Future[ApiDataValue] = {
@@ -279,44 +239,10 @@ class DataService extends DalExecutionContext {
     buildDataTreeStructures(dataTableTrees, Set(tableId)).map(_.headOption)
   }
 
-  protected[api] def buildDataTreeStructures(
-    dataTableTrees: Query[DataTableTree, DataTableTreeRow, Seq],
-    roots: Set[Int] = Set())(implicit db: Database): Future[Seq[ApiDataTable]] = {
-
-    // Another round of field filtering to only get those within the returned trees
-    val treeFieldQuery = for {
-      (tree, maybeField) <- dataTableTrees joinLeft DataField.filter(_.deleted === false)
-    } yield (tree, maybeField)
-
-    val eventualTreeFields = db.run(treeFieldQuery.result)
-
-    eventualTreeFields.map { treeFields =>
-      val tablesWithParents = treeFields.map(_._1) // Get the trees
-        .map(tree => (ModelTranslation.fromDbModel(tree, None, None), tree.table1)) // Use the API data model for each tree
-        .distinct // Take only distinct trees (duplicates are returned with each field
-      //logger.debug(s"Got tables with parents: $tablesWithParents")
-
-      val fields = treeFields.flatMap(_._2)
-        .map(ModelTranslation.fromDbModel)
-        .distinct
-
-      val rootTables = if (roots.nonEmpty) {
-        tablesWithParents.filter(t => roots.contains(t._1.id.get)).map(_._1)
-      }
-      else {
-        tablesWithParents.filter(_._2.isEmpty).map(_._1)
-      }
-
-      rootTables map { table =>
-        buildTableStructure(table, fields, tablesWithParents)
-      }
-    }
-  }
-
   /*
    * Stores a set of values for a data record as a single batch operation
    */
-  def storeRecordValues(recordValues: Seq[ApiRecordValues])(implicit db: Database): Future[Seq[ApiRecordValues]] = {
+  def storeRecordValues(recordValues: Seq[ApiRecordValues], userId: UUID)(implicit db: Database): Future[Seq[ApiRecordValues]] = {
     val records = recordValues map { apiRecordValues =>
       val newRecord = DataRecordRow(0, LocalDateTime.now(), apiRecordValues.record.lastUpdated.getOrElse(LocalDateTime.now()), apiRecordValues.record.name)
       val maybeRecord = db.run((DataRecord returning DataRecord) += newRecord)
@@ -343,82 +269,20 @@ class DataService extends DalExecutionContext {
                 ModelTranslation.fromDbModel(value, field, valueRecord)
             }
           }
+
           eventualDataValues map { dataValues =>
             ApiRecordValues(record, dataValues)
           }
+        } andThen {
+          case Success(_) =>
+            // TEMPORARY
+            getRecordValues(insertedRecord.id)
+              .map(_.map(migrationService.migrateOldDataRecord(userId, _)))
         }
       }
     }
 
     Future.sequence(records)
-  }
-
-  /*
-   * Fills ApiDataTable with values grouped by field ID
-   */
-  protected def fillStructure(table: ApiDataTable)(values: Map[Int, Seq[ApiDataValue]]): ApiDataTable = {
-    val filledFields = table.fields map { fields =>
-      // For each field, insert values
-      fields flatMap {
-        case ApiDataField(Some(fieldId), dateCreated, lastUpdated, tableId, fieldName, _) =>
-          val fieldValues = values.get(fieldId)
-          fieldValues.map { fValues =>
-            // Create a new field with only the values updated
-            ApiDataField(Some(fieldId), dateCreated, lastUpdated, tableId, fieldName, Some(fValues))
-          }
-      }
-    }
-
-    val filledSubtables = table.subTables map { subtables =>
-      val filled = subtables map { subtable: ApiDataTable =>
-        fillStructure(subtable)(values)
-      }
-      val nonEmpty = filled.filter { t =>
-        (t.fields.nonEmpty && t.fields.get.nonEmpty) || (t.subTables.nonEmpty && t.subTables.get.nonEmpty)
-      }
-      nonEmpty
-    }
-
-    table.copy(fields = filledFields, subTables = filledSubtables)
-  }
-
-  protected[hat] def restructureTableValuesToRecords(
-    dbValues: Seq[(DataRecordRow, DataFieldRow, DataValueRow)],
-    tables: Seq[ApiDataTable]): Seq[ApiDataRecord] = {
-
-    // Group values by record
-    val byRecord = dbValues.groupBy(_._1)
-
-    val records = byRecord flatMap {
-      case (record, recordValues: Seq[(DataRecordRow, DataFieldRow, DataValueRow)]) =>
-        val fieldValues = recordValues.map { case (_, f, v) => (f, v) }
-          .groupBy(_._1.id) // Group values by field
-          .map { case (k, v) => (k, v.unzip._2.map(ModelTranslation.fromDbModel)) }
-
-        val filledRecords = tables.flatMap { table =>
-          val filledValues = fillStructure(table)(fieldValues)
-          if (filledValues.fields.isDefined && filledValues.fields.get.nonEmpty ||
-            filledValues.subTables.isDefined && filledValues.subTables.get.nonEmpty) {
-            // Keep records separate for each root table
-            Some(ModelTranslation.fromDbModel(record, Some(Seq(filledValues))))
-          }
-          else {
-            None
-          }
-        }
-        filledRecords
-    }
-
-    records.toSeq.sortBy(-_.id.getOrElse(0))
-  }
-
-  protected[hat] def getStructureFields(structure: ApiDataTable): Set[Int] = {
-    val fieldSet = structure.fields.getOrElse(Seq()).flatMap(_.id).toSet
-
-    structure.subTables
-      .getOrElse(Seq())
-      .map(getStructureFields)
-      .fold(fieldSet)((fieldset, subtableFieldset) => fieldset ++ subtableFieldset)
   }
 
   /*
@@ -516,33 +380,6 @@ class DataService extends DalExecutionContext {
     } map (_.headOption)
   }
 
-  protected[service] def buildTableStructure(
-    table: ApiDataTable,
-    fields: Seq[ApiDataField],
-    dataTables: Seq[(ApiDataTable, Option[Int])])(implicit db: Database): ApiDataTable = {
-    val tableFields = {
-      val tFields = fields.filter(_.tableId == table.id)
-      if (tFields.isEmpty) {
-        None
-      }
-      else {
-        Some(tFields)
-      }
-    }
-    val subtables = dataTables.filter(tablePair => table.id == tablePair._2)
-    val apiTables = subtables.map { apiTable =>
-      // Every subtable with a linked ID exists, no need to handle Option
-      buildTableStructure(apiTable._1, fields, dataTables)
-    }
-    val someApiTables = if (apiTables.isEmpty) {
-      None
-    }
-    else {
-      Some(apiTables)
-    }
-    table.copy(fields = tableFields, subTables = someApiTables)
-  }
-
   ///////////////////
   // Data deletion
   // Important: Data never gets deleted from the HAT, it only gets hidden from all APIs
@@ -624,4 +461,155 @@ class DataService extends DalExecutionContext {
           .update((LocalDateTime.now(), true)))
     }
   }
+
+  protected[hat] def restructureTableValuesToRecords(
+    dbValues: Seq[(DataRecordRow, DataFieldRow, DataValueRow)],
+    tables: Seq[ApiDataTable]): Seq[ApiDataRecord] =
+    DataService.restructureTableValuesToRecords(dbValues, tables)
+
+  protected[service] def buildTableStructure(
+    table: ApiDataTable,
+    fields: Seq[ApiDataField],
+    dataTables: Seq[(ApiDataTable, Option[Int])]): ApiDataTable =
+    DataService.buildTableStructure(table, fields, dataTables)
+
+  protected[hat] def getStructureFields(structure: ApiDataTable): Set[Int] =
+    DataService.getStructureFields(structure)
+
+  protected[api] def buildDataTreeStructures(
+    dataTableTrees: Query[DataTableTree, DataTableTreeRow, Seq],
+    roots: Set[Int] = Set())(implicit db: Database): Future[Seq[ApiDataTable]] =
+    DataService.buildDataTreeStructures(dataTableTrees, roots)
+}
+
+object DataService {
+  protected[service] def buildTableStructure(
+    table: ApiDataTable,
+    fields: Seq[ApiDataField],
+    dataTables: Seq[(ApiDataTable, Option[Int])]): ApiDataTable = {
+    val tableFields = {
+      val tFields = fields.filter(_.tableId == table.id)
+      if (tFields.isEmpty) {
+        None
+      }
+      else {
+        Some(tFields)
+      }
+    }
+    val subtables = dataTables.filter(tablePair => table.id == tablePair._2)
+    val apiTables = subtables.map { apiTable =>
+      // Every subtable with a linked ID exists, no need to handle Option
+      buildTableStructure(apiTable._1, fields, dataTables)
+    }
+    val someApiTables = if (apiTables.isEmpty) {
+      None
+    }
+    else {
+      Some(apiTables)
+    }
+    table.copy(fields = tableFields, subTables = someApiTables)
+  }
+
+  protected[hat] def getStructureFields(structure: ApiDataTable): Set[Int] = {
+    val fieldSet = structure.fields.getOrElse(Seq()).flatMap(_.id).toSet
+
+    structure.subTables
+      .getOrElse(Seq())
+      .map(getStructureFields)
+      .fold(fieldSet)((fieldset, subtableFieldset) => fieldset ++ subtableFieldset)
+  }
+
+  protected[hat] def restructureTableValuesToRecords(
+    dbValues: Seq[(DataRecordRow, DataFieldRow, DataValueRow)],
+    tables: Seq[ApiDataTable]): Seq[ApiDataRecord] = {
+
+    // Group values by record
+    val byRecord = dbValues.groupBy(_._1)
+
+    val records = byRecord flatMap {
+      case (record, recordValues: Seq[(DataRecordRow, DataFieldRow, DataValueRow)]) =>
+        val fieldValues = recordValues.map { case (_, f, v) => (f, v) }
+          .groupBy(_._1.id) // Group values by field
+          .map { case (k, v) => (k, v.unzip._2.map(ModelTranslation.fromDbModel)) }
+
+        val filledRecords = tables.flatMap { table =>
+          val filledValues = fillStructure(table)(fieldValues)
+          if (filledValues.fields.isDefined && filledValues.fields.get.nonEmpty ||
+            filledValues.subTables.isDefined && filledValues.subTables.get.nonEmpty) {
+            // Keep records separate for each root table
+            Some(ModelTranslation.fromDbModel(record, Some(Seq(filledValues))))
+          }
+          else {
+            None
+          }
+        }
+        filledRecords
+    }
+
+    records.toSeq.sortBy(-_.id.getOrElse(0))
+  }
+
+  /*
+   * Fills ApiDataTable with values grouped by field ID
+   */
+  protected def fillStructure(table: ApiDataTable)(values: Map[Int, Seq[ApiDataValue]]): ApiDataTable = {
+    val filledFields = table.fields map { fields =>
+      // For each field, insert values
+      fields flatMap {
+        case ApiDataField(Some(fieldId), dateCreated, lastUpdated, tableId, fieldName, _) =>
+          val fieldValues = values.get(fieldId)
+          fieldValues.map { fValues =>
+            // Create a new field with only the values updated
+            ApiDataField(Some(fieldId), dateCreated, lastUpdated, tableId, fieldName, Some(fValues))
+          }
+      }
+    }
+
+    val filledSubtables = table.subTables map { subtables =>
+      val filled = subtables map { subtable: ApiDataTable =>
+        fillStructure(subtable)(values)
+      }
+      val nonEmpty = filled.filter { t =>
+        (t.fields.nonEmpty && t.fields.get.nonEmpty) || (t.subTables.nonEmpty && t.subTables.get.nonEmpty)
+      }
+      nonEmpty
+    }
+
+    table.copy(fields = filledFields, subTables = filledSubtables)
+  }
+
+  protected[api] def buildDataTreeStructures(
+    dataTableTrees: Query[DataTableTree, DataTableTreeRow, Seq],
+    roots: Set[Int] = Set())(implicit db: Database, ec: ExecutionContext): Future[Seq[ApiDataTable]] = {
+
+    // Another round of field filtering to only get those within the returned trees
+    val treeFieldQuery = for {
+      (tree, maybeField) <- dataTableTrees joinLeft DataField.filter(_.deleted === false)
+    } yield (tree, maybeField)
+
+    val eventualTreeFields = db.run(treeFieldQuery.result)
+
+    eventualTreeFields.map { treeFields =>
+      val tablesWithParents = treeFields.map(_._1) // Get the trees
+        .map(tree => (ModelTranslation.fromDbModel(tree, None, None), tree.table1)) // Use the API data model for each tree
+        .distinct // Take only distinct trees (duplicates are returned with each field
+      //logger.debug(s"Got tables with parents: $tablesWithParents")
+
+      val fields = treeFields.flatMap(_._2)
+        .map(ModelTranslation.fromDbModel)
+        .distinct
+
+      val rootTables = if (roots.nonEmpty) {
+        tablesWithParents.filter(t => roots.contains(t._1.id.get)).map(_._1)
+      }
+      else {
+        tablesWithParents.filter(_._2.isEmpty).map(_._1)
+      }
+
+      rootTables map { table =>
+        buildTableStructure(table, fields, tablesWithParents)
+      }
+    }
+  }
+
 }
