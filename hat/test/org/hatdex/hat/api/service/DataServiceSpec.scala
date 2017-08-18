@@ -133,7 +133,7 @@ class DataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with 
         _ <- service.storeRecordValues(Seq(
           ApiRecordValues(
             ApiDataRecord(None, None, None, "testRecord1", None),
-            Seq(ApiDataValue(None, None, None, "testValue1", Some(ApiDataField(field.id, None, None, None, "field", None)), None)))))
+            Seq(ApiDataValue(None, None, None, "testValue1", Some(ApiDataField(field.id, None, None, None, "field", None)), None)))), owner.userId)
         values <- service.fieldsetValues(fieldsetQuery(table.id.get), LocalDateTime.now().minusDays(7), LocalDateTime.now(), 1000)
       } yield {
         values.length must equalTo(1)
@@ -155,7 +155,7 @@ class DataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with 
         _ <- service.storeRecordValues(Seq(
           ApiRecordValues(
             ApiDataRecord(None, None, None, "testRecord1", None),
-            Seq(ApiDataValue(None, None, None, "testValue1", Some(ApiDataField(field.id, None, None, None, "field", None)), None)))))
+            Seq(ApiDataValue(None, None, None, "testValue1", Some(ApiDataField(field.id, None, None, None, "field", None)), None)))), owner.userId)
         values <- service.fieldsetValues(fieldsetQuery(table.id.get), LocalDateTime.now().minusDays(7), LocalDateTime.now(), 1)
       } yield {
         values.length must equalTo(1)
@@ -184,7 +184,7 @@ class DataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with 
             ApiDataRecord(None, None, None, "testRecord2", None),
             Seq(
               ApiDataValue(None, None, None, "testValue2", Some(ApiDataField(field.id, None, None, None, "field", None)), None),
-              ApiDataValue(None, None, None, "testValue2-2", Some(ApiDataField(field.id, None, None, None, "anotherfield", None)), None)))))
+              ApiDataValue(None, None, None, "testValue2-2", Some(ApiDataField(field.id, None, None, None, "anotherfield", None)), None)))), owner.userId)
         values <- service.fieldsetValues(fieldsetQuery(table.id.get), LocalDateTime.now().minusDays(7), LocalDateTime.now(), 2)
       } yield {
         val string = values.toString
@@ -212,7 +212,7 @@ class DataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with 
             ApiDataRecord(None, None, None, "testRecord1", None),
             Seq(
               ApiDataValue(None, None, None, "testValue1", Some(ApiDataField(field.id, None, None, None, "field", None)), None),
-              ApiDataValue(None, None, None, "testValue1-2", Some(ApiDataField(field.id, None, None, None, "anotherfield", None)), None)))))
+              ApiDataValue(None, None, None, "testValue1-2", Some(ApiDataField(field.id, None, None, None, "anotherfield", None)), None)))), owner.userId)
         _ <- service.storeRecordValues(Seq(
           ApiRecordValues(
             ApiDataRecord(None, None, None, "testRecord2", None),
@@ -223,7 +223,7 @@ class DataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with 
             ApiDataRecord(None, None, None, "testRecord3", None),
             Seq(
               ApiDataValue(None, None, None, "testValue3", Some(ApiDataField(field.id, None, None, None, "field", None)), None),
-              ApiDataValue(None, None, None, "testValue3-2", Some(ApiDataField(field.id, None, None, None, "anotherfield", None)), None)))))
+              ApiDataValue(None, None, None, "testValue3-2", Some(ApiDataField(field.id, None, None, None, "anotherfield", None)), None)))), owner.userId)
         values <- service.fieldsetValues(fieldsetQuery(table.id.get), LocalDateTime.now().minusDays(7), LocalDateTime.now(), 2)
       } yield {
         val string = values.toString
@@ -253,7 +253,7 @@ class DataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with 
             ApiDataRecord(None, None, None, "testRecord1", None),
             Seq(
               ApiDataValue(None, None, None, "testValue1", Some(ApiDataField(field.id, None, None, None, "field", None)), None),
-              ApiDataValue(None, None, None, "testValue1-2", Some(ApiDataField(field.id, None, None, None, "anotherfield", None)), None)))))
+              ApiDataValue(None, None, None, "testValue1-2", Some(ApiDataField(field.id, None, None, None, "anotherfield", None)), None)))), owner.userId)
         _ <- service.storeRecordValues(Seq(
           ApiRecordValues(
             ApiDataRecord(None, None, None, "testRecord2", None),
@@ -264,7 +264,7 @@ class DataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with 
             ApiDataRecord(None, None, None, "testRecord3", None),
             Seq(
               ApiDataValue(None, None, None, "testValue3", Some(ApiDataField(field.id, None, None, None, "field", None)), None),
-              ApiDataValue(None, None, None, "testValue3-2", Some(ApiDataField(field.id, None, None, None, "anotherfield", None)), None)))))
+              ApiDataValue(None, None, None, "testValue3-2", Some(ApiDataField(field.id, None, None, None, "anotherfield", None)), None)))), owner.userId)
         values <- service.fieldsetValues(fieldsetQuery(table.id.get), LocalDateTime.now().minusDays(7), LocalDateTime.now(), 3)
       } yield {
         val string = values.toString

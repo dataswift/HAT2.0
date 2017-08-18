@@ -67,8 +67,8 @@ publishArtifact in (Compile, packageSrc) := false
 
 // Use the alternative "Ash" script for running compiled project form inside Alpine-derived container
 // as Bash is incompatible with Alpine
-//enablePlugins(AshScriptPlugin)
-//javaOptions in Universal ++= Seq("-Dhttp.port=8080")
+enablePlugins(AshScriptPlugin)
+javaOptions in Universal ++= Seq("-Dhttp.port=8080")
 
 import com.typesafe.sbt.packager.docker._
 packageName in Docker := "hat"

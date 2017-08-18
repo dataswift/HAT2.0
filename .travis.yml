@@ -91,9 +91,10 @@ before_script:
 
 script:
   - sbt clean
-  - sbt ++$TRAVIS_SCALA_VERSION compile test:compile
+  - sbt ++$TRAVIS_SCALA_VERSION compile
   - |
     if [[ "$REPOSITORY_NAME" = "hubat" ]]; then
+      sbt ++$TRAVIS_SCALA_VERSION test:compile
       sbt coverage "testOnly org.hatdex.hat.api.*" -Dconfig.file=src/main/resources/application.test.conf
     fi
   - sbt "project hat" docker:stage
