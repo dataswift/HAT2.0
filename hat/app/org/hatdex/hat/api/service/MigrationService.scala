@@ -65,11 +65,8 @@ class MigrationService @Inject() (richDataService: RichDataService)(implicit val
   def migrateOldDataRecord(userId: UUID, record: ApiDataRecord)(implicit db: Database): Future[Int] = {
     record.tables.map { tables =>
       val savedRecords = tables.map { table =>
-        val recordJson = convertRecordJson(
-          ApiDataRecord(None, record.dateCreated, record.lastUpdated, record.name, Some(Seq(table))),
-          includeTimestamp = true)
-        recordJson map { data =>
-          richDataService.saveData(userId, Seq(EndpointData(s"${table.name}/${table.source}", None, data, None))).map(_ => 1)
+        convertRecordJson(record, includeTimestamp = true) map { data =>
+          richDataService.saveData(userId, Seq(EndpointData(s"${table.source}/${table.name}", None, data, None))).map(_ => 1)
         } getOrElse Future.successful(0)
       }
 

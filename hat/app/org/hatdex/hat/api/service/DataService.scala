@@ -30,6 +30,7 @@ import org.hatdex.hat.api.models.{ ApiDataField, ApiDataRecord, ApiDataTable, Ap
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataTabletotablecrossref, _ }
+import org.hatdex.hat.utils.FutureTransformations
 import org.hatdex.libs.dal.SlickPostgresDriver.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
@@ -277,7 +278,12 @@ class DataService @Inject() (migrationService: MigrationService) extends DalExec
           case Success(_) =>
             // TEMPORARY
             getRecordValues(insertedRecord.id)
-              .map(_.map(migrationService.migrateOldDataRecord(userId, _)))
+              .flatMap { r =>
+                FutureTransformations.transform(
+                  r.map(record => migrationService.migrateOldDataRecord(userId, record)))
+              } onFailure {
+                case e => logger.error(s"Error migrating record to new APIs: ${e.getMessage}", e)
+              }
         }
       }
     }
