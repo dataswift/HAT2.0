@@ -36,7 +36,9 @@ import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class HatServerProviderActor @Inject() (hatServerActorFactory: HatServerActor.Factory, configuration: Configuration) extends Actor with ActorLogging with InjectedActorSupport {
+class HatServerProviderActor @Inject() (
+    hatServerActorFactory: HatServerActor.Factory,
+    configuration: Configuration) extends Actor with ActorLogging with InjectedActorSupport {
   import HatServerProviderActor._
   import org.hatdex.hat.api.service.IoExecutionContext.ioThreadPool
 
