@@ -134,8 +134,8 @@ class UserLimiter @Inject() (implicit val actorSystem: ActorSystem, implicit val
   type Secured[B] = SecuredRequest[HatApiAuthEnvironment, B]
   type UserAware[B] = UserAwareRequest[HatApiAuthEnvironment, B]
 
-  // allow 2 failures immediately and get a new token every 10 seconds
-  private val rl = new RateLimiter(15, 1f / 5, "[Rate Limiter]")
+  // allow 10 requests immediately and get a new token every 2 seconds
+  private val rl = new RateLimiter(10, 1f / 2, "[Rate Limiter]")
 
   private implicit val errorMesageFormat = HatJsonFormats.errorMessage
   private def response(r: RequestHeader) = Results.BadRequest(

@@ -282,7 +282,7 @@ class DataService @Inject() (migrationService: MigrationService) extends DalExec
                 FutureTransformations.transform(
                   r.map(record => migrationService.migrateOldDataRecord(userId, record)))
               } onFailure {
-                case e => logger.error(s"Error migrating record to new APIs: ${e.getMessage}", e)
+                case e => logger.error(s"Error migrating record to new APIs: ${e.getMessage}")
               }
         }
       }
