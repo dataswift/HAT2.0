@@ -74,12 +74,13 @@ class HatServerProviderActor @Inject() (
   }
 
   private def getHatServerActor(hat: String): Future[ActorRef] = {
-    doFindOrCreate(hat, hatServerTimeout.duration / 2)
+    doFindOrCreate(hat, hatServerTimeout.duration / 4)
   }
 
   private val maxAttempts = 3
   private def doFindOrCreate(hat: String, timeout: FiniteDuration, depth: Int = 0): Future[ActorRef] = {
     if (depth >= maxAttempts) {
+      log.error(s"HAT server actor for $hat not resolved")
       throw new RuntimeException(s"Can not create actor for $hat and reached max attempts of $maxAttempts")
     }
     val selection = s"/user/hatServerProviderActor/hat:$hat"

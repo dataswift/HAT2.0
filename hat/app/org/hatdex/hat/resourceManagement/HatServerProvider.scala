@@ -26,18 +26,19 @@ package org.hatdex.hat.resourceManagement
 
 import java.io.StringWriter
 import java.security.interfaces.RSAPublicKey
-import javax.inject.{ Inject, Named, Singleton }
+import javax.inject.{Inject, Named, Singleton}
 
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
 import com.mohiva.play.silhouette.api.services.DynamicEnvironmentProviderService
-import org.bouncycastle.util.io.pem.{ PemObject, PemWriter }
+import org.bouncycastle.util.io.pem.{PemObject, PemWriter}
 import org.hatdex.hat.resourceManagement.actors.HatServerProviderActor
 import org.hatdex.hat.utils.Utils
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import play.api.cache.CacheApi
 import play.api.mvc.Request
+import net.ceedubs.ficus.Ficus._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -58,8 +59,8 @@ trait HatServerProvider extends DynamicEnvironmentProviderService[HatServer] {
 
 @Singleton
 class HatServerProviderImpl @Inject() (
-    @Named("hatServerProviderActor") serverProviderActor: ActorRef,
-    val cache: CacheApi) extends HatServerProvider {
+    configuration: Configuration,
+    @Named("hatServerProviderActor") serverProviderActor: ActorRef) extends HatServerProvider {
 
   import org.hatdex.hat.api.service.IoExecutionContext.ioThreadPool
 
@@ -73,36 +74,24 @@ class HatServerProviderImpl @Inject() (
   }
 
   def retrieve(hatAddress: String): Future[Option[HatServer]] = {
-    val cacheKey = s"hatServer:$hatAddress"
-    val cacheKeyError = s"$cacheKey:error"
-    cache.get[Option[HatServer]](cacheKey) map { cached =>
-      Future.successful(cached)
-    } getOrElse {
-      cache.get[HatServerDiscoveryException](cacheKeyError) map { cachedError =>
-        Future.failed(cachedError)
-      } getOrElse {
-        logger.info(s"Retrieving environment for $hatAddress")
-        implicit val timeout: Timeout = 10.seconds
-        (serverProviderActor ? HatServerProviderActor.HatServerRetrieve(hatAddress)) flatMap {
-          case server: HatServer =>
-            logger.debug(s"Got back server $server")
-            cache.set(cacheKey, Some(server), serverInfoExpiry)
-            Future.successful(Some(server))
-          case error: HatServerDiscoveryException =>
-            logger.debug(s"Got back error $error")
-            cache.set(cacheKeyError, error, serverErrorExpiry)
-            Future.failed(error)
-          case message =>
-            logger.warn(s"Unknown message $message from HAT Server provider actor")
-            val error = new HatServerDiscoveryException("Unknown message")
-            Future.failed(error)
-        } recoverWith {
-          case e =>
-            logger.warn(s"Error while retrieving HAT Server info: ${e.getMessage}")
-            val error = new HatServerDiscoveryException("HAT Server info retrieval failed", e)
-            Future.failed(error)
-        }
-      }
+    logger.info(s"Retrieving environment for $hatAddress")
+    implicit val timeout: Timeout = configuration.underlying.as[FiniteDuration]("resourceManagement.serverProvisioningTimeout")
+    (serverProviderActor ? HatServerProviderActor.HatServerRetrieve(hatAddress)) flatMap {
+      case server: HatServer =>
+        logger.debug(s"Got back server $server")
+        Future.successful(Some(server))
+      case error: HatServerDiscoveryException =>
+        logger.debug(s"Got back error $error")
+        Future.failed(error)
+      case message =>
+        logger.warn(s"Unknown message $message from HAT Server provider actor")
+        val error = new HatServerDiscoveryException("Unknown message")
+        Future.failed(error)
+    } recoverWith {
+      case e =>
+        logger.warn(s"Error while retrieving HAT Server info: ${e.getMessage}")
+        val error = new HatServerDiscoveryException("HAT Server info retrieval failed", e)
+        Future.failed(error)
     }
   }
 
