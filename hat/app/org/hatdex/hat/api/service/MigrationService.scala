@@ -29,9 +29,10 @@ import javax.inject.Inject
 
 import akka.NotUsed
 import akka.stream.Materializer
-import akka.stream.scaladsl.{ Flow, Keep, RunnableGraph, Sink, Source }
+import akka.stream.scaladsl.{Flow, Keep, RunnableGraph, Sink, Source}
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ ApiDataRecord, _ }
+import org.hatdex.hat.api.models.{ApiDataRecord, _}
+import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
@@ -42,7 +43,9 @@ import play.api.libs.json._
 
 import scala.concurrent.Future
 
-class MigrationService @Inject() (richDataService: RichDataService)(implicit val materializer: Materializer) extends DalExecutionContext {
+class MigrationService @Inject() (
+  richDataService: RichDataService,
+  dataEventDispatcher: HatDataEventDispatcher)(implicit val materializer: Materializer) extends DalExecutionContext {
 
   protected val logger = Logger(this.getClass)
 
@@ -66,7 +69,9 @@ class MigrationService @Inject() (richDataService: RichDataService)(implicit val
     record.tables.map { tables =>
       val savedRecords = tables.map { table =>
         convertRecordJson(record, includeTimestamp = true) map { data =>
-          richDataService.saveData(userId, Seq(EndpointData(s"${table.source}/${table.name}", None, data, None))).map(_ => 1)
+          richDataService.saveData(userId, Seq(EndpointData(s"${table.source}/${table.name}", None, data, None)))
+            .andThen(dataEventDispatcher.dispatchEventDataCreated(s"migrated record for ${table.source}/${table.name}"))
+            .map(_ => 1)
         } getOrElse Future.successful(0)
       }
 
@@ -97,7 +102,7 @@ class MigrationService @Inject() (richDataService: RichDataService)(implicit val
         Flow[JsResult[JsObject]].map(_.get) // Unwrap Json Objects
       } via Flow[JsObject].mapAsync(parallelMigrations) { oldJson =>
         richDataService.saveData(userId, Seq(EndpointData(endpoint, None, oldJson, None)))
-          // .andThen(dataEventDispatcher.dispatchEventDataCreated(s"saved data for $toDataEndpoint"))
+          .andThen(dataEventDispatcher.dispatchEventDataCreated(s"migrated data to $endpoint"))
           .map(_ => 1L)
           .recover {
             case e =>

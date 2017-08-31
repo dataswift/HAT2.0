@@ -87,7 +87,7 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
     case Success(saved) =>
       dataEventBus.publish(HatDataEventBus.DataCreatedEvent(
         request.dynamicEnvironment.hatName,
-        request.identity,
+        request.identity.clean,
         DateTime.now(),
         message, saved))
   }
@@ -96,7 +96,7 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
     case Success(saved) =>
       dataEventBus.publish(HatDataEventBus.DataDebitEvent(
         request.dynamicEnvironment.hatName,
-        request.identity,
+        request.identity.clean,
         DateTime.now(),
         operation.toString, saved, operation))
   }
@@ -105,7 +105,7 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
     case Success(Some(saved)) =>
       dataEventBus.publish(HatDataEventBus.DataDebitEvent(
         request.dynamicEnvironment.hatName,
-        request.identity,
+        request.identity.clean,
         DateTime.now(),
         operation.toString, saved, operation))
   }
@@ -113,7 +113,7 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
   def dispatchEventDataDebitValues(debit: RichDataDebit)(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[Map[String, Seq[EndpointData]]], Unit] = {
     case Success(data) => dataEventBus.publish(HatDataEventBus.DataRetrievedEvent(
       request.dynamicEnvironment.hatName,
-      request.identity,
+      request.identity.clean,
       DateTime.now(),
       DataDebitOperations.GetValues().toString, debit, data.values.flatten.toSeq))
   }

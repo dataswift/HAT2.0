@@ -26,16 +26,16 @@ package org.hatdex.hat.resourceManagement
 
 import java.io.StringWriter
 import java.security.interfaces.RSAPublicKey
-import javax.inject.{Inject, Named, Singleton}
+import javax.inject.{ Inject, Named, Singleton }
 
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
 import com.mohiva.play.silhouette.api.services.DynamicEnvironmentProviderService
-import org.bouncycastle.util.io.pem.{PemObject, PemWriter}
+import org.bouncycastle.util.io.pem.{ PemObject, PemWriter }
 import org.hatdex.hat.resourceManagement.actors.HatServerProviderActor
 import org.hatdex.hat.utils.Utils
-import play.api.{Configuration, Logger}
+import play.api.{ Configuration, Logger }
 import play.api.cache.CacheApi
 import play.api.mvc.Request
 import net.ceedubs.ficus.Ficus._

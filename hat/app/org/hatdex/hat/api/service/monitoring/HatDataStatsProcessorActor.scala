@@ -28,14 +28,15 @@ import javax.inject.Inject
 
 import akka.actor.{ Actor, ActorLogging }
 import org.hatdex.hat.api.models.{ DataStats, InboundDataStats, OutboundDataStats }
+import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{ DataCreatedEvent, DataRetrievedEvent }
 import org.hatdex.hat.api.service.{ IoExecutionContext, StatsReporter }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerDiscoveryException, HatServerProvider }
+import play.api.Logger
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-class HatDataStatsProcessor @Inject() (
-    statsReporter: StatsReporter,
-    hatServerProvider: HatServerProvider) extends Actor with ActorLogging {
+class HatDataStatsProcessorActor @Inject() (
+    processor: HatDataStatsProcessor) extends Actor with ActorLogging {
 
   import HatDataEventBus._
 
@@ -52,17 +53,27 @@ class HatDataStatsProcessor @Inject() (
       .groupBy(_.hat) map {
         case (hat, stats) =>
           val aggregated = stats.collect {
-            case s: DataCreatedEvent   => computeInboundStats(s)
-            case s: DataRetrievedEvent => computeOutboundStats(s)
+            case s: DataCreatedEvent   => processor.computeInboundStats(s)
+            case s: DataRetrievedEvent => processor.computeOutboundStats(s)
           }
           hat -> aggregated
       } foreach {
         case (hat, hatStats) =>
           if (hatStats.nonEmpty) {
-            publishStats(hat, hatStats)
+            processor.publishStats(hat, hatStats)
           }
       }
   }
+
+}
+
+class HatDataStatsProcessor @Inject() (
+    statsReporter: StatsReporter,
+    hatServerProvider: HatServerProvider)(
+    implicit
+    val ec: ExecutionContext) {
+
+  protected val logger = Logger(this.getClass)
 
   def computeInboundStats(event: DataCreatedEvent): InboundDataStats = {
     val endpointStats = JsonStatsService.endpointDataCounts(event.data)
@@ -76,15 +87,14 @@ class HatDataStatsProcessor @Inject() (
       event.dataDebit.dataDebitKey, endpointStats.toSeq, event.logEntry)
   }
 
-  def publishStats(hat: String, stats: Iterable[DataStats]): Unit = {
-    implicit val ec: ExecutionContext = IoExecutionContext.ioThreadPool
-    log.debug(s"Publish stats for $hat: $stats")
+  def publishStats(hat: String, stats: Iterable[DataStats]): Future[Unit] = {
+    logger.debug(s"Publish stats for $hat: $stats")
 
-    hatServerProvider.retrieve(hat) foreach {
+    hatServerProvider.retrieve(hat) flatMap {
       _ map { implicit hatServer: HatServer =>
         statsReporter.reportStatistics(stats.toSeq)
       } getOrElse {
-        log.error(s"No HAT $hat found to report statistics for")
+        logger.error(s"No HAT $hat found to report statistics for")
         Future.failed(new HatServerDiscoveryException(s"HAT $hat discovery failed for stats reporting"))
       }
     }
