@@ -29,11 +29,13 @@ import javax.inject.Inject
 
 import akka.NotUsed
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Keep, RunnableGraph, Sink, Source}
+import akka.stream.scaladsl.{ Flow, Keep, RunnableGraph, Sink, Source }
+import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ApiDataRecord, _}
+import org.hatdex.hat.api.models.{ ApiDataRecord, _ }
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData.RichDataService
+import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.libs.dal.SlickPostgresDriver.api._
@@ -44,8 +46,8 @@ import play.api.libs.json._
 import scala.concurrent.Future
 
 class MigrationService @Inject() (
-  richDataService: RichDataService,
-  dataEventDispatcher: HatDataEventDispatcher)(implicit val materializer: Materializer) extends DalExecutionContext {
+    richDataService: RichDataService,
+    dataEventDispatcher: HatDataEventDispatcher)(implicit val materializer: Materializer) extends DalExecutionContext {
 
   protected val logger = Logger(this.getClass)
 
@@ -65,7 +67,7 @@ class MigrationService @Inject() (
     HatJsonFormats.flattenRecordValues(record).transform(transformation)
   }
 
-  def migrateOldDataRecord(userId: UUID, record: ApiDataRecord)(implicit db: Database): Future[Int] = {
+  def migrateOldDataRecord(userId: UUID, record: ApiDataRecord)(implicit db: Database, request: SecuredRequest[HatApiAuthEnvironment, _]): Future[Int] = {
     record.tables.map { tables =>
       val savedRecords = tables.map { table =>
         convertRecordJson(record, includeTimestamp = true) map { data =>
@@ -84,7 +86,7 @@ class MigrationService @Inject() (
   def migrateOldData(userId: UUID, endpoint: String,
     fromTableName: String, fromSource: String,
     updatedSince: Option[LocalDateTime], updatedUntil: Option[LocalDateTime],
-    includeTimestamp: Boolean)(implicit db: Database): Future[Long] = {
+    includeTimestamp: Boolean)(implicit db: Database, request: SecuredRequest[HatApiAuthEnvironment, _]): Future[Long] = {
     val parallelMigrations = 10
 
     val eventualCount: Future[Long] = db.run {

@@ -26,8 +26,10 @@ package org.hatdex.hat.api.service
 import java.util.UUID
 import javax.inject.Inject
 
+import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import org.hatdex.hat.api.models.{ ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _ }
 import org.hatdex.hat.api.service.richData.RichDataService
+import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataTabletotablecrossref, _ }
 import org.hatdex.hat.utils.FutureTransformations
@@ -243,7 +245,7 @@ class DataService @Inject() (migrationService: MigrationService) extends DalExec
   /*
    * Stores a set of values for a data record as a single batch operation
    */
-  def storeRecordValues(recordValues: Seq[ApiRecordValues], userId: UUID)(implicit db: Database): Future[Seq[ApiRecordValues]] = {
+  def storeRecordValues(recordValues: Seq[ApiRecordValues], userId: UUID)(implicit db: Database, request: SecuredRequest[HatApiAuthEnvironment, _]): Future[Seq[ApiRecordValues]] = {
     val records = recordValues map { apiRecordValues =>
       val newRecord = DataRecordRow(0, LocalDateTime.now(), apiRecordValues.record.lastUpdated.getOrElse(LocalDateTime.now()), apiRecordValues.record.name)
       val maybeRecord = db.run((DataRecord returning DataRecord) += newRecord)
