@@ -48,6 +48,7 @@ class HatDataStatsProcessorActor @Inject() (
   }
 
   private def processBatchedStats(d: Seq[Any]) = {
+    log.debug(s"Process batched stas: $d")
     d.filter(_.isInstanceOf[HatDataEvent])
       .map(_.asInstanceOf[HatDataEvent])
       .groupBy(_.hat) map {
