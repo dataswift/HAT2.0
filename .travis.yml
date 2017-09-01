@@ -58,6 +58,12 @@ matrix:
       - REPOSITORY_NAME=quensus
       - RUMPEL=quensus
     - env:
+      - REPOSITORY_NAME=tamouk
+      - RUMPEL=tamo
+    - env:
+      - REPOSITORY_NAME=accept
+      - RUMPEL=accept
+    - env:
       - REPOSITORY_NAME=hubofallthings
       - RUMPEL=rumpel
       - secure: "QrIhQCkVPMH6B+eKbdIRqpDyXyTS+SEJyQ3pz1GrrFipneQDZrwDj6VmYf00ebo1flNgEY/D/si1KoXk3NMfz3P9+3VzXzFOO4vjh2GShWJpvlSoo9FC31eSy2wCbtC7FVwOWn36200G2YL0UVVVG1vv+Sbto4Y8JUl/WahOoFix8R6v1ttyhnpVfknmTpxY/03btVdYkq03Yh9xqsMaAblATYvm1ApV/owy1FtfxY6Ykxwtd+aj0tnTAknJjAfk3irZXDQmLb6uGNPTH2YoijesdxpCq/YZhbUXEMQ+4YMGR9YU+3vR0gv65LGYk3+cdSn0teoDu6liiUxB80PKPEScyk68jfkfUvqDT0ODig02fKgVGi6QCQ2kcRFWEhZqlyHlO2UDndb4j632Zf+cwpPF4WZWoyN4BSgpeLM7VzpEYn4HF4MCLusya1feYe0Mn0gzLtTMaXu+K8c5OAqkyC3jKZBSFX98H2xNfpbrpV0op60QwY3Td7j7vd8q5b1/lub2xB3w/erfAs0wwVBfUbwVZrOFTMDt101t+hNAQBxqYHzP/6NhmfNizl/67erNQO+vMdeKqls6jKb0U/jvrkB4DiaIDuajUMHJKWh96SFKgeMjLQKKUlvNTBwJcULDeKio+vVdv1K3xLcS/MyzvoTPv7VjuAqYEv6JITtd0dk="
