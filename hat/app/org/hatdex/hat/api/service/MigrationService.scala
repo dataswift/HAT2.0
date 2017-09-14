@@ -51,10 +51,17 @@ class MigrationService @Inject() (
 
   protected val logger = Logger(this.getClass)
 
-  protected def convertRecordJson(record: ApiDataRecord, includeTimestamp: Boolean): JsResult[JsObject] = {
-    import HatJsonFormats.DefaultJodaLocalDateTimeWrites
+  protected def convertRecordJson(record: ApiDataRecord, includeTimestamp: Boolean, liftDataItem: Option[String]): JsResult[JsObject] = {
+    implicit val localDateTimeWrites = HatJsonFormats.DefaultJodaLocalDateTimeWrites
+
+    val dataPath = liftDataItem map { liftItem =>
+      __ \ 'data \ liftItem
+    } getOrElse {
+      __ \ 'data
+    }
+
     val transformation = if (includeTimestamp) {
-      (__ \ 'data).json.pick(
+      dataPath.json.pick(
         __.json.update(
           (__ \ 'lastUpdated)
             .json
@@ -62,15 +69,18 @@ class MigrationService @Inject() (
               record.lastUpdated.getOrElse(LocalDateTime.now())))))
     }
     else {
-      (__ \ 'data).json.pick[JsObject]
+      dataPath.json.pick[JsObject]
     }
-    HatJsonFormats.flattenRecordValues(record).transform(transformation)
+
+    HatJsonFormats
+      .flattenRecordValues(record)
+      .transform(transformation)
   }
 
   def migrateOldDataRecord(userId: UUID, record: ApiDataRecord)(implicit db: Database, request: SecuredRequest[HatApiAuthEnvironment, _]): Future[Int] = {
     record.tables.map { tables =>
       val savedRecords = tables.map { table =>
-        convertRecordJson(record, includeTimestamp = true) map { data =>
+        convertRecordJson(record, includeTimestamp = true, Some(table.name)) map { data =>
           richDataService.saveData(userId, Seq(EndpointData(s"${table.source}/${table.name}", None, data, None)))
             .andThen(dataEventDispatcher.dispatchEventDataCreated(s"migrated record for ${table.source}/${table.name}"))
             .map(_ => 1)
@@ -97,7 +107,7 @@ class MigrationService @Inject() (
     } map (_.head.id.get) flatMap { tableId =>
 
       val migratedCountSource = getTableValuesStreaming(tableId, updatedSince, updatedUntil) map { record =>
-        convertRecordJson(record, includeTimestamp)
+        convertRecordJson(record, includeTimestamp, Some(fromTableName))
       } via {
         Flow[JsResult[JsObject]].filter(_.isSuccess) // Filter out unsuccessfully extracted data objects
       } via {
