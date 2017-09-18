@@ -492,19 +492,20 @@ trait Tables {
    *  @param endDate Database column end_date SqlType(timestamp)
    *  @param rolling Database column rolling SqlType(bool)
    *  @param enabled Database column enabled SqlType(bool)
+   *  @param conditions Database column conditions SqlType(varchar), Default(None)
    */
-  case class DataDebitBundleRow(dataDebitKey: String, bundleId: String, dateCreated: org.joda.time.LocalDateTime, startDate: org.joda.time.LocalDateTime, endDate: org.joda.time.LocalDateTime, rolling: Boolean, enabled: Boolean)
+  case class DataDebitBundleRow(dataDebitKey: String, bundleId: String, dateCreated: org.joda.time.LocalDateTime, startDate: org.joda.time.LocalDateTime, endDate: org.joda.time.LocalDateTime, rolling: Boolean, enabled: Boolean, conditions: Option[String] = None)
   /** GetResult implicit for fetching DataDebitBundleRow objects using plain SQL queries */
-  implicit def GetResultDataDebitBundleRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime], e2: GR[Boolean]): GR[DataDebitBundleRow] = GR {
+  implicit def GetResultDataDebitBundleRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime], e2: GR[Boolean], e3: GR[Option[String]]): GR[DataDebitBundleRow] = GR {
     prs =>
       import prs._
-      DataDebitBundleRow.tupled((<<[String], <<[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Boolean], <<[Boolean]))
+      DataDebitBundleRow.tupled((<<[String], <<[String], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[org.joda.time.LocalDateTime], <<[Boolean], <<[Boolean], <<?[String]))
   }
   /** Table description of table data_debit_bundle. Objects of this class serve as prototypes for rows in queries. */
   class DataDebitBundle(_tableTag: Tag) extends Table[DataDebitBundleRow](_tableTag, Some("hat"), "data_debit_bundle") {
-    def * = (dataDebitKey, bundleId, dateCreated, startDate, endDate, rolling, enabled) <> (DataDebitBundleRow.tupled, DataDebitBundleRow.unapply)
+    def * = (dataDebitKey, bundleId, dateCreated, startDate, endDate, rolling, enabled, conditions) <> (DataDebitBundleRow.tupled, DataDebitBundleRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(dataDebitKey), Rep.Some(bundleId), Rep.Some(dateCreated), Rep.Some(startDate), Rep.Some(endDate), Rep.Some(rolling), Rep.Some(enabled)).shaped.<>({ r => import r._; _1.map(_ => DataDebitBundleRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(dataDebitKey), Rep.Some(bundleId), Rep.Some(dateCreated), Rep.Some(startDate), Rep.Some(endDate), Rep.Some(rolling), Rep.Some(enabled), conditions).shaped.<>({ r => import r._; _1.map(_ => DataDebitBundleRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7.get, _8))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column data_debit_key SqlType(varchar) */
     val dataDebitKey: Rep[String] = column[String]("data_debit_key")
@@ -520,12 +521,16 @@ trait Tables {
     val rolling: Rep[Boolean] = column[Boolean]("rolling")
     /** Database column enabled SqlType(bool) */
     val enabled: Rep[Boolean] = column[Boolean]("enabled")
+    /** Database column conditions SqlType(varchar), Default(None) */
+    val conditions: Rep[Option[String]] = column[Option[String]]("conditions", O.Default(None))
 
     /** Primary key of DataDebitBundle (database name data_debit_bundle_pkey) */
     val pk = primaryKey("data_debit_bundle_pkey", (dataDebitKey, bundleId))
 
     /** Foreign key referencing DataBundles (database name data_debit_bundle_bundle_id_fkey) */
-    lazy val dataBundlesFk = foreignKey("data_debit_bundle_bundle_id_fkey", bundleId, DataBundles)(r => r.bundleId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+    lazy val dataBundlesFk1 = foreignKey("data_debit_bundle_bundle_id_fkey", bundleId, DataBundles)(r => r.bundleId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+    /** Foreign key referencing DataBundles (database name data_debit_bundle_conditions_fkey) */
+    lazy val dataBundlesFk2 = foreignKey("data_debit_bundle_conditions_fkey", conditions, DataBundles)(r => Rep.Some(r.bundleId), onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
     /** Foreign key referencing DataDebitContract (database name data_debit_bundle_data_debit_key_fkey) */
     lazy val dataDebitContractFk = foreignKey("data_debit_bundle_data_debit_key_fkey", dataDebitKey, DataDebitContract)(r => r.dataDebitKey, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
   }

@@ -172,15 +172,15 @@ object ModelTranslation {
     EndpointDataBundle(dataBundleRow.bundleId, dataBundleRow.bundle.as[Map[String, PropertyQuery]])
   }
 
-  def fromDbModel(dataDebitBundle: DataDebitBundleRow, bundle: DataBundlesRow): DebitBundle = {
+  def fromDbModel(dataDebitBundle: DataDebitBundleRow, bundle: DataBundlesRow, conditions: Option[DataBundlesRow]): DebitBundle = {
     DebitBundle(dataDebitBundle.dateCreated, dataDebitBundle.startDate, dataDebitBundle.endDate,
       dataDebitBundle.rolling, dataDebitBundle.enabled,
-      ModelTranslation.fromDbModel(bundle))
+      conditions.map(ModelTranslation.fromDbModel), ModelTranslation.fromDbModel(bundle))
   }
 
-  def fromDbModel(dataDebit: DataDebitContractRow, client: UserUserRow, dataDebitBundle: Seq[(DataDebitBundleRow, DataBundlesRow)]): RichDataDebit = {
+  def fromDbModel(dataDebit: DataDebitContractRow, client: UserUserRow, dataDebitBundle: Seq[(DataDebitBundleRow, DataBundlesRow, Option[DataBundlesRow])]): RichDataDebit = {
     RichDataDebit(dataDebit.dataDebitKey, dataDebit.dateCreated,
-      userFromDbModel(client), dataDebitBundle.map(d => ModelTranslation.fromDbModel(d._1, d._2)))
+      userFromDbModel(client), dataDebitBundle.map(d => ModelTranslation.fromDbModel(d._1, d._2, d._3)))
   }
 
   def userFromDbModel(user: UserUserRow): User = {

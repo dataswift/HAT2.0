@@ -43,11 +43,19 @@ class DataDebitContractService extends DalExecutionContext with RichDataJsonForm
   val logger = Logger(this.getClass)
 
   def createDataDebit(key: String, ddRequest: DataDebitRequest, userId: UUID)(implicit db: Database): Future[RichDataDebit] = {
+    val dataDebitContractInsert = (DataDebitContract returning DataDebitContract) += DataDebitContractRow(key, LocalDateTime.now(), userId)
+    val dataDebitBundleInserts = DataBundles ++= Seq(
+      Some(DataBundlesRow(ddRequest.bundle.name, Json.toJson(ddRequest.bundle.bundle))),
+      ddRequest.conditions.map(b => DataBundlesRow(b.name, Json.toJson(b.bundle)))).flatten
+
+    val dataDebitBundleLinkInserts = DataDebitBundle += DataDebitBundleRow(key, ddRequest.bundle.name,
+      LocalDateTime.now(), ddRequest.startDate, ddRequest.endDate, ddRequest.rolling, enabled = false, ddRequest.conditions.map(_.name))
+
     val query = for {
-      dd <- (DataDebitContract returning DataDebitContract) += DataDebitContractRow(key, LocalDateTime.now(), userId)
-      bundle <- (DataBundles returning DataBundles) += DataBundlesRow(ddRequest.bundle.name, Json.toJson(ddRequest.bundle.bundle))
-      ddb <- (DataDebitBundle returning DataDebitBundle) += DataDebitBundleRow(dd.dataDebitKey, bundle.bundleId, LocalDateTime.now(), ddRequest.startDate, ddRequest.endDate, ddRequest.rolling, enabled = false)
-    } yield ddb
+      _ <- dataDebitContractInsert
+      _ <- dataDebitBundleInserts
+      _ <- dataDebitBundleLinkInserts
+    } yield ()
 
     db.run(query.transactionally)
       .flatMap(_ => dataDebit(key)) // Retrieve the data debit
@@ -84,11 +92,11 @@ class DataDebitContractService extends DalExecutionContext with RichDataJsonForm
 
   def dataDebit(dataDebitKey: String)(implicit db: Database): Future[Option[RichDataDebit]] = {
     val query = for {
-      ddb <- DataDebitBundle.filter(_.dataDebitKey === dataDebitKey)
+      (ddb, conditions) <- DataDebitBundle.filter(_.dataDebitKey === dataDebitKey).joinLeft(DataBundles).on(_.conditions === _.bundleId)
       dd <- ddb.dataDebitContractFk
-      bundle <- ddb.dataBundlesFk
+      bundleDefinition <- ddb.dataBundlesFk1
       client <- dd.userUserFk
-    } yield (dd, client, (ddb, bundle))
+    } yield (dd, client, (ddb, bundleDefinition, conditions))
 
     db.run(query.result).map(_.unzip3) map {
       case (dd, client, ddBundle) =>
@@ -101,11 +109,11 @@ class DataDebitContractService extends DalExecutionContext with RichDataJsonForm
 
   def all()(implicit db: Database): Future[Seq[RichDataDebit]] = {
     val query = for {
-      ddb <- DataDebitBundle
+      (ddb, conditions) <- DataDebitBundle.joinLeft(DataBundles).on(_.conditions === _.bundleId)
       dd <- ddb.dataDebitContractFk
-      bundle <- ddb.dataBundlesFk
+      bundle <- ddb.dataBundlesFk1
       client <- dd.userUserFk
-    } yield (dd, client, (ddb, bundle))
+    } yield (dd, client, (ddb, bundle, conditions))
 
     db.run(query.result)
       .map { result =>

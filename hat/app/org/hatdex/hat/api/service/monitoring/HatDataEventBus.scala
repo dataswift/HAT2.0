@@ -113,12 +113,12 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
         operation.toString, saved, operation))
   }
 
-  def dispatchEventDataDebitValues(debit: RichDataDebit)(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[Map[String, Seq[EndpointData]]], Unit] = {
+  def dispatchEventDataDebitValues(debit: RichDataDebit)(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[RichDataDebitData], Unit] = {
     case Success(data) => dataEventBus.publish(HatDataEventBus.DataRetrievedEvent(
       request.dynamicEnvironment.domain,
       request.identity.clean,
       DateTime.now(),
-      DataDebitOperations.GetValues().toString, debit, data.values.flatten.toSeq))
+      DataDebitOperations.GetValues().toString, debit, data.bundle.values.flatten.toSeq))
   }
 }
 

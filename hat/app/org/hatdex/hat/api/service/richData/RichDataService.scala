@@ -242,7 +242,7 @@ class RichDataService extends DalExecutionContext {
    * @return the generated query for a list of data records, for each record including the JSON Data row, , and if present - same for linked records
    */
   private def propertyDataQuery(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], orderingDescending: Boolean,
-    skip: Int, limit: Int): Query[((DataJson, ConstColumn[String]), Rep[Option[(DataJson, ConstColumn[String])]]), ((DataJsonRow, String), Option[(DataJsonRow, String)]), Seq] = {
+    skip: Int, limit: Option[Int]): Query[((DataJson, ConstColumn[String]), Rep[Option[(DataJson, ConstColumn[String])]]), ((DataJsonRow, String), Option[(DataJsonRow, String)]), Seq] = {
 
     val queriesWithMappers = endpointQueries.zipWithIndex map {
       case (endpointQuery, endpointQueryIndex) =>
@@ -260,8 +260,15 @@ class RichDataService extends DalExecutionContext {
     val endpointDataQuery = queriesWithMappers
       .reduce((aggregate, query) => aggregate.unionAll(query)) // merge all the queries together
       .sortBy(d => if (orderingDescending) { d._2.desc } else { d._2.asc }) // order all the results by the chosen column
-      .drop(skip) // skip the desired number of records
-      .take(limit) // take up to the desired number of records
+
+    val endpointDataQueryWithLimits = limit map { take =>
+      endpointDataQuery
+        .drop(skip) // skip the desired number of records
+        .take(take) // take up to the desired number of records
+    } getOrElse {
+      endpointDataQuery
+        .drop(skip) // skip the desired number of records
+    }
 
     val linkedRecordQueries = endpointQueries.zipWithIndex map { // linked records are tracked separately for each query, use index to disambiguate
       case (endpointQuery, endpointQueryIndex) =>
@@ -286,7 +293,7 @@ class RichDataService extends DalExecutionContext {
     val groupRecords = linkedRecordQueries.flatten
       .reduce((aggregate, query) => aggregate.unionAll(query))
 
-    val resultQuery = endpointDataQuery
+    val resultQuery = endpointDataQueryWithLimits
       .joinLeft(groupRecords)
       .on((l, r) => l._1.recordId === r._3 && l._3.asColumnOf[String] === r._1.asColumnOf[String]) // join on the main query record ID with the linked query record ID AND the query index
       .sortBy(if (orderingDescending) { _._1._2.desc } else { _._1._2.asc }) // join does not maintain data ordering - sort data by the chosen sort field
@@ -312,7 +319,7 @@ class RichDataService extends DalExecutionContext {
   }
 
   def propertyData(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], orderingDescending: Boolean,
-    skip: Int, limit: Int)(implicit db: Database): Future[Seq[EndpointData]] = {
+    skip: Int, limit: Option[Int])(implicit db: Database): Future[Seq[EndpointData]] = {
 
     val query = propertyDataQuery(endpointQueries, orderBy, orderingDescending, skip, limit)
     val mappers = queryMappers(endpointQueries)

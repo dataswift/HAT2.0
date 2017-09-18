@@ -206,7 +206,7 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       status(result) must equalTo(BAD_REQUEST)
     }
 
-    "Return data for matching bundle" in {
+    "Return data for matching, enabled data debit bundle" in {
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
 
@@ -224,7 +224,52 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       } yield data
 
       status(result) must equalTo(OK)
-      val data = contentAsJson(result).as[Map[String, Seq[EndpointData]]]
+      val data = contentAsJson(result).as[RichDataDebitData].bundle
+      data("test").length must not equalTo 0
+      data("complex").length must not equalTo 0
+    }
+
+    "Return no data for bundle with unfulfilled conditions" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+
+      val controller = application.injector.instanceOf[RichData]
+      val service = application.injector.instanceOf[DataDebitContractService]
+      val dataService = application.injector.instanceOf[RichDataService]
+
+      val result = for {
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test", None, simpleJson, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test", None, simpleJson2, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("complex", None, complexJson, None)))
+        _ <- service.createDataDebit("dd", ddRequestionConditionsFailed, owner.userId)
+        _ <- service.dataDebitEnableBundle("dd", ddRequestionConditionsFailed.bundle.name)
+        data <- Helpers.call(controller.getDataDebitValues("dd"), request)
+      } yield data
+
+      status(result) must equalTo(OK)
+      val data = contentAsJson(result).as[RichDataDebitData].bundle
+      data must beEmpty
+    }
+
+    "Return data for data debit with fulfilled conditions" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+
+      val controller = application.injector.instanceOf[RichData]
+      val service = application.injector.instanceOf[DataDebitContractService]
+      val dataService = application.injector.instanceOf[RichDataService]
+
+      val result = for {
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test", None, simpleJson, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test", None, simpleJson2, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("complex", None, complexJson, None)))
+        _ <- service.createDataDebit("dd", ddRequestionConditionsFulfilled, owner.userId)
+        _ <- service.dataDebitEnableBundle("dd", ddRequestionConditionsFulfilled.bundle.name)
+        data <- Helpers.call(controller.getDataDebitValues("dd"), request)
+      } yield data
+
+      status(result) must equalTo(OK)
+      val data = contentAsJson(result).as[RichDataDebitData].bundle
       data("test").length must not equalTo 0
       data("complex").length must not equalTo 0
     }
@@ -409,14 +454,26 @@ trait RichDataContext extends Scope {
     EndpointQuery("anothertest", None, None, None))
 
   val testBundle = EndpointDataBundle("testBundle", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), None, 3),
-    "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), None, 1)))
+    "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
+    "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
+
+  val failingCondition = EndpointDataBundle("failCondition", Map(
+    "test" -> PropertyQuery(List(EndpointQuery("test", None, Some(Seq(
+      EndpointQueryFilter("field", transformation = None, operator = FilterOperator.Contains(Json.toJson("N/A"))))), None)), Some("data.newField"), None, Some(3))))
+
+  val matchingCondition = EndpointDataBundle("failCondition", Map(
+    "test" -> PropertyQuery(List(EndpointQuery("test", None, Some(Seq(
+      EndpointQueryFilter("field", transformation = None, operator = FilterOperator.Contains(Json.toJson("value"))))), None)), Some("data.newField"), None, Some(3))))
 
   val testBundle2 = EndpointDataBundle("testBundle2", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), None, 3),
-    "complex" -> PropertyQuery(List(EndpointQuery("anothertest", None, None, None)), Some("data.newField"), None, 1)))
+    "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
+    "complex" -> PropertyQuery(List(EndpointQuery("anothertest", None, None, None)), Some("data.newField"), None, Some(1))))
 
-  val testDataDebitRequest = DataDebitRequest(testBundle, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
+  val testDataDebitRequest = DataDebitRequest(testBundle, None, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
 
-  val testDataDebitRequestUpdate = DataDebitRequest(testBundle2, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
+  val testDataDebitRequestUpdate = DataDebitRequest(testBundle2, None, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
+
+  val ddRequestionConditionsFailed = DataDebitRequest(testBundle, Some(failingCondition), LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
+
+  val ddRequestionConditionsFulfilled = DataDebitRequest(testBundle, Some(matchingCondition), LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
 }

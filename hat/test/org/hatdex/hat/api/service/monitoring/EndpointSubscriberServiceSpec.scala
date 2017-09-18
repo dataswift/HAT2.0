@@ -48,14 +48,14 @@ class EndpointSubscriberServiceSpec(implicit ee: ExecutionEnv) extends PlaySpeci
   "The `matchesBundle` method" should {
     "Trigger when endpoint query with no filters matches" in {
       val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test", None, None, None)), None, None, 3)))
+        "test" -> PropertyQuery(List(EndpointQuery("test", None, None, None)), None, None, Some(3))))
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
 
     "Not trigger when endpoint no query matches" in {
       val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("anothertest", None, None, None)), None, None, 3)))
+        "test" -> PropertyQuery(List(EndpointQuery("anothertest", None, None, None)), None, None, Some(3))))
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beFalse
     }
@@ -63,7 +63,7 @@ class EndpointSubscriberServiceSpec(implicit ee: ExecutionEnv) extends PlaySpeci
     "Trigger when endpoint query with `Contains` filter matches" in {
       val query = EndpointDataBundle("test", Map(
         "test" -> PropertyQuery(List(EndpointQuery("test", None, Some(Seq(
-          EndpointQueryFilter("object", None, FilterOperator.Contains(simpleJsonFragment)))), None)), None, None, 3)))
+          EndpointQueryFilter("object", None, FilterOperator.Contains(simpleJsonFragment)))), None)), None, None, Some(3))))
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
@@ -75,7 +75,7 @@ class EndpointSubscriberServiceSpec(implicit ee: ExecutionEnv) extends PlaySpeci
             EndpointQueryFilter(
               "object.objectField",
               None,
-              FilterOperator.Contains(Json.toJson("objectFieldValue"))))), None)), None, None, 3)))
+              FilterOperator.Contains(Json.toJson("objectFieldValue"))))), None)), None, None, Some(3))))
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
@@ -85,7 +85,7 @@ class EndpointSubscriberServiceSpec(implicit ee: ExecutionEnv) extends PlaySpeci
         "test" -> PropertyQuery(List(EndpointQuery("test", None,
           Some(Seq(
             EndpointQueryFilter("object.objectFieldArray", None,
-              FilterOperator.Contains(Json.toJson("objectFieldArray2"))))), None)), None, None, 3)))
+              FilterOperator.Contains(Json.toJson("objectFieldArray2"))))), None)), None, None, Some(3))))
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
@@ -95,7 +95,7 @@ class EndpointSubscriberServiceSpec(implicit ee: ExecutionEnv) extends PlaySpeci
         "test" -> PropertyQuery(List(EndpointQuery("test", None,
           Some(Seq(
             EndpointQueryFilter("object.objectFieldArray", None,
-              FilterOperator.Contains(Json.parse("""["objectFieldArray2", "objectFieldArray3"]"""))))), None)), None, None, 3)))
+              FilterOperator.Contains(Json.parse("""["objectFieldArray2", "objectFieldArray3"]"""))))), None)), None, None, Some(3))))
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
@@ -107,7 +107,7 @@ class EndpointSubscriberServiceSpec(implicit ee: ExecutionEnv) extends PlaySpeci
             EndpointQueryFilter(
               "date_iso",
               Some(FieldTransformation.DateTimeExtract("hour")),
-              FilterOperator.Between(Json.toJson(14), Json.toJson(17))))), None)), None, None, 3)))
+              FilterOperator.Between(Json.toJson(14), Json.toJson(17))))), None)), None, None, Some(3))))
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
@@ -119,7 +119,7 @@ class EndpointSubscriberServiceSpec(implicit ee: ExecutionEnv) extends PlaySpeci
             EndpointQueryFilter(
               "date",
               Some(FieldTransformation.TimestampExtract("hour")),
-              FilterOperator.Between(Json.toJson(14), Json.toJson(17))))), None)), None, None, 3)))
+              FilterOperator.Between(Json.toJson(14), Json.toJson(17))))), None)), None, None, Some(3))))
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
@@ -131,7 +131,7 @@ class EndpointSubscriberServiceSpec(implicit ee: ExecutionEnv) extends PlaySpeci
             EndpointQueryFilter(
               "anotherField",
               Some(FieldTransformation.Searchable()),
-              FilterOperator.Find(Json.toJson("anotherFieldValue"))))), None)), None, None, 3)))
+              FilterOperator.Find(Json.toJson("anotherFieldValue"))))), None)), None, None, Some(3))))
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must throwA[EndpointQueryException]
     }
