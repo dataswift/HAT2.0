@@ -28,11 +28,11 @@ import javax.inject.Inject
 
 import akka.actor.{ Actor, ActorLogging }
 import org.hatdex.hat.api.models.{ DataStats, InboundDataStats, OutboundDataStats }
-import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{ DataCreatedEvent, DataRetrievedEvent }
+import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{ DataCreatedEvent, DataDebitEvent, DataRetrievedEvent }
 import org.hatdex.hat.api.service.{ IoExecutionContext, StatsReporter }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerDiscoveryException, HatServerProvider }
 import play.api.Logger
-
+import org.hatdex.hat.api.models.{ DataDebitEvent => DataDebitAction }
 import scala.concurrent.{ ExecutionContext, Future }
 
 class HatDataStatsProcessorActor @Inject() (
@@ -43,6 +43,7 @@ class HatDataStatsProcessorActor @Inject() (
   def receive: Receive = {
     case d: DataCreatedEvent   => processBatchedStats(Seq(d))
     case d: DataRetrievedEvent => processBatchedStats(Seq(d))
+    case d: DataDebitEvent     => processBatchedStats(Seq(d))
     case d: Seq[_]             => processBatchedStats(d)
     case m                     => log.warning(s"Received something else: $m")
   }
@@ -56,6 +57,7 @@ class HatDataStatsProcessorActor @Inject() (
           val aggregated = stats.collect {
             case s: DataCreatedEvent   => processor.computeInboundStats(s)
             case s: DataRetrievedEvent => processor.computeOutboundStats(s)
+            case e: DataDebitEvent     => processor.reportDataDebitEvent(e)
           }
           hat -> aggregated
       } foreach {
@@ -78,14 +80,19 @@ class HatDataStatsProcessor @Inject() (
 
   def computeInboundStats(event: DataCreatedEvent): InboundDataStats = {
     val endpointStats = JsonStatsService.endpointDataCounts(event.data)
-    InboundDataStats("inbound", event.time.toLocalDateTime, event.user,
+    InboundDataStats(event.time.toLocalDateTime, event.user,
       endpointStats.toSeq, event.logEntry)
   }
 
   def computeOutboundStats(event: DataRetrievedEvent): OutboundDataStats = {
     val endpointStats = JsonStatsService.endpointDataCounts(event.data)
-    OutboundDataStats("outbound", event.time.toLocalDateTime, event.user,
+    OutboundDataStats(event.time.toLocalDateTime, event.user,
       event.dataDebit.dataDebitKey, endpointStats.toSeq, event.logEntry)
+  }
+
+  def reportDataDebitEvent(event: DataDebitEvent): DataDebitAction = {
+    DataDebitAction(event.dataDebit, event.operation.toString,
+      event.time.toLocalDateTime, event.user, event.logEntry)
   }
 
   def publishStats(hat: String, stats: Iterable[DataStats]): Future[Unit] = {

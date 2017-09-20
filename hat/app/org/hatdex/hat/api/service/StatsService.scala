@@ -53,7 +53,7 @@ class StatsService @Inject() (statsReporter: StatsReporter) extends DalExecution
       (StatsDataDebitOperation returning StatsDataDebitOperation.map(_.recordId)) += ddOperation
     } map {
       case recordId =>
-        val stats = DataDebitStats("datadebit", dd, operationType.toString, ddOperation.dateCreated, ddUser, None, logEntry)
+        val stats = DataDebitStats(dd, operationType.toString, ddOperation.dateCreated, ddUser, None, logEntry)
         logger.debug(s"Data Debit operation recorded, sending stats to actor $stats")
         statsReporter.reportStatistics(Seq(stats))
         recordId
@@ -71,7 +71,7 @@ class StatsService @Inject() (statsReporter: StatsReporter) extends DalExecution
       (StatsDataDebitOperation returning StatsDataDebitOperation) += ddOperation
     } andThen {
       case _ =>
-        val stats = DataDebitStats("datadebit", dd, ddOperation.operation, ddOperation.dateCreated, ddUser, None, logEntry)
+        val stats = DataDebitStats(dd, ddOperation.operation, ddOperation.dateCreated, ddUser, None, logEntry)
         statsReporter.reportStatistics(Seq(stats))
     }
     fOperation.map { o =>
@@ -89,7 +89,7 @@ class StatsService @Inject() (statsReporter: StatsReporter) extends DalExecution
         .andThen {
           case _ =>
             val bundleStats = convertBundleStats(tableValueStats, fieldValueStats)
-            val stats = DataDebitStats("datadebit", dd, ddOperation.operation, ddOperation.dateCreated, ddUser, Some(bundleStats), logEntry)
+            val stats = DataDebitStats(dd, ddOperation.operation, ddOperation.dateCreated, ddUser, Some(bundleStats), logEntry)
             statsReporter.reportStatistics(Seq(stats))
         }
     } getOrElse {
@@ -107,7 +107,7 @@ class StatsService @Inject() (statsReporter: StatsReporter) extends DalExecution
     })
 
     getFieldsetStats(allFields) map { fieldsetStats =>
-      val stats = DataCreditStats("datacredit", "Data Record Inbound", LocalDateTime.now(), userInfo, Some(fieldsetStats), logEntry)
+      val stats = DataCreditStats("Data Record Inbound", LocalDateTime.now(), userInfo, Some(fieldsetStats), logEntry)
       statsReporter.reportStatistics(Seq(stats))
     }
   }
@@ -120,7 +120,7 @@ class StatsService @Inject() (statsReporter: StatsReporter) extends DalExecution
       }
     }
     getFieldsetStats(allFields) map { fieldsetStats =>
-      val stats = DataCreditStats("datacredit", "Data Values Inbound", LocalDateTime.now(), userInfo, Some(fieldsetStats), logEntry)
+      val stats = DataCreditStats("Data Values Inbound", LocalDateTime.now(), userInfo, Some(fieldsetStats), logEntry)
       statsReporter.reportStatistics(Seq(stats))
     }
   }
