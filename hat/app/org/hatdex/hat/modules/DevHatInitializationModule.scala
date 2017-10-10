@@ -35,7 +35,7 @@ import org.hatdex.hat.api.models.{ Owner, Platform }
 import org.hatdex.hat.api.service.{ DalExecutionContext, UsersService }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.hat.dal.SlickPostgresDriver.backend.Database
+import org.hatdex.libs.dal.SlickPostgresDriver.api.Database
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.{ Configuration, Logger }
 

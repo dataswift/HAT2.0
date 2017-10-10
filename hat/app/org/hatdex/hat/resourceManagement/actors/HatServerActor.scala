@@ -34,6 +34,7 @@ import play.api.Configuration
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import net.ceedubs.ficus.Ficus._
+import play.api.cache.CacheApi
 
 object HatServerActor {
   sealed trait HatServerActorMessage
@@ -52,9 +53,10 @@ class HatServerActor @Inject() (
     @Assisted hat: String,
     configuration: Configuration,
     hatDatabaseProvider: HatDatabaseProvider,
-    hatKeyProvider: HatKeyProvider) extends Actor with ActorLogging with Stash {
+    hatKeyProvider: HatKeyProvider,
+    cacheApi: CacheApi) extends Actor with ActorLogging with Stash {
   import HatServerActor._
-  import IoExecutionContext.ioThreadPool
+  import org.hatdex.hat.api.service.IoExecutionContext.ioThreadPool
   val idleTimeout = configuration.underlying.as[FiniteDuration]("resourceManagement.serverIdleTimeout")
 
   def receive: Receive = {
@@ -107,6 +109,7 @@ class HatServerActor @Inject() (
   }
 
   private def shutdown(server: HatServer): Future[Unit] = {
+    cacheApi.remove(s"hatServer:${server.domain}")
     hatDatabaseProvider.shutdown(server.db)
   }
 

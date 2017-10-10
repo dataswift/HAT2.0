@@ -29,7 +29,6 @@ import javax.inject.Inject
 import akka.actor.{ Props, _ }
 import akka.util.Timeout
 import net.ceedubs.ficus.Ficus._
-import org.hatdex.hat.resourceManagement.IoExecutionContext
 import play.api.Configuration
 import play.api.libs.concurrent.InjectedActorSupport
 
@@ -37,9 +36,11 @@ import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class HatServerProviderActor @Inject() (hatServerActorFactory: HatServerActor.Factory, configuration: Configuration) extends Actor with ActorLogging with InjectedActorSupport {
+class HatServerProviderActor @Inject() (
+    hatServerActorFactory: HatServerActor.Factory,
+    configuration: Configuration) extends Actor with ActorLogging with InjectedActorSupport {
   import HatServerProviderActor._
-  import IoExecutionContext.ioThreadPool
+  import org.hatdex.hat.api.service.IoExecutionContext.ioThreadPool
 
   private val activeServers = mutable.HashMap[String, ActorRef]()
   private implicit val hatServerTimeout: Timeout = configuration.underlying.as[FiniteDuration]("resourceManagement.serverProvisioningTimeout")
@@ -49,9 +50,9 @@ class HatServerProviderActor @Inject() (hatServerActorFactory: HatServerActor.Fa
     case HatServerRetrieve(hat) =>
       log.debug(s"Retrieve HAT server $hat for $sender")
       val retrievingSender = sender
-      getHatServerProviderActor(hat) map { hatServerProviderActor =>
+      getHatServerActor(hat) map { hatServerActor =>
         log.debug(s"Got HAT server provider actor, forwarding retrieval message with sender $sender $retrievingSender")
-        hatServerProviderActor tell (HatServerActor.HatRetrieve(), retrievingSender)
+        hatServerActor tell (HatServerActor.HatRetrieve(), retrievingSender)
       } recover {
         case e =>
           log.warning(s"Error while getting HAT server provider actor: ${e.getMessage}")
@@ -72,20 +73,28 @@ class HatServerProviderActor @Inject() (hatServerActorFactory: HatServerActor.Fa
       log.debug(s"Total HATs active: $hatsActive")
   }
 
-  private def getHatServerProviderActor(hat: String): Future[ActorRef] = {
-    context.actorSelection(s"/user/hatServerProviderActor/hat:$hat").resolveOne(hatServerTimeout.duration / 2) map { hatServerActor =>
-      log.debug(s"HAT server $hat actor resolved")
+  private def getHatServerActor(hat: String): Future[ActorRef] = {
+    doFindOrCreate(hat, hatServerTimeout.duration / 4)
+  }
+
+  private val maxAttempts = 3
+  private def doFindOrCreate(hat: String, timeout: FiniteDuration, depth: Int = 0): Future[ActorRef] = {
+    if (depth >= maxAttempts) {
+      log.error(s"HAT server actor for $hat not resolved")
+      throw new RuntimeException(s"Can not create actor for $hat and reached max attempts of $maxAttempts")
+    }
+    val selection = s"/user/hatServerProviderActor/hat:$hat"
+
+    context.actorSelection(selection).resolveOne(timeout) map { hatServerActor =>
+      log.debug(s"HAT server actor $selection resolved")
       hatServerActor
-    } recover {
-      case ActorNotFound(selection) =>
-        log.debug(s"HAT server $hat actor not found, injecting child")
+    } recoverWith {
+      case ActorNotFound(actorSelection) =>
+        log.debug(s"HAT server actor ($selection) not found, injecting child")
         val hatServerActor = injectedChild(hatServerActorFactory(hat), s"hat:$hat", props = (props: Props) => props.withDispatcher("hat-server-provider-actor-dispatcher"))
         activeServers(hat) = hatServerActor
         log.debug(s"Injected actor $hatServerActor")
-        hatServerActor
-      case e =>
-        log.warning(s"HAT server $hat actor error: ${e.getMessage}")
-        throw e
+        doFindOrCreate(hat, timeout, depth + 1)
     }
   }
 

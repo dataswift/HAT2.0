@@ -45,14 +45,14 @@ case class HatUser(userId: UUID, email: String, pass: Option[String], name: Stri
     if (roles.contains(Owner())) {
       Owner()
     }
-    else if (roles.contains(DataDebitOwner(""))) {
-      DataDebitOwner("")
+    else if (roles.contains(Platform())) {
+      Platform()
     }
     else if (roles.contains(DataCredit(""))) {
       DataCredit("")
     }
-    else if (roles.contains(Platform())) {
-      Platform()
+    else if (roles.contains(DataDebitOwner(""))) {
+      DataDebitOwner("")
     }
     else {
       Validate()

@@ -1,11 +1,28 @@
 language: scala
-
 dist: trusty
-
+sudo: required
 scala:
-   - 2.11.8
+  - 2.11.8
 jdk:
   - oraclejdk8
+
+services:
+  - docker
+addons:
+  postgresql: "9.5"
+
+cache:
+  directories:
+  - $HOME/.ivy2/cache
+  - $HOME/.sbt/boot/scala-$TRAVIS_SCALA_VERSION
+
+notifications:
+  slack:
+    template:
+      - "Build <%{build_url}|#%{build_number}> (<%{compare_url}|%{commit}>) of %{repository}@%{branch} by %{author} %{result} in %{duration}"
+      - "Build %{commit}: %{commit_message}"
+    rooms:
+      secure: f10x2/Uu8gyami/QGXS4dVOehWAY9mAKWYchs6Wr92qgnCPW1ALpoZlRqQiVvjsjcByxjLuVz0NgUFT7RmPusV3OuVLpBetjb6J+55kWebhdAE7OlAhGgmhxLcdWFvBuql4hhN7GHfUNQv0wwabAHoiq/cbMC9uZYcJDdfznqAjSZvlb4t6zgGhNyCFJL0v1nTdJz64zo2SEUdwWFhaV7/k0wbpTjFytyySj0LVW5ymkApQD+Lqvn2KZBDMwtwrMH8derLLrqbj41UB7EsnGP4K7hh6HUOgf4aw2r46m/wFqTmwzgeD140iWslmDISprhSW2WAo5QG8hz0rKuywzHL/NB2WmRMF7Dg6tnG0zihVy+fJJ7CviVewC6DWUtHGZYENX6BNVImymAdVu2LIh+QrHUEjXlPRjBdH97ZEnSzc/RKIvVBRzyMZ5IAv4wZCuKHthPeTX17ZCp3mnL3BD/kXacabao0H0ot1fPaDBErmA5cp0STPh2OmPheKElLDoFHyXubeMPpicXTUkeFqnYTtrdLRgC+XvvHQegNkUO/rq/62BwC6ewSA7udHOj7w8fG9mSpOcEAsDbL7FOiqw64NVWMrTtWq0KaVyC+KESpaPgHWapbs9HCEFKdwtj+pygvilVDvqQDlp4KINYAhJynmATneh3T9Qa2Z2Juqrayw=
 
 branches:
   only:
@@ -13,33 +30,104 @@ branches:
     - testing
     - dev
 
-addons:
-  postgresql: "9.5"
-
-cache:
-  directories:
-  - $HOME/.sbt
-  - $HOME/.ivy2
-
 # Handle git submodules yourself
 git:
     submodules: false
 
-before_script:
-  - psql -c "CREATE DATABASE testhatdb1;" -U postgres
-  - psql -c "CREATE USER testhatdb1 WITH PASSWORD 'testing';" -U postgres
-  - psql -c "GRANT CREATE ON DATABASE testhatdb1 TO testhatdb1" -U postgres
+env:
+  global:
+    - RUMPEL_BUCKET=rumpel-build-artifacts
+    - AWS_DEFAULT_REGION=eu-west-1
+    - secure: rGkp2QHhU+T5VvIRYALgwCPkUqP64vZjVaUgmqt2B53N1hxLuJs3FMc9qdd3+0SJTTFndGSsGjANE6Nb6FZeEoT1OB8TQvW9ZOGZCbggpZLFfAEudZo4lzLBR0PASa7nJyyvlVaxuay7g6K0Llqm1Lfphd/1FAW6bmDORwJIbikak7ejfwAWoZCrzp5xmTsC7OZ6Th1dJ5HLCZhionPQ8jp1nEedrbC4a4ryop9D7vlF+zu7vxTd/ZHC41mKGUdrfCyzkWGhK58Ne1dNdHYiP/Arj30m0s36alkPsXeZnnfbWYqy+6u9KkR0Rt+cIgJALkIYY/aQQIqvREsaN4hcYn6DP02J8Yw0GUDDV+Mu1V+kCdWHI6izoJZjlGmZ6uXbABXbEiYFlp2j+JEa89B1diEL8sQ7qFShUs1/cUOGg1XYEyZq4ht8peIGhoTADHNFO+mSt6R8jxZThzD5YXJ7miAMvXCwENNEEZZQ32K7Ar2IREa99FLTpSSduQHz6TH8upZMICFHXwdM/Z2P72jELQ/cRBT3WkHGUm5pncOklu/zb1D7quvSm2sd97hVKczTxHM74XdBVhWEGEPpj+bzRhzKISDYlwDngCO08fv5HefqSbgewk0Ks+HhYb7aHOlmk5B568rymGD2VQJIGRD+Acyp1PrEyBNcVyfYtYAMHKw=
+    - secure: mXXvzrn94Nb6YWEskkdidDisSb2ncIX+8fnfBC7Z2zwgITHCa2kHva54fs8qMH5CAFTm6ROx+l3ejbYvUWiHQeLMefzXrnTicB7XAfYKkOfM2V5jmuweNFkn+AozZOos5vPfcuribrlHck57C9LcpkhkZARgNKaWskLFSTmwWjFRiaf0tqFm+8kaa01obu4SQLaYmyfmyUDVJga3L9HiZ8VybeaP3rYp0Z1vpX5+foqRmwFSHpcKiIrBjBzqMm/Tkf6R9gceXsCaZVmlfmyCuKxFos0Js0EwYX+xaduVKZU8xSwQ1p9m/r69qAlFQ2/Nd1iIYasTE1VY7O/FAIUz0N8S0R6SL0D5TwqNvS6lhUjPpn+vI3co5EvMtiVJ9E2ebBkKTvNJ1131rIwecIqUStDvCCFLMwuHDsSwtiAj/mTiuggK0dS4GGYFrTx5qxHR+9SUSGHIezgqEXXU3Ok9FPVRTNOxV97AMOQciXictroSX2Arpdho677/rpIkPnhJmxbUMe5x+TxnvyUdbMF3eDV22RlnJEp7wM12FrwVOUAYYDvpAg6RhCo3maV8e27en+DYWmP/oQaVnwWCkgYjKl+SdrNZf85gDdsPbU8yrVdNlpAeKfc6YgFSXdkyC06ma1t7BPgsyv7O25i0VgoFBbkhTQ/M2P599o0cGKuY8l4=
+    - secure: USVpIy0emFH9ZvrkckuOxF3a9SsWOnH5a8XqZ/5WcA8xT+Jk3MDk8f1upx4DBpa4V4DRxI7Cvr326cP/Xi2gsBmgaKneo1tjACExIy42R9YZ8XPdr1Bbng7LDO4xfNSrKwMBUOeA1vF9/yZU4ki0Fv/J5wLYCthpnfEQ7+mubZ9h4dzFv0hd1wAinFR0vTVAn3+dQ4jaZSU9Tl/0L5T7y2Z2v/m9c4PHkII38WwdIvkrdY2jmSm0eSD7iEIwv3UwYk9BTIknmdHYfQ7xx256tRkadgMThmhdJhdm6JaLr819fXe30u/OIH15hLyM4ND+FjW6DvKNs3+2AVT7uOSK/wRntA2Fwvpczq7cwMxi2mU4HXXzH7a82Iswnm8Nn6Od+9vxsRV3nyl8XLmkn8Gn03k6+Pr2jj/ljdvGYeFmMYcvSlskE6VbWBGxyu6vAjccnUtGK9r3lkoxjX8CgiCev+/fwX5jlWvTSVeS8bvGy7dlRQQ2XRscQ8av5fKcACZOJVpQ4YgKnQ8j4MDUfT6sJ/8kONwXu4d6f9AREazZEml5taKvkZuDpHWPr77SqG+9Fccybm8IWjr0uq1eR+URsKJAXWj7ah0a7qA4M8WikH0FePR79YyyF2APm8KtDe7ZsbkbMdjVngrRhpACCUtsGLPhX4Y62szoBY8SzYJV/LI=
+    - secure: garvO7sZMrDyhJ/LroK5SlidZCCBRa868Ebmuwwv75vlqeablbQk0LKEFqk6WjO428TIsu+JT0fkrg8eVoJPYO1n6/GhjtI9R4TgRNWcsoaFZe1RdCJkZoJemaeXkDomq34ZKRwnl7QsWeKInqtwDl3EJwoALaQjPPXEsrO20uodLKD8zFhCf89uQ4HIW6kAXJHTQSXByjkuRenhnyQ4nM/ixLnHZ+auJ/NG2RFUPADxRjpTNWcKoqvVh7QGzvYCiahDSaY669bZnLmTzOMH1EtVf8UPDFyHM56Pgq3a/OdOU4sxhSIdf3C+pbD8XV4lmU3gE/OLbybkk87YsU4J5iZLr552Dkm+g0ak2AnF4lxQwzm0sN/Q76eZRGpcBacncCLRlLK1kmWlfoJ6RrQTPRMBmNIzveCZ9gSY49AWEMUSn7ZG9F+MxCYnVAWlWDAEhKfQLYpHACa/GbGgvBaek6wG8vaeTMeBEVunpb3lsgQJ7fNBVtQ4vcn++0be1kW3+bAmPlviDJ+myey2O2uk1f5/T3k0s7UhbFcTzfN7HJ+2eIpg1Hp0FbmVEJvZVmE6TE8tiF0UwAJzbKDeU2HwGg8dXBbpKn/GWm70R1yytOCls4Mmndfxq75tnh9/ZRK7ihpa+TDg/xAjWqREGo1nHhObmY5L3rWxptyWKPgdVeA=
+
+matrix:
+  include:
+    - env:
+      - REPOSITORY_NAME=surreycode
+      - RUMPEL=surreycode
+    - env:
+      - REPOSITORY_NAME=xtiva
+      - RUMPEL=xtiva
+    - env:
+      - REPOSITORY_NAME=hubat
+      - RUMPEL=hubat
+    - env:
+      - REPOSITORY_NAME=quensus
+      - RUMPEL=quensus
+    - env:
+      - REPOSITORY_NAME=tamouk
+      - RUMPEL=tamo
+    - env:
+      - REPOSITORY_NAME=accept
+      - RUMPEL=accept
+    - env:
+      - REPOSITORY_NAME=hubofallthings
+      - RUMPEL=rumpel
+      - secure: "QrIhQCkVPMH6B+eKbdIRqpDyXyTS+SEJyQ3pz1GrrFipneQDZrwDj6VmYf00ebo1flNgEY/D/si1KoXk3NMfz3P9+3VzXzFOO4vjh2GShWJpvlSoo9FC31eSy2wCbtC7FVwOWn36200G2YL0UVVVG1vv+Sbto4Y8JUl/WahOoFix8R6v1ttyhnpVfknmTpxY/03btVdYkq03Yh9xqsMaAblATYvm1ApV/owy1FtfxY6Ykxwtd+aj0tnTAknJjAfk3irZXDQmLb6uGNPTH2YoijesdxpCq/YZhbUXEMQ+4YMGR9YU+3vR0gv65LGYk3+cdSn0teoDu6liiUxB80PKPEScyk68jfkfUvqDT0ODig02fKgVGi6QCQ2kcRFWEhZqlyHlO2UDndb4j632Zf+cwpPF4WZWoyN4BSgpeLM7VzpEYn4HF4MCLusya1feYe0Mn0gzLtTMaXu+K8c5OAqkyC3jKZBSFX98H2xNfpbrpV0op60QwY3Td7j7vd8q5b1/lub2xB3w/erfAs0wwVBfUbwVZrOFTMDt101t+hNAQBxqYHzP/6NhmfNizl/67erNQO+vMdeKqls6jKb0U/jvrkB4DiaIDuajUMHJKWh96SFKgeMjLQKKUlvNTBwJcULDeKio+vVdv1K3xLcS/MyzvoTPv7VjuAqYEv6JITtd0dk="
+      - secure: "HuEUJ12CGLphVWHMHRK6IHOb2mGUqDlojzM6swozu6ceGAm2PlHUZm6SkdkvhAWq7sonjpnQKEC/42olocxSBi6SPOkHrWxIQMPTODr84XLI4gsyw9yh2eGENfYF0vyRTB4u8MbsJ0RvwEyyTzWNrmxeIsvVudYAsXGWfR1L/WA4J7luyGHeJ+ce96ZhKE5wJz67hPIzkOY2A/pkUdrrV8K+aObg+MZz9KdMl4g1S/nFNDIMwvB1VRzJ8kPkukcOkMN/t0uBXJT9YJZWfgTvHRhZJSkHkaMCAq3h0fYUeHDH1n4Dyir8VWuHW1NkEtF6yaLF6WA2Wa9Y1+Ucw4ANYrwgSy3Bu1kd06xwmbMTo/iVzL18I/2N7dj4s64mvsHkpf6YM1aBXoT+8GS4sjB/1NIAfGOi/dl5jjJKk5rkA9K89BmStUW737LbLADL0148aUrn5tNSsP2BoSKTjRSgqbBpsyH51ids7GqSOb0CKemibcAGaIGnzXza68cQgFnwAk6WIehukBeH7e+bGudhVDIuO+AIEVclHkOTDr3a8jxDqpEspqdSYAx+3J0K3zBbVqkkg2Ouj6AM4p9hA72SEWLulThZfGIP77Lv2VJvnrdCMUmZ5k8j/Zv6itd+9dR07vOH+Iq0Z/o6wIVBogyxBdMR6K+LInIeyp0aJAFNFqM=" 
+
 
 # Use sed to replace the SSH URL with the public URL, then initialize submodules
 before_install:
   - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
   - git submodule update --init --recursive
 
+install:
+  - pip install --user awscli
+  - export PATH=$PATH:$HOME/.local/bin
+
+before_script:
+  - psql -c "CREATE DATABASE testhatdb1;" -U postgres
+  - psql -c "CREATE USER testhatdb1 WITH PASSWORD 'testing';" -U postgres
+  - psql -c "GRANT CREATE ON DATABASE testhatdb1 TO testhatdb1" -U postgres
+  - |
+    if [[ "$TRAVIS_PULL_REQUEST" = "false" || -z "$RUMPEL" ]]; then
+      cd ./hat/app/org/hatdex/hat/phata/assets/
+      aws s3 cp s3://${RUMPEL_BUCKET}/${RUMPEL} rumpel --recursive
+      cp rumpel/*.js* js/
+      cp rumpel/*.css stylesheets/
+      gzip --keep --force js/*.bundle.js
+      cp -r rumpel/assets/* .
+      rm -r rumpel
+      cd -
+    fi
 
 script:
-   - sbt clean
-   - sbt ++$TRAVIS_SCALA_VERSION compile test:compile
-   - sbt coverage "testOnly org.hatdex.hat.api.*" -Dconfig.file=src/main/resources/application.test.conf
+  - sbt clean
+  - sbt ++$TRAVIS_SCALA_VERSION compile
+  - |
+    if [[ "$REPOSITORY_NAME" = "hubat" ]]; then
+      sbt ++$TRAVIS_SCALA_VERSION test:compile
+      sbt coverage "testOnly org.hatdex.hat.api.*" -Dconfig.file=src/main/resources/application.test.conf
+    fi
+  - sbt "project hat" docker:stage
+  - docker build -t ${REPOSITORY_NAME}/hat:$(git rev-parse --short HEAD) hat/target/docker/stage
 
 after_success:
-  - sbt coveralls
+  - find $HOME/.sbt -name "*.lock" | xargs rm
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+  - |
+    if [[ "$TRAVIS_PULL_REQUEST" = "false" || -z "$RUMPEL" ]]; then
+      sbt coverageReport && sbt coverageAggregate && sbt coveralls
+    fi
+
+before_deploy:
+  - unset AWS_SECRET_ACCESS_KEY;
+    export AWS_SECRET_ACCESS_KEY=$DEPLOY_AWS_SECRET_ACCESS_KEY;
+    unset AWS_ACCESS_KEY_ID;
+    export AWS_ACCESS_KEY_ID=$DEPLOY_AWS_ACCESS_KEY_ID;
+    ECR_REPOSITORY=$(aws ecr describe-repositories --repository-name ${REPOSITORY_NAME} --query 'repositories[0].repositoryUri' --output text);
+    eval $(aws ecr get-login --no-include-email)
+  - docker tag ${REPOSITORY_NAME}/hat:$(git rev-parse --short HEAD) ${ECR_REPOSITORY}:$(git rev-parse --short HEAD)
+
+deploy:
+  - provider: script
+    script:
+      - docker push ${ECR_REPOSITORY}:$(git rev-parse --short HEAD)
+    skip_cleanup: true
+    on:
+      repo: Hub-of-all-Things/HAT2.0
+      branch: dev

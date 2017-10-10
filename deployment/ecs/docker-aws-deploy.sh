@@ -2,16 +2,15 @@
 
 set -e
 
+REPOSITORY_NAME=${REPOSITORY_NAME:-hubofallthings}
+
 VERSION=`git log --format="%H" -n 1`
+APPLICATION_NAME="hat"
+
+echo "Build ${APPLICATION_NAME} ${VERSION}"
+sbt "project ${APPLICATION_NAME}" docker:stage
 
 echo "Create package"
-export APPLICATION_NAME="hat"
-HAT_HOME=${PWD} #if executing from deployment/  : "$PWD/../.."
-DOCKER=${DOCKER:-"${HAT_HOME}/deployment/docker"}
-bash ${DOCKER}/hat/docker-build.sh
-
-echo "Publish to AWS"
-docker tag hubofallthings/${APPLICATION_NAME}:latest 717711705314.dkr.ecr.eu-west-1.amazonaws.com/hubofallthings:${VERSION}
-docker push 717711705314.dkr.ecr.eu-west-1.amazonaws.com/hubofallthings:${VERSION}
-
-echo "Built application version ${APPLICATION_NAME} ${VERSION}"
+cd ${APPLICATION_NAME}/target/docker/stage
+docker build -t ${REPOSITORY_NAME}/${APPLICATION_NAME}:${VERSION} .
+cd -

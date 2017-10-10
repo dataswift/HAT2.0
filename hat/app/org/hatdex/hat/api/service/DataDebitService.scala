@@ -28,8 +28,8 @@ import javax.inject.Inject
 
 import org.hatdex.hat.api.models.{ User, _ }
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
+import org.hatdex.libs.dal.SlickPostgresDriver.api._
 import org.joda.time.LocalDateTime
 
 import scala.concurrent.Future
@@ -113,8 +113,6 @@ class DataDebitService @Inject() (bundlesService: BundleService) extends DalExec
   }
 
   def listDataDebits()(implicit db: Database): Future[Seq[ApiDataDebit]] = {
-    // FIXME: local import while the rest of the service uses the old slick model
-    import org.hatdex.hat.dal.SlickPostgresDriver.api._
 
     val ddbundleContextlessQuery = for {
       dd <- DataDebit

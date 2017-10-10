@@ -27,21 +27,19 @@ import sbt._
 
 object Build extends Build {
 
-  lazy val codegen = Project(
-    id = "codegen",
-    base = file("codegen"))
+//  lazy val codegen = Project(
+//    id = "codegen",
+//    base = file("codegen"))
 
   lazy val hat = Project(
     id = "hat",
     base = file("hat"),
-    dependencies = Seq(
-      codegen % "compile->compile;test->test"))
+    dependencies = Seq())
 
   val root = Project(
     id = "hat-project",
     base = file("."),
     aggregate = Seq(
-      codegen,
       hat),
     settings = Defaults.coreDefaultSettings ++
       Seq(

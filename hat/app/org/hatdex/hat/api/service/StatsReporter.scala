@@ -31,10 +31,10 @@ import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
 import org.hatdex.hat.api.models.{ DataStats, Platform }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.SlickPostgresDriver.api._
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.FutureRetries
+import org.hatdex.libs.dal.SlickPostgresDriver.api._
 import org.hatdex.marketsquare.api.services.MarketsquareClient
 import play.api.libs.json.{ JsObject, Json }
 import play.api.libs.ws.WSClient

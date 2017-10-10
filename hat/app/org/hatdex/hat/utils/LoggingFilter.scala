@@ -45,16 +45,17 @@ class LoggingFilter @Inject() (@Named("hatServerProviderActor") serverProviderAc
     val startTime = System.currentTimeMillis
     implicit val timeout: akka.util.Timeout = 200 milliseconds
 
-    for {
-      result <- nextFilter(requestHeader)
-      activeHats <- serverProviderActor.ask(HatServerProviderActor.GetHatServersActive()).mapTo[HatServerProviderActor.HatServersActive]
-    } yield {
-      val endTime = System.currentTimeMillis
-      val requestTime = endTime - startTime
+    nextFilter(requestHeader) flatMap { result =>
+      serverProviderActor.ask(HatServerProviderActor.GetHatServersActive()).mapTo[HatServerProviderActor.HatServersActive] recover {
+        case e => HatServerProviderActor.HatServersActive(-1) // Could not fetch the number of active HATs
+      } map { activeHats =>
+        val endTime = System.currentTimeMillis
+        val requestTime = endTime - startTime
 
-      logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] [${result.header.status}] TIME [${requestTime}]ms HATs [${activeHats.active}]")
+        logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] [${result.header.status}] TIME [${requestTime}]ms HATs [${activeHats.active}]")
 
-      result.withHeaders("Request-Time" -> requestTime.toString)
+        result.withHeaders("Request-Time" -> requestTime.toString)
+      }
     }
   }
 }

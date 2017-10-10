@@ -26,7 +26,7 @@ package org.hatdex.hat.authentication
 
 import com.mohiva.play.silhouette.api.Authorization
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
-import org.hatdex.hat.api.models.{ DataCredit, Owner, UserRole }
+import org.hatdex.hat.api.models.{ Owner, UserRole }
 import org.hatdex.hat.authentication.models._
 import play.api.mvc.Request
 
@@ -35,13 +35,8 @@ import scala.concurrent.Future
 object WithTokenParameters {
   def roleMatchesToken(user: HatUser, authenticator: JWTRS256Authenticator, roles: UserRole*): Boolean = {
     authenticator.customClaims.flatMap { claims =>
-      (claims \ "accessScope").validate[String].asOpt.map { scope =>
-        if (user.roles.map(_.title.toLowerCase).contains(scope.toLowerCase)) {
-          true
-        }
-        else {
-          false
-        }
+      (claims \ "accessScope").validate[String].asOpt.map(_.toLowerCase).map { scope =>
+        user.roles.map(_.title.toLowerCase).contains(scope)
       }
     } getOrElse {
       true
@@ -60,19 +55,13 @@ case class WithRole(anyOf: UserRole*) extends Authorization[HatUser, JWTRS256Aut
       WithRole.isAuthorized(user, authenticator, anyOf: _*)
     }
   }
-
 }
+
 object WithRole {
   def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, anyOf: UserRole*): Boolean = {
-
-    if (WithTokenParameters.roleMatchesToken(user, authenticator)) {
-      anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner())
-    }
-    else {
-      false
-    }
+    WithTokenParameters.roleMatchesToken(user, authenticator) &&
+      (anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner()))
   }
-
 }
 
 /**
@@ -89,11 +78,7 @@ case class WithRoles(allOf: UserRole*) extends Authorization[HatUser, JWTRS256Au
 }
 
 object WithRoles {
-  def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, allOf: UserRole*): Boolean =
-    if (WithTokenParameters.roleMatchesToken(user, authenticator)) {
-      allOf.intersect(user.roles).size == allOf.size || user.roles.contains(Owner())
-    }
-    else {
-      false
-    }
+  def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, allOf: UserRole*): Boolean = {
+    WithTokenParameters.roleMatchesToken(user, authenticator) && (allOf.intersect(user.roles).size == allOf.size || user.roles.contains(Owner()))
+  }
 }

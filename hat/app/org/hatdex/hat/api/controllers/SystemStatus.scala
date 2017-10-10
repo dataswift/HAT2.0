@@ -34,28 +34,37 @@ import org.hatdex.hat.api.service.{ SystemStatusService, UsersService }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.ocpsoft.prettytime.PrettyTime
+import play.api.cache.{ CacheApi, Cached }
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
+import scala.concurrent.ExecutionContext
+
 class SystemStatus @Inject() (
     val messagesApi: MessagesApi,
+    cached: Cached,
     configuration: Configuration,
     silhouette: Silhouette[HatApiAuthEnvironment],
     hatServerProvider: HatServerProvider,
     systemStatusService: SystemStatusService,
     usersService: UsersService,
     clock: Clock,
-    hatDatabaseProvider: HatDatabaseProvider) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    hatDatabaseProvider: HatDatabaseProvider,
+    implicit val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   val logger = Logger(this.getClass)
 
-  def update(): Action[AnyContent] = UserAwareAction.async { implicit request =>
-    hatDatabaseProvider.update(request.dynamicEnvironment.db) map {
-      case _ =>
+  val indefiniteSuccessCaching = cached
+    .status(req => s"${req.host}${req.path}", 200)
+    .includeStatus(404, 600)
+
+  def update(): EssentialAction = indefiniteSuccessCaching {
+    UserAwareAction.async { implicit request =>
+      hatDatabaseProvider.update(request.dynamicEnvironment.db) map { _ =>
         Ok(Json.toJson(SuccessResponse("Database updated")))
+      }
     }
   }
 

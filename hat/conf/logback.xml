@@ -69,9 +69,10 @@
     <logger name="org.hatdex.hat.api.service" level="INFO" />
     <logger name="org.hatdex.hat.api.service.DataService" level="INFO" />
     <logger name="org.hatdex.hat.api.service.UsersService" level="WARN" />
-    <logger name="org.hatdex.hat.api.controllers" level="DEBUG" />
-    <logger name="org.hatdex.hat.api.service.monitoring" level="DEBUG" />
-    <logger name="org.hatdex.hat.modules" level="DEBUG" />
+    <logger name="org.hatdex.hat.authentication" level="INFO" />
+    <logger name="org.hatdex.hat.api.controllers" level="INFO" />
+    <logger name="org.hatdex.hat.api.service.monitoring" level="INFO" />
+    <logger name="org.hatdex.hat.modules" level="INFO" />
 
     <logger name="org.hatdex.marketsquare" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>
@@ -88,5 +89,19 @@
     <logger name="org.asynchttpclient" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
+
+    <logger name="com.zaxxer" level="ERROR">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
+    <logger name="com.digitaltangible.playguard" level="ERROR">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
+    <logger name="org.hatdex.hat.authentication.UserLimiter" level="ERROR">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
+
 
 </configuration>

@@ -29,9 +29,9 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.google.inject.ImplementedBy
 import play.api.Configuration
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.mailer._
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 @ImplementedBy(classOf[MailServiceImpl])
@@ -40,7 +40,11 @@ trait MailService {
   def sendEmail(recipients: String*)(subject: String, bodyHtml: String, bodyText: String): Unit
 }
 
-class MailServiceImpl @Inject() (system: ActorSystem, mailerClient: MailerClient, val conf: Configuration) extends MailService {
+class MailServiceImpl @Inject() (
+    system: ActorSystem,
+    mailerClient: MailerClient,
+    val conf: Configuration,
+    implicit val ec: ExecutionContext) extends MailService {
 
   lazy val from = conf.getString("play.mailer.from").get
 

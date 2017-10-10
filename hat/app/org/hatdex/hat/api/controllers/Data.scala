@@ -36,12 +36,11 @@ import org.hatdex.hat.authentication.{ HatApiController, WithRole, _ }
 import org.hatdex.hat.resourceManagement._
 import org.joda.time.DateTime
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 
 // this trait defines our service behavior independently from the service actor
 class Data @Inject() (
@@ -52,7 +51,8 @@ class Data @Inject() (
     silhouette: Silhouette[HatApiAuthEnvironment],
     hatServerProvider: HatServerProvider,
     clock: Clock,
-    dataService: DataService) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    dataService: DataService,
+    implicit val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   val logger = Logger(this.getClass)
 
@@ -196,14 +196,14 @@ class Data @Inject() (
     SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json) { implicit request =>
       val recordValues = request.body
       val insertedRecord = recordValues.validate[ApiRecordValues] match {
-        case recordValues: JsSuccess[ApiRecordValues] => dataService.storeRecordValues(Seq(recordValues.value)).map(v => Json.toJson(v.head))
+        case recordValues: JsSuccess[ApiRecordValues] => dataService.storeRecordValues(Seq(recordValues.value), request.identity.userId).map(v => Json.toJson(v.head))
         case e: JsError                               => Future.failed(new RuntimeException(s"Record value parsing failed: ${e.toString}"))
       }
 
       val insertedRecords = insertedRecord.recoverWith {
         case e: RuntimeException =>
           recordValues.validate[Seq[ApiRecordValues]] match {
-            case recordValues: JsSuccess[Seq[ApiRecordValues]] => dataService.storeRecordValues(recordValues.value).map(v => Json.toJson(v))
+            case recordValues: JsSuccess[Seq[ApiRecordValues]] => dataService.storeRecordValues(recordValues.value, request.identity.userId).map(v => Json.toJson(v))
             case e: JsError                                    => Future.failed(new RuntimeException(s"Record value parsing failed: ${e.toString}"))
           }
       }

@@ -90,7 +90,7 @@ class HatMailerImpl @Inject() (val configuration: play.api.Configuration, val ms
     Try {
       val emailFrom = configuration.getString("play.mailer.from").get
       ms.sendEmailAsync(email)(
-        subject = s"HAT ${server.hatName}.${server.domain} - reset your password",
+        subject = s"HAT ${server.domain} - reset your password",
         bodyHtml = views.html.mails.emailPasswordReset(user, resetLink),
         bodyText = views.txt.mails.emailPasswordReset(user, resetLink).toString())
     }
@@ -100,7 +100,7 @@ class HatMailerImpl @Inject() (val configuration: play.api.Configuration, val ms
     Try {
       val emailFrom = configuration.getString("play.mailer.from").get
       ms.sendEmailAsync(email)(
-        subject = s"HAT ${server.hatName}.${server.domain} - password changed",
+        subject = s"HAT ${server.domain} - password changed",
         bodyHtml = views.html.mails.emailPasswordChanged(user),
         bodyText = views.txt.mails.emailPasswordChanged(user).toString())
     }

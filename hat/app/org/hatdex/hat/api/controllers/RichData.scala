@@ -38,12 +38,11 @@ import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
 import play.api.cache.CacheApi
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.NonFatal
 
 class RichData @Inject() (
@@ -57,7 +56,8 @@ class RichData @Inject() (
     dataEventDispatcher: HatDataEventDispatcher,
     dataService: RichDataService,
     bundleService: RichBundleService,
-    dataDebitService: DataDebitContractService) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
+    dataDebitService: DataDebitContractService,
+    implicit val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
 
   private val logger = Logger(this.getClass)
   private val defaultRecordLimit = 1000
@@ -80,7 +80,7 @@ class RichData @Inject() (
       val dataEndpoint = s"$namespace/$endpoint"
       val query = Seq(EndpointQuery(dataEndpoint, None, None, None))
       val data = dataService.propertyData(query, orderBy, ordering.contains("descending"),
-        skip.getOrElse(0), take.getOrElse(defaultRecordLimit))
+        skip.getOrElse(0), take.orElse(Some(defaultRecordLimit)))
       data.map(d => Ok(Json.toJson(d)))
     }
 
@@ -155,7 +155,7 @@ class RichData @Inject() (
       val result = for {
         query <- bundleService.combinator(combinator).map(_.get)
         data <- dataService.propertyData(query, orderBy, ordering.contains("descending"),
-          skip.getOrElse(0), take.getOrElse(defaultRecordLimit))
+          skip.getOrElse(0), take.orElse(Some(defaultRecordLimit)))
       } yield data
 
       result map { d =>
@@ -250,9 +250,34 @@ class RichData @Inject() (
       dataDebitService.dataDebit(dataDebitId)
         .flatMap {
           case Some(debit) if debit.activeBundle.isDefined =>
-            dataService.bundleData(debit.activeBundle.get.bundle)
+            val eventualData = debit.activeBundle.get.conditions map { bundleConditions =>
+              dataService.bundleData(bundleConditions).flatMap { conditionValues =>
+                val conditionFulfillment: Map[String, Boolean] = conditionValues map {
+                  case (condition, values) =>
+                    (condition, values.nonEmpty)
+                }
+
+                if (conditionFulfillment.forall(_._2)) {
+                  logger.debug(s"Data Debit $dataDebitId conditions satisfied")
+                  dataService.bundleData(debit.activeBundle.get.bundle)
+                    .map(RichDataDebitData(Some(conditionFulfillment), _))
+                }
+                else {
+                  logger.debug(s"Data Debit $dataDebitId conditions not satisfied: $conditionFulfillment")
+                  Future.successful(RichDataDebitData(Some(conditionFulfillment), Map()))
+                }
+              }
+
+            } getOrElse {
+              logger.debug(s"Data Debit $dataDebitId without conditions")
+              dataService.bundleData(debit.activeBundle.get.bundle)
+                .map(RichDataDebitData(None, _))
+            }
+
+            eventualData
               .andThen(dataEventDispatcher.dispatchEventDataDebitValues(debit))
-              .map(values => Ok(Json.toJson(values)))
+              .map(d => Ok(Json.toJson(d)))
+
           case Some(_) => Future.successful(BadRequest(Json.toJson(Errors.dataDebitNotEnabled(dataDebitId))))
           case None    => Future.successful(NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId))))
         }

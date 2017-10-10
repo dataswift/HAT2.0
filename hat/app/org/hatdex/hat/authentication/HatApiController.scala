@@ -26,26 +26,26 @@ package org.hatdex.hat.authentication
 
 import javax.inject.Inject
 
+import akka.actor.ActorSystem
+import com.digitaltangible.playguard.{ RateLimitActionFilter, RateLimiter, clientIp }
 import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.actions._
 import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import net.ceedubs.ficus.Ficus._
-import org.hatdex.hat.api.models.User
+import org.hatdex.hat.api.json.HatJsonFormats
+import org.hatdex.hat.api.models.{ ErrorMessage, User }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.SlickPostgresDriver.api.Database
+import org.hatdex.libs.dal.SlickPostgresDriver.api.Database
 import org.hatdex.hat.resourceManagement._
 import org.joda.time.DateTime
-import play.api.{ Configuration, Logger, Play }
-import play.api.http.{ DefaultHttpErrorHandler, HttpErrorHandler, LazyHttpErrorHandler, Status }
+import play.api.Configuration
 import play.api.i18n.I18nSupport
-import play.api.libs.json.{ JsError, Reads }
-import play.api.mvc.BodyParsers.parse
-import play.api.mvc.{ BodyParser, Controller, RequestHeader, Result }
+import play.api.libs.json.Json
+import play.api.mvc._
 
-import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 abstract class HatController[T <: HatAuthEnvironment](
@@ -55,9 +55,9 @@ abstract class HatController[T <: HatAuthEnvironment](
     configuration: Configuration) extends Controller with I18nSupport {
 
   def env: Environment[T] = silhouette.env
-  def SecuredAction = silhouette.securedAction(env)
-  def UnsecuredAction = silhouette.unsecuredAction(env)
-  def UserAwareAction = silhouette.userAwareAction(env)
+  def SecuredAction: SecuredActionBuilder[T] = silhouette.securedAction(env)
+  def UnsecuredAction: UnsecuredActionBuilder[T] = silhouette.unsecuredAction(env)
+  def UserAwareAction: UserAwareActionBuilder[T] = silhouette.userAwareAction(env)
 
   implicit def securedRequest2User[A](implicit request: SecuredRequest[T, A]): HatUser = request.identity
   implicit def userAwareRequest2UserOpt[A](implicit request: UserAwareRequest[T, A]): Option[HatUser] = request.identity
@@ -100,4 +100,51 @@ abstract class HatFrontendController(
       cfg.getAs[FiniteDuration]("authenticatorIdleTimeout"),
       cfg.getAs[FiniteDuration]("cookieMaxAge"))
   }
+}
+
+/**
+ * A Limiter for user logic.
+ */
+class UserLimiter @Inject() (implicit val actorSystem: ActorSystem, implicit val configuration: Configuration) {
+  import scala.language.higherKinds
+
+  /**
+   * A Rate limiter Function for.
+   *
+   * @param rateLimiter The rate limiter implementation.
+   * @param reject The function to apply on reject.
+   * @param requestKeyExtractor The Request Parameter we want to filter from.
+   * @param actorSystem The implicit Akka Actor system.
+   * @tparam K the key by which to identify the user.
+   */
+  def createUserAware[T <: HatAuthEnvironment, R[_] <: UserAwareRequest[T, _], K](
+    rateLimiter: RateLimiter)(reject: R[_] => Result, requestKeyExtractor: R[_] => K)(
+    implicit
+    actorSystem: ActorSystem): RateLimitActionFilter[R] with ActionFunction[R, R] = {
+    new RateLimitActionFilter[R](rateLimiter)(reject, requestKeyExtractor) with ActionFunction[R, R]
+  }
+
+  def createSecured[T <: HatAuthEnvironment, R[_] <: SecuredRequest[T, _], K](
+    rateLimiter: RateLimiter)(reject: R[_] => Result, requestKeyExtractor: R[_] => K)(
+    implicit
+    actorSystem: ActorSystem): RateLimitActionFilter[R] with ActionFunction[R, R] = {
+    new RateLimitActionFilter[R](rateLimiter)(reject, requestKeyExtractor) with ActionFunction[R, R]
+  }
+
+  type Secured[B] = SecuredRequest[HatApiAuthEnvironment, B]
+  type UserAware[B] = UserAwareRequest[HatApiAuthEnvironment, B]
+
+  // allow 10 requests immediately and get a new token every 2 seconds
+  private val rl = new RateLimiter(10, 1f / 2, "[Rate Limiter]")
+
+  private implicit val errorMesageFormat = HatJsonFormats.errorMessage
+  private def response(r: RequestHeader) = Results.BadRequest(
+    Json.toJson(ErrorMessage("Request rate exceeded", "Rate of requests from your IP exceeded")))
+
+  def UserAwareRateLimit: RateLimitActionFilter[UserAware] with ActionFunction[UserAware, UserAware] =
+    createUserAware[HatApiAuthEnvironment, UserAware, String](rl)(response, clientIp)
+
+  def SecureRateLimit: RateLimitActionFilter[Secured] with ActionFunction[Secured, Secured] =
+    createSecured[HatApiAuthEnvironment, Secured, String](rl)(response, clientIp)
+
 }

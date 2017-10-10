@@ -32,12 +32,12 @@ object Dependencies {
   }
 
   val resolvers = Seq(
+    Resolver.jcenterRepo,
     "Atlassian Releases" at "https://maven.atlassian.com/public/",
-    "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
-    "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",
+    Resolver.bintrayRepo("scalaz", "releases"),
+    Resolver.sonatypeRepo("snapshots"),
     "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com",
-    "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com"
-  )
+    "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com")
 
   object Library {
 
@@ -70,9 +70,10 @@ object Dependencies {
       }
 
       object Utils {
-        val playBootstrap = "com.adrianhurt" %% "play-bootstrap" % "1.1-P25-B3" exclude("org.webjars", "jquery")
+        val playBootstrap = "com.adrianhurt" %% "play-bootstrap" % "1.1-P25-B3" exclude ("org.webjars", "jquery")
         val commonsValidator = "commons-validator" % "commons-validator" % "1.5.0"
         val htmlCompressor = "com.mohiva" %% "play-html-compressor" % "0.6.3"
+        val playGuard = "com.digitaltangible" %% "play-guard" % "2.0.0"
       }
 
       object Silhouette {
@@ -119,35 +120,29 @@ object Dependencies {
       val slickHikari = "com.typesafe.slick" %% "slick-hikaricp" % slickVersion
       val slickCodegen = "com.typesafe.slick" %% "slick-codegen" % slickVersion
       val slick_pgV = "0.14.6"
-      val slickPgCore = "com.github.tminglei" % "slick-pg_core_2.11" % slick_pgV
+      val slickPgCore = "com.github.tminglei" %% "slick-pg_core" % slick_pgV
       val slickPg = "com.github.tminglei" %% "slick-pg" % slick_pgV
       val slickPgJoda = "com.github.tminglei" %% "slick-pg_joda-time" % slick_pgV
       val slickPgJts = "com.github.tminglei" %% "slick-pg_jts" % slick_pgV
-      val slickPgSprayJson = "com.github.tminglei" % "slick-pg_spray-json_2.11" % slick_pgV
-      val slickPgPlayJson = "com.github.tminglei" % "slick-pg_play-json_2.11" % slick_pgV
+      val slickPgSprayJson = "com.github.tminglei" %% "slick-pg_spray-json" % slick_pgV
+      val slickPgPlayJson = "com.github.tminglei" %% "slick-pg_play-json" % slick_pgV
     }
 
     object Akka {
       private val version = "2.4.19"
       val slf4j = "com.typesafe.akka" %% "akka-slf4j" % version
-      val httpCore = "com.typesafe.akka" % "akka-http-core_2.11" % "10.0.8"
+      val httpCore = "com.typesafe.akka" %% "akka-http-core" % "10.0.8"
       val akkaStream = "com.typesafe.akka" %% "akka-stream" % version
       val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json-experimental" % version
       val akkaActor = "com.typesafe.akka" %% "akka-actor" % version
       val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % version
     }
 
-//    object Spray {
-//      private val version = "1.3.3"
-//      val sprayCan = "io.spray" %% "spray-can" % version
-//      val sprayRouting = "io.spray" %% "spray-routing-shapeless2" % version
-//      val sprayTestkit = "io.spray" %% "spray-testkit" % version % "test"
-//    }
-
     object HATDeX {
       private val version = "2.3.0-SNAPSHOT"
       val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.4.0-SNAPSHOT"
       val marketsquareClient = "org.hatdex" %% "marketsquare-client-scala-play" % version
+      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.2-SNAPSHOT"
     }
 
     val jwtCore = Play.Jwt.atlassianJwtCore

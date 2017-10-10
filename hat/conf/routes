@@ -95,6 +95,13 @@ GET           /api/v2/data-debit/$dataDebitId<[0-9a-zA-Z-]+>/disable            
 POST          /api/v2/data-debit/$dataDebitId<[0-9a-zA-Z-]+>                                        org.hatdex.hat.api.controllers.RichData.registerDataDebit(dataDebitId)
 PUT           /api/v2/data-debit/$dataDebitId<[0-9a-zA-Z-]+>                                        org.hatdex.hat.api.controllers.RichData.updateDataDebit(dataDebitId)
 
+GET           /api/v2/migrate                                                                       org.hatdex.hat.api.controllers.DataMigration.migrateData(fromSource: String, fromTableName: String, toNamespace: String, toEndpoint: String, includeTimestamp: Boolean = true)
+
+# APPLICATION routes
+
+GET           /api/v2/application                                                                   org.hatdex.hat.api.controllers.Applications.apps()
+POST          /api/v2/application                                                                   org.hatdex.hat.api.controllers.Applications.saveApp()
+
 # AUTHENTICATION routes
 
 GET           /control/v2/auth/hatlogin                            org.hatdex.hat.api.controllers.Authentication.hatLogin(name: String, redirect: String)

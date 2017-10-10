@@ -34,8 +34,11 @@ import akka.util.Timeout
 import com.mohiva.play.silhouette.api.services.DynamicEnvironmentProviderService
 import org.bouncycastle.util.io.pem.{ PemObject, PemWriter }
 import org.hatdex.hat.resourceManagement.actors.HatServerProviderActor
-import play.api.Logger
+import org.hatdex.hat.utils.Utils
+import play.api.{ Configuration, Logger }
+import play.api.cache.CacheApi
 import play.api.mvc.Request
+import net.ceedubs.ficus.Ficus._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -55,10 +58,15 @@ trait HatServerProvider extends DynamicEnvironmentProviderService[HatServer] {
 }
 
 @Singleton
-class HatServerProviderImpl @Inject() (@Named("hatServerProviderActor") serverProviderActor: ActorRef, hatKeyProvider: HatKeyProvider) extends HatServerProvider {
-  import play.api.libs.concurrent.Execution.Implicits._
+class HatServerProviderImpl @Inject() (
+    configuration: Configuration,
+    @Named("hatServerProviderActor") serverProviderActor: ActorRef) extends HatServerProvider {
+
+  import org.hatdex.hat.api.service.IoExecutionContext.ioThreadPool
 
   private val logger = Logger(this.getClass)
+  private val serverInfoExpiry = 1.hour
+  private val serverErrorExpiry = 2.minutes
 
   def retrieve[B](request: Request[B]): Future[Option[HatServer]] = {
     val hatAddress = request.host //.split(':').headOption.getOrElse(request.host)
@@ -67,7 +75,7 @@ class HatServerProviderImpl @Inject() (@Named("hatServerProviderActor") serverPr
 
   def retrieve(hatAddress: String): Future[Option[HatServer]] = {
     logger.info(s"Retrieving environment for $hatAddress")
-    implicit val timeout: Timeout = 10.seconds
+    implicit val timeout: Timeout = configuration.underlying.as[FiniteDuration]("resourceManagement.serverProvisioningTimeout")
     (serverProviderActor ? HatServerProviderActor.HatServerRetrieve(hatAddress)) flatMap {
       case server: HatServer =>
         logger.debug(s"Got back server $server")
@@ -77,11 +85,13 @@ class HatServerProviderImpl @Inject() (@Named("hatServerProviderActor") serverPr
         Future.failed(error)
       case message =>
         logger.warn(s"Unknown message $message from HAT Server provider actor")
-        Future.failed(new HatServerDiscoveryException("Unknown message"))
+        val error = new HatServerDiscoveryException("Unknown message")
+        Future.failed(error)
     } recoverWith {
       case e =>
         logger.warn(s"Error while retrieving HAT Server info: ${e.getMessage}")
-        Future.failed(new HatServerDiscoveryException("HAT Server info retrieval failed", e))
+        val error = new HatServerDiscoveryException("HAT Server info retrieval failed", e)
+        Future.failed(error)
     }
   }
 

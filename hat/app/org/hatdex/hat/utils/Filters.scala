@@ -38,7 +38,13 @@ class Filters @Inject() (
   tlsFilter: TLSFilter,
   gzip: GzipFilter,
   corsFilter: CORSFilter,
-  log: LoggingFilter) extends DefaultHttpFilters(tlsFilter, gzip, corsFilter, log)
+  log: LoggingFilter) extends DefaultHttpFilters(log, tlsFilter, gzip, corsFilter)
+
+class DevFilters @Inject() (
+  tlsFilter: TLSFilter,
+  gzip: GzipFilter,
+  corsFilter: CORSFilter,
+  log: LoggingFilter) extends DefaultHttpFilters(log, gzip, corsFilter)
 
 class TLSFilter @Inject() (
     implicit

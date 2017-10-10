@@ -29,3 +29,7 @@ addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.6")
 resolvers += "Era7 maven releases" at "https://s3-eu-west-1.amazonaws.com/releases.era7.com"
 
 addSbtPlugin("ohnosequences" % "sbt-s3-resolver" % "0.15.0")
+
+resolvers += "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com"
+
+addSbtPlugin("org.hatdex" % "sbt-slick-postgres-generator" % "0.0.2-SNAPSHOT")

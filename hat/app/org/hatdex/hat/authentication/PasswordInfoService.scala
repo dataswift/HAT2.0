@@ -24,36 +24,47 @@
 
 package org.hatdex.hat.authentication
 
-import javax.inject.Inject
+import javax.inject.{ Inject, Named }
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
+import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.authentication.Implicits._
 import org.hatdex.hat.resourceManagement.HatServer
+import org.hatdex.hat.utils.Utils
 import play.api.Logger
+import play.api.cache.{ CacheApi, NamedCache }
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
-class PasswordInfoService @Inject() (userService: AuthUserServiceImpl) extends DelegableAuthInfoDAO[PasswordInfo, HatServer] {
+class PasswordInfoService @Inject() (
+  implicit
+  @NamedCache("user-cache") val cache: CacheApi,
+  userService: AuthUserServiceImpl)
+    extends DelegableAuthInfoDAO[PasswordInfo, HatServer] with DalExecutionContext {
+
   val logger = Logger(this.getClass)
-  def add(loginInfo: LoginInfo, authInfo: PasswordInfo)(implicit hat: HatServer): Future[PasswordInfo] =
+
+  def add(loginInfo: LoginInfo, authInfo: PasswordInfo)(implicit hat: HatServer): Future[PasswordInfo] = {
     update(loginInfo, authInfo)
+  }
 
   def find(loginInfo: LoginInfo)(implicit hat: HatServer): Future[Option[PasswordInfo]] = {
-    logger.info(s"Finding password info for $loginInfo")
-    userService.retrieve(loginInfo).map {
-      case Some(user) if user.pass.isDefined =>
-        logger.info(s"Got back user ${user}")
-        Some(user.pass.get)
-      case _ =>
-        logger.info("No such user")
-        None
+    Utils.cacheAsync(s"passwordInfo:${loginInfo.providerKey}") {
+      userService.retrieve(loginInfo).map {
+        case Some(user) if user.pass.isDefined =>
+          Some(user.pass.get)
+        case _ =>
+          logger.info("No such user")
+          None
+      }
     }
   }
 
-  def remove(loginInfo: LoginInfo)(implicit hat: HatServer): Future[Unit] = Future.successful(()) //userService.remove(loginInfo)
+  def remove(loginInfo: LoginInfo)(implicit hat: HatServer): Future[Unit] =
+    userService.remove(loginInfo)
 
   def save(loginInfo: LoginInfo, authInfo: PasswordInfo)(implicit hat: HatServer): Future[PasswordInfo] =
     find(loginInfo).flatMap {
@@ -64,6 +75,7 @@ class PasswordInfoService @Inject() (userService: AuthUserServiceImpl) extends D
   def update(loginInfo: LoginInfo, authInfo: PasswordInfo)(implicit hat: HatServer): Future[PasswordInfo] =
     userService.retrieve(loginInfo).map {
       case Some(user) => {
+        cache.remove(s"passwordInfo:${loginInfo.providerKey}")
         userService.save(user.copy(pass = Some(authInfo)))
         authInfo
       }

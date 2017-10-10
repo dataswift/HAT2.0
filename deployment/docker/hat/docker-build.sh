@@ -6,7 +6,7 @@ set -e
 HAT_HOME=${HAT_HOME:-"$PWD/hat"} #if executing from deployment/  : "$PWD/../.."
 DOCKER=${DOCKER:-"$PWD/deployment/docker/hat"}
 DOCKER_DEPLOY=$DOCKER/docker-deploy
-APP=${APPLICATION_NAME:-hat-experimental}
+APP=${APPLICATION_NAME:-hat}
 
 echo "Creating $DOCKER_DEPLOY"
 mkdir $DOCKER_DEPLOY

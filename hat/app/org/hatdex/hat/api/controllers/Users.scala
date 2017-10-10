@@ -37,12 +37,11 @@ import org.hatdex.hat.authentication.{ HatApiController, WithRole, _ }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement._
 import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 
 class Users @Inject() (
     val messagesApi: MessagesApi,
@@ -51,7 +50,8 @@ class Users @Inject() (
     hatServerProvider: HatServerProvider,
     clock: Clock,
     hatServicesService: HatServicesService,
-    usersService: UsersService) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    usersService: UsersService,
+    implicit val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   private val logger = Logger(this.getClass)
 
@@ -118,10 +118,7 @@ class Users @Inject() (
           Future.successful(Forbidden(Json.toJson(ErrorMessage("Forbidden", s"Privileged account can not be enabled or disabled"))))
         }
         else {
-          for {
-            _ <- usersService.deleteUser(userId)
-            created <- usersService.saveUser(updatedUser)
-          } yield {
+          usersService.saveUser(updatedUser) map { created =>
             Created(Json.toJson(ModelTranslation.fromInternalModel(created)))
           }
         }
@@ -132,7 +129,6 @@ class Users @Inject() (
   }
 
   def enableUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
-    implicit val db = request.dynamicEnvironment.asInstanceOf[HatServer].db
     usersService.getUser(userId) flatMap { maybeUser =>
       maybeUser map { user =>
         if (privilegedRole(user)) {
@@ -148,7 +144,6 @@ class Users @Inject() (
   }
 
   def disableUser(userId: UUID): Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
-    implicit val db = request.dynamicEnvironment.asInstanceOf[HatServer].db
     usersService.getUser(userId) flatMap { maybeUser =>
       maybeUser map { user =>
         if (privilegedRole(user)) {
