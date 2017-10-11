@@ -28,6 +28,7 @@ import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
@@ -290,20 +291,29 @@ class RichData @Inject() (
       }
     }
 
-  def enableDataDebit(dataDebitId: String, bundleId: String): Action[AnyContent] =
+  def enableDataDebitBundle(dataDebitId: String, bundleId: String): Action[AnyContent] =
     SecuredAction(WithRole(Owner())).async { implicit request =>
-      val enabled = for {
-        _ <- dataDebitService.dataDebitEnableBundle(dataDebitId, bundleId)
-        debit <- dataDebitService.dataDebit(dataDebitId)
-      } yield debit
-
-      enabled
-        .andThen(dataEventDispatcher.dispatchEventMaybeDataDebit(DataDebitOperations.Enable()))
-        .map {
-          case Some(debit) => Ok(Json.toJson(debit))
-          case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
-        }
+      enableDataDebit(dataDebitId, Some(bundleId))
     }
+
+  def enableDataDebitNewest(dataDebitId: String): Action[AnyContent] =
+    SecuredAction(WithRole(Owner())).async { implicit request =>
+      enableDataDebit(dataDebitId, None)
+    }
+
+  protected def enableDataDebit(dataDebitId: String, bundleId: Option[String])(implicit request: SecuredRequest[HatApiAuthEnvironment, AnyContent]) = {
+    val enabled = for {
+      _ <- dataDebitService.dataDebitEnableBundle(dataDebitId, bundleId)
+      debit <- dataDebitService.dataDebit(dataDebitId)
+    } yield debit
+
+    enabled
+      .andThen(dataEventDispatcher.dispatchEventMaybeDataDebit(DataDebitOperations.Enable()))
+      .map {
+        case Some(debit) => Ok(Json.toJson(debit))
+        case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
+      }
+  }
 
   def disableDataDebit(dataDebitId: String): Action[AnyContent] =
     SecuredAction(WithRole(Owner())).async { implicit request =>
