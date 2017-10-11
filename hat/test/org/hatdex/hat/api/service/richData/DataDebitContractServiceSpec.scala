@@ -124,7 +124,7 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
       val service = application.injector.instanceOf[DataDebitContractService]
       val saved = for {
         _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        _ <- service.dataDebitEnableBundle("dd", testDataDebitRequest.bundle.name)
+        _ <- service.dataDebitEnableBundle("dd", None)
         saved <- service.dataDebit("dd")
       } yield saved
 
@@ -144,7 +144,7 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
       val saved = for {
         _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
         _ <- service.updateDataDebitBundle("dd", testDataDebitRequestUpdate, owner.userId)
-        _ <- service.dataDebitEnableBundle("dd", testDataDebitRequestUpdate.bundle.name)
+        _ <- service.dataDebitEnableBundle("dd", Some(testDataDebitRequestUpdate.bundle.name))
         saved <- service.dataDebit("dd")
       } yield saved
 
@@ -167,9 +167,9 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
 
       val saved = for {
         _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        _ <- service.dataDebitEnableBundle("dd", testDataDebitRequest.bundle.name)
+        _ <- service.dataDebitEnableBundle("dd", Some(testDataDebitRequest.bundle.name))
         _ <- service.updateDataDebitBundle("dd", testDataDebitRequestUpdate, owner.userId)
-        _ <- service.dataDebitEnableBundle("dd", testDataDebitRequestUpdate.bundle.name)
+        _ <- service.dataDebitEnableBundle("dd", Some(testDataDebitRequestUpdate.bundle.name))
         _ <- service.dataDebitDisable("dd")
         saved <- service.dataDebit("dd")
       } yield saved
