@@ -145,22 +145,22 @@ class DataDebitContractService extends DalExecutionContext with RichDataJsonForm
       .map(_.enabled)
       .update(false)
 
-    val newestBundleEnabled = specificBundle map { bundleId =>
+    val dataDebitBundleFilter = specificBundle map { bundleId =>
       DataDebitBundle
         .filter(_.dataDebitKey === dataDebitKey)
         .filter(_.bundleId === bundleId)
-        .map(_.enabled)
-        .update(true)
     } getOrElse {
       DataDebitBundle
         .filter(_.dataDebitKey === dataDebitKey)
         .sortBy(_.dateCreated.desc)
         .take(1)
-        .map(_.enabled)
-        .update(true)
     }
 
-    db.run(DBIO.seq(dataBundlesDisabled, newestBundleEnabled).transactionally)
+    val dataDebitBundleEnable = DataDebitBundle
+      .filter(_.bundleId in dataDebitBundleFilter.map(_.bundleId))
+      .map(_.enabled).update(true)
+
+    db.run(DBIO.seq(dataBundlesDisabled, dataDebitBundleEnable).transactionally)
       .map(_ => ())
   }
 
