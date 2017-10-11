@@ -1,19 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2447" height="2447" viewBox="0 0 2447 2447">
-  <defs>
-    <style>
-      .cls-1 {
-        fill: #009688;
-      }
-
-      .cls-2 {
-        fill: #fff;
-        fill-rule: evenodd;
-      }
-    </style>
-  </defs>
-  <circle id="Ellipse_1_copy_10" data-name="Ellipse 1 copy 10" class="cls-1" cx="1235" cy="1234" r="1187"/>
-  <path id="Rectangle_1_copy_10" data-name="Rectangle 1 copy 10" class="cls-2" d="M598.3,848.075L1022.85,646.327v454.3L598.3,1297.02V848.075Z"/>
-  <path id="Rectangle_1_copy_10-2" data-name="Rectangle 1 copy 10" class="cls-2" d="M1087.71,612.466l436.37-207.4V878.6l-436.37,201.9V612.466Z"/>
-  <path id="Rectangle_1_copy_10-3" data-name="Rectangle 1 copy 10" class="cls-2" d="M598.3,1380.22l424.548-195.4v454.3L598.3,1829.17V1380.22Z"/>
-  <path id="Rectangle_1_copy_10-4" data-name="Rectangle 1 copy 10" class="cls-2" d="M1550.38,1383.67l436.37-200.88v460.62l-436.37,195.38V1383.67Z"/>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 21.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 2447 2447" style="enable-background:new 0 0 2447 2447;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#009688;}
+	.st1{fill:#FFFFFF;}
+</style>
+<circle id="Ellipse_1_copy_10" class="st0" cx="1235" cy="1234" r="1187"/>
+<path id="Rectangle_1_copy_10" class="st1" d="M598.3,848.1l424.5-201.7v454.3L598.3,1297V848.1z"/>
+<path id="Rectangle_1_copy_10-2" class="st1" d="M1087.7,612.5l436.4-207.4v473.5l-436.4,201.9V612.5z"/>
+<path id="Rectangle_1_copy_10-3" class="st1" d="M598.3,1380.2l424.5-195.4v454.3l-424.5,190.1V1380.2z"/>
+<path id="Rectangle_1_copy_10-4" class="st1" d="M1550.4,1383.7l436.4-200.9v460.6l-436.4,195.4V1383.7z"/>
 </svg>
