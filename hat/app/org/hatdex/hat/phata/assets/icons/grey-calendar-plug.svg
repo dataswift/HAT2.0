@@ -45,7 +45,7 @@
 	c22.18-0.566,44.479-4.951,64.35-15.092c-0.774-24.061-1.066-48.128-1.199-72.198C509.594,313.234,508.943,264.233,512.15,215.697"
 	/>
 <linearGradient id="SVGID_3_" gradientUnits="userSpaceOnUse" x1="78.6201" y1="702.2979" x2="395.9355" y2="702.2979" gradientTransform="matrix(4.4245 0 0 -4.4245 6.7878 3572.1802)">
-	<stop  offset="0" style="stop-color:#FFFFFF"/>
+	<stop  offset="0" style="stop-color:white"/>
 	<stop  offset="1" style="stop-color:#737373"/>
 </linearGradient>
 <path fill="url(#SVGID_3_)" d="M471.875,464.625c-4.615-0.031-9.221,0.15-13.813,0.541h38.271

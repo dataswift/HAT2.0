@@ -219,7 +219,7 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
         _ <- dataService.saveData(owner.userId, List(EndpointData("test", None, simpleJson2, None)))
         _ <- dataService.saveData(owner.userId, List(EndpointData("complex", None, complexJson, None)))
         _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        _ <- service.dataDebitEnableBundle("dd", testDataDebitRequest.bundle.name)
+        _ <- service.dataDebitEnableBundle("dd", None)
         data <- Helpers.call(controller.getDataDebitValues("dd"), request)
       } yield data
 
@@ -242,7 +242,7 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
         _ <- dataService.saveData(owner.userId, List(EndpointData("test", None, simpleJson2, None)))
         _ <- dataService.saveData(owner.userId, List(EndpointData("complex", None, complexJson, None)))
         _ <- service.createDataDebit("dd", ddRequestionConditionsFailed, owner.userId)
-        _ <- service.dataDebitEnableBundle("dd", ddRequestionConditionsFailed.bundle.name)
+        _ <- service.dataDebitEnableBundle("dd", Some(ddRequestionConditionsFailed.bundle.name))
         data <- Helpers.call(controller.getDataDebitValues("dd"), request)
       } yield data
 
@@ -264,7 +264,7 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
         _ <- dataService.saveData(owner.userId, List(EndpointData("test", None, simpleJson2, None)))
         _ <- dataService.saveData(owner.userId, List(EndpointData("complex", None, complexJson, None)))
         _ <- service.createDataDebit("dd", ddRequestionConditionsFulfilled, owner.userId)
-        _ <- service.dataDebitEnableBundle("dd", ddRequestionConditionsFulfilled.bundle.name)
+        _ <- service.dataDebitEnableBundle("dd", Some(ddRequestionConditionsFulfilled.bundle.name))
         data <- Helpers.call(controller.getDataDebitValues("dd"), request)
       } yield data
 
