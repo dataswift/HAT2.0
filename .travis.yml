@@ -132,9 +132,9 @@ deploy:
       repo: Hub-of-all-Things/HAT2.0
       branch: dev
   - provider: script
-      script:
-        - docker push ${ECR_REPOSITORY}:$(git rev-parse --short HEAD)
-      skip_cleanup: true
-      on:
-        repo: Hub-of-all-Things/HAT2.0
-        branch: master
+    script:
+      - docker push ${ECR_REPOSITORY}:$(git rev-parse --short HEAD)
+    skip_cleanup: true
+    on:
+      repo: Hub-of-all-Things/HAT2.0
+      branch: master
