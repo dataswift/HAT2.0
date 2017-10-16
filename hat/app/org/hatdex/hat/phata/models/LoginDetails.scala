@@ -32,8 +32,8 @@ import play.api.libs.json.{ JsError, _ }
 import scala.collection.JavaConverters._
 
 case class ApiPasswordChange(
-  newPassword: String,
-  password: Option[String])
+    newPassword: String,
+    password: Option[String])
 
 object ApiPasswordChange {
 
@@ -88,7 +88,7 @@ object ApiPasswordChange {
 }
 
 case class ApiPasswordResetRequest(
-  email: String)
+    email: String)
 
 object ApiPasswordResetRequest {
   implicit val passwordResetApiReads: Reads[ApiPasswordResetRequest] =

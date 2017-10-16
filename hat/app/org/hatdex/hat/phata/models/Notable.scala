@@ -29,41 +29,41 @@ import org.joda.time.DateTime
 import play.api.libs.json.Json
 
 case class NotableAuthor(
-  id: Option[String],
-  name: Option[String],
-  nick: Option[String],
-  phata: String,
-  photo_url: Option[String])
+    id: Option[String],
+    name: Option[String],
+    nick: Option[String],
+    phata: String,
+    photo_url: Option[String])
 
 case class NotableLocation(
-  latitude: String,
-  longitude: String,
-  accuracy: Option[String],
-  altitude: Option[String],
-  altitude_accuracy: Option[String],
-  heading: Option[String],
-  speed: Option[String],
-  shared: Option[String])
+    latitude: String,
+    longitude: String,
+    accuracy: Option[String],
+    altitude: Option[String],
+    altitude_accuracy: Option[String],
+    heading: Option[String],
+    speed: Option[String],
+    shared: Option[String])
 
 case class NotablePhoto(
-  link: String,
-  source: String,
-  caption: String,
-  shared: String)
+    link: String,
+    source: String,
+    caption: String,
+    shared: String)
 
 case class Notable(
-  id: Int,
-  recordDateLastUpdated: DateTime,
-  message: String,
-  kind: String,
-  created_time: DateTime,
-  updated_time: DateTime,
-  public_until: Option[DateTime],
-  shared: Boolean,
-  shared_on: Option[List[String]],
-  author: NotableAuthor,
-  location: Option[NotableLocation],
-  photo: Option[NotablePhoto])
+    id: Int,
+    recordDateLastUpdated: DateTime,
+    message: String,
+    kind: String,
+    created_time: DateTime,
+    updated_time: DateTime,
+    public_until: Option[DateTime],
+    shared: Boolean,
+    shared_on: Option[List[String]],
+    author: NotableAuthor,
+    location: Option[NotableLocation],
+    photo: Option[NotablePhoto])
 
 object Notable extends DateTimeMarshalling {
   implicit val notableAuthorFormat = Json.format[NotableAuthor]

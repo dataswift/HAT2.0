@@ -41,7 +41,7 @@ object BasicSettings extends AutoPlugin {
       "-deprecation", // Emit warning and location for usages of deprecated APIs.
       "-feature", // Emit warning and location for usages of features that should be imported explicitly.
       "-unchecked", // Enable additional warnings where generated code depends on assumptions.
-      "-Xfatal-warnings", // Fail the compilation if there are any warnings.
+//      "-Xfatal-warnings", // Fail the compilation if there are any warnings.
       "-Xlint", // Enable recommended additional warnings.
       "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver.
       "-Ywarn-dead-code", // Warn when dead code is identified.
@@ -61,45 +61,6 @@ object BasicSettings extends AutoPlugin {
     // and https://github.com/travis-ci/travis-ci/issues/3775
     javaOptions += "-Xmx1G"
   )
-}
-
-////*******************************
-//// Scalariform settings
-////*******************************
-object CodeFormatter extends AutoPlugin {
-
-  import com.typesafe.sbt.SbtScalariform._
-
-  import scalariform.formatter.preferences._
-
-  lazy val BuildConfig = config("build") extend Compile
-  lazy val BuildSbtConfig = config("buildsbt") extend Compile
-
-  lazy val prefs = Seq(
-    ScalariformKeys.preferences := ScalariformKeys.preferences.value
-      .setPreference(FormatXml, false)
-      .setPreference(DoubleIndentClassDeclaration, true)
-      .setPreference(AlignSingleLineCaseStatements, true)
-      .setPreference(CompactControlReadability, true)
-      .setPreference(DanglingCloseParenthesis, Prevent)
-  )
-
-  override def trigger = allRequirements
-
-  override def projectSettings = defaultScalariformSettings ++ prefs ++
-    inConfig(BuildConfig)(configScalariformSettings) ++
-    inConfig(BuildSbtConfig)(configScalariformSettings) ++
-    Seq(
-      scalaSource in BuildConfig := baseDirectory.value / "project",
-      scalaSource in BuildSbtConfig := baseDirectory.value / "project",
-      includeFilter in (BuildConfig, ScalariformKeys.format) := ("*.scala": FileFilter),
-      includeFilter in (BuildSbtConfig, ScalariformKeys.format) := ("*.sbt": FileFilter),
-      ScalariformKeys.format in Compile := {
-        (ScalariformKeys.format in BuildSbtConfig).value
-        (ScalariformKeys.format in BuildConfig).value
-        (ScalariformKeys.format in Compile).value
-      }
-    )
 }
 
 ////*******************************

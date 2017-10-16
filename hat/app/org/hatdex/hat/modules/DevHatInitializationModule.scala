@@ -100,10 +100,10 @@ class DevHatInitializer @Inject() (
 }
 
 case class DevHatConfig(
-  owner: String,
-  ownerName: String,
-  ownerPasswordHash: String,
-  platform: String,
-  platformName: String,
-  platformPasswordHash: String,
-  database: Config)
+    owner: String,
+    ownerName: String,
+    ownerPasswordHash: String,
+    platform: String,
+    platformName: String,
+    platformPasswordHash: String,
+    database: Config)

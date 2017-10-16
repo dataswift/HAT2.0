@@ -40,10 +40,10 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 class PasswordInfoService @Inject() (
-  implicit
-  @NamedCache("user-cache") val cache: CacheApi,
-  userService: AuthUserServiceImpl)
-    extends DelegableAuthInfoDAO[PasswordInfo, HatServer] with DalExecutionContext {
+    implicit
+    @NamedCache("user-cache") val cache: CacheApi,
+    userService: AuthUserServiceImpl)
+  extends DelegableAuthInfoDAO[PasswordInfo, HatServer] with DalExecutionContext {
 
   val logger = Logger(this.getClass)
 

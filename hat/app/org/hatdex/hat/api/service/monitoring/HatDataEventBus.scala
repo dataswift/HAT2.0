@@ -131,27 +131,27 @@ object HatDataEventBus {
   }
 
   case class DataCreatedEvent(
-    hat: String,
-    user: User,
-    time: DateTime,
-    logEntry: String,
-    data: Seq[EndpointData]) extends HatDataEvent
+      hat: String,
+      user: User,
+      time: DateTime,
+      logEntry: String,
+      data: Seq[EndpointData]) extends HatDataEvent
 
   case class DataDebitEvent(
-    hat: String,
-    user: User,
-    time: DateTime,
-    logEntry: String,
-    dataDebit: RichDataDebit,
-    operation: DataDebitOperations.DataDebitOperation) extends HatDataEvent
+      hat: String,
+      user: User,
+      time: DateTime,
+      logEntry: String,
+      dataDebit: RichDataDebit,
+      operation: DataDebitOperations.DataDebitOperation) extends HatDataEvent
 
   case class DataRetrievedEvent(
-    hat: String,
-    user: User,
-    time: DateTime,
-    logEntry: String,
-    dataDebit: RichDataDebit,
-    data: Seq[EndpointData]) extends HatDataEvent
+      hat: String,
+      user: User,
+      time: DateTime,
+      logEntry: String,
+      dataDebit: RichDataDebit,
+      data: Seq[EndpointData]) extends HatDataEvent
 
   case class HatDataSubscriber(hat: HatServer)
 }

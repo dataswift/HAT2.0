@@ -34,21 +34,21 @@ case class DatabaseInstance(id: UUID, name: String, password: String)
 case class DatabaseServer(id: Int, host: String, port: Int, dateCreated: DateTime, databases: Seq[DatabaseInstance])
 
 case class HatKeys(
-  privateKey: String,
-  publicKey: String)
+    privateKey: String,
+    publicKey: String)
 
 case class HatSignup(
-  id: UUID,
-  fullName: String,
-  username: String,
-  email: String,
-  pass: String,
-  dbPass: String,
-  created: Boolean,
-  registerTime: DateTime,
-  database: Option[DatabaseInstance],
-  databaseServer: Option[DatabaseServer],
-  keys: Option[HatKeys])
+    id: UUID,
+    fullName: String,
+    username: String,
+    email: String,
+    pass: String,
+    dbPass: String,
+    created: Boolean,
+    registerTime: DateTime,
+    database: Option[DatabaseInstance],
+    databaseServer: Option[DatabaseServer],
+    keys: Option[HatKeys])
 
 object HatSignup {
   implicit val databaseInstanceFormat = Json.format[DatabaseInstance]

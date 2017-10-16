@@ -43,11 +43,11 @@ trait FileManager {
 }
 
 case class AwsS3Configuration(
-  bucketName: String,
-  accessKeyId: String,
-  secretKey: String,
-  region: String,
-  signedUrlExpiry: FiniteDuration)
+    bucketName: String,
+    accessKeyId: String,
+    secretKey: String,
+    region: String,
+    signedUrlExpiry: FiniteDuration)
 
 class FileManagerS3 @Inject() (
     awsS3Configuration: AwsS3Configuration,

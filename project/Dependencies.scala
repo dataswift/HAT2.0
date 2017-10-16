@@ -27,7 +27,7 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val crossScala = Seq("2.11.8")
+    val crossScala = Seq("2.12.3")
     val scalaVersion = crossScala.head
   }
 
@@ -139,10 +139,10 @@ object Dependencies {
     }
 
     object HATDeX {
-      private val version = "2.3.0-SNAPSHOT"
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.4.0-SNAPSHOT"
-      val marketsquareClient = "org.hatdex" %% "marketsquare-client-scala-play" % version
-      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.2-SNAPSHOT"
+      private val version = "2.4.1-SNAPSHOT"
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
+      val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
+      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.3-SNAPSHOT"
     }
 
     val jwtCore = Play.Jwt.atlassianJwtCore

@@ -69,10 +69,10 @@ abstract class HatController[T <: HatAuthEnvironment](
 }
 
 abstract class HatApiController(
-  silhouette: Silhouette[HatApiAuthEnvironment],
-  clock: Clock,
-  hatServerProvider: HatServerProvider,
-  configuration: Configuration) extends HatController[HatApiAuthEnvironment](silhouette, clock, hatServerProvider, configuration)
+    silhouette: Silhouette[HatApiAuthEnvironment],
+    clock: Clock,
+    hatServerProvider: HatServerProvider,
+    configuration: Configuration) extends HatController[HatApiAuthEnvironment](silhouette, clock, hatServerProvider, configuration)
 
 abstract class HatFrontendController(
     silhouette: Silhouette[HatFrontendAuthEnvironment],

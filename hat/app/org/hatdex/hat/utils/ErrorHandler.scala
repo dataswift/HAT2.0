@@ -43,13 +43,13 @@ import scala.concurrent.Future
 import scala.util.Try
 
 class ErrorHandler @Inject() (
-  env: Environment,
-  config: Configuration,
-  sourceMapper: OptionalSourceMapper,
-  router: Provider[Router],
-  hatMailer: HatMailer,
-  val messagesApi: MessagesApi) extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
-    with SecuredErrorHandler with UnsecuredErrorHandler with I18nSupport with ContentTypes with RequestExtractors with Rendering {
+    env: Environment,
+    config: Configuration,
+    sourceMapper: OptionalSourceMapper,
+    router: Provider[Router],
+    hatMailer: HatMailer,
+    val messagesApi: MessagesApi) extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
+  with SecuredErrorHandler with UnsecuredErrorHandler with I18nSupport with ContentTypes with RequestExtractors with Rendering {
 
   /**
    * Exception handler which chains the exceptions handlers from the sub types.
