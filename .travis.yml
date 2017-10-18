@@ -49,9 +49,6 @@ matrix:
       - REPOSITORY_NAME=surreycode
       - RUMPEL=surreycode
     - env:
-      - REPOSITORY_NAME=xtiva
-      - RUMPEL=xtiva
-    - env:
       - REPOSITORY_NAME=hubat
       - RUMPEL=hubat
     - env:
@@ -60,9 +57,6 @@ matrix:
     - env:
       - REPOSITORY_NAME=tamouk
       - RUMPEL=tamo
-    - env:
-      - REPOSITORY_NAME=accept
-      - RUMPEL=accept
     - env:
       - REPOSITORY_NAME=hubofallthings
       - RUMPEL=rumpel
