@@ -35,7 +35,7 @@ import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.FutureRetries
 import org.hatdex.libs.dal.SlickPostgresDriver.api._
-import org.hatdex.marketsquare.api.services.MarketsquareClient
+import org.hatdex.dex.api.services.DexClient
 import play.api.libs.json.{ JsObject, Json }
 import play.api.libs.ws.WSClient
 import play.api.test.FakeRequest
@@ -60,7 +60,7 @@ class StatsReporter @Inject() (
   private val retryTime = FiniteDuration(configuration.underlying.getDuration("exchange.retryTime").toMillis, "millis")
   private val statsBatchSize = 100
 
-  private val msClient = new MarketsquareClient(
+  private val dexClient = new DexClient(
     wsClient,
     configuration.underlying.getString("exchange.address"),
     configuration.underlying.getString("exchange.scheme"))
@@ -122,7 +122,7 @@ class StatsReporter @Inject() (
     logger.debug(s"Uploading stats $stats")
     val uploaded = for {
       token <- applicationToken()
-      result <- msClient.postStats(token, stats)
+      result <- dexClient.postStats(token, stats)
     } yield {
       result
     }

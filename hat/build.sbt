@@ -39,7 +39,7 @@ libraryDependencies ++= Seq(
   Library.Play.Utils.playGuard,
   Library.scalaGuice,
   Library.HATDeX.hatClient,
-  Library.HATDeX.marketsquareClient,
+  Library.HATDeX.dexClient,
   Library.HATDeX.codegen,
   Library.Utils.awsJavaS3Sdk,
   Library.Utils.prettyTime,
