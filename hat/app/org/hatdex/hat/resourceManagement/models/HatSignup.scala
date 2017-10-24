@@ -51,6 +51,9 @@ case class HatSignup(
     keys: Option[HatKeys])
 
 object HatSignup {
+  import play.api.libs.json.JodaWrites._
+  import play.api.libs.json.JodaReads._
+
   implicit val databaseInstanceFormat = Json.format[DatabaseInstance]
   implicit val databaseServerFormat = Json.format[DatabaseServer]
   implicit val hatKeysFormat = Json.format[HatKeys]

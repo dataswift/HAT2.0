@@ -47,7 +47,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class Phata @Inject() (
-    val messagesApi: MessagesApi,
+    components: ControllerComponents,
     cached: Cached,
     configuration: Configuration,
     silhouette: Silhouette[HatFrontendAuthEnvironment],
@@ -56,7 +56,7 @@ class Phata @Inject() (
     wsClient: WSClient,
     hatServicesService: HatServicesService,
     userProfileService: UserProfileService,
-    notablesService: NotablesService) extends HatFrontendController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    notablesService: NotablesService) extends HatFrontendController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   private val logger = Logger(this.getClass)
 
@@ -66,7 +66,7 @@ class Phata @Inject() (
 
   def rumpelIndex(): EssentialAction = indefiniteSuccessCaching {
     UserAwareAction.async { implicit request =>
-      Future.successful(Ok(phataViews.html.rumpelIndex(configuration.getString("frontend.protocol").getOrElse("https:"))))
+      Future.successful(Ok(phataViews.html.rumpelIndex(configuration.getOptional[String]("frontend.protocol").getOrElse("https:"))))
     }
   }
 

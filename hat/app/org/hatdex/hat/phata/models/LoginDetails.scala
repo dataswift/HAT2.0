@@ -25,7 +25,6 @@
 package org.hatdex.hat.phata.models
 
 import me.gosimple.nbvcxz._
-import play.api.data.validation.ValidationError
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{ JsError, _ }
 
@@ -74,7 +73,7 @@ object ApiPasswordChange {
             JsSuccess(a)
           }
           else {
-            JsError(ValidationError(
+            JsError(JsonValidationError(
               "Minimum password requirement strength not met",
               estimate.getFeedback.getSuggestion.asScala.toList: _*))
           }

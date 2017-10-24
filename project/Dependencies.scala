@@ -27,7 +27,7 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val crossScala = Seq("2.12.3")
+    val crossScala = Seq("2.11.8")
     val scalaVersion = crossScala.head
   }
 
@@ -48,13 +48,15 @@ object Dependencies {
       val test = "com.typesafe.play" %% "play-test" % version
       val specs2 = "com.typesafe.play" %% "play-specs2" % version
       val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.4.1"
-      val mailer = "com.typesafe.play" %% "play-mailer" % "5.0.0"
+      val mailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
+      val jdbc = "com.typesafe.play" %% "play-jdbc" % version
+      val json = "com.typesafe.play" %% "play-json" % version
+      val jsonJoda = "com.typesafe.play" %% "play-json-joda" % version
 
-      object Specs2 {
-        private val version = "3.6.6"
-        val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
-        val mock = "org.specs2" %% "specs2-mock" % version
-      }
+      val commonsValidator = "commons-validator" % "commons-validator" % "1.5.0"
+      val htmlCompressor = "com.mohiva" %% "play-html-compressor" % "0.6.3"
+      val playGuard = "com.digitaltangible" %% "play-guard" % "2.1.0"
+
       object Jwt {
         private val bouncyCastleVersion = "1.57"
         val bouncyCastle = "org.bouncycastle" % "bcprov-jdk15on" % bouncyCastleVersion
@@ -64,20 +66,9 @@ object Dependencies {
         val atlassianJwtApi = "com.atlassian.jwt" % "jwt-api" % atlassianJwtVersion
         val nimbusDsJwt = "com.nimbusds" % "nimbus-jose-jwt" % "3.6"
       }
-      object Db {
-        val jdbc = "com.typesafe.play" %% "play-jdbc" % version
-        val postgres = Library.Db.postgres
-      }
-
-      object Utils {
-        val playBootstrap = "com.adrianhurt" %% "play-bootstrap" % "1.1-P25-B3" exclude ("org.webjars", "jquery")
-        val commonsValidator = "commons-validator" % "commons-validator" % "1.5.0"
-        val htmlCompressor = "com.mohiva" %% "play-html-compressor" % "0.6.3"
-        val playGuard = "com.digitaltangible" %% "play-guard" % "2.0.0"
-      }
 
       object Silhouette {
-        val version = "4.1.0-SNAPSHOT"
+        val version = "5.0.2-SNAPSHOT"
         val passwordBcrypt = "com.mohiva" %% "play-silhouette-password-bcrypt" % version
         val persistence = "com.mohiva" %% "play-silhouette-persistence" % version
         val cryptoJca = "com.mohiva" %% "play-silhouette-crypto-jca" % version
@@ -86,8 +77,28 @@ object Dependencies {
       }
     }
 
+    object Db {
+      val liquibase = "org.liquibase" % "liquibase-maven-plugin" % "3.5.1"
+      val postgres = "org.postgresql" % "postgresql" % "42.1.1"
+    }
+
+    object Slick {
+      private val slickVersion = "3.2.1"
+      val slick = "com.typesafe.slick" %% "slick" % slickVersion
+      val slickHikari = "com.typesafe.slick" %% "slick-hikaricp" % slickVersion
+      val slickCodegen = "com.typesafe.slick" %% "slick-codegen" % slickVersion
+      val slick_pgV = "0.15.4"
+      val slickPgCore = "com.github.tminglei" %% "slick-pg_core" % slick_pgV
+      val slickPg = "com.github.tminglei" %% "slick-pg" % slick_pgV
+      val slickPgJoda = "com.github.tminglei" %% "slick-pg_joda-time" % slick_pgV
+      val slickPgJts = "com.github.tminglei" %% "slick-pg_jts" % slick_pgV
+      val slickPgSprayJson = "com.github.tminglei" %% "slick-pg_spray-json" % slick_pgV
+      val slickPgPlayJson = "com.github.tminglei" %% "slick-pg_play-json" % slick_pgV
+      val slickPgDate2 = "com.github.tminglei" %% "slick-pg_date2" % slick_pgV
+    }
+
     object Specs2 {
-      private val version = "3.6.6"
+      private val version = "3.8.9"
       val core = "org.specs2" %% "specs2-core" % version
       val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
       val mock = "org.specs2" %% "specs2-mock" % version
@@ -108,47 +119,26 @@ object Dependencies {
       val nbvcxz = "me.gosimple" % "nbvcxz" % "1.3.4"
     }
 
-    object Db {
-      val liquibase = "org.liquibase" % "liquibase-maven-plugin" % "3.5.3"
-      val postgres = "org.postgresql" % "postgresql" % "9.4-1206-jdbc4"
-      val hikariCP = "com.zaxxer" % "HikariCP" % "2.5.0"
-    }
-
-    object Slick {
-      private val slickVersion = "3.1.1"
-      val slick = "com.typesafe.slick" %% "slick" % slickVersion
-      val slickHikari = "com.typesafe.slick" %% "slick-hikaricp" % slickVersion
-      val slickCodegen = "com.typesafe.slick" %% "slick-codegen" % slickVersion
-      val slick_pgV = "0.14.6"
-      val slickPgCore = "com.github.tminglei" %% "slick-pg_core" % slick_pgV
-      val slickPg = "com.github.tminglei" %% "slick-pg" % slick_pgV
-      val slickPgJoda = "com.github.tminglei" %% "slick-pg_joda-time" % slick_pgV
-      val slickPgJts = "com.github.tminglei" %% "slick-pg_jts" % slick_pgV
-      val slickPgSprayJson = "com.github.tminglei" %% "slick-pg_spray-json" % slick_pgV
-      val slickPgPlayJson = "com.github.tminglei" %% "slick-pg_play-json" % slick_pgV
-    }
-
     object Akka {
-      private val version = "2.4.19"
+      private val version = "2.5.4"
       val slf4j = "com.typesafe.akka" %% "akka-slf4j" % version
       val httpCore = "com.typesafe.akka" %% "akka-http-core" % "10.0.8"
       val akkaStream = "com.typesafe.akka" %% "akka-stream" % version
-      val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json-experimental" % version
       val akkaActor = "com.typesafe.akka" %% "akka-actor" % version
       val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % version
     }
 
     object HATDeX {
-      private val version = "2.4.1-SNAPSHOT"
+      private val version = "2.4.2-SNAPSHOT"
       val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
       val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
-      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.3-SNAPSHOT"
+      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.2-SNAPSHOT"
     }
 
     val jwtCore = Play.Jwt.atlassianJwtCore
     val jwtApi = Play.Jwt.atlassianJwtApi
     val akkaTestkit = Akka.akkaTestkit
-    val scalaGuice = "net.codingwell" %% "scala-guice" % "4.0.1"
+    val scalaGuice = "net.codingwell" %% "scala-guice" % "4.1.0"
     val jbcrypt = "org.mindrot" % "jbcrypt" % "0.3m"
   }
 }

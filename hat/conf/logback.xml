@@ -102,6 +102,10 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
+    <logger name="com.github.tminglei.slickpg*" level="DEBUG">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
 
 
 </configuration>

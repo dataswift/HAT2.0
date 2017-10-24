@@ -28,13 +28,13 @@ import javax.inject.Inject
 
 import akka.actor._
 import com.google.inject.assistedinject.Assisted
+import net.ceedubs.ficus.Ficus._
 import org.hatdex.hat.resourceManagement._
 import play.api.Configuration
+import play.api.cache.AsyncCacheApi
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import net.ceedubs.ficus.Ficus._
-import play.api.cache.CacheApi
 
 object HatServerActor {
   sealed trait HatServerActorMessage
@@ -54,13 +54,13 @@ class HatServerActor @Inject() (
     configuration: Configuration,
     hatDatabaseProvider: HatDatabaseProvider,
     hatKeyProvider: HatKeyProvider,
-    cacheApi: CacheApi) extends Actor with ActorLogging with Stash {
+    cacheApi: AsyncCacheApi) extends Actor with ActorLogging with Stash {
   import HatServerActor._
   import org.hatdex.hat.api.service.IoExecutionContext.ioThreadPool
-  val idleTimeout = configuration.underlying.as[FiniteDuration]("resourceManagement.serverIdleTimeout")
+  val idleTimeout: FiniteDuration = configuration.underlying.as[FiniteDuration]("resourceManagement.serverIdleTimeout")
 
   def receive: Receive = {
-    case message: HatRetrieve =>
+    case _: HatRetrieve =>
       log.debug(s"RECEIVE HATRetrieve, stashing, connecting")
       stash()
       context.become(connecting)
@@ -80,12 +80,12 @@ class HatServerActor @Inject() (
       unstashAll()
       context.setReceiveTimeout(idleTimeout * 10)
       context.become(failed(error))
-    case message: HatServerActorMessage =>
+    case _: HatServerActorMessage =>
       stash()
   }
 
   def connected(server: HatServer): Actor.Receive = {
-    case message: HatRetrieve =>
+    case _: HatRetrieve =>
       log.debug(s"HAT $hat connected, replying")
       sender ! server
     case ReceiveTimeout =>
@@ -98,7 +98,7 @@ class HatServerActor @Inject() (
   }
 
   def failed(e: HatServerDiscoveryException): Actor.Receive = {
-    case message: HatServerActorMessage =>
+    case _: HatServerActorMessage =>
       log.debug(s"HAT $hat failed (${e.getMessage}), replying")
       sender ! e
     case ReceiveTimeout =>

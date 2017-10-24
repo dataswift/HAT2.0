@@ -43,21 +43,23 @@ import org.hatdex.hat.resourceManagement._
 import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.i18n.I18nSupport
-import play.api.libs.json.Json
+import play.api.libs.json.{ Format, Json }
 import play.api.mvc._
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
 abstract class HatController[T <: HatAuthEnvironment](
+    components: ControllerComponents,
     silhouette: Silhouette[T],
     clock: Clock,
     hatServerProvider: HatServerProvider,
-    configuration: Configuration) extends Controller with I18nSupport {
+    configuration: Configuration) extends AbstractController(components) with I18nSupport {
 
   def env: Environment[T] = silhouette.env
-  def SecuredAction: SecuredActionBuilder[T] = silhouette.securedAction(env)
-  def UnsecuredAction: UnsecuredActionBuilder[T] = silhouette.unsecuredAction(env)
-  def UserAwareAction: UserAwareActionBuilder[T] = silhouette.userAwareAction(env)
+  def SecuredAction: SecuredActionBuilder[T, AnyContent] = silhouette.securedAction(env)
+  def UnsecuredAction: UnsecuredActionBuilder[T, AnyContent] = silhouette.unsecuredAction(env)
+  def UserAwareAction: UserAwareActionBuilder[T, AnyContent] = silhouette.userAwareAction(env)
 
   implicit def securedRequest2User[A](implicit request: SecuredRequest[T, A]): HatUser = request.identity
   implicit def userAwareRequest2UserOpt[A](implicit request: UserAwareRequest[T, A]): Option[HatUser] = request.identity
@@ -69,16 +71,18 @@ abstract class HatController[T <: HatAuthEnvironment](
 }
 
 abstract class HatApiController(
+    components: ControllerComponents,
     silhouette: Silhouette[HatApiAuthEnvironment],
     clock: Clock,
     hatServerProvider: HatServerProvider,
-    configuration: Configuration) extends HatController[HatApiAuthEnvironment](silhouette, clock, hatServerProvider, configuration)
+    configuration: Configuration) extends HatController[HatApiAuthEnvironment](components, silhouette, clock, hatServerProvider, configuration)
 
 abstract class HatFrontendController(
+    components: ControllerComponents,
     silhouette: Silhouette[HatFrontendAuthEnvironment],
     clock: Clock,
     hatServerProvider: HatServerProvider,
-    configuration: Configuration) extends HatController[HatFrontendAuthEnvironment](silhouette, clock, hatServerProvider, configuration) {
+    configuration: Configuration) extends HatController[HatFrontendAuthEnvironment](components, silhouette, clock, hatServerProvider, configuration) {
 
   def authenticatorWithRememberMe(authenticator: CookieAuthenticator, rememberMe: Boolean): CookieAuthenticator = {
     if (rememberMe) {
@@ -94,7 +98,7 @@ abstract class HatFrontendController(
   }
 
   private lazy val rememberMeParams: (FiniteDuration, Option[FiniteDuration], Option[FiniteDuration]) = {
-    val cfg = configuration.getConfig("silhouette.authenticator.rememberMe").get.underlying
+    val cfg = configuration.get[Configuration]("silhouette.authenticator.rememberMe").underlying
     (
       cfg.as[FiniteDuration]("authenticatorExpiry"),
       cfg.getAs[FiniteDuration]("authenticatorIdleTimeout"),
@@ -105,7 +109,10 @@ abstract class HatFrontendController(
 /**
  * A Limiter for user logic.
  */
-class UserLimiter @Inject() (implicit val actorSystem: ActorSystem, implicit val configuration: Configuration) {
+class UserLimiter @Inject() (implicit
+    actorSystem: ActorSystem,
+    configuration: Configuration,
+    ec: ExecutionContext) {
   import scala.language.higherKinds
 
   /**
@@ -137,7 +144,7 @@ class UserLimiter @Inject() (implicit val actorSystem: ActorSystem, implicit val
   // allow 10 requests immediately and get a new token every 2 seconds
   private val rl = new RateLimiter(10, 1f / 2, "[Rate Limiter]")
 
-  private implicit val errorMesageFormat = HatJsonFormats.errorMessage
+  private implicit val errorMesageFormat: Format[ErrorMessage] = HatJsonFormats.errorMessage
   private def response(r: RequestHeader) = Results.BadRequest(
     Json.toJson(ErrorMessage("Request rate exceeded", "Rate of requests from your IP exceeded")))
 

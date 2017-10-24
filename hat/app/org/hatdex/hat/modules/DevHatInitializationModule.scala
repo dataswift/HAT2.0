@@ -58,7 +58,7 @@ class DevHatInitializer @Inject() (
   val logger = Logger(this.getClass)
 
   val devHats = configuration.underlying.as[Seq[DevHatConfig]]("devhats")
-  val devHatMigrations = configuration.getStringSeq("devhatMigrations").get
+  val devHatMigrations = configuration.get[Seq[String]]("devhatMigrations")
 
   logger.info(s"Initializing HATs: $devHats")
   devHats.map(initializeHat)

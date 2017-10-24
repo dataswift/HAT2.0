@@ -49,7 +49,7 @@ object EndpointSubscriberService {
     }
   }
 
-  private implicit val dateReads: Reads[DateTime] = jodaDateReads("yyyy-MM-dd'T'HH:mm:ssZ")
+  private implicit val dateReads: Reads[DateTime] = JodaReads.jodaDateReads("yyyy-MM-dd'T'HH:mm:ssZ")
 
   private def dataMatchesFilters(data: EndpointData, filters: Seq[EndpointQueryFilter]): Boolean = {
     filters.exists { f =>

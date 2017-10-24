@@ -43,7 +43,7 @@ import play.api.{ Configuration, Logger }
 import scala.concurrent.ExecutionContext
 
 class SystemStatus @Inject() (
-    val messagesApi: MessagesApi,
+    components: ControllerComponents,
     cached: Cached,
     configuration: Configuration,
     silhouette: Silhouette[HatApiAuthEnvironment],
@@ -52,7 +52,7 @@ class SystemStatus @Inject() (
     usersService: UsersService,
     clock: Clock,
     hatDatabaseProvider: HatDatabaseProvider,
-    implicit val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    implicit val ec: ExecutionContext) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   val logger = Logger(this.getClass)
 

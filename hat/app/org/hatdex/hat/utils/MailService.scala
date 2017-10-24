@@ -46,7 +46,7 @@ class MailServiceImpl @Inject() (
     val conf: Configuration,
     implicit val ec: ExecutionContext) extends MailService {
 
-  lazy val from = conf.getString("play.mailer.from").get
+  lazy val from = conf.get[String]("play.mailer.from")
 
   def sendEmailAsync(recipients: String*)(subject: String, bodyHtml: String, bodyText: String): Unit = {
     system.scheduler.scheduleOnce(100.milliseconds) {

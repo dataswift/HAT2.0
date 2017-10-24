@@ -42,7 +42,7 @@ import play.api.{ Configuration, Logger }
 import scala.concurrent.ExecutionContext
 
 class DataMigration @Inject() (
-    val messagesApi: MessagesApi,
+    components: ControllerComponents,
     configuration: Configuration,
     parsers: HatBodyParsers,
     silhouette: Silhouette[HatApiAuthEnvironment],
@@ -50,7 +50,7 @@ class DataMigration @Inject() (
     hatServerProvider: HatServerProvider,
     migrationService: MigrationService)(
     implicit
-    val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
+    val ec: ExecutionContext) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
 
   private val logger = Logger(this.getClass)
 

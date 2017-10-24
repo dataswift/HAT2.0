@@ -34,10 +34,11 @@ import org.hatdex.hat.api.service.{ DataDebitService, StatsService }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.dal.{ ModelTranslation, Tables }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider }
+import org.hatdex.hat.utils.HatBodyParsers
 import org.joda.time.{ DateTime, LocalDateTime }
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
-import play.api.mvc.{ BodyParsers, RequestHeader }
+import play.api.mvc.{ BodyParsers, ControllerComponents, RequestHeader }
 import play.api.{ Configuration, Logger }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -45,19 +46,20 @@ import scala.concurrent.Future
 
 // this trait defines our service behavior independently from the service actor
 class DataDebitController @Inject() (
-    val messagesApi: MessagesApi,
+    components: ControllerComponents,
     passwordHasherRegistry: PasswordHasherRegistry,
     configuration: Configuration,
     silhouette: Silhouette[HatApiAuthEnvironment],
     hatServerProvider: HatServerProvider,
     dataDebitService: DataDebitService,
     statsService: StatsService,
-    clock: Clock) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with DataDebitFormats {
+    hatBodyParsers: HatBodyParsers,
+    clock: Clock) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with DataDebitFormats {
 
   val logger = Logger(this.getClass)
 
   def proposeDataDebit =
-    SecuredAction(WithRole(Owner(), Platform(), DataDebitOwner(""))).async(BodyParsers.parse.json[ApiDataDebit]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataDebitOwner(""))).async(hatBodyParsers.json[ApiDataDebit]) { implicit request =>
       val debit = request.body
       (debit.kind, debit.bundleContextless, debit.bundleContextual) match {
         case ("contextless", Some(bundle), None) => processContextlessDDProposal(debit, bundle)

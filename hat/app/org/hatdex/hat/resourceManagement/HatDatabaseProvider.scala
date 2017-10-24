@@ -28,10 +28,9 @@ import javax.inject.{ Inject, Singleton }
 
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.libs.dal.SlickPostgresDriver.api.Database
-import play.api.cache.CacheApi
+import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
 import play.api.{ Configuration, Logger }
-import slick.util.AsyncExecutor
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -44,7 +43,7 @@ trait HatDatabaseProvider {
     db.shutdown
   }
 
-  def update(db: Database)(implicit ec: ExecutionContext) = {
+  def update(db: Database)(implicit ec: ExecutionContext): Future[Unit] = {
     schemaMigration.run()(db)
   }
 }
@@ -64,7 +63,7 @@ class HatDatabaseProviderConfig @Inject() (configuration: Configuration, val sch
 @Singleton
 class HatDatabaseProviderMilliner @Inject() (
     val configuration: Configuration,
-    val cache: CacheApi,
+    val cache: AsyncCacheApi,
     val ws: WSClient,
     val schemaMigration: SchemaMigration) extends HatDatabaseProvider with MillinerHatSignup {
   val logger = Logger(this.getClass)

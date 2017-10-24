@@ -24,7 +24,7 @@
 
 package org.hatdex.hat.authentication
 
-import javax.inject.{ Inject, Named }
+import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
@@ -32,16 +32,14 @@ import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.authentication.Implicits._
 import org.hatdex.hat.resourceManagement.HatServer
-import org.hatdex.hat.utils.Utils
 import play.api.Logger
-import play.api.cache.{ CacheApi, NamedCache }
+import play.api.cache.{ AsyncCacheApi, NamedCache }
 
 import scala.concurrent.Future
-import scala.concurrent.duration.Duration
 
 class PasswordInfoService @Inject() (
     implicit
-    @NamedCache("user-cache") val cache: CacheApi,
+    @NamedCache("user-cache") val cache: AsyncCacheApi,
     userService: AuthUserServiceImpl)
   extends DelegableAuthInfoDAO[PasswordInfo, HatServer] with DalExecutionContext {
 
@@ -52,7 +50,7 @@ class PasswordInfoService @Inject() (
   }
 
   def find(loginInfo: LoginInfo)(implicit hat: HatServer): Future[Option[PasswordInfo]] = {
-    Utils.cacheAsync(s"passwordInfo:${loginInfo.providerKey}") {
+    cache.getOrElseUpdate(s"passwordInfo:${loginInfo.providerKey}") {
       userService.retrieve(loginInfo).map {
         case Some(user) if user.pass.isDefined =>
           Some(user.pass.get)
@@ -74,11 +72,10 @@ class PasswordInfoService @Inject() (
 
   def update(loginInfo: LoginInfo, authInfo: PasswordInfo)(implicit hat: HatServer): Future[PasswordInfo] =
     userService.retrieve(loginInfo).map {
-      case Some(user) => {
+      case Some(user) =>
         cache.remove(s"passwordInfo:${loginInfo.providerKey}")
         userService.save(user.copy(pass = Some(authInfo)))
         authInfo
-      }
       case _ => throw new Exception("PasswordInfoDAO - update : the user must exists to update its password")
     }
 

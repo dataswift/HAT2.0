@@ -49,7 +49,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class Authentication @Inject() (
-    val messagesApi: MessagesApi,
+    components: ControllerComponents,
+
     configuration: Configuration,
     cached: Cached,
     parsers: HatBodyParsers,
@@ -63,7 +64,7 @@ class Authentication @Inject() (
     clock: Clock,
     mailer: HatMailer,
     tokenService: MailTokenService[MailTokenUser],
-    limiter: UserLimiter) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    limiter: UserLimiter) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   private val logger = Logger(this.getClass)
 

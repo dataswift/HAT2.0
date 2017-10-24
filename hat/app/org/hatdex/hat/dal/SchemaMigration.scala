@@ -53,7 +53,7 @@ class SchemaMigration @Inject() (configuration: Configuration) extends DalExecut
   val logger = Logger(this.getClass)
 
   def run()(implicit db: Database): Future[Unit] = {
-    configuration.getStringSeq("hat.schemaMigrations").map { migrations =>
+    configuration.getOptional[Seq[String]]("hat.schemaMigrations").map { migrations =>
       logger.info(s"Running database schema migrations on $migrations")
       run(migrations)
     } getOrElse {

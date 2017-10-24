@@ -84,15 +84,5 @@ object Utils {
     result
   }
 
-  def cacheAsync[T: ClassTag](key: String, duration: Duration = Duration.Inf)(block: => Future[T])(implicit cache: CacheApi, ec: ExecutionContext): Future[T] = {
-    cache.get[T](key) map { cached =>
-      Future.successful(cached)
-    } getOrElse {
-      block map { result =>
-        cache.set(key, result, duration)
-        result
-      }
-    }
-  }
 }
 

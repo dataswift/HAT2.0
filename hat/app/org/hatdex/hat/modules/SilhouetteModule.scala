@@ -28,11 +28,11 @@ import com.google.inject.name.Named
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.actions.{ SecuredErrorHandler, UnsecuredErrorHandler }
-import com.mohiva.play.silhouette.api.crypto.{ CookieSigner, Crypter, _ }
+import com.mohiva.play.silhouette.api.crypto.{ Crypter, _ }
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services._
 import com.mohiva.play.silhouette.api.util._
-import com.mohiva.play.silhouette.crypto.{ JcaCookieSigner, JcaCookieSignerSettings, JcaCrypter, JcaCrypterSettings }
+import com.mohiva.play.silhouette.crypto.{ JcaCrypter, JcaCrypterSettings, JcaSigner, JcaSignerSettings }
 import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, _ }
 import com.mohiva.play.silhouette.impl.providers._
 import com.mohiva.play.silhouette.impl.util._
@@ -51,6 +51,7 @@ import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, HatMailerImpl }
 import play.api.Configuration
 import play.api.http.HttpErrorHandler
 import play.api.libs.ws.WSClient
+import play.api.mvc.CookieHeaderEncoding
 
 import scala.concurrent.ExecutionContext
 
@@ -154,9 +155,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * @return The cookie signer for the authenticator.
    */
   @Provides @Named("authenticator-cookie-signer")
-  def provideAuthenticatorCookieSigner(configuration: Configuration): CookieSigner = {
-    val config = configuration.underlying.as[JcaCookieSignerSettings]("silhouette.authenticator.cookie.signer")
-    new JcaCookieSigner(config)
+  def provideAuthenticatorCookieSigner(configuration: Configuration): Signer = {
+    val config = configuration.underlying.as[JcaSignerSettings]("silhouette.authenticator.cookie.signer")
+    new JcaSigner(config)
   }
 
   /**
@@ -200,8 +201,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
   @Provides
   def provideCookieAuthenticatorService(
-    @Named("authenticator-cookie-signer") cookieSigner: CookieSigner,
+    @Named("authenticator-signer") signer: Signer,
     @Named("authenticator-crypter") crypter: Crypter,
+    cookieHeaderEncoding: CookieHeaderEncoding,
     fingerprintGenerator: FingerprintGenerator,
     idGenerator: IDGenerator,
     configuration: Configuration,
@@ -209,8 +211,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
     val config = configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator")
     val encoder = new CrypterAuthenticatorEncoder(crypter)
+    val authenticatorEncoder = new CrypterAuthenticatorEncoder(crypter)
 
-    new CookieAuthenticatorService[HatServer](config, None, cookieSigner, encoder, fingerprintGenerator, idGenerator, clock)
+    new CookieAuthenticatorService[HatServer](config, None, signer, cookieHeaderEncoding, authenticatorEncoder, fingerprintGenerator, idGenerator, clock)
   }
 
   /**
