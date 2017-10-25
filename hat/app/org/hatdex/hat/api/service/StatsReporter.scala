@@ -34,7 +34,7 @@ import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.FutureRetries
-import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.hatdex.dex.api.services.DexClient
 import play.api.libs.json.{ JsObject, Json }
 import play.api.libs.ws.WSClient

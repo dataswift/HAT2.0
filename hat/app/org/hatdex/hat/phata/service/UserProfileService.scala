@@ -29,7 +29,7 @@ import javax.inject.Inject
 import org.hatdex.hat.api.json.HatJsonUtilities
 import org.hatdex.hat.api.models.ApiDataTable
 import org.hatdex.hat.api.service.{ BundleService, DataService }
-import org.hatdex.libs.dal.SlickPostgresDriver.api.Database
+import org.hatdex.libs.dal.HATPostgresProfile.api.Database
 import org.hatdex.hat.phata.models.ProfileField
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.FutureTransformations

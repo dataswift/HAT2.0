@@ -39,26 +39,25 @@ import com.mohiva.play.silhouette.impl.util._
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import net.ceedubs.ficus.readers.EnumerationReader.enumerationValueReader
+import com.typesafe.config.Config
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.service.{ MailTokenService, MailTokenUserService }
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models.MailTokenUser
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider, HatServerProviderImpl }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, HatMailerImpl }
-import play.api.Configuration
+import play.api.{ ConfigLoader, Configuration }
 import play.api.http.HttpErrorHandler
 import play.api.libs.ws.WSClient
 import play.api.mvc.CookieHeaderEncoding
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * The Guice module which wires all Silhouette dependencies.
  */
-class SilhouetteModule extends AbstractModule with ScalaModule {
+class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteConfigLoaders {
 
   /**
    * Configures the module.
@@ -154,9 +153,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * @param configuration The Play configuration.
    * @return The cookie signer for the authenticator.
    */
-  @Provides @Named("authenticator-cookie-signer")
+  @Provides @Named("authenticator-signer")
   def provideAuthenticatorCookieSigner(configuration: Configuration): Signer = {
-    val config = configuration.underlying.as[JcaSignerSettings]("silhouette.authenticator.cookie.signer")
+    val config = configuration.get[JcaSignerSettings]("silhouette.authenticator.signer")
     new JcaSigner(config)
   }
 
@@ -168,7 +167,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    */
   @Provides @Named("authenticator-crypter")
   def provideAuthenticatorCrypter(configuration: Configuration): Crypter = {
-    val config = configuration.underlying.as[JcaCrypterSettings]("silhouette.authenticator.crypter")
+    val config = configuration.get[JcaCrypterSettings]("silhouette.authenticator.crypter")
 
     new JcaCrypter(config)
   }
@@ -193,7 +192,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     configuration: Configuration,
     clock: Clock)(implicit ec: ExecutionContext): AuthenticatorService[JWTRS256Authenticator, HatServer] = {
 
-    val config = configuration.underlying.as[JWTRS256AuthenticatorSettings]("silhouette.authenticator")
+    val config = configuration.get[JWTRS256AuthenticatorSettings]("silhouette.authenticator")
     val encoder = new Base64AuthenticatorEncoder()
 
     new JWTRS256AuthenticatorService[HatServer](config, None, encoder, idGenerator, clock)
@@ -209,7 +208,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     configuration: Configuration,
     clock: Clock)(implicit ec: ExecutionContext): AuthenticatorService[CookieAuthenticator, HatServer] = {
 
-    val config = configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator")
+    val config = configuration.get[CookieAuthenticatorSettings]("silhouette.authenticator.cookie")
     val encoder = new CrypterAuthenticatorEncoder(crypter)
     val authenticatorEncoder = new CrypterAuthenticatorEncoder(crypter)
 
@@ -239,5 +238,51 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     authInfoRepository: AuthInfoRepository[HatServer],
     passwordHasherRegistry: PasswordHasherRegistry)(implicit ec: ExecutionContext): CredentialsProvider[HatServer] = {
     new CredentialsProvider(authInfoRepository, passwordHasherRegistry)
+  }
+}
+
+trait SilhouetteConfigLoaders {
+  implicit val cookieAuthenticatorSettingsLoader: ConfigLoader[CookieAuthenticatorSettings] = new ConfigLoader[CookieAuthenticatorSettings] {
+    def load(rootConfig: Config, path: String): CookieAuthenticatorSettings = {
+      val config = ConfigLoader.configurationLoader.load(rootConfig, path)
+      CookieAuthenticatorSettings(
+        cookieName = config.get[String]("cookieName"),
+        cookiePath = config.get[String]("cookiePath"),
+        cookieDomain = config.getOptional[String]("cookieDomain"),
+        secureCookie = config.get[Boolean]("secureCookie"),
+        httpOnlyCookie = config.get[Boolean]("httpOnlyCookie"),
+        useFingerprinting = config.get[Boolean]("useFingerprinting"),
+        cookieMaxAge = config.get[Option[FiniteDuration]]("cookieMaxAge"),
+        authenticatorIdleTimeout = config.get[Option[FiniteDuration]]("authenticatorIdleTimeout"),
+        authenticatorExpiry = config.get[FiniteDuration]("authenticatorExpiry"))
+    }
+  }
+
+  implicit val JWTRS256AuthenticatorSettingsLoader: ConfigLoader[JWTRS256AuthenticatorSettings] = new ConfigLoader[JWTRS256AuthenticatorSettings] {
+    def load(rootConfig: Config, path: String): JWTRS256AuthenticatorSettings = {
+      val config = ConfigLoader.configurationLoader.load(rootConfig, path)
+
+      JWTRS256AuthenticatorSettings(
+        fieldName = config.get[String]("fieldName"),
+        requestParts = config.getOptional[Seq[String]]("requestParts")
+          .map(rps => rps.flatMap(r => RequestPart.values.find(_.toString == r))),
+        issuerClaim = config.get[String]("issuerClaim"),
+        authenticatorIdleTimeout = config.get[Option[FiniteDuration]]("authenticatorIdleTimeout"),
+        authenticatorExpiry = config.get[FiniteDuration]("authenticatorExpiry"))
+    }
+  }
+
+  implicit val JcaCrypterSettingsLoader: ConfigLoader[JcaCrypterSettings] = new ConfigLoader[JcaCrypterSettings] {
+    def load(rootConfig: Config, path: String): JcaCrypterSettings = {
+      val config = ConfigLoader.configurationLoader.load(rootConfig, path)
+      JcaCrypterSettings(config.get[String]("key"))
+    }
+  }
+
+  implicit val JcaSignerSettingsLoader: ConfigLoader[JcaSignerSettings] = new ConfigLoader[JcaSignerSettings] {
+    def load(rootConfig: Config, path: String): JcaSignerSettings = {
+      val config = ConfigLoader.configurationLoader.load(rootConfig, path)
+      JcaSignerSettings(config.get[String]("key"), config.get[String]("pepper"))
+    }
   }
 }

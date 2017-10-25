@@ -28,16 +28,15 @@ import java.util.UUID
 import javax.inject.Inject
 
 import com.typesafe.config.Config
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.models.{ Owner, Platform }
 import org.hatdex.hat.api.service.{ DalExecutionContext, UsersService }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.libs.dal.SlickPostgresDriver.api.Database
+import org.hatdex.libs.dal.HATPostgresProfile.api.Database
+import play.api.ConfigLoader.seqConfigLoader
 import play.api.libs.concurrent.AkkaGuiceSupport
-import play.api.{ Configuration, Logger }
+import play.api.{ ConfigLoader, Configuration, Logger }
 
 import scala.concurrent.Future
 
@@ -57,11 +56,13 @@ class DevHatInitializer @Inject() (
     usersService: UsersService) extends DalExecutionContext {
   val logger = Logger(this.getClass)
 
-  val devHats = configuration.underlying.as[Seq[DevHatConfig]]("devhats")
+  import DevHatConfig.configLoader
+
+  val devHats = configuration.get[Map[String, DevHatConfig]]("devhats")
   val devHatMigrations = configuration.get[Seq[String]]("devhatMigrations")
 
   logger.info(s"Initializing HATs: $devHats")
-  devHats.map(initializeHat)
+  devHats.values.map(initializeHat)
 
   def initializeHat(hat: DevHatConfig) = {
     implicit val database = Database.forConfig("", hat.database)
@@ -107,3 +108,19 @@ case class DevHatConfig(
     platformName: String,
     platformPasswordHash: String,
     database: Config)
+
+object DevHatConfig {
+  implicit val configLoader: ConfigLoader[DevHatConfig] = new ConfigLoader[DevHatConfig] {
+    def load(rootConfig: Config, path: String): DevHatConfig = {
+      val config = ConfigLoader.configurationLoader.load(rootConfig, path)
+      DevHatConfig(
+        owner = config.get[String]("owner"),
+        ownerName = config.get[String]("ownerName"),
+        ownerPasswordHash = config.get[String]("ownerPasswordHash"),
+        platform = config.get[String]("platform"),
+        platformName = config.get[String]("platformName"),
+        platformPasswordHash = config.get[String]("platformPasswordHash"),
+        database = config.get[Config]("database"))
+    }
+  }
+}

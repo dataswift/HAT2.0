@@ -27,7 +27,7 @@ package org.hatdex.hat.api.service
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.phata.models.{ MailToken, MailTokenUser }
-import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import org.hatdex.libs.dal.HATPostgresProfile.api._
 
 import scala.concurrent._
 

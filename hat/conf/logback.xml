@@ -106,6 +106,13 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
+    <!--<logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG">-->
+        <!--<appender-ref ref="ASYNCCONSOLE"/>-->
+    <!--</logger>-->
+
+    <!--<logger name="slick.jdbc.JdbcBackend.parameter" level="DEBUG">-->
+        <!--<appender-ref ref="ASYNCCONSOLE"/>-->
+    <!--</logger>-->
 
 
 </configuration>

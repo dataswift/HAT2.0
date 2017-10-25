@@ -33,7 +33,7 @@ import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataTabletotablecrossref, _ }
 import org.hatdex.hat.utils.FutureTransformations
-import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
 

@@ -28,7 +28,6 @@ import javax.inject.Inject
 
 import akka.actor.{ Props, _ }
 import akka.util.Timeout
-import net.ceedubs.ficus.Ficus._
 import play.api.Configuration
 import play.api.libs.concurrent.InjectedActorSupport
 
@@ -43,7 +42,7 @@ class HatServerProviderActor @Inject() (
   import org.hatdex.hat.api.service.IoExecutionContext.ioThreadPool
 
   private val activeServers = mutable.HashMap[String, ActorRef]()
-  private implicit val hatServerTimeout: Timeout = configuration.underlying.as[FiniteDuration]("resourceManagement.serverProvisioningTimeout")
+  private implicit val hatServerTimeout: Timeout = configuration.get[FiniteDuration]("resourceManagement.serverProvisioningTimeout")
   private var hatsActive: Long = 0L
 
   def receive: Receive = {

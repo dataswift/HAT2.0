@@ -52,9 +52,6 @@ matrix:
       - REPOSITORY_NAME=hubat
       - RUMPEL=hubat
     - env:
-      - REPOSITORY_NAME=quensus
-      - RUMPEL=quensus
-    - env:
       - REPOSITORY_NAME=tamouk
       - RUMPEL=tamo
     - env:

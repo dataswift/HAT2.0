@@ -33,12 +33,11 @@ import com.mohiva.play.silhouette.api.actions._
 import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import net.ceedubs.ficus.Ficus._
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models.{ ErrorMessage, User }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.libs.dal.SlickPostgresDriver.api.Database
+import org.hatdex.libs.dal.HATPostgresProfile.api.Database
 import org.hatdex.hat.resourceManagement._
 import org.joda.time.DateTime
 import play.api.Configuration
@@ -98,11 +97,11 @@ abstract class HatFrontendController(
   }
 
   private lazy val rememberMeParams: (FiniteDuration, Option[FiniteDuration], Option[FiniteDuration]) = {
-    val cfg = configuration.get[Configuration]("silhouette.authenticator.rememberMe").underlying
+    val cfg = configuration.get[Configuration]("silhouette.authenticator.rememberMe")
     (
-      cfg.as[FiniteDuration]("authenticatorExpiry"),
-      cfg.getAs[FiniteDuration]("authenticatorIdleTimeout"),
-      cfg.getAs[FiniteDuration]("cookieMaxAge"))
+      cfg.get[FiniteDuration]("authenticatorExpiry"),
+      cfg.getOptional[FiniteDuration]("authenticatorIdleTimeout"),
+      cfg.getOptional[FiniteDuration]("cookieMaxAge"))
   }
 }
 

@@ -32,7 +32,7 @@ import liquibase.database.jvm.JdbcConnection
 import liquibase.resource.ClassLoaderResourceAccessor
 import liquibase.{ Contexts, LabelExpression, Liquibase }
 import org.hatdex.hat.api.service.DalExecutionContext
-import org.hatdex.libs.dal.SlickPostgresDriver.api.Database
+import org.hatdex.libs.dal.HATPostgresProfile.api.Database
 import play.api.{ Configuration, Logger }
 
 import scala.collection.JavaConverters._

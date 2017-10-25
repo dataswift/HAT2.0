@@ -26,7 +26,7 @@ package org.hatdex.hat.api.service.richData
 
 import com.github.tminglei.slickpg.TsVector
 import org.hatdex.hat.api.models._
-import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.libs.json._
 

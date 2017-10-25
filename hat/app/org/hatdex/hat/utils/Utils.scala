@@ -24,12 +24,9 @@
 package org.hatdex.hat.utils
 
 import play.api.Logger
-import play.api.cache.CacheApi
 
 import scala.collection.immutable.HashMap
-import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.reflect.ClassTag
 import scala.util.{ Failure, Success, Try }
 
 object Utils {

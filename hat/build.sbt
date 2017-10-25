@@ -1,16 +1,16 @@
 import Dependencies._
 
 libraryDependencies ++= Seq(
+  Library.Play.ws,
   filters,
-  Library.Akka.httpCore,
-  Library.Utils.jodaTime,
-  Library.Utils.jodaConvert,
-  Library.Utils.jts,
-  Library.Utils.logbackClassic,
-  Library.Utils.pegdown,
-  Library.Specs2.core,
-  Library.Specs2.matcherExtra,
-  Library.Specs2.mock,
+  ehcache,
+  Library.Play.cache,
+  Library.Play.test,
+  Library.Play.mailer,
+  Library.Play.mailerGuice,
+  Library.Play.playGuard,
+  Library.Play.json,
+  Library.Play.jsonJoda,
   Library.Play.Silhouette.passwordBcrypt,
   Library.Play.Silhouette.persistence,
   Library.Play.Silhouette.cryptoJca,
@@ -19,32 +19,21 @@ libraryDependencies ++= Seq(
   Library.Play.Jwt.atlassianJwtCore,
   Library.Play.Jwt.atlassianJwtApi,
   Library.Play.Jwt.bouncyCastlePkix,
-  Library.Play.ws,
-  Library.Play.cache,
-  Library.Play.test,
-  Library.Play.typesafeConfigExtras,
-  Library.Play.mailer,
-  Library.Play.specs2,
-  Library.Play.playGuard,
-  Library.Play.json,
-  Library.Play.jsonJoda,
-//  Library.Play.jdbc,
-//  Library.Db.postgres,
-//  Library.Db.liquibase,
-//  Library.Slick.slick,
-//  Library.Slick.slickHikari,
-//  Library.Slick.slickPgCore,
-//  Library.Slick.slickPg,
-//  Library.Slick.slickPgJts,
-//  Library.Slick.slickPgJoda,
-//  Library.Slick.slickPgPlayJson,
   Library.HATDeX.hatClient,
   Library.HATDeX.dexClient,
   Library.HATDeX.codegen,
+  Library.Utils.pegdown,
   Library.Utils.awsJavaS3Sdk,
   Library.Utils.prettyTime,
   Library.Utils.nbvcxz,
-  Library.scalaGuice,
+  Library.scalaGuice
+)
+
+libraryDependencies ++= Seq(
+  Library.Play.specs2,
+  Library.Specs2.core,
+  Library.Specs2.matcherExtra,
+  Library.Specs2.mock
 )
 
 enablePlugins(PlayScala)
@@ -57,6 +46,13 @@ pipelineStages in Assets := Seq(digest)
 sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets"
 
 aggregate in update := false
+
+libraryDependencies in Test ++= Seq(
+  Library.Play.specs2,
+  Library.Specs2.core,
+  Library.Specs2.matcherExtra,
+  Library.Specs2.mock
+)
 
 testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "exclude", "REMOTE")
 

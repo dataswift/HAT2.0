@@ -47,13 +47,12 @@ object Dependencies {
       val cache = "com.typesafe.play" %% "play-cache" % version
       val test = "com.typesafe.play" %% "play-test" % version
       val specs2 = "com.typesafe.play" %% "play-specs2" % version
-      val typesafeConfigExtras = "com.iheart" %% "ficus" % "1.4.1"
-      val mailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
       val jdbc = "com.typesafe.play" %% "play-jdbc" % version
       val json = "com.typesafe.play" %% "play-json" % version
       val jsonJoda = "com.typesafe.play" %% "play-json-joda" % version
+      val mailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
+      val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
 
-      val commonsValidator = "commons-validator" % "commons-validator" % "1.5.0"
       val htmlCompressor = "com.mohiva" %% "play-html-compressor" % "0.6.3"
       val playGuard = "com.digitaltangible" %% "play-guard" % "2.1.0"
 
@@ -64,7 +63,6 @@ object Dependencies {
         val atlassianJwtVersion = "1.6.1"
         val atlassianJwtCore = "com.atlassian.jwt" % "jwt-core" % atlassianJwtVersion
         val atlassianJwtApi = "com.atlassian.jwt" % "jwt-api" % atlassianJwtVersion
-        val nimbusDsJwt = "com.nimbusds" % "nimbus-jose-jwt" % "3.6"
       }
 
       object Silhouette {
@@ -77,26 +75,6 @@ object Dependencies {
       }
     }
 
-    object Db {
-      val liquibase = "org.liquibase" % "liquibase-maven-plugin" % "3.5.1"
-      val postgres = "org.postgresql" % "postgresql" % "42.1.1"
-    }
-
-    object Slick {
-      private val slickVersion = "3.2.1"
-      val slick = "com.typesafe.slick" %% "slick" % slickVersion
-      val slickHikari = "com.typesafe.slick" %% "slick-hikaricp" % slickVersion
-      val slickCodegen = "com.typesafe.slick" %% "slick-codegen" % slickVersion
-      val slick_pgV = "0.15.4"
-      val slickPgCore = "com.github.tminglei" %% "slick-pg_core" % slick_pgV
-      val slickPg = "com.github.tminglei" %% "slick-pg" % slick_pgV
-      val slickPgJoda = "com.github.tminglei" %% "slick-pg_joda-time" % slick_pgV
-      val slickPgJts = "com.github.tminglei" %% "slick-pg_jts" % slick_pgV
-      val slickPgSprayJson = "com.github.tminglei" %% "slick-pg_spray-json" % slick_pgV
-      val slickPgPlayJson = "com.github.tminglei" %% "slick-pg_play-json" % slick_pgV
-      val slickPgDate2 = "com.github.tminglei" %% "slick-pg_date2" % slick_pgV
-    }
-
     object Specs2 {
       private val version = "3.8.9"
       val core = "org.specs2" %% "specs2-core" % version
@@ -106,13 +84,6 @@ object Dependencies {
 
     object Utils {
       val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
-      val jodaTime = "joda-time" % "joda-time" % "2.9.9"
-      val jodaConvert = "org.joda" % "joda-convert" % "1.8"
-      val jts = "com.vividsolutions" % "jts" % "1.13"
-      val slf4j = "org.slf4j" % "slf4j-api" % "1.7.18"
-      val logbackV = "1.1.2"
-      val logbackCore = "ch.qos.logback" % "logback-core" % logbackV
-      val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackV
       val awsJavaSdk = "com.amazonaws" % "aws-java-sdk" % "1.10.64"
       val awsJavaS3Sdk = "com.amazonaws" % "aws-java-sdk-s3" % "1.11.123"
       val prettyTime = "org.ocpsoft.prettytime" % "prettytime" % "3.2.7.Final"
@@ -135,10 +106,6 @@ object Dependencies {
       val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.2-SNAPSHOT"
     }
 
-    val jwtCore = Play.Jwt.atlassianJwtCore
-    val jwtApi = Play.Jwt.atlassianJwtApi
-    val akkaTestkit = Akka.akkaTestkit
     val scalaGuice = "net.codingwell" %% "scala-guice" % "4.1.0"
-    val jbcrypt = "org.mindrot" % "jbcrypt" % "0.3m"
   }
 }
