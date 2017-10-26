@@ -31,10 +31,25 @@ import sbt._
 object BasicSettings extends AutoPlugin {
   override def trigger = allRequirements
 
+  object autoImport {
+    object BuildEnv extends Enumeration {
+      val Production, Stage, Test, Developement = Value
+    }
+
+    val buildEnv = settingKey[BuildEnv.Value]("the current build environment")
+
+    def excludeSpecs2(module: ModuleID): ModuleID = {
+      module.excludeAll(
+        ExclusionRule(organization = "org.specs2"),
+        ExclusionRule(organization = "org.seleniumhq.selenium"))
+    }
+  }
+  import autoImport._
+
   override def projectSettings = Seq(
     organization := "org.hatdex",
     version := "2.4.2-SNAPSHOT",
-    name := "The HAT",
+    name := "HAT",
     resolvers ++= Dependencies.resolvers,
     scalaVersion := Dependencies.Versions.scalaVersion,
     crossScalaVersions := Dependencies.Versions.crossScala,
@@ -60,8 +75,42 @@ object BasicSettings extends AutoPlugin {
     // in Travis with `sudo: false`.
     // See https://github.com/sbt/sbt/issues/653
     // and https://github.com/travis-ci/travis-ci/issues/3775
-    javaOptions += "-Xmx1G"
+    javaOptions += "-Xmx1G",
+    buildEnv := {
+      sys.props.get("env")
+        .orElse(sys.env.get("BUILD_ENV"))
+        .flatMap {
+          case "prod" => Some(BuildEnv.Production)
+          case "stage" => Some(BuildEnv.Stage)
+          case "test" => Some(BuildEnv.Test)
+          case "dev" => Some(BuildEnv.Developement)
+          case unknown => None
+        }
+        .getOrElse(BuildEnv.Developement)
+    },
+    // give feed back
+    onLoadMessage := {
+      // depend on the old message as well
+      val defaultMessage = onLoadMessage.value
+      val env = buildEnv.value
+      s"""|$defaultMessage
+          |Running in build environment: $env""".stripMargin
+    }
+  ) ++ scalariformPrefs
+
+  import com.typesafe.sbt.SbtScalariform._
+  import scalariform.formatter.preferences._
+
+  lazy val scalariformPrefs = Seq(
+    ScalariformKeys.preferences := ScalariformKeys.preferences.value
+    .setPreference(FormatXml, false)
+    .setPreference(DoubleIndentClassDeclaration, true)
+    .setPreference(DoubleIndentConstructorArguments, true)
+    .setPreference(AlignSingleLineCaseStatements, true)
+    .setPreference(CompactControlReadability, true)
+    .setPreference(DanglingCloseParenthesis, Prevent)
   )
+
 }
 
 ////*******************************

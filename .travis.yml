@@ -92,9 +92,9 @@ script:
   - |
     if [[ "$REPOSITORY_NAME" = "hubat" ]]; then
       sbt ++$TRAVIS_SCALA_VERSION test:compile
-      sbt coverage "testOnly org.hatdex.hat.api.*" -Dconfig.file=src/main/resources/application.test.conf
+      sbt "project hat" coverage "testOnly org.hatdex.hat.api.*" -Dconfig.file=hat/conf/application.test.conf
     fi
-  - sbt "project hat" docker:stage
+  - sbt -Denv=prod docker:stage
   - docker build -t ${REPOSITORY_NAME}/hat:$(git rev-parse --short HEAD) hat/target/docker/stage
 
 after_success:
@@ -102,7 +102,7 @@ after_success:
   - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
   - |
     if [[ "$TRAVIS_PULL_REQUEST" = "false" || -z "$RUMPEL" ]]; then
-      sbt coverageReport && sbt coverageAggregate && sbt coveralls
+      sbt coverageReport && sbt coverageAggregate # && sbt coveralls
     fi
 
 before_deploy:

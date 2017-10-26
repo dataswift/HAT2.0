@@ -9,7 +9,7 @@ addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.6")
 
 // Code Quality
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")
-//addSbtPlugin("org.scoverage" % "sbt-coveralls" % "1.1.0")
+addSbtPlugin("org.scoverage" % "sbt-coveralls" % "1.2.2")
 addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.1")
 
 
