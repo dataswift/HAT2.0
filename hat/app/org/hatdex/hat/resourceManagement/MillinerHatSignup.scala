@@ -41,7 +41,7 @@ trait MillinerHatSignup {
   val schema: String = configuration.get[String]("resourceManagement.millinerAddress") match {
     case address if address.startsWith("https") => "https://"
     case address if address.startsWith("http")  => "http://"
-    case _ => "https://"
+    case _                                      => "https://"
   }
 
   val millinerAddress: String = configuration.get[String]("resourceManagement.millinerAddress")

@@ -54,6 +54,8 @@ lazy val hat = project
     aggregate in update := false,
     testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "exclude", "REMOTE"),
     routesGenerator := InjectedRoutesGenerator,
+    concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
+    coverageExcludedPackages := """.*\.controllers\..*Reverse.*;router.Routes.*;org.hatdex.hat.dal.Tables.*;org.hatdex.hat.phata.views.*;controllers.javascript\..*""",
     // Do not publish docs and source in compiled package
     sources in (Compile,doc) := Seq.empty,
     publishArtifact in (Compile, packageDoc) := false,
