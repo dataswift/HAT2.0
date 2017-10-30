@@ -44,13 +44,13 @@ To run it from source in a development environment two sets of tools are require
 To launch the HAT, follow these steps:
 
 1. Create the database:
-    ```
+    ```bash
     createdb testhatdb1
     createuser testhatdb1
     psql postgres -c "GRANT CREATE ON DATABASE testhatdb1 TO testhatdb1"
     ```
 2. Compile the project:
-    ```
+    ```bash
     sbt compile
     ```
 3. Add custom local domain mapping to your `/etc/hosts` file. This will make sure when you go to the defined address from your machine you will be pointed back to your own machine. E.g.:
@@ -58,7 +58,7 @@ To launch the HAT, follow these steps:
     127.0.0.1   bobtheplumber.hat.org
     ```
 4. Run the project:
-    ```
+    ```bash
     sbt "project hat" -Dconfig.resource=dev.conf run
     ```
 5. Go to http://bobtheplumber.hat.org:9000
@@ -100,7 +100,7 @@ keypair used by the HAT for its token operations
 
 HAT is intended to be run inside Docker containers. To build a new container, execute:
 
-```
+```bash
 export REPOSITORY_NAME="hubofallthings"
 ./deployment/ecs/docker-aws-deploy.sh
 ```
@@ -109,7 +109,7 @@ The script is a thin wrapper around a few basic Docker commands. It allows for c
 the name of the repository you  want to deploy the container to and tags it with the git
 commit fingerprint for the current code version. Otherwise, it could be simplified to:
 
-```
+```bash
 # Scala Build Tool to compile the code and prepare Dockerfile
 sbt "project hat" docker:stage
 
