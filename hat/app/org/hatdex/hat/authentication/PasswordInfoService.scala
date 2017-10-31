@@ -37,10 +37,7 @@ import play.api.cache.{ AsyncCacheApi, NamedCache }
 
 import scala.concurrent.Future
 
-class PasswordInfoService @Inject() (
-    implicit
-    @NamedCache("user-cache") val cache: AsyncCacheApi,
-    userService: AuthUserServiceImpl)
+class PasswordInfoService @Inject() (userService: AuthUserServiceImpl)
   extends DelegableAuthInfoDAO[PasswordInfo, HatServer] with DalExecutionContext {
 
   val logger = Logger(this.getClass)
@@ -50,14 +47,12 @@ class PasswordInfoService @Inject() (
   }
 
   def find(loginInfo: LoginInfo)(implicit hat: HatServer): Future[Option[PasswordInfo]] = {
-    cache.getOrElseUpdate(s"passwordInfo:${loginInfo.providerKey}") {
-      userService.retrieve(loginInfo).map {
-        case Some(user) if user.pass.isDefined =>
-          Some(user.pass.get)
-        case _ =>
-          logger.info("No such user")
-          None
-      }
+    userService.retrieve(loginInfo).map {
+      case Some(user) if user.pass.isDefined =>
+        Some(user.pass.get)
+      case _ =>
+        logger.info("No such user")
+        None
     }
   }
 
@@ -73,7 +68,6 @@ class PasswordInfoService @Inject() (
   def update(loginInfo: LoginInfo, authInfo: PasswordInfo)(implicit hat: HatServer): Future[PasswordInfo] =
     userService.retrieve(loginInfo).map {
       case Some(user) =>
-        cache.remove(s"passwordInfo:${loginInfo.providerKey}")
         userService.save(user.copy(pass = Some(authInfo)))
         authInfo
       case _ => throw new Exception("PasswordInfoDAO - update : the user must exists to update its password")

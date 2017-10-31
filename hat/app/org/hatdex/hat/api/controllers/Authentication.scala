@@ -116,7 +116,7 @@ class Authentication @Inject() (
       usernameParam <- request.getQueryString("username").orElse(request.headers.get("username"))
       passwordParam <- request.getQueryString("password").orElse(request.headers.get("password"))
     } yield {
-      val username = usernameParam
+      val username = URLDecoder.decode(usernameParam, "UTF-8")
       val password = URLDecoder.decode(passwordParam, "UTF-8")
       credentialsProvider.authenticate(Credentials(username, password))
         .flatMap { loginInfo =>
