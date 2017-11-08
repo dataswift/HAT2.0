@@ -120,8 +120,13 @@ trait FunctionServiceContext extends Scope {
     None)
 
   val dummyFunctionConfigurationUpdated = FunctionConfiguration("dummy-function", "Updated Function",
-    FunctionTrigger.TriggerIndividual(), available = false, enabled = false,
+    FunctionTrigger.TriggerIndividual(), available = false, enabled = true,
     dataBundle = EndpointDataBundle("data-feed-dummy-mapper", Map()),
+    None)
+
+  val unavailableFunctionConfiguration = FunctionConfiguration("unavailable-function", "Unavailable Function",
+    FunctionTrigger.TriggerIndividual(), available = false, enabled = false,
+    dataBundle = EndpointDataBundle("unavailable-function-bundler", Map()),
     None)
 
   val registeredFunction = new DataFeedDirectMapper()

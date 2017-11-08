@@ -42,33 +42,6 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
   sequential
 
-  "The `save` method" should {
-    "return the saved function configuration" in {
-      val service = application.injector.instanceOf[FunctionService]
-
-      service.save(dummyFunctionConfiguration)
-        .map { c =>
-          c.name must be equalTo dummyFunctionConfiguration.name
-          c.available must beFalse
-        }.await(3, 10.seconds)
-    }
-
-    "update function configuration with matching name" in {
-      val service = application.injector.instanceOf[FunctionService]
-
-      val saved = for {
-        _ <- service.save(dummyFunctionConfiguration)
-        saved <- service.save(dummyFunctionConfigurationUpdated)
-      } yield saved
-
-      saved.map { c =>
-        c.name must be equalTo dummyFunctionConfiguration.name
-        c.available must beFalse
-        c.description must be equalTo dummyFunctionConfigurationUpdated.description
-      }.await(3, 10.seconds)
-    }
-  }
-
   "The `get` method" should {
     "return `None` when no such function exists" in {
       val service = application.injector.instanceOf[FunctionService]
@@ -79,14 +52,14 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val service = application.injector.instanceOf[FunctionService]
 
       val saved = for {
-        _ <- service.save(dummyFunctionConfiguration)
-        saved <- service.get(dummyFunctionConfiguration.name)
+        _ <- service.save(unavailableFunctionConfiguration)
+        saved <- service.get(unavailableFunctionConfiguration.name)
       } yield saved
 
       saved.map { mSaved =>
         mSaved must beSome
         val c = mSaved.get
-        c.name must be equalTo dummyFunctionConfiguration.name
+        c.name must be equalTo unavailableFunctionConfiguration.name
         c.available must beFalse
       }.await(3, 10.seconds)
     }
@@ -113,13 +86,13 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val service = application.injector.instanceOf[FunctionService]
 
       val all = for {
-        _ <- service.save(dummyFunctionConfiguration)
+        _ <- service.save(unavailableFunctionConfiguration)
         all <- service.saved()
       } yield all
 
       all.map { functions =>
         functions.length must be equalTo 1
-        val dummy = functions.find(_.name == dummyFunctionConfiguration.name)
+        val dummy = functions.find(_.name == unavailableFunctionConfiguration.name)
         dummy must beSome
         dummy.get.available must beFalse
       }.await(3, 10.seconds)
@@ -129,14 +102,14 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val service = application.injector.instanceOf[FunctionService]
 
       val all = for {
-        _ <- service.save(dummyFunctionConfiguration)
+        _ <- service.save(unavailableFunctionConfiguration)
         _ <- service.save(registeredFunction.configuration)
         all <- service.saved()
       } yield all
 
       all.map { functions =>
         functions.length must be equalTo 2
-        val dummy = functions.find(_.name == dummyFunctionConfiguration.name)
+        val dummy = functions.find(_.name == unavailableFunctionConfiguration.name)
         dummy must beSome
         dummy.get.available must beFalse
 
@@ -164,6 +137,33 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         val available = functions.find(_.name == registeredFunction.configuration.name)
         available must beSome
         available.get.available must beTrue
+      }.await(3, 10.seconds)
+    }
+  }
+
+  "The `save` method" should {
+    "return the saved function configuration" in {
+      val service = application.injector.instanceOf[FunctionService]
+
+      service.save(dummyFunctionConfiguration)
+        .map { c =>
+          c.name must be equalTo dummyFunctionConfiguration.name
+          c.available must beFalse
+        }.await(3, 10.seconds)
+    }
+
+    "update function configuration with matching name, keeping configuration paramters as higher priority" in {
+      val service = application.injector.instanceOf[FunctionService]
+
+      val saved = for {
+        _ <- service.save(dummyFunctionConfiguration)
+        c <- service.save(dummyFunctionConfigurationUpdated)
+      } yield c
+
+      saved.map { c =>
+        c.name must be equalTo dummyFunctionConfiguration.name
+        c.enabled must beTrue
+        c.description must be equalTo dummyFunctionConfiguration.description
       }.await(3, 10.seconds)
     }
   }
