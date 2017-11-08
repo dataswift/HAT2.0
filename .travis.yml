@@ -92,7 +92,7 @@ script:
   - |
     if [[ "$REPOSITORY_NAME" = "hubat" ]]; then
       sbt ++$TRAVIS_SCALA_VERSION test:compile
-      sbt "project hat" coverage "testOnly org.hatdex.hat.api.*" -Dconfig.file=hat/conf/application.test.conf
+      sbt "project hat" coverage "testOnly org.hatdex.hat.*" -Dconfig.file=hat/conf/application.test.conf
     fi
   - sbt -Denv=prod docker:stage
   - docker build -t ${REPOSITORY_NAME}/hat:$(git rev-parse --short HEAD) hat/target/docker/stage
