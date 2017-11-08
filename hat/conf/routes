@@ -82,6 +82,7 @@ GET           /api/v2/data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>        
 POST          /api/v2/data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                            org.hatdex.hat.api.controllers.RichData.saveEndpointData(namespace, endpoint)
 PUT           /api/v2/data                                                                          org.hatdex.hat.api.controllers.RichData.updateRecords()
 DELETE        /api/v2/data                                                                          org.hatdex.hat.api.controllers.RichData.deleteDataRecords(records: Seq[java.util.UUID])
+GET           /api/v2/data/sources                                                                  org.hatdex.hat.api.controllers.RichData.listEndpoints
 POST          /api/v2/data-link                                                                     org.hatdex.hat.api.controllers.RichData.linkDataRecords(records: Seq[java.util.UUID])
 POST          /api/v2/data-batch                                                                    org.hatdex.hat.api.controllers.RichData.saveBatchData
 POST          /api/v2/data-bundle/$bundleId<[0-9a-zA-Z-]+>                                          org.hatdex.hat.api.controllers.RichData.registerBundle(bundleId)
@@ -102,6 +103,14 @@ GET           /api/v2/migrate                                                   
 
 GET           /api/v2/application                                                                   org.hatdex.hat.api.controllers.Applications.apps()
 POST          /api/v2/application                                                                   org.hatdex.hat.api.controllers.Applications.saveApp()
+
+# Smart HAT Engine (SHE) routes
+
+GET           /api/v2/she/function                                                                  org.hatdex.hat.she.controllers.FunctionManager.functionList()
+GET           /api/v2/she/function/:function                                                        org.hatdex.hat.she.controllers.FunctionManager.functionGet(function: String)
+GET           /api/v2/she/function/:function/enable                                                 org.hatdex.hat.she.controllers.FunctionManager.functionEnable(function: String)
+GET           /api/v2/she/function/:function/disable                                                org.hatdex.hat.she.controllers.FunctionManager.functionDisable(function: String)
+GET           /api/v2/she/function/:function/trigger                                                org.hatdex.hat.she.controllers.FunctionManager.functionTrigger(function: String)
 
 # AUTHENTICATION routes
 

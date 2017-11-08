@@ -102,7 +102,7 @@ after_success:
   - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
   - |
     if [[ "$TRAVIS_PULL_REQUEST" = "false" || -z "$RUMPEL" ]]; then
-      sbt coverageReport && sbt coverageAggregate # && sbt coveralls
+      sbt coverageReport && sbt coverageAggregate && sbt coveralls
     fi
 
 before_deploy:

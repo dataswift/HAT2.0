@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{ GetResult => GR }
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, DataBundles.schema, DataCombinators.schema, DataDebit.schema, DataDebitBundle.schema, DataDebitContract.schema, DataField.schema, DataJson.schema, DataJsonGroupRecords.schema, DataJsonGroups.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, HatFile.schema, HatFileAccess.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, UserAccessLog.schema, UserMailTokens.schema, UserRole.schema, UserRoleAvailable.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, DataBundles.schema, DataCombinators.schema, DataDebit.schema, DataDebitBundle.schema, DataDebitContract.schema, DataField.schema, DataJson.schema, DataJsonGroupRecords.schema, DataJsonGroups.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, HatFile.schema, HatFileAccess.schema, SheFunction.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, UserAccessLog.schema, UserMailTokens.schema, UserRole.schema, UserRoleAvailable.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -867,6 +867,47 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table HatFileAccess */
   lazy val HatFileAccess = new TableQuery(tag => new HatFileAccess(tag))
+
+  /**
+   * Entity class storing rows of table SheFunction
+   *  @param name Database column name SqlType(varchar), PrimaryKey
+   *  @param description Database column description SqlType(varchar)
+   *  @param trigger Database column trigger SqlType(jsonb)
+   *  @param enabled Database column enabled SqlType(bool)
+   *  @param bundleId Database column bundle_id SqlType(varchar)
+   *  @param lastExecution Database column last_execution SqlType(timestamptz), Default(None)
+   */
+  case class SheFunctionRow(name: String, description: String, trigger: play.api.libs.json.JsValue, enabled: Boolean, bundleId: String, lastExecution: Option[org.joda.time.DateTime] = None)
+  /** GetResult implicit for fetching SheFunctionRow objects using plain SQL queries */
+  implicit def GetResultSheFunctionRow(implicit e0: GR[String], e1: GR[play.api.libs.json.JsValue], e2: GR[Boolean], e3: GR[Option[org.joda.time.DateTime]]): GR[SheFunctionRow] = GR {
+    prs =>
+      import prs._
+      SheFunctionRow.tupled((<<[String], <<[String], <<[play.api.libs.json.JsValue], <<[Boolean], <<[String], <<?[org.joda.time.DateTime]))
+  }
+  /** Table description of table she_function. Objects of this class serve as prototypes for rows in queries. */
+  class SheFunction(_tableTag: Tag) extends profile.api.Table[SheFunctionRow](_tableTag, Some("hat"), "she_function") {
+    def * = (name, description, trigger, enabled, bundleId, lastExecution) <> (SheFunctionRow.tupled, SheFunctionRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(name), Rep.Some(description), Rep.Some(trigger), Rep.Some(enabled), Rep.Some(bundleId), lastExecution).shaped.<>({ r => import r._; _1.map(_ => SheFunctionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column name SqlType(varchar), PrimaryKey */
+    val name: Rep[String] = column[String]("name", O.PrimaryKey)
+    /** Database column description SqlType(varchar) */
+    val description: Rep[String] = column[String]("description")
+    /** Database column trigger SqlType(jsonb) */
+    val trigger: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("trigger")
+    /** Database column enabled SqlType(bool) */
+    val enabled: Rep[Boolean] = column[Boolean]("enabled")
+    /** Database column bundle_id SqlType(varchar) */
+    val bundleId: Rep[String] = column[String]("bundle_id")
+    /** Database column last_execution SqlType(timestamptz), Default(None) */
+    val lastExecution: Rep[Option[org.joda.time.DateTime]] = column[Option[org.joda.time.DateTime]]("last_execution", O.Default(None))
+
+    /** Foreign key referencing DataBundles (database name she_function_bundle_id_fkey) */
+    lazy val dataBundlesFk = foreignKey("she_function_bundle_id_fkey", bundleId, DataBundles)(r => r.bundleId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
+  }
+  /** Collection-like TableQuery object for table SheFunction */
+  lazy val SheFunction = new TableQuery(tag => new SheFunction(tag))
 
   /**
    * Entity class storing rows of table StatsDataDebitClessBundleRecords

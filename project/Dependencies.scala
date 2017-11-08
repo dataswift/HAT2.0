@@ -66,7 +66,7 @@ object Dependencies {
       }
 
       object Silhouette {
-        val version = "5.0.2-SNAPSHOT"
+        val version = "5.1.2"
         val passwordBcrypt = "com.mohiva" %% "play-silhouette-password-bcrypt" % version
         val persistence = "com.mohiva" %% "play-silhouette-persistence" % version
         val cryptoJca = "com.mohiva" %% "play-silhouette-crypto-jca" % version

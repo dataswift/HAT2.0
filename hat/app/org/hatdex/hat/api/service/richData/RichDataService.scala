@@ -32,7 +32,7 @@ import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.libs.dal.HATPostgresProfile.api._
-import org.joda.time.LocalDateTime
+import org.joda.time.{ DateTime, LocalDateTime }
 import org.postgresql.util.PSQLException
 import play.api.Logger
 import play.api.libs.json._
@@ -92,6 +92,17 @@ class RichDataService extends DalExecutionContext {
           logger.error(s"Error inserting data: ${e.getMessage}")
           throw e
       }
+  }
+
+  def listEndpoints()(implicit db: Database): Future[Map[String, Seq[String]]] = {
+    val query = DataJson.map(_.source).distinct
+    db.run(query.result).map { sources =>
+      sources.map { s =>
+        val parts = s.split('/')
+        (parts.head, parts.tail.mkString("/"))
+      }.groupBy(_._1)
+        .map { case (k, v) => k -> v.unzip._2 }
+    }
   }
 
   def deleteRecords(userId: UUID, recordIds: Seq[UUID])(implicit db: Database): Future[Unit] = {
@@ -242,8 +253,8 @@ class RichDataService extends DalExecutionContext {
    * @return the generated query for a list of data records, for each record including the JSON Data row, , and if present - same for linked records
    */
   private def propertyDataQuery(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], orderingDescending: Boolean,
-    skip: Int, limit: Option[Int]): Query[((DataJson, ConstColumn[String]), Rep[Option[(DataJson, ConstColumn[String])]]), ((DataJsonRow, String), Option[(DataJsonRow, String)]), Seq] = {
-
+    skip: Int, limit: Option[Int], sinceDate: Option[DateTime], untilDate: Option[DateTime]): Query[((DataJson, ConstColumn[String]), Rep[Option[(DataJson, ConstColumn[String])]]), ((DataJsonRow, String), Option[(DataJsonRow, String)]), Seq] = {
+    // TODO: filter by date if present!
     val queriesWithMappers = endpointQueries.zipWithIndex map {
       case (endpointQuery, endpointQueryIndex) =>
         orderBy map { orderBy =>
@@ -319,9 +330,9 @@ class RichDataService extends DalExecutionContext {
   }
 
   def propertyData(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], orderingDescending: Boolean,
-    skip: Int, limit: Option[Int])(implicit db: Database): Future[Seq[EndpointData]] = {
+    skip: Int, limit: Option[Int], sinceDate: Option[DateTime], untilDate: Option[DateTime])(implicit db: Database): Future[Seq[EndpointData]] = {
 
-    val query = propertyDataQuery(endpointQueries, orderBy, orderingDescending, skip, limit)
+    val query = propertyDataQuery(endpointQueries, orderBy, orderingDescending, skip, limit, sinceDate, untilDate)
     val mappers = queryMappers(endpointQueries)
 
     db.run(query.result).map { results =>
@@ -353,12 +364,21 @@ class RichDataService extends DalExecutionContext {
       None)
   }
 
-  def bundleData(bundle: EndpointDataBundle)(implicit db: Database): Future[Map[String, Seq[EndpointData]]] = {
+  def bundleData(bundle: EndpointDataBundle, skip: Option[Int] = None, limit: Option[Int] = None,
+    sinceDate: Option[DateTime] = None, untilDate: Option[DateTime] = None)(implicit db: Database): Future[Map[String, Seq[EndpointData]]] = {
     val results = bundle.bundle map {
       case (property, propertyQuery) =>
+        val skipRecords = skip.getOrElse(0)
+        val takeRecords = propertyQuery
+          // if bundle has a limit, reduce the take by records already skipped,
+          // otherwise take the smaller of it and the provided limit
+          .limit.map(l => Math.max(Math.min(l - skipRecords, limit.getOrElse(l)), 0))
+          // if no limit, take the provided one
+          .orElse(limit)
+
         propertyData(propertyQuery.endpoints, propertyQuery.orderBy,
           orderingDescending = propertyQuery.ordering.contains("descending"),
-          0, propertyQuery.limit)
+          skipRecords, takeRecords, sinceDate, untilDate)
           .map(property -> _)
     }
 

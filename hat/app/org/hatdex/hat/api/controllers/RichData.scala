@@ -78,7 +78,7 @@ class RichData @Inject() (
       val dataEndpoint = s"$namespace/$endpoint"
       val query = Seq(EndpointQuery(dataEndpoint, None, None, None))
       val data = dataService.propertyData(query, orderBy, ordering.contains("descending"),
-        skip.getOrElse(0), take.orElse(Some(defaultRecordLimit)))
+        skip.getOrElse(0), take.orElse(Some(defaultRecordLimit)), None, None)
       data.map(d => Ok(Json.toJson(d)))
     }
 
@@ -153,7 +153,7 @@ class RichData @Inject() (
       val result = for {
         query <- bundleService.combinator(combinator).map(_.get)
         data <- dataService.propertyData(query, orderBy, ordering.contains("descending"),
-          skip.getOrElse(0), take.orElse(Some(defaultRecordLimit)))
+          skip.getOrElse(0), take.orElse(Some(defaultRecordLimit)), None, None)
       } yield data
 
       result map { d =>
@@ -181,6 +181,12 @@ class RichData @Inject() (
         case RichDataMissingException(message, _) => BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
       }
     }
+
+  def listEndpoints: Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async { implicit request =>
+    dataService.listEndpoints() map { endpoints =>
+      Ok(Json.toJson(endpoints))
+    }
+  }
 
   def updateRecords(): Action[Seq[EndpointData]] =
     SecuredAction(WithRole(DataCredit(""), Owner())).async(parsers.json[Seq[EndpointData]]) { implicit request =>
