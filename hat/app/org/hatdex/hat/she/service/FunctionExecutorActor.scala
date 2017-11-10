@@ -27,18 +27,18 @@ package org.hatdex.hat.she.service
 import javax.inject.Inject
 
 import akka.Done
-import akka.actor.{ Actor, ActorNotFound, ActorRef, ActorSystem, PoisonPill, Props, Stash }
-import akka.pattern.{ ask, pipe }
+import akka.actor.{Actor, ActorNotFound, ActorRef, ActorSystem, PoisonPill, Props, Stash}
+import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import com.google.inject.assistedinject.Assisted
-import org.hatdex.hat.resourceManagement.{ HatServerDiscoveryException, HatServerProvider }
+import org.hatdex.hat.resourceManagement.{HatServerDiscoveryException, HatServerProvider}
 import org.hatdex.hat.she.models.FunctionConfiguration
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.concurrent.InjectedActorSupport
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 object FunctionExecutorActor {
   sealed trait FunctionExecutorActorMessage
@@ -112,47 +112,5 @@ class FunctionExecutorActor @Inject() (
     case message =>
       logger.debug(s"FINISHED received a message: $message")
       sender ! ExecutionFailed(error)
-  }
-}
-
-class FunctionExecutionDispatcher @Inject() (
-    functionExecutorActorFactory: FunctionExecutorActor.Factory,
-    actorSystem: ActorSystem) extends InjectedActorSupport {
-  private val logger = Logger(this.getClass)
-
-  def trigger(hat: String, conf: FunctionConfiguration)(implicit timeout: FiniteDuration, ec: ExecutionContext): Future[Done] = {
-    logger.debug(s"Triggered function ${conf.name} by $hat")
-    implicit val resultTimeout: Timeout = timeout
-    doFindOrCreate(hat, conf, timeout) flatMap { actor =>
-      actor.ask(FunctionExecutorActor.Execute(None)) map {
-        case _: FunctionExecutorActor.ExecutionFinished =>
-          logger.debug(s"Finished executing function ${conf.name} by $hat")
-          Done
-        case FunctionExecutorActor.ExecutionFailed(e) =>
-          throw e
-      }
-    }
-  }
-
-  private val maxAttempts = 3
-  def doFindOrCreate(hat: String, conf: FunctionConfiguration, timeout: FiniteDuration, depth: Int = 0)(implicit ec: ExecutionContext): Future[ActorRef] = {
-    val actorName = s"function:$hat:${conf.name}"
-    if (depth >= maxAttempts) {
-      logger.error(s"Function executor actor for $actorName not resolved")
-      throw new RuntimeException(s"Can not create actor for executor $actorName and reached max attempts of $maxAttempts")
-    }
-    val selection = s"/user/$actorName"
-
-    actorSystem.actorSelection(selection).resolveOne(timeout) map { hatServerActor =>
-      logger.debug(s"HAT function executor actor $selection resolved")
-      hatServerActor
-    } recoverWith {
-      case ActorNotFound(_) =>
-        logger.debug(s"HAT function executor actor ($selection) not found, injecting child")
-        val functionExecutorActor = actorSystem.actorOf(Props(functionExecutorActorFactory(hat, conf))
-          .withDispatcher("she-function-execution-actor-dispatcher"), actorName)
-        logger.debug(s"Injected actor $functionExecutorActor")
-        doFindOrCreate(hat, conf, timeout, depth + 1)
-    }
   }
 }

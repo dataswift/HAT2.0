@@ -69,7 +69,7 @@ class FunctionService @Inject() (
            | $registeredFunctions
            | $savedFunctions""".stripMargin)
       mergeRegisteredSaved(registeredFunctions, savedFunctions)
-        .filter(f => !active || f.enabled) // only return enabled ones if filtering is on
+        .filter(f => !active || f.enabled && f.available) // only return enabled ones if filtering is on
     }
   }
 

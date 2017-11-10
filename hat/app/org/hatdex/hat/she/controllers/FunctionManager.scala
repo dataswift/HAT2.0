@@ -85,7 +85,7 @@ class FunctionManager @Inject() (
     functionSetEnabled(function, enabled = false)
   }
 
-  protected def functionSetEnabled(function: String, enabled: Boolean)(implicit request: SecuredRequest[HatApiAuthEnvironment, AnyContent]) = {
+  protected def functionSetEnabled(function: String, enabled: Boolean)(implicit request: SecuredRequest[HatApiAuthEnvironment, AnyContent]): Future[Result] = {
     logger.debug(s"Enable function $function = $enabled")
     functionService.get(function).flatMap { maybeFunction =>
       maybeFunction.map { function =>

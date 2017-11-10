@@ -52,7 +52,8 @@ class HatDataStatsProcessorActor @Inject() (
     log.debug(s"Process batched stas: $d")
     d.filter(_.isInstanceOf[HatDataEvent])
       .map(_.asInstanceOf[HatDataEvent])
-      .groupBy(_.hat) map {
+      .groupBy(_.hat)
+      .map {
         case (hat, stats) =>
           val aggregated = stats.collect {
             case s: DataCreatedEvent   => processor.computeInboundStats(s)
@@ -60,7 +61,8 @@ class HatDataStatsProcessorActor @Inject() (
             case e: DataDebitEvent     => processor.reportDataDebitEvent(e)
           }
           hat -> aggregated
-      } foreach {
+      }
+      .foreach {
         case (hat, hatStats) =>
           if (hatStats.nonEmpty) {
             processor.publishStats(hat, hatStats)

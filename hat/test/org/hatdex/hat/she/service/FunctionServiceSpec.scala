@@ -167,6 +167,5 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       }.await(3, 10.seconds)
     }
   }
-
 }
 
