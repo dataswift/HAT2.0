@@ -24,9 +24,13 @@
 
 package org.hatdex.hat.she.models
 
+import org.hatdex.hat.api.models.EndpointDataBundle
+import org.joda.time.DateTime
+
 import scala.concurrent.{ ExecutionContext, Future }
 
 trait FunctionExecutable {
   val configuration: FunctionConfiguration
   def execute(configuration: FunctionConfiguration, request: Request)(implicit ec: ExecutionContext): Future[Seq[Response]]
+  def bundleFilterByDate(fromDate: Option[DateTime], untilDate: Option[DateTime]): EndpointDataBundle = configuration.dataBundle
 }

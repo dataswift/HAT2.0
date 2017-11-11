@@ -57,7 +57,7 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
       |            "retweeted": "true",
       |            "truncated": "false",
       |            "created_at": "Sat Sep 23 09:24:51 +0000 2017",
-      |            "lastUpdated": "2017-09-23T09:24:51+0000",
+      |            "lastUpdated": "2017-09-20T09:24:51+0000",
       |            "retweet_count": "2937",
       |            "favorite_count": "0",
       |            "possibly_sensitive": "false",
@@ -135,7 +135,7 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
   private val exampleFacebookPhotoPostText =
     """
       |{
-      |        "endpoint": "facebook/posts",
+      |        "endpoint": "facebook/feed",
       |        "recordId": "597d28d5-19fe-4987-a986-0d7bb4b13a2b",
       |        "data": {
       |            "id": "10208242138349438_10214705870378699",
@@ -170,7 +170,7 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
   private val exampleFacebookPostText =
     """
       |{
-      |        "endpoint": "facebook/posts",
+      |        "endpoint": "facebook/feed",
       |        "recordId": "fd863cdd-1585-47a2-ada7-9e5177ab1cba",
       |        "data": {
       |            "id": "10208242138349438_10214298168906417",
@@ -200,7 +200,7 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
   private val facebookStoryText =
     """
       |{
-      |        "endpoint": "facebook/posts",
+      |        "endpoint": "facebook/feed",
       |        "recordId": "303b8480-f801-46d5-a046-9a3fe96cdf53",
       |        "data": {
       |            "id": "10208242138349438_10214203256533667",
@@ -272,8 +272,8 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
       |        "data": {
       |            "id": "435839040089222",
       |            "name": "Personal Data: Freedom and Rights - SODP",
-      |            "end_time": "2017-03-29T20:30:00+0100",
-      |            "start_time": "2017-03-29T17:30:00+0100",
+      |            "end_time": "2017-08-29T20:30:00+0100",
+      |            "start_time": "2017-08-29T17:30:00+0100",
       |            "description": "Covering areas such as privacy, security, access rights, regulation, transaction costs and ownership, property rights, this session will be chaired by Prof. John Naughton. \n\nJohn Naughton was elected a Fellow of the College in 1992 and is now an Emeritus Fellow; he served as Vice-President from 2011-2015. By background a systems engineer with a strong interest in the social impacts of networking technology, he has written a weekly column for the Observer since 1987. He has written extensively on technology and its role in society, is the author of a well-known history of the Internet – A Brief History of the Future (Phoenix, 2000) – and is currently working on changes in our information ecosystem brought about by technological change. His latest book – From Gutenberg to Zuckerberg: what you really need to know about the Internet – is published by Quercus Books. He was the Academic Advisor to the Arcadia Project at Cambridge University Library, which ran from 2008-2012 and investigated the role of the academic library in a digital age. He is currently a Senior Research Fellow in the Centre for Research in the Arts, Social Sciences and Humanities (CRASSH) where (with Professor Richard Evans and Professor David Runciman) he is a Principal Investigator on the Leverhulme-funded research project on “Conspiracy and Democracy”.",
       |            "lastUpdated": "2017-11-01T12:34:57+0000",
       |            "rsvp_status": "attending"
@@ -294,8 +294,8 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
       |            "place": {
       |              "name": "8 Aylestone road, Cambridge, cb4 1hf"
       |            },
-      |            "end_time": "2017-03-29T20:30:00+0100",
-      |            "start_time": "2017-03-29T17:30:00+0100",
+      |            "end_time": "2017-08-29T20:30:00+0100",
+      |            "start_time": "2017-08-29T17:30:00+0100",
       |            "description": "Copy of Covering areas such as privacy, security, access rights, regulation, transaction costs and ownership, property rights, this session will be chaired by Prof. John Naughton. \n\nJohn Naughton was elected a Fellow of the College in 1992 and is now an Emeritus Fellow; he served as Vice-President from 2011-2015. By background a systems engineer with a strong interest in the social impacts of networking technology, he has written a weekly column for the Observer since 1987. He has written extensively on technology and its role in society, is the author of a well-known history of the Internet – A Brief History of the Future (Phoenix, 2000) – and is currently working on changes in our information ecosystem brought about by technological change. His latest book – From Gutenberg to Zuckerberg: what you really need to know about the Internet – is published by Quercus Books. He was the Academic Advisor to the Arcadia Project at Cambridge University Library, which ran from 2008-2012 and investigated the role of the academic library in a digital age. He is currently a Senior Research Fellow in the Centre for Research in the Arts, Social Sciences and Humanities (CRASSH) where (with Professor Richard Evans and Professor David Runciman) he is a Principal Investigator on the Leverhulme-funded research project on “Conspiracy and Democracy”.",
       |            "lastUpdated": "2017-11-01T12:34:57+0000",
       |            "rsvp_status": "attending"
@@ -337,232 +337,232 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
       |                    {
       |                        "level": "restless",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T00:15:00.000"
+      |                        "dateTime": "2017-08-30T00:15:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 60,
-      |                        "dateTime": "2017-03-30T00:17:00.000"
+      |                        "dateTime": "2017-08-30T00:17:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 60,
-      |                        "dateTime": "2017-03-30T00:18:00.000"
+      |                        "dateTime": "2017-08-30T00:18:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T00:19:00.000"
+      |                        "dateTime": "2017-08-30T00:19:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 180,
-      |                        "dateTime": "2017-03-30T00:21:00.000"
+      |                        "dateTime": "2017-08-30T00:21:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 1980,
-      |                        "dateTime": "2017-03-30T00:24:00.000"
+      |                        "dateTime": "2017-08-30T00:24:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T00:57:00.000"
+      |                        "dateTime": "2017-08-30T00:57:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T00:59:00.000"
+      |                        "dateTime": "2017-08-30T00:59:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 60,
-      |                        "dateTime": "2017-03-30T01:01:00.000"
+      |                        "dateTime": "2017-08-30T01:01:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 780,
-      |                        "dateTime": "2017-03-30T01:02:00.000"
+      |                        "dateTime": "2017-08-30T01:02:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 180,
-      |                        "dateTime": "2017-03-30T01:15:00.000"
+      |                        "dateTime": "2017-08-30T01:15:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 6660,
-      |                        "dateTime": "2017-03-30T01:18:00.000"
+      |                        "dateTime": "2017-08-30T01:18:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T03:09:00.000"
+      |                        "dateTime": "2017-08-30T03:09:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T03:11:00.000"
+      |                        "dateTime": "2017-08-30T03:11:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 60,
-      |                        "dateTime": "2017-03-30T03:13:00.000"
+      |                        "dateTime": "2017-08-30T03:13:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 2640,
-      |                        "dateTime": "2017-03-30T03:14:00.000"
+      |                        "dateTime": "2017-08-30T03:14:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T03:58:00.000"
+      |                        "dateTime": "2017-08-30T03:58:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T04:00:00.000"
+      |                        "dateTime": "2017-08-30T04:00:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 60,
-      |                        "dateTime": "2017-03-30T04:02:00.000"
+      |                        "dateTime": "2017-08-30T04:02:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 1380,
-      |                        "dateTime": "2017-03-30T04:03:00.000"
+      |                        "dateTime": "2017-08-30T04:03:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 240,
-      |                        "dateTime": "2017-03-30T04:26:00.000"
+      |                        "dateTime": "2017-08-30T04:26:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 4740,
-      |                        "dateTime": "2017-03-30T04:30:00.000"
+      |                        "dateTime": "2017-08-30T04:30:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T05:49:00.000"
+      |                        "dateTime": "2017-08-30T05:49:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T05:51:00.000"
+      |                        "dateTime": "2017-08-30T05:51:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 60,
-      |                        "dateTime": "2017-03-30T05:53:00.000"
+      |                        "dateTime": "2017-08-30T05:53:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T05:54:00.000"
+      |                        "dateTime": "2017-08-30T05:54:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T05:56:00.000"
+      |                        "dateTime": "2017-08-30T05:56:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 60,
-      |                        "dateTime": "2017-03-30T05:58:00.000"
+      |                        "dateTime": "2017-08-30T05:58:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T05:59:00.000"
+      |                        "dateTime": "2017-08-30T05:59:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 240,
-      |                        "dateTime": "2017-03-30T06:01:00.000"
+      |                        "dateTime": "2017-08-30T06:01:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T06:05:00.000"
+      |                        "dateTime": "2017-08-30T06:05:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 1500,
-      |                        "dateTime": "2017-03-30T06:07:00.000"
+      |                        "dateTime": "2017-08-30T06:07:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 60,
-      |                        "dateTime": "2017-03-30T06:32:00.000"
+      |                        "dateTime": "2017-08-30T06:32:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 1620,
-      |                        "dateTime": "2017-03-30T06:33:00.000"
+      |                        "dateTime": "2017-08-30T06:33:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T07:00:00.000"
+      |                        "dateTime": "2017-08-30T07:00:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 1380,
-      |                        "dateTime": "2017-03-30T07:02:00.000"
+      |                        "dateTime": "2017-08-30T07:02:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T07:25:00.000"
+      |                        "dateTime": "2017-08-30T07:25:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 1200,
-      |                        "dateTime": "2017-03-30T07:27:00.000"
+      |                        "dateTime": "2017-08-30T07:27:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 180,
-      |                        "dateTime": "2017-03-30T07:47:00.000"
+      |                        "dateTime": "2017-08-30T07:47:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 180,
-      |                        "dateTime": "2017-03-30T07:50:00.000"
+      |                        "dateTime": "2017-08-30T07:50:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 60,
-      |                        "dateTime": "2017-03-30T07:53:00.000"
+      |                        "dateTime": "2017-08-30T07:53:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 360,
-      |                        "dateTime": "2017-03-30T07:54:00.000"
+      |                        "dateTime": "2017-08-30T07:54:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T08:00:00.000"
+      |                        "dateTime": "2017-08-30T08:00:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 780,
-      |                        "dateTime": "2017-03-30T08:02:00.000"
+      |                        "dateTime": "2017-08-30T08:02:00.000"
       |                    },
       |                    {
       |                        "level": "restless",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T08:15:00.000"
+      |                        "dateTime": "2017-08-30T08:15:00.000"
       |                    },
       |                    {
       |                        "level": "asleep",
       |                        "seconds": 120,
-      |                        "dateTime": "2017-03-30T08:17:00.000"
+      |                        "dateTime": "2017-08-30T08:17:00.000"
       |                    }
       |                ],
       |                "summary": {
@@ -580,13 +580,13 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
       |                    }
       |                }
       |            },
-      |            "endTime": "2017-03-30T08:19:30.000",
+      |            "endTime": "2017-08-30T08:19:30.000",
       |            "duration": 29040000,
       |            "infoCode": 0,
-      |            "startTime": "2017-03-30T00:15:00.000",
+      |            "startTime": "2017-08-30T00:15:00.000",
       |            "timeInBed": 484,
       |            "efficiency": 91,
-      |            "dateOfSleep": "2017-03-30",
+      |            "dateOfSleep": "2017-08-30",
       |            "minutesAwake": 44,
       |            "minutesAsleep": 440,
       |            "minutesAfterWakeup": 0,
@@ -608,9 +608,9 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
       |            "logType": "auto_detected",
       |            "calories": 126,
       |            "duration": 1023000,
-      |            "startTime": "2017-01-15T16:19:23.000Z",
+      |            "startTime": "2017-08-15T16:19:23.000Z",
       |            "activityName": "Walk",
-      |            "lastModified": "2017-01-15T16:39:47.000Z",
+      |            "lastModified": "2017-08-15T16:39:47.000Z",
       |            "activityLevel": [
       |                {
       |                    "name": "sedentary",
@@ -660,7 +660,7 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
       |            ],
       |            "averageHeartRate": 94,
       |            "originalDuration": 1023000,
-      |            "originalStartTime": "2017-01-15T16:19:23.000Z",
+      |            "originalStartTime": "2017-08-15T16:19:23.000Z",
       |            "manualValuesSpecified": {
       |                "steps": false,
       |                "calories": false,

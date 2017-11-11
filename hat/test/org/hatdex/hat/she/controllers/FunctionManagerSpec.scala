@@ -260,7 +260,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       dataService.propertyData(
         Seq(EndpointQuery(s"${registeredFunction.namespace}/${registeredFunction.endpoint}", None, None, None)),
-        None, orderingDescending = false, 0, None, None, None)
+        None, orderingDescending = false, 0, None)
         .map { data =>
           data.length must be equalTo records.length
           data.forall(_.endpoint == "she/feed") must be equalTo true

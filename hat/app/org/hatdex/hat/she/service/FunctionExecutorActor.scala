@@ -26,19 +26,15 @@ package org.hatdex.hat.she.service
 
 import javax.inject.Inject
 
-import akka.Done
-import akka.actor.{Actor, ActorNotFound, ActorRef, ActorSystem, PoisonPill, Props, Stash}
-import akka.pattern.{ask, pipe}
-import akka.util.Timeout
+import akka.actor.{ Actor, PoisonPill, Stash }
+import akka.pattern.pipe
 import com.google.inject.assistedinject.Assisted
-import org.hatdex.hat.resourceManagement.{HatServerDiscoveryException, HatServerProvider}
+import org.hatdex.hat.resourceManagement.{ HatServerDiscoveryException, HatServerProvider }
 import org.hatdex.hat.she.models.FunctionConfiguration
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.concurrent.InjectedActorSupport
 
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 object FunctionExecutorActor {
   sealed trait FunctionExecutorActorMessage

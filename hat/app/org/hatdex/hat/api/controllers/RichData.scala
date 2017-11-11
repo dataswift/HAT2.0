@@ -78,7 +78,7 @@ class RichData @Inject() (
       val dataEndpoint = s"$namespace/$endpoint"
       val query = Seq(EndpointQuery(dataEndpoint, None, None, None))
       val data = dataService.propertyData(query, orderBy, ordering.contains("descending"),
-        skip.getOrElse(0), take.orElse(Some(defaultRecordLimit)), None, None)
+        skip.getOrElse(0), take.orElse(Some(defaultRecordLimit)))
       data.map(d => Ok(Json.toJson(d)))
     }
 
@@ -102,6 +102,16 @@ class RichData @Inject() (
       response recover {
         case e: RichDataDuplicateException => BadRequest(Json.toJson(Errors.richDataDuplicate(e)))
         case e: RichDataServiceException   => BadRequest(Json.toJson(Errors.richDataError(e)))
+      }
+    }
+
+  def deleteEndpointData(namespace: String, endpoint: String): Action[AnyContent] =
+    SecuredAction(WithRole(NamespaceWrite(namespace))).async { implicit request =>
+      val dataEndpoint = s"$namespace/$endpoint"
+      dataService.deleteEndpoint(request.identity.userId, dataEndpoint) map { _ =>
+        Ok(Json.toJson(SuccessResponse(s"All records deleted")))
+      } recover {
+        case RichDataMissingException(message, _) => BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
       }
     }
 
@@ -153,7 +163,7 @@ class RichData @Inject() (
       val result = for {
         query <- bundleService.combinator(combinator).map(_.get)
         data <- dataService.propertyData(query, orderBy, ordering.contains("descending"),
-          skip.getOrElse(0), take.orElse(Some(defaultRecordLimit)), None, None)
+          skip.getOrElse(0), take.orElse(Some(defaultRecordLimit)))
       } yield data
 
       result map { d =>

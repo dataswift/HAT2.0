@@ -135,7 +135,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       val result = for {
         _ <- service.saveData(owner.userId, data)
-        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), false, 0, Some(1), None, None)
+        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), false, 0, Some(1))
       } yield retrieved
 
       result map { result =>
@@ -158,7 +158,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
           List(
             EndpointQuery("test", Some(simpleTransformation), None, None),
             EndpointQuery("complex", Some(complexTransformation), None, None)),
-          Some("data.newField"), false, 0, Some(3), None, None)
+          Some("data.newField"), false, 0, Some(3))
       } yield retrieved
 
       result map { result =>
@@ -183,7 +183,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
           List(
             EndpointQuery("test", Some(simpleTransformation), None, None),
             EndpointQuery("complex", Some(complexTransformation), None, None)),
-          Some("data.newField"), false, 0, Some(3), None, None)
+          Some("data.newField"), false, 0, Some(3))
       } yield retrieved
 
       result map { result =>
@@ -208,7 +208,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
             Some(List(
               EndpointQuery("testlinked", None, None, None),
               EndpointQuery("complex", None, None, None))))),
-          Some("data.newField"), false, 0, Some(1), None, None)
+          Some("data.newField"), false, 0, Some(1))
       } yield retrieved
 
       result map { result =>
@@ -235,7 +235,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         retrieved <- service.propertyData(
           List(EndpointQuery("test", Some(simpleTransformation), None,
             Some(List(EndpointQuery("testlinked", None, None, None))))),
-          Some("data.newField"), false, 0, Some(1), None, None)
+          Some("data.newField"), false, 0, Some(1))
       } yield retrieved
 
       result map { result =>
@@ -261,7 +261,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         retrieved <- service.propertyData(
           List(EndpointQuery("test", Some(simpleTransformation), None,
             Some(List(EndpointQuery("testlinked", Some(simpleTransformation), None, None))))),
-          Some("data.newField"), false, 0, Some(1), None, None)
+          Some("data.newField"), false, 0, Some(1))
       } yield retrieved
 
       result map { result =>
@@ -291,7 +291,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
             Some(List(
               EndpointQuery("test", None, None, None),
               EndpointQuery("complex", None, None, None))))),
-          Some("data.newField"), false, 0, Some(3), None, None)
+          Some("data.newField"), false, 0, Some(3))
       } yield retrieved
 
       result map { result =>
@@ -506,7 +506,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
           List(
             EndpointQuery("test", Some(simpleTransformation), None, None),
             EndpointQuery("complex", Some(complexTransformation), None, None)),
-          Some("data.newField"), false, 0, Some(3), None, None)
+          Some("data.newField"), false, 0, Some(3))
       } yield retrieved
 
       result map { result =>
@@ -531,7 +531,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
           List(
             EndpointQuery("test", Some(simpleTransformation), None, None),
             EndpointQuery("complex", Some(complexTransformation), None, None)),
-          Some("data.newField"), false, 0, Some(3), None, None)
+          Some("data.newField"), false, 0, Some(3))
       } yield retrieved
 
       result map { result =>
@@ -592,7 +592,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
           List(
             EndpointQuery("test", Some(simpleTransformation), None, None),
             EndpointQuery("complex", Some(complexTransformation), None, None)),
-          Some("data.newField"), false, 0, Some(3), None, None)
+          Some("data.newField"), false, 0, Some(3))
       } yield retrieved
 
       result map { result =>
@@ -619,7 +619,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
           List(
             EndpointQuery("test", Some(simpleTransformation), None, None),
             EndpointQuery("complex", Some(complexTransformation), None, None)),
-          Some("data.newField"), false, 0, Some(3), None, None)
+          Some("data.newField"), false, 0, Some(3))
       } yield retrieved
 
       result map { result =>

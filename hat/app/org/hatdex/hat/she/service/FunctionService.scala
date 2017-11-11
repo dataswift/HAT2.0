@@ -24,19 +24,21 @@
 
 package org.hatdex.hat.she.service
 
+import java.security.MessageDigest
 import javax.inject.Inject
 
 import akka.Done
 import org.hatdex.hat.api.models.{ EndpointData, Owner, RichDataJsonFormats }
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.richData.RichDataService
-import org.hatdex.hat.she.models.{ FunctionConfiguration, FunctionExecutable, Request }
+import org.hatdex.hat.she.models.{ FunctionConfiguration, FunctionExecutable, Request, Response }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import org.hatdex.hat.dal.Tables._
 import play.api.Logger
 import play.api.libs.json.Json
 
+import scala.collection.mutable
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Success
 
@@ -126,33 +128,40 @@ class FunctionService @Inject() (
   def run(configuration: FunctionConfiguration, startTime: Option[DateTime])(implicit db: Database): Future[Done] = {
     functionRegistry.get[FunctionExecutable](configuration.name)
       .map { function: FunctionExecutable =>
-        val fromDate = startTime.orElse(configuration.lastExecution)
+        val fromDate = Some(DateTime.now().minusMonths(6))
+        val untilDate = Some(DateTime.now().plusMonths(3))
         val executionTime = DateTime.now()
-        val eventualResponse = for {
-          data <- dataService.bundleData(configuration.dataBundle, sinceDate = fromDate) // Get all bundle data from a specific date until now
+        for {
+          data <- dataService.bundleData(function.bundleFilterByDate(fromDate, untilDate), createdAfter = configuration.lastExecution) // Get all bundle data from a specific date until now
           response <- function.execute(configuration, Request(data, linkRecords = true)) // Execute the function
+            .map(removeDuplicateData) // Remove duplicate data in case some records mapped onto the same values when transformed
           owner <- usersService.getUserByRole(Owner()).map(_.head) // Fetch the owner user - functions run on their behalf
-        } yield (response, owner)
-
-        eventualResponse flatMap {
-          case (response, owner) =>
-            // Save each record group from the response, adding them to the groups with the original records
-            val groupsSaved = response.map { r =>
-              for {
-                saved <- dataService.saveData(owner.userId, r.data.map(EndpointData(s"${r.namespace}/${r.endpoint}", None, _, None)))
-                _ <- dataService.saveRecordGroup(owner.userId, r.linkedRecords ++ saved.flatMap(_.recordId))
-              } yield Done
-            }
-
-            Future.sequence(groupsSaved)
-              .andThen {
-                // If saving groups has been successful, record time
-                case Success(_) => save(configuration.copy(lastExecution = Some(executionTime)))
-              }
-              .map(_.head)
-        }
+          _ <- dataService.saveDataGroups(owner.userId, response.map(r => (r.data.map(EndpointData(s"${r.namespace}/${r.endpoint}", None, _, None)), r.linkedRecords)))
+          _ <- save(configuration.copy(lastExecution = Some(executionTime)))
+        } yield Done
       } getOrElse {
         Future.failed(new RuntimeException("The requested function is not available"))
       }
+  }
+
+  //TODO: expensive operation!
+  def removeDuplicateData(response: Seq[Response]): Seq[Response] = {
+    val md = MessageDigest.getInstance("SHA-256")
+    response.map { r =>
+      val digest = md.digest(r.data.head.toString().getBytes)
+      (BigInt(digest), r)
+    }
+      .sortBy(_._1)
+      .foldRight(Seq[(BigInt, Response)]()) {
+        case (e, ls) if ls.isEmpty || ls.head._1 != e._1 => e +: ls
+        case (_, ls)                                     => ls
+      }
+      .zipWithIndex
+      .map {
+        case ((hash, response), i) =>
+          logger.info(s"$i $hash -> ${response.data}")
+          response
+      }
+    //      .unzip._2
   }
 }

@@ -33,6 +33,7 @@ import play.api.Logger
 import play.api.test.PlaySpecification
 
 import scala.concurrent.duration._
+import org.joda.time.DateTime
 import scala.util.Failure
 
 class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirectMapper with PlaySpecification with Mockito with DataFeedDirectMapperContext {
@@ -194,7 +195,7 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
     "run mappings for all events" in {
       val request = Request(Map[String, Seq[EndpointData]](
         "twitter" -> Seq(exampleTweetRetweet, exampleTweetMentions),
-        "facebook/posts" -> Seq(exampleFacebookPhotoPost, exampleFacebookPost, facebookStory),
+        "facebook/feed" -> Seq(exampleFacebookPhotoPost, exampleFacebookPost, facebookStory),
         "facebook/events" -> Seq(facebookEvent, facebookEvenNoLocation, facebookEvenPartialLocation),
         "fitbit/sleep" -> Seq(fitbitSleepMeasurement),
         "fitbit/weight" -> Seq(fitbitWeightMeasurement),
@@ -247,7 +248,7 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
       } yield {
         data.values.toSeq.flatten.length must be equalTo 14
         data("twitter").length must be equalTo 2
-        data("facebook/posts").length must be equalTo 3
+        data("facebook/feed").length must be equalTo 3
         data("facebook/events").length must be equalTo 3
         data("calendar").length must be equalTo 2
         data("fitbit/sleep").length must be equalTo 1
@@ -258,6 +259,34 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
 
       res.await(1, 30.seconds)
 
+    }
+
+    "Correctly filter data by date" in {
+      await(databaseReady)(10.seconds)
+      val from: DateTime = DateTime.parse("2017-09-22T19:24:47+0000")
+      val to: DateTime = DateTime.parse("2017-11-05T12:34:55+0000")
+      val bundle = registeredFunction.bundleFilterByDate(Some(from), Some(to))
+
+      val records = Seq(exampleTweetRetweet, exampleTweetMentions, exampleFacebookPhotoPost, exampleFacebookPost,
+        facebookStory, facebookEvent, facebookEvenNoLocation, facebookEvenPartialLocation, fitbitSleepMeasurement,
+        fitbitWeightMeasurement, fitbitActivity, fitbitDaySummary, googleCalendarEvent, googleCalendarFullDayEvent)
+
+      val service = application.injector.instanceOf[RichDataService]
+      val res = for {
+        _ <- service.saveData(owner.userId, records)
+        data <- service.bundleData(bundle)
+      } yield {
+        data("twitter").length must be equalTo 1
+        data("facebook/feed").length must be equalTo 1
+        data("facebook/events").length must be equalTo 0
+        data("fitbit/sleep").length must be equalTo 0
+        data("fitbit/weight").length must be equalTo 1
+        data("fitbit/activity").length must be equalTo 0
+        data("fitbit/activity/day/summary").length must be equalTo 1
+        data("calendar").length must be equalTo 1
+      }
+
+      res.await(1, 30.seconds)
     }
   }
 }

@@ -27,6 +27,7 @@ package org.hatdex.hat.api.service.richData
 import java.security.MessageDigest
 import java.util.UUID
 
+import akka.Done
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
@@ -51,7 +52,7 @@ class RichDataService extends DalExecutionContext {
     DataJsonRow(recordId.getOrElse(UUID.randomUUID()), endpoint, userId, LocalDateTime.now(), data, digest)
   }
 
-  def saveData(userId: UUID, endpointData: Seq[EndpointData])(implicit db: Database): Future[Seq[EndpointData]] = {
+  private def saveDataQuery(userId: UUID, endpointData: Seq[EndpointData], linkedRecords: Option[Seq[UUID]]) = {
     val queries = endpointData map { endpointDataGroup =>
       val endpointRow = dbDataRow(endpointDataGroup.endpoint, userId, endpointDataGroup.data)
 
@@ -63,7 +64,8 @@ class RichDataService extends DalExecutionContext {
 
       val (groupRow, groupRecordRows) = if (recordIds.length > 1) {
         val groupRow = DataJsonGroupsRow(UUID.randomUUID(), userId, LocalDateTime.now())
-        val groupRecordRows = recordIds.map(DataJsonGroupRecordsRow(groupRow.groupId, _))
+        val groupRecordRows = recordIds.map(DataJsonGroupRecordsRow(groupRow.groupId, _)) ++
+          linkedRecords.map(r => r.map(DataJsonGroupRecordsRow(groupRow.groupId, _))).getOrElse(Seq())
         (Seq(groupRow), groupRecordRows)
       }
       else {
@@ -76,6 +78,33 @@ class RichDataService extends DalExecutionContext {
         group <- DataJsonGroups ++= groupRow
         groupRecords <- DataJsonGroupRecords ++= groupRecordRows
       } yield (endpointData, linkedData, group, groupRecords)
+    }
+    queries
+  }
+
+  def saveData(userId: UUID, endpointData: Seq[EndpointData])(implicit db: Database): Future[Seq[EndpointData]] = {
+    val queries = saveDataQuery(userId, endpointData, None)
+
+    db.run(DBIO.sequence(queries).transactionally)
+      .map {
+        _.map { inserted =>
+          ModelTranslation.fromDbModel(inserted._1, inserted._2)
+        }
+      } recover {
+        case e: PSQLException if e.getMessage.startsWith("ERROR: duplicate key value violates unique constraint \"data_json_hash_key\"") =>
+          throw RichDataDuplicateException("Duplicate data", e)
+        case e: PSQLException =>
+          throw RichDataDuplicateException("Unexpected issue with inserting data", e)
+        case e =>
+          logger.error(s"Error inserting data: ${e.getMessage}")
+          throw e
+      }
+  }
+
+  def saveDataGroups(userId: UUID, dataGroups: Seq[(Seq[EndpointData], Seq[UUID])])(implicit db: Database): Future[Seq[EndpointData]] = {
+    val queries = dataGroups flatMap {
+      case (endpointData, linkedRecords) =>
+        saveDataQuery(userId, endpointData, Some(linkedRecords))
     }
 
     db.run(DBIO.sequence(queries).transactionally)
@@ -102,6 +131,19 @@ class RichDataService extends DalExecutionContext {
         (parts.head, parts.tail.mkString("/"))
       }.groupBy(_._1)
         .map { case (k, v) => k -> v.unzip._2 }
+    }
+  }
+
+  def deleteEndpoint(userId: UUID, dataEndpoint: String)(implicit db: Database): Future[Done] = {
+    val endpointRecrodsQuery = DataJson.filter(r => (r.source === dataEndpoint)).map(_.recordId)
+    val query = for {
+      deletedGroupRecords <- DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete // delete links between records and groups
+      deletedGroups <- DataJsonGroups.filterNot(g => (g.groupId in DataJsonGroupRecords.map(_.groupId))).delete // delete any groups that have become empty
+      deletedRecords <- DataJson.filter(r => (r.recordId in endpointRecrodsQuery)).delete // delete the records, but only if all requested records are found
+    } yield (deletedGroupRecords, deletedGroups, deletedRecords)
+
+    db.run(query.transactionally).map(_ => Done) recover {
+      case e: NoSuchElementException => throw RichDataMissingException("Records missing for deleting", e)
     }
   }
 
@@ -253,8 +295,7 @@ class RichDataService extends DalExecutionContext {
    * @return the generated query for a list of data records, for each record including the JSON Data row, , and if present - same for linked records
    */
   private def propertyDataQuery(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], orderingDescending: Boolean,
-    skip: Int, limit: Option[Int], sinceDate: Option[DateTime], untilDate: Option[DateTime]): Query[((DataJson, ConstColumn[String]), Rep[Option[(DataJson, ConstColumn[String])]]), ((DataJsonRow, String), Option[(DataJsonRow, String)]), Seq] = {
-    // TODO: filter by date if present!
+    skip: Int, limit: Option[Int], createdAfter: Option[DateTime]): Query[((DataJson, ConstColumn[String]), Rep[Option[(DataJson, ConstColumn[String])]]), ((DataJsonRow, String), Option[(DataJsonRow, String)]), Seq] = {
     val queriesWithMappers = endpointQueries.zipWithIndex map {
       case (endpointQuery, endpointQueryIndex) =>
         orderBy map { orderBy =>
@@ -271,6 +312,7 @@ class RichDataService extends DalExecutionContext {
     val endpointDataQuery = queriesWithMappers
       .reduce((aggregate, query) => aggregate.unionAll(query)) // merge all the queries together
       .sortBy(d => if (orderingDescending) { d._2.desc } else { d._2.asc }) // order all the results by the chosen column
+      .filter(d => createdAfter.fold(true.bind)(t => d._1.date > t.toLocalDateTime))
 
     val endpointDataQueryWithLimits = limit map { take =>
       endpointDataQuery
@@ -330,9 +372,9 @@ class RichDataService extends DalExecutionContext {
   }
 
   def propertyData(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], orderingDescending: Boolean,
-    skip: Int, limit: Option[Int], sinceDate: Option[DateTime], untilDate: Option[DateTime])(implicit db: Database): Future[Seq[EndpointData]] = {
+    skip: Int, limit: Option[Int], createdAfter: Option[DateTime] = None)(implicit db: Database): Future[Seq[EndpointData]] = {
 
-    val query = propertyDataQuery(endpointQueries, orderBy, orderingDescending, skip, limit, sinceDate, untilDate)
+    val query = propertyDataQuery(endpointQueries, orderBy, orderingDescending, skip, limit, createdAfter)
     val mappers = queryMappers(endpointQueries)
 
     db.run(query.result).map { results =>
@@ -365,7 +407,7 @@ class RichDataService extends DalExecutionContext {
   }
 
   def bundleData(bundle: EndpointDataBundle, skip: Option[Int] = None, limit: Option[Int] = None,
-    sinceDate: Option[DateTime] = None, untilDate: Option[DateTime] = None)(implicit db: Database): Future[Map[String, Seq[EndpointData]]] = {
+    createdAfter: Option[DateTime] = None)(implicit db: Database): Future[Map[String, Seq[EndpointData]]] = {
     val results = bundle.bundle map {
       case (property, propertyQuery) =>
         val skipRecords = skip.getOrElse(0)
@@ -378,7 +420,7 @@ class RichDataService extends DalExecutionContext {
 
         propertyData(propertyQuery.endpoints, propertyQuery.orderBy,
           orderingDescending = propertyQuery.ordering.contains("descending"),
-          skipRecords, takeRecords, sinceDate, untilDate)
+          skipRecords, takeRecords, createdAfter)
           .map(property -> _)
     }
 

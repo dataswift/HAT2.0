@@ -26,8 +26,9 @@ package org.hatdex.hat.she.functions
 
 import java.util.UUID
 
-import org.hatdex.hat.api.models.{ EndpointData, EndpointDataBundle, EndpointQuery, PropertyQuery }
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.she.models._
+import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{ DateTime, DateTimeZone }
 import play.api.Logger
 import play.api.libs.json._
@@ -40,89 +41,143 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
   val namespace = "she"
   val endpoint = "feed"
 
-  val configuration = FunctionConfiguration("data-feed-direct-mapper", "",
+  val configuration: FunctionConfiguration = FunctionConfiguration("data-feed-direct-mapper", "",
     FunctionTrigger.TriggerIndividual(), available = true, enabled = false,
-    dataBundle = EndpointDataBundle("data-feed-direct-mapper", Map(
-      "twitter" -> PropertyQuery(List(EndpointQuery("twitter/tweets", None, None, None)), Some("lastUpdated"), None, None),
-      "facebook/posts" -> PropertyQuery(List(EndpointQuery("facebook/posts", None, None, None)), Some("created_time"), None, None),
-      "facebook/events" -> PropertyQuery(List(EndpointQuery("facebook/events", None, None, None)), Some("start_time"), None, None),
-      "calendar" -> PropertyQuery(List(EndpointQuery("calendar/google/events", None, None, None)), Some("created"), None, None),
-      "fitbit/sleep" -> PropertyQuery(List(EndpointQuery("fitbit/sleep", None, None, None)), Some("endTime"), None, None),
-      "fitbit/weight" -> PropertyQuery(List(EndpointQuery("fitbit/weight", None, None, None)), Some("date"), None, None),
-      "fitbit/activity" -> PropertyQuery(List(EndpointQuery("fitbit/activity", None, None, None)), Some("originalStartTime"), None, None),
-      "fitbit/activity/day/summary" -> PropertyQuery(List(EndpointQuery("fitbit/activity/day/summary", None, None, None)), Some("dateCreated"), None, None))),
+    dataBundle = bundleFilterByDate(None, None),
     None)
+
+  override def bundleFilterByDate(fromDate: Option[DateTime], untilDate: Option[DateTime]): EndpointDataBundle = {
+    val fmt = ISODateTimeFormat.dateTime();
+    val dateTimeFilter = if (fromDate.isDefined) {
+      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(fmt))), Json.toJson(untilDate.map(_.toString(fmt)))))
+    }
+    else {
+      None
+    }
+    val dateFilter = if (fromDate.isDefined) {
+      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString("yyyy-MM-dd"))), Json.toJson(untilDate.map(_.toString("yyyy-MM-dd")))))
+    }
+    else {
+      None
+    }
+    EndpointDataBundle("data-feed-direct-mapper", Map(
+      "twitter" -> PropertyQuery(
+        List(
+          EndpointQuery("twitter/tweets", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("lastUpdated", None, f))), None)),
+        Some("lastUpdated"), None, None),
+      "facebook/feed" -> PropertyQuery(
+        List(
+          EndpointQuery("facebook/feed", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("created_time", None, f))), None)),
+        Some("created_time"), None, None),
+      "facebook/events" -> PropertyQuery(
+        List(
+          EndpointQuery("facebook/events", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("start_time", None, f))), None)),
+        Some("start_time"), None, None),
+      "calendar" -> PropertyQuery(
+        List(
+          EndpointQuery("calendar/google/events", None, Some(Seq(
+            dateFilter.map(f => EndpointQueryFilter("start.date", None, f))).flatten), None),
+          EndpointQuery("calendar/google/events", None, Some(Seq(
+            dateTimeFilter.map(f => EndpointQueryFilter("start.dateTime", None, f))).flatten), None)),
+        Some("created"), None, None),
+      "fitbit/sleep" -> PropertyQuery(
+        List(
+          EndpointQuery("fitbit/sleep", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("endTime", None, f))), None)),
+        Some("endTime"), None, None),
+      "fitbit/weight" -> PropertyQuery(
+        List(
+          EndpointQuery("fitbit/weight", None, dateFilter.map(f => Seq(EndpointQueryFilter("date", None, f))), None)),
+        Some("date"), None, None),
+      "fitbit/activity" -> PropertyQuery(
+        List(
+          EndpointQuery("fitbit/activity", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("originalStartTime", None, f))), None)),
+        Some("originalStartTime"), None, None),
+      "fitbit/activity/day/summary" -> PropertyQuery(
+        List(
+          EndpointQuery("fitbit/activity/day/summary", None, dateFilter.map(f => Seq(EndpointQueryFilter("dateCreated", None, f))), None)),
+        Some("dateCreated"), None, None)))
+  }
 
   private val logger: Logger = Logger(this.getClass)
 
   def execute(configuration: FunctionConfiguration, request: Request)(implicit ec: ExecutionContext): Future[Seq[Response]] = {
     val responseData = request.data collect {
       case (n, data) if n == "twitter" =>
-        data collect {
+        val records = data collect {
           case EndpointData("twitter/tweets", Some(recordId), content, _) =>
             (recordId, mapTweet(recordId, content))
           case EndpointData(e, Some(recordId), _, _) =>
             (recordId, Failure(new RuntimeException(s"Unexpected endpoint data $e within $n")))
         }
-      case (n, data) if n == "facebook/posts" =>
-        data collect {
-          case EndpointData("facebook/posts", Some(recordId), content, _) =>
+        ("twitter", records)
+      case (n, data) if n == "facebook/feed" =>
+        val records = data collect {
+          case EndpointData("facebook/feed", Some(recordId), content, _) =>
             (recordId, mapFacebookPost(recordId, content))
           case EndpointData(e, Some(recordId), _, _) =>
             (recordId, Failure(new RuntimeException(s"Unexpected endpoint data $e within $n")))
         }
+        ("facebook/feed", records)
       case (n, data) if n == "facebook/events" =>
-        data collect {
+        val records = data collect {
           case EndpointData("facebook/events", Some(recordId), content, _) =>
             (recordId, mapFacebookEvent(recordId, content))
           case EndpointData(e, Some(recordId), _, _) =>
             (recordId, Failure(new RuntimeException(s"Unexpected endpoint data $e within $n")))
         }
+        ("facebook/events", records)
       case (n, data) if n == "fitbit/sleep" =>
-        data collect {
+        val records = data collect {
           case EndpointData("fitbit/sleep", Some(recordId), content, _) =>
             (recordId, mapFitbitSleep(recordId, content))
           case EndpointData(e, Some(recordId), _, _) =>
             (recordId, Failure(new RuntimeException(s"Unexpected endpoint data $e within $n")))
         }
+        ("fitbit/sleep", records)
       case (n, data) if n == "fitbit/weight" =>
-        data collect {
+        val records = data collect {
           case EndpointData("fitbit/weight", Some(recordId), content, _) =>
             (recordId, mapFitbitWeight(recordId, content))
           case EndpointData(e, Some(recordId), _, _) =>
             (recordId, Failure(new RuntimeException(s"Unexpected endpoint data $e within $n")))
         }
+        ("fitbit/weight", records)
       case (n, data) if n == "fitbit/activity" =>
-        data collect {
+        val records = data collect {
           case EndpointData("fitbit/activity", Some(recordId), content, _) =>
             (recordId, mapFitbitActivity(recordId, content))
           case EndpointData(e, Some(recordId), _, _) =>
             (recordId, Failure(new RuntimeException(s"Unexpected endpoint data $e within $n")))
         }
+        ("fitbit/activity", records)
       case (n, data) if n == "fitbit/activity/day/summary" =>
-        data collect {
+        val records = data collect {
           case EndpointData("fitbit/activity/day/summary", Some(recordId), content, _) =>
             (recordId, mapFitbitDaySummarySteps(recordId, content))
           case EndpointData(e, Some(recordId), _, _) =>
             (recordId, Failure(new RuntimeException(s"Unexpected endpoint data $e within $n")))
         }
+        ("fitbit/activity/day/summary", records)
       case (n, data) if n == "calendar" =>
-        data collect {
+        val records = data collect {
           case EndpointData("calendar/google/events", Some(recordId), content, _) =>
             (recordId, mapGoogleCalendarEvent(recordId, content))
           case EndpointData(e, Some(recordId), _, _) =>
             (recordId, Failure(new RuntimeException(s"Unexpected endpoint data $e within $n")))
         }
+        ("calendar/google/events", records)
     }
 
-    val response = responseData.flatten
-      .collect {
-        case (recordId, Success(data)) => Response(namespace, endpoint, Seq(Json.toJson(data)), Seq(recordId))
+    val response = responseData
+      .flatMap { d =>
+        logger.info(s"[${d._1}] Computed ${d._2.count(r => r._2.isSuccess)} out of ${d._2.length} records")
+        d._2.collect {
+          case (_, Failure(e)) => logger.warn(s"[${d._1}] Error while transforming data: ${e.getMessage}")
+        }
+        d._2.collect {
+          case (recordId, Success(data)) => Response(namespace, endpoint, Seq(Json.toJson(data)), Seq(recordId))
+        }
       }
-
-    responseData.flatten.collect {
-      case (_, Failure(e)) => logger.warn(s"Error while transforming data: ${e.getMessage}")
-    }
 
     Future.successful(response.toSeq)
   }
@@ -294,7 +349,7 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
   }
 
   protected def mapFitbitDaySummarySteps(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
-    for {
+    val fitbitSummary = for {
       count <- Try((content \ "steps").as[Int]) if count > 0
       date <- Try((content \ "dateCreated").as[DateTime])
     } yield {
@@ -307,6 +362,10 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
       val title = DataFeedItemTitle(s"You walked $count steps", Some("fitness"))
       DataFeedItem("fitbit", adjustedDate, Seq("fitness", "activity"),
         Some(title), None, None)
+    }
+
+    fitbitSummary recoverWith {
+      case _: NoSuchElementException => Failure(new RuntimeException("Fitbit empty day summary"))
     }
   }
 
