@@ -47,7 +47,7 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
     None)
 
   override def bundleFilterByDate(fromDate: Option[DateTime], untilDate: Option[DateTime]): EndpointDataBundle = {
-    val fmt = ISODateTimeFormat.dateTime();
+    val fmt = ISODateTimeFormat.dateTime()
     val dateTimeFilter = if (fromDate.isDefined) {
       Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(fmt))), Json.toJson(untilDate.map(_.toString(fmt)))))
     }
@@ -286,9 +286,10 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
     val title = DataFeedItemTitle("You added a new weight measurement", Some("weight"))
 
     val itemContent = DataFeedItemContent(
-      Some((content \ "weight").asOpt[Double].map(w => s"- Weight: $w\n").getOrElse("") +
-        (content \ "fat").asOpt[Double].map(w => s"- Body Fat: $w").getOrElse("") +
-        (content \ "bmi").asOpt[Double].map(w => s"- BMI: $w").getOrElse("")),
+      Some(Seq(
+        (content \ "weight").asOpt[Double].map(w => s"- Weight: $w"),
+        (content \ "fat").asOpt[Double].map(w => s"- Body Fat: $w"),
+        (content \ "bmi").asOpt[Double].map(w => s"- BMI: $w")).flatten.mkString("\n")),
       None)
 
     for {
@@ -323,24 +324,11 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
     } yield {
       val title = DataFeedItemTitle("You logged Fitbit activity", Some("fitness"))
 
-      val message =
-        s"""
-        | - Activity: ${(content \ "activityName").asOpt[String].getOrElse("Not recorded")}
-
-        | - Duration: ${
-          (content \ "duration").asOpt[Long].map(t => s"${t / 1000 / 60} minutes").getOrElse(
-            "Not recorded")
-        }
-        | - Average heart rate: ${
-          (content \ "averageHeartRate").asOpt[Long].
-            getOrElse("Not recorded")
-        }
-        | - Calories burned: ${
-          (content \ "calories").asOpt[Long].getOrElse(
-
-            "Not recorded")
-        }
-      """.stripMargin
+      val message = Seq(
+        (content \ "activityName").asOpt[String].map(c => s"- Activity: $c"),
+        (content \ "duration").asOpt[Long].map(c => s"- Duration: ${c / 1000 / 60} minutes"),
+        (content \ "averageHeartRate").asOpt[Long].map(c => s"- Average heart rate: $c"),
+        (content \ "calories").asOpt[Long].map(c => s"- Calories burned: $c")).flatten.mkString("\n")
 
       DataFeedItem(
         "fitbit", date, Seq("fitness", "activity"),
@@ -379,15 +367,11 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
         .withZone((content \ "end" \ "timeZone").asOpt[String].flatMap(z => Try(DateTimeZone.forID(z)).toOption).getOrElse(DateTimeZone.getDefault)))
       timeIntervalString <- Try(eventTimeIntervalString(startDate, Some(endDate)))
       itemContent <- Try(DataFeedItemContent(
-        Some(
-          s"""## ${(content \ "summary").as[String]}
-             |
-           |${timeIntervalString._1} ${timeIntervalString._2.getOrElse("")}
-             |
-           |${(content \ "location").asOpt[String].map(l => s"@$l").getOrElse("")}
-             |
-           |${(content \ "description").asOpt[String].getOrElse("")}
-             |""".stripMargin),
+        Some(Seq(
+          Some(s"## ${(content \ "summary").as[String]}"),
+          Some(s"${timeIntervalString._1} ${timeIntervalString._2.getOrElse("")}"),
+          (content \ "location").asOpt[String].map(c => s"@$c"),
+          (content \ "description").asOpt[String]).flatten.mkString("\n\n")),
         None))
       location <- Try(DataFeedItemLocation(
         geo = None,

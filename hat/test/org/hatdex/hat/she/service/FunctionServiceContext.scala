@@ -103,7 +103,7 @@ trait FunctionServiceContext extends Scope {
 
     @Provides
     def provideFunctionExecutableRegistry(): FunctionExecutableRegistry = {
-      new FunctionExecutableRegistry(Seq(registeredFunction, registeredDummyFunction))
+      new FunctionExecutableRegistry(Seq(registeredFunction, registeredDummyFunction, registeredDummyFunctionAvailable))
     }
   }
 
@@ -119,6 +119,11 @@ trait FunctionServiceContext extends Scope {
     dataBundle = EndpointDataBundle("data-feed-dummy-mapper", Map()),
     None)
 
+  val dummyFunctionConfigurationAvailable = FunctionConfiguration("dummy-function-available", "Dummy Function",
+    FunctionTrigger.TriggerIndividual(), available = true, enabled = false,
+    dataBundle = EndpointDataBundle("data-feed-dummy-mapper-vailable", Map()),
+    None)
+
   val dummyFunctionConfigurationUpdated = FunctionConfiguration("dummy-function", "Updated Function",
     FunctionTrigger.TriggerIndividual(), available = false, enabled = true,
     dataBundle = EndpointDataBundle("data-feed-dummy-mapper", Map()),
@@ -131,6 +136,7 @@ trait FunctionServiceContext extends Scope {
 
   val registeredFunction = new DataFeedDirectMapper()
   val registeredDummyFunction: FunctionExecutable = new DummyFunctionExecutable(dummyFunctionConfiguration)
+  val registeredDummyFunctionAvailable: FunctionExecutable = new DummyFunctionExecutable(dummyFunctionConfigurationAvailable)
 }
 
 class DummyFunctionExecutable(conf: FunctionConfiguration) extends FunctionExecutable {

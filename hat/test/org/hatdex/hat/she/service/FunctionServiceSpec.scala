@@ -91,7 +91,7 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       } yield all
 
       all.map { functions =>
-        functions.length must be equalTo 1
+        functions.length must be greaterThan 0
         val dummy = functions.find(_.name == unavailableFunctionConfiguration.name)
         dummy must beSome
         dummy.get.available must beFalse

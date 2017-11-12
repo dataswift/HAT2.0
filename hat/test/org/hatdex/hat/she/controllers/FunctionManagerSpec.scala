@@ -86,8 +86,8 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       status(result) must equalTo(OK)
       val functions = contentAsJson(result).as[Seq[FunctionConfiguration]]
-      functions.length must be equalTo 2
-      val registered = functions.find(_.name == "data-feed-direct-mapper").get
+      functions.length must be greaterThanOrEqualTo 2
+      val registered = functions.find(_.name == registeredDummyFunctionAvailable.configuration.name).get
       registered.available must be equalTo true
       registered.enabled must be equalTo false
     }
@@ -99,7 +99,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = Helpers.call(controller.functionGet("data-feed-direct-mapper"), request)
+      val result: Future[Result] = Helpers.call(controller.functionGet(registeredDummyFunctionAvailable.configuration.name), request)
 
       status(result) must equalTo(OK)
       val function = contentAsJson(result).as[FunctionConfiguration]
@@ -202,12 +202,12 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       message.message must be equalTo "Function Not Found"
     }
 
-    "Respond with Bad Request for a non-existing function" in {
+    "Respond with Bad Request for a non-enabled function" in {
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = Helpers.call(controller.functionTrigger("data-feed-direct-mapper"), request)
+      val result: Future[Result] = Helpers.call(controller.functionTrigger(registeredDummyFunctionAvailable.configuration.name), request)
 
       status(result) must equalTo(BAD_REQUEST)
       val message = contentAsJson(result).as[ErrorMessage]
@@ -262,7 +262,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         Seq(EndpointQuery(s"${registeredFunction.namespace}/${registeredFunction.endpoint}", None, None, None)),
         None, orderingDescending = false, 0, None)
         .map { data =>
-          data.length must be equalTo records.length
+          data.length must be greaterThanOrEqualTo records.length
           data.forall(_.endpoint == "she/feed") must be equalTo true
         } await (3, 60.seconds)
     }
