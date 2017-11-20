@@ -26,8 +26,7 @@ package org.hatdex.hat.api.service
 
 import java.util.UUID
 
-import org.hatdex.hat.api.models.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus }
-import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
+import org.hatdex.hat.api.models.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus, Owner }
 import org.hatdex.hat.authentication.models.HatUser
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -35,7 +34,7 @@ import org.specs2.specification.BeforeEach
 import play.api.Logger
 import play.api.test.PlaySpecification
 
-import scala.concurrent.ExecutionContext.Implicits.global
+//import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with FileManagerContext with BeforeEach {

@@ -28,13 +28,9 @@ import akka.actor.ActorSystem
 import akka.event.LoggingAdapter
 import akka.http.javadsl.model.StatusCode
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.{ActorMaterializer, Materializer}
-import org.hatdex.hat.api.json.JsonProtocol
-import org.hatdex.hat.api.models.{ApiRecordValues, ApiDataRecord, ApiDataField, ApiDataTable}
-import spray.json._
+import org.hatdex.hat.api.models.{ApiDataField, ApiDataTable, ApiRecordValues}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -42,7 +38,6 @@ import scala.concurrent.Future
 class HatApiHelpers(logger: LoggingAdapter, hatAddress: String, ownerAuthParams: Map[String, String]) {
   implicit val system = ActorSystem()
   implicit val materializer: Materializer = ActorMaterializer()
-  import JsonProtocol._
 
   def createTable(name: String, source: String): Future[ApiDataTable] = {
     val path = Uri.Path("/data/table")

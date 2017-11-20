@@ -25,15 +25,14 @@
 package org.hatdex.hat.phata.models
 
 import me.gosimple.nbvcxz._
-import play.api.data.validation.ValidationError
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{ JsError, _ }
 
 import scala.collection.JavaConverters._
 
 case class ApiPasswordChange(
-  newPassword: String,
-  password: Option[String])
+    newPassword: String,
+    password: Option[String])
 
 object ApiPasswordChange {
 
@@ -65,7 +64,7 @@ object ApiPasswordChange {
     }
   }
 
-  def passwordStrength(implicit reads: Reads[String], p: String => scala.collection.TraversableLike[_, String]): Reads[String] =
+  def passwordStrength(implicit reads: Reads[String]): Reads[String] =
     Reads[String] { js =>
       reads.reads(js)
         .flatMap { a =>
@@ -74,7 +73,7 @@ object ApiPasswordChange {
             JsSuccess(a)
           }
           else {
-            JsError(ValidationError(
+            JsError(JsonValidationError(
               "Minimum password requirement strength not met",
               estimate.getFeedback.getSuggestion.asScala.toList: _*))
           }
@@ -88,7 +87,7 @@ object ApiPasswordChange {
 }
 
 case class ApiPasswordResetRequest(
-  email: String)
+    email: String)
 
 object ApiPasswordResetRequest {
   implicit val passwordResetApiReads: Reads[ApiPasswordResetRequest] =

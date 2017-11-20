@@ -24,7 +24,7 @@
 
 package org.hatdex.hat.authentication
 
-import javax.inject.{ Inject, Named }
+import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
@@ -32,18 +32,12 @@ import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.authentication.Implicits._
 import org.hatdex.hat.resourceManagement.HatServer
-import org.hatdex.hat.utils.Utils
 import play.api.Logger
-import play.api.cache.{ CacheApi, NamedCache }
 
 import scala.concurrent.Future
-import scala.concurrent.duration.Duration
 
-class PasswordInfoService @Inject() (
-  implicit
-  @NamedCache("user-cache") val cache: CacheApi,
-  userService: AuthUserServiceImpl)
-    extends DelegableAuthInfoDAO[PasswordInfo, HatServer] with DalExecutionContext {
+class PasswordInfoService @Inject() (userService: AuthUserServiceImpl)
+  extends DelegableAuthInfoDAO[PasswordInfo, HatServer] with DalExecutionContext {
 
   val logger = Logger(this.getClass)
 
@@ -52,14 +46,12 @@ class PasswordInfoService @Inject() (
   }
 
   def find(loginInfo: LoginInfo)(implicit hat: HatServer): Future[Option[PasswordInfo]] = {
-    Utils.cacheAsync(s"passwordInfo:${loginInfo.providerKey}") {
-      userService.retrieve(loginInfo).map {
-        case Some(user) if user.pass.isDefined =>
-          Some(user.pass.get)
-        case _ =>
-          logger.info("No such user")
-          None
-      }
+    userService.retrieve(loginInfo).map {
+      case Some(user) if user.pass.isDefined =>
+        Some(user.pass.get)
+      case _ =>
+        logger.info("No such user")
+        None
     }
   }
 
@@ -74,11 +66,9 @@ class PasswordInfoService @Inject() (
 
   def update(loginInfo: LoginInfo, authInfo: PasswordInfo)(implicit hat: HatServer): Future[PasswordInfo] =
     userService.retrieve(loginInfo).map {
-      case Some(user) => {
-        cache.remove(s"passwordInfo:${loginInfo.providerKey}")
+      case Some(user) =>
         userService.save(user.copy(pass = Some(authInfo)))
         authInfo
-      }
       case _ => throw new Exception("PasswordInfoDAO - update : the user must exists to update its password")
     }
 

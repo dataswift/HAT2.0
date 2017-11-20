@@ -28,17 +28,16 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import org.hatdex.hat.api.models.{ ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue, _ }
-import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataTabletotablecrossref, _ }
 import org.hatdex.hat.utils.FutureTransformations
-import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
 
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.Success
+import scala.util.{ Failure, Success }
 
 // this trait defines our service behavior independently from the service actor
 class DataService @Inject() (migrationService: MigrationService) extends DalExecutionContext {
@@ -283,8 +282,9 @@ class DataService @Inject() (migrationService: MigrationService) extends DalExec
               .flatMap { r =>
                 FutureTransformations.transform(
                   r.map(record => migrationService.migrateOldDataRecord(userId, record)))
-              } onFailure {
-                case e => logger.error(s"Error migrating record to new APIs: ${e.getMessage}")
+              } onComplete {
+                case Success(_) => logger.debug(s"Records migrated for ${request.dynamicEnvironment.hatName}")
+                case Failure(e) => logger.error(s"Error migrating record to new APIs: ${e.getMessage}")
               }
         }
       }
@@ -563,14 +563,14 @@ object DataService {
   protected def fillStructure(table: ApiDataTable)(values: Map[Int, Seq[ApiDataValue]]): ApiDataTable = {
     val filledFields = table.fields map { fields =>
       // For each field, insert values
-      fields flatMap {
+      fields.collect {
         case ApiDataField(Some(fieldId), dateCreated, lastUpdated, tableId, fieldName, _) =>
           val fieldValues = values.get(fieldId)
           fieldValues.map { fValues =>
             // Create a new field with only the values updated
             ApiDataField(Some(fieldId), dateCreated, lastUpdated, tableId, fieldName, Some(fValues))
           }
-      }
+      }.flatten
     }
 
     val filledSubtables = table.subTables map { subtables =>

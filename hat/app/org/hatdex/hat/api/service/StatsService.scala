@@ -30,10 +30,9 @@ import org.hatdex.hat.api.models._
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.Utils
-import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
-import play.api.mvc.RequestHeader
 
 import scala.collection.immutable.HashMap
 import scala.concurrent.Future
@@ -43,7 +42,7 @@ class StatsService @Inject() (statsReporter: StatsReporter) extends DalExecution
 
   implicit def hatServer2db(implicit hatServer: HatServer): Database = hatServer.db
 
-  def recordDataDebitOperation(dd: ApiDataDebit, user: User, operationType: DataDebitOperation, logEntry: String)(implicit server: HatServer, request: RequestHeader): Future[Int] = {
+  def recordDataDebitOperation(dd: ApiDataDebit, user: User, operationType: DataDebitOperation, logEntry: String)(implicit server: HatServer): Future[Int] = {
     logger.debug(s"Record Data Debit operation: ${dd.key}, ${operationType.toString} by ${user.name}")
 
     val ddOperation = StatsDataDebitOperationRow(0, LocalDateTime.now(), dd.key.get, user.userId, operationType.toString)
@@ -64,7 +63,7 @@ class StatsService @Inject() (statsReporter: StatsReporter) extends DalExecution
     }
   }
 
-  def recordDataDebitRetrieval(dd: ApiDataDebit, values: Seq[ApiEntity], user: User, logEntry: String)(implicit server: HatServer, request: RequestHeader): Future[Unit] = {
+  def recordDataDebitRetrieval(dd: ApiDataDebit, values: Seq[ApiEntity], user: User, logEntry: String)(implicit server: HatServer): Future[Unit] = {
     val ddOperation = StatsDataDebitOperationRow(0, LocalDateTime.now(), dd.key.get, user.userId, DataDebitOperations.GetValues().toString)
     val ddUser = user.copy(pass = None)
     val fOperation = server.db.run {
@@ -79,7 +78,7 @@ class StatsService @Inject() (statsReporter: StatsReporter) extends DalExecution
     }
   }
 
-  def recordDataDebitRetrieval(dd: ApiDataDebit, values: ApiDataDebitOut, user: User, logEntry: String)(implicit server: HatServer, request: RequestHeader): Future[Unit] = {
+  def recordDataDebitRetrieval(dd: ApiDataDebit, values: ApiDataDebitOut, user: User, logEntry: String)(implicit server: HatServer): Future[Unit] = {
 
     val ddOperation = StatsDataDebitOperationRow(0, LocalDateTime.now(), dd.key.get, user.userId, DataDebitOperations.GetValues().toString)
     val ddUser = user.copy(pass = None)
@@ -98,7 +97,7 @@ class StatsService @Inject() (statsReporter: StatsReporter) extends DalExecution
     }
   }
 
-  def recordDataInbound(records: Seq[ApiRecordValues], user: User, logEntry: String)(implicit server: HatServer, request: RequestHeader): Future[Unit] = {
+  def recordDataInbound(records: Seq[ApiRecordValues], user: User, logEntry: String)(implicit server: HatServer): Future[Unit] = {
     val userInfo = user.copy(pass = None)
     val allFields = records.flatMap(_.values flatMap { value =>
       value.field.map { field =>
@@ -112,7 +111,7 @@ class StatsService @Inject() (statsReporter: StatsReporter) extends DalExecution
     }
   }
 
-  def recordDataValuesInbound(values: Seq[ApiDataValue], user: User, logEntry: String)(implicit server: HatServer, request: RequestHeader): Future[Unit] = {
+  def recordDataValuesInbound(values: Seq[ApiDataValue], user: User, logEntry: String)(implicit server: HatServer): Future[Unit] = {
     val userInfo = user.copy(pass = None)
     val allFields = values flatMap { value =>
       value.field.map { field =>

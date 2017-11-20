@@ -31,9 +31,25 @@ import sbt._
 object BasicSettings extends AutoPlugin {
   override def trigger = allRequirements
 
+  object autoImport {
+    object BuildEnv extends Enumeration {
+      val Production, Stage, Test, Developement = Value
+    }
+
+    val buildEnv = settingKey[BuildEnv.Value]("the current build environment")
+
+    def excludeSpecs2(module: ModuleID): ModuleID = {
+      module.excludeAll(
+        ExclusionRule(organization = "org.specs2"),
+        ExclusionRule(organization = "org.seleniumhq.selenium"))
+    }
+  }
+  import autoImport._
+
   override def projectSettings = Seq(
     organization := "org.hatdex",
-    version := "2.4.1-SNAPSHOT",
+    version := "2.4.2-SNAPSHOT",
+    name := "HAT",
     resolvers ++= Dependencies.resolvers,
     scalaVersion := Dependencies.Versions.scalaVersion,
     crossScalaVersions := Dependencies.Versions.crossScala,
@@ -41,7 +57,7 @@ object BasicSettings extends AutoPlugin {
       "-deprecation", // Emit warning and location for usages of deprecated APIs.
       "-feature", // Emit warning and location for usages of features that should be imported explicitly.
       "-unchecked", // Enable additional warnings where generated code depends on assumptions.
-      "-Xfatal-warnings", // Fail the compilation if there are any warnings.
+//      "-Xfatal-warnings", // Fail the compilation if there are any warnings.
       "-Xlint", // Enable recommended additional warnings.
       "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver.
       "-Ywarn-dead-code", // Warn when dead code is identified.
@@ -59,47 +75,42 @@ object BasicSettings extends AutoPlugin {
     // in Travis with `sudo: false`.
     // See https://github.com/sbt/sbt/issues/653
     // and https://github.com/travis-ci/travis-ci/issues/3775
-    javaOptions += "-Xmx1G"
-  )
-}
-
-////*******************************
-//// Scalariform settings
-////*******************************
-object CodeFormatter extends AutoPlugin {
+    javaOptions += "-Xmx1G",
+    buildEnv := {
+      sys.props.get("env")
+        .orElse(sys.env.get("BUILD_ENV"))
+        .flatMap {
+          case "prod" => Some(BuildEnv.Production)
+          case "stage" => Some(BuildEnv.Stage)
+          case "test" => Some(BuildEnv.Test)
+          case "dev" => Some(BuildEnv.Developement)
+          case unknown => None
+        }
+        .getOrElse(BuildEnv.Developement)
+    },
+    // give feed back
+    onLoadMessage := {
+      // depend on the old message as well
+      val defaultMessage = onLoadMessage.value
+      val env = buildEnv.value
+      s"""|$defaultMessage
+          |Running in build environment: $env""".stripMargin
+    }
+  ) ++ scalariformPrefs
 
   import com.typesafe.sbt.SbtScalariform._
-
   import scalariform.formatter.preferences._
 
-  lazy val BuildConfig = config("build") extend Compile
-  lazy val BuildSbtConfig = config("buildsbt") extend Compile
-
-  lazy val prefs = Seq(
+  lazy val scalariformPrefs = Seq(
     ScalariformKeys.preferences := ScalariformKeys.preferences.value
-      .setPreference(FormatXml, false)
-      .setPreference(DoubleIndentClassDeclaration, true)
-      .setPreference(AlignSingleLineCaseStatements, true)
-      .setPreference(CompactControlReadability, true)
-      .setPreference(DanglingCloseParenthesis, Prevent)
+    .setPreference(FormatXml, false)
+    .setPreference(DoubleIndentClassDeclaration, true)
+    .setPreference(DoubleIndentConstructorArguments, true)
+    .setPreference(AlignSingleLineCaseStatements, true)
+    .setPreference(CompactControlReadability, true)
+    .setPreference(DanglingCloseParenthesis, Prevent)
   )
 
-  override def trigger = allRequirements
-
-  override def projectSettings = defaultScalariformSettings ++ prefs ++
-    inConfig(BuildConfig)(configScalariformSettings) ++
-    inConfig(BuildSbtConfig)(configScalariformSettings) ++
-    Seq(
-      scalaSource in BuildConfig := baseDirectory.value / "project",
-      scalaSource in BuildSbtConfig := baseDirectory.value / "project",
-      includeFilter in (BuildConfig, ScalariformKeys.format) := ("*.scala": FileFilter),
-      includeFilter in (BuildSbtConfig, ScalariformKeys.format) := ("*.sbt": FileFilter),
-      ScalariformKeys.format in Compile := {
-        (ScalariformKeys.format in BuildSbtConfig).value
-        (ScalariformKeys.format in BuildConfig).value
-        (ScalariformKeys.format in Compile).value
-      }
-    )
 }
 
 ////*******************************

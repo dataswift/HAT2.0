@@ -31,12 +31,13 @@ import org.hatdex.hat.api.models.{ ApiHatFile, HatFileStatus }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
-import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
 import play.api.libs.json.Json
 
 import scala.concurrent.Future
+import scala.util.{ Failure, Success }
 
 class FileMetadataService extends DalExecutionContext {
   val logger = Logger(this.getClass)
@@ -86,9 +87,9 @@ class FileMetadataService extends DalExecutionContext {
       .map(groupFilePermissions)
       .map(_.head)
 
-    result.onFailure {
-      case e =>
-        logger.error(s"Error while saving file: ${e.getMessage}", e)
+    result.onComplete {
+      case Success(_) => logger.debug(s"File ${file} saved")
+      case Failure(e) => logger.error(s"Error while saving file $file: ${e.getMessage}", e)
     }
     result
   }

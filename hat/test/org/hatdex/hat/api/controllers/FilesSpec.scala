@@ -28,20 +28,19 @@ import java.io.StringReader
 import java.util.UUID
 
 import akka.stream.Materializer
-import com.amazonaws.services.s3.{ AmazonS3, AmazonS3Client }
+import com.amazonaws.services.s3.AmazonS3
 import com.atlassian.jwt.core.keys.KeyUtils
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.{ Environment, LoginInfo }
 import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.models.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus }
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
-import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.libs.dal.SlickPostgresDriver.backend.Database
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
+import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeEach, Scope }
@@ -51,7 +50,6 @@ import play.api.mvc.Result
 import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
 import play.api.{ Application, Configuration, Logger }
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -366,18 +364,19 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
 }
 
 trait FilesContext extends Scope {
+  import scala.concurrent.ExecutionContext.Implicits.global
   // Initialize configuration
   val hatAddress = "hat.hubofallthings.net"
   val hatUrl = s"http://$hatAddress"
   private val configuration = Configuration.from(FakeHatConfiguration.config)
-  private val hatConfig = configuration.getConfig(s"hat.$hatAddress").get
+  private val hatConfig = configuration.get[Configuration](s"hat.$hatAddress")
 
   // Build up the FakeEnvironment for authentication testing
   private val keyUtils = new KeyUtils()
-  implicit protected def hatDatabase: Database = Database.forConfig("", hatConfig.getConfig("database").get.underlying)
+  implicit protected def hatDatabase: Database = Database.forConfig("", hatConfig.get[Configuration]("database").underlying)
   implicit val hatServer: HatServer = HatServer(hatAddress, "hat", "user@hat.org",
-    keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.getString("privateKey").get)),
-    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.getString("publicKey").get)), hatDatabase)
+    keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.get[String]("privateKey"))),
+    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))), hatDatabase)
 
   // Setup default users for testing
   val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)

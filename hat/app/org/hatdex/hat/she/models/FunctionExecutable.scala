@@ -19,31 +19,18 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 2 / 2017
+ * 11 / 2017
  */
 
-import sbt.Keys._
-import sbt._
+package org.hatdex.hat.she.models
 
-object Build extends Build {
+import org.hatdex.hat.api.models.EndpointDataBundle
+import org.joda.time.DateTime
 
-//  lazy val codegen = Project(
-//    id = "codegen",
-//    base = file("codegen"))
+import scala.concurrent.{ ExecutionContext, Future }
 
-  lazy val hat = Project(
-    id = "hat",
-    base = file("hat"),
-    dependencies = Seq())
-
-  val root = Project(
-    id = "hat-project",
-    base = file("."),
-    aggregate = Seq(
-      hat),
-    settings = Defaults.coreDefaultSettings ++
-      Seq(
-        publishLocal := {},
-        publishM2 := {},
-        publishArtifact := false))
+trait FunctionExecutable {
+  val configuration: FunctionConfiguration
+  def execute(configuration: FunctionConfiguration, request: Request)(implicit ec: ExecutionContext): Future[Seq[Response]]
+  def bundleFilterByDate(fromDate: Option[DateTime], untilDate: Option[DateTime]): EndpointDataBundle = configuration.dataBundle
 }

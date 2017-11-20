@@ -38,9 +38,8 @@ import org.hatdex.hat.api.service.{ HatServicesService, MailTokenService, UsersS
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
-import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer, Utils }
+import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer }
 import play.api.cache.{ Cached, CachedBuilder }
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
@@ -49,7 +48,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class Authentication @Inject() (
-    val messagesApi: MessagesApi,
+    components: ControllerComponents,
+
     configuration: Configuration,
     cached: Cached,
     parsers: HatBodyParsers,
@@ -63,7 +63,7 @@ class Authentication @Inject() (
     clock: Clock,
     mailer: HatMailer,
     tokenService: MailTokenService[MailTokenUser],
-    limiter: UserLimiter) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    limiter: UserLimiter) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   private val logger = Logger(this.getClass)
 
@@ -115,7 +115,7 @@ class Authentication @Inject() (
       usernameParam <- request.getQueryString("username").orElse(request.headers.get("username"))
       passwordParam <- request.getQueryString("password").orElse(request.headers.get("password"))
     } yield {
-      val username = usernameParam
+      val username = URLDecoder.decode(usernameParam, "UTF-8")
       val password = URLDecoder.decode(passwordParam, "UTF-8")
       credentialsProvider.authenticate(Credentials(username, password))
         .flatMap { loginInfo =>
@@ -141,6 +141,7 @@ class Authentication @Inject() (
   }
 
   def passwordChangeProcess: Action[ApiPasswordChange] = SecuredAction(WithRole(Owner())).async(parsers.json[ApiPasswordChange]) { implicit request =>
+    logger.warn("Processing password change request")
     request.body.password map { oldPassword =>
       val eventualResult = for {
         _ <- credentialsProvider.authenticate(Credentials(request.identity.email, oldPassword))
@@ -165,6 +166,7 @@ class Authentication @Inject() (
    * Sends an email to the user with a link to reset the password
    */
   def handleForgotPassword: Action[ApiPasswordResetRequest] = UserAwareAction.async(parsers.json[ApiPasswordResetRequest]) { implicit request =>
+    logger.warn("Processing forgotten password request")
     val email = request.body.email
     val response = Ok(Json.toJson(SuccessResponse("If the email you have entered is correct, you will shortly receive an email with password reset instructions")))
     if (email == request.dynamicEnvironment.ownerEmail) {

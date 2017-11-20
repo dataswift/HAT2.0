@@ -36,7 +36,7 @@ import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.authentication.{ HatApiController, WithRole, _ }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement._
-import play.api.i18n.MessagesApi
+import org.hatdex.hat.utils.HatBodyParsers
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
@@ -44,14 +44,15 @@ import play.api.{ Configuration, Logger }
 import scala.concurrent.{ ExecutionContext, Future }
 
 class Users @Inject() (
-    val messagesApi: MessagesApi,
+    components: ControllerComponents,
     configuration: Configuration,
     silhouette: Silhouette[HatApiAuthEnvironment],
     hatServerProvider: HatServerProvider,
     clock: Clock,
     hatServicesService: HatServicesService,
     usersService: UsersService,
-    implicit val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    hatBodyParsers: HatBodyParsers,
+    implicit val ec: ExecutionContext) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   private val logger = Logger(this.getClass)
 
@@ -71,8 +72,9 @@ class Users @Inject() (
     }
   }
 
-  def createUser(): Action[User] = SecuredAction(WithRole(Owner(), Platform())).async(BodyParsers.parse.json[User]) { implicit request =>
+  def createUser(): Action[User] = SecuredAction(WithRole(Owner(), Platform())).async(hatBodyParsers.json[User]) { implicit request =>
     val user = request.body
+    logger.debug(s"Creating user $user")
     val hatUser = ModelTranslation.fromExternalModel(user, enabled = true)
     if (privilegedRole(hatUser)) {
       Future.successful(BadRequest(Json.toJson(ErrorMessage("Invalid User", s"Users with privileged roles may not be created"))))
@@ -110,7 +112,7 @@ class Users @Inject() (
     }
   }
 
-  def updateUser(userId: UUID): Action[User] = SecuredAction(WithRole(Owner(), Platform())).async(BodyParsers.parse.json[User]) { implicit request =>
+  def updateUser(userId: UUID): Action[User] = SecuredAction(WithRole(Owner(), Platform())).async(hatBodyParsers.json[User]) { implicit request =>
     usersService.getUser(userId) flatMap { maybeUser =>
       maybeUser.filter(_.userId == request.body.userId) map { user =>
         val updatedUser = ModelTranslation.fromExternalModel(request.body, enabled = true)

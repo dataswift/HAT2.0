@@ -37,7 +37,6 @@ import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, 
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
 import org.joda.time.DateTime
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
@@ -45,7 +44,7 @@ import play.api.{ Configuration, Logger }
 import scala.concurrent.{ ExecutionContext, Future }
 
 class Files @Inject() (
-    val messagesApi: MessagesApi,
+    components: ControllerComponents,
     configuration: Configuration,
     parsers: HatBodyParsers,
     silhouette: Silhouette[HatApiAuthEnvironment],
@@ -55,7 +54,7 @@ class Files @Inject() (
     fileMetadataService: FileMetadataService,
     fileManager: FileManager,
     usersService: UsersService,
-    implicit val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    implicit val ec: ExecutionContext) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   val logger = Logger(this.getClass)
 

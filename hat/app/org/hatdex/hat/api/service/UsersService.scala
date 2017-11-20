@@ -30,7 +30,7 @@ import org.hatdex.hat.api.models.{ UserRole, _ }
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ UserRole => UserRoleDb, _ }
-import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
 

@@ -27,9 +27,9 @@ package org.hatdex.hat.authentication.models
 import org.joda.time.DateTime
 
 case class HatAccessLog(
-  date: DateTime,
-  user: HatUser,
-  accessType: String,
-  scope: String,
-  applicationName: Option[String],
-  applicationResource: Option[String])
+    date: DateTime,
+    user: HatUser,
+    accessType: String,
+    scope: String,
+    applicationName: Option[String],
+    applicationResource: Option[String])

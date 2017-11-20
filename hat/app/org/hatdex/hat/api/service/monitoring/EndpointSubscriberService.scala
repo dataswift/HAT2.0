@@ -49,36 +49,37 @@ object EndpointSubscriberService {
     }
   }
 
-  private implicit val dateReads: Reads[DateTime] = jodaDateReads("yyyy-MM-dd'T'HH:mm:ssZ")
+  private implicit val dateReads: Reads[DateTime] = JodaReads.jodaDateReads("yyyy-MM-dd'T'HH:mm:ssZ")
 
   private def dataMatchesFilters(data: EndpointData, filters: Seq[EndpointQueryFilter]): Boolean = {
+    logger.debug("Checking if data matches provided filters")
     filters.exists { f =>
       data.data.transform(JsonDataTransformer.parseJsPath(f.field).json.pick).fold(
         invalid = {
-        _ => false
-      },
+          _ => false
+        },
         valid = {
-        fieldData =>
-          val data = f.transformation map {
-            case _: FieldTransformation.Identity =>
+          fieldData =>
+            val data = f.transformation map {
+              case _: FieldTransformation.Identity =>
+                fieldData
+              case trans: FieldTransformation.DateTimeExtract =>
+                Json.toJson(dateTimeExtractPart(fieldData.as[DateTime](dateReads), trans.part))
+              case trans: FieldTransformation.TimestampExtract =>
+                Json.toJson(dateTimeExtractPart(new DateTime(fieldData.as[Long] * 1000L), trans.part))
+              case trans =>
+                throw EndpointQueryException(s"Invalid field transformation `${trans.getClass.getName}` for ongoing tracking")
+            } getOrElse {
               fieldData
-            case trans: FieldTransformation.DateTimeExtract =>
-              Json.toJson(dateTimeExtractPart(fieldData.as[DateTime](dateReads), trans.part))
-            case trans: FieldTransformation.TimestampExtract =>
-              Json.toJson(dateTimeExtractPart(new DateTime(fieldData.as[Long] * 1000L), trans.part))
-            case trans =>
-              throw EndpointQueryException(s"Invalid field transformation `${trans.getClass.getName}` for ongoing tracking")
-          } getOrElse {
-            fieldData
-          }
-          f.operator match {
-            case op: FilterOperator.In       => jsContains(op.value, data)
-            case op: FilterOperator.Contains => jsContains(data, op.value)
-            case op: FilterOperator.Between  => jsLessThanOrEqual(op.lower, data) && jsLessThanOrEqual(data, op.upper)
-            case op                          => throw EndpointQueryException(s"Invalid match operator `${op.getClass.getName}` for ongoing tracking")
-          }
+            }
+            f.operator match {
+              case op: FilterOperator.In       => jsContains(op.value, data)
+              case op: FilterOperator.Contains => jsContains(data, op.value)
+              case op: FilterOperator.Between  => jsLessThanOrEqual(op.lower, data) && jsLessThanOrEqual(data, op.upper)
+              case op                          => throw EndpointQueryException(s"Invalid match operator `${op.getClass.getName}` for ongoing tracking")
+            }
 
-      })
+        })
     }
   }
 

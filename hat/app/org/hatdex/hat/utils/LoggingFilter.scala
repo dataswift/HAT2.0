@@ -31,13 +31,15 @@ import akka.pattern.ask
 import akka.stream.Materializer
 import org.hatdex.hat.resourceManagement.actors.HatServerProviderActor
 import play.api.Logger
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{ Filter, RequestHeader, Result }
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration._
 
-class LoggingFilter @Inject() (@Named("hatServerProviderActor") serverProviderActor: ActorRef, implicit val mat: Materializer) extends Filter {
+class LoggingFilter @Inject() (@Named("hatServerProviderActor") serverProviderActor: ActorRef)(
+    implicit
+    ec: ExecutionContext,
+    val mat: Materializer) extends Filter {
   val logger = Logger("http")
 
   def apply(nextFilter: RequestHeader => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
@@ -47,7 +49,7 @@ class LoggingFilter @Inject() (@Named("hatServerProviderActor") serverProviderAc
 
     nextFilter(requestHeader) flatMap { result =>
       serverProviderActor.ask(HatServerProviderActor.GetHatServersActive()).mapTo[HatServerProviderActor.HatServersActive] recover {
-        case e => HatServerProviderActor.HatServersActive(-1) // Could not fetch the number of active HATs
+        case _ => HatServerProviderActor.HatServersActive(-1) // Could not fetch the number of active HATs
       } map { activeHats =>
         val endTime = System.currentTimeMillis
         val requestTime = endTime - startTime

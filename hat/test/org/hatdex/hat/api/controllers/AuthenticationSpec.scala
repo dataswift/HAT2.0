@@ -40,15 +40,15 @@ import org.hatdex.hat.api.service._
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.libs.dal.SlickPostgresDriver.backend.Database
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer }
+import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeEach, Scope }
-import play.api.cache.CacheApi
+import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
 import play.api.i18n.Messages
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -59,7 +59,6 @@ import play.api.{ Application, Configuration, Logger }
 import play.cache.NamedCacheImpl
 import play.mvc.Http.{ HeaderNames, MimeTypes }
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -270,18 +269,19 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
 }
 
 trait AuthenticationContext extends Scope with Mockito {
+  import scala.concurrent.ExecutionContext.Implicits.global
   // Initialize configuration
   val hatAddress = "hat.hubofallthings.net"
   val hatUrl = s"http://$hatAddress"
   private val configuration = Configuration.from(FakeHatConfiguration.config)
-  private val hatConfig = configuration.getConfig(s"hat.$hatAddress").get
+  private val hatConfig = configuration.get[Configuration](s"hat.$hatAddress")
 
   // Build up the FakeEnvironment for authentication testing
   private val keyUtils = new KeyUtils()
-  implicit protected def hatDatabase: Database = Database.forConfig("", hatConfig.getConfig("database").get.underlying)
+  implicit protected def hatDatabase: Database = Database.forConfig("", hatConfig.get[Configuration]("database").underlying)
   implicit val hatServer: HatServer = HatServer(hatAddress, "hat", "user@hat.org",
-    keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.getString("privateKey").get)),
-    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.getString("publicKey").get)), hatDatabase)
+    keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.get[String]("privateKey"))),
+    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))), hatDatabase)
 
   // Setup default users for testing
   val owner = HatUser(UUID.randomUUID(), "hatuser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "hatuser", Seq(Owner()), enabled = true)
@@ -330,8 +330,8 @@ trait AuthenticationContext extends Scope with Mockito {
       bind[MailTokenService[MailTokenUser]].to[MailTokenUserService]
       bind[HatMailer].toInstance(mockMailer)
       bind[HttpErrorHandler].to[ErrorHandler]
-      bind[CacheApi].annotatedWith(new NamedCacheImpl("user-cache")).to[FakeCache]
-      bind[CacheApi].to[FakeCache]
+      bind[AsyncCacheApi].annotatedWith(new NamedCacheImpl("user-cache")).to[FakeCache]
+      bind[AsyncCacheApi].to[FakeCache]
     }
 
   }

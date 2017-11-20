@@ -30,9 +30,9 @@ import javax.inject.{ Inject, Singleton }
 
 import com.atlassian.jwt.core.keys.KeyUtils
 import org.bouncycastle.util.io.pem.{ PemObject, PemWriter }
-import play.api.cache.CacheApi
-import play.api.{ Configuration, Logger }
+import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
+import play.api.{ Configuration, Logger }
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
@@ -84,7 +84,7 @@ trait HatKeyProvider {
 @Singleton
 class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatKeyProvider {
   def publicKey(hat: String)(implicit ec: ExecutionContext): Future[RSAPublicKey] = {
-    configuration.getString(s"hat.${hat.replace(':', '.')}.publicKey") map { confPublicKey =>
+    configuration.getOptional[String](s"hat.${hat.replace(':', '.')}.publicKey") map { confPublicKey =>
       readRsaPublicKey(confPublicKey)
     } getOrElse {
       Future.failed(new HatServerDiscoveryException(s"Public Key for $hat not found"))
@@ -92,7 +92,7 @@ class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatK
   }
 
   def privateKey(hat: String)(implicit ec: ExecutionContext): Future[RSAPrivateKey] = {
-    configuration.getString(s"hat.${hat.replace(':', '.')}.privateKey") map { confPrivateKey =>
+    configuration.getOptional[String](s"hat.${hat.replace(':', '.')}.privateKey") map { confPrivateKey =>
       readRsaPrivateKey(confPrivateKey)
     } getOrElse {
       Future.failed(new HatServerDiscoveryException(s"Private Key for $hat not found"))
@@ -100,7 +100,7 @@ class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatK
   }
 
   def ownerEmail(hat: String)(implicit ec: ExecutionContext): Future[String] = {
-    configuration.getString(s"hat.${hat.replace(':', '.')}.ownerEmail") map { email =>
+    configuration.getOptional[String](s"hat.${hat.replace(':', '.')}.ownerEmail") map { email =>
       Future.successful(email)
     } getOrElse {
       Future.failed(new HatServerDiscoveryException(s"Owner email for $hat not found"))
@@ -111,7 +111,7 @@ class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatK
 @Singleton
 class HatKeyProviderMilliner @Inject() (
     val configuration: Configuration,
-    val cache: CacheApi,
+    val cache: AsyncCacheApi,
     val ws: WSClient) extends HatKeyProvider with MillinerHatSignup {
   val logger = Logger(this.getClass)
 

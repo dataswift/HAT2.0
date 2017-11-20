@@ -28,7 +28,7 @@ import javax.inject.Inject
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
-import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
 import play.api.libs.json.Json
@@ -216,7 +216,7 @@ class BundleService @Inject() (dataService: DataService) extends DalExecutionCon
 
   protected[api] def recordsDatasetGrouped(
     tables: Seq[ApiDataTable],
-    valueRecords: Iterable[ApiDataRecord])(implicit db: Database): Map[String, Seq[ApiBundleContextlessDatasetData]] = {
+    valueRecords: Iterable[ApiDataRecord]): Map[String, Seq[ApiBundleContextlessDatasetData]] = {
 
     val datasets = tables.map { table =>
       val recordsWithTable = valueRecords.filter { record =>

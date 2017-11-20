@@ -26,7 +26,7 @@ package org.hatdex.hat.modules
 
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.service.monitoring.{ HatDataEventBus, HatDataEventRouter, HatDataEventRouterImpl, HatDataStatsProcessorActor }
+import org.hatdex.hat.api.service.monitoring.{ HatDataEventRouter, HatDataEventRouterImpl, HatDataStatsProcessorActor }
 import play.api.libs.concurrent.AkkaGuiceSupport
 
 class DataMonitoringModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {

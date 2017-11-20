@@ -25,41 +25,38 @@
 package org.hatdex.hat.resourceManagement
 
 import org.hatdex.hat.resourceManagement.models.HatSignup
-import play.api.cache.CacheApi
-import play.api.{ Configuration, Logger }
+import play.api.cache.AsyncCacheApi
 import play.api.http.Status._
 import play.api.libs.json.{ JsError, JsSuccess }
 import play.api.libs.ws.{ WSClient, WSRequest, WSResponse }
+import play.api.{ Configuration, Logger }
 
-import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration._
+import scala.concurrent.{ ExecutionContext, Future }
 
 trait MillinerHatSignup {
   val logger: Logger
   val ws: WSClient
   val configuration: Configuration
-  val schema: String = configuration.getString("resourceManagement.millinerAddress") match {
-    case Some(address) if address.startsWith("https") => "https://"
-    case Some(address) if address.startsWith("http") => "http://"
-    case _ => "http://"
+  val schema: String = configuration.get[String]("resourceManagement.millinerAddress") match {
+    case address if address.startsWith("https") => "https://"
+    case address if address.startsWith("http")  => "http://"
+    case _                                      => "https://"
   }
 
-  val millinerAddress: String = configuration.getString("resourceManagement.millinerAddress").get
+  val millinerAddress: String = configuration.get[String]("resourceManagement.millinerAddress")
     .stripPrefix("http://")
     .stripPrefix("https://")
-  val hatSharedSecret: String = configuration.getString("resourceManagement.hatSharedSecret").get
+  val hatSharedSecret: String = configuration.get[String]("resourceManagement.hatSharedSecret")
 
-  val cache: CacheApi
+  val cache: AsyncCacheApi
 
   def getHatSignup(hatAddress: String)(implicit ec: ExecutionContext): Future[HatSignup] = {
     // Cache the signup information for subsequent calls (For private/public key and database details)
-    cache.get[HatSignup](s"configuration:$hatAddress") map { signup =>
-      logger.debug("Serving hat signup info from cache")
-      Future.successful(signup)
-    } getOrElse {
+    cache.getOrElseUpdate[HatSignup](s"configuration:$hatAddress") {
       val request: WSRequest = ws.url(s"$schema$millinerAddress/api/manage/configuration/$hatAddress")
         .withVirtualHost(millinerAddress)
-        .withHeaders("Accept" -> "application/json", "X-Auth-Token" -> hatSharedSecret)
+        .withHttpHeaders("Accept" -> "application/json", "X-Auth-Token" -> hatSharedSecret)
 
       val futureResponse: Future[WSResponse] = request.get()
       futureResponse.map { response =>
@@ -71,7 +68,7 @@ trait MillinerHatSignup {
                 cache.set(s"configuration:$hatAddress", signup.value, 1.minute)
                 signup.value
               case e: JsError =>
-                logger.error(s"Parsing HAT configuration failed: ${e}")
+                logger.error(s"Parsing HAT configuration failed: $e")
                 throw new RuntimeException("Fetching HAT configuration failed")
             }
           case _ =>

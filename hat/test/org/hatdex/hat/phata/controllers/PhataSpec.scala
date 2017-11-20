@@ -29,20 +29,19 @@ import java.util.UUID
 
 import com.atlassian.jwt.core.keys.KeyUtils
 import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.{ Environment, LoginInfo }
+import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
+import org.hatdex.hat.api.models.Owner
 import org.hatdex.hat.authentication.HatFrontendAuthEnvironment
-import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.libs.dal.SlickPostgresDriver.backend.Database
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
+import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.mvc.Result
-import play.api.test.{ FakeRequest, PlaySpecification }
+import play.api.test.PlaySpecification
 import play.api.{ Application, Configuration, Logger }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -83,14 +82,14 @@ trait Context extends Scope {
   val hatAddress = "hat.hubofallthings.net"
   val hatUrl = s"http://$hatAddress"
   private val configuration = Configuration.from(FakeHatConfiguration.config)
-  private val hatConfig = configuration.getConfig(s"hat.$hatAddress").get
+  private val hatConfig = configuration.get[Configuration](s"hat.$hatAddress")
 
   // Build up the FakeEnvironment for authentication testing
   private val keyUtils = new KeyUtils()
-  private def hatDatabase: Database = Database.forConfig("", hatConfig.getConfig("database").get.underlying)
+  private def hatDatabase: Database = Database.forConfig("", hatConfig.get[Configuration]("database").underlying)
   implicit val hatServer: HatServer = HatServer(hatAddress, "hat", "user@hat.org",
-    keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.getString("privateKey").get)),
-    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.getString("publicKey").get)), hatDatabase)
+    keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.get[String]("privateKey"))),
+    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))), hatDatabase)
 
   // Setup default users for testing
   val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)

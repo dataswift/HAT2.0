@@ -27,12 +27,13 @@ package org.hatdex.hat.api.service.richData
 import java.security.MessageDigest
 import java.util.UUID
 
+import akka.Done
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
-import org.hatdex.libs.dal.SlickPostgresDriver.api._
-import org.joda.time.LocalDateTime
+import org.hatdex.libs.dal.HATPostgresProfile.api._
+import org.joda.time.{ DateTime, LocalDateTime }
 import org.postgresql.util.PSQLException
 import play.api.Logger
 import play.api.libs.json._
@@ -51,7 +52,7 @@ class RichDataService extends DalExecutionContext {
     DataJsonRow(recordId.getOrElse(UUID.randomUUID()), endpoint, userId, LocalDateTime.now(), data, digest)
   }
 
-  def saveData(userId: UUID, endpointData: Seq[EndpointData])(implicit db: Database): Future[Seq[EndpointData]] = {
+  private def saveDataQuery(userId: UUID, endpointData: Seq[EndpointData], linkedRecords: Option[Seq[UUID]]) = {
     val queries = endpointData map { endpointDataGroup =>
       val endpointRow = dbDataRow(endpointDataGroup.endpoint, userId, endpointDataGroup.data)
 
@@ -63,7 +64,8 @@ class RichDataService extends DalExecutionContext {
 
       val (groupRow, groupRecordRows) = if (recordIds.length > 1) {
         val groupRow = DataJsonGroupsRow(UUID.randomUUID(), userId, LocalDateTime.now())
-        val groupRecordRows = recordIds.map(DataJsonGroupRecordsRow(groupRow.groupId, _))
+        val groupRecordRows = recordIds.map(DataJsonGroupRecordsRow(groupRow.groupId, _)) ++
+          linkedRecords.map(r => r.map(DataJsonGroupRecordsRow(groupRow.groupId, _))).getOrElse(Seq())
         (Seq(groupRow), groupRecordRows)
       }
       else {
@@ -76,6 +78,33 @@ class RichDataService extends DalExecutionContext {
         group <- DataJsonGroups ++= groupRow
         groupRecords <- DataJsonGroupRecords ++= groupRecordRows
       } yield (endpointData, linkedData, group, groupRecords)
+    }
+    queries
+  }
+
+  def saveData(userId: UUID, endpointData: Seq[EndpointData])(implicit db: Database): Future[Seq[EndpointData]] = {
+    val queries = saveDataQuery(userId, endpointData, None)
+
+    db.run(DBIO.sequence(queries).transactionally)
+      .map {
+        _.map { inserted =>
+          ModelTranslation.fromDbModel(inserted._1, inserted._2)
+        }
+      } recover {
+        case e: PSQLException if e.getMessage.startsWith("ERROR: duplicate key value violates unique constraint \"data_json_hash_key\"") =>
+          throw RichDataDuplicateException("Duplicate data", e)
+        case e: PSQLException =>
+          throw RichDataDuplicateException("Unexpected issue with inserting data", e)
+        case e =>
+          logger.error(s"Error inserting data: ${e.getMessage}")
+          throw e
+      }
+  }
+
+  def saveDataGroups(userId: UUID, dataGroups: Seq[(Seq[EndpointData], Seq[UUID])])(implicit db: Database): Future[Seq[EndpointData]] = {
+    val queries = dataGroups flatMap {
+      case (endpointData, linkedRecords) =>
+        saveDataQuery(userId, endpointData, Some(linkedRecords))
     }
 
     db.run(DBIO.sequence(queries).transactionally)
@@ -92,6 +121,30 @@ class RichDataService extends DalExecutionContext {
           logger.error(s"Error inserting data: ${e.getMessage}")
           throw e
       }
+  }
+
+  def listEndpoints()(implicit db: Database): Future[Map[String, Seq[String]]] = {
+    val query = DataJson.map(_.source).distinct
+    db.run(query.result).map { sources =>
+      sources.map { s =>
+        val parts = s.split('/')
+        (parts.head, parts.tail.mkString("/"))
+      }.groupBy(_._1)
+        .map { case (k, v) => k -> v.unzip._2 }
+    }
+  }
+
+  def deleteEndpoint(userId: UUID, dataEndpoint: String)(implicit db: Database): Future[Done] = {
+    val endpointRecrodsQuery = DataJson.filter(r => (r.source === dataEndpoint)).map(_.recordId)
+    val query = for {
+      deletedGroupRecords <- DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete // delete links between records and groups
+      deletedGroups <- DataJsonGroups.filterNot(g => (g.groupId in DataJsonGroupRecords.map(_.groupId))).delete // delete any groups that have become empty
+      deletedRecords <- DataJson.filter(r => (r.recordId in endpointRecrodsQuery)).delete // delete the records, but only if all requested records are found
+    } yield (deletedGroupRecords, deletedGroups, deletedRecords)
+
+    db.run(query.transactionally).map(_ => Done) recover {
+      case e: NoSuchElementException => throw RichDataMissingException("Records missing for deleting", e)
+    }
   }
 
   def deleteRecords(userId: UUID, recordIds: Seq[UUID])(implicit db: Database): Future[Unit] = {
@@ -230,7 +283,7 @@ class RichDataService extends DalExecutionContext {
         currentTransformation match {
           case t: Searchable =>
             val f = FieldTransformable.process(t)
-            query.filter(d => f(d.data #> filter.originalField) @@ plainToTsQuery(searchTerm.asColumnOf[String]))
+            query.filter(d => f(d.data #> filter.originalField) @@ plainToTsQuery(LiteralColumn(searchTerm.toString)))
           case _ => query
         }
     }
@@ -242,24 +295,24 @@ class RichDataService extends DalExecutionContext {
    * @return the generated query for a list of data records, for each record including the JSON Data row, , and if present - same for linked records
    */
   private def propertyDataQuery(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], orderingDescending: Boolean,
-    skip: Int, limit: Option[Int]): Query[((DataJson, ConstColumn[String]), Rep[Option[(DataJson, ConstColumn[String])]]), ((DataJsonRow, String), Option[(DataJsonRow, String)]), Seq] = {
-
+    skip: Int, limit: Option[Int], createdAfter: Option[DateTime]): Query[_, ((DataJsonRow, Int), Option[(DataJsonRow, String)]), Seq] = {
     val queriesWithMappers = endpointQueries.zipWithIndex map {
       case (endpointQuery, endpointQueryIndex) =>
         orderBy map { orderBy =>
           for {
             data <- generatedDataQuery(endpointQuery, DataJson)
-          } yield (data, data.data #> endpointQuery.originalField(orderBy), endpointQueryIndex.toString) // Include the data, the selected sort field and endpoint query index for later joins
+          } yield (data, data.data #> endpointQuery.originalField(orderBy), endpointQueryIndex.bind) // Include the data, the selected sort field and endpoint query index for later joins
         } getOrElse {
           for {
             data <- generatedDataQuery(endpointQuery, DataJson)
-          } yield (data, toJson(data.date.asColumnOf[String]).asColumnOf[Option[JsValue]], endpointQueryIndex.toString) // Include the data, the date field as the sort field and endpoint query index for later joins
+          } yield (data, toJsonGenericOptional(data.date), endpointQueryIndex.bind) // Include the data, the date field as the sort field and endpoint query index for later joins
         }
     }
 
     val endpointDataQuery = queriesWithMappers
       .reduce((aggregate, query) => aggregate.unionAll(query)) // merge all the queries together
       .sortBy(d => if (orderingDescending) { d._2.desc } else { d._2.asc }) // order all the results by the chosen column
+      .filter(d => createdAfter.fold(true.bind)(t => d._1.date > t.toLocalDateTime))
 
     val endpointDataQueryWithLimits = limit map { take =>
       endpointDataQuery
@@ -280,13 +333,13 @@ class RichDataService extends DalExecutionContext {
                 (linkedGroupId, linkedRecordId) <- DataJsonGroupRecords.map(v => (v.groupId, v.recordId))
                 if (endpointQueryRecordGroup.groupId === linkedGroupId && endpointQueryRecordGroup.recordId =!= linkedRecordId) // Pick out the group IDs and record IDs that match
                 linkedRecord <- generatedDataQuery(link, DataJson.filter(_.recordId === linkedRecordId)) // Pull out the records themselves, following on foreign-keyed IDs
-              } yield (endpointQueryIndex.toString, s"$endpointQueryIndex-$linkIndex", endpointQueryRecordGroup.recordId, linkedRecord) // Include the endpoint query index, generate the name of the link, the record ID to link from, and the record itself
+              } yield (endpointQueryIndex, s"$endpointQueryIndex-$linkIndex".bind, endpointQueryRecordGroup.recordId, linkedRecord) // Include the endpoint query index, generate the name of the link, the record ID to link from, and the record itself
           }
         } getOrElse { // generate dummy, empty query for the join operation next
           Seq(for {
             noGroup <- DataJsonGroupRecords.take(0) // take no group records
             noLinkedRecord <- DataJson.take(0) // take no linked records
-          } yield (endpointQueryIndex.toString, s"$endpointQueryIndex-", noGroup.recordId, noLinkedRecord))
+          } yield (endpointQueryIndex, s"$endpointQueryIndex-".bind, noGroup.recordId, noLinkedRecord))
         }
     }
 
@@ -295,14 +348,14 @@ class RichDataService extends DalExecutionContext {
 
     val resultQuery = endpointDataQueryWithLimits
       .joinLeft(groupRecords)
-      .on((l, r) => l._1.recordId === r._3 && l._3.asColumnOf[String] === r._1.asColumnOf[String]) // join on the main query record ID with the linked query record ID AND the query index
+      .on((l, r) => l._1.recordId === r._3 && l._3 === r._1) // join on the main query record ID with the linked query record ID AND the query index
       .sortBy(if (orderingDescending) { _._1._2.desc } else { _._1._2.asc }) // join does not maintain data ordering - sort data by the chosen sort field
       .map(v => ((v._1._1, v._1._3), v._2.map(lr => (lr._4, lr._2)))) // pull out only the required data
 
     resultQuery
   }
 
-  implicit def equalDataJsonRowIdentity(a: (DataJsonRow, String), b: (DataJsonRow, String)): Boolean = {
+  implicit def equalDataJsonRowIdentity(a: (DataJsonRow, Int), b: (DataJsonRow, Int)): Boolean = {
     a._1.recordId == b._1.recordId
   }
 
@@ -319,19 +372,19 @@ class RichDataService extends DalExecutionContext {
   }
 
   def propertyData(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], orderingDescending: Boolean,
-    skip: Int, limit: Option[Int])(implicit db: Database): Future[Seq[EndpointData]] = {
+    skip: Int, limit: Option[Int], createdAfter: Option[DateTime] = None)(implicit db: Database): Future[Seq[EndpointData]] = {
 
-    val query = propertyDataQuery(endpointQueries, orderBy, orderingDescending, skip, limit)
+    val query = propertyDataQuery(endpointQueries, orderBy, orderingDescending, skip, limit, createdAfter)
     val mappers = queryMappers(endpointQueries)
 
     db.run(query.result).map { results =>
-      groupRecords[(DataJsonRow, String), (DataJsonRow, String)](results).map {
+      groupRecords[(DataJsonRow, Int), (DataJsonRow, String)](results).map {
         case ((record, queryId), linkedResults) =>
           val linked = linkedResults.map {
             case (linkedRecord, linkedQueryId) =>
               endpointDataWithMappers(linkedRecord, linkedQueryId, mappers)
           }
-          val endpointData = endpointDataWithMappers(record, queryId, mappers)
+          val endpointData = endpointDataWithMappers(record, queryId.toString, mappers)
           if (linked.nonEmpty) {
             endpointData.copy(links = Some(linked))
           }
@@ -353,16 +406,25 @@ class RichDataService extends DalExecutionContext {
       None)
   }
 
-  def bundleData(bundle: EndpointDataBundle)(implicit db: Database): Future[Map[String, Seq[EndpointData]]] = {
+  def bundleData(bundle: EndpointDataBundle, skip: Option[Int] = None, limit: Option[Int] = None,
+    createdAfter: Option[DateTime] = None)(implicit db: Database): Future[Map[String, Seq[EndpointData]]] = {
     val results = bundle.bundle map {
       case (property, propertyQuery) =>
+        val skipRecords = skip.getOrElse(0)
+        val takeRecords = propertyQuery
+          // if bundle has a limit, reduce the take by records already skipped,
+          // otherwise take the smaller of it and the provided limit
+          .limit.map(l => Math.max(Math.min(l - skipRecords, limit.getOrElse(l)), 0))
+          // if no limit, take the provided one
+          .orElse(limit)
+
         propertyData(propertyQuery.endpoints, propertyQuery.orderBy,
           orderingDescending = propertyQuery.ordering.contains("descending"),
-          0, propertyQuery.limit)
+          skipRecords, takeRecords, createdAfter)
           .map(property -> _)
     }
 
-    Future.fold(results)(Map[String, Seq[EndpointData]]()) { (propertyMap, response) =>
+    Future.foldLeft(results)(Map[String, Seq[EndpointData]]()) { (propertyMap, response) =>
       propertyMap + response
     }
   }

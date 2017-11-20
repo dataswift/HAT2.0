@@ -29,7 +29,7 @@ import javax.inject.Inject
 import org.hatdex.hat.api.models.{ User, _ }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
-import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 
 import scala.concurrent.Future
@@ -64,7 +64,7 @@ class DataDebitService @Inject() (bundlesService: BundleService) extends DalExec
     }
   }
 
-  def storeContextDataDebit(debit: ApiDataDebit, bundle: ApiBundleContext)(implicit db: Database, user: User): Future[ApiDataDebit] = {
+  def storeContextDataDebit(debit: ApiDataDebit, bundle: ApiBundleContext): Future[ApiDataDebit] = {
     throw new NotImplementedError("Contextual APIs not implemented")
   }
 
@@ -108,7 +108,7 @@ class DataDebitService @Inject() (bundlesService: BundleService) extends DalExec
     }
   }
 
-  def retrieveDataDebitContextualValues(debit: DataDebitRow, bundleId: Int)(implicit db: Database): Future[ApiDataDebitOut] = {
+  def retrieveDataDebitContextualValues(debit: DataDebitRow, bundleId: Int): Future[ApiDataDebitOut] = {
     throw new NotImplementedError("Contextual APIs not implemented")
   }
 
@@ -119,17 +119,10 @@ class DataDebitService @Inject() (bundlesService: BundleService) extends DalExec
       bundleContextless <- dd.bundleContextlessFk
     } yield (dd, bundleContextless)
 
-    val ddBundleContextualQuery = for {
-      dd <- DataDebit
-      bundleContextual <- dd.bundleContextFk
-    } yield (dd, bundleContextual)
-
     val eventualBunleContextless = db.run(ddbundleContextlessQuery.result)
-    val eventualBundleContextual = db.run(ddBundleContextualQuery.result)
 
     val debits = for {
       contextless <- eventualBunleContextless
-      contextual <- eventualBundleContextual
     } yield {
       val cless = contextless.map {
         case (dd, bundle) =>

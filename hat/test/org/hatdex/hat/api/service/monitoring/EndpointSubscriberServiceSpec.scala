@@ -27,11 +27,9 @@ package org.hatdex.hat.api.service.monitoring
 import java.util.UUID
 
 import akka.stream.Materializer
-import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
+import org.hatdex.hat.api.models.{ Owner, _ }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
-import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -39,7 +37,7 @@ import play.api.libs.json.{ JsValue, Json }
 import play.api.test.PlaySpecification
 import play.api.{ Application, Logger }
 
-class EndpointSubscriberServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with EndpointSubscriberServiceContext {
+class EndpointSubscriberServiceSpec extends PlaySpecification with Mockito with EndpointSubscriberServiceContext {
 
   val logger = Logger(this.getClass)
 

@@ -35,16 +35,16 @@ import scala.concurrent.{ ExecutionContext, Future }
 import akka.stream.Materializer
 
 class Filters @Inject() (
-  tlsFilter: TLSFilter,
-  gzip: GzipFilter,
-  corsFilter: CORSFilter,
-  log: LoggingFilter) extends DefaultHttpFilters(log, tlsFilter, gzip, corsFilter)
+    tlsFilter: TLSFilter,
+    gzip: GzipFilter,
+    corsFilter: CORSFilter,
+    log: LoggingFilter) extends DefaultHttpFilters(log, tlsFilter, gzip, corsFilter)
 
 class DevFilters @Inject() (
-  tlsFilter: TLSFilter,
-  gzip: GzipFilter,
-  corsFilter: CORSFilter,
-  log: LoggingFilter) extends DefaultHttpFilters(log, gzip, corsFilter)
+    tlsFilter: TLSFilter,
+    gzip: GzipFilter,
+    corsFilter: CORSFilter,
+    log: LoggingFilter) extends DefaultHttpFilters(log, gzip, corsFilter)
 
 class TLSFilter @Inject() (
     implicit

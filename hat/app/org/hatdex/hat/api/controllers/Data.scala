@@ -34,8 +34,8 @@ import org.hatdex.hat.api.models.{ DataCredit, Owner, Platform, _ }
 import org.hatdex.hat.api.service.DataService
 import org.hatdex.hat.authentication.{ HatApiController, WithRole, _ }
 import org.hatdex.hat.resourceManagement._
+import org.hatdex.hat.utils.HatBodyParsers
 import org.joda.time.DateTime
-import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
@@ -44,7 +44,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 // this trait defines our service behavior independently from the service actor
 class Data @Inject() (
-    val messagesApi: MessagesApi,
+    components: ControllerComponents,
     passwordHasherRegistry: PasswordHasherRegistry,
     configuration: Configuration,
     credentialsProvider: CredentialsProvider[HatServer],
@@ -52,7 +52,8 @@ class Data @Inject() (
     hatServerProvider: HatServerProvider,
     clock: Clock,
     dataService: DataService,
-    implicit val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    hatBodyParsers: HatBodyParsers,
+    implicit val ec: ExecutionContext) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
   val logger = Logger(this.getClass)
 
@@ -60,7 +61,7 @@ class Data @Inject() (
    * Creates a new virtual table for storing arbitrary incoming data
    */
   def createTable(): Action[ApiDataTable] =
-    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json[ApiDataTable]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(hatBodyParsers.json[ApiDataTable]) { implicit request =>
       dataService.createTable(request.body) map {
         case structure => Created(Json.toJson(structure))
       } recover {
@@ -72,7 +73,7 @@ class Data @Inject() (
    * Marks provided table as a "child" of another, e.g. to created nested data structured
    */
   def linkTables(parentId: Int, childId: Int): Action[ApiRelationship] =
-    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json[ApiRelationship]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(hatBodyParsers.json[ApiRelationship]) { implicit request =>
       dataService.linkTables(parentId, childId, request.body) map { id =>
         Created(Json.toJson(ApiGenericId(id)))
       } recover {
@@ -143,7 +144,7 @@ class Data @Inject() (
    * Create a new field in a virtual table
    */
   def createField(): Action[ApiDataField] =
-    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json[ApiDataField]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(hatBodyParsers.json[ApiDataField]) { implicit request =>
       logger.debug("POST /table")
       dataService.createField(request.body) map {
         case field => Created(Json.toJson(field))
@@ -183,7 +184,7 @@ class Data @Inject() (
    * Insert a new, potentially named, data record
    */
   def createRecord(): Action[ApiDataRecord] =
-    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json[ApiDataRecord]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(hatBodyParsers.json[ApiDataRecord]) { implicit request =>
       logger.debug("POST /record")
       dataService.createRecord(request.body) map {
         case record => Created(Json.toJson(record))
@@ -193,7 +194,7 @@ class Data @Inject() (
     }
 
   def createRecordValues =
-    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(hatBodyParsers.json[JsValue]) { implicit request =>
       val recordValues = request.body
       val insertedRecord = recordValues.validate[ApiRecordValues] match {
         case recordValues: JsSuccess[ApiRecordValues] => dataService.storeRecordValues(Seq(recordValues.value), request.identity.userId).map(v => Json.toJson(v.head))
@@ -235,7 +236,7 @@ class Data @Inject() (
    * Batch-insert data values as a list
    */
   def storeValueList(recordId: Int): Action[Seq[ApiDataValue]] =
-    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json[Seq[ApiDataValue]]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(hatBodyParsers.json[Seq[ApiDataValue]]) { implicit request =>
       val eventualValues = Future.sequence(request.body.map(x => dataService.createValue(x, None, Some(recordId))))
 
       //      eventualValues map {
@@ -253,7 +254,7 @@ class Data @Inject() (
    * Create (insert) a new data value
    */
   def createValue: Action[ApiDataValue] =
-    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(BodyParsers.parse.json[ApiDataValue]) { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async(hatBodyParsers.json[ApiDataValue]) { implicit request =>
       val eventualValues = dataService.createValue(request.body, None, None)
       //      eventualValues map {
       //        case inserted => recordDataValuesInbound(Seq(insertedValue), user, s"Single data value posted")

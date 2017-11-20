@@ -50,7 +50,6 @@ trait Mailer {
 }
 
 trait HatMailer extends Mailer {
-  import scala.language.implicitConversions
 
   protected val configuration: play.api.Configuration
   protected val ms: MailService
@@ -62,12 +61,14 @@ trait HatMailer extends Mailer {
 }
 
 class HatMailerImpl @Inject() (val configuration: play.api.Configuration, val ms: MailService) extends HatMailer {
+  private val emailFrom = configuration.get[String]("play.mailer.from")
+  private val adminEmails = configuration.get[Seq[String]]("exchange.admin")
+
   def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Unit = {
     // wrap any errors
     Try {
-      val emailFrom = configuration.getString("play.mailer.from").get
-      val adminEmails = configuration.getStringSeq("exchange.admin").getOrElse(Seq())
       ms.sendEmailAsync(adminEmails: _*)(
+        from = emailFrom,
         subject = s"HAT server ${request.host} errorr #${exception.id}",
         bodyHtml = views.html.mails.emailServerError(request, exception),
         bodyText = views.html.mails.emailServerError(request, exception).toString())
@@ -77,9 +78,8 @@ class HatMailerImpl @Inject() (val configuration: play.api.Configuration, val ms
   def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Unit = {
     // wrap any errors
     Try {
-      val emailFrom = configuration.getString("play.mailer.from").get
-      val adminEmails = configuration.getStringSeq("exchange.admin").getOrElse(Seq())
       ms.sendEmailAsync(adminEmails: _*)(
+        from = emailFrom,
         subject = s"HAT server ${request.host} error: ${exception.getMessage} for ${request.path + request.rawQueryString}",
         bodyHtml = views.html.mails.emailServerThrowable(request, exception),
         bodyText = views.html.mails.emailServerThrowable(request, exception).toString())
@@ -88,8 +88,8 @@ class HatMailerImpl @Inject() (val configuration: play.api.Configuration, val ms
 
   def passwordReset(email: String, user: HatUser, resetLink: String)(implicit m: Messages, server: HatServer): Unit = {
     Try {
-      val emailFrom = configuration.getString("play.mailer.from").get
       ms.sendEmailAsync(email)(
+        from = emailFrom,
         subject = s"HAT ${server.domain} - reset your password",
         bodyHtml = views.html.mails.emailPasswordReset(user, resetLink),
         bodyText = views.txt.mails.emailPasswordReset(user, resetLink).toString())
@@ -98,8 +98,8 @@ class HatMailerImpl @Inject() (val configuration: play.api.Configuration, val ms
 
   def passwordChanged(email: String, user: HatUser)(implicit m: Messages, server: HatServer): Unit = {
     Try {
-      val emailFrom = configuration.getString("play.mailer.from").get
       ms.sendEmailAsync(email)(
+        from = emailFrom,
         subject = s"HAT ${server.domain} - password changed",
         bodyHtml = views.html.mails.emailPasswordChanged(user),
         bodyText = views.txt.mails.emailPasswordChanged(user).toString())

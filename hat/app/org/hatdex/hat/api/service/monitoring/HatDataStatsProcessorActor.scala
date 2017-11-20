@@ -27,12 +27,12 @@ package org.hatdex.hat.api.service.monitoring
 import javax.inject.Inject
 
 import akka.actor.{ Actor, ActorLogging }
-import org.hatdex.hat.api.models.{ DataStats, InboundDataStats, OutboundDataStats }
+import org.hatdex.hat.api.models.{ DataStats, InboundDataStats, OutboundDataStats, DataDebitEvent => DataDebitAction }
+import org.hatdex.hat.api.service.StatsReporter
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{ DataCreatedEvent, DataDebitEvent, DataRetrievedEvent }
-import org.hatdex.hat.api.service.{ IoExecutionContext, StatsReporter }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerDiscoveryException, HatServerProvider }
 import play.api.Logger
-import org.hatdex.hat.api.models.{ DataDebitEvent => DataDebitAction }
+
 import scala.concurrent.{ ExecutionContext, Future }
 
 class HatDataStatsProcessorActor @Inject() (
@@ -52,7 +52,8 @@ class HatDataStatsProcessorActor @Inject() (
     log.debug(s"Process batched stas: $d")
     d.filter(_.isInstanceOf[HatDataEvent])
       .map(_.asInstanceOf[HatDataEvent])
-      .groupBy(_.hat) map {
+      .groupBy(_.hat)
+      .map {
         case (hat, stats) =>
           val aggregated = stats.collect {
             case s: DataCreatedEvent   => processor.computeInboundStats(s)
@@ -60,7 +61,8 @@ class HatDataStatsProcessorActor @Inject() (
             case e: DataDebitEvent     => processor.reportDataDebitEvent(e)
           }
           hat -> aggregated
-      } foreach {
+      }
+      .foreach {
         case (hat, hatStats) =>
           if (hatStats.nonEmpty) {
             processor.publishStats(hat, hatStats)

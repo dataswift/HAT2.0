@@ -29,7 +29,6 @@ import javax.inject._
 
 import com.mohiva.play.silhouette.api.actions.{ SecuredErrorHandler, UnsecuredErrorHandler }
 import com.mohiva.play.silhouette.impl.exceptions.{ IdentityNotFoundException, InvalidPasswordException }
-import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.HatServerDiscoveryException
 import play.api._
 import play.api.http.{ ContentTypes, DefaultHttpErrorHandler, HttpErrorHandlerExceptions }
@@ -43,13 +42,13 @@ import scala.concurrent.Future
 import scala.util.Try
 
 class ErrorHandler @Inject() (
-  env: Environment,
-  config: Configuration,
-  sourceMapper: OptionalSourceMapper,
-  router: Provider[Router],
-  hatMailer: HatMailer,
-  val messagesApi: MessagesApi) extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
-    with SecuredErrorHandler with UnsecuredErrorHandler with I18nSupport with ContentTypes with RequestExtractors with Rendering {
+    env: Environment,
+    config: Configuration,
+    sourceMapper: OptionalSourceMapper,
+    router: Provider[Router],
+    hatMailer: HatMailer,
+    val messagesApi: MessagesApi) extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
+  with SecuredErrorHandler with UnsecuredErrorHandler with I18nSupport with ContentTypes with RequestExtractors with Rendering {
 
   /**
    * Exception handler which chains the exceptions handlers from the sub types.
@@ -108,7 +107,6 @@ class ErrorHandler @Inject() (
   // 404 - page not found error
   override def onNotFound(request: RequestHeader, message: String): Future[Result] = Future.successful {
     implicit val _request = request
-    implicit val noUser: Option[HatUser] = None
     render {
       case Accepts.Json() =>
         NotFound(Json.obj(
@@ -152,7 +150,6 @@ class ErrorHandler @Inject() (
 
   override def onBadRequest(request: RequestHeader, message: String): Future[Result] = {
     implicit val _request = request
-    implicit val noUser: Option[HatUser] = None
     Future.successful {
       render {
         case Accepts.Json() =>

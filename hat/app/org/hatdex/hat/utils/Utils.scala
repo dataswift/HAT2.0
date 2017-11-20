@@ -24,12 +24,9 @@
 package org.hatdex.hat.utils
 
 import play.api.Logger
-import play.api.cache.CacheApi
 
 import scala.collection.immutable.HashMap
-import scala.concurrent.duration.Duration
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.reflect.ClassTag
 import scala.util.{ Failure, Success, Try }
 
 object Utils {
@@ -75,24 +72,13 @@ object Utils {
 
   def timeFuture[R](name: String, logger: Logger)(block: => Future[R])(implicit ec: ExecutionContext): Future[R] = {
     val t0 = System.nanoTime()
-    val result = block // call-by-name
-    result onSuccess {
-      case _ =>
-        val t1 = System.nanoTime()
-        logger.info(s"[$name] Elapsed time: ${(t1 - t0) / 1000000.0}ms")
-    }
-    result
+    block // call-by-name
+      .andThen {
+        case Success(_) =>
+          val t1 = System.nanoTime()
+          logger.info(s"[$name] Elapsed time: ${(t1 - t0) / 1000000.0}ms")
+      }
   }
 
-  def cacheAsync[T: ClassTag](key: String, duration: Duration = Duration.Inf)(block: => Future[T])(implicit cache: CacheApi, ec: ExecutionContext): Future[T] = {
-    cache.get[T](key) map { cached =>
-      Future.successful(cached)
-    } getOrElse {
-      block map { result =>
-        cache.set(key, result, duration)
-        result
-      }
-    }
-  }
 }
 

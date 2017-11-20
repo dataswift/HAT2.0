@@ -26,31 +26,20 @@ package org.hatdex.hat.tests.remote
 
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.pattern.Patterns
 import akka.stream.{ActorMaterializer, Materializer}
-import org.hatdex.hat.api.endpoints.jsonExamples.DataExamples
-import org.hatdex.hat.api.json.JsonProtocol
 import org.hatdex.hat.api.models._
-import spray.json.JsonParser
-import spray.json._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.Duration;
 import scala.concurrent.duration._
-
-import org.specs2.mutable._
-import org.specs2.runner._
+import scala.concurrent.{ExecutionContext, Future}
 
 class ApiSpec extends BaseRemoteApiSpec {
   val logger: LoggingAdapter = system.log
 
   def testspec(hatAddress: String, ownerAuthParams: Map[String, String]) = {
     implicit val materializer: Materializer = ActorMaterializer()
-    import JsonProtocol._
 
     val apiHelpers = new HatApiHelpers(logger = logger, hatAddress = hatAddress, ownerAuthParams = ownerAuthParams)
 

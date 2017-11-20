@@ -28,16 +28,16 @@ import javax.inject.Inject
 
 import play.api.http.{ HttpErrorHandler, Status }
 import play.api.libs.json.{ JsError, Reads }
-import play.api.mvc.BodyParser
-import play.api.mvc.BodyParsers.parse
+import play.api.mvc.{ BodyParser, PlayBodyParsers }
 
-import scala.concurrent.Future
+import scala.concurrent.{ ExecutionContext, Future }
 
-class HatBodyParsers @Inject() (errorHandler: HttpErrorHandler) {
+class HatBodyParsers @Inject() (errorHandler: HttpErrorHandler, playBodyParsers: PlayBodyParsers)(
+    implicit
+    val ec: ExecutionContext) {
   def json[A](implicit reader: Reads[A]): BodyParser[A] =
     BodyParser("json reader") { request =>
-      import play.api.libs.iteratee.Execution.Implicits.trampoline
-      parse.json(request) mapFuture {
+      playBodyParsers.json(request) mapFuture {
         case Left(simpleResult) =>
           Future.successful(Left(simpleResult))
         case Right(jsValue) =>

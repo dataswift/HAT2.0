@@ -37,8 +37,6 @@ import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
-import play.api.cache.CacheApi
-import play.api.i18n.MessagesApi
 import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
@@ -47,18 +45,17 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.NonFatal
 
 class RichData @Inject() (
-    val messagesApi: MessagesApi,
+    components: ControllerComponents,
     configuration: Configuration,
     parsers: HatBodyParsers,
     silhouette: Silhouette[HatApiAuthEnvironment],
     clock: Clock,
     hatServerProvider: HatServerProvider,
-    cache: CacheApi,
     dataEventDispatcher: HatDataEventDispatcher,
     dataService: RichDataService,
     bundleService: RichBundleService,
     dataDebitService: DataDebitContractService,
-    implicit val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
+    implicit val ec: ExecutionContext) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
 
   private val logger = Logger(this.getClass)
   private val defaultRecordLimit = 1000
@@ -105,6 +102,16 @@ class RichData @Inject() (
       response recover {
         case e: RichDataDuplicateException => BadRequest(Json.toJson(Errors.richDataDuplicate(e)))
         case e: RichDataServiceException   => BadRequest(Json.toJson(Errors.richDataError(e)))
+      }
+    }
+
+  def deleteEndpointData(namespace: String, endpoint: String): Action[AnyContent] =
+    SecuredAction(WithRole(NamespaceWrite(namespace))).async { implicit request =>
+      val dataEndpoint = s"$namespace/$endpoint"
+      dataService.deleteEndpoint(request.identity.userId, dataEndpoint) map { _ =>
+        Ok(Json.toJson(SuccessResponse(s"All records deleted")))
+      } recover {
+        case RichDataMissingException(message, _) => BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
       }
     }
 
@@ -184,6 +191,12 @@ class RichData @Inject() (
         case RichDataMissingException(message, _) => BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
       }
     }
+
+  def listEndpoints: Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async { implicit request =>
+    dataService.listEndpoints() map { endpoints =>
+      Ok(Json.toJson(endpoints))
+    }
+  }
 
   def updateRecords(): Action[Seq[EndpointData]] =
     SecuredAction(WithRole(DataCredit(""), Owner())).async(parsers.json[Seq[EndpointData]]) { implicit request =>
@@ -301,7 +314,7 @@ class RichData @Inject() (
       enableDataDebit(dataDebitId, None)
     }
 
-  protected def enableDataDebit(dataDebitId: String, bundleId: Option[String])(implicit request: SecuredRequest[HatApiAuthEnvironment, AnyContent]) = {
+  protected def enableDataDebit(dataDebitId: String, bundleId: Option[String])(implicit request: SecuredRequest[HatApiAuthEnvironment, AnyContent]): Future[Result] = {
     val enabled = for {
       _ <- dataDebitService.dataDebitEnableBundle(dataDebitId, bundleId)
       debit <- dataDebitService.dataDebit(dataDebitId)

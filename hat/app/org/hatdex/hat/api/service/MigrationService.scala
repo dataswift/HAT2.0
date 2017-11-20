@@ -38,7 +38,7 @@ import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
-import org.hatdex.libs.dal.SlickPostgresDriver.api._
+import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
 import play.api.libs.json._

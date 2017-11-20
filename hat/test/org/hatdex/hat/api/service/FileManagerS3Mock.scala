@@ -25,8 +25,8 @@
 package org.hatdex.hat.api.service
 
 import com.amazonaws.auth.{ AWSStaticCredentialsProvider, BasicAWSCredentials }
-import com.amazonaws.services.s3.{ AmazonS3, AmazonS3Client, AmazonS3ClientBuilder }
 import com.amazonaws.services.s3.model.ObjectMetadata
+import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
 import org.specs2.mock.Mockito
 
 import scala.concurrent.duration._

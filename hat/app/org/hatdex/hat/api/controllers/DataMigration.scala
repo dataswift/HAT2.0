@@ -30,11 +30,9 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.MigrationService
-import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
-import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
@@ -42,7 +40,7 @@ import play.api.{ Configuration, Logger }
 import scala.concurrent.ExecutionContext
 
 class DataMigration @Inject() (
-    val messagesApi: MessagesApi,
+    components: ControllerComponents,
     configuration: Configuration,
     parsers: HatBodyParsers,
     silhouette: Silhouette[HatApiAuthEnvironment],
@@ -50,13 +48,13 @@ class DataMigration @Inject() (
     hatServerProvider: HatServerProvider,
     migrationService: MigrationService)(
     implicit
-    val ec: ExecutionContext) extends HatApiController(silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
+    val ec: ExecutionContext) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
 
   private val logger = Logger(this.getClass)
 
   def migrateData(fromSource: String, fromTableName: String, toNamespace: String, toEndpoint: String, includeTimestamp: Boolean): Action[AnyContent] =
     SecuredAction(WithRole(Owner())).async { implicit request =>
-
+      logger.info(s"Migrate data from $fromSource:$fromTableName to $toNamespace/$toEndpoint")
       val eventualCount = migrationService.migrateOldData(
         request.identity.userId, s"$toNamespace/$toEndpoint",
         fromTableName, fromSource,
