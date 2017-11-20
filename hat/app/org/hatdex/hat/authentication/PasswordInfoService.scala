@@ -33,7 +33,6 @@ import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.authentication.Implicits._
 import org.hatdex.hat.resourceManagement.HatServer
 import play.api.Logger
-import play.api.cache.{ AsyncCacheApi, NamedCache }
 
 import scala.concurrent.Future
 

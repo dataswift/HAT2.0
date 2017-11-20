@@ -24,7 +24,6 @@
 
 package org.hatdex.hat.api.service.richData
 
-import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.Logger
@@ -32,7 +31,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.json.{ JsValue, Json, _ }
 import play.api.test.PlaySpecification
 
-class JsonDataTransformerSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito {
+class JsonDataTransformerSpec extends PlaySpecification with Mockito {
 
   val logger = Logger(this.getClass)
 

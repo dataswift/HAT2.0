@@ -31,7 +31,6 @@ import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
 import org.specs2.specification.mutable.CommandLineArguments
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 case class Retry(value: Int) extends AnyVal

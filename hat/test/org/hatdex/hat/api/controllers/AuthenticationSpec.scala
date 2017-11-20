@@ -40,10 +40,10 @@ import org.hatdex.hat.api.service._
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer }
+import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -59,7 +59,6 @@ import play.api.{ Application, Configuration, Logger }
 import play.cache.NamedCacheImpl
 import play.mvc.Http.{ HeaderNames, MimeTypes }
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -270,6 +269,7 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
 }
 
 trait AuthenticationContext extends Scope with Mockito {
+  import scala.concurrent.ExecutionContext.Implicits.global
   // Initialize configuration
   val hatAddress = "hat.hubofallthings.net"
   val hatUrl = s"http://$hatAddress"

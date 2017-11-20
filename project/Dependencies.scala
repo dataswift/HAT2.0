@@ -27,7 +27,7 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val crossScala = Seq("2.11.8")
+    val crossScala = Seq("2.12.4")
     val scalaVersion = crossScala.head
   }
 
@@ -103,7 +103,7 @@ object Dependencies {
       private val version = "2.4.2-SNAPSHOT"
       val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
       val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
-      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.2-SNAPSHOT"
+      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.4-SNAPSHOT"
     }
 
     val scalaGuice = "net.codingwell" %% "scala-guice" % "4.1.0"

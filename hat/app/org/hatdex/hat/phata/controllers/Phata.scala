@@ -27,6 +27,7 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
+import controllers.{ AssetsFinder, AssetsFinderProvider }
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models.ErrorMessage
 import org.hatdex.hat.api.service.HatServicesService
@@ -37,7 +38,6 @@ import org.hatdex.hat.phata.service.{ NotablesService, UserProfileService }
 import org.hatdex.hat.phata.{ views => phataViews }
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
 import play.api.cache.Cached
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc._
@@ -48,6 +48,7 @@ import scala.concurrent.Future
 
 class Phata @Inject() (
     components: ControllerComponents,
+    assetsFinder: AssetsFinderProvider,
     cached: Cached,
     configuration: Configuration,
     silhouette: Silhouette[HatFrontendAuthEnvironment],
@@ -58,6 +59,8 @@ class Phata @Inject() (
     userProfileService: UserProfileService,
     notablesService: NotablesService) extends HatFrontendController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
+  implicit val assets: AssetsFinder = assetsFinder.get
+
   private val logger = Logger(this.getClass)
 
   val indefiniteSuccessCaching = cached
@@ -66,11 +69,11 @@ class Phata @Inject() (
 
   def rumpelIndex(): EssentialAction = indefiniteSuccessCaching {
     UserAwareAction.async { implicit request =>
-      Future.successful(Ok(phataViews.html.rumpelIndex(configuration.getOptional[String]("frontend.protocol").getOrElse("https:"))))
+      Future.successful(Ok(phataViews.html.rumpelIndex(configuration.getOptional[String]("frontend.protocol").getOrElse("https:"))(assets)))
     }
   }
 
-  private def getProfile(maybeUser: Option[HatUser])(implicit server: HatServer, request: RequestHeader): Future[Result] = {
+  private def getProfile(maybeUser: Option[HatUser])(implicit server: HatServer): Future[Result] = {
     val eventualProfileData = for {
       (profilePublic, profileInfo) <- userProfileService.getPublicProfile()
       notables <- notablesService.getPublicNotes()

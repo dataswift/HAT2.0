@@ -35,7 +35,7 @@ import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, EndpointDataBundle, Owner }
 import org.hatdex.hat.api.service.UsersService
-import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatFrontendAuthEnvironment }
+import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
@@ -48,7 +48,6 @@ import play.api.{ Application, Configuration }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.Success
 
 trait FunctionServiceContext extends Scope {
   val hatAddress = "hat.hubofallthings.net"

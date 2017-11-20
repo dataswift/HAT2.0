@@ -46,6 +46,7 @@ class UserProfileService @Inject() (bundleService: BundleService, dataService: D
   private implicit def hatServer2db(implicit hatServer: HatServer): Database = hatServer.db
 
   def getPublicProfile()(implicit server: HatServer): Future[(Boolean, Map[String, Map[String, String]])] = {
+    logger.debug(s"Get public profile for ${server.domain}")
     val eventualMaybeProfileTable = bundleService.sourceDatasetTables(Seq(("rumpel", "profile")), None).map(_.headOption)
     val eventualMaybeFacebookTable = bundleService.sourceDatasetTables(Seq(("facebook", "profile_picture")), None).map(_.headOption)
     val eventualProfileRecord = eventualMaybeProfileTable flatMap { maybeTable =>
@@ -104,14 +105,14 @@ class UserProfileService @Inject() (bundleService: BundleService, dataService: D
 
     val startTime = LocalDateTime.now().minusDays(365)
     val endTime = LocalDateTime.now()
-    val eventualValues = dataService.fieldsetValues(fieldset, startTime, endTime, Some(1))
+    val eventualValues = dataService.fieldsetValues(fieldset, startTime, endTime, Some(1))(server.db)
 
     eventualValues.map(values => dataService.restructureTableValuesToRecords(values, Seq(table)))
       .map { records => records.headOption }
       .map(_.flatMap(_.tables.flatMap(_.headOption)))
   }
 
-  private def formatProfile(profileFields: Seq[ProfileField])(implicit server: HatServer): Map[String, Map[String, String]] = {
+  private def formatProfile(profileFields: Seq[ProfileField]): Map[String, Map[String, String]] = {
     val links = Map(profileFields collect {
       // links
       case ProfileField("facebook", values, true) => "Facebook" -> values.getOrElse("link", "")

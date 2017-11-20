@@ -34,7 +34,6 @@ import org.hatdex.hat.api.service.{ DalExecutionContext, UsersService }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.libs.dal.HATPostgresProfile.api.Database
-import play.api.ConfigLoader.seqConfigLoader
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.{ ConfigLoader, Configuration, Logger }
 

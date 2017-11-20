@@ -31,7 +31,7 @@ import com.amazonaws.services.s3.model.{ GeneratePresignedUrlRequest, SSEAlgorit
 import com.google.inject.name.Named
 import com.typesafe.config.Config
 import org.hatdex.hat.resourceManagement.HatServer
-import play.api.{ ConfigLoader, Configuration, Logger }
+import play.api.{ ConfigLoader, Logger }
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration

@@ -51,7 +51,7 @@ GET           /system/update                                       org.hatdex.ha
 GET           /api/v2/system/status                                org.hatdex.hat.api.controllers.SystemStatus.status()
 
 # PHATA routes
-GET           /assets/*file                                        @controllers.Assets.versioned(path="/public", file: Asset)
+GET           /assets/*file                                        controllers.Assets.at(file)
 GET           /hatlogin                                            org.hatdex.hat.phata.controllers.Phata.hatLogin(name: String, redirect: String)
 GET           /                                                    org.hatdex.hat.phata.controllers.Phata.rumpelIndex
 GET           /api/profile                                         org.hatdex.hat.phata.controllers.Phata.profile

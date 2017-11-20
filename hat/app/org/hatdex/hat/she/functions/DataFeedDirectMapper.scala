@@ -461,7 +461,8 @@ trait DataFeedItemJsonProtocol extends JodaWrites with JodaReads {
     (JsPath \ "types").write[Seq[String]] and
     (JsPath \ "title").writeNullable[DataFeedItemTitle] and
     (JsPath \ "content").writeNullable[DataFeedItemContent] and
-    (JsPath \ "location").writeNullable[DataFeedItemLocation])(t => (t.source, t.date, t.date.getMillis / 1000L, t.types, t.title, t.content, t.location))
+    (JsPath \ "location").writeNullable[DataFeedItemLocation])(t =>
+      (t.source, t.date, t.date.getMillis / 1000L, t.types, t.title, t.content, t.location))
 
   implicit val feedItemReads: Reads[DataFeedItem] = (
     (JsPath \ "source").read[String] and

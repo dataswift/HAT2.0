@@ -27,14 +27,13 @@ package org.hatdex.hat.she.functions
 import org.hatdex.hat.api.models.EndpointData
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.models.Request
+import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import play.api.Logger
 import play.api.test.PlaySpecification
 
 import scala.concurrent.duration._
-import org.joda.time.DateTime
-import scala.util.Failure
 
 class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirectMapper with PlaySpecification with Mockito with DataFeedDirectMapperContext {
   val logger = Logger(this.getClass)

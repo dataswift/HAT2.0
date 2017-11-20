@@ -39,11 +39,12 @@ trait HatDatabaseProvider {
 
   def database(hat: String)(implicit ec: ExecutionContext): Future[Database]
 
-  def shutdown(db: Database)(implicit ec: ExecutionContext): Future[Unit] = {
+  def shutdown(db: Database): Future[Unit] = {
+    // Execution context for the future is defined by specifying the executor during initialisation
     db.shutdown
   }
 
-  def update(db: Database)(implicit ec: ExecutionContext): Future[Unit] = {
+  def update(db: Database): Future[Unit] = {
     schemaMigration.run()(db)
   }
 }

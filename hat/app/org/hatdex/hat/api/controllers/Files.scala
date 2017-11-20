@@ -37,7 +37,6 @@ import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, 
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
 import org.joda.time.DateTime
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.{ Configuration, Logger }

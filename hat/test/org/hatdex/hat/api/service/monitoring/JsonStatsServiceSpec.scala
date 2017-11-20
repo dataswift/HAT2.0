@@ -30,7 +30,6 @@ import akka.stream.Materializer
 import org.hatdex.hat.api.models.{ EndpointData, Owner }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
-import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -38,7 +37,7 @@ import play.api.libs.json.{ JsValue, Json }
 import play.api.test.PlaySpecification
 import play.api.{ Application, Logger }
 
-class JsonStatsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with JsonStatsServiceContext {
+class JsonStatsServiceSpec extends PlaySpecification with Mockito with JsonStatsServiceContext {
 
   val logger = Logger(this.getClass)
 

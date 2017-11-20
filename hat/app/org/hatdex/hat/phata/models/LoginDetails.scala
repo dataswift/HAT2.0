@@ -64,7 +64,7 @@ object ApiPasswordChange {
     }
   }
 
-  def passwordStrength(implicit reads: Reads[String], p: String => scala.collection.TraversableLike[_, String]): Reads[String] =
+  def passwordStrength(implicit reads: Reads[String]): Reads[String] =
     Reads[String] { js =>
       reads.reads(js)
         .flatMap { a =>

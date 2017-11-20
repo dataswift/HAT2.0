@@ -33,7 +33,6 @@ import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.FakeCache
 import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner, _ }
 import org.hatdex.hat.api.service.{ FileManagerS3Mock, UsersService }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
@@ -50,7 +49,6 @@ import play.api.libs.json.{ JsObject, Json }
 import play.api.test.PlaySpecification
 import play.api.{ Application, Configuration, Logger }
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -216,6 +214,7 @@ class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification
 }
 
 trait RichBundleServiceContext extends Scope with Mockito {
+  import scala.concurrent.ExecutionContext.Implicits.global
   // Initialize configuration
   val hatAddress = "hat.hubofallthings.net"
   val hatUrl = s"http://$hatAddress"

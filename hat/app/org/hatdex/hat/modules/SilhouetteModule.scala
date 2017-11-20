@@ -46,10 +46,10 @@ import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models.MailTokenUser
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider, HatServerProviderImpl }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, HatMailerImpl }
-import play.api.{ ConfigLoader, Configuration }
 import play.api.http.HttpErrorHandler
 import play.api.libs.ws.WSClient
 import play.api.mvc.CookieHeaderEncoding
+import play.api.{ ConfigLoader, Configuration }
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
@@ -209,10 +209,10 @@ class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteCo
     clock: Clock)(implicit ec: ExecutionContext): AuthenticatorService[CookieAuthenticator, HatServer] = {
 
     val config = configuration.get[CookieAuthenticatorSettings]("silhouette.authenticator.cookie")
-    val encoder = new CrypterAuthenticatorEncoder(crypter)
     val authenticatorEncoder = new CrypterAuthenticatorEncoder(crypter)
 
-    new CookieAuthenticatorService[HatServer](config, None, signer, cookieHeaderEncoding, authenticatorEncoder, fingerprintGenerator, idGenerator, clock)
+    new CookieAuthenticatorService[HatServer](config, None, signer, cookieHeaderEncoding,
+      authenticatorEncoder, fingerprintGenerator, idGenerator, clock)
   }
 
   /**

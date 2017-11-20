@@ -52,6 +52,7 @@ object EndpointSubscriberService {
   private implicit val dateReads: Reads[DateTime] = JodaReads.jodaDateReads("yyyy-MM-dd'T'HH:mm:ssZ")
 
   private def dataMatchesFilters(data: EndpointData, filters: Seq[EndpointQueryFilter]): Boolean = {
+    logger.debug("Checking if data matches provided filters")
     filters.exists { f =>
       data.data.transform(JsonDataTransformer.parseJsPath(f.field).json.pick).fold(
         invalid = {

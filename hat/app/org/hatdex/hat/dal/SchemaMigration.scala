@@ -37,7 +37,7 @@ import play.api.{ Configuration, Logger }
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ Future, blocking }
-import scala.util.Try
+import scala.util.{ Failure, Success, Try }
 
 /**
  * Runs Liquibase based database schema and data migrations. This is the only place for all related
@@ -92,9 +92,9 @@ class SchemaMigration @Inject() (configuration: Configuration) extends DalExecut
       } get
     }
 
-    eventuallyEvolved onFailure {
-      case e =>
-        logger.error(s"Error updating database: ${e.getMessage}")
+    eventuallyEvolved onComplete {
+      case Success(_) => logger.debug(s"Database reset")
+      case Failure(e) => logger.error(s"Error updating database: ${e.getMessage}")
     }
 
     eventuallyEvolved
@@ -102,7 +102,7 @@ class SchemaMigration @Inject() (configuration: Configuration) extends DalExecut
 
   def rollback(changeLogFiles: Seq[String])(implicit db: Database): Future[Unit] = {
     logger.info(s"Rolling back schema migrations: ${changeLogFiles.mkString(", ")}")
-    changeLogFiles.foldLeft(Future.successful(())) { (execution, evolution) => execution.flatMap { _ => updateDb(evolution) } }
+    changeLogFiles.foldLeft(Future.successful(())) { (execution, evolution) => execution.flatMap { _ => rollbackDb(evolution) } }
   }
 
   private def updateDb(diffFilePath: String)(implicit db: Database): Future[Unit] = {
@@ -130,9 +130,9 @@ class SchemaMigration @Inject() (configuration: Configuration) extends DalExecut
       } get
     }
 
-    eventuallyEvolved onFailure {
-      case e =>
-        logger.error(s"Error updating database: ${e.getMessage}")
+    eventuallyEvolved onComplete {
+      case Success(_) => logger.debug(s"Database updated with $diffFilePath")
+      case Failure(e) => logger.error(s"Error updating database: ${e.getMessage}")
     }
 
     eventuallyEvolved
@@ -163,9 +163,9 @@ class SchemaMigration @Inject() (configuration: Configuration) extends DalExecut
       } get
     }
 
-    eventuallyEvolved onFailure {
-      case e =>
-        logger.error(s"Error updating database: ${e.getMessage}")
+    eventuallyEvolved onComplete {
+      case Success(_) => logger.debug(s"Database updated with $diffFilePath")
+      case Failure(e) => logger.error(s"Error updating database: ${e.getMessage}")
     }
 
     eventuallyEvolved

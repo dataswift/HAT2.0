@@ -37,6 +37,7 @@ import play.api.Logger
 import play.api.libs.json.Json
 
 import scala.concurrent.Future
+import scala.util.{ Failure, Success }
 
 class FileMetadataService extends DalExecutionContext {
   val logger = Logger(this.getClass)
@@ -86,9 +87,9 @@ class FileMetadataService extends DalExecutionContext {
       .map(groupFilePermissions)
       .map(_.head)
 
-    result.onFailure {
-      case e =>
-        logger.error(s"Error while saving file: ${e.getMessage}", e)
+    result.onComplete {
+      case Success(_) => logger.debug(s"File ${file} saved")
+      case Failure(e) => logger.error(s"Error while saving file $file: ${e.getMessage}", e)
     }
     result
   }

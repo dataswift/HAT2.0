@@ -34,6 +34,7 @@ import play.api.cache.AsyncCacheApi
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.{ Failure, Success }
 
 object HatServerActor {
   sealed trait HatServerActorMessage
@@ -133,9 +134,9 @@ class HatServerActor @Inject() (
       hatServer
     }
 
-    server onFailure {
-      case e =>
-        log.warning(s"Error while trying to fetch HAT $hat Server configuration: ${e.getMessage}")
+    server onComplete {
+      case Success(_) => log.debug(s"Server $hat information retrieved")
+      case Failure(e) => log.warning(s"Error while trying to fetch HAT $hat Server configuration: ${e.getMessage}")
     }
 
     server

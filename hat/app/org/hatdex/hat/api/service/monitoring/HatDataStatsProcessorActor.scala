@@ -27,12 +27,12 @@ package org.hatdex.hat.api.service.monitoring
 import javax.inject.Inject
 
 import akka.actor.{ Actor, ActorLogging }
-import org.hatdex.hat.api.models.{ DataStats, InboundDataStats, OutboundDataStats }
+import org.hatdex.hat.api.models.{ DataStats, InboundDataStats, OutboundDataStats, DataDebitEvent => DataDebitAction }
+import org.hatdex.hat.api.service.StatsReporter
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{ DataCreatedEvent, DataDebitEvent, DataRetrievedEvent }
-import org.hatdex.hat.api.service.{ IoExecutionContext, StatsReporter }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerDiscoveryException, HatServerProvider }
 import play.api.Logger
-import org.hatdex.hat.api.models.{ DataDebitEvent => DataDebitAction }
+
 import scala.concurrent.{ ExecutionContext, Future }
 
 class HatDataStatsProcessorActor @Inject() (

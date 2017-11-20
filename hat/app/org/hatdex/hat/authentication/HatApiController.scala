@@ -37,8 +37,8 @@ import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models.{ ErrorMessage, User }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.libs.dal.HATPostgresProfile.api.Database
 import org.hatdex.hat.resourceManagement._
+import org.hatdex.libs.dal.HATPostgresProfile.api.Database
 import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.i18n.I18nSupport
@@ -120,20 +120,15 @@ class UserLimiter @Inject() (implicit
    * @param rateLimiter The rate limiter implementation.
    * @param reject The function to apply on reject.
    * @param requestKeyExtractor The Request Parameter we want to filter from.
-   * @param actorSystem The implicit Akka Actor system.
    * @tparam K the key by which to identify the user.
    */
   def createUserAware[T <: HatAuthEnvironment, R[_] <: UserAwareRequest[T, _], K](
-    rateLimiter: RateLimiter)(reject: R[_] => Result, requestKeyExtractor: R[_] => K)(
-    implicit
-    actorSystem: ActorSystem): RateLimitActionFilter[R] with ActionFunction[R, R] = {
+    rateLimiter: RateLimiter)(reject: R[_] => Result, requestKeyExtractor: R[_] => K): RateLimitActionFilter[R] with ActionFunction[R, R] = {
     new RateLimitActionFilter[R](rateLimiter)(reject, requestKeyExtractor) with ActionFunction[R, R]
   }
 
   def createSecured[T <: HatAuthEnvironment, R[_] <: SecuredRequest[T, _], K](
-    rateLimiter: RateLimiter)(reject: R[_] => Result, requestKeyExtractor: R[_] => K)(
-    implicit
-    actorSystem: ActorSystem): RateLimitActionFilter[R] with ActionFunction[R, R] = {
+    rateLimiter: RateLimiter)(reject: R[_] => Result, requestKeyExtractor: R[_] => K): RateLimitActionFilter[R] with ActionFunction[R, R] = {
     new RateLimitActionFilter[R](rateLimiter)(reject, requestKeyExtractor) with ActionFunction[R, R]
   }
 

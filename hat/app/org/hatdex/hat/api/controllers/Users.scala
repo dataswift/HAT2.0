@@ -37,7 +37,6 @@ import org.hatdex.hat.authentication.{ HatApiController, WithRole, _ }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
@@ -75,6 +74,7 @@ class Users @Inject() (
 
   def createUser(): Action[User] = SecuredAction(WithRole(Owner(), Platform())).async(hatBodyParsers.json[User]) { implicit request =>
     val user = request.body
+    logger.debug(s"Creating user $user")
     val hatUser = ModelTranslation.fromExternalModel(user, enabled = true)
     if (privilegedRole(hatUser)) {
       Future.successful(BadRequest(Json.toJson(ErrorMessage("Invalid User", s"Users with privileged roles may not be created"))))

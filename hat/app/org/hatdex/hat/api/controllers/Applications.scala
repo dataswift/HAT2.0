@@ -33,7 +33,6 @@ import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.HatServicesService
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
-import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.{ Configuration, Logger }

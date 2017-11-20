@@ -216,7 +216,7 @@ class BundleService @Inject() (dataService: DataService) extends DalExecutionCon
 
   protected[api] def recordsDatasetGrouped(
     tables: Seq[ApiDataTable],
-    valueRecords: Iterable[ApiDataRecord])(implicit db: Database): Map[String, Seq[ApiBundleContextlessDatasetData]] = {
+    valueRecords: Iterable[ApiDataRecord]): Map[String, Seq[ApiBundleContextlessDatasetData]] = {
 
     val datasets = tables.map { table =>
       val recordsWithTable = valueRecords.filter { record =>

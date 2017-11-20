@@ -28,18 +28,18 @@ import java.io.StringReader
 import java.util.UUID
 
 import com.amazonaws.auth.{ AWSStaticCredentialsProvider, BasicAWSCredentials }
-import com.amazonaws.services.s3.{ AmazonS3, AmazonS3Client, AmazonS3ClientBuilder }
+import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
 import com.atlassian.jwt.core.keys.KeyUtils
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
+import org.hatdex.hat.api.models.Owner
 import org.hatdex.hat.authentication.HatFrontendAuthEnvironment
-import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
+import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{ Application, Configuration }

@@ -51,7 +51,6 @@ import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.test.PlaySpecification
 import play.api.{ Application, Configuration, Logger }
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -649,6 +648,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 }
 
 trait RichDataServiceContext extends Scope with Mockito {
+  import scala.concurrent.ExecutionContext.Implicits.global
   // Initialize configuration
   val hatAddress = "hat.hubofallthings.net"
   val hatUrl = s"http://$hatAddress"

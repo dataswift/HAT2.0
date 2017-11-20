@@ -64,7 +64,7 @@ class DataDebitService @Inject() (bundlesService: BundleService) extends DalExec
     }
   }
 
-  def storeContextDataDebit(debit: ApiDataDebit, bundle: ApiBundleContext)(implicit db: Database, user: User): Future[ApiDataDebit] = {
+  def storeContextDataDebit(debit: ApiDataDebit, bundle: ApiBundleContext): Future[ApiDataDebit] = {
     throw new NotImplementedError("Contextual APIs not implemented")
   }
 
@@ -108,7 +108,7 @@ class DataDebitService @Inject() (bundlesService: BundleService) extends DalExec
     }
   }
 
-  def retrieveDataDebitContextualValues(debit: DataDebitRow, bundleId: Int)(implicit db: Database): Future[ApiDataDebitOut] = {
+  def retrieveDataDebitContextualValues(debit: DataDebitRow, bundleId: Int): Future[ApiDataDebitOut] = {
     throw new NotImplementedError("Contextual APIs not implemented")
   }
 

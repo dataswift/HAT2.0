@@ -33,26 +33,23 @@ import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.FakeCache
-import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner, _ }
 import org.hatdex.hat.api.service.{ FileManagerS3Mock, UsersService }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
-import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
+import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.joda.time.LocalDateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeEach, Scope }
-import play.api.cache.{ AsyncCacheApi, CacheApi }
+import play.api.cache.AsyncCacheApi
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsObject, Json }
 import play.api.test.PlaySpecification
 import play.api.{ Application, Configuration, Logger }
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -233,6 +230,7 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
 }
 
 trait DataDebitContractServiceContext extends Scope with Mockito {
+  import scala.concurrent.ExecutionContext.Implicits.global
   // Initialize configuration
   val hatAddress = "hat.hubofallthings.net"
   val hatUrl = s"http://$hatAddress"

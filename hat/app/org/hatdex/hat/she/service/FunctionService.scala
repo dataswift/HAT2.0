@@ -38,7 +38,6 @@ import org.hatdex.hat.dal.Tables._
 import play.api.Logger
 import play.api.libs.json.Json
 
-import scala.collection.mutable
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Success
 

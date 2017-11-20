@@ -34,8 +34,7 @@ import org.hatdex.hat.api.service.{ SystemStatusService, UsersService }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.ocpsoft.prettytime.PrettyTime
-import play.api.cache.{ CacheApi, Cached }
-import play.api.i18n.MessagesApi
+import play.api.cache.Cached
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.{ Configuration, Logger }

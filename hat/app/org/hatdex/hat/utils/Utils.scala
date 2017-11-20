@@ -72,13 +72,12 @@ object Utils {
 
   def timeFuture[R](name: String, logger: Logger)(block: => Future[R])(implicit ec: ExecutionContext): Future[R] = {
     val t0 = System.nanoTime()
-    val result = block // call-by-name
-    result onSuccess {
-      case _ =>
-        val t1 = System.nanoTime()
-        logger.info(s"[$name] Elapsed time: ${(t1 - t0) / 1000000.0}ms")
-    }
-    result
+    block // call-by-name
+      .andThen {
+        case Success(_) =>
+          val t1 = System.nanoTime()
+          logger.info(s"[$name] Elapsed time: ${(t1 - t0) / 1000000.0}ms")
+      }
   }
 
 }

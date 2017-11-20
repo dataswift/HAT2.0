@@ -45,7 +45,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
   val logger = Logger(this.getClass)
 
-  import org.hatdex.hat.api.json.HatJsonFormats._
+  import org.hatdex.hat.api.json.HatJsonFormats.{ errorMessage, successResponse }
   import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol._
 
   override implicit def defaultAwaitTimeout: util.Timeout = 60.seconds
@@ -251,7 +251,6 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       logger.warn("Function setup, executing")
 
       val result = Helpers.call(controller.functionTrigger("data-feed-direct-mapper"), request)
-      val body = contentAsString(result)
       status(result) must equalTo(OK)
       val message = contentAsJson(result).as[SuccessResponse]
       message.message must be equalTo "Function Executed"

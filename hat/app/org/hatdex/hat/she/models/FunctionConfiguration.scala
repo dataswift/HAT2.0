@@ -97,11 +97,8 @@ object FunctionTrigger {
 
 }
 
-trait FunctionConfigurationJsonProtocol extends JodaWrites with JodaReads {
+trait FunctionConfigurationJsonProtocol extends JodaWrites with JodaReads with RichDataJsonFormats {
   import FunctionTrigger._
-
-  private implicit val endpointDataBundleFormat: Format[EndpointDataBundle] = RichDataJsonFormats.endpointDatabundleFormat
-  private implicit val endpointDataFormat: Format[EndpointData] = RichDataJsonFormats.endpointDataFormat
 
   /*
   * Duration Json formats

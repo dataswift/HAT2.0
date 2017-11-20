@@ -108,11 +108,11 @@ class NotablesService @Inject() (bundleService: BundleService, dataService: Data
             JsArray(Seq[JsValue]())
         }))
 
-  private def renderNoteText(markdown: String, mdProcessor: PegDownProcessor) = {
-    mdProcessor.synchronized {
-      Try(mdProcessor.markdownToHtml(markdown)).toOption.getOrElse("")
-    }
-  }
+  //  private def renderNoteText(markdown: String, mdProcessor: PegDownProcessor) = {
+  //    mdProcessor.synchronized {
+  //      Try(mdProcessor.markdownToHtml(markdown)).toOption.getOrElse("")
+  //    }
+  //  }
 
   private def getTableValues(table: ApiDataTable)(implicit server: HatServer): Future[Seq[ApiDataRecord]] = {
     val fieldset = dataService.getStructureFields(table)

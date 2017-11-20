@@ -36,9 +36,8 @@ import org.hatdex.hat.dal.{ ModelTranslation, Tables }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider }
 import org.hatdex.hat.utils.HatBodyParsers
 import org.joda.time.{ DateTime, LocalDateTime }
-import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
-import play.api.mvc.{ BodyParsers, ControllerComponents, RequestHeader }
+import play.api.mvc.ControllerComponents
 import play.api.{ Configuration, Logger }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -68,7 +67,7 @@ class DataDebitController @Inject() (
       }
     }
 
-  private def processContextlessDDProposal(debit: ApiDataDebit, bundle: ApiBundleContextless)(implicit hatServer: HatServer, user: User, request: RequestHeader) = {
+  private def processContextlessDDProposal(debit: ApiDataDebit, bundle: ApiBundleContextless)(implicit hatServer: HatServer, user: User) = {
     val eventualDataDebit = dataDebitService.storeContextlessDataDebit(debit, bundle)
 
     eventualDataDebit map {
@@ -83,7 +82,7 @@ class DataDebitController @Inject() (
     }
   }
 
-  private def processContextualDDProposal(debit: ApiDataDebit, bundle: ApiBundleContext)(implicit hatServer: HatServer, user: User, request: RequestHeader) = {
+  private def processContextualDDProposal(debit: ApiDataDebit, bundle: ApiBundleContext)(implicit hatServer: HatServer, user: User) = {
     val eventualDataDebit = dataDebitService.storeContextDataDebit(debit, bundle)
     eventualDataDebit map { createdDebit =>
       statsService.recordDataDebitOperation(createdDebit, user, DataDebitOperations.Create(), "Contextual Data Debit created")
@@ -177,7 +176,7 @@ class DataDebitController @Inject() (
 
   private def getContextlessDataDebitValues(dataDebit: Tables.DataDebitRow, bundleId: Int,
     maybeLimit: Option[Int], maybeStartTime: Option[LocalDateTime],
-    maybeEndTime: Option[LocalDateTime])(implicit hatServer: HatServer, user: User, request: RequestHeader): Future[ApiDataDebitOut] = {
+    maybeEndTime: Option[LocalDateTime])(implicit hatServer: HatServer, user: User): Future[ApiDataDebitOut] = {
     val eventualValues = dataDebitService.retrieveDataDebiValues(dataDebit, bundleId, maybeLimit, maybeStartTime, maybeEndTime)
     eventualValues map { values =>
       val apiDataDebit = ModelTranslation.fromDbModel(dataDebit)
@@ -191,7 +190,7 @@ class DataDebitController @Inject() (
   private def getContextualDataDebitValues(dataDebit: Tables.DataDebitRow, bundleId: Int,
     maybeLimit: Option[Int],
     maybeStartTime: Option[LocalDateTime],
-    maybeEndTime: Option[LocalDateTime])(implicit hatServer: HatServer, user: User, request: RequestHeader): Future[ApiDataDebitOut] = {
+    maybeEndTime: Option[LocalDateTime])(implicit hatServer: HatServer, user: User): Future[ApiDataDebitOut] = {
     val eventualValues = dataDebitService.retrieveDataDebitContextualValues(dataDebit, bundleId)
     eventualValues map { values =>
       val apiDataDebit = ModelTranslation.fromDbModel(dataDebit)

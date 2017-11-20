@@ -62,8 +62,6 @@ class HatServerProviderImpl @Inject() (
   import org.hatdex.hat.api.service.IoExecutionContext.ioThreadPool
 
   private val logger = Logger(this.getClass)
-  private val serverInfoExpiry = 1.hour
-  private val serverErrorExpiry = 2.minutes
 
   def retrieve[B](request: Request[B]): Future[Option[HatServer]] = {
     val hatAddress = request.host //.split(':').headOption.getOrElse(request.host)
