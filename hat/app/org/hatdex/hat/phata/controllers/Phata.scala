@@ -29,15 +29,12 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import controllers.{ AssetsFinder, AssetsFinderProvider }
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.ErrorMessage
-import org.hatdex.hat.api.service.HatServicesService
-import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.api.models.{ EndpointDataBundle, RichDataJsonFormats }
+import org.hatdex.hat.api.service.richData.{ RichBundleService, RichDataService }
 import org.hatdex.hat.authentication.{ HatFrontendAuthEnvironment, HatFrontendController }
-import org.hatdex.hat.phata.models.PublicProfileResponse
-import org.hatdex.hat.phata.service.{ NotablesService, UserProfileService }
 import org.hatdex.hat.phata.{ views => phataViews }
-import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
-import play.api.cache.Cached
+import org.hatdex.hat.resourceManagement.HatServerProvider
+import play.api.cache.{ Cached, CachedBuilder }
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc._
@@ -55,15 +52,14 @@ class Phata @Inject() (
     hatServerProvider: HatServerProvider,
     clock: Clock,
     wsClient: WSClient,
-    hatServicesService: HatServicesService,
-    userProfileService: UserProfileService,
-    notablesService: NotablesService) extends HatFrontendController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    bundleService: RichBundleService,
+    dataService: RichDataService) extends HatFrontendController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats with RichDataJsonFormats {
 
   implicit val assets: AssetsFinder = assetsFinder.get
 
   private val logger = Logger(this.getClass)
 
-  val indefiniteSuccessCaching = cached
+  val indefiniteSuccessCaching: CachedBuilder = cached
     .status(req => s"${req.host}${req.path}", 200)
     .includeStatus(404, 600)
 
@@ -73,32 +69,13 @@ class Phata @Inject() (
     }
   }
 
-  private def getProfile(maybeUser: Option[HatUser])(implicit server: HatServer): Future[Result] = {
-    val eventualProfileData = for {
-      (profilePublic, profileInfo) <- userProfileService.getPublicProfile()
-      notables <- notablesService.getPublicNotes()
-    } yield {
-      (profilePublic, profileInfo, notables)
-    }
-
-    eventualProfileData map {
-      case (true, publicProfile, notables) => Ok(Json.toJson(PublicProfileResponse(public = true, Some(publicProfile), Some(notables))))
-      case (false, _, _)                   => Ok(Json.toJson(PublicProfileResponse(public = false, None, None)))
-    } recover {
-      case _ => Ok(Json.toJson(PublicProfileResponse(public = false, None, None)))
-    }
-  }
-
   def profile: Action[AnyContent] = UserAwareAction.async { implicit request =>
-    getProfile(request.identity)
-  }
-
-  def notables(id: Option[Int]): Action[AnyContent] = UserAwareAction.async { implicit request =>
-    notablesService.getPublicNotes() map { notables =>
-      Ok(Json.toJson(notables))
-    } recover {
-      case e =>
-        InternalServerError(Json.toJson(ErrorMessage("Server Error", "Failed to retrieve notables")))
+    val defaultBundleDefinition = Json.parse(configuration.get[String]("phata.defaultBundle")).as[EndpointDataBundle]
+    for {
+      bundle <- bundleService.bundle(defaultBundleDefinition.name).map(_.getOrElse(defaultBundleDefinition))
+      data <- dataService.bundleData(bundle, None, None, None)
+    } yield {
+      Ok(Json.toJson(data))
     }
   }
 
@@ -106,7 +83,7 @@ class Phata @Inject() (
     UserAwareAction { implicit request =>
       val uri = wsClient.url(routes.Phata.hatLogin(name, redirectUrl).absoluteURL()).uri
       val newRedirectUrl = s"${uri.getScheme}://${uri.getAuthority}/#/hatlogin?${uri.getQuery}"
-      logger.debug(s"Redirect url from ${request.uri}: ${newRedirectUrl}")
+      logger.debug(s"Redirect url from ${request.uri}: $newRedirectUrl")
       Redirect(newRedirectUrl)
     }
   }

@@ -229,6 +229,19 @@ class RichData @Inject() (
       }
     }
 
+  def bundleStructure(bundleId: String): Action[AnyContent] =
+    SecuredAction(WithRole(Owner())).async { implicit request =>
+      val result = for {
+        bundle <- bundleService.bundle(bundleId).map(_.get)
+      } yield bundle
+
+      result map { d =>
+        Ok(Json.toJson(d))
+      } recover {
+        case NonFatal(_) => NotFound(Json.toJson(Errors.bundleNotFound(bundleId)))
+      }
+    }
+
   def registerDataDebit(dataDebitId: String): Action[DataDebitRequest] =
     SecuredAction(WithRole(Owner(), DataDebitOwner(""), Platform())).async(parsers.json[DataDebitRequest]) { implicit request =>
       dataDebitService.createDataDebit(dataDebitId, request.body, request.identity.userId)

@@ -11,41 +11,6 @@ PUT           /users/user/:userId/disable                          org.hatdex.ha
 PUT           /users/user/:userId/delete                           org.hatdex.hat.api.controllers.Users.deleteUser(userId: java.util.UUID)
 PUT           /users/user/:userId/update                           org.hatdex.hat.api.controllers.Users.updateUser(userId: java.util.UUID)
 
-# DATA Routes
-GET           /data/sources                                        org.hatdex.hat.api.controllers.Data.getDataSources
-
-POST          /data/table                                          org.hatdex.hat.api.controllers.Data.createTable
-POST          /data/table/:parentId/table/:childId                 org.hatdex.hat.api.controllers.Data.linkTables(parentId: Int, childId: Int)
-GET           /data/table/:tableId                                 org.hatdex.hat.api.controllers.Data.getTable(tableId: Int)
-GET           /data/table                                          org.hatdex.hat.api.controllers.Data.findTable(name: Option[String], nameLike: Option[String], nameUnlike: Option[String], source: String)
-GET           /data/table/:tableId/values                          org.hatdex.hat.api.controllers.Data.getTableValues(tableId: Int, limit: Option[Int], starttime: Option[Long], endtime: Option[Long], pretty: Option[Boolean])
-
-POST          /data/field                                          org.hatdex.hat.api.controllers.Data.createField
-GET           /data/field/:fieldId                                 org.hatdex.hat.api.controllers.Data.getField(fieldId: Int)
-GET           /data/field/:fieldId/values                          org.hatdex.hat.api.controllers.Data.getFieldValues(fieldId: Int)
-
-POST          /data/record                                         org.hatdex.hat.api.controllers.Data.createRecord
-POST          /data/record/values                                  org.hatdex.hat.api.controllers.Data.createRecordValues
-GET           /data/record/:recordId/values                        org.hatdex.hat.api.controllers.Data.getRecordValues(recordId: Int)
-POST          /data/record/:recordId/values                        org.hatdex.hat.api.controllers.Data.storeValueList(recordId: Int)
-
-POST          /data/value                                          org.hatdex.hat.api.controllers.Data.createValue
-
-DELETE        /data/value/:valueId                                 org.hatdex.hat.api.controllers.Data.deleteDataValue(valueId: Int)
-DELETE        /data/field/:fieldId                                 org.hatdex.hat.api.controllers.Data.deleteDataField(fieldId: Int)
-DELETE        /data/table/:tableId                                 org.hatdex.hat.api.controllers.Data.deleteDataTable(tableId: Int)
-DELETE        /data/record/:recordId                               org.hatdex.hat.api.controllers.Data.deleteDataRecord(recordId: Int)
-
-# DATA DEBIT routes
-
-GET           /dataDebit                                           org.hatdex.hat.api.controllers.DataDebitController.listDataDebits()
-POST          /dataDebit/propose                                   org.hatdex.hat.api.controllers.DataDebitController.proposeDataDebit
-GET           /dataDebit/:dataDebitKey                             org.hatdex.hat.api.controllers.DataDebitController.getDataDebit(dataDebitKey: java.util.UUID)
-PUT           /dataDebit/:dataDebitKey/enable                      org.hatdex.hat.api.controllers.DataDebitController.enableDataDebit(dataDebitKey: java.util.UUID)
-PUT           /dataDebit/:dataDebitKey/disable                     org.hatdex.hat.api.controllers.DataDebitController.disableDataDebit(dataDebitKey: java.util.UUID)
-PUT           /dataDebit/:dataDebitKey/roll                        org.hatdex.hat.api.controllers.DataDebitController.rollDataDebitApi(dataDebitKey: java.util.UUID)
-GET           /dataDebit/:dataDebitKey/values                      org.hatdex.hat.api.controllers.DataDebitController.retrieveDataDebitValues(dataDebitKey: java.util.UUID, limit: Option[Int], starttime: Option[Long], endtime: Option[Long], pretty: Option[Boolean])
-
 # SYSTEM routes
 GET           /system/update                                       org.hatdex.hat.api.controllers.SystemStatus.update()
 GET           /api/v2/system/status                                org.hatdex.hat.api.controllers.SystemStatus.status()
@@ -54,8 +19,7 @@ GET           /api/v2/system/status                                org.hatdex.ha
 GET           /assets/*file                                        controllers.Assets.at(file)
 GET           /hatlogin                                            org.hatdex.hat.phata.controllers.Phata.hatLogin(name: String, redirect: String)
 GET           /                                                    org.hatdex.hat.phata.controllers.Phata.rumpelIndex
-GET           /api/profile                                         org.hatdex.hat.phata.controllers.Phata.profile
-GET           /api/notables                                        org.hatdex.hat.phata.controllers.Phata.notables(id: Option[Int])
+GET           /api/v2/phata/profile                                org.hatdex.hat.phata.controllers.Phata.profile
 
 # FILE routes
 POST          /api/v2/files/upload                                 org.hatdex.hat.api.controllers.Files.startUpload
@@ -88,6 +52,7 @@ POST          /api/v2/data-link                                                 
 POST          /api/v2/data-batch                                                                    org.hatdex.hat.api.controllers.RichData.saveBatchData
 POST          /api/v2/data-bundle/$bundleId<[0-9a-zA-Z-]+>                                          org.hatdex.hat.api.controllers.RichData.registerBundle(bundleId)
 GET           /api/v2/data-bundle/$bundleId<[0-9a-zA-Z-]+>                                          org.hatdex.hat.api.controllers.RichData.fetchBundle(bundleId)
+GET           /api/v2/data-bundle/$bundleId<[0-9a-zA-Z-]+>/structure                                org.hatdex.hat.api.controllers.RichData.bundleStructure(bundleId)
 
 GET           /api/v2/data-debit/$dataDebitId<[0-9a-zA-Z-]+>                                        org.hatdex.hat.api.controllers.RichData.getDataDebit(dataDebitId: String)
 GET           /api/v2/data-debit/$dataDebitId<[0-9a-zA-Z-]+>/values                                 org.hatdex.hat.api.controllers.RichData.getDataDebitValues(dataDebitId: String)
