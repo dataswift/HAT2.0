@@ -69,7 +69,7 @@ class Phata @Inject() (
 
   def rumpelIndex(): EssentialAction = indefiniteSuccessCaching {
     UserAwareAction.async { implicit request =>
-      Future.successful(Ok(phataViews.html.rumpelIndex(configuration.getOptional[String]("frontend.protocol").getOrElse("https:"))(assets)))
+      Future.successful(Ok(phataViews.html.rumpelIndex(assets)))
     }
   }
 

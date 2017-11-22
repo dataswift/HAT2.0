@@ -48,7 +48,7 @@ object BasicSettings extends AutoPlugin {
 
   override def projectSettings = Seq(
     organization := "org.hatdex",
-    version := "2.4.2-SNAPSHOT",
+    version := "2.5.0",
     name := "HAT",
     resolvers ++= Dependencies.resolvers,
     scalaVersion := Dependencies.Versions.scalaVersion,

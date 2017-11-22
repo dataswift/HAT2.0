@@ -1,10 +1,12 @@
-@(protocol: String)(assets: AssetsFinder)
+@(assets: AssetsFinder)(implicit request: RequestHeader)
+
+@protocol = @{ if(request.secure) { "https" } else { "http" } }
 
 <!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">
-        <title>Rumpel</title>
+        <title>Hub of All Things @request.host</title>
         <base href="/">
         <script>
             var httpProtocol = "@protocol";
@@ -13,17 +15,17 @@
 
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:site" content="@@thehatdex">
-        <meta name="twitter:title" content="Rumpel">
-        <meta name="twitter:description" content="Welcome to Rumpel, the personal hyperdata browser for your HAT data. Rumpel is a service that allows you to acquire, visualise and exchange your HAT data.">
-        <meta name="twitter:image:src" content="https://rumpel.hubofallthings.com/assets/icons/rumpel-plug.png">
-        <meta name="twitter:domain" content="https://rumpel.hubofallthings.com">
-        <meta property="og:url" content="https://rumpel.hubofallthings.com" />
+        <meta name="twitter:site" content="@@hubofallthings">
+        <meta name="twitter:title" content="Hub of All Things">
+        <meta name="twitter:description" content="HATs are individual secure and private storage containers that are specially designed to hold the database of a user's personal data: a private 'data account' (like a savings/current account) to hold your data from the most trivial to the most precious.">
+        <meta name="twitter:image:src" content="@assets.path("images/hat_logo.png")">
+        <meta name="twitter:domain" content="https://hubofallthings.com">
+        <meta property="og:url" content="https://hubofallthings.com" />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Rumpel" />
-        <meta property="og:description" content="Welcome to Rumpel, the personal hyperdata browser for your HAT data. Rumpel is a service that allows you to acquire, visualise and exchange your HAT data." />
-        <meta property="og:image" content="https://rumpel.hubofallthings.com/assets/icons/rumpel-plug.png" />
-        <meta property="og:site_name" content="Rumpel" />
+        <meta property="og:title" content="Hub of All Things" />
+        <meta property="og:description" content="HATs are individual secure and private storage containers that are specially designed to hold the database of a user's personal data: a private 'data account' (like a savings/current account) to hold your data from the most trivial to the most precious." />
+        <meta property="og:image" content="@assets.path("images/hat_logo.png")" />
+        <meta property="og:site_name" content="Hub of All Things" />
         <meta property="og:app_id" content="158753364485419" />
         <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,300italic,700">
         <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:200,300i,400,600,700">
@@ -59,6 +61,5 @@
 
     <script type="text/javascript" src="@assets.path("js/inline.bundle.js")"></script>
     <script type="text/javascript" src="@assets.path("js/polyfills.bundle.js")"></script>
-    <script type="text/javascript" src="@assets.path("js/vendor.bundle.js")"></script>
     <script type="text/javascript" src="@assets.path("js/main.bundle.js")"></script>
 </html>
