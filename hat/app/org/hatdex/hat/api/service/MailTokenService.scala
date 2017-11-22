@@ -24,6 +24,8 @@
 
 package org.hatdex.hat.api.service
 
+import javax.inject.Inject
+
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.phata.models.{ MailToken, MailTokenUser }
@@ -37,8 +39,7 @@ trait MailTokenService[T <: MailToken] {
   def consume(id: String)(implicit db: Database): Unit
 }
 
-@javax.inject.Singleton
-class MailTokenUserService extends MailTokenService[MailTokenUser] with DalExecutionContext {
+class MailTokenUserService @Inject() (implicit val ec: DalExecutionContext) extends MailTokenService[MailTokenUser] {
   def create(token: MailTokenUser)(implicit db: Database): Future[Option[MailTokenUser]] = {
     save(token).map(Some(_))
   }

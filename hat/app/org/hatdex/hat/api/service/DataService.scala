@@ -40,7 +40,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
 
 // this trait defines our service behavior independently from the service actor
-class DataService @Inject() (migrationService: MigrationService) extends DalExecutionContext {
+class DataService @Inject() (migrationService: MigrationService)(implicit val ec: DalExecutionContext) {
   val logger = Logger(this.getClass)
 
   def getTableValues(

@@ -52,7 +52,7 @@ class DevHatInitializationModule extends ScalaModule with AkkaGuiceSupport {
 class DevHatInitializer @Inject() (
     configuration: Configuration,
     schemaMigration: SchemaMigration,
-    usersService: UsersService) extends DalExecutionContext {
+    usersService: UsersService)(implicit ec: DalExecutionContext) {
   val logger = Logger(this.getClass)
 
   import DevHatConfig.configLoader

@@ -19,33 +19,35 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 2 / 2017
+ * 11 / 2017
  */
 
 package org.hatdex.hat.utils
 
-import scala.annotation.tailrec
-
-//from https://github.com/julienrf/chooze/blob/master/app/util/Util.scala
 object Slugs {
   def slugify(str: String): String = {
     import java.text.Normalizer
-    Normalizer.normalize(str, Normalizer.Form.NFD).replaceAll("[^\\w ]", "").replace(" ", "-").toLowerCase
+    Normalizer.normalize(str, Normalizer.Form.NFD)
+      .replaceAll("[^\\w ]", "")
+      .replace(" ", "-")
+      .toLowerCase
   }
 
-  def slugifyUnique(str: String, existing: Seq[String]): String = generateUniqueSlug(slugify(str), existing)
+  def slugifyUnique(str: String, suffix: Option[String], existing: Seq[String]): String =
+    generateUniqueSlug(slugify(str), suffix, existing)
 
-  @tailrec
-  private def generateUniqueSlug(slug: String, existingSlugs: Seq[String]): String = {
-    if (!(existingSlugs contains slug)) {
+  private def generateUniqueSlug(slug: String, suffix: Option[String], existingSlugs: Seq[String]): String = {
+    val slugSuffix = suffix.getOrElse("")
+    if (!(existingSlugs contains slug + slugSuffix)) {
       slug
     }
     else {
-      val EndsWithNumber = "(.+-)([0-9]+)$".r
-      slug match {
-        case EndsWithNumber(s, n) => generateUniqueSlug(s + (n.toInt + 1), existingSlugs)
-        case s                    => generateUniqueSlug(s + "-2", existingSlugs)
+      val endsWithNumber = s"(.+-)([0-9]+)$slugSuffix".r
+      val suffixes = existingSlugs.map {
+        case endsWithNumber(_, number) => number.toInt
+        case _                         => 0
       }
+      s"$slug-${suffixes.max + 1}$slugSuffix"
     }
   }
 }

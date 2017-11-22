@@ -53,7 +53,8 @@ class TLSFilter @Inject() (
     if (requestHeader.headers.get("X-Forwarded-Proto").getOrElse("http") != "https" && env.mode == play.api.Mode.Prod) {
       if (requestHeader.method == "GET") {
         Future.successful(Results.MovedPermanently("https://" + requestHeader.host + requestHeader.uri))
-      } else {
+      }
+      else {
         Future.successful(Results.BadRequest("This service requires strict transport security"))
       }
     }

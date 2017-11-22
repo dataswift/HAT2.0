@@ -66,7 +66,7 @@ object AwsS3Configuration {
 
 class FileManagerS3 @Inject() (
     awsS3Configuration: AwsS3Configuration,
-    @Named("s3client-file-manager") s3client: AmazonS3) extends FileManager with RemoteApiExecutionContext {
+    @Named("s3client-file-manager") s3client: AmazonS3)(implicit ec: RemoteExecutionContext) extends FileManager {
 
   private val logger = Logger(this.getClass)
   private val bucketName = awsS3Configuration.bucketName

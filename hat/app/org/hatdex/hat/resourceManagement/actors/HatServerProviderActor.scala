@@ -28,6 +28,7 @@ import javax.inject.Inject
 
 import akka.actor.{ Props, _ }
 import akka.util.Timeout
+import org.hatdex.hat.api.service.RemoteExecutionContext
 import play.api.Configuration
 import play.api.libs.concurrent.InjectedActorSupport
 
@@ -37,9 +38,10 @@ import scala.concurrent.duration._
 
 class HatServerProviderActor @Inject() (
     hatServerActorFactory: HatServerActor.Factory,
-    configuration: Configuration) extends Actor with ActorLogging with InjectedActorSupport {
+    configuration: Configuration)(
+    implicit
+    val ec: RemoteExecutionContext) extends Actor with ActorLogging with InjectedActorSupport {
   import HatServerProviderActor._
-  import org.hatdex.hat.api.service.IoExecutionContext.ioThreadPool
 
   private val activeServers = mutable.HashMap[String, ActorRef]()
   private implicit val hatServerTimeout: Timeout = configuration.get[FiniteDuration]("resourceManagement.serverProvisioningTimeout")

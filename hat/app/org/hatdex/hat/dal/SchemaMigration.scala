@@ -48,7 +48,7 @@ import scala.util.{ Failure, Success, Try }
  *
  * It does not matter which module runs this migration first.
  */
-class SchemaMigration @Inject() (configuration: Configuration) extends DalExecutionContext {
+class SchemaMigration @Inject() (configuration: Configuration)(implicit ec: DalExecutionContext) {
 
   val logger = Logger(this.getClass)
 

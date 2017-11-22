@@ -36,8 +36,8 @@ import play.api.Logger
 
 import scala.concurrent.Future
 
-class PasswordInfoService @Inject() (userService: AuthUserServiceImpl)
-  extends DelegableAuthInfoDAO[PasswordInfo, HatServer] with DalExecutionContext {
+class PasswordInfoService @Inject() (userService: AuthUserServiceImpl)(implicit ec: DalExecutionContext)
+  extends DelegableAuthInfoDAO[PasswordInfo, HatServer] {
 
   val logger = Logger(this.getClass)
 

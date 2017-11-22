@@ -24,6 +24,8 @@
 
 package org.hatdex.hat.api.service.richData
 
+import javax.inject.Inject
+
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
@@ -34,7 +36,7 @@ import play.api.libs.json._
 
 import scala.concurrent.Future
 
-class RichBundleService extends DalExecutionContext with RichDataJsonFormats {
+class RichBundleService @Inject() (implicit ec: DalExecutionContext) extends RichDataJsonFormats {
 
   val logger = Logger(this.getClass)
 

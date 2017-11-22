@@ -76,10 +76,10 @@ class SystemStatus @Inject() (
       fileSize <- systemStatusService.fileStorageTotal
       maybePreviousLogin <- usersService.previousLogin(request.identity)
     } yield {
-      val dbsa = systemStatusService.humanReadableByteCount(dbStorageAllowance)
-      val dbsu = systemStatusService.humanReadableByteCount(dbsize)
-      val fsa = systemStatusService.humanReadableByteCount(fileStorageAllowance)
-      val fsu = systemStatusService.humanReadableByteCount(fileSize)
+      val dbsa = SystemStatusService.humanReadableByteCount(dbStorageAllowance)
+      val dbsu = SystemStatusService.humanReadableByteCount(dbsize)
+      val fsa = SystemStatusService.humanReadableByteCount(fileStorageAllowance)
+      val fsu = SystemStatusService.humanReadableByteCount(fileSize)
 
       val login = maybePreviousLogin.map {
         case login =>

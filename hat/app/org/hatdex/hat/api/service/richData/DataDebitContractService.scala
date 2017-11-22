@@ -25,9 +25,10 @@
 package org.hatdex.hat.api.service.richData
 
 import java.util.UUID
+import javax.inject.Inject
 
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.service.DalExecutionContext
+import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.libs.dal.HATPostgresProfile.api._
@@ -38,7 +39,7 @@ import play.api.libs.json._
 
 import scala.concurrent.Future
 
-class DataDebitContractService extends DalExecutionContext with RichDataJsonFormats {
+class DataDebitContractService @Inject() (implicit val ec: RemoteExecutionContext) extends RichDataJsonFormats {
 
   val logger = Logger(this.getClass)
 

@@ -24,13 +24,14 @@
 
 package org.hatdex.hat.api.service
 
-import java.text.Normalizer
+import javax.inject.Inject
 
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models.{ ApiHatFile, HatFileStatus }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
+import org.hatdex.hat.utils.Slugs
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
@@ -39,30 +40,17 @@ import play.api.libs.json.Json
 import scala.concurrent.Future
 import scala.util.{ Failure, Success }
 
-class FileMetadataService extends DalExecutionContext {
+class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
   val logger = Logger(this.getClass)
 
   def getUniqueFileId(file: ApiHatFile)(implicit db: Database): Future[ApiHatFile] = {
     val fileExtension = file.name.split('.').drop(1).lastOption.map(ext => s".$ext").getOrElse("")
     val fileName = file.name.split('.').takeWhile(p => s".$p" != fileExtension).mkString("")
-    val fullNameNormalized = Normalizer.normalize(file.source + fileName, Normalizer.Form.NFD)
-      .replaceAll("[^\\w ]", "")
-      .replace(" ", "-")
-      .toLowerCase
+    val fullNameNormalized = Slugs.slugify(file.source + fileName)
 
     val similarFilesSearch = HatFile.filter(t => t.id like s"$fullNameNormalized%$fileExtension")
     val eventualUniqueFilename = db.run(similarFilesSearch.result).map(_.map(_.id)).map(_.toList) map { similarFileNames =>
-      if (!similarFileNames.contains(fullNameNormalized + fileExtension)) {
-        fullNameNormalized + fileExtension
-      }
-      else {
-        val endsWithNumber = s"(.+-)([0-9]+)$fileExtension".r
-        val suffixes = similarFileNames.map {
-          case endsWithNumber(_, number) => number.toInt
-          case _                         => 0
-        }
-        s"$fullNameNormalized-${suffixes.max + 1}$fileExtension"
-      }
+      Slugs.slugifyUnique(fullNameNormalized, Some(fileExtension), similarFileNames)
     }
 
     eventualUniqueFilename map { fn =>
@@ -88,7 +76,7 @@ class FileMetadataService extends DalExecutionContext {
       .map(_.head)
 
     result.onComplete {
-      case Success(_) => logger.debug(s"File ${file} saved")
+      case Success(_) => logger.debug(s"File $file saved")
       case Failure(e) => logger.error(s"Error while saving file $file: ${e.getMessage}", e)
     }
     result

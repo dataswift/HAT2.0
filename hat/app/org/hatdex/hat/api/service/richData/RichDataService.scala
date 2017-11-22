@@ -26,6 +26,7 @@ package org.hatdex.hat.api.service.richData
 
 import java.security.MessageDigest
 import java.util.UUID
+import javax.inject.Inject
 
 import akka.Done
 import org.hatdex.hat.api.models._
@@ -42,7 +43,7 @@ import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
 import scala.concurrent.Future
 
-class RichDataService extends DalExecutionContext {
+class RichDataService @Inject() (implicit ec: DalExecutionContext) {
 
   protected val logger = Logger(this.getClass)
 
