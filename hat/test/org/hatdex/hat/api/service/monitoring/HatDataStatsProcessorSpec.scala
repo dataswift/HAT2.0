@@ -52,7 +52,7 @@ class HatDataStatsProcessorSpec extends PlaySpecification with Mockito with HatD
       val stats = service.computeInboundStats(simpleDataCreatedEvent)
 
       import org.hatdex.hat.api.json.DataStatsFormat._
-      logger.info(s"Got back stats: ${Json.prettyPrint(Json.toJson(stats))}")
+      logger.debug(s"Got back stats: ${Json.prettyPrint(Json.toJson(stats))}")
 
       stats.logEntry must be equalTo "test item"
       stats.statsType must be equalTo "inbound"

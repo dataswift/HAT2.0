@@ -80,7 +80,7 @@ class Files @Inject() (
   def completeUpload(fileId: String): Action[AnyContent] = SecuredAction(WithRole(DataCredit(""), Owner())).async { implicit request =>
     fileMetadataService.getById(fileId) flatMap {
       case Some(file) if fileContentAccessAllowed(file) =>
-        logger.info(s"Marking $file complete ")
+        logger.debug(s"Marking $file complete ")
         val completed = for {
           fileSize <- fileManager.getFileSize(file.fileId.get)
           completed <- fileMetadataService.save(file.copy(status = Some(HatFileStatus.Completed(fileSize)))) if fileSize > 0
@@ -90,7 +90,7 @@ class Files @Inject() (
           Ok(Json.toJson(completed))
         } recover {
           case e =>
-            logger.info(s"Could not complete file upload: ${e.getMessage}", e)
+            logger.warn(s"Could not complete file upload: ${e.getMessage}")
             BadRequest(Json.toJson(ErrorMessage("File not available", s"Not fully uploaded file can not be completed")))
         }
 

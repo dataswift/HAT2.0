@@ -7,7 +7,7 @@ This repository contains an implementation of the [Hub-of-All-Things](http://hub
 
 ## Releases
 
-The current project version is 2.4.1 [HAT 2.4.1](https://github.com/Hub-of-all-Things/HAT2.0/releases/tag/v2.4.1).
+The current project version is 2.5.1: [HAT 2.5.1](https://github.com/Hub-of-all-Things/HAT2.0/releases/tag/v2.5.1).
 
 ## About the project
 
@@ -22,9 +22,9 @@ A Personal Data Management System (“the HAT”) is a personal single tenant (�
 This HAT PDS implementation is written in Scala (2.11.8) uses the following technology stack:
 
 - PostgreSQL relational database (version 9.5)
-- Play Framework (version 2.5.4)
-- Akka (version 2.4.7)
-- Slick as the database access layer (version 3.1.1)
+- Play Framework (version 2.6.6)
+- Akka (version 2.5.4)
+- Slick as the database access layer (version 3.2.1)
 
 ## Running the project
 

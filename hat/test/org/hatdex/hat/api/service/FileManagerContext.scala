@@ -24,85 +24,8 @@
 
 package org.hatdex.hat.api.service
 
-import java.io.StringReader
-import java.util.UUID
+import org.hatdex.hat.api.HATTestContext
 
-import com.amazonaws.auth.{ AWSStaticCredentialsProvider, BasicAWSCredentials }
-import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
-import com.atlassian.jwt.core.keys.KeyUtils
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.test._
-import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.models.Owner
-import org.hatdex.hat.authentication.HatFrontendAuthEnvironment
-import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
-import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
-import org.specs2.specification.Scope
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.{ Application, Configuration }
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.concurrent.duration._
-
-trait FileManagerContext extends Scope {
-  val hatAddress = "hat.hubofallthings.net"
-  val hatUrl = s"http://$hatAddress"
-  private val keyUtils = new KeyUtils()
-  private val configuration = Configuration.from(FakeHatConfiguration.config)
-  private val hatConfig = configuration.get[Configuration](s"hat.$hatAddress")
-
-  implicit protected def hatDatabase: Database = Database.forConfig("", hatConfig.get[Configuration]("database").underlying)
-
-  implicit val hatServer: HatServer = HatServer(hatAddress, "hat", "user@hat.org",
-    keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.get[String]("privateKey"))),
-    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))), hatDatabase)
-
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
-  implicit val environment: Environment[HatFrontendAuthEnvironment] = FakeEnvironment[HatFrontendAuthEnvironment](
-    Seq(owner.loginInfo -> owner),
-    hatServer)
-
-  val s3Configuration = AwsS3Configuration("hat-storage-test", "testAwsAccessKey", "testAwsSecret", "eu-west-1", 5.minutes)
-
-  def provides3Client(configuration: AwsS3Configuration): AmazonS3 = {
-    val awsCreds: BasicAWSCredentials = new BasicAWSCredentials(configuration.accessKeyId, configuration.secretKey)
-    AmazonS3ClientBuilder.standard()
-      .withRegion(configuration.region)
-      .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-      .build()
-  }
-
-  // Helpers to (re-)initialize the test database and await for it to be ready
-  val devHatMigrations = Seq(
-    "evolutions/hat-database-schema/11_hat.sql",
-    "evolutions/hat-database-schema/12_hatEvolutions.sql",
-    "evolutions/hat-database-schema/13_liveEvolutions.sql",
-    "evolutions/hat-database-schema/14_newHat.sql")
-
-  def databaseReady: Future[Unit] = {
-    val schemaMigration = application.injector.instanceOf[SchemaMigration]
-    schemaMigration.resetDatabase()
-      .flatMap(_ => schemaMigration.run(devHatMigrations))
-  }
-
-  /**
-   * A fake Guice module.
-   */
-  class FakeModule extends AbstractModule with ScalaModule {
-    def configure() = {
-      bind[Environment[HatFrontendAuthEnvironment]].toInstance(environment)
-      bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
-    }
-  }
-
-  lazy val application: Application = new GuiceApplicationBuilder()
-    .configure(FakeHatConfiguration.config)
-    .overrides(new FakeModule)
-    .build()
-
-  val mockS3client = FileManagerS3Mock().mockS3client
+trait FileManagerContext extends HATTestContext {
+  val mockS3client = fileManagerS3Mock.mockS3client
 }

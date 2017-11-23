@@ -24,39 +24,25 @@
 
 package org.hatdex.hat.api.controllers
 
-import java.io.StringReader
 import java.util.UUID
 
-import akka.stream.Materializer
-import com.amazonaws.services.s3.AmazonS3
-import com.atlassian.jwt.core.keys.KeyUtils
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.{ Environment, LoginInfo }
+import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
-import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.FakeCache
-import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
+import org.hatdex.hat.api.HATTestContext
+import org.hatdex.hat.api.models.DataDebitOwner
 import org.hatdex.hat.api.service._
-import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
-import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
-import org.hatdex.hat.utils.{ ErrorHandler, HatMailer }
-import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
+import org.hatdex.hat.resourceManagement.HatServer
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.{ BeforeEach, Scope }
-import play.api.cache.AsyncCacheApi
-import play.api.http.HttpErrorHandler
+import org.specs2.specification.BeforeEach
+import play.api.Logger
 import play.api.i18n.Messages
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Result
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers, PlaySpecification }
-import play.api.{ Application, Configuration, Logger }
-import play.cache.NamedCacheImpl
 import play.mvc.Http.{ HeaderNames, MimeTypes }
 
 import scala.concurrent.Future
@@ -260,7 +246,7 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
       tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
       val result: Future[Result] = Helpers.call(controller.handleResetPassword(tokenId), request)
 
-      logger.warn(s"reset pass response: ${contentAsJson(result)}")
+      logger.debug(s"reset pass response: ${contentAsJson(result)}")
 
       status(result) must equalTo(OK)
     }
@@ -268,81 +254,7 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
 
 }
 
-trait AuthenticationContext extends Scope with Mockito {
-  import scala.concurrent.ExecutionContext.Implicits.global
-  // Initialize configuration
-  val hatAddress = "hat.hubofallthings.net"
-  val hatUrl = s"http://$hatAddress"
-  private val configuration = Configuration.from(FakeHatConfiguration.config)
-  private val hatConfig = configuration.get[Configuration](s"hat.$hatAddress")
-
-  // Build up the FakeEnvironment for authentication testing
-  private val keyUtils = new KeyUtils()
-  implicit protected def hatDatabase: Database = Database.forConfig("", hatConfig.get[Configuration]("database").underlying)
-  implicit val hatServer: HatServer = HatServer(hatAddress, "hat", "user@hat.org",
-    keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.get[String]("privateKey"))),
-    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))), hatDatabase)
-
-  // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "hatuser", Seq(Owner()), enabled = true)
-  val dataDebitUser = HatUser(UUID.randomUUID(), "dataDebitUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataDebitUser", Seq(DataDebitOwner("")), enabled = true)
-  val dataCreditUser = HatUser(UUID.randomUUID(), "dataCreditUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataCreditUser", Seq(DataCredit("")), enabled = true)
-  implicit val environment: Environment[HatApiAuthEnvironment] = FakeEnvironment[HatApiAuthEnvironment](
-    Seq(owner.loginInfo -> owner, dataDebitUser.loginInfo -> dataDebitUser, dataCreditUser.loginInfo -> dataCreditUser),
-    hatServer)
-
-  // Helpers to (re-)initialize the test database and await for it to be ready
-  val devHatMigrations = Seq(
-    "evolutions/hat-database-schema/11_hat.sql",
-    "evolutions/hat-database-schema/12_hatEvolutions.sql",
-    "evolutions/hat-database-schema/13_liveEvolutions.sql",
-    "evolutions/hat-database-schema/14_newHat.sql")
-
-  def databaseReady: Future[Unit] = {
-    val schemaMigration = application.injector.instanceOf[SchemaMigration]
-    schemaMigration.resetDatabase()(hatDatabase)
-      .flatMap(_ => schemaMigration.run(devHatMigrations)(hatDatabase))
-      .flatMap { _ =>
-        val usersService = application.injector.instanceOf[UsersService]
-        for {
-          _ <- usersService.saveUser(dataCreditUser)
-          _ <- usersService.saveUser(dataDebitUser)
-          _ <- usersService.saveUser(owner)
-        } yield ()
-      }
-  }
-
-  val mockMailer: HatMailer = mock[HatMailer]
-  doNothing.when(mockMailer).passwordReset(any[String], any[HatUser], any[String])(any[Messages], any[HatServer])
-
-  /**
-   * A fake Guice module.
-   */
-  class FakeModule extends AbstractModule with ScalaModule {
-    val fileManagerS3Mock = FileManagerS3Mock()
-
-    def configure(): Unit = {
-      bind[Environment[HatApiAuthEnvironment]].toInstance(environment)
-      bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
-      bind[AwsS3Configuration].toInstance(fileManagerS3Mock.s3Configuration)
-      bind[AmazonS3].toInstance(fileManagerS3Mock.mockS3client)
-      bind[FileManager].toInstance(new FileManagerS3(fileManagerS3Mock.s3Configuration, fileManagerS3Mock.mockS3client))
-      bind[MailTokenService[MailTokenUser]].to[MailTokenUserService]
-      bind[HatMailer].toInstance(mockMailer)
-      bind[HttpErrorHandler].to[ErrorHandler]
-      bind[AsyncCacheApi].annotatedWith(new NamedCacheImpl("user-cache")).to[FakeCache]
-      bind[AsyncCacheApi].to[FakeCache]
-    }
-
-  }
-
-  lazy val application: Application = new GuiceApplicationBuilder()
-    .configure(FakeHatConfiguration.config)
-    .overrides(new FakeModule)
-    .build()
-
-  implicit lazy val materializer: Materializer = application.materializer
-
+trait AuthenticationContext extends HATTestContext {
   val passwordChangeIncorrect = ApiPasswordChange("some-passwords-are-better-than-others", Some("wrongOldPassword"))
   val passwordChangeSimple = ApiPasswordChange("simple", Some("pa55w0rd"))
   val passwordChangeStrong = ApiPasswordChange("some-passwords-are-better-than-others", Some("pa55w0rd"))

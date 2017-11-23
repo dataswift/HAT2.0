@@ -248,14 +248,10 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       await(setup)(60.seconds)
 
-      logger.warn("Function setup, executing")
-
       val result = Helpers.call(controller.functionTrigger("data-feed-direct-mapper"), request)
       status(result) must equalTo(OK)
       val message = contentAsJson(result).as[SuccessResponse]
       message.message must be equalTo "Function Executed"
-
-      logger.warn("Fetching data")
 
       dataService.propertyData(
         Seq(EndpointQuery(s"${registeredFunction.namespace}/${registeredFunction.endpoint}", None, None, None)),

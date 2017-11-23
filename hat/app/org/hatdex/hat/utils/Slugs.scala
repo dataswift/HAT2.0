@@ -39,7 +39,7 @@ object Slugs {
   private def generateUniqueSlug(slug: String, suffix: Option[String], existingSlugs: Seq[String]): String = {
     val slugSuffix = suffix.getOrElse("")
     if (!(existingSlugs contains slug + slugSuffix)) {
-      slug
+      s"$slug$slugSuffix"
     }
     else {
       val endsWithNumber = s"(.+-)([0-9]+)$slugSuffix".r

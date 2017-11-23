@@ -44,14 +44,20 @@ class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
   val logger = Logger(this.getClass)
 
   def getUniqueFileId(file: ApiHatFile)(implicit db: Database): Future[ApiHatFile] = {
-    val fileExtension = file.name.split('.').drop(1).lastOption.map(ext => s".$ext").getOrElse("")
-    val fileName = file.name.split('.').takeWhile(p => s".$p" != fileExtension).mkString("")
-    val fullNameNormalized = Slugs.slugify(file.source + fileName)
+    val extensionNormalized = file.name
+      .split('.').drop(1).lastOption
+      .map(Slugs.slugify)
+      .map(ext => s".$ext")
+      .getOrElse("")
 
-    val similarFilesSearch = HatFile.filter(t => t.id like s"$fullNameNormalized%$fileExtension")
-    val eventualUniqueFilename = db.run(similarFilesSearch.result).map(_.map(_.id)).map(_.toList) map { similarFileNames =>
-      Slugs.slugifyUnique(fullNameNormalized, Some(fileExtension), similarFileNames)
-    }
+    val nameNormalized = Slugs.slugify(s"${file.source}${file.name}").stripSuffix(extensionNormalized.stripPrefix("."))
+
+    val similarFilesSearch = HatFile.filter(t => t.id like s"$nameNormalized%$extensionNormalized")
+    val eventualUniqueFilename = db.run(similarFilesSearch.result)
+      .map(_.map(_.id))
+      .map { similarFileNames =>
+        Slugs.slugifyUnique(nameNormalized, Some(extensionNormalized), similarFileNames)
+      }
 
     eventualUniqueFilename map { fn =>
       file.copy(fileId = Some(fn))

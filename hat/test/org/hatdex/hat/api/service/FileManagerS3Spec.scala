@@ -38,7 +38,7 @@ class FileManagerS3Spec(implicit ee: ExecutionEnv) extends PlaySpecification wit
 
   "The `getUploadUrl` method" should {
     "return a signed url for a provided key" in {
-      val fileManager = new FileManagerS3(s3Configuration, mockS3client)
+      val fileManager = application.injector.instanceOf[FileManager]
       val result: Future[String] = fileManager.getUploadUrl("testFile")
 
       result must startWith("https://hat-storage-test.s3-eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile").await
@@ -47,7 +47,7 @@ class FileManagerS3Spec(implicit ee: ExecutionEnv) extends PlaySpecification wit
 
   "The `getContentUrl` method" should {
     "return a signed url for a provided key" in {
-      val fileManager = new FileManagerS3(s3Configuration, mockS3client)
+      val fileManager = application.injector.instanceOf[FileManager]
       val result: Future[String] = fileManager.getContentUrl("testFile")
 
       result must startWith("https://hat-storage-test.s3-eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile").await
@@ -56,7 +56,7 @@ class FileManagerS3Spec(implicit ee: ExecutionEnv) extends PlaySpecification wit
 
   "The `deleteContents` method" should {
     "return quietly when deleting any file" in {
-      val fileManager = new FileManagerS3(s3Configuration, mockS3client)
+      val fileManager = application.injector.instanceOf[FileManager]
       val result: Future[Unit] = fileManager.deleteContents("deleteFile")
 
       result must not(throwAn[Exception]).await
@@ -66,14 +66,14 @@ class FileManagerS3Spec(implicit ee: ExecutionEnv) extends PlaySpecification wit
 
   "The `getFileSize` method" should {
     "return 0 for files that do not exist" in {
-      val fileManager = new FileManagerS3(s3Configuration, mockS3client)
+      val fileManager = application.injector.instanceOf[FileManager]
       val result: Future[Long] = fileManager.getFileSize("nonExistentFile")
 
       result must equalTo(0L).await(3, 10.seconds)
     }
 
     "extract file size for files that do exist" in {
-      val fileManager = new FileManagerS3(s3Configuration, mockS3client)
+      val fileManager = application.injector.instanceOf[FileManager]
       val result: Future[Long] = fileManager.getFileSize("testFile")
 
       result must equalTo(123456L).await
