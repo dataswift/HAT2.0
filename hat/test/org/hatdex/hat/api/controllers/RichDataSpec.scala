@@ -52,6 +52,62 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
   sequential
 
+  "The `listEndpoints` method" should {
+    "Return a list of all endpoints seen so far" in {
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(Json.toJson(testDataDebitRequest))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val data = List(
+        EndpointData("namespace1/test", None, simpleJson, None),
+        EndpointData("namespace2/test2", None, simpleJson2, None),
+        EndpointData("namespace1/test3", None, complexJson, None))
+
+      val dataService = application.injector.instanceOf[RichDataService]
+
+      val result = for {
+        _ <- dataService.saveData(owner.userId, data)
+        response <- Helpers.call(controller.listEndpoints(), request)
+      } yield response
+
+      val endpoints = contentAsJson(result).as[Map[String, Seq[String]]]
+      logger.warn(s"Got back endpoints: $endpoints")
+      endpoints.get("namespace1") must beSome
+      endpoints("namespace1") must be contain "test"
+      endpoints("namespace1") must be contain "test3"
+      endpoints.get("namespace2") must beSome
+      endpoints("namespace2") must be contain "test2"
+    }
+  }
+
+  "The `deleteEndpointData` method" should {
+    "Delete all data for an endpoint" in {
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(Json.toJson(testDataDebitRequest))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val data = List(
+        EndpointData("namespace1/test", None, simpleJson, None),
+        EndpointData("namespace2/test2", None, simpleJson2, None),
+        EndpointData("namespace1/test3", None, complexJson, None))
+
+      val dataService = application.injector.instanceOf[RichDataService]
+
+      val result = for {
+        _ <- dataService.saveData(owner.userId, data)
+        _ <- Helpers.call(controller.deleteEndpointData("namespace1", "test"), request)
+        response <- Helpers.call(controller.getEndpointData("namespace1", "test", None, None, None, None, None), request)
+      } yield response
+
+      val responseData = contentAsJson(result).as[Seq[EndpointData]]
+      responseData.size must be equalTo 0
+    }
+  }
+
   "The `registerBundle` method" should {
     "return accepted debit if data debit is registered" in {
       val request = FakeRequest("POST", "http://hat.hubofallthings.net")

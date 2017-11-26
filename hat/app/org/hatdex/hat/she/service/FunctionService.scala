@@ -144,7 +144,7 @@ class FunctionService @Inject() (
   }
 
   //TODO: expensive operation!
-  def removeDuplicateData(response: Seq[Response]): Seq[Response] = {
+  private def removeDuplicateData(response: Seq[Response]): Seq[Response] = {
     val md = MessageDigest.getInstance("SHA-256")
     response.map { r =>
       val digest = md.digest(r.data.head.toString().getBytes)
@@ -158,9 +158,7 @@ class FunctionService @Inject() (
       .zipWithIndex
       .map {
         case ((hash, response), i) =>
-          logger.info(s"$i $hash -> ${response.data}")
           response
       }
-    //      .unzip._2
   }
 }

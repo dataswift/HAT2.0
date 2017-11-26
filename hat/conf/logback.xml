@@ -60,37 +60,33 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="org.hatdex.hat.resourceManagement" level="WARN" >
+    <logger name="org.hatdex.hat.resourceManagement" level="WARN" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
-    <logger name="org.hatdex.hat.authentication" level="INFO" >
+    <logger name="org.hatdex.hat.authentication" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
-    <logger name="org.hatdex.hat.api.service" level="INFO" >
+    <logger name="org.hatdex.hat.api.service" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
-    <logger name="org.hatdex.hat.api.service.DataService" level="INFO" >
+    <logger name="org.hatdex.hat.api.service.DataService" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
-    <logger name="org.hatdex.hat.api.service.UsersService" level="WARN" >
+    <logger name="org.hatdex.hat.api.service.UsersService" level="WARN" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
-    <logger name="org.hatdex.hat.api.controllers" level="INFO" >
+    <logger name="org.hatdex.hat.api.controllers" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
-    <logger name="org.hatdex.hat.api.service.monitoring" level="INFO" >
+    <logger name="org.hatdex.hat.api.service.monitoring" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
-    <logger name="org.hatdex.hat.modules" level="INFO" >
+    <logger name="org.hatdex.hat.modules" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="org.hatdex.hat.she.*" level="INFO" additivity="false" >
+    <logger name="org.hatdex.hat.she.*" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE" />
-    </logger>
-
-    <logger name="org.hatdex.marketsquare" level="INFO">
-        <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
     <logger name="org.hatdex.hat.authentication.UserLimiter" level="ERROR">

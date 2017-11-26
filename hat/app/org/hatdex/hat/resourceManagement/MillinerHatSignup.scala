@@ -69,11 +69,11 @@ trait MillinerHatSignup {
                 signup.value
               case e: JsError =>
                 logger.error(s"Parsing HAT configuration failed: $e")
-                throw new RuntimeException("Fetching HAT configuration failed")
+                throw new HatServerDiscoveryException("Fetching HAT configuration failed")
             }
           case _ =>
             logger.error(s"Fetching HAT configuration failed: ${response.body}")
-            throw new RuntimeException("Fetching HAT configuration failed")
+            throw new HatServerDiscoveryException("Fetching HAT configuration failed")
         }
       }
     }

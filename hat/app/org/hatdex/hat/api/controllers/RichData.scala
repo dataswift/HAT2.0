@@ -110,8 +110,6 @@ class RichData @Inject() (
       val dataEndpoint = s"$namespace/$endpoint"
       dataService.deleteEndpoint(request.identity.userId, dataEndpoint) map { _ =>
         Ok(Json.toJson(SuccessResponse(s"All records deleted")))
-      } recover {
-        case RichDataMissingException(message, _) => BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
       }
     }
 

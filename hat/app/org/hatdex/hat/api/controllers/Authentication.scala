@@ -112,12 +112,13 @@ class Authentication @Inject() (
 
   def accessToken(): Action[AnyContent] = (UserAwareAction andThen limiter.UserAwareRateLimit).async { implicit request =>
     val eventuallyAuthenticatedUser = for {
-      usernameParam <- request.getQueryString("username").orElse(request.headers.get("username"))
-      passwordParam <- request.getQueryString("password").orElse(request.headers.get("password"))
+      usernameParam <- request.headers.get("username")
+      passwordParam <- request.headers.get("password")
     } yield {
       val username = URLDecoder.decode(usernameParam, "UTF-8")
       val password = URLDecoder.decode(passwordParam, "UTF-8")
       credentialsProvider.authenticate(Credentials(username, password))
+        .map(_.copy(request.dynamicEnvironment.id))
         .flatMap { loginInfo =>
           usersService.getUser(loginInfo.providerKey).flatMap {
             case Some(user) =>

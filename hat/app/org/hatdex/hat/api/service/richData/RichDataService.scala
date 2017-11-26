@@ -136,11 +136,11 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
   }
 
   def deleteEndpoint(userId: UUID, dataEndpoint: String)(implicit db: Database): Future[Done] = {
-    val endpointRecrodsQuery = DataJson.filter(r => (r.source === dataEndpoint)).map(_.recordId)
+    val endpointRecrodsQuery = DataJson.filter(r => r.source === dataEndpoint).map(_.recordId)
     val query = for {
       deletedGroupRecords <- DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete // delete links between records and groups
-      deletedGroups <- DataJsonGroups.filterNot(g => (g.groupId in DataJsonGroupRecords.map(_.groupId))).delete // delete any groups that have become empty
-      deletedRecords <- DataJson.filter(r => (r.recordId in endpointRecrodsQuery)).delete // delete the records, but only if all requested records are found
+      deletedGroups <- DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete // delete any groups that have become empty
+      deletedRecords <- DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete // delete the records, but only if all requested records are found
     } yield (deletedGroupRecords, deletedGroups, deletedRecords)
 
     db.run(query.transactionally).map(_ => Done) recover {

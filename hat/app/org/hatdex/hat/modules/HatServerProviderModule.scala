@@ -27,7 +27,7 @@ package org.hatdex.hat.modules
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.resourceManagement.actors.{ HatServerActor, HatServerProviderActor }
-import org.hatdex.hat.resourceManagement.{ HatDatabaseProvider, HatDatabaseProviderMilliner, HatKeyProvider, HatKeyProviderMilliner }
+import org.hatdex.hat.resourceManagement._
 import play.api.libs.concurrent.AkkaGuiceSupport
 
 class HatServerProviderModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
@@ -38,6 +38,7 @@ class HatServerProviderModule extends AbstractModule with ScalaModule with AkkaG
 
     bind[HatDatabaseProvider].to[HatDatabaseProviderMilliner]
     bind[HatKeyProvider].to[HatKeyProviderMilliner]
+    bind[HatServerProvider].to[HatServerProviderImpl]
   }
 
 }

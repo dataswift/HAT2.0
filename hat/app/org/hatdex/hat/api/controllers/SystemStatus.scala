@@ -53,14 +53,15 @@ class SystemStatus @Inject() (
     hatDatabaseProvider: HatDatabaseProvider,
     implicit val ec: ExecutionContext) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
 
-  val logger = Logger(this.getClass)
+  private val logger = Logger(this.getClass)
 
-  val indefiniteSuccessCaching = cached
+  private val indefiniteSuccessCaching = cached
     .status(req => s"${req.host}${req.path}", 200)
     .includeStatus(404, 600)
 
   def update(): EssentialAction = indefiniteSuccessCaching {
     UserAwareAction.async { implicit request =>
+      logger.debug(s"Updating HAT ${request.dynamicEnvironment.id}")
       hatDatabaseProvider.update(request.dynamicEnvironment.db) map { _ =>
         Ok(Json.toJson(SuccessResponse("Database updated")))
       }
@@ -80,11 +81,9 @@ class SystemStatus @Inject() (
       val dbsu = SystemStatusService.humanReadableByteCount(dbsize)
       val fsa = SystemStatusService.humanReadableByteCount(fileStorageAllowance)
       val fsu = SystemStatusService.humanReadableByteCount(fileSize)
-
-      val login = maybePreviousLogin.map {
-        case login =>
-          val p = new PrettyTime()
-          HatStatus("Previous Login", StatusKind.Text(p.format(login.date.toDate) + login.applicationName.map(n => s" via $n").getOrElse(""), None))
+      val login = maybePreviousLogin.map { l =>
+        val p = new PrettyTime()
+        HatStatus("Previous Login", StatusKind.Text(p.format(l.date.toDate) + l.applicationName.map(n => s" via $n").getOrElse(""), None))
       } getOrElse {
         HatStatus("Previous Login", StatusKind.Text("Never", None))
       }

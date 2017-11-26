@@ -70,7 +70,6 @@ class HatServerProviderImpl @Inject() (
   }
 
   def retrieve(hatAddress: String): Future[Option[HatServer]] = {
-    logger.info(s"Retrieving environment for $hatAddress")
     implicit val timeout: Timeout = configuration.get[FiniteDuration]("resourceManagement.serverProvisioningTimeout")
     (serverProviderActor ? HatServerProviderActor.HatServerRetrieve(hatAddress)) flatMap {
       case server: HatServer =>
@@ -86,7 +85,7 @@ class HatServerProviderImpl @Inject() (
     } recoverWith {
       case e =>
         logger.warn(s"Error while retrieving HAT Server info: ${e.getMessage}")
-        val error = new HatServerDiscoveryException("HAT Server info retrieval failed", e)
+        val error = new HatServerDiscoveryException("HAT Server info retrieval failed")
         Future.failed(error)
     }
   }

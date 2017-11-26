@@ -27,6 +27,9 @@ package org.hatdex.hat.api.controllers
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
+import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, JWTRS256AuthenticatorSettings }
+import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.test._
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models.DataDebitOwner
@@ -57,6 +60,41 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
   }
 
   sequential
+
+  "The `publicKey` method" should {
+    "Return public key of the HAT" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+
+      val controller = application.injector.instanceOf[Authentication]
+      val result = controller.publicKey().apply(request)
+
+      status(result) must equalTo(OK)
+      contentAsString(result) must startWith("-----BEGIN PUBLIC KEY-----\n")
+    }
+  }
+
+  "The `validateToken` method" should {
+    "return status 401 if authenticator but no identity was found" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withAuthenticator(LoginInfo("xing", "comedian@watchmen.com"))
+
+      val controller = application.injector.instanceOf[Authentication]
+      val result = controller.validateToken().apply(request)
+
+      status(result) must equalTo(UNAUTHORIZED)
+    }
+
+    "Return simple success message for a valid token" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+
+      val controller = application.injector.instanceOf[Authentication]
+      val result = controller.validateToken().apply(request)
+
+      status(result) must equalTo(OK)
+      (contentAsJson(result) \ "message").as[String] must equalTo("Authenticated")
+    }
+  }
 
   "The `hatLogin` method" should {
     "return status 401 if authenticator but no identity was found" in {
@@ -89,6 +127,45 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
       status(result) must equalTo(OK)
       contentAsString(result) must contain("testredirect")
       contentAsString(result) must contain("token=")
+    }
+  }
+
+  "The `accessToken` method" should {
+    "return status 401 if no credentials provided" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+
+      val controller = application.injector.instanceOf[Authentication]
+      val result: Future[Result] = controller.accessToken().apply(request)
+
+      status(result) must equalTo(UNAUTHORIZED)
+    }
+
+    "return status 401 if credentials but no matching identity" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withHeaders("username" -> "test", "password" -> "test")
+
+      val controller = application.injector.instanceOf[Authentication]
+
+      controller.accessToken().apply(request) must throwA[IdentityNotFoundException].await(1, 30.seconds)
+
+    }
+
+    "return Access Token for the authenticated user" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withHeaders("username" -> "hatuser", "password" -> "pa55w0rd")
+
+      val controller = application.injector.instanceOf[Authentication]
+
+      val encoder = new Base64AuthenticatorEncoder()
+      val settings = JWTRS256AuthenticatorSettings("X-Auth-Token", None, "hat.org", Some(3.days), 3.days)
+
+      val result: Future[Result] = controller.accessToken().apply(request)
+
+      status(result) must equalTo(OK)
+      val token = (contentAsJson(result) \ "accessToken").as[String]
+      val unserialized = JWTRS256Authenticator.unserialize(token, encoder, settings)
+      unserialized must beSuccessfulTry
+      unserialized.get.loginInfo must be equalTo owner.loginInfo
     }
   }
 
