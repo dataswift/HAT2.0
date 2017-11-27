@@ -24,43 +24,22 @@
 
 package org.hatdex.hat.phata.controllers
 
-import java.io.StringReader
-import java.util.UUID
-
-import akka.stream.Materializer
-import com.atlassian.jwt.core.keys.KeyUtils
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test._
-import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.models.{ EndpointData, Owner }
-import org.hatdex.hat.api.service.UsersService
+import org.hatdex.hat.api.HATTestContext
+import org.hatdex.hat.api.models.EndpointData
 import org.hatdex.hat.api.service.richData.RichDataService
-import org.hatdex.hat.authentication.HatFrontendAuthEnvironment
-import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
-import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.{ BeforeEach, Scope }
-import play.api.inject.guice.GuiceApplicationBuilder
+import org.specs2.specification.BeforeEach
+import play.api.Logger
 import play.api.libs.json.Json
-import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
-import play.api.{ Application, Configuration, Logger }
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
+import play.api.test.{FakeRequest, Helpers, PlaySpecification}
 
 class PhataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with Context with BeforeEach {
 
   val logger = Logger(this.getClass)
 
   import org.hatdex.hat.api.models.RichDataJsonFormats._
-
-  def before: Unit = {
-    await(databaseReady)(30.seconds)
-  }
 
   sequential
 
@@ -117,62 +96,7 @@ class PhataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
 
 }
 
-trait Context extends Scope {
-  import scala.concurrent.ExecutionContext.Implicits.global
-  // Initialize configuration
-  val hatAddress = "hat.hubofallthings.net"
-  val hatUrl = s"http://$hatAddress"
-  private val configuration = Configuration.from(FakeHatConfiguration.config)
-  private val hatConfig = configuration.get[Configuration](s"hat.$hatAddress")
-
-  // Build up the FakeEnvironment for authentication testing
-  private val keyUtils = new KeyUtils()
-  implicit protected def hatDatabase: Database = Database.forConfig("", hatConfig.get[Configuration]("database").underlying)
-  implicit val hatServer: HatServer = HatServer(hatAddress, "hat", "user@hat.org",
-    keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.get[String]("privateKey"))),
-    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))), hatDatabase)
-
-  // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
-  implicit val environment: Environment[HatFrontendAuthEnvironment] = FakeEnvironment[HatFrontendAuthEnvironment](
-    Seq(owner.loginInfo -> owner),
-    hatServer)
-
-  // Helpers to (re-)initialize the test database and await for it to be ready
-  val devHatMigrations = Seq(
-    "evolutions/hat-database-schema/11_hat.sql",
-    "evolutions/hat-database-schema/12_hatEvolutions.sql",
-    "evolutions/hat-database-schema/13_liveEvolutions.sql",
-    "evolutions/hat-database-schema/14_newHat.sql")
-
-  def databaseReady: Future[Unit] = {
-    val schemaMigration = application.injector.instanceOf[SchemaMigration]
-    schemaMigration.resetDatabase()(hatDatabase)
-      .flatMap(_ => schemaMigration.run(devHatMigrations)(hatDatabase))
-      .flatMap { _ =>
-        val usersService = application.injector.instanceOf[UsersService]
-        for {
-          _ <- usersService.saveUser(owner)
-        } yield ()
-      }
-  }
-
-  /**
-   * A fake Guice module.
-   */
-  class FakeModule extends AbstractModule with ScalaModule {
-    def configure() = {
-      bind[Environment[HatFrontendAuthEnvironment]].toInstance(environment)
-      bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
-    }
-  }
-
-  lazy val application: Application = new GuiceApplicationBuilder()
-    .configure(FakeHatConfiguration.config)
-    .overrides(new FakeModule)
-    .build()
-
-  implicit lazy val materializer: Materializer = application.materializer
+trait Context extends HATTestContext {
 
   val samplePublicNotable = Json.parse(
     """

@@ -55,10 +55,6 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
 
   val logger = Logger(this.getClass)
 
-  def before: Unit = {
-    await(databaseReady)(30.seconds)
-  }
-
   sequential
 
   "The `publicKey` method" should {

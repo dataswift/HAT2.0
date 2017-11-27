@@ -33,7 +33,7 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.BeforeEach
 import play.api.Logger
-import play.api.libs.json.{ JsObject, JsValue, Json }
+import play.api.libs.json.{ JsArray, JsObject, JsValue, Json }
 import play.api.mvc.Result
 import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
 
@@ -46,11 +46,128 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
   import org.hatdex.hat.api.models.RichDataJsonFormats._
 
-  def before: Unit = {
-    await(databaseReady)(30.seconds)
+  sequential
+
+  "The `getEndpointData` method" should {
+    "Return an empty array for an unknown endpoint" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = Helpers.call(controller.getEndpointData("namespace", "endpoint", None, None, None, None), request)
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData must beEmpty
+    }
+
+    "Order records by selected field" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+
+      val controller = application.injector.instanceOf[RichData]
+      val service = application.injector.instanceOf[RichDataService]
+
+      val data = List(
+        EndpointData("namespace/endpoint", None, simpleJson, None),
+        EndpointData("namespace/endpoint", None, simpleJson2, None),
+        EndpointData("namespace/endpoint", None, complexJson, None))
+
+      val response = for {
+        _ <- service.saveData(owner.userId, data).map(_.head)
+        r <- Helpers.call(controller.getEndpointData("namespace", "endpoint", Some("field"), None, None, Some(2)), request)
+      } yield r
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData.length must beEqualTo(2)
+      responseData.head.data must be equalTo simpleJson
+    }
+
+    "Order records by selected field in descending order" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+
+      val controller = application.injector.instanceOf[RichData]
+      val service = application.injector.instanceOf[RichDataService]
+
+      val data = List(
+        EndpointData("namespace/endpoint", None, simpleJson, None),
+        EndpointData("namespace/endpoint", None, simpleJson2, None),
+        EndpointData("namespace/endpoint", None, complexJson, None))
+
+      val response = for {
+        _ <- service.saveData(owner.userId, data).map(_.head)
+        r <- Helpers.call(controller.getEndpointData("namespace", "endpoint", Some("field"), Some("descending"), Some(1), Some(2)), request)
+      } yield r
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData.length must beEqualTo(2)
+      responseData.head.data must be equalTo simpleJson
+    }
   }
 
-  sequential
+  "The `saveEndpointData` method" should {
+    "Save a single record" in {
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(simpleJson)
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = for {
+        _ <- Helpers.call(controller.saveEndpointData("namespace", "endpoint", None), request)
+        r <- Helpers.call(controller.getEndpointData("namespace", "endpoint", None, None, None, None), request)
+      } yield r
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData.length must beEqualTo(1)
+      responseData.head.data must be equalTo simpleJson
+    }
+
+    "Save multiple records" in {
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(JsArray(Seq(simpleJson, simpleJson2)))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = for {
+        _ <- Helpers.call(controller.saveEndpointData("namespace", "endpoint", None), request)
+        r <- Helpers.call(controller.getEndpointData("namespace", "endpoint", None, None, None, None), request)
+      } yield r
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData.length must beEqualTo(2)
+    }
+
+    "Return an error when duplicate records are being inserted" in {
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(JsArray(Seq(simpleJson, simpleJson, simpleJson2)))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = for {
+        r <- Helpers.call(controller.saveEndpointData("namespace", "endpoint", None), request)
+      } yield r
+
+      status(response) must equalTo(BAD_REQUEST)
+      val responseData = contentAsJson(response).as[ErrorMessage]
+      responseData.message must be equalTo "Bad Request"
+      responseData.cause must be startingWith "Duplicate data -"
+    }
+
+    "Skip duplicate insertion errors when requested" in {
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(JsArray(Seq(simpleJson, simpleJson, simpleJson2)))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = for {
+        _ <- Helpers.call(controller.saveEndpointData("namespace", "endpoint", Some(true)), request)
+        r <- Helpers.call(controller.getEndpointData("namespace", "endpoint", None, None, None, None), request)
+      } yield r
+
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData.length must beEqualTo(2)
+    }
+  }
 
   "The `listEndpoints` method" should {
     "Return a list of all endpoints seen so far" in {
@@ -73,7 +190,6 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       } yield response
 
       val endpoints = contentAsJson(result).as[Map[String, Seq[String]]]
-      logger.warn(s"Got back endpoints: $endpoints")
       endpoints.get("namespace1") must beSome
       endpoints("namespace1") must be contain "test"
       endpoints("namespace1") must be contain "test3"
@@ -100,11 +216,73 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val result = for {
         _ <- dataService.saveData(owner.userId, data)
         _ <- Helpers.call(controller.deleteEndpointData("namespace1", "test"), request)
-        response <- Helpers.call(controller.getEndpointData("namespace1", "test", None, None, None, None, None), request)
+        response <- Helpers.call(controller.getEndpointData("namespace1", "test", None, None, None, None), request)
       } yield response
 
       val responseData = contentAsJson(result).as[Seq[EndpointData]]
       responseData.size must be equalTo 0
+    }
+  }
+
+  "The `saveBatchData` method" should {
+    "Save all data included in a batch" in {
+      val data = List(
+        EndpointData("namespace1/test", None, simpleJson, None),
+        EndpointData("namespace2/test2", None, simpleJson2, None),
+        EndpointData("namespace1/test", None, complexJson, None))
+
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(Json.toJson(data))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = for {
+        _ <- Helpers.call(controller.saveBatchData(), request)
+        r <- Helpers.call(controller.getEndpointData("namespace1", "test", None, None, None, None), request)
+      } yield r
+
+      status(response) must equalTo(OK)
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData.length must beEqualTo(2)
+    }
+
+    "Reject all data if user has no permissions to write some of it" in {
+      val data = List(
+        EndpointData("namespace/test", None, simpleJson, None),
+        EndpointData("namespace2/test2", None, simpleJson2, None),
+        EndpointData("namespace/test", None, complexJson, None))
+
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(dataCreditUser.loginInfo)
+        .withJsonBody(Json.toJson(data))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = for {
+        r <- Helpers.call(controller.saveBatchData(), request)
+      } yield r
+
+      status(response) must equalTo(FORBIDDEN)
+    }
+
+    "Return an error when inserting duplicate data" in {
+      val data = List(
+        EndpointData("namespace/test", None, simpleJson, None),
+        EndpointData("namespace2/test2", None, simpleJson2, None),
+        EndpointData("namespace/test", None, simpleJson, None))
+
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(Json.toJson(data))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = for {
+        r <- Helpers.call(controller.saveBatchData(), request)
+      } yield r
+
+      status(response) must equalTo(BAD_REQUEST)
     }
   }
 

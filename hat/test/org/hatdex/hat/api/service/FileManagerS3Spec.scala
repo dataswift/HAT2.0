@@ -36,6 +36,8 @@ class FileManagerS3Spec(implicit ee: ExecutionEnv) extends PlaySpecification wit
 
   val logger = Logger(this.getClass)
 
+  sequential
+
   "The `getUploadUrl` method" should {
     "return a signed url for a provided key" in {
       val fileManager = application.injector.instanceOf[FileManager]

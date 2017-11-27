@@ -40,6 +40,8 @@ class HatServiceProviderSpec(implicit ee: ExecutionEnv) extends PlaySpecificatio
 
   val logger = Logger(this.getClass)
 
+  sequential
+
   "The `retrieve` method" should {
     "Return HAT Server configuration for registered address" in {
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")

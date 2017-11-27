@@ -39,10 +39,6 @@ class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification
 
   val logger = Logger(this.getClass)
 
-  def before: Unit = {
-    await(databaseReady)(30.seconds)
-  }
-
   sequential
 
   "The `saveCombinator` method" should {

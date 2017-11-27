@@ -54,7 +54,8 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{ Application, Configuration }
 import play.cache.NamedCacheImpl
 
-import scala.concurrent.Future
+import scala.concurrent.{ Await, Future }
+import scala.concurrent.duration._
 
 trait HATTestContext extends Scope with Mockito {
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -74,7 +75,7 @@ trait HATTestContext extends Scope with Mockito {
   // Setup default users for testing
   val owner = HatUser(UUID.randomUUID(), "hatuser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "hatuser", Seq(Owner()), enabled = true)
   val dataDebitUser = HatUser(UUID.randomUUID(), "dataDebitUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataDebitUser", Seq(DataDebitOwner("")), enabled = true)
-  val dataCreditUser = HatUser(UUID.randomUUID(), "dataCreditUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataCreditUser", Seq(DataCredit("")), enabled = true)
+  val dataCreditUser = HatUser(UUID.randomUUID(), "dataCreditUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataCreditUser", Seq(DataCredit(""), DataCredit("namespace")), enabled = true)
   implicit val environment: Environment[HatApiAuthEnvironment] = FakeEnvironment[HatApiAuthEnvironment](
     Seq(owner.loginInfo -> owner, dataDebitUser.loginInfo -> dataDebitUser, dataCreditUser.loginInfo -> dataCreditUser),
     hatServer)
@@ -140,4 +141,8 @@ trait HATTestContext extends Scope with Mockito {
     .build()
 
   implicit lazy val materializer: Materializer = application.materializer
+
+  def before: Unit = {
+    Await.result(databaseReady, 60.seconds)
+  }
 }

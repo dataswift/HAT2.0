@@ -40,10 +40,6 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
   val logger = Logger(this.getClass)
 
-  def before: Unit = {
-    await(databaseReady)(10.seconds)
-  }
-
   sequential
 
   "The `get` method" should {

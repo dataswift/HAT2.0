@@ -42,6 +42,7 @@ import play.api.libs.json._
 import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
 import scala.concurrent.Future
+import scala.util.Success
 
 class RichDataService @Inject() (implicit ec: DalExecutionContext) {
 
@@ -83,10 +84,23 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
     queries
   }
 
-  def saveData(userId: UUID, endpointData: Seq[EndpointData])(implicit db: Database): Future[Seq[EndpointData]] = {
+  def saveData(userId: UUID, endpointData: Seq[EndpointData], skipErrors: Boolean = false)(implicit db: Database): Future[Seq[EndpointData]] = {
     val queries = saveDataQuery(userId, endpointData, None)
 
-    db.run(DBIO.sequence(queries).transactionally)
+    val insertQuery = if (skipErrors) {
+      val temp = queries.map(q => q.asTry)
+      db.run(DBIO.sequence(temp))
+        .map {
+          _.collect {
+            case Success(d) => d
+          }
+        }
+    }
+    else {
+      db.run(DBIO.sequence(queries).transactionally)
+    }
+
+    insertQuery
       .map {
         _.map { inserted =>
           ModelTranslation.fromDbModel(inserted._1, inserted._2)
@@ -312,7 +326,7 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
 
     val endpointDataQuery = queriesWithMappers
       .reduce((aggregate, query) => aggregate.unionAll(query)) // merge all the queries together
-      .sortBy(d => if (orderingDescending) { d._2.desc } else { d._2.asc }) // order all the results by the chosen column
+      .sortBy(d => if (orderingDescending) { d._2.desc.nullsLast } else { d._2.asc.nullsLast }) // order all the results by the chosen column
       .filter(d => createdAfter.fold(true.bind)(t => d._1.date > t.toLocalDateTime))
 
     val endpointDataQueryWithLimits = limit map { take =>
@@ -350,7 +364,7 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
     val resultQuery = endpointDataQueryWithLimits
       .joinLeft(groupRecords)
       .on((l, r) => l._1.recordId === r._3 && l._3 === r._1) // join on the main query record ID with the linked query record ID AND the query index
-      .sortBy(if (orderingDescending) { _._1._2.desc } else { _._1._2.asc }) // join does not maintain data ordering - sort data by the chosen sort field
+      .sortBy(if (orderingDescending) { _._1._2.desc.nullsLast } else { _._1._2.asc.nullsLast }) // join does not maintain data ordering - sort data by the chosen sort field
       .map(v => ((v._1._1, v._1._3), v._2.map(lr => (lr._4, lr._2)))) // pull out only the required data
 
     resultQuery

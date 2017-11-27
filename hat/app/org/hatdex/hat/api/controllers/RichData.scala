@@ -72,8 +72,8 @@ class RichData @Inject() (
    * @param take How many data records to take - limits the number of results, could be used for paging responses
    * @return HTTP Response with JSON-serialized data records or an error message
    */
-  def getEndpointData(namespace: String, endpoint: String, recordId: Option[UUID],
-    orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int]): Action[AnyContent] =
+  def getEndpointData(namespace: String, endpoint: String, orderBy: Option[String], ordering: Option[String],
+    skip: Option[Int], take: Option[Int]): Action[AnyContent] =
     SecuredAction(WithRole(Owner(), NamespaceRead(namespace))).async { implicit request =>
       val dataEndpoint = s"$namespace/$endpoint"
       val query = Seq(EndpointQuery(dataEndpoint, None, None, None))
@@ -82,13 +82,13 @@ class RichData @Inject() (
       data.map(d => Ok(Json.toJson(d)))
     }
 
-  def saveEndpointData(namespace: String, endpoint: String): Action[JsValue] =
+  def saveEndpointData(namespace: String, endpoint: String, skipErrors: Option[Boolean]): Action[JsValue] =
     SecuredAction(WithRole(NamespaceWrite(namespace))).async(parsers.json[JsValue]) { implicit request =>
       val dataEndpoint = s"$namespace/$endpoint"
       val response = request.body match {
         case array: JsArray =>
           val values = array.value.map(EndpointData(dataEndpoint, None, _, None))
-          dataService.saveData(request.identity.userId, values)
+          dataService.saveData(request.identity.userId, values, skipErrors.getOrElse(false))
             .andThen(dataEventDispatcher.dispatchEventDataCreated(s"saved batch for $dataEndpoint"))
             .map(saved => Created(Json.toJson(saved)))
 

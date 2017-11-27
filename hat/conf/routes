@@ -42,8 +42,8 @@ GET           /api/v2/files/restrictAccessPublic/:fileId           org.hatdex.ha
 
 POST          /api/v2/combinator/$combinator<[0-9a-z-/]+>                                           org.hatdex.hat.api.controllers.RichData.registerCombinator(combinator)
 GET           /api/v2/combinator/$combinator<[0-9a-z-/]+>                                           org.hatdex.hat.api.controllers.RichData.getCombinatorData(combinator, recordId: Option[java.util.UUID], orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
-GET           /api/v2/data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                            org.hatdex.hat.api.controllers.RichData.getEndpointData(namespace, endpoint, recordId: Option[java.util.UUID], orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
-POST          /api/v2/data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                            org.hatdex.hat.api.controllers.RichData.saveEndpointData(namespace, endpoint)
+GET           /api/v2/data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                            org.hatdex.hat.api.controllers.RichData.getEndpointData(namespace, endpoint, orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
+POST          /api/v2/data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                            org.hatdex.hat.api.controllers.RichData.saveEndpointData(namespace, endpoint, skipErrors: Option[Boolean])
 DELETE        /api/v2/data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                            org.hatdex.hat.api.controllers.RichData.deleteEndpointData(namespace, endpoint)
 PUT           /api/v2/data                                                                          org.hatdex.hat.api.controllers.RichData.updateRecords()
 DELETE        /api/v2/data                                                                          org.hatdex.hat.api.controllers.RichData.deleteDataRecords(records: Seq[java.util.UUID])

@@ -41,10 +41,6 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
 
   val logger = Logger(this.getClass)
 
-  def before: Unit = {
-    await(databaseReady)(10.seconds)
-  }
-
   sequential
 
   "The `getUniqueFileId` method" should {

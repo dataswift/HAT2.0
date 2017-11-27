@@ -50,10 +50,6 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
   override implicit def defaultAwaitTimeout: util.Timeout = 60.seconds
 
-  def before: Unit = {
-    await(databaseReady)(30.seconds)
-  }
-
   sequential
 
   "The `functionList` method" should {

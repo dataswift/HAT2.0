@@ -46,10 +46,6 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
 
   import org.hatdex.hat.api.json.HatJsonFormats._
 
-  def before: Unit = {
-    await(databaseReady)(30.seconds)
-  }
-
   sequential
 
   "The `startUpload` method" should {

@@ -40,10 +40,6 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
 
   val logger = Logger(this.getClass)
 
-  def before: Unit = {
-    await(databaseReady)(30.seconds)
-  }
-
   sequential
 
   "The `createDataDebit` method" should {

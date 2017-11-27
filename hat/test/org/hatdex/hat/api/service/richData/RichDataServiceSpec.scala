@@ -44,10 +44,6 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
   val logger = Logger(this.getClass)
 
-  def before: Unit = {
-    await(databaseReady)(30.seconds)
-  }
-
   sequential
 
   "The `saveData` method" should {

@@ -40,10 +40,6 @@ class SystemStatusSpec(implicit ee: ExecutionEnv) extends PlaySpecification with
 
   val logger = Logger(this.getClass)
 
-  def before: Unit = {
-    await(databaseReady)(30.seconds)
-  }
-
   sequential
 
   "The `update` method" should {
