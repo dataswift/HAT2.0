@@ -30,18 +30,43 @@ import org.hatdex.hat.api.models.EndpointData
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.BeforeEach
+import org.specs2.specification.{BeforeAll, BeforeEach}
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.test.{FakeRequest, Helpers, PlaySpecification}
 
-class PhataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with Context with BeforeEach {
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+class PhataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with Context with BeforeEach with BeforeAll {
 
   val logger = Logger(this.getClass)
 
   import org.hatdex.hat.api.models.RichDataJsonFormats._
 
   sequential
+
+  def beforeAll: Unit = {
+    Await.result(databaseReady, 60.seconds)
+  }
+
+  override def before: Unit = {
+    import org.hatdex.hat.dal.Tables._
+    import org.hatdex.libs.dal.HATPostgresProfile.api._
+
+    val endpointRecrodsQuery = DataJson.filter(d => d.source.like("test%") || d.source.like("rumpel%")).map(_.recordId)
+
+    val action = DBIO.seq(
+      DataDebitBundle.filter(_.bundleId.like("test%")).delete,
+      DataDebitContract.filter(_.dataDebitKey.like("test%")).delete,
+      DataCombinators.filter(_.combinatorId.like("test%")).delete,
+      DataBundles.filter(_.bundleId.like("test%")).delete,
+      DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
+      DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+
+    Await.result(hatDatabase.run(action), 60.seconds)
+  }
 
   "The `profile` method" should {
     "Return bundle data with profile information" in {

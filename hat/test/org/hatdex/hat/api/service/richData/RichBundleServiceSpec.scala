@@ -28,18 +28,41 @@ import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.BeforeEach
+import org.specs2.specification.{BeforeAll, BeforeEach}
 import play.api.Logger
-import play.api.libs.json.{ JsObject, Json }
+import play.api.libs.json.{JsObject, Json}
 import play.api.test.PlaySpecification
 
+import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichBundleServiceContext with BeforeEach {
+class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichBundleServiceContext with BeforeEach with BeforeAll {
 
   val logger = Logger(this.getClass)
 
   sequential
+
+  def beforeAll: Unit = {
+    Await.result(databaseReady, 60.seconds)
+  }
+
+  override def before: Unit = {
+    import org.hatdex.hat.dal.Tables._
+    import org.hatdex.libs.dal.HATPostgresProfile.api._
+
+    val endpointRecrodsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
+
+    val action = DBIO.seq(
+      DataDebitBundle.filter(_.bundleId.like("test%")).delete,
+      DataDebitContract.filter(_.dataDebitKey.like("test%")).delete,
+      DataCombinators.filter(_.combinatorId.like("test%")).delete,
+      DataBundles.filter(_.bundleId.like("test%")).delete,
+      DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
+      DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+
+    Await.result(hatDatabase.run(action), 60.seconds)
+  }
 
   "The `saveCombinator` method" should {
     "Save a combinator" in {
@@ -193,7 +216,7 @@ class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification
 }
 
 trait RichBundleServiceContext extends HATTestContext {
-  private val simpleTransformation: JsObject = Json.parse(
+  protected val simpleTransformation: JsObject = Json.parse(
     """
       | {
       |   "data.newField": "anotherField",
@@ -202,7 +225,7 @@ trait RichBundleServiceContext extends HATTestContext {
       | }
     """.stripMargin).as[JsObject]
 
-  private val complexTransformation: JsObject = Json.parse(
+  protected val complexTransformation: JsObject = Json.parse(
     """
       | {
       |   "data.newField": "hometown.name",
@@ -212,18 +235,18 @@ trait RichBundleServiceContext extends HATTestContext {
     """.stripMargin).as[JsObject]
 
   val testEndpointQuery = Seq(
-    EndpointQuery("test", Some(simpleTransformation), None, None),
-    EndpointQuery("complex", Some(complexTransformation), None, None))
+    EndpointQuery("test/test", Some(simpleTransformation), None, None),
+    EndpointQuery("test/complex", Some(complexTransformation), None, None))
 
   val testEndpointQueryUpdated = Seq(
-    EndpointQuery("test", Some(simpleTransformation), None, None),
-    EndpointQuery("anothertest", None, None, None))
+    EndpointQuery("test/test", Some(simpleTransformation), None, None),
+    EndpointQuery("test/anothertest", None, None, None))
 
   val testBundle = EndpointDataBundle("testBundle", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-    "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
+    "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
+    "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
 
   val testBundle2 = EndpointDataBundle("testBundle2", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-    "complex" -> PropertyQuery(List(EndpointQuery("anothertest", None, None, None)), Some("data.newField"), None, Some(1))))
+    "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
+    "complex" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)), Some("data.newField"), None, Some(1))))
 }

@@ -28,34 +28,38 @@ import java.util.UUID
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
-import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, JWTRS256AuthenticatorSettings }
+import com.mohiva.play.silhouette.impl.authenticators.{JWTRS256Authenticator, JWTRS256AuthenticatorSettings}
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.test._
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models.DataDebitOwner
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
+import org.hatdex.hat.phata.models.{ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser}
 import org.hatdex.hat.resourceManagement.HatServer
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.BeforeEach
+import org.specs2.specification.BeforeAll
 import play.api.Logger
 import play.api.i18n.Messages
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
-import play.api.test.{ FakeHeaders, FakeRequest, Helpers, PlaySpecification }
-import play.mvc.Http.{ HeaderNames, MimeTypes }
+import play.api.test.{FakeHeaders, FakeRequest, Helpers, PlaySpecification}
+import play.mvc.Http.{HeaderNames, MimeTypes}
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
-class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with AuthenticationContext with BeforeEach {
+class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with AuthenticationContext with BeforeAll {
 
   val logger = Logger(this.getClass)
 
   sequential
+
+  def beforeAll: Unit = {
+    Await.result(databaseReady, 60.seconds)
+  }
 
   "The `publicKey` method" should {
     "Return public key of the HAT" in {
@@ -289,6 +293,22 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
       (contentAsJson(result) \ "cause").as[String] must equalTo("Only HAT owner can reset their password")
     }
 
+    "Reset password" in {
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(Json.toJson(passwordResetStrong))
+
+      val controller = application.injector.instanceOf[Authentication]
+      val tokenService = application.injector.instanceOf[MailTokenUserService]
+      val tokenId = UUID.randomUUID().toString
+      tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
+      val result: Future[Result] = Helpers.call(controller.handleResetPassword(tokenId), request)
+
+      logger.warn(s"reset pass response: ${contentAsJson(result)}")
+
+      status(result) must equalTo(OK)
+    }
+
     "Return status 401 if no owner exists (should never happen)" in {
       val request = FakeRequest("POST", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
@@ -306,22 +326,6 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
 
       status(result) must equalTo(UNAUTHORIZED)
       (contentAsJson(result) \ "cause").as[String] must equalTo("No user matching token")
-    }
-
-    "Reset password" in {
-      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
-        .withJsonBody(Json.toJson(passwordResetStrong))
-
-      val controller = application.injector.instanceOf[Authentication]
-      val tokenService = application.injector.instanceOf[MailTokenUserService]
-      val tokenId = UUID.randomUUID().toString
-      tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
-      val result: Future[Result] = Helpers.call(controller.handleResetPassword(tokenId), request)
-
-      logger.debug(s"reset pass response: ${contentAsJson(result)}")
-
-      status(result) must equalTo(OK)
     }
   }
 

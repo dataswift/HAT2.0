@@ -31,22 +31,39 @@ import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.BeforeEach
+import org.specs2.specification.{BeforeAll, BeforeEach}
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Result
-import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
+import play.api.test.{FakeRequest, Helpers, PlaySpecification}
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
-class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with FilesContext with BeforeEach {
+class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with FilesContext with BeforeAll with BeforeEach {
 
   val logger = Logger(this.getClass)
 
   import org.hatdex.hat.api.json.HatJsonFormats._
 
   sequential
+
+  def beforeAll: Unit = {
+    Await.result(databaseReady, 60.seconds)
+  }
+
+  override def before: Unit = {
+    import org.hatdex.hat.dal.Tables._
+    import org.hatdex.libs.dal.HATPostgresProfile.api._
+
+    val testFilesQuery = HatFile.filter(_.source.like("test%"))
+
+    val action = DBIO.seq(
+      HatFileAccess.filter(_.fileId in testFilesQuery.map(_.id)).delete,
+      testFilesQuery.delete)
+
+    Await.result(hatDatabase.run(action), 60.seconds)
+  }
 
   "The `startUpload` method" should {
     "return status 401 if authenticator but no identity was found" in {

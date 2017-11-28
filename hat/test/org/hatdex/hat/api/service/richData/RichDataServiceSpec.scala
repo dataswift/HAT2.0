@@ -28,23 +28,45 @@ import java.util.UUID
 
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.dal.Tables.{ DataJson, DataJsonGroups }
+import org.hatdex.hat.dal.Tables.{DataJson, DataJsonGroups}
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.BeforeEach
+import org.specs2.specification.{BeforeAll, BeforeEach}
 import play.api.Logger
-import play.api.libs.json.{ JsObject, JsValue, Json }
+import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.test.PlaySpecification
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
-class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichDataServiceContext with BeforeEach {
+class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichDataServiceContext with BeforeEach with BeforeAll {
 
   val logger = Logger(this.getClass)
 
   sequential
+
+  def beforeAll: Unit = {
+    Await.result(databaseReady, 60.seconds)
+  }
+
+  override def before: Unit = {
+    import org.hatdex.hat.dal.Tables._
+    import org.hatdex.libs.dal.HATPostgresProfile.api._
+
+    val endpointRecrodsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
+
+    val action = DBIO.seq(
+      DataDebitBundle.filter(_.bundleId.like("test%")).delete,
+      DataDebitContract.filter(_.dataDebitKey.like("test%")).delete,
+      DataCombinators.filter(_.combinatorId.like("test%")).delete,
+      DataBundles.filter(_.bundleId.like("test%")).delete,
+      DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
+      DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+
+    Await.result(hatDatabase.run(action), 60.seconds)
+  }
 
   "The `saveData` method" should {
     "Save a single JSON datapoint and add ID" in {
@@ -61,11 +83,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "Save multiple JSON datapoints" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson, None),
-        EndpointData("test", None, simpleJson2, None),
-        EndpointData("complex", None, complexJson, None))
-      val saved = service.saveData(owner.userId, data)
+      val saved = service.saveData(owner.userId, sampleData)
 
       saved map { record =>
         record.length must equalTo(3)
@@ -75,14 +93,9 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "Refuse to save data with duplicate records" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson, None),
-        EndpointData("test", None, simpleJson2, None),
-        EndpointData("complex", None, complexJson, None))
-
       val saved = for {
-        _ <- service.saveData(owner.userId, List(EndpointData("test", None, simpleJson, None)))
-        saved <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, List(EndpointData("test/test", None, simpleJson, None)))
+        saved <- service.saveData(owner.userId, sampleData)
       } yield saved
 
       saved must throwA[Exception].await(3, 10.seconds)
@@ -92,8 +105,8 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
-        EndpointData("test", None, simpleJson,
-          Some(List(EndpointData("test", None, simpleJson2, None)))))
+        EndpointData("test/test", None, simpleJson,
+          Some(List(EndpointData("test/test", None, simpleJson2, None)))))
       val saved = service.saveData(owner.userId, data)
 
       saved map { record =>
@@ -109,14 +122,9 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "Find test endpoint values and map them to expected json output" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson, None),
-        EndpointData("test", None, simpleJson2, None),
-        EndpointData("complex", None, complexJson, None))
-
       val result = for {
-        _ <- service.saveData(owner.userId, data)
-        retrieved <- service.propertyData(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), false, 0, Some(1))
+        _ <- service.saveData(owner.userId, sampleData)
+        retrieved <- service.propertyData(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), false, 0, Some(1))
       } yield retrieved
 
       result map { result =>
@@ -128,17 +136,12 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "Correctly sort retrieved results" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson, None),
-        EndpointData("test", None, simpleJson2, None),
-        EndpointData("complex", None, complexJson, None))
-
       val result = for {
-        _ <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, sampleData)
         retrieved <- service.propertyData(
           List(
-            EndpointQuery("test", Some(simpleTransformation), None, None),
-            EndpointQuery("complex", Some(complexTransformation), None, None)),
+            EndpointQuery("test/test", Some(simpleTransformation), None, None),
+            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
           Some("data.newField"), false, 0, Some(3))
       } yield retrieved
 
@@ -153,17 +156,12 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "Apply different mappers converting from different endpoints into a single format" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson, None),
-        EndpointData("test", None, simpleJson2, None),
-        EndpointData("complex", None, complexJson, None))
-
       val result = for {
-        _ <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, sampleData)
         retrieved <- service.propertyData(
           List(
-            EndpointQuery("test", Some(simpleTransformation), None, None),
-            EndpointQuery("complex", Some(complexTransformation), None, None)),
+            EndpointQuery("test/test", Some(simpleTransformation), None, None),
+            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
           Some("data.newField"), false, 0, Some(3))
       } yield retrieved
 
@@ -176,19 +174,13 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "Retrieved linked object records" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson,
-          Some(List(
-            EndpointData("testlinked", None, simpleJson2, None),
-            EndpointData("complex", None, complexJson, None)))))
-
       val result = for {
-        _ <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, linkedSampleData)
         retrieved <- service.propertyData(
-          List(EndpointQuery("test", Some(simpleTransformation), None,
+          List(EndpointQuery("test/test", Some(simpleTransformation), None,
             Some(List(
-              EndpointQuery("testlinked", None, None, None),
-              EndpointQuery("complex", None, None, None))))),
+              EndpointQuery("test/testlinked", None, None, None),
+              EndpointQuery("test/complex", None, None, None))))),
           Some("data.newField"), false, 0, Some(1))
       } yield retrieved
 
@@ -197,25 +189,19 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         (result.head.data \ "data" \ "newField").as[String] must equalTo("anotherFieldValue")
         result.head.links must beSome
         result.head.links.get.length must equalTo(2)
-        result.head.links.get(0).endpoint must equalTo("testlinked")
-        result.head.links.get(1).endpoint must equalTo("complex")
+        result.head.links.get(0).endpoint must equalTo("test/testlinked")
+        result.head.links.get(1).endpoint must equalTo("test/complex")
       } await (3, 10.seconds)
     }
 
     "Leave out unrequested object records" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson,
-          Some(List(
-            EndpointData("testlinked", None, simpleJson2, None),
-            EndpointData("complex", None, complexJson, None)))))
-
       val result = for {
-        _ <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, linkedSampleData)
         retrieved <- service.propertyData(
-          List(EndpointQuery("test", Some(simpleTransformation), None,
-            Some(List(EndpointQuery("testlinked", None, None, None))))),
+          List(EndpointQuery("test/test", Some(simpleTransformation), None,
+            Some(List(EndpointQuery("test/testlinked", None, None, None))))),
           Some("data.newField"), false, 0, Some(1))
       } yield retrieved
 
@@ -231,17 +217,11 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "Apply mappers to linked objects if provided" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson,
-          Some(List(
-            EndpointData("testlinked", None, simpleJson2, None),
-            EndpointData("complex", None, complexJson, None)))))
-
       val result = for {
-        _ <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, linkedSampleData)
         retrieved <- service.propertyData(
-          List(EndpointQuery("test", Some(simpleTransformation), None,
-            Some(List(EndpointQuery("testlinked", Some(simpleTransformation), None, None))))),
+          List(EndpointQuery("test/test", Some(simpleTransformation), None,
+            Some(List(EndpointQuery("test/testlinked", Some(simpleTransformation), None, None))))),
           Some("data.newField"), false, 0, Some(1))
       } yield retrieved
 
@@ -259,19 +239,14 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "Link up inserted records for retrieval" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson, None),
-        EndpointData("test", None, simpleJson2, None),
-        EndpointData("complex", None, complexJson, None))
-
       val result = for {
-        saved <- service.saveData(owner.userId, data)
+        saved <- service.saveData(owner.userId, sampleData)
         linked <- service.saveRecordGroup(owner.userId, saved.flatMap(_.recordId))
         retrieved <- service.propertyData(
-          List(EndpointQuery("test", Some(simpleTransformation), None,
+          List(EndpointQuery("test/test", Some(simpleTransformation), None,
             Some(List(
-              EndpointQuery("test", None, None, None),
-              EndpointQuery("complex", None, None, None))))),
+              EndpointQuery("test/test", None, None, None),
+              EndpointQuery("test/complex", None, None, None))))),
           Some("data.newField"), false, 0, Some(3))
       } yield retrieved
 
@@ -280,8 +255,8 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         (result.head.data \ "data" \ "newField").as[String] must equalTo("anotherFieldDifferentValue")
         result.head.links must beSome
         result.head.links.get.length must equalTo(2)
-        result.head.links.get(0).endpoint must equalTo("test")
-        result.head.links.get(1).endpoint must equalTo("complex")
+        result.head.links.get(0).endpoint must equalTo("test/test")
+        result.head.links.get(1).endpoint must equalTo("test/complex")
       } await (3, 10.seconds)
     }
 
@@ -298,19 +273,14 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
   "The `generatedDataQuery` method" should {
 
-    val data = List(
-      EndpointData("test", None, simpleJson, None),
-      EndpointData("test", None, simpleJson2, None),
-      EndpointData("complex", None, complexJson, None))
-
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
     "retrieve all results without any additional filters" in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test", None, None, None), DataJson)
+      val query = service.generatedDataQuery(EndpointQuery("test/test", None, None, None), DataJson)
 
       val result = for {
-        _ <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, sampleData)
         retrieved <- hatDatabase.run(query.result)
       } yield retrieved
 
@@ -321,12 +291,12 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "retrieve results with a `Contains` filter " in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test", None,
+      val query = service.generatedDataQuery(EndpointQuery("test/test", None,
         Some(Seq(
           EndpointQueryFilter("object.objectFieldArray", None, FilterOperator.Contains(Json.toJson("objectFieldArray2"))))), None), DataJson)
 
       val result = for {
-        _ <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, sampleData)
         retrieved <- hatDatabase.run(query.result)
       } yield retrieved
 
@@ -337,12 +307,12 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "retrieve results with a `Contains` filter for complex objects " in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test", None,
+      val query = service.generatedDataQuery(EndpointQuery("test/test", None,
         Some(Seq(
           EndpointQueryFilter("object", None, FilterOperator.Contains(simpleJsonFragment)))), None), DataJson)
 
       val result = for {
-        _ <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, sampleData)
         retrieved <- hatDatabase.run(query.result)
       } yield retrieved
 
@@ -353,12 +323,12 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "use `Contains` filter for equality" in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test", None,
+      val query = service.generatedDataQuery(EndpointQuery("test/test", None,
         Some(Seq(
           EndpointQueryFilter("field", None, FilterOperator.Contains(Json.toJson("value2"))))), None), DataJson)
 
       val result = for {
-        _ <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, sampleData)
         retrieved <- hatDatabase.run(query.result)
       } yield retrieved
 
@@ -370,12 +340,12 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "retrieve results with a `Between` filter" in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test", None,
+      val query = service.generatedDataQuery(EndpointQuery("test/test", None,
         Some(Seq(
           EndpointQueryFilter("date", None, FilterOperator.Between(Json.toJson(1492699000), Json.toJson(1492799000))))), None), DataJson)
 
       val result = for {
-        _ <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, sampleData)
         retrieved <- hatDatabase.run(query.result)
       } yield retrieved
 
@@ -387,12 +357,12 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "Use the `In` filter for a 'one-of' matching " in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test", None,
+      val query = service.generatedDataQuery(EndpointQuery("test/test", None,
         Some(Seq(
           EndpointQueryFilter("field", None, FilterOperator.In(Json.parse("""["value", "value2"]"""))))), None), DataJson)
 
       val result = for {
-        _ <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, sampleData)
         retrieved <- hatDatabase.run(query.result)
       } yield retrieved
 
@@ -403,7 +373,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "Use transformation operator for date conversion combined with a `Between` filter" in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test", None,
+      val query = service.generatedDataQuery(EndpointQuery("test/test", None,
         Some(Seq(
           EndpointQueryFilter(
             "date_iso",
@@ -411,7 +381,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
             FilterOperator.Between(Json.toJson(14), Json.toJson(17))))), None), DataJson)
 
       val result = for {
-        _ <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, sampleData)
         retrieved <- hatDatabase.run(query.result)
       } yield retrieved
 
@@ -423,7 +393,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "Run search with a `Find` filter" in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("complex", None,
+      val query = service.generatedDataQuery(EndpointQuery("test/complex", None,
         Some(Seq(
           EndpointQueryFilter(
             "hometown.name",
@@ -431,7 +401,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
             FilterOperator.Find(Json.toJson("london"))))), None), DataJson)
 
       val result = for {
-        _ <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, sampleData)
         retrieved <- hatDatabase.run(query.result)
       } yield retrieved
 
@@ -446,16 +416,11 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "retrieve values into corresponding properties" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson, None),
-        EndpointData("test", None, simpleJson2, None),
-        EndpointData("complex", None, complexJson, None))
-
       val query = EndpointDataBundle("testBundle", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-        "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
+        "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
+        "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
       val result = for {
-        _ <- service.saveData(owner.userId, data)
+        _ <- service.saveData(owner.userId, sampleData)
         retrieved <- service.bundleData(query)
       } yield retrieved
 
@@ -475,18 +440,13 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "delete all required records" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson, None),
-        EndpointData("test", None, simpleJson2, None),
-        EndpointData("complex", None, complexJson, None))
-
       val result = for {
-        saved <- service.saveData(owner.userId, data)
+        saved <- service.saveData(owner.userId, sampleData)
         deleted <- service.deleteRecords(owner.userId, Seq(saved(1).recordId.get))
         retrieved <- service.propertyData(
           List(
-            EndpointQuery("test", Some(simpleTransformation), None, None),
-            EndpointQuery("complex", Some(complexTransformation), None, None)),
+            EndpointQuery("test/test", Some(simpleTransformation), None, None),
+            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
           Some("data.newField"), false, 0, Some(3))
       } yield retrieved
 
@@ -500,18 +460,13 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "not delete any records if some requested records do not exist" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson, None),
-        EndpointData("test", None, simpleJson2, None),
-        EndpointData("complex", None, complexJson, None))
-
       val result = for {
-        saved <- service.saveData(owner.userId, data)
+        saved <- service.saveData(owner.userId, sampleData)
         _ <- service.deleteRecords(owner.userId, Seq(saved(1).recordId.get, UUID.randomUUID())).recover { case e => Future.successful(()) }
         retrieved <- service.propertyData(
           List(
-            EndpointQuery("test", Some(simpleTransformation), None, None),
-            EndpointQuery("complex", Some(complexTransformation), None, None)),
+            EndpointQuery("test/test", Some(simpleTransformation), None, None),
+            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
           Some("data.newField"), false, 0, Some(3))
       } yield retrieved
 
@@ -523,13 +478,8 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "not delete records if provided user Id doesn't match" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson, None),
-        EndpointData("test", None, simpleJson2, None),
-        EndpointData("complex", None, complexJson, None))
-
       val result = for {
-        saved <- service.saveData(owner.userId, data)
+        saved <- service.saveData(owner.userId, sampleData)
         deleted <- service.deleteRecords(dataDebitUser.userId, Seq(saved(1).recordId.get))
       } yield deleted
 
@@ -539,14 +489,8 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "delete groups if all records in those groups are deleted" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson,
-          Some(List(
-            EndpointData("testlinked", None, simpleJson2, None),
-            EndpointData("complex", None, complexJson, None)))))
-
       val result = for {
-        saved <- service.saveData(owner.userId, data)
+        saved <- service.saveData(owner.userId, linkedSampleData)
         deleted <- service.deleteRecords(owner.userId, saved.head.links.get.map(_.recordId.get) :+ saved.head.recordId.get)
         groups <- hatDatabase.run(DataJsonGroups.take(1).result)
       } yield groups
@@ -561,18 +505,13 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "update all required records" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson, None),
-        EndpointData("test", None, simpleJson2, None),
-        EndpointData("complex", None, complexJson, None))
-
       val result = for {
-        saved <- service.saveData(owner.userId, data)
+        saved <- service.saveData(owner.userId, sampleData)
         updated <- service.updateRecords(owner.userId, Seq(saved(1).copy(data = simpleJson2Updated)))
         retrieved <- service.propertyData(
           List(
-            EndpointQuery("test", Some(simpleTransformation), None, None),
-            EndpointQuery("complex", Some(complexTransformation), None, None)),
+            EndpointQuery("test/test", Some(simpleTransformation), None, None),
+            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
           Some("data.newField"), false, 0, Some(3))
       } yield retrieved
 
@@ -588,18 +527,18 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
-        EndpointData("test", None, simpleJson, None),
-        EndpointData("test", None, simpleJson2, None))
+        EndpointData("test/test", None, simpleJson, None),
+        EndpointData("test/test", None, simpleJson2, None))
 
       val result = for {
         saved <- service.saveData(owner.userId, data)
         _ <- service.updateRecords(owner.userId, Seq(
           saved(1).copy(data = simpleJson2Updated),
-          EndpointData("complex", None, complexJson, None))).recover { case e => Future.successful(()) }
+          EndpointData("test/complex", None, complexJson, None))).recover { case e => Future.successful(()) }
         retrieved <- service.propertyData(
           List(
-            EndpointQuery("test", Some(simpleTransformation), None, None),
-            EndpointQuery("complex", Some(complexTransformation), None, None)),
+            EndpointQuery("test/test", Some(simpleTransformation), None, None),
+            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
           Some("data.newField"), false, 0, Some(3))
       } yield retrieved
 
@@ -613,13 +552,8 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "not update records if provided user Id doesn't match" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test", None, simpleJson, None),
-        EndpointData("test", None, simpleJson2, None),
-        EndpointData("complex", None, complexJson, None))
-
       val result = for {
-        saved <- service.saveData(owner.userId, data)
+        saved <- service.saveData(owner.userId, sampleData)
         deleted <- service.updateRecords(dataDebitUser.userId, Seq(saved(1).copy(data = simpleJson2Updated)))
       } yield deleted
 
@@ -754,4 +688,15 @@ trait RichDataServiceContext extends HATTestContext {
       |   "data.onemore": "education[0].type"
       | }
     """.stripMargin).as[JsObject]
+
+  val sampleData = List(
+    EndpointData("test/test", None, simpleJson, None),
+    EndpointData("test/test", None, simpleJson2, None),
+    EndpointData("test/complex", None, complexJson, None))
+
+  val linkedSampleData = List(
+    EndpointData("test/test", None, simpleJson,
+      Some(List(
+        EndpointData("test/testlinked", None, simpleJson2, None),
+        EndpointData("test/complex", None, complexJson, None)))))
 }

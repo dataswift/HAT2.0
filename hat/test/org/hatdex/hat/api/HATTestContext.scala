@@ -31,19 +31,19 @@ import akka.stream.Materializer
 import com.amazonaws.services.s3.AmazonS3
 import com.atlassian.jwt.core.keys.KeyUtils
 import com.google.inject.name.Named
-import com.google.inject.{ AbstractModule, Provides }
+import com.google.inject.{AbstractModule, Provides}
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.FakeCache
-import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
+import org.hatdex.hat.api.models.{DataCredit, DataDebitOwner, Owner}
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.hat.phata.models.MailTokenUser
-import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
-import org.hatdex.hat.utils.{ ErrorHandler, HatMailer }
+import org.hatdex.hat.resourceManagement.{FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider}
+import org.hatdex.hat.utils.{ErrorHandler, HatMailer}
 import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
@@ -51,11 +51,11 @@ import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
 import play.api.i18n.Messages
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.{ Application, Configuration }
+import play.api.{Application, Configuration}
 import play.cache.NamedCacheImpl
 
-import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 trait HATTestContext extends Scope with Mockito {
   import scala.concurrent.ExecutionContext.Implicits.global

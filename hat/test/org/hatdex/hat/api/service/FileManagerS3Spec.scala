@@ -24,6 +24,7 @@
 
 package org.hatdex.hat.api.service
 
+import org.hatdex.hat.api.HATTestContext
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import play.api.Logger
@@ -82,4 +83,8 @@ class FileManagerS3Spec(implicit ee: ExecutionEnv) extends PlaySpecification wit
       there was one(mockS3client).getObjectMetadata("hat-storage-test", "hat.hubofallthings.net/testFile")
     }
   }
+}
+
+trait FileManagerContext extends HATTestContext {
+  val mockS3client = fileManagerS3Mock.mockS3client
 }

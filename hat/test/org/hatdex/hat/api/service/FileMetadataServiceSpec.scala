@@ -24,24 +24,40 @@
 
 package org.hatdex.hat.api.service
 
-import java.util.UUID
-
-import org.hatdex.hat.api.models.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus, Owner }
-import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.api.models.{ApiHatFile, ApiHatFilePermissions, HatFileStatus}
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.BeforeEach
+import org.specs2.specification.{BeforeAll, BeforeEach}
 import play.api.Logger
 import play.api.test.PlaySpecification
+
+import scala.concurrent.Await
 
 //import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with FileManagerContext with BeforeEach {
+class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with FileManagerContext with BeforeEach with BeforeAll {
 
   val logger = Logger(this.getClass)
 
   sequential
+
+  def beforeAll: Unit = {
+    Await.result(databaseReady, 60.seconds)
+  }
+
+  override def before: Unit = {
+    import org.hatdex.hat.dal.Tables._
+    import org.hatdex.libs.dal.HATPostgresProfile.api._
+
+    val testFilesQuery = HatFile.filter(_.source.like("test%"))
+
+    val action = DBIO.seq(
+      HatFileAccess.filter(_.fileId in testFilesQuery.map(_.id)).delete,
+      testFilesQuery.delete)
+
+    Await.result(hatDatabase.run(action), 60.seconds)
+  }
 
   "The `getUniqueFileId` method" should {
     "return a ApiHatFile with fileId appended" in {
@@ -295,26 +311,20 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   "The `grantAccess` method" should {
     "Grant file detail access to an existing user" in {
       val service = application.injector.instanceOf[FileMetadataService]
-      val usersService = application.injector.instanceOf[UsersService]
-
-      val hatUser = HatUser(UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42"), "hatUser", Some(""), "hatUser", Seq(Owner()), enabled = true)
-      val dataDebitUser = HatUser(UUID.fromString("6507ae16-13d7-479b-8ebc-65c28fec1634"), "dataDebit", Some(""), "dataDebit", Seq(Owner()), enabled = true)
 
       val granted = for {
-        user <- usersService.saveUser(hatUser)
-        dduser <- usersService.saveUser(dataDebitUser)
         file <- service.save(ApiHatFile(Some("testtestfile.png"), "testFile.png", "test",
           None, None, None, None, None, None, Some(HatFileStatus.New()), None, None))
-        _ <- service.grantAccess(file, user, content = false)
-        _ <- service.grantAccess(file, dduser, content = true)
+        _ <- service.grantAccess(file, dataDebitUser, content = false)
+        _ <- service.grantAccess(file, dataCreditUser, content = true)
         granted <- service.getById("testtestfile.png")
       } yield {
         granted must beSome
         granted.get.contentPublic must beSome(false)
         granted.get.permissions must beSome
         granted.get.permissions.get must haveSize[Seq[ApiHatFilePermissions]](2)
-        granted.get.permissions.get must contain(ApiHatFilePermissions(user.userId, contentReadable = false))
-        granted.get.permissions.get must contain(ApiHatFilePermissions(dduser.userId, contentReadable = true))
+        granted.get.permissions.get must contain(ApiHatFilePermissions(dataDebitUser.userId, contentReadable = false))
+        granted.get.permissions.get must contain(ApiHatFilePermissions(dataCreditUser.userId, contentReadable = true))
       }
 
       granted.await(3, 10.seconds)
@@ -324,26 +334,20 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   "The `restrictAccess` method" should {
     "Restrict file access" in {
       val service = application.injector.instanceOf[FileMetadataService]
-      val usersService = application.injector.instanceOf[UsersService]
-
-      val hatUser = HatUser(UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42"), "hatUser", Some(""), "hatUser", Seq(Owner()), enabled = true)
-      val dataDebitUser = HatUser(UUID.fromString("6507ae16-13d7-479b-8ebc-65c28fec1634"), "dataDebit", Some(""), "dataDebit", Seq(Owner()), enabled = true)
 
       val granted = for {
-        user <- usersService.saveUser(hatUser)
-        dduser <- usersService.saveUser(dataDebitUser)
         file <- service.save(ApiHatFile(Some("testtestfile.png"), "testFile.png", "test",
           None, None, None, None, None, None, Some(HatFileStatus.New()), None, None))
-        _ <- service.grantAccess(file, user, content = false)
-        _ <- service.grantAccess(file, dduser, content = true)
-        _ <- service.restrictAccess(file, user)
+        _ <- service.grantAccess(file, dataCreditUser, content = false)
+        _ <- service.grantAccess(file, dataDebitUser, content = true)
+        _ <- service.restrictAccess(file, dataCreditUser)
         granted <- service.getById("testtestfile.png")
       } yield {
         granted must beSome
         granted.get.contentPublic must beSome(false)
         granted.get.permissions must beSome
         granted.get.permissions.get must haveSize[Seq[ApiHatFilePermissions]](1)
-        granted.get.permissions.get must contain(ApiHatFilePermissions(dduser.userId, contentReadable = true))
+        granted.get.permissions.get must contain(ApiHatFilePermissions(dataDebitUser.userId, contentReadable = true))
       }
 
       granted.await(3, 10.seconds)
@@ -353,12 +357,8 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   "The `grantAccessPattern` method" should {
     "Grant file access to an existing user for a matching file access pattern" in {
       val service = application.injector.instanceOf[FileMetadataService]
-      val usersService = application.injector.instanceOf[UsersService]
-
-      val hatUser = HatUser(UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42"), "hatUser", Some(""), "hatUser", Seq(Owner()), enabled = true)
 
       val granted = for {
-        user <- usersService.saveUser(hatUser)
         file1 <- service.save(ApiHatFile(Some("testtestfile-1.png"), "testFile.png", "test",
           None, None, Some(Seq("tag1", "tag2")), None, None, None, Some(HatFileStatus.New()), None, None))
         file2 <- service.save(ApiHatFile(Some("testtestfile-2.png"), "testFile.png", "test",
@@ -368,7 +368,7 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
         _ <- service.grantAccessPattern(
           ApiHatFile(None, "testFile.png", "test",
             None, None, Some(Seq("tag1", "tag2")), None, None, None, Some(HatFileStatus.New()), None, None),
-          user, content = false)
+          dataDebitUser, content = false)
         granted <- service.search(ApiHatFile(None, "testFile.png", "test",
           None, None, Some(Seq("tag1")), None, None, None, Some(HatFileStatus.New()), None, None))
       } yield {
@@ -377,12 +377,12 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
         val gfile1 = granted.find(_.fileId.contains("testtestfile-1.png"))
         gfile1 must beSome
         gfile1.get.permissions.get must haveSize[Seq[ApiHatFilePermissions]](1)
-        gfile1.get.permissions.get must contain(ApiHatFilePermissions(user.userId, contentReadable = false))
+        gfile1.get.permissions.get must contain(ApiHatFilePermissions(dataDebitUser.userId, contentReadable = false))
 
         val gfile2 = granted.find(_.fileId.contains("testtestfile-2.png"))
         gfile2 must beSome
         gfile2.get.permissions.get must haveSize[Seq[ApiHatFilePermissions]](1)
-        gfile2.get.permissions.get must contain(ApiHatFilePermissions(user.userId, contentReadable = false))
+        gfile2.get.permissions.get must contain(ApiHatFilePermissions(dataDebitUser.userId, contentReadable = false))
 
         val gfile3 = granted.find(_.fileId.contains("testtestfile-3.png"))
         gfile3 must beSome
@@ -396,12 +396,8 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   "The `restrictAccessPattern` method" should {
     "Restrict file access to an existing user for a matching file access pattern" in {
       val service = application.injector.instanceOf[FileMetadataService]
-      val usersService = application.injector.instanceOf[UsersService]
-
-      val hatUser = HatUser(UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42"), "hatUser", Some(""), "hatUser", Seq(Owner()), enabled = true)
 
       val granted = for {
-        user <- usersService.saveUser(hatUser)
         file1 <- service.save(ApiHatFile(Some("testtestfile-1.png"), "testFile.png", "test",
           None, None, Some(Seq("tag1", "tag2")), None, None, None, Some(HatFileStatus.New()), None, None))
         file2 <- service.save(ApiHatFile(Some("testtestfile-2.png"), "testFile.png", "test",
@@ -411,11 +407,11 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
         _ <- service.grantAccessPattern(
           ApiHatFile(None, "testFile.png", "test",
             None, None, Some(Seq("tag1")), None, None, None, Some(HatFileStatus.New()), None, None),
-          user, content = false)
+          dataDebitUser, content = false)
         _ <- service.restrictAccessPattern(
           ApiHatFile(None, "testFile.png", "test",
             None, None, Some(Seq("tag1", "tag2")), None, None, None, Some(HatFileStatus.New()), None, None),
-          user)
+          dataDebitUser)
         granted <- service.search(ApiHatFile(None, "testFile.png", "test",
           None, None, Some(Seq("tag1")), None, None, None, Some(HatFileStatus.New()), None, None))
       } yield {
@@ -432,7 +428,7 @@ class FileMetadataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
         val gfile3 = granted.find(_.fileId.contains("testtestfile-3.png"))
         gfile3 must beSome
         gfile3.get.permissions.get must haveSize[Seq[ApiHatFilePermissions]](1)
-        gfile3.get.permissions.get must contain(ApiHatFilePermissions(user.userId, contentReadable = false))
+        gfile3.get.permissions.get must contain(ApiHatFilePermissions(dataDebitUser.userId, contentReadable = false))
       }
 
       granted.await(3, 10.seconds)

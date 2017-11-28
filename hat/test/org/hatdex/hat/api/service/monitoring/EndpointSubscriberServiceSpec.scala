@@ -27,15 +27,15 @@ package org.hatdex.hat.api.service.monitoring
 import java.util.UUID
 
 import akka.stream.Materializer
-import org.hatdex.hat.api.models.{ Owner, _ }
+import org.hatdex.hat.api.models.{Owner, _}
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json.{JsValue, Json}
 import play.api.test.PlaySpecification
-import play.api.{ Application, Logger }
+import play.api.{Application, Logger}
 
 class EndpointSubscriberServiceSpec extends PlaySpecification with Mockito with EndpointSubscriberServiceContext {
 
@@ -46,21 +46,21 @@ class EndpointSubscriberServiceSpec extends PlaySpecification with Mockito with 
   "The `matchesBundle` method" should {
     "Trigger when endpoint query with no filters matches" in {
       val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test", None, None, None)), None, None, Some(3))))
+        "test" -> PropertyQuery(List(EndpointQuery("test/test", None, None, None)), None, None, Some(3))))
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
 
     "Not trigger when endpoint no query matches" in {
       val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("anothertest", None, None, None)), None, None, Some(3))))
+        "test" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)), None, None, Some(3))))
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beFalse
     }
 
     "Trigger when endpoint query with `Contains` filter matches" in {
       val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test", None, Some(Seq(
+        "test" -> PropertyQuery(List(EndpointQuery("test/test", None, Some(Seq(
           EndpointQueryFilter("object", None, FilterOperator.Contains(simpleJsonFragment)))), None)), None, None, Some(3))))
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
@@ -68,7 +68,7 @@ class EndpointSubscriberServiceSpec extends PlaySpecification with Mockito with 
 
     "Trigger when endpoint query with `Contains` filter matches for equality" in {
       val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test", None,
+        "test" -> PropertyQuery(List(EndpointQuery("test/test", None,
           Some(Seq(
             EndpointQueryFilter(
               "object.objectField",
@@ -80,7 +80,7 @@ class EndpointSubscriberServiceSpec extends PlaySpecification with Mockito with 
 
     "Trigger when endpoint query with `Contains` filter matches for array containment" in {
       val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test", None,
+        "test" -> PropertyQuery(List(EndpointQuery("test/test", None,
           Some(Seq(
             EndpointQueryFilter("object.objectFieldArray", None,
               FilterOperator.Contains(Json.toJson("objectFieldArray2"))))), None)), None, None, Some(3))))
@@ -90,7 +90,7 @@ class EndpointSubscriberServiceSpec extends PlaySpecification with Mockito with 
 
     "Trigger when endpoint query with `Contains` filter matches for array intersection" in {
       val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test", None,
+        "test" -> PropertyQuery(List(EndpointQuery("test/test", None,
           Some(Seq(
             EndpointQueryFilter("object.objectFieldArray", None,
               FilterOperator.Contains(Json.parse("""["objectFieldArray2", "objectFieldArray3"]"""))))), None)), None, None, Some(3))))
@@ -100,7 +100,7 @@ class EndpointSubscriberServiceSpec extends PlaySpecification with Mockito with 
 
     "Trigger when endpoint query with `DateTimeExtract` filter matches" in {
       val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test", None,
+        "test" -> PropertyQuery(List(EndpointQuery("test/test", None,
           Some(Seq(
             EndpointQueryFilter(
               "date_iso",
@@ -112,7 +112,7 @@ class EndpointSubscriberServiceSpec extends PlaySpecification with Mockito with 
 
     "Trigger when endpoint query with `TimestampExtract` filter matches" in {
       val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test", None,
+        "test" -> PropertyQuery(List(EndpointQuery("test/test", None,
           Some(Seq(
             EndpointQueryFilter(
               "date",
@@ -124,7 +124,7 @@ class EndpointSubscriberServiceSpec extends PlaySpecification with Mockito with 
 
     "Throw an error for text search field transformation" in {
       val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test", None,
+        "test" -> PropertyQuery(List(EndpointQuery("test/test", None,
           Some(Seq(
             EndpointQueryFilter(
               "anotherField",
@@ -176,5 +176,5 @@ trait EndpointSubscriberServiceContext extends Scope {
       | }
     """.stripMargin)
 
-  val simpleEndpointData = EndpointData("test", Some(UUID.randomUUID()), simpleJson, None)
+  val simpleEndpointData = EndpointData("test/test", Some(UUID.randomUUID()), simpleJson, None)
 }

@@ -24,7 +24,7 @@
 
 package org.hatdex.hat.she.service
 
-import com.google.inject.{ AbstractModule, Provides }
+import com.google.inject.{AbstractModule, Provides}
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models.EndpointDataBundle
@@ -34,7 +34,7 @@ import org.hatdex.hat.she.models._
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 trait FunctionServiceContext extends HATTestContext {
 
@@ -57,24 +57,24 @@ trait FunctionServiceContext extends HATTestContext {
     .overrides(new CustomisedFakeModule)
     .build()
 
-  val dummyFunctionConfiguration = FunctionConfiguration("dummy-function", "Dummy Function",
+  val dummyFunctionConfiguration = FunctionConfiguration("test-dummy-function", "Dummy Function",
     FunctionTrigger.TriggerIndividual(), available = false, enabled = false,
-    dataBundle = EndpointDataBundle("data-feed-dummy-mapper", Map()),
+    dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper", Map()),
     None)
 
-  val dummyFunctionConfigurationAvailable = FunctionConfiguration("dummy-function-available", "Dummy Function",
+  val dummyFunctionConfigurationAvailable = FunctionConfiguration("test-dummy-function-available", "Dummy Function",
     FunctionTrigger.TriggerIndividual(), available = true, enabled = false,
-    dataBundle = EndpointDataBundle("data-feed-dummy-mapper-vailable", Map()),
+    dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper-vailable", Map()),
     None)
 
-  val dummyFunctionConfigurationUpdated = FunctionConfiguration("dummy-function", "Updated Function",
+  val dummyFunctionConfigurationUpdated = FunctionConfiguration("test-dummy-function", "Updated Function",
     FunctionTrigger.TriggerIndividual(), available = false, enabled = true,
-    dataBundle = EndpointDataBundle("data-feed-dummy-mapper", Map()),
+    dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper", Map()),
     None)
 
-  val unavailableFunctionConfiguration = FunctionConfiguration("unavailable-function", "Unavailable Function",
+  val unavailableFunctionConfiguration = FunctionConfiguration("test-test-unavailable-function", "Unavailable Function",
     FunctionTrigger.TriggerIndividual(), available = false, enabled = false,
-    dataBundle = EndpointDataBundle("unavailable-function-bundler", Map()),
+    dataBundle = EndpointDataBundle("test-unavailable-function-bundler", Map()),
     None)
 
   val registeredFunction = new DataFeedDirectMapper()

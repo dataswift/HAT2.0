@@ -30,13 +30,42 @@ import org.hatdex.hat.she.models.Request
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
+import org.specs2.specification.BeforeAll
 import play.api.Logger
 import play.api.test.PlaySpecification
 
+import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirectMapper with PlaySpecification with Mockito with DataFeedDirectMapperContext {
+class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirectMapper with PlaySpecification with Mockito with DataFeedDirectMapperContext with BeforeAll {
   val logger = Logger(this.getClass)
+
+  def beforeAll: Unit = {
+    Await.result(databaseReady, 60.seconds)
+  }
+
+  override def before: Unit = {
+    import org.hatdex.hat.dal.Tables._
+    import org.hatdex.libs.dal.HATPostgresProfile.api._
+
+    val endpointRecrodsQuery = DataJson.filter(d => d.source.like("test%") ||
+      d.source.like("rumpel%") ||
+      d.source.like("twitter%") ||
+      d.source.like("facebook%") ||
+      d.source.like("fitbit%") ||
+      d.source.like("calendar%")).map(_.recordId)
+
+    val action = DBIO.seq(
+      DataDebitBundle.filter(_.bundleId.like("test%")).delete,
+      DataDebitContract.filter(_.dataDebitKey.like("test%")).delete,
+      DataCombinators.filter(_.combinatorId.like("test%")).delete,
+      DataBundles.filter(_.bundleId.like("test%")).delete,
+      DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
+      DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+
+    Await.result(hatDatabase.run(action), 60.seconds)
+  }
 
   "The `mapTweet` method" should {
     "translate twitter retweets" in {
@@ -189,6 +218,8 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
       transformed.content.get.text.get must contain("27 October - 29 October")
     }
   }
+
+  sequential
 
   "The `execute` method" should {
     "run mappings for all events" in {
