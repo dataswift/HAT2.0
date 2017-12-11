@@ -30,10 +30,10 @@ import org.hatdex.hat.api.models.EndpointData
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.{BeforeAll, BeforeEach}
+import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
 import play.api.libs.json.Json
-import play.api.test.{FakeRequest, Helpers, PlaySpecification}
+import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -131,7 +131,7 @@ trait Context extends HATTestContext {
       |    {
       |        "phata": "testing.hubat.net"
       |    },
-      |    "shared": "true",
+      |    "shared": true,
       |    "message": "public message",
       |    "shared_on": "phata",
       |    "created_time": "2017-10-18T15:32:43+01:00",
@@ -148,7 +148,7 @@ trait Context extends HATTestContext {
       |    {
       |        "phata": "testing.hubat.net"
       |    },
-      |    "shared": "false",
+      |    "shared": false,
       |    "message": "private message",
       |    "shared_on": "marketsquare",
       |    "created_time": "2017-10-18T15:32:43+01:00",
@@ -165,7 +165,7 @@ trait Context extends HATTestContext {
       |    {
       |        "phata": "testing.hubat.net"
       |    },
-      |    "shared": "true",
+      |    "shared": true,
       |    "message": "social message",
       |    "shared_on": "facebook,twitter",
       |    "created_time": "2017-10-18T15:32:43+01:00",
