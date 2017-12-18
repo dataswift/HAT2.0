@@ -38,6 +38,7 @@ class HatTestServerProviderModule extends AbstractModule with ScalaModule with A
 
     bind[HatDatabaseProvider].to[HatDatabaseProviderConfig]
     bind[HatKeyProvider].to[HatKeyProviderConfig]
+    bind[HatServerProvider].to[HatServerProviderImpl]
   }
 
 }

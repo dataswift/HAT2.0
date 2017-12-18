@@ -112,12 +112,13 @@ class Authentication @Inject() (
 
   def accessToken(): Action[AnyContent] = (UserAwareAction andThen limiter.UserAwareRateLimit).async { implicit request =>
     val eventuallyAuthenticatedUser = for {
-      usernameParam <- request.getQueryString("username").orElse(request.headers.get("username"))
-      passwordParam <- request.getQueryString("password").orElse(request.headers.get("password"))
+      usernameParam <- request.headers.get("username")
+      passwordParam <- request.headers.get("password")
     } yield {
       val username = URLDecoder.decode(usernameParam, "UTF-8")
       val password = URLDecoder.decode(passwordParam, "UTF-8")
       credentialsProvider.authenticate(Credentials(username, password))
+        .map(_.copy(request.dynamicEnvironment.id))
         .flatMap { loginInfo =>
           usersService.getUser(loginInfo.providerKey).flatMap {
             case Some(user) =>
@@ -141,7 +142,7 @@ class Authentication @Inject() (
   }
 
   def passwordChangeProcess: Action[ApiPasswordChange] = SecuredAction(WithRole(Owner())).async(parsers.json[ApiPasswordChange]) { implicit request =>
-    logger.warn("Processing password change request")
+    logger.debug("Processing password change request")
     request.body.password map { oldPassword =>
       val eventualResult = for {
         _ <- credentialsProvider.authenticate(Credentials(request.identity.email, oldPassword))
@@ -166,7 +167,7 @@ class Authentication @Inject() (
    * Sends an email to the user with a link to reset the password
    */
   def handleForgotPassword: Action[ApiPasswordResetRequest] = UserAwareAction.async(parsers.json[ApiPasswordResetRequest]) { implicit request =>
-    logger.warn("Processing forgotten password request")
+    logger.debug("Processing forgotten password request")
     val email = request.body.email
     val response = Ok(Json.toJson(SuccessResponse("If the email you have entered is correct, you will shortly receive an email with password reset instructions")))
     if (email == request.dynamicEnvironment.ownerEmail) {

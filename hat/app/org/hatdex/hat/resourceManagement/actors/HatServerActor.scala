@@ -28,6 +28,7 @@ import javax.inject.Inject
 
 import akka.actor._
 import com.google.inject.assistedinject.Assisted
+import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.resourceManagement._
 import play.api.Configuration
 import play.api.cache.AsyncCacheApi
@@ -54,9 +55,8 @@ class HatServerActor @Inject() (
     configuration: Configuration,
     hatDatabaseProvider: HatDatabaseProvider,
     hatKeyProvider: HatKeyProvider,
-    cacheApi: AsyncCacheApi) extends Actor with ActorLogging with Stash {
+    cacheApi: AsyncCacheApi)(implicit ec: RemoteExecutionContext) extends Actor with ActorLogging with Stash {
   import HatServerActor._
-  import org.hatdex.hat.api.service.IoExecutionContext.ioThreadPool
   val idleTimeout: FiniteDuration = configuration.get[FiniteDuration]("resourceManagement.serverIdleTimeout")
 
   def receive: Receive = {

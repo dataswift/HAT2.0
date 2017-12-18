@@ -24,13 +24,15 @@
 
 package org.hatdex.hat.api.service
 
+import javax.inject.Inject
+
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import play.api.Logger
 
 import scala.concurrent.Future
 
-class SystemStatusService extends DalExecutionContext {
+class SystemStatusService @Inject() (implicit val ec: DalExecutionContext) {
   val logger = Logger(this.getClass)
 
   def tableSizeTotal(implicit db: Database): Future[Long] = {
@@ -44,7 +46,9 @@ class SystemStatusService extends DalExecutionContext {
       .sum
     db.run(sizeQuery.result).map(_.getOrElse(0L))
   }
+}
 
+object SystemStatusService {
   def humanReadableByteCount(bytes: Long, si: Boolean = true): (BigDecimal, String) = {
     val unit = if (si) { 1000 } else { 1024 }
     if (bytes < unit) {

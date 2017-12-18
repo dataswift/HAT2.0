@@ -24,32 +24,76 @@
 
 package org.hatdex.hat.phata.controllers
 
-import java.io.StringReader
-import java.util.UUID
-
-import com.atlassian.jwt.core.keys.KeyUtils
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test._
-import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.models.Owner
-import org.hatdex.hat.authentication.HatFrontendAuthEnvironment
-import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
-import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
+import org.hatdex.hat.api.HATTestContext
+import org.hatdex.hat.api.models.EndpointData
+import org.hatdex.hat.api.service.richData.RichDataService
+import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.Scope
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.test.PlaySpecification
-import play.api.{ Application, Configuration, Logger }
+import org.specs2.specification.{ BeforeAll, BeforeEach }
+import play.api.Logger
+import play.api.libs.json.Json
+import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
-class PhataSpec extends PlaySpecification with Mockito {
+class PhataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with Context with BeforeEach with BeforeAll {
 
   val logger = Logger(this.getClass)
+
+  import org.hatdex.hat.api.models.RichDataJsonFormats._
+
+  sequential
+
+  def beforeAll: Unit = {
+    Await.result(databaseReady, 60.seconds)
+  }
+
+  override def before: Unit = {
+    import org.hatdex.hat.dal.Tables._
+    import org.hatdex.libs.dal.HATPostgresProfile.api._
+
+    val endpointRecrodsQuery = DataJson.filter(d => d.source.like("test%") || d.source.like("rumpel%")).map(_.recordId)
+
+    val action = DBIO.seq(
+      DataDebitBundle.filter(_.bundleId.like("test%")).delete,
+      DataDebitContract.filter(_.dataDebitKey.like("test%")).delete,
+      DataCombinators.filter(_.combinatorId.like("test%")).delete,
+      DataBundles.filter(_.bundleId.like("test%")).delete,
+      DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
+      DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+
+    Await.result(hatDatabase.run(action), 60.seconds)
+  }
+
+  "The `profile` method" should {
+    "Return bundle data with profile information" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+
+      val controller = application.injector.instanceOf[Phata]
+      val dataService = application.injector.instanceOf[RichDataService]
+
+      val data = List(
+        EndpointData("rumpel/notablesv1", None, samplePublicNotable, None),
+        EndpointData("rumpel/notablesv1", None, samplePrivateNotable, None),
+        EndpointData("rumpel/notablesv1", None, sampleSocialNotable, None))
+
+      val result = for {
+        _ <- dataService.saveData(owner.userId, data)
+        response <- Helpers.call(controller.profile, request)
+      } yield response
+
+      status(result) must equalTo(OK)
+      val phataData = contentAsJson(result).as[Map[String, Seq[EndpointData]]]
+
+      phataData.get("notables") must beSome
+      phataData("notables").length must be equalTo (1)
+
+    }
+  }
 
   //  "The `launcher` method" should {
   //    "return status 401 if authenticator but no identity was found" in new Context {
@@ -77,51 +121,56 @@ class PhataSpec extends PlaySpecification with Mockito {
 
 }
 
-trait Context extends Scope {
-  // Initialize configuration
-  val hatAddress = "hat.hubofallthings.net"
-  val hatUrl = s"http://$hatAddress"
-  private val configuration = Configuration.from(FakeHatConfiguration.config)
-  private val hatConfig = configuration.get[Configuration](s"hat.$hatAddress")
+trait Context extends HATTestContext {
 
-  // Build up the FakeEnvironment for authentication testing
-  private val keyUtils = new KeyUtils()
-  private def hatDatabase: Database = Database.forConfig("", hatConfig.get[Configuration]("database").underlying)
-  implicit val hatServer: HatServer = HatServer(hatAddress, "hat", "user@hat.org",
-    keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.get[String]("privateKey"))),
-    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))), hatDatabase)
+  val samplePublicNotable = Json.parse(
+    """
+      |{
+      |    "kind": "note",
+      |    "author":
+      |    {
+      |        "phata": "testing.hubat.net"
+      |    },
+      |    "shared": true,
+      |    "message": "public message",
+      |    "shared_on": "phata",
+      |    "created_time": "2017-10-18T15:32:43+01:00",
+      |    "public_until": "",
+      |    "updated_time": "2017-10-23T18:29:59+01:00"
+      |}
+    """.stripMargin)
 
-  // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
-  implicit val env: Environment[HatFrontendAuthEnvironment] = FakeEnvironment[HatFrontendAuthEnvironment](
-    Seq(owner.loginInfo -> owner),
-    hatServer)
+  val samplePrivateNotable = Json.parse(
+    """
+      |{
+      |    "kind": "note",
+      |    "author":
+      |    {
+      |        "phata": "testing.hubat.net"
+      |    },
+      |    "shared": false,
+      |    "message": "private message",
+      |    "shared_on": "marketsquare",
+      |    "created_time": "2017-10-18T15:32:43+01:00",
+      |    "public_until": "",
+      |    "updated_time": "2017-10-23T18:29:59+01:00"
+      |}
+    """.stripMargin)
 
-  // Helpers to (re-)initialize the test database and await for it to be ready
-  val devHatMigrations = Seq(
-    "evolutions/hat-database-schema/11_hat.sql",
-    "evolutions/hat-database-schema/12_hatEvolutions.sql",
-    "evolutions/hat-database-schema/13_liveEvolutions.sql",
-    "evolutions/hat-database-schema/14_newHat.sql")
-
-  def databaseReady: Future[Unit] = {
-    val schemaMigration = application.injector.instanceOf[SchemaMigration]
-    schemaMigration.resetDatabase()(hatDatabase)
-      .flatMap(_ => schemaMigration.run(devHatMigrations)(hatDatabase))
-  }
-
-  /**
-   * A fake Guice module.
-   */
-  class FakeModule extends AbstractModule with ScalaModule {
-    def configure() = {
-      bind[Environment[HatFrontendAuthEnvironment]].toInstance(env)
-      bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
-    }
-  }
-
-  lazy val application: Application = new GuiceApplicationBuilder()
-    .configure(FakeHatConfiguration.config)
-    .overrides(new FakeModule)
-    .build()
+  val sampleSocialNotable = Json.parse(
+    """
+      |{
+      |    "kind": "note",
+      |    "author":
+      |    {
+      |        "phata": "testing.hubat.net"
+      |    },
+      |    "shared": true,
+      |    "message": "social message",
+      |    "shared_on": "facebook,twitter",
+      |    "created_time": "2017-10-18T15:32:43+01:00",
+      |    "public_until": "",
+      |    "updated_time": "2017-10-23T18:29:59+01:00"
+      |}
+    """.stripMargin)
 }

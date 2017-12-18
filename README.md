@@ -7,7 +7,7 @@ This repository contains an implementation of the [Hub-of-All-Things](http://hub
 
 ## Releases
 
-The current project version is 2.4.1 [HAT 2.4.1](https://github.com/Hub-of-all-Things/HAT2.0/releases/tag/v2.4.1).
+The current project version is 2.5.1: [HAT 2.5.1](https://github.com/Hub-of-all-Things/HAT2.0/releases/tag/v2.5.1).
 
 ## About the project
 
@@ -22,9 +22,9 @@ A Personal Data Management System (“the HAT”) is a personal single tenant (�
 This HAT PDS implementation is written in Scala (2.11.8) uses the following technology stack:
 
 - PostgreSQL relational database (version 9.5)
-- Play Framework (version 2.5.4)
-- Akka (version 2.4.7)
-- Slick as the database access layer (version 3.1.1)
+- Play Framework (version 2.6.6)
+- Akka (version 2.5.4)
+- Slick as the database access layer (version 3.2.1)
 
 ## Running the project
 
@@ -59,7 +59,7 @@ To launch the HAT, follow these steps:
     ```
 4. Run the project:
     ```bash
-    sbt "project hat" -Dconfig.resource=dev.conf run
+    sbt "project hat" "run -Dconfig.resource=dev.conf"
     ```
 5. Go to http://bobtheplumber.hat.org:9000
 
@@ -68,9 +68,16 @@ To launch the HAT, follow these steps:
 ### Customising development environment
 
 Your best source of information on how the development environment could
-be customised is the `hat/conf/dev.conf` configuration file. Make sure it
-is *enabled* in `hat/conf/activeHats.conf` -- such setup is not intended
-to be used in production, but becomes handy for local testing.
+be customised is the `hat/conf/dev.conf` configuration file. Make sure you
+run the project locally with the configuration enabled (using the steps above)
+or it will just show you the message that the HAT could not be found.
+
+Among other things, the configuration includes:
+
+- host names alongside port numbers of the test HATs (bobtheplumber.hat.org:9000)
+- access credentials used to log in as the owner or restricted platform user into the HAT (the default password is a very unsafe *testing*)
+- database connection details (important if you want to change your database setup above)
+- private and public keys used for token signing and verification  
 
 Specifically, it has 4 major sections:
 

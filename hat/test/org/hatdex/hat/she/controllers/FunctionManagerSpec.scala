@@ -27,7 +27,7 @@ package org.hatdex.hat.she.controllers
 import akka.util
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
-import org.hatdex.hat.api.models.{ EndpointQuery, ErrorMessage, SuccessResponse }
+import org.hatdex.hat.api.models.{EndpointQuery, ErrorMessage, SuccessResponse}
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
 import org.hatdex.hat.she.models.FunctionConfiguration
@@ -36,7 +36,7 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.specification.BeforeEach
 import play.api.Logger
 import play.api.mvc.Result
-import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
+import play.api.test.{FakeRequest, Helpers, PlaySpecification}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -45,14 +45,10 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
   val logger = Logger(this.getClass)
 
-  import org.hatdex.hat.api.json.HatJsonFormats.{ errorMessage, successResponse }
+  import org.hatdex.hat.api.json.HatJsonFormats.{errorMessage, successResponse}
   import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol._
 
   override implicit def defaultAwaitTimeout: util.Timeout = 60.seconds
-
-  def before: Unit = {
-    await(databaseReady)(30.seconds)
-  }
 
   sequential
 
@@ -222,7 +218,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val controller = application.injector.instanceOf[FunctionManager]
       val result: Future[Result] = for {
         _ <- service.save(dummyFunctionConfiguration)
-        result <- Helpers.call(controller.functionTrigger("dummy-function"), request)
+        result <- Helpers.call(controller.functionTrigger("test-dummy-function"), request)
       } yield result
 
       status(result) must equalTo(BAD_REQUEST)
@@ -248,14 +244,10 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       await(setup)(60.seconds)
 
-      logger.warn("Function setup, executing")
-
       val result = Helpers.call(controller.functionTrigger("data-feed-direct-mapper"), request)
       status(result) must equalTo(OK)
       val message = contentAsJson(result).as[SuccessResponse]
       message.message must be equalTo "Function Executed"
-
-      logger.warn("Fetching data")
 
       dataService.propertyData(
         Seq(EndpointQuery(s"${registeredFunction.namespace}/${registeredFunction.endpoint}", None, None, None)),

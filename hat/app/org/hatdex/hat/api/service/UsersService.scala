@@ -25,6 +25,7 @@
 package org.hatdex.hat.api.service
 
 import java.util.UUID
+import javax.inject.Inject
 
 import org.hatdex.hat.api.models.{ UserRole, _ }
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
@@ -36,7 +37,7 @@ import play.api.Logger
 
 import scala.concurrent.Future
 
-class UsersService extends DalExecutionContext {
+class UsersService @Inject() (implicit ec: DalExecutionContext) {
   val logger = Logger(this.getClass)
 
   def listUsers()(implicit db: Database): Future[Seq[HatUser]] = {

@@ -24,48 +24,289 @@
 
 package org.hatdex.hat.api.controllers
 
-import java.io.StringReader
-import java.util.UUID
-
-import akka.stream.Materializer
-import com.amazonaws.services.s3.AmazonS3
-import com.atlassian.jwt.core.keys.KeyUtils
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.test._
-import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner, _ }
-import org.hatdex.hat.api.service._
-import org.hatdex.hat.api.service.richData.{ DataDebitContractService, RichDataService }
-import org.hatdex.hat.authentication.HatApiAuthEnvironment
-import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
-import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
+import org.hatdex.hat.api.HATTestContext
+import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.service.richData.{DataDebitContractService, RichDataService}
 import org.joda.time.LocalDateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.{ BeforeEach, Scope }
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{ JsObject, JsValue, Json }
+import org.specs2.specification.{BeforeAll, BeforeEach}
+import play.api.Logger
+import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
 import play.api.mvc.Result
-import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
-import play.api.{ Application, Configuration, Logger }
+import play.api.test.{FakeRequest, Helpers, PlaySpecification}
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
-class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichDataContext with BeforeEach {
+class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichDataContext with BeforeEach with BeforeAll {
 
   val logger = Logger(this.getClass)
 
   import org.hatdex.hat.api.models.RichDataJsonFormats._
 
-  def before: Unit = {
-    await(databaseReady)(30.seconds)
+  sequential
+
+  def beforeAll: Unit = {
+    Await.result(databaseReady, 60.seconds)
   }
 
-  sequential
+  override def before: Unit = {
+    import org.hatdex.hat.dal.Tables._
+    import org.hatdex.libs.dal.HATPostgresProfile.api._
+
+    val endpointRecrodsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
+
+    val action = DBIO.seq(
+      DataDebitBundle.filter(_.bundleId.like("test%")).delete,
+      DataDebitContract.filter(_.dataDebitKey.like("test%")).delete,
+      DataCombinators.filter(_.combinatorId.like("test%")).delete,
+      DataBundles.filter(_.bundleId.like("test%")).delete,
+      DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
+      DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+
+    Await.result(hatDatabase.run(action), 60.seconds)
+  }
+
+  "The `getEndpointData` method" should {
+    "Return an empty array for an unknown endpoint" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None), request)
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData must beEmpty
+    }
+
+    "Order records by selected field" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+
+      val controller = application.injector.instanceOf[RichData]
+      val service = application.injector.instanceOf[RichDataService]
+
+      val data = List(
+        EndpointData("test/endpoint", None, simpleJson, None),
+        EndpointData("test/endpoint", None, simpleJson2, None),
+        EndpointData("test/endpoint", None, complexJson, None))
+
+      val response = for {
+        _ <- service.saveData(owner.userId, data).map(_.head)
+        r <- Helpers.call(controller.getEndpointData("test", "endpoint", Some("field"), None, None, Some(2)), request)
+      } yield r
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData.length must beEqualTo(2)
+      responseData.head.data must be equalTo simpleJson
+    }
+
+    "Order records by selected field in descending order" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+
+      val controller = application.injector.instanceOf[RichData]
+      val service = application.injector.instanceOf[RichDataService]
+
+      val data = List(
+        EndpointData("test/endpoint", None, simpleJson, None),
+        EndpointData("test/endpoint", None, simpleJson2, None),
+        EndpointData("test/endpoint", None, complexJson, None))
+
+      val response = for {
+        _ <- service.saveData(owner.userId, data).map(_.head)
+        r <- Helpers.call(controller.getEndpointData("test", "endpoint", Some("field"), Some("descending"), Some(1), Some(2)), request)
+      } yield r
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData.length must beEqualTo(2)
+      responseData.head.data must be equalTo simpleJson
+    }
+  }
+
+  "The `saveEndpointData` method" should {
+    "Save a single record" in {
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(simpleJson)
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = for {
+        _ <- Helpers.call(controller.saveEndpointData("test", "endpoint", None), request)
+        r <- Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None), request)
+      } yield r
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData.length must beEqualTo(1)
+      responseData.head.data must be equalTo simpleJson
+    }
+
+    "Save multiple records" in {
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(JsArray(Seq(simpleJson, simpleJson2)))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = for {
+        _ <- Helpers.call(controller.saveEndpointData("test", "endpoint", None), request)
+        r <- Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None), request)
+      } yield r
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData.length must beEqualTo(2)
+    }
+
+    "Return an error when duplicate records are being inserted" in {
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(JsArray(Seq(simpleJson, simpleJson, simpleJson2)))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = for {
+        r <- Helpers.call(controller.saveEndpointData("test", "endpoint", None), request)
+      } yield r
+
+      status(response) must equalTo(BAD_REQUEST)
+      val responseData = contentAsJson(response).as[ErrorMessage]
+      responseData.message must be equalTo "Bad Request"
+      responseData.cause must be startingWith "Duplicate data -"
+    }
+
+    "Skip duplicate insertion errors when requested" in {
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(JsArray(Seq(simpleJson, simpleJson, simpleJson2)))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = for {
+        _ <- Helpers.call(controller.saveEndpointData("test", "endpoint", Some(true)), request)
+        r <- Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None), request)
+      } yield r
+
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData.length must beEqualTo(2)
+    }
+  }
+
+  "The `listEndpoints` method" should {
+    "Return a list of all endpoints seen so far" in {
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(Json.toJson(testDataDebitRequest))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val data = List(
+        EndpointData("test/test", None, simpleJson, None),
+        EndpointData("test2/test2", None, simpleJson2, None),
+        EndpointData("test/test3", None, complexJson, None))
+
+      val dataService = application.injector.instanceOf[RichDataService]
+
+      val result = for {
+        _ <- dataService.saveData(owner.userId, data)
+        response <- Helpers.call(controller.listEndpoints(), request)
+      } yield response
+
+      val endpoints = contentAsJson(result).as[Map[String, Seq[String]]]
+      endpoints.get("test") must beSome
+      endpoints("test") must be contain "test"
+      endpoints("test") must be contain "test3"
+      endpoints.get("test2") must beSome
+      endpoints("test2") must be contain "test2"
+    }
+  }
+
+  "The `deleteEndpointData` method" should {
+    "Delete all data for an endpoint" in {
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(Json.toJson(testDataDebitRequest))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val data = List(
+        EndpointData("test/test", None, simpleJson, None),
+        EndpointData("test2/test2", None, simpleJson2, None),
+        EndpointData("test/test3", None, complexJson, None))
+
+      val dataService = application.injector.instanceOf[RichDataService]
+
+      val result = for {
+        _ <- dataService.saveData(owner.userId, data)
+        _ <- Helpers.call(controller.deleteEndpointData("test", "test"), request)
+        response <- Helpers.call(controller.getEndpointData("test", "test", None, None, None, None), request)
+      } yield response
+
+      val responseData = contentAsJson(result).as[Seq[EndpointData]]
+      responseData.size must be equalTo 0
+    }
+  }
+
+  "The `saveBatchData` method" should {
+    "Save all data included in a batch" in {
+      val data = List(
+        EndpointData("test/test", None, simpleJson, None),
+        EndpointData("test2/test2", None, simpleJson2, None),
+        EndpointData("test/test", None, complexJson, None))
+
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(Json.toJson(data))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = for {
+        _ <- Helpers.call(controller.saveBatchData(), request)
+        r <- Helpers.call(controller.getEndpointData("test", "test", None, None, None, None), request)
+      } yield r
+
+      status(response) must equalTo(OK)
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData.length must beEqualTo(2)
+    }
+
+    "Reject all data if user has no permissions to write some of it" in {
+      val data = List(
+        EndpointData("test/test", None, simpleJson, None),
+        EndpointData("test/test2", None, simpleJson2, None),
+        EndpointData("test/test", None, complexJson, None))
+
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(dataCreditUser.loginInfo)
+        .withJsonBody(Json.toJson(data))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = for {
+        r <- Helpers.call(controller.saveBatchData(), request)
+      } yield r
+
+      status(response) must equalTo(FORBIDDEN)
+    }
+
+    "Return an error when inserting duplicate data" in {
+      val data = List(
+        EndpointData("namespace/test", None, simpleJson, None),
+        EndpointData("namespace2/test2", None, simpleJson2, None),
+        EndpointData("namespace/test", None, simpleJson, None))
+
+      val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(Json.toJson(data))
+
+      val controller = application.injector.instanceOf[RichData]
+
+      val response = for {
+        r <- Helpers.call(controller.saveBatchData(), request)
+      } yield r
+
+      status(response) must equalTo(BAD_REQUEST)
+    }
+  }
 
   "The `registerBundle` method" should {
     "return accepted debit if data debit is registered" in {
@@ -74,11 +315,11 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
         .withJsonBody(Json.toJson(testDataDebitRequest))
 
       val controller = application.injector.instanceOf[RichData]
-      val result: Future[Result] = Helpers.call(controller.registerDataDebit("dd"), request)
+      val result: Future[Result] = Helpers.call(controller.registerDataDebit("testdd"), request)
 
       status(result) must equalTo(CREATED)
       val debit = contentAsJson(result).as[RichDataDebit]
-      debit.dataDebitKey must equalTo("dd")
+      debit.dataDebitKey must equalTo("testdd")
       debit.bundles.exists(_.enabled) must beFalse
       debit.bundles.length must equalTo(1)
     }
@@ -90,8 +331,8 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
       val controller = application.injector.instanceOf[RichData]
       val result: Future[Result] = for {
-        _ <- Helpers.call(controller.registerDataDebit("dd"), request)
-        debit <- Helpers.call(controller.registerDataDebit("dd"), request)
+        _ <- Helpers.call(controller.registerDataDebit("testdd"), request)
+        debit <- Helpers.call(controller.registerDataDebit("testdd"), request)
       } yield debit
 
       status(result) must equalTo(BAD_REQUEST)
@@ -107,8 +348,8 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val controller = application.injector.instanceOf[RichData]
       val service = application.injector.instanceOf[DataDebitContractService]
       val result: Future[Result] = for {
-        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        debit <- Helpers.call(controller.updateDataDebit("dd"), request)
+        _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+        debit <- Helpers.call(controller.updateDataDebit("testdd"), request)
       } yield debit
 
       status(result) must equalTo(OK)
@@ -121,7 +362,7 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
       val controller = application.injector.instanceOf[RichData]
       val result: Future[Result] = for {
-        debit <- Helpers.call(controller.updateDataDebit("dd"), request)
+        debit <- Helpers.call(controller.updateDataDebit("testdd"), request)
       } yield debit
 
       status(result) must equalTo(BAD_REQUEST)
@@ -135,8 +376,8 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val controller = application.injector.instanceOf[RichData]
       val service = application.injector.instanceOf[DataDebitContractService]
       val result: Future[Result] = for {
-        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        debit <- Helpers.call(controller.updateDataDebit("dd"), request)
+        _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+        debit <- Helpers.call(controller.updateDataDebit("testdd"), request)
       } yield debit
 
       status(result) must equalTo(BAD_REQUEST)
@@ -150,7 +391,7 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
       val controller = application.injector.instanceOf[RichData]
       val result: Future[Result] = for {
-        debit <- Helpers.call(controller.getDataDebit("dd"), request)
+        debit <- Helpers.call(controller.getDataDebit("testdd"), request)
       } yield debit
 
       status(result) must equalTo(NOT_FOUND)
@@ -164,13 +405,13 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val service = application.injector.instanceOf[DataDebitContractService]
 
       val result: Future[Result] = for {
-        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        debit <- Helpers.call(controller.getDataDebit("dd"), request)
+        _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+        debit <- Helpers.call(controller.getDataDebit("testdd"), request)
       } yield debit
 
       status(result) must equalTo(OK)
       val debit = contentAsJson(result).as[RichDataDebit]
-      debit.dataDebitKey must equalTo("dd")
+      debit.dataDebitKey must equalTo("testdd")
       debit.bundles.exists(_.enabled) must beFalse
       debit.bundles.length must equalTo(1)
     }
@@ -183,7 +424,7 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
       val controller = application.injector.instanceOf[RichData]
       val result: Future[Result] = for {
-        debit <- Helpers.call(controller.getDataDebitValues("dd"), request)
+        debit <- Helpers.call(controller.getDataDebitValues("testdd"), request)
       } yield debit
 
       status(result) must equalTo(NOT_FOUND)
@@ -197,8 +438,8 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val service = application.injector.instanceOf[DataDebitContractService]
 
       val result: Future[Result] = for {
-        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        debit <- Helpers.call(controller.getDataDebitValues("dd"), request)
+        _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+        debit <- Helpers.call(controller.getDataDebitValues("testdd"), request)
       } yield debit
 
       status(result) must equalTo(BAD_REQUEST)
@@ -213,18 +454,18 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val dataService = application.injector.instanceOf[RichDataService]
 
       val result = for {
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test", None, simpleJson, None)))
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test", None, simpleJson2, None)))
-        _ <- dataService.saveData(owner.userId, List(EndpointData("complex", None, complexJson, None)))
-        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        _ <- service.dataDebitEnableBundle("dd", None)
-        data <- Helpers.call(controller.getDataDebitValues("dd"), request)
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, simpleJson, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, simpleJson2, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/complex", None, complexJson, None)))
+        _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+        _ <- service.dataDebitEnableBundle("testdd", None)
+        data <- Helpers.call(controller.getDataDebitValues("testdd"), request)
       } yield data
 
       status(result) must equalTo(OK)
       val data = contentAsJson(result).as[RichDataDebitData].bundle
       data("test").length must not equalTo 0
-      data("complex").length must not equalTo 0
+      data("test").length must not equalTo 0
     }
 
     "Return no data for bundle with unfulfilled conditions" in {
@@ -236,12 +477,12 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val dataService = application.injector.instanceOf[RichDataService]
 
       val result = for {
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test", None, simpleJson, None)))
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test", None, simpleJson2, None)))
-        _ <- dataService.saveData(owner.userId, List(EndpointData("complex", None, complexJson, None)))
-        _ <- service.createDataDebit("dd", ddRequestionConditionsFailed, owner.userId)
-        _ <- service.dataDebitEnableBundle("dd", Some(ddRequestionConditionsFailed.bundle.name))
-        data <- Helpers.call(controller.getDataDebitValues("dd"), request)
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, simpleJson, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, simpleJson2, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/complex", None, complexJson, None)))
+        _ <- service.createDataDebit("testdd", ddRequestionConditionsFailed, owner.userId)
+        _ <- service.dataDebitEnableBundle("testdd", Some(ddRequestionConditionsFailed.bundle.name))
+        data <- Helpers.call(controller.getDataDebitValues("testdd"), request)
       } yield data
 
       status(result) must equalTo(OK)
@@ -258,89 +499,24 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val dataService = application.injector.instanceOf[RichDataService]
 
       val result = for {
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test", None, simpleJson, None)))
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test", None, simpleJson2, None)))
-        _ <- dataService.saveData(owner.userId, List(EndpointData("complex", None, complexJson, None)))
-        _ <- service.createDataDebit("dd", ddRequestionConditionsFulfilled, owner.userId)
-        _ <- service.dataDebitEnableBundle("dd", Some(ddRequestionConditionsFulfilled.bundle.name))
-        data <- Helpers.call(controller.getDataDebitValues("dd"), request)
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, simpleJson, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, simpleJson2, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/complex", None, complexJson, None)))
+        _ <- service.createDataDebit("testdd", ddRequestionConditionsFulfilled, owner.userId)
+        _ <- service.dataDebitEnableBundle("testdd", Some(ddRequestionConditionsFulfilled.bundle.name))
+        data <- Helpers.call(controller.getDataDebitValues("testdd"), request)
       } yield data
 
       status(result) must equalTo(OK)
       val data = contentAsJson(result).as[RichDataDebitData].bundle
       data("test").length must not equalTo 0
-      data("complex").length must not equalTo 0
+      data("test").length must not equalTo 0
     }
   }
 
 }
 
-trait RichDataContext extends Scope {
-  import scala.concurrent.ExecutionContext.Implicits.global
-  // Initialize configuration
-  val hatAddress = "hat.hubofallthings.net"
-  val hatUrl = s"http://$hatAddress"
-  private val configuration = Configuration.from(FakeHatConfiguration.config)
-  private val hatConfig = configuration.get[Configuration](s"hat.$hatAddress")
-
-  // Build up the FakeEnvironment for authentication testing
-  private val keyUtils = new KeyUtils()
-  implicit protected def hatDatabase: Database = Database.forConfig("", hatConfig.get[Configuration]("database").underlying)
-  implicit val hatServer: HatServer = HatServer(hatAddress, "hat", "user@hat.org",
-    keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.get[String]("privateKey"))),
-    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))), hatDatabase)
-
-  // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
-  val dataDebitUser = HatUser(UUID.randomUUID(), "dataDebitUser", Some("pa55w0rd"), "dataDebitUser", Seq(DataDebitOwner("")), enabled = true)
-  val dataCreditUser = HatUser(UUID.randomUUID(), "dataCreditUser", Some("pa55w0rd"), "dataCreditUser", Seq(DataCredit("")), enabled = true)
-  implicit val environment: Environment[HatApiAuthEnvironment] = FakeEnvironment[HatApiAuthEnvironment](
-    Seq(owner.loginInfo -> owner, dataDebitUser.loginInfo -> dataDebitUser, dataCreditUser.loginInfo -> dataCreditUser),
-    hatServer)
-
-  // Helpers to (re-)initialize the test database and await for it to be ready
-  val devHatMigrations = Seq(
-    "evolutions/hat-database-schema/11_hat.sql",
-    "evolutions/hat-database-schema/12_hatEvolutions.sql",
-    "evolutions/hat-database-schema/13_liveEvolutions.sql",
-    "evolutions/hat-database-schema/14_newHat.sql")
-
-  def databaseReady: Future[Unit] = {
-    val schemaMigration = application.injector.instanceOf[SchemaMigration]
-    schemaMigration.resetDatabase()(hatDatabase)
-      .flatMap(_ => schemaMigration.run(devHatMigrations)(hatDatabase))
-      .flatMap { _ =>
-        val usersService = application.injector.instanceOf[UsersService]
-        for {
-          _ <- usersService.saveUser(dataCreditUser)
-          _ <- usersService.saveUser(dataDebitUser)
-          _ <- usersService.saveUser(owner)
-        } yield ()
-      }
-  }
-
-  /**
-   * A fake Guice module.
-   */
-  class FakeModule extends AbstractModule with ScalaModule {
-    val fileManagerS3Mock = FileManagerS3Mock()
-
-    def configure(): Unit = {
-      bind[Environment[HatApiAuthEnvironment]].toInstance(environment)
-      bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
-      bind[AwsS3Configuration].toInstance(fileManagerS3Mock.s3Configuration)
-      bind[AmazonS3].toInstance(fileManagerS3Mock.mockS3client)
-      bind[FileManager].toInstance(new FileManagerS3(fileManagerS3Mock.s3Configuration, fileManagerS3Mock.mockS3client))
-    }
-  }
-
-  lazy val application: Application = new GuiceApplicationBuilder()
-    .configure(FakeHatConfiguration.config)
-    .overrides(new FakeModule)
-    .build()
-
-  implicit lazy val materializer: Materializer = application.materializer
-
+trait RichDataContext extends HATTestContext {
   val simpleJson: JsValue = Json.parse(
     """
       | {
@@ -445,28 +621,28 @@ trait RichDataContext extends Scope {
     """.stripMargin).as[JsObject]
 
   val testEndpointQuery = Seq(
-    EndpointQuery("test", Some(simpleTransformation), None, None),
-    EndpointQuery("complex", Some(complexTransformation), None, None))
+    EndpointQuery("test/test", Some(simpleTransformation), None, None),
+    EndpointQuery("test/complex", Some(complexTransformation), None, None))
 
   val testEndpointQueryUpdated = Seq(
-    EndpointQuery("test", Some(simpleTransformation), None, None),
-    EndpointQuery("anothertest", None, None, None))
+    EndpointQuery("test/test", Some(simpleTransformation), None, None),
+    EndpointQuery("test/anothertest", None, None, None))
 
   val testBundle = EndpointDataBundle("testBundle", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-    "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
+    "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
+    "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
 
-  val failingCondition = EndpointDataBundle("failCondition", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test", None, Some(Seq(
+  val failingCondition = EndpointDataBundle("testfailCondition", Map(
+    "test" -> PropertyQuery(List(EndpointQuery("test/test", None, Some(Seq(
       EndpointQueryFilter("field", transformation = None, operator = FilterOperator.Contains(Json.toJson("N/A"))))), None)), Some("data.newField"), None, Some(3))))
 
-  val matchingCondition = EndpointDataBundle("failCondition", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test", None, Some(Seq(
+  val matchingCondition = EndpointDataBundle("testfailCondition", Map(
+    "test" -> PropertyQuery(List(EndpointQuery("test/test", None, Some(Seq(
       EndpointQueryFilter("field", transformation = None, operator = FilterOperator.Contains(Json.toJson("value"))))), None)), Some("data.newField"), None, Some(3))))
 
   val testBundle2 = EndpointDataBundle("testBundle2", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-    "complex" -> PropertyQuery(List(EndpointQuery("anothertest", None, None, None)), Some("data.newField"), None, Some(1))))
+    "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
+    "complex" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)), Some("data.newField"), None, Some(1))))
 
   val testDataDebitRequest = DataDebitRequest(testBundle, None, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
 

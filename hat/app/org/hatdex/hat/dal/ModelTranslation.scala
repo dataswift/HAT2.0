@@ -91,49 +91,9 @@ object ModelTranslation {
       value.value, None, None)
   }
 
-  def fromDbModel(value: DataValueRow, field: DataFieldRow, record: DataRecordRow): ApiDataValue = {
-    val apiRecord = fromDbModel(record, None)
-    ApiDataValue(Some(value.id), Some(value.dateCreated), None,
-      value.value, Some(fromDbModel(field)), Some(apiRecord))
-  }
-
-  def fromDbModel(value: DataValueRow, maybeApiField: Option[ApiDataField], maybeApiRecord: Option[ApiDataRecord]): ApiDataValue = {
-    ApiDataValue(Some(value.id), Some(value.dateCreated), None,
-      value.value, maybeApiField, maybeApiRecord)
-  }
-
   def fromDbModel(value: DataStatsLogRow): DataStats = {
     import org.hatdex.hat.api.json.DataStatsFormat.dataStatsFormat
     value.stats.as[DataStats]
-  }
-
-  def fromDbModel(bundleContextless: BundleContextlessRow): ApiBundleContextless = {
-    ApiBundleContextless(
-      Some(bundleContextless.id),
-      Some(bundleContextless.dateCreated), Some(bundleContextless.lastUpdated),
-      bundleContextless.name, None)
-  }
-
-  def fromDbModel(bundleContextless: BundleContextlessRow, sources: Option[Seq[ApiBundleDataSourceStructure]]): ApiBundleContextless = {
-    ApiBundleContextless(
-      Some(bundleContextless.id),
-      Some(bundleContextless.dateCreated), Some(bundleContextless.lastUpdated),
-      bundleContextless.name, sources)
-  }
-
-  def fromDbModel(dataDebitRow: DataDebitRow): ApiDataDebit = {
-    ApiDataDebit(Some(dataDebitRow.dataDebitKey), Some(dataDebitRow.dateCreated), Some(dataDebitRow.lastUpdated),
-      dataDebitRow.name, dataDebitRow.startDate, dataDebitRow.endDate, Some(dataDebitRow.enabled), dataDebitRow.rolling, dataDebitRow.sellRent,
-      dataDebitRow.price, dataDebitRow.kind, None, None)
-  }
-
-  def fromDbModel(
-    dataDebitRow: DataDebitRow,
-    apiBundleContextlessData: Option[ApiBundleContextlessData],
-    apiBundleContextualData: Option[Seq[ApiEntity]]): ApiDataDebitOut = {
-    ApiDataDebitOut(Some(dataDebitRow.dataDebitKey), Some(dataDebitRow.dateCreated), Some(dataDebitRow.lastUpdated),
-      dataDebitRow.name, dataDebitRow.startDate, dataDebitRow.endDate, Some(dataDebitRow.enabled), dataDebitRow.rolling, dataDebitRow.sellRent,
-      dataDebitRow.price, dataDebitRow.kind, apiBundleContextlessData, apiBundleContextualData)
   }
 
   def fromDbModel(

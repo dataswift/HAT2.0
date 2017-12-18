@@ -63,7 +63,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteCo
    * Configures the module.
    */
   def configure() {
-    bind[HatServerProvider].to[HatServerProviderImpl]
     bind[DynamicEnvironmentProviderService[HatServer]].to[HatServerProvider]
 
     bind[Silhouette[HatApiAuthEnvironment]].to[SilhouetteProvider[HatApiAuthEnvironment]]

@@ -40,7 +40,7 @@ import play.api.mvc.RequestHeader
 
 import scala.concurrent.Future
 
-class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment]) extends DalExecutionContext {
+class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment])(implicit val ec: DalExecutionContext) {
   private val logger = Logger(this.getClass)
 
   def hatServices(categories: Set[String])(implicit hatServer: HatServer): Future[Seq[HatService]] = {

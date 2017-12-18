@@ -26,19 +26,25 @@ package org.hatdex.hat.utils
 
 import javax.inject.Inject
 
+import akka.Done
+import akka.actor.ActorSystem
+import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.resourceManagement.HatServer
-import play.api.UsefulException
-import play.api.i18n.Messages
-import play.api.mvc.RequestHeader
-import play.twirl.api.Html
 import org.hatdex.hat.phata.views
+import org.hatdex.hat.resourceManagement.HatServer
+import play.api.i18n.Messages
+import play.api.libs.mailer.{ Email, MailerClient }
+import play.api.mvc.RequestHeader
+import play.api.{ Configuration, UsefulException }
+import play.twirl.api.Html
 
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try
 
 trait Mailer {
-  protected val configuration: play.api.Configuration
-  protected val ms: MailService
+  protected val configuration: Configuration
+  protected val system: ActorSystem
+  protected val mailerClient: MailerClient
 
   import scala.language.implicitConversions
 
@@ -47,27 +53,31 @@ trait Mailer {
   def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Unit
 
   def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Unit
+
+  def sendEmail(recipients: String*)(from: String, subject: String, bodyHtml: String, bodyText: String)(implicit ec: ExecutionContext): Future[Done] = {
+    Future(mailerClient.send(Email(subject, from, recipients, Some(bodyText), Some(bodyHtml))))
+      .map(_ => Done)
+  }
 }
 
 trait HatMailer extends Mailer {
-
-  protected val configuration: play.api.Configuration
-  protected val ms: MailService
-
   def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Unit
   def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Unit
   def passwordReset(email: String, user: HatUser, resetLink: String)(implicit m: Messages, server: HatServer): Unit
   def passwordChanged(email: String, user: HatUser)(implicit m: Messages, server: HatServer): Unit
 }
 
-class HatMailerImpl @Inject() (val configuration: play.api.Configuration, val ms: MailService) extends HatMailer {
+class HatMailerImpl @Inject() (
+    val configuration: Configuration,
+    val system: ActorSystem,
+    val mailerClient: MailerClient)(implicit ec: RemoteExecutionContext) extends HatMailer {
   private val emailFrom = configuration.get[String]("play.mailer.from")
   private val adminEmails = configuration.get[Seq[String]]("exchange.admin")
 
   def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Unit = {
     // wrap any errors
     Try {
-      ms.sendEmailAsync(adminEmails: _*)(
+      sendEmail(adminEmails: _*)(
         from = emailFrom,
         subject = s"HAT server ${request.host} errorr #${exception.id}",
         bodyHtml = views.html.mails.emailServerError(request, exception),
@@ -78,7 +88,7 @@ class HatMailerImpl @Inject() (val configuration: play.api.Configuration, val ms
   def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Unit = {
     // wrap any errors
     Try {
-      ms.sendEmailAsync(adminEmails: _*)(
+      sendEmail(adminEmails: _*)(
         from = emailFrom,
         subject = s"HAT server ${request.host} error: ${exception.getMessage} for ${request.path + request.rawQueryString}",
         bodyHtml = views.html.mails.emailServerThrowable(request, exception),
@@ -88,7 +98,7 @@ class HatMailerImpl @Inject() (val configuration: play.api.Configuration, val ms
 
   def passwordReset(email: String, user: HatUser, resetLink: String)(implicit m: Messages, server: HatServer): Unit = {
     Try {
-      ms.sendEmailAsync(email)(
+      sendEmail(email)(
         from = emailFrom,
         subject = s"HAT ${server.domain} - reset your password",
         bodyHtml = views.html.mails.emailPasswordReset(user, resetLink),
@@ -98,7 +108,7 @@ class HatMailerImpl @Inject() (val configuration: play.api.Configuration, val ms
 
   def passwordChanged(email: String, user: HatUser)(implicit m: Messages, server: HatServer): Unit = {
     Try {
-      ms.sendEmailAsync(email)(
+      sendEmail(email)(
         from = emailFrom,
         subject = s"HAT ${server.domain} - password changed",
         bodyHtml = views.html.mails.emailPasswordChanged(user),

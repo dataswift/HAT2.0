@@ -22,10 +22,17 @@
  * 2 / 2017
  */
 
-package org.hatdex.hat.utils
+package org.hatdex.hat.api.service
 
-object TypeTags {
-  import scala.reflect.runtime.universe.{ TypeTag, typeOf, typeTag }
-  def getTypeTag[T: TypeTag](t: T) = typeTag[T].tpe
-  def getTypeOfTag[T: TypeTag] = typeOf[T]
-}
+import javax.inject.{ Inject, Singleton }
+
+import akka.actor.ActorSystem
+import play.api.libs.concurrent.CustomExecutionContext
+
+@Singleton
+class RemoteExecutionContext @Inject() (system: ActorSystem)
+  extends CustomExecutionContext(system, "dispatcher.remote-api")
+
+@Singleton
+class DalExecutionContext @Inject() (system: ActorSystem)
+  extends CustomExecutionContext(system, "dispatcher.dal")

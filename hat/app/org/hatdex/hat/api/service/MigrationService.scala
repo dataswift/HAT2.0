@@ -47,7 +47,10 @@ import scala.concurrent.Future
 
 class MigrationService @Inject() (
     richDataService: RichDataService,
-    dataEventDispatcher: HatDataEventDispatcher)(implicit val materializer: Materializer) extends DalExecutionContext {
+    dataEventDispatcher: HatDataEventDispatcher)(
+    implicit
+    materializer: Materializer,
+    ec: DalExecutionContext) {
 
   protected val logger = Logger(this.getClass)
 

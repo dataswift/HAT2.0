@@ -1,10 +1,10 @@
 language: scala
 dist: trusty
-sudo: required
+sudo: false
 scala:
   - 2.12.4
 jdk:
-  - oraclejdk8
+  - openjdk8
 
 services:
   - docker
@@ -92,7 +92,7 @@ script:
   - |
     if [[ "$REPOSITORY_NAME" = "hubat" ]]; then
       sbt ++$TRAVIS_SCALA_VERSION test:compile
-      sbt "project hat" coverage "testOnly org.hatdex.hat.*" -Dconfig.file=hat/conf/application.test.conf
+      sbt ++$TRAVIS_SCALA_VERSION "project hat" coverage test -Dconfig.file=hat/conf/application.test.conf
     fi
   - sbt -Denv=prod docker:stage
   - docker build -t ${REPOSITORY_NAME}/hat:$(git rev-parse --short HEAD) hat/target/docker/stage
@@ -102,7 +102,7 @@ after_success:
   - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
   - |
     if [[ "$TRAVIS_PULL_REQUEST" = "false" || -z "$RUMPEL" ]]; then
-      sbt coverageReport && sbt coverageAggregate && sbt coveralls
+      sbt coverageReport && sbt coveralls
     fi
 
 before_deploy:

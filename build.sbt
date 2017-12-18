@@ -38,7 +38,6 @@ lazy val hat = project
     ),
     libraryDependencies := (buildEnv.value match {
       case BuildEnv.Developement | BuildEnv.Test =>
-        println("Adding specs2!")
         libraryDependencies.value ++ Seq(
           Library.Play.specs2,
           Library.Specs2.core,

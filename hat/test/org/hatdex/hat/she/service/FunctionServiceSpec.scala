@@ -24,23 +24,44 @@
 
 package org.hatdex.hat.she.service
 
+import org.hatdex.hat.api.models.EndpointQuery
+import org.hatdex.hat.api.service.richData.RichDataService
+import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
+import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.BeforeEach
+import org.specs2.specification.BeforeAll
 import play.api.Logger
 import play.api.test.PlaySpecification
 
+import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with FunctionServiceContext with BeforeEach {
+class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with DataFeedDirectMapperContext with BeforeAll {
 
   val logger = Logger(this.getClass)
 
-  def before: Unit = {
-    await(databaseReady)(10.seconds)
+  sequential
+
+  def beforeAll: Unit = {
+    Await.result(databaseReady, 60.seconds)
   }
 
-  sequential
+  override def before: Unit = {
+    import org.hatdex.hat.dal.Tables._
+    import org.hatdex.libs.dal.HATPostgresProfile.api._
+
+    val endpointRecrodsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
+
+    val action = DBIO.seq(
+      DataBundles.filter(_.bundleId.like("test%")).delete,
+      SheFunction.filter(_.name.like("test%")).delete,
+      DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
+      DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+
+    Await.result(hatDatabase.run(action), 60.seconds)
+  }
 
   "The `get` method" should {
     "return `None` when no such function exists" in {
@@ -108,7 +129,7 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       } yield all
 
       all.map { functions =>
-        functions.length must be equalTo 2
+        functions.length must be greaterThanOrEqualTo 2
         val dummy = functions.find(_.name == unavailableFunctionConfiguration.name)
         dummy must beSome
         dummy.get.available must beFalse
@@ -167,5 +188,41 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       }.await(3, 10.seconds)
     }
   }
+
+  "The `run` method" should {
+    "Execute function that is available" in {
+      val service = application.injector.instanceOf[FunctionService]
+      val dataService = application.injector.instanceOf[RichDataService]
+
+      val records = Seq(exampleTweetRetweet, exampleTweetMentions, exampleFacebookPhotoPost, exampleFacebookPost,
+        facebookStory, facebookEvent, facebookEvenNoLocation, facebookEvenPartialLocation, fitbitSleepMeasurement,
+        fitbitWeightMeasurement, fitbitActivity, fitbitDaySummary, googleCalendarEvent, googleCalendarFullDayEvent)
+
+      val currentDate = DateTime.now()
+
+      val executed = for {
+        _ <- dataService.saveData(owner.userId, records)
+        _ <- service.run(registeredFunction.configuration, None)
+        data <- dataService.propertyData(
+          Seq(EndpointQuery(s"${registeredFunction.namespace}/${registeredFunction.endpoint}", None, None, None)),
+          None, orderingDescending = false, 0, None)
+        functionUpdated <- service.get(registeredFunction.configuration.name)
+      } yield {
+        data.length must be greaterThanOrEqualTo records.length
+        data.forall(_.endpoint == "she/feed") must be equalTo true
+        functionUpdated must beSome
+        functionUpdated.get.lastExecution must beSome
+        functionUpdated.get.lastExecution.map(_.isAfter(currentDate)) must beSome(true)
+      }
+
+      executed await (1, 60.seconds)
+    }
+
+    "Throw an error if no function matching the name is available" in {
+      val service = application.injector.instanceOf[FunctionService]
+      service.run(dummyFunctionConfiguration, None) must throwA[RuntimeException].await(1, 30.seconds)
+    }
+  }
+
 }
 

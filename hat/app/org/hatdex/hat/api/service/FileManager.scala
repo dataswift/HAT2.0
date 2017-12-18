@@ -66,7 +66,7 @@ object AwsS3Configuration {
 
 class FileManagerS3 @Inject() (
     awsS3Configuration: AwsS3Configuration,
-    @Named("s3client-file-manager") s3client: AmazonS3) extends FileManager with RemoteApiExecutionContext {
+    @Named("s3client-file-manager") s3client: AmazonS3)(implicit ec: RemoteExecutionContext) extends FileManager {
 
   private val logger = Logger(this.getClass)
   private val bucketName = awsS3Configuration.bucketName
@@ -95,7 +95,7 @@ class FileManagerS3 @Inject() (
   }
 
   def getFileSize(fileName: String)(implicit hatServer: HatServer): Future[Long] = {
-    logger.info(s"Getting file size for $bucketName ${hatServer.domain}/$fileName")
+    logger.debug(s"Getting file size for $bucketName ${hatServer.domain}/$fileName")
     Future(s3client.getObjectMetadata(bucketName, s"${hatServer.domain}/$fileName"))
       .map { metadata => Option(metadata.getContentLength).getOrElse(0L) }
       .recover { case _ => 0L }

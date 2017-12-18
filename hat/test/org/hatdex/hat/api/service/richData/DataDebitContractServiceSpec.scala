@@ -24,52 +24,52 @@
 
 package org.hatdex.hat.api.service.richData
 
-import java.io.StringReader
-import java.util.UUID
-
-import akka.stream.Materializer
-import com.atlassian.jwt.core.keys.KeyUtils
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.test.FakeEnvironment
-import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner, _ }
-import org.hatdex.hat.api.service.{ FileManagerS3Mock, UsersService }
-import org.hatdex.hat.authentication.HatApiAuthEnvironment
-import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
-import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
+import org.hatdex.hat.api.models._
 import org.joda.time.LocalDateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.{ BeforeEach, Scope }
-import play.api.cache.AsyncCacheApi
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{ JsObject, Json }
+import org.specs2.specification.{BeforeAll, BeforeEach}
+import play.api.Logger
 import play.api.test.PlaySpecification
-import play.api.{ Application, Configuration, Logger }
 
-import scala.concurrent.Future
+import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with DataDebitContractServiceContext with BeforeEach {
+class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with DataDebitContractServiceContext with BeforeEach with BeforeAll {
 
   val logger = Logger(this.getClass)
 
-  def before: Unit = {
-    await(databaseReady)(30.seconds)
+  sequential
+
+  def beforeAll: Unit = {
+    Await.result(databaseReady, 60.seconds)
   }
 
-  sequential
+  override def before: Unit = {
+    import org.hatdex.hat.dal.Tables._
+    import org.hatdex.libs.dal.HATPostgresProfile.api._
+
+    val endpointRecrodsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
+
+    val action = DBIO.seq(
+      DataDebitBundle.filter(_.bundleId.like("test%")).delete,
+      DataDebitContract.filter(_.dataDebitKey.like("test%")).delete,
+      DataCombinators.filter(_.combinatorId.like("test%")).delete,
+      DataBundles.filter(_.bundleId.like("test%")).delete,
+      DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
+      DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+
+    Await.result(hatDatabase.run(action), 60.seconds)
+  }
 
   "The `createDataDebit` method" should {
     "Save a data debit" in {
       val service = application.injector.instanceOf[DataDebitContractService]
-      val saved = service.createDataDebit("dd", testDataDebitRequest, owner.userId)
+      val saved = service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
       saved map { debit =>
         debit.client.email must be equalTo (owner.email)
-        debit.dataDebitKey must be equalTo ("dd")
+        debit.dataDebitKey must be equalTo ("testdd")
         debit.bundles.length must be equalTo (1)
         debit.bundles.head.rolling must beFalse
         debit.bundles.head.enabled must beFalse
@@ -79,8 +79,8 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
     "Throw an error when a duplicate data debit is getting saved" in {
       val service = application.injector.instanceOf[DataDebitContractService]
       val saved = for {
-        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        saved <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
+        _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+        saved <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
       } yield saved
 
       saved must throwA[Exception].await(3, 10.seconds)
@@ -91,15 +91,15 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
     "Return a data debit by ID" in {
       val service = application.injector.instanceOf[DataDebitContractService]
       val saved = for {
-        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        saved <- service.dataDebit("dd")
+        _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+        saved <- service.dataDebit("testdd")
       } yield saved
 
       saved map { maybeDebit =>
         maybeDebit must beSome
         val debit = maybeDebit.get
         debit.client.email must be equalTo (owner.email)
-        debit.dataDebitKey must be equalTo ("dd")
+        debit.dataDebitKey must be equalTo ("testdd")
         debit.bundles.length must be equalTo (1)
         debit.bundles.head.enabled must beFalse
       } await (3, 10.seconds)
@@ -108,7 +108,7 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
     "Return None when data debit doesn't exist" in {
       val service = application.injector.instanceOf[DataDebitContractService]
       val saved = for {
-        saved <- service.dataDebit("dd")
+        saved <- service.dataDebit("testdd")
       } yield saved
 
       saved map { maybeDebit =>
@@ -121,16 +121,16 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
     "Enable an existing data debit" in {
       val service = application.injector.instanceOf[DataDebitContractService]
       val saved = for {
-        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        _ <- service.dataDebitEnableBundle("dd", None)
-        saved <- service.dataDebit("dd")
+        _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+        _ <- service.dataDebitEnableBundle("testdd", None)
+        saved <- service.dataDebit("testdd")
       } yield saved
 
       saved map { maybeDebit =>
         maybeDebit must beSome
         val debit = maybeDebit.get
         debit.client.email must be equalTo (owner.email)
-        debit.dataDebitKey must be equalTo ("dd")
+        debit.dataDebitKey must be equalTo ("testdd")
         debit.bundles.length must be equalTo (1)
         debit.bundles.head.enabled must beTrue
         debit.activeBundle must beSome
@@ -140,17 +140,17 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
     "Enable a data debit after a few iterations of bundle adjustments" in {
       val service = application.injector.instanceOf[DataDebitContractService]
       val saved = for {
-        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        _ <- service.updateDataDebitBundle("dd", testDataDebitRequestUpdate, owner.userId)
-        _ <- service.dataDebitEnableBundle("dd", Some(testDataDebitRequestUpdate.bundle.name))
-        saved <- service.dataDebit("dd")
+        _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+        _ <- service.updateDataDebitBundle("testdd", testDataDebitRequestUpdate, owner.userId)
+        _ <- service.dataDebitEnableBundle("testdd", Some(testDataDebitRequestUpdate.bundle.name))
+        saved <- service.dataDebit("testdd")
       } yield saved
 
       saved map { maybeDebit =>
         maybeDebit must beSome
         val debit = maybeDebit.get
         debit.client.email must be equalTo (owner.email)
-        debit.dataDebitKey must be equalTo ("dd")
+        debit.dataDebitKey must be equalTo ("testdd")
         debit.bundles.length must be equalTo (2)
         debit.activeBundle must beSome
         debit.activeBundle.get.bundle.name must be equalTo (testDataDebitRequestUpdate.bundle.name)
@@ -164,12 +164,12 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
       val service = application.injector.instanceOf[DataDebitContractService]
 
       val saved = for {
-        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        _ <- service.dataDebitEnableBundle("dd", Some(testDataDebitRequest.bundle.name))
-        _ <- service.updateDataDebitBundle("dd", testDataDebitRequestUpdate, owner.userId)
-        _ <- service.dataDebitEnableBundle("dd", Some(testDataDebitRequestUpdate.bundle.name))
-        _ <- service.dataDebitDisable("dd")
-        saved <- service.dataDebit("dd")
+        _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+        _ <- service.dataDebitEnableBundle("testdd", Some(testDataDebitRequest.bundle.name))
+        _ <- service.updateDataDebitBundle("testdd", testDataDebitRequestUpdate, owner.userId)
+        _ <- service.dataDebitEnableBundle("testdd", Some(testDataDebitRequestUpdate.bundle.name))
+        _ <- service.dataDebitDisable("testdd")
+        saved <- service.dataDebit("testdd")
       } yield saved
 
       saved map { maybeDebit =>
@@ -185,13 +185,13 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
     "Update a data debit by inserting an additional bundle" in {
       val service = application.injector.instanceOf[DataDebitContractService]
       val saved = for {
-        saved <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        updated <- service.updateDataDebitBundle("dd", testDataDebitRequestUpdate, owner.userId)
+        saved <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+        updated <- service.updateDataDebitBundle("testdd", testDataDebitRequestUpdate, owner.userId)
       } yield updated
 
       saved map { debit =>
         debit.client.email must be equalTo (owner.email)
-        debit.dataDebitKey must be equalTo ("dd")
+        debit.dataDebitKey must be equalTo ("testdd")
         debit.bundles.length must be equalTo (2)
         debit.bundles.head.enabled must beFalse
         debit.currentBundle must beSome
@@ -203,8 +203,8 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
     "Throw an error when updating with an existing bundle" in {
       val service = application.injector.instanceOf[DataDebitContractService]
       val saved = for {
-        saved <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        updated <- service.updateDataDebitBundle("dd", testDataDebitRequestUpdate.copy(bundle = testDataDebitRequest.bundle), owner.userId)
+        saved <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+        updated <- service.updateDataDebitBundle("testdd", testDataDebitRequestUpdate.copy(bundle = testDataDebitRequest.bundle), owner.userId)
       } yield updated
 
       saved must throwA[RichDataDuplicateBundleException].await(3, 10.seconds)
@@ -216,8 +216,8 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
       val service = application.injector.instanceOf[DataDebitContractService]
 
       val saved = for {
-        _ <- service.createDataDebit("dd", testDataDebitRequest, owner.userId)
-        _ <- service.createDataDebit("dd2", testDataDebitRequestUpdate, owner.userId)
+        _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+        _ <- service.createDataDebit("testdd2", testDataDebitRequestUpdate, owner.userId)
         saved <- service.all()
       } yield saved
 
@@ -229,106 +229,7 @@ class DataDebitContractServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
 
 }
 
-trait DataDebitContractServiceContext extends Scope with Mockito {
-  import scala.concurrent.ExecutionContext.Implicits.global
-  // Initialize configuration
-  val hatAddress = "hat.hubofallthings.net"
-  val hatUrl = s"http://$hatAddress"
-  private val configuration = Configuration.from(FakeHatConfiguration.config)
-  private val hatConfig = configuration.get[Configuration](s"hat.$hatAddress")
-
-  // Build up the FakeEnvironment for authentication testing
-  private val keyUtils = new KeyUtils()
-  implicit protected def hatDatabase: Database = Database.forConfig("", hatConfig.get[Configuration]("database").underlying)
-  implicit val hatServer: HatServer = HatServer(hatAddress, "hat", "user@hat.org",
-    keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.get[String]("privateKey"))),
-    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))), hatDatabase)
-
-  // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
-  val dataDebitUser = HatUser(UUID.randomUUID(), "dataDebitUser", Some("pa55w0rd"), "dataDebitUser", Seq(DataDebitOwner("")), enabled = true)
-  val dataCreditUser = HatUser(UUID.randomUUID(), "dataCreditUser", Some("pa55w0rd"), "dataCreditUser", Seq(DataCredit("")), enabled = true)
-  implicit val environment: Environment[HatApiAuthEnvironment] = FakeEnvironment[HatApiAuthEnvironment](
-    Seq(owner.loginInfo -> owner, dataDebitUser.loginInfo -> dataDebitUser, dataCreditUser.loginInfo -> dataCreditUser),
-    hatServer)
-
-  // Helpers to (re-)initialize the test database and await for it to be ready
-  val devHatMigrations = Seq(
-    "evolutions/hat-database-schema/11_hat.sql",
-    "evolutions/hat-database-schema/12_hatEvolutions.sql",
-    "evolutions/hat-database-schema/13_liveEvolutions.sql",
-    "evolutions/hat-database-schema/14_newHat.sql")
-
-  def databaseReady: Future[Unit] = {
-    val schemaMigration = application.injector.instanceOf[SchemaMigration]
-    schemaMigration.resetDatabase()(hatDatabase)
-      .flatMap(_ => schemaMigration.run(devHatMigrations)(hatDatabase))
-      .flatMap { _ =>
-        val usersService = application.injector.instanceOf[UsersService]
-        for {
-          _ <- usersService.saveUser(dataCreditUser)
-          _ <- usersService.saveUser(dataDebitUser)
-          _ <- usersService.saveUser(owner)
-        } yield ()
-      }
-  }
-
-  /**
-   * A fake Guice module.
-   */
-  class FakeModule extends AbstractModule with ScalaModule {
-    val fileManagerS3Mock = FileManagerS3Mock()
-    lazy val cacheAPI = mock[AsyncCacheApi]
-
-    def configure(): Unit = {
-      bind[Environment[HatApiAuthEnvironment]].toInstance(environment)
-      bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
-      bind[AsyncCacheApi].toInstance(cacheAPI)
-    }
-  }
-
-  lazy val application: Application = new GuiceApplicationBuilder()
-    .configure(FakeHatConfiguration.config)
-    .overrides(new FakeModule)
-    .build()
-
-  implicit lazy val materializer: Materializer = application.materializer
-
-  private val simpleTransformation: JsObject = Json.parse(
-    """
-      | {
-      |   "data.newField": "anotherField",
-      |   "data.arrayField": "object.objectFieldArray",
-      |   "data.onemore": "object.education[1]"
-      | }
-    """.stripMargin).as[JsObject]
-
-  private val complexTransformation: JsObject = Json.parse(
-    """
-      | {
-      |   "data.newField": "hometown.name",
-      |   "data.arrayField": "education",
-      |   "data.onemore": "education[0].type"
-      | }
-    """.stripMargin).as[JsObject]
-
-  val testEndpointQuery = Seq(
-    EndpointQuery("test", Some(simpleTransformation), None, None),
-    EndpointQuery("complex", Some(complexTransformation), None, None))
-
-  val testEndpointQueryUpdated = Seq(
-    EndpointQuery("test", Some(simpleTransformation), None, None),
-    EndpointQuery("anothertest", None, None, None))
-
-  val testBundle = EndpointDataBundle("testBundle", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-    "complex" -> PropertyQuery(List(EndpointQuery("complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
-
-  val testBundle2 = EndpointDataBundle("testBundle2", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-    "complex" -> PropertyQuery(List(EndpointQuery("anothertest", None, None, None)), Some("data.newField"), None, Some(1))))
-
+trait DataDebitContractServiceContext extends RichBundleServiceContext {
   val testDataDebitRequest = DataDebitRequest(testBundle, None, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
-
   val testDataDebitRequestUpdate = DataDebitRequest(testBundle2, None, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
 }

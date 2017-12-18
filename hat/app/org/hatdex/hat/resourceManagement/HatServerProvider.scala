@@ -33,6 +33,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.mohiva.play.silhouette.api.services.DynamicEnvironmentProviderService
 import org.bouncycastle.util.io.pem.{ PemObject, PemWriter }
+import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.resourceManagement.actors.HatServerProviderActor
 import play.api.{ Configuration, Logger }
 import play.api.mvc.Request
@@ -57,9 +58,9 @@ trait HatServerProvider extends DynamicEnvironmentProviderService[HatServer] {
 @Singleton
 class HatServerProviderImpl @Inject() (
     configuration: Configuration,
-    @Named("hatServerProviderActor") serverProviderActor: ActorRef) extends HatServerProvider {
-
-  import org.hatdex.hat.api.service.IoExecutionContext.ioThreadPool
+    @Named("hatServerProviderActor") serverProviderActor: ActorRef)(
+    implicit
+    val ec: RemoteExecutionContext) extends HatServerProvider {
 
   private val logger = Logger(this.getClass)
 
@@ -69,7 +70,6 @@ class HatServerProviderImpl @Inject() (
   }
 
   def retrieve(hatAddress: String): Future[Option[HatServer]] = {
-    logger.info(s"Retrieving environment for $hatAddress")
     implicit val timeout: Timeout = configuration.get[FiniteDuration]("resourceManagement.serverProvisioningTimeout")
     (serverProviderActor ? HatServerProviderActor.HatServerRetrieve(hatAddress)) flatMap {
       case server: HatServer =>
@@ -85,7 +85,7 @@ class HatServerProviderImpl @Inject() (
     } recoverWith {
       case e =>
         logger.warn(s"Error while retrieving HAT Server info: ${e.getMessage}")
-        val error = new HatServerDiscoveryException("HAT Server info retrieval failed", e)
+        val error = new HatServerDiscoveryException("HAT Server info retrieval failed")
         Future.failed(error)
     }
   }
