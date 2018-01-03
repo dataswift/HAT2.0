@@ -116,13 +116,25 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
       }
   }
 
-  def saveDataGroups(userId: UUID, dataGroups: Seq[(Seq[EndpointData], Seq[UUID])])(implicit db: Database): Future[Seq[EndpointData]] = {
+  def saveDataGroups(userId: UUID, dataGroups: Seq[(Seq[EndpointData], Seq[UUID])], skipErrors: Boolean = false)(implicit db: Database): Future[Seq[EndpointData]] = {
     val queries = dataGroups flatMap {
       case (endpointData, linkedRecords) =>
         saveDataQuery(userId, endpointData, Some(linkedRecords))
     }
 
-    db.run(DBIO.sequence(queries).transactionally)
+    val insertAction = if (skipErrors) {
+      val temp = queries.map(q => q.asTry)
+      db.run(DBIO.sequence(temp))
+        .map {
+          _.collect {
+            case Success(d) => d
+          }
+        }
+    } else {
+      db.run(DBIO.sequence(queries).transactionally)
+    }
+
+    insertAction
       .map {
         _.map { inserted =>
           ModelTranslation.fromDbModel(inserted._1, inserted._2)
