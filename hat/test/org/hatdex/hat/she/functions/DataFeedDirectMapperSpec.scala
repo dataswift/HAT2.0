@@ -67,6 +67,7 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
     Await.result(hatDatabase.run(action), 60.seconds)
   }
 
+  // TODO: updated tweet with retweet structure
   "The `mapTweet` method" should {
     "translate twitter retweets" in {
       val transformed = mapTweet(exampleTweetRetweet.recordId.get, exampleTweetRetweet.data).get
@@ -80,10 +81,17 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
       transformed.location.get.address.get.city must be equalTo "Washington"
     }
 
+    // TODO: update tweet with reply structure
     "translate twitter replies" in {
       val transformed = mapTweet(exampleTweetMentions.recordId.get, exampleTweetMentions.data).get
       transformed.source must be equalTo "twitter"
       transformed.title.get.text must contain("You replied to @drgeep")
+    }
+
+    "translate minimal tweet structure correctly" in {
+      val transformed = mapTweet(exampleTweetMinimalFields.recordId.get, exampleTweetMinimalFields.data).get
+      transformed.source must be equalTo "twitter"
+      transformed.content.get.text.get must contain("Tweet from Portugal.")
     }
   }
 
