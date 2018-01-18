@@ -24,7 +24,7 @@
 
 package org.hatdex.hat.she.service
 
-import com.google.inject.{AbstractModule, Provides}
+import com.google.inject.{ AbstractModule, Provides }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models.EndpointDataBundle
@@ -34,7 +34,7 @@ import org.hatdex.hat.she.models._
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 trait FunctionServiceContext extends HATTestContext {
 

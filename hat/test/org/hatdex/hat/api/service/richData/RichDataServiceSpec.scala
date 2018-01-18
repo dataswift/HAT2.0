@@ -28,17 +28,17 @@ import java.util.UUID
 
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.dal.Tables.{DataJson, DataJsonGroups}
+import org.hatdex.hat.dal.Tables.{ DataJson, DataJsonGroups }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.{BeforeAll, BeforeEach}
+import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.test.PlaySpecification
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{ Await, Future }
 
 class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichDataServiceContext with BeforeEach with BeforeAll {
 

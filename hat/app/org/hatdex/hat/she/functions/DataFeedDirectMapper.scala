@@ -184,10 +184,10 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
 
   protected def mapTweet(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     for {
-      title <- Try(if ((content \ "retweeted").as[String] == "true") {
+      title <- Try(if ((content \ "retweeted").as[Boolean]) {
         DataFeedItemTitle("You retweeted", Some("repeat"))
       }
-      else if ((content \ "in_reply_to_user_id").isDefined) {
+      else if ((content \ "in_reply_to_user_id").isDefined && !((content \ "in_reply_to_user_id").get == JsNull)) {
         DataFeedItemTitle(s"You replied to @${(content \ "in_reply_to_screen_name").as[String]}", None)
       }
       else {

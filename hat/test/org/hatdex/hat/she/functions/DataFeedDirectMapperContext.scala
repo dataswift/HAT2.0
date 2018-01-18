@@ -24,10 +24,10 @@
 
 package org.hatdex.hat.she.functions
 
-import org.hatdex.hat.api.models.{EndpointData, RichDataJsonFormats}
+import org.hatdex.hat.api.models.{ EndpointData, RichDataJsonFormats }
 import org.hatdex.hat.she.service.FunctionServiceContext
 import org.specs2.specification.Scope
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.{ Format, Json }
 
 trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
   private implicit val endpointDataFormat: Format[EndpointData] = RichDataJsonFormats.endpointDataFormat
@@ -53,9 +53,9 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
       |                "favourites_count": "39"
       |            },
       |            "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
-      |            "favorited": "false",
-      |            "retweeted": "true",
-      |            "truncated": "false",
+      |            "favorited": false,
+      |            "retweeted": true,
+      |            "truncated": false,
       |            "created_at": "Sat Sep 23 09:24:51 +0000 2017",
       |            "lastUpdated": "2017-09-20T09:24:51+0000",
       |            "retweet_count": "2937",
@@ -116,9 +116,9 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
       |                "favourites_count": "39"
       |            },
       |            "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
-      |            "favorited": "false",
-      |            "retweeted": "false",
-      |            "truncated": "true",
+      |            "favorited": false,
+      |            "retweeted": false,
+      |            "truncated": true,
       |            "created_at": "Sat Sep 23 19:24:47 +0000 2017",
       |            "lastUpdated": "2017-09-23T19:24:47+0000",
       |            "retweet_count": "0",
@@ -131,6 +131,93 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
     """.stripMargin
 
   val exampleTweetMentions: EndpointData = Json.parse(exampleTweetMentionsText).as[EndpointData]
+
+  private val exampleTweetMinimalFieldsText =
+    """
+      |{
+      |        "endpoint": "twitter/tweets",
+      |        "recordId": "8c9c541c-21e5-4094-875d-ede01c9bf613",
+      |        "data": {
+      |            "id": 953685879859679233,
+      |            "geo": null,
+      |            "lang": "en",
+      |            "text": "Tweet from Portugal.",
+      |            "user": {
+      |                "id": 819125281931792384,
+      |                "url": null,
+      |                "lang": "en",
+      |                "name": "Augustinas",
+      |                "id_str": "819125281931792384",
+      |                "entities": {
+      |                    "description": {
+      |                        "urls": []
+      |                    }
+      |                },
+      |                "location": "",
+      |                "verified": false,
+      |                "following": false,
+      |                "protected": true,
+      |                "time_zone": null,
+      |                "created_at": "Wed Jan 11 10:14:20 +0000 2017",
+      |                "utc_offset": null,
+      |                "description": "",
+      |                "geo_enabled": false,
+      |                "screen_name": "augustinas_test",
+      |                "listed_count": 0,
+      |                "friends_count": 28,
+      |                "is_translator": false,
+      |                "notifications": false,
+      |                "statuses_count": 22,
+      |                "default_profile": true,
+      |                "followers_count": 0,
+      |                "translator_type": "none",
+      |                "favourites_count": 0,
+      |                "profile_image_url": "http://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png",
+      |                "profile_link_color": "1DA1F2",
+      |                "profile_text_color": "333333",
+      |                "follow_request_sent": false,
+      |                "contributors_enabled": false,
+      |                "has_extended_profile": false,
+      |                "default_profile_image": true,
+      |                "is_translation_enabled": false,
+      |                "profile_background_tile": false,
+      |                "profile_image_url_https": "https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png",
+      |                "profile_background_color": "F5F8FA",
+      |                "profile_sidebar_fill_color": "DDEEF6",
+      |                "profile_background_image_url": null,
+      |                "profile_sidebar_border_color": "C0DEED",
+      |                "profile_use_background_image": true,
+      |                "profile_background_image_url_https": null
+      |            },
+      |            "place": null,
+      |            "id_str": "953685879859679233",
+      |            "source": "<a href=\"http://twitter.com\" rel=\"nofollow\">Twitter Web Client</a>",
+      |            "entities": {
+      |                "urls": [],
+      |                "symbols": [],
+      |                "hashtags": [],
+      |                "user_mentions": []
+      |            },
+      |            "favorited": false,
+      |            "retweeted": false,
+      |            "truncated": false,
+      |            "created_at": "Wed Jan 17 17:50:07 +0000 2018",
+      |            "coordinates": null,
+      |            "lastUpdated": "2018-01-17T17:50:07.000Z",
+      |            "contributors": null,
+      |            "retweet_count": 0,
+      |            "favorite_count": 0,
+      |            "is_quote_status": false,
+      |            "in_reply_to_user_id": null,
+      |            "in_reply_to_status_id": null,
+      |            "in_reply_to_screen_name": null,
+      |            "in_reply_to_user_id_str": null,
+      |            "in_reply_to_status_id_str": null
+      |        }
+      |    }
+    """.stripMargin
+
+  val exampleTweetMinimalFields: EndpointData = Json.parse(exampleTweetMinimalFieldsText).as[EndpointData]
 
   private val exampleFacebookPhotoPostText =
     """

@@ -28,9 +28,9 @@ import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.{BeforeAll, BeforeEach}
+import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{ JsObject, Json }
 import play.api.test.PlaySpecification
 
 import scala.concurrent.Await

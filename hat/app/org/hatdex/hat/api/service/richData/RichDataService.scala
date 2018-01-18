@@ -130,7 +130,8 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
             case Success(d) => d
           }
         }
-    } else {
+    }
+    else {
       db.run(DBIO.sequence(queries).transactionally)
     }
 

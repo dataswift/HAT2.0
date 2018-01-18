@@ -27,7 +27,7 @@ package org.hatdex.hat.api.service.monitoring
 import java.util.UUID
 
 import akka.stream.Materializer
-import org.hatdex.hat.api.models.{EndpointData, Owner}
+import org.hatdex.hat.api.models.{ EndpointData, Owner }
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.DataCreatedEvent
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
@@ -36,9 +36,9 @@ import org.joda.time.DateTime
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{ JsValue, Json }
 import play.api.test.PlaySpecification
-import play.api.{Application, Logger}
+import play.api.{ Application, Logger }
 
 class HatDataStatsProcessorSpec extends PlaySpecification with Mockito with HatDataStatsProcessorContext {
 
