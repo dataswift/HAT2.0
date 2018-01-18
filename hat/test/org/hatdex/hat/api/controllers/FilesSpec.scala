@@ -31,14 +31,14 @@ import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.{BeforeAll, BeforeEach}
+import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Result
-import play.api.test.{FakeRequest, Helpers, PlaySpecification}
+import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{ Await, Future }
 
 class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with FilesContext with BeforeAll with BeforeEach {
 

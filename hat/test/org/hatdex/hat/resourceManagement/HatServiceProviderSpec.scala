@@ -26,13 +26,13 @@ package org.hatdex.hat.resourceManagement
 
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.resourceManagement.actors.{HatServerActor, HatServerProviderActor}
+import org.hatdex.hat.resourceManagement.actors.{ HatServerActor, HatServerProviderActor }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.concurrent.AkkaGuiceSupport
-import play.api.test.{FakeRequest, PlaySpecification}
-import play.api.{Application, Logger}
+import play.api.test.{ FakeRequest, PlaySpecification }
+import play.api.{ Application, Logger }
 
 import scala.concurrent.duration._
 

@@ -28,7 +28,7 @@ import org.hatdex.hat.api.models._
 import org.joda.time.LocalDateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.{BeforeAll, BeforeEach}
+import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
 import play.api.test.PlaySpecification
 
