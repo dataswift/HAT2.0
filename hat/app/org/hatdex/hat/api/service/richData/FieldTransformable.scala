@@ -63,7 +63,7 @@ object FieldTransformable {
       type Out = Rep[JsValue] => Rep[JsValue]
 
       def apply(in: TimestampExtract): Rep[JsValue] => Rep[JsValue] = {
-        value => toJson(datePartTimestamp(in.part, toTimestamp(value.asColumnOf[Double])))
+        value => toJson(datePartTimestamp(in.part, toTimestamp(value.asColumnOf[String].asColumnOf[Double])))
       }
     }
 

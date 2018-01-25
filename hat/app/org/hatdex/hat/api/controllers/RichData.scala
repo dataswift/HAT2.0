@@ -36,7 +36,7 @@ import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
-import org.hatdex.hat.utils.HatBodyParsers
+import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider }
 import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
@@ -55,9 +55,10 @@ class RichData @Inject() (
     dataService: RichDataService,
     bundleService: RichBundleService,
     dataDebitService: DataDebitContractService,
+    loggingProvider: LoggingProvider,
     implicit val ec: ExecutionContext) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
 
-  private val logger = Logger(this.getClass)
+  private val logger = loggingProvider.logger(this.getClass)
   private val defaultRecordLimit = 1000
 
   /**
@@ -275,7 +276,9 @@ class RichData @Inject() (
       dataDebitService.dataDebit(dataDebitId)
         .flatMap {
           case Some(debit) if debit.activeBundle.isDefined =>
+            logger.debug("Got Data Debit, fetching data")
             val eventualData = debit.activeBundle.get.conditions map { bundleConditions =>
+              logger.debug("Getting data for conditions")
               dataService.bundleData(bundleConditions).flatMap { conditionValues =>
                 val conditionFulfillment: Map[String, Boolean] = conditionValues map {
                   case (condition, values) =>
@@ -305,6 +308,9 @@ class RichData @Inject() (
 
           case Some(_) => Future.successful(BadRequest(Json.toJson(Errors.dataDebitNotEnabled(dataDebitId))))
           case None    => Future.successful(NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId))))
+        }
+        .recover {
+          case err: RichDataBundleFormatException => BadRequest(Json.toJson(Errors.dataDebitBundleMalformed(dataDebitId, err)))
         }
     }
 
@@ -359,6 +365,7 @@ class RichData @Inject() (
     def dataDebitNotFound(id: String) = ErrorMessage("Not Found", s"Data Debit $id not found")
     def dataDebitNotEnabled(id: String) = ErrorMessage("Bad Request", s"Data Debit $id not enabled")
     def dataDebitMalformed(err: Throwable) = ErrorMessage("Bad Request", s"Data Debit request malformed: ${err.getMessage}")
+    def dataDebitBundleMalformed(id: String, err: Throwable) = ErrorMessage("Data Debit Bundle malformed", s"Data Debit $id active bundle malformed: ${err.getMessage}")
 
     def bundleNotFound(bundleId: String) = ErrorMessage("Bundle Not Found", s"Bundle $bundleId not found")
 

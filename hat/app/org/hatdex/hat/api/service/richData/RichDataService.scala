@@ -110,9 +110,6 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
           throw RichDataDuplicateException("Duplicate data", e)
         case e: PSQLException =>
           throw RichDataDuplicateException("Unexpected issue with inserting data", e)
-        case e =>
-          logger.error(s"Error inserting data: ${e.getMessage}")
-          throw e
       }
   }
 
@@ -145,9 +142,6 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
           throw RichDataDuplicateException("Duplicate data", e)
         case e: PSQLException =>
           throw RichDataDuplicateException("Unexpected issue with inserting data", e)
-        case e =>
-          logger.error(s"Error inserting data: ${e.getMessage}")
-          throw e
       }
   }
 
@@ -420,6 +414,9 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
             endpointData
           }
       }
+    } recover {
+      case e: PSQLException if e.getMessage.contains("cannot cast type") =>
+        throw RichDataBundleFormatException("Invalid bundle format - cannot cast between types to satisfy query", e)
     }
   }
 

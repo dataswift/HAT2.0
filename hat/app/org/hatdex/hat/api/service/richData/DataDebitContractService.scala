@@ -24,6 +24,7 @@
 
 package org.hatdex.hat.api.service.richData
 
+import java.sql.SQLException
 import java.util.UUID
 import javax.inject.Inject
 
@@ -62,12 +63,10 @@ class DataDebitContractService @Inject() (implicit val ec: RemoteExecutionContex
       .flatMap(_ => dataDebit(key)) // Retrieve the data debit
       .map(_.get) // Data Debit must be Some as it has been inserted
       .recover {
-        case e: PSQLException if e.getMessage.contains("duplicate key value violates unique constraint \"data_bundles_pkey\"") =>
+        case e: SQLException if e.getMessage.contains("duplicate key value violates unique constraint \"data_bundles_pkey\"") =>
           throw RichDataDuplicateBundleException("Data bundle with such ID already exists")
-        case e: PSQLException if e.getMessage.contains("duplicate key value violates unique constraint \"data_debit_contract_pkey\"") =>
+        case e: SQLException if e.getMessage.contains("duplicate key value violates unique constraint \"data_debit_contract_pkey\"") =>
           throw RichDataDuplicateDebitException("Data Debit with such ID already exists")
-        case e =>
-          throw e
       }
   }
 
@@ -86,8 +85,6 @@ class DataDebitContractService @Inject() (implicit val ec: RemoteExecutionContex
           throw RichDataDuplicateBundleException("Data bundle with such ID already exists")
         case e: UnsupportedOperationException if e.getMessage.contains("empty.head") =>
           throw RichDataDebitException("Data Debit being updated does not exist")
-        case e =>
-          throw e
       }
   }
 

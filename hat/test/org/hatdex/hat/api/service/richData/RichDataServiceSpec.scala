@@ -391,6 +391,26 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       } await (3, 10.seconds)
     }
 
+    "Use transformation operator for unix timestamp conversion combined with a `Between` filter" in {
+      val service = application.injector.instanceOf[RichDataService]
+      val query = service.generatedDataQuery(EndpointQuery("test/test", None,
+        Some(Seq(
+          EndpointQueryFilter(
+            "date",
+            Some(FieldTransformation.TimestampExtract("hour")),
+            FilterOperator.Between(Json.toJson(14), Json.toJson(17))))), None), DataJson)
+
+      val result = for {
+        _ <- service.saveData(owner.userId, sampleData)
+        retrieved <- hatDatabase.run(query.result)
+      } yield retrieved
+
+      result map { retrievedRows =>
+        retrievedRows.length should equalTo(1)
+        (retrievedRows.head.data \ "anotherField").as[String] must equalTo("anotherFieldValue")
+      } await (3, 10.seconds)
+    }
+
     "Run search with a `Find` filter" in {
       val service = application.injector.instanceOf[RichDataService]
       val query = service.generatedDataQuery(EndpointQuery("test/complex", None,
