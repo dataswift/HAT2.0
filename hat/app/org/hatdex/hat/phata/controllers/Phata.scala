@@ -31,7 +31,7 @@ import controllers.{ AssetsFinder, AssetsFinderProvider }
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models.{ EndpointDataBundle, RichDataJsonFormats }
 import org.hatdex.hat.api.service.richData.{ RichBundleService, RichDataService }
-import org.hatdex.hat.authentication.{ HatFrontendAuthEnvironment, HatFrontendController }
+import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.phata.{ views => phataViews }
 import org.hatdex.hat.resourceManagement.HatServerProvider
 import play.api.cache.{ Cached, CachedBuilder }
@@ -48,12 +48,12 @@ class Phata @Inject() (
     assetsFinder: AssetsFinderProvider,
     cached: Cached,
     configuration: Configuration,
-    silhouette: Silhouette[HatFrontendAuthEnvironment],
+    silhouette: Silhouette[HatApiAuthEnvironment],
     hatServerProvider: HatServerProvider,
     clock: Clock,
     wsClient: WSClient,
     bundleService: RichBundleService,
-    dataService: RichDataService) extends HatFrontendController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats with RichDataJsonFormats {
+    dataService: RichDataService) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats with RichDataJsonFormats {
 
   implicit val assets: AssetsFinder = assetsFinder.get
 
@@ -64,7 +64,7 @@ class Phata @Inject() (
     .includeStatus(404, 600)
 
   def rumpelIndex(): EssentialAction = indefiniteSuccessCaching {
-    UserAwareAction.async { implicit request =>
+    Action.async { implicit request =>
       Future.successful(Ok(phataViews.html.rumpelIndex(assets)))
     }
   }
@@ -80,7 +80,7 @@ class Phata @Inject() (
   }
 
   def hatLogin(name: String, redirectUrl: String) = indefiniteSuccessCaching {
-    UserAwareAction { implicit request =>
+    Action { implicit request =>
       val uri = wsClient.url(routes.Phata.hatLogin(name, redirectUrl).absoluteURL()).uri
       val newRedirectUrl = s"${uri.getScheme}://${uri.getAuthority}/#/hatlogin?${uri.getQuery}"
       logger.debug(s"Redirect url from ${request.uri}: $newRedirectUrl")

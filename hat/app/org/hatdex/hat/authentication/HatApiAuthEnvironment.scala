@@ -36,7 +36,3 @@ trait HatAuthEnvironment extends Env {
 trait HatApiAuthEnvironment extends HatAuthEnvironment {
   type A = JWTRS256Authenticator
 }
-
-trait HatFrontendAuthEnvironment extends HatAuthEnvironment {
-  type A = CookieAuthenticator
-}

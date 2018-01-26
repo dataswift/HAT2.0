@@ -44,11 +44,10 @@ import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.service.{ MailTokenService, MailTokenUserService }
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models.MailTokenUser
-import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider, HatServerProviderImpl }
+import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, HatMailerImpl }
 import play.api.http.HttpErrorHandler
 import play.api.libs.ws.WSClient
-import play.api.mvc.CookieHeaderEncoding
 import play.api.{ ConfigLoader, Configuration }
 
 import scala.concurrent.ExecutionContext
@@ -66,7 +65,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteCo
     bind[DynamicEnvironmentProviderService[HatServer]].to[HatServerProvider]
 
     bind[Silhouette[HatApiAuthEnvironment]].to[SilhouetteProvider[HatApiAuthEnvironment]]
-    bind[Silhouette[HatFrontendAuthEnvironment]].to[SilhouetteProvider[HatFrontendAuthEnvironment]]
     bind[MailTokenService[MailTokenUser]].to[MailTokenUserService]
     bind[HatMailer].to[HatMailerImpl]
 
@@ -112,21 +110,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteCo
     eventBus: EventBus)(implicit ec: ExecutionContext): Environment[HatApiAuthEnvironment] = {
 
     Environment[HatApiAuthEnvironment](
-      userService,
-      authenticatorService,
-      Seq(),
-      dynamicEnvironmentProviderService,
-      eventBus)
-  }
-
-  @Provides
-  def provideCookieAuthEnvironment(
-    userService: AuthUserService,
-    authenticatorService: AuthenticatorService[CookieAuthenticator, HatServer],
-    dynamicEnvironmentProviderService: DynamicEnvironmentProviderService[HatServer],
-    eventBus: EventBus)(implicit ec: ExecutionContext): Environment[HatFrontendAuthEnvironment] = {
-
-    Environment[HatFrontendAuthEnvironment](
       userService,
       authenticatorService,
       Seq(),
@@ -185,33 +168,16 @@ class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteCo
   @Provides
   def provideAuthenticatorService(
     //    @Named("authenticator-cookie-signer") cookieSigner: CookieSigner,
-    //    @Named("authenticator-crypter") crypter: Crypter,
+    @Named("authenticator-crypter") crypter: Crypter,
     fingerprintGenerator: FingerprintGenerator,
     idGenerator: IDGenerator,
     configuration: Configuration,
     clock: Clock)(implicit ec: ExecutionContext): AuthenticatorService[JWTRS256Authenticator, HatServer] = {
 
     val config = configuration.get[JWTRS256AuthenticatorSettings]("silhouette.authenticator")
-    val encoder = new Base64AuthenticatorEncoder()
+    val encoder = new CrypterAuthenticatorEncoder(crypter)
 
     new JWTRS256AuthenticatorService[HatServer](config, None, encoder, idGenerator, clock)
-  }
-
-  @Provides
-  def provideCookieAuthenticatorService(
-    @Named("authenticator-signer") signer: Signer,
-    @Named("authenticator-crypter") crypter: Crypter,
-    cookieHeaderEncoding: CookieHeaderEncoding,
-    fingerprintGenerator: FingerprintGenerator,
-    idGenerator: IDGenerator,
-    configuration: Configuration,
-    clock: Clock)(implicit ec: ExecutionContext): AuthenticatorService[CookieAuthenticator, HatServer] = {
-
-    val config = configuration.get[CookieAuthenticatorSettings]("silhouette.authenticator.cookie")
-    val authenticatorEncoder = new CrypterAuthenticatorEncoder(crypter)
-
-    new CookieAuthenticatorService[HatServer](config, None, signer, cookieHeaderEncoding,
-      authenticatorEncoder, fingerprintGenerator, idGenerator, clock)
   }
 
   /**
@@ -241,22 +207,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteCo
 }
 
 trait SilhouetteConfigLoaders {
-  implicit val cookieAuthenticatorSettingsLoader: ConfigLoader[CookieAuthenticatorSettings] = new ConfigLoader[CookieAuthenticatorSettings] {
-    def load(rootConfig: Config, path: String): CookieAuthenticatorSettings = {
-      val config = ConfigLoader.configurationLoader.load(rootConfig, path)
-      CookieAuthenticatorSettings(
-        cookieName = config.get[String]("cookieName"),
-        cookiePath = config.get[String]("cookiePath"),
-        cookieDomain = config.getOptional[String]("cookieDomain"),
-        secureCookie = config.get[Boolean]("secureCookie"),
-        httpOnlyCookie = config.get[Boolean]("httpOnlyCookie"),
-        useFingerprinting = config.get[Boolean]("useFingerprinting"),
-        cookieMaxAge = config.get[Option[FiniteDuration]]("cookieMaxAge"),
-        authenticatorIdleTimeout = config.get[Option[FiniteDuration]]("authenticatorIdleTimeout"),
-        authenticatorExpiry = config.get[FiniteDuration]("authenticatorExpiry"))
-    }
-  }
-
   implicit val JWTRS256AuthenticatorSettingsLoader: ConfigLoader[JWTRS256AuthenticatorSettings] = new ConfigLoader[JWTRS256AuthenticatorSettings] {
     def load(rootConfig: Config, path: String): JWTRS256AuthenticatorSettings = {
       val config = ConfigLoader.configurationLoader.load(rootConfig, path)

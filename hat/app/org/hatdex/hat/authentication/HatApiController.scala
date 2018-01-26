@@ -76,35 +76,6 @@ abstract class HatApiController(
     hatServerProvider: HatServerProvider,
     configuration: Configuration) extends HatController[HatApiAuthEnvironment](components, silhouette, clock, hatServerProvider, configuration)
 
-abstract class HatFrontendController(
-    components: ControllerComponents,
-    silhouette: Silhouette[HatFrontendAuthEnvironment],
-    clock: Clock,
-    hatServerProvider: HatServerProvider,
-    configuration: Configuration) extends HatController[HatFrontendAuthEnvironment](components, silhouette, clock, hatServerProvider, configuration) {
-
-  def authenticatorWithRememberMe(authenticator: CookieAuthenticator, rememberMe: Boolean): CookieAuthenticator = {
-    if (rememberMe) {
-      val expirationTime: DateTime = clock.now + rememberMeParams._1
-      authenticator.copy(
-        expirationDateTime = expirationTime,
-        idleTimeout = rememberMeParams._2,
-        cookieMaxAge = rememberMeParams._3)
-    }
-    else {
-      authenticator
-    }
-  }
-
-  private lazy val rememberMeParams: (FiniteDuration, Option[FiniteDuration], Option[FiniteDuration]) = {
-    val cfg = configuration.get[Configuration]("silhouette.authenticator.rememberMe")
-    (
-      cfg.get[FiniteDuration]("authenticatorExpiry"),
-      cfg.getOptional[FiniteDuration]("authenticatorIdleTimeout"),
-      cfg.getOptional[FiniteDuration]("cookieMaxAge"))
-  }
-}
-
 /**
  * A Limiter for user logic.
  */
