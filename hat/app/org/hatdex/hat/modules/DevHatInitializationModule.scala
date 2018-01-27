@@ -71,16 +71,14 @@ class DevHatInitializer @Inject() (
       _ <- setupCredentials(hat)
     } yield ()
 
-    eventuallyMigrated map {
-      case _ =>
-        logger.info(s"Database successfully initialized for ${hat.owner}")
+    eventuallyMigrated map { _ =>
+      logger.info(s"Database successfully initialized for ${hat.owner}")
     } recover {
       case e =>
         logger.error(s"Database initialisation failed for ${hat.owner}: ${e.getMessage}", e)
-    } map {
-      case _ =>
-        logger.debug(s"Shutting down connection to database for ${hat.owner}")
-        database.shutdown
+    } map { _ =>
+      logger.debug(s"Shutting down connection to database for ${hat.owner}")
+      database.shutdown
     }
   }
 

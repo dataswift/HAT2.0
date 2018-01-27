@@ -29,6 +29,7 @@ import javax.inject.Inject
 import akka.actor.{ Props, _ }
 import akka.util.Timeout
 import org.hatdex.hat.api.service.RemoteExecutionContext
+import org.hatdex.hat.utils.ActiveHatCounter
 import play.api.Configuration
 import play.api.libs.concurrent.InjectedActorSupport
 
@@ -38,6 +39,7 @@ import scala.concurrent.duration._
 
 class HatServerProviderActor @Inject() (
     hatServerActorFactory: HatServerActor.Factory,
+    activeHatcounter: ActiveHatCounter,
     configuration: Configuration)(
     implicit
     val ec: RemoteExecutionContext) extends Actor with ActorLogging with InjectedActorSupport {
@@ -45,7 +47,6 @@ class HatServerProviderActor @Inject() (
 
   private val activeServers = mutable.HashMap[String, ActorRef]()
   private implicit val hatServerTimeout: Timeout = configuration.get[FiniteDuration]("resourceManagement.serverProvisioningTimeout")
-  private var hatsActive: Long = 0L
 
   def receive: Receive = {
     case HatServerRetrieve(hat) =>
@@ -60,18 +61,13 @@ class HatServerProviderActor @Inject() (
       }
 
     case HatServerStarted(_) =>
-      hatsActive += 1
-      log.debug(s"Total HATs active: $hatsActive")
+      activeHatcounter.increase()
 
     case HatServerStopped(_) =>
-      hatsActive -= 1
-
-    case GetHatServersActive() =>
-      sender ! HatServersActive(hatsActive)
+      activeHatcounter.decrease()
 
     case message =>
       log.debug(s"Received unexpected message $message")
-      log.debug(s"Total HATs active: $hatsActive")
   }
 
   private def getHatServerActor(hat: String): Future[ActorRef] = {
@@ -90,7 +86,7 @@ class HatServerProviderActor @Inject() (
       log.debug(s"HAT server actor $selection resolved")
       hatServerActor
     } recoverWith {
-      case ActorNotFound(actorSelection) =>
+      case ActorNotFound(_) =>
         log.debug(s"HAT server actor ($selection) not found, injecting child")
         val hatServerActor = injectedChild(hatServerActorFactory(hat), s"hat:$hat", props = (props: Props) => props.withDispatcher("hat-server-provider-actor-dispatcher"))
         activeServers(hat) = hatServerActor
@@ -106,8 +102,5 @@ object HatServerProviderActor {
 
   case class HatServerStarted(hat: String)
   case class HatServerStopped(hat: String)
-
-  case class GetHatServersActive()
-  case class HatServersActive(active: Long)
 }
 

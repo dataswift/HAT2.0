@@ -125,5 +125,11 @@
         <!--<appender-ref ref="ASYNCCONSOLE"/>-->
     <!--</logger>-->
 
+    <!--<logger name="com.zaxxer.hikari.HikariDataSource" level="DEBUG" additivity="false">-->
+        <!--<appender-ref ref="ASYNCCONSOLE"/>-->
+    <!--</logger>-->
+    <!--<logger name="com.zaxxer.hikari.pool.HikariPool" level="DEBUG" additivity="false">-->
+        <!--<appender-ref ref="ASYNCCONSOLE"/>-->
+    <!--</logger>-->
 
 </configuration>

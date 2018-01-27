@@ -24,19 +24,25 @@
 
 package org.hatdex.hat.utils
 
-import javax.inject.{ Inject, Named }
+import javax.inject.{ Inject, Singleton }
 
-import akka.actor.ActorRef
-import akka.pattern.ask
 import akka.stream.Materializer
-import org.hatdex.hat.resourceManagement.actors.HatServerProviderActor
 import play.api.Logger
 import play.api.mvc.{ Filter, RequestHeader, Result }
 
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.concurrent.duration._
 
-class LoggingFilter @Inject() (@Named("hatServerProviderActor") serverProviderActor: ActorRef)(
+@Singleton
+class ActiveHatCounter() {
+  // Careful! Mutable state
+  private var count: Long = 0
+
+  def get(): Long = count
+  def increase(): Unit = this.synchronized(count += 1)
+  def decrease(): Unit = this.synchronized(count -= 1)
+}
+
+class LoggingFilter @Inject() (hatCounter: ActiveHatCounter)(
     implicit
     ec: ExecutionContext,
     val mat: Materializer) extends Filter {
@@ -45,19 +51,14 @@ class LoggingFilter @Inject() (@Named("hatServerProviderActor") serverProviderAc
   def apply(nextFilter: RequestHeader => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
 
     val startTime = System.currentTimeMillis
-    implicit val timeout: akka.util.Timeout = 200 milliseconds
 
-    nextFilter(requestHeader) flatMap { result =>
-      serverProviderActor.ask(HatServerProviderActor.GetHatServersActive()).mapTo[HatServerProviderActor.HatServersActive] recover {
-        case _ => HatServerProviderActor.HatServersActive(-1) // Could not fetch the number of active HATs
-      } map { activeHats =>
-        val endTime = System.currentTimeMillis
-        val requestTime = endTime - startTime
+    nextFilter(requestHeader) map { result =>
+      val active = hatCounter.get()
+      val requestTime = System.currentTimeMillis - startTime
 
-        logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] [${result.header.status}] TIME [${requestTime}]ms HATs [${activeHats.active}]")
+      logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] [${result.header.status}] TIME [$requestTime]ms HATs [$active]")
 
-        result.withHeaders("Request-Time" -> requestTime.toString)
-      }
+      result.withHeaders("Request-Time" -> requestTime.toString)
     }
   }
 }

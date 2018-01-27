@@ -26,6 +26,7 @@ package org.hatdex.hat.resourceManagement
 
 import javax.inject.{ Inject, Singleton }
 
+import com.typesafe.config.ConfigFactory
 import org.hatdex.hat.dal.SchemaMigration
 import org.hatdex.libs.dal.HATPostgresProfile.api.Database
 import play.api.cache.AsyncCacheApi
@@ -33,6 +34,8 @@ import play.api.libs.ws.WSClient
 import play.api.{ Configuration, Logger }
 
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.collection.JavaConverters._
+import scala.concurrent.duration.Duration
 
 trait HatDatabaseProvider {
   val schemaMigration: SchemaMigration
@@ -41,6 +44,7 @@ trait HatDatabaseProvider {
 
   def shutdown(db: Database): Future[Unit] = {
     // Execution context for the future is defined by specifying the executor during initialisation
+
     db.shutdown
   }
 
@@ -71,9 +75,23 @@ class HatDatabaseProviderMilliner @Inject() (
 
   def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {
     getHatSignup(hat) map { signup =>
-      val databaseUrl = s"jdbc:postgresql://${signup.databaseServer.get.host}:${signup.databaseServer.get.port}/${signup.database.get.name}"
+      val database = signup.database.get
+      val config = Map(
+        "dataSourceClassName" -> "org.postgresql.ds.PGSimpleDataSource",
+        "properties" -> Map(
+          "user" -> database.name,
+          "password" -> database.password,
+          "databaseName" -> database.name,
+          "portNumber" -> signup.databaseServer.get.port,
+          "serverName" -> signup.databaseServer.get.host),
+        "numThreads" -> configuration.get[Int]("resourceManagement.hatDBThreads"),
+        "idleTimeout" -> configuration.get[Duration]("resourceManagement.hatDBIdleTimeout").toMillis).asJava
+
+      val dbConfig = ConfigFactory.parseMap(config)
+      //      val databaseUrl = s"jdbc:postgresql://${signup.databaseServer.get.host}:${signup.databaseServer.get.port}/${signup.database.get.name}"
       //      val executor = AsyncExecutor(hat, numThreads = 3, queueSize = 1000)
-      Database.forURL(databaseUrl, signup.database.get.name, signup.database.get.password, driver = "org.postgresql.Driver" /*, executor = slickAsyncExecutor*/ )
+      //      Database.forURL(databaseUrl, signup.database.get.name, signup.database.get.password, driver = "org.postgresql.Driver" /*, executor = slickAsyncExecutor*/ )
+      Database.forConfig("", dbConfig)
     }
   }
 }
