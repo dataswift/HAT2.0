@@ -26,13 +26,16 @@ package org.hatdex.hat.resourceManagement
 
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
+import org.hatdex.hat.FakeCache
 import org.hatdex.hat.resourceManagement.actors.{ HatServerActor, HatServerProviderActor }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.specification.Scope
+import play.api.cache.AsyncCacheApi
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.test.{ FakeRequest, PlaySpecification }
 import play.api.{ Application, Logger }
+import play.cache.NamedCacheImpl
 
 import scala.concurrent.duration._
 
@@ -77,6 +80,7 @@ trait HatServerProviderContext extends Scope {
       bind[HatDatabaseProvider].to[HatDatabaseProviderConfig]
       bind[HatKeyProvider].to[HatKeyProviderConfig]
       bind[HatServerProvider].to[HatServerProviderImpl]
+      bind[AsyncCacheApi].to[FakeCache]
     }
   }
 
