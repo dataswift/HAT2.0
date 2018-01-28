@@ -27,6 +27,7 @@ package org.hatdex.hat.resourceManagement
 object FakeHatConfiguration {
   def config = Map(
     "play.cache.createBoundCaches" -> "false",
+    "resourceManagement.hatDBIdleTimeout" -> "30 seconds",
     "hat" -> Map(
       "hat.hubofallthings.net" -> Map(
         "ownerEmail" -> "user@hat.org",

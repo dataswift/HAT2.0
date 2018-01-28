@@ -26,8 +26,9 @@ package org.hatdex.hat.resourceManagement
 
 import javax.inject.{ Inject, Singleton }
 
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ Config, ConfigFactory }
 import org.hatdex.hat.dal.SchemaMigration
+import org.hatdex.hat.resourceManagement.models.HatSignup
 import org.hatdex.libs.dal.HATPostgresProfile.api.Database
 import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
@@ -75,24 +76,28 @@ class HatDatabaseProviderMilliner @Inject() (
 
   def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {
     getHatSignup(hat) map { signup =>
-      val database = signup.database.get
-      val config = Map(
-        "dataSourceClassName" -> "org.postgresql.ds.PGSimpleDataSource",
-        "properties" -> Map(
-          "user" -> database.name,
-          "password" -> database.password,
-          "databaseName" -> database.name,
-          "portNumber" -> signup.databaseServer.get.port,
-          "serverName" -> signup.databaseServer.get.host),
-        "numThreads" -> configuration.get[Int]("resourceManagement.hatDBThreads"),
-        "idleTimeout" -> configuration.get[Duration]("resourceManagement.hatDBIdleTimeout").toMillis).asJava
-
-      val dbConfig = ConfigFactory.parseMap(config)
+      val config = signupDatabaseConfig(signup)
       //      val databaseUrl = s"jdbc:postgresql://${signup.databaseServer.get.host}:${signup.databaseServer.get.port}/${signup.database.get.name}"
       //      val executor = AsyncExecutor(hat, numThreads = 3, queueSize = 1000)
       //      Database.forURL(databaseUrl, signup.database.get.name, signup.database.get.password, driver = "org.postgresql.Driver" /*, executor = slickAsyncExecutor*/ )
-      Database.forConfig("", dbConfig)
+      Database.forConfig("", config)
     }
+  }
+
+  def signupDatabaseConfig(signup: HatSignup): Config = {
+    val database = signup.database.get
+    val config = Map(
+      "dataSourceClass" -> "org.postgresql.ds.PGSimpleDataSource",
+      "properties" -> Map[String, String](
+        "user" -> database.name,
+        "password" -> database.password,
+        "databaseName" -> database.name,
+        "portNumber" -> signup.databaseServer.get.port.toString,
+        "serverName" -> signup.databaseServer.get.host).asJava,
+      "numThreads" -> configuration.get[Int]("resourceManagement.hatDBThreads").toString,
+      "idleTimeout" -> configuration.get[Duration]("resourceManagement.hatDBIdleTimeout").toMillis.toString).asJava
+
+    ConfigFactory.parseMap(config)
   }
 }
 
