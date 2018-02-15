@@ -7,7 +7,7 @@ lazy val hat = project
   .in(file("hat"))
   .enablePlugins(PlayScala)
   .enablePlugins(SbtWeb, SbtSassify, SbtGzip, SbtDigest)
-    .enablePlugins(BasicSettings)
+  .enablePlugins(BasicSettings)
   .settings(
     libraryDependencies ++= Seq(
       Library.Play.ws,
@@ -78,5 +78,6 @@ lazy val hat = project
     codegenOutputDir in gentables := (baseDirectory.value / "app").getPath,
     codegenClassName in gentables := "Tables",
     codegenExcludedTables in gentables := Seq("databasechangelog", "databasechangeloglock"),
-    codegenDatabase in gentables := "devdb"
+    codegenDatabase in gentables := "devdb",
+    codegenConfig in gentables := "dev.conf"
   )

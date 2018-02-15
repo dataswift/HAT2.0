@@ -75,6 +75,9 @@
     <logger name="org.hatdex.hat.api.service.UsersService" level="WARN" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
+    <logger name="org.hatdex.hat.api.service.applications.ApplicationsService" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
     <logger name="org.hatdex.hat.api.controllers" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>

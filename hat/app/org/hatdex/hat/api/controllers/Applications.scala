@@ -28,36 +28,74 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
-import org.hatdex.hat.api.json.HatJsonFormats
+import org.hatdex.hat.api.json.ApplicationJsonProtocol
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.HatServicesService
+import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ ExecutionContext, Future }
 
 class Applications @Inject() (
     components: ControllerComponents,
     configuration: Configuration,
     silhouette: Silhouette[HatApiAuthEnvironment],
     hatServerProvider: HatServerProvider,
-    hatServicesService: HatServicesService,
-    clock: Clock)(implicit val ec: ExecutionContext) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    applicationsService: ApplicationsService,
+    clock: Clock)(implicit val ec: ExecutionContext) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with ApplicationJsonProtocol {
+
+  import org.hatdex.hat.api.json.HatJsonFormats.errorMessage
 
   val logger = Logger(this.getClass)
 
-  def apps(): Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
-    hatServicesService.hatServices(Set("app", "dataplug", "testapp")) map { apps =>
-      Ok(Json.toJson(apps))
+  def applications(): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
+    applicationsService.applicationStatus()
+      .map { apps =>
+        Ok(Json.toJson(apps))
+      }
+  }
+
+  def applicationStatus(id: String): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
+    applicationsService.applicationStatus(id).map { maybeStatus =>
+      maybeStatus map { status =>
+        Ok(Json.toJson(status))
+      } getOrElse {
+        NotFound(Json.toJson(ErrorMessage(
+          "Application not Found",
+          s"Application $id does not appear to be a valid application registered with the DEX")))
+      }
     }
   }
 
-  def saveApp(): Action[HatService] = SecuredAction(WithRole(Platform())).async(parse.json[HatService]) { implicit request =>
-    hatServicesService.save(request.body) map { app =>
-      Ok(Json.toJson(app))
+  def applicationSetup(id: String): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
+    applicationsService.applicationStatus(id).flatMap { maybeStatus =>
+      maybeStatus map { status =>
+        applicationsService.setup(status)
+          .map(s => Ok(Json.toJson(s)))
+      } getOrElse {
+        Future.successful(
+          BadRequest(Json.toJson(ErrorMessage(
+            "Application not Found",
+            s"Application $id does not appear to be a valid application registered with the DEX"))))
+      }
+    }
+  }
+
+  def applicationDisable(id: String): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
+    applicationsService.applicationStatus(id).flatMap { maybeStatus =>
+      maybeStatus map { status =>
+        applicationsService.disable(status)
+          .map(s => Ok(Json.toJson(s)))
+      } getOrElse {
+        Future.successful(
+          BadRequest(Json.toJson(ErrorMessage(
+            "Application not Found",
+            s"Application $id does not appear to be a valid application registered with the DEX"))))
+      }
     }
   }
 

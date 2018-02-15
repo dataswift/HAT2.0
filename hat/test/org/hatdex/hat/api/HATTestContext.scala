@@ -32,13 +32,14 @@ import com.amazonaws.services.s3.AmazonS3
 import com.atlassian.jwt.core.keys.KeyUtils
 import com.google.inject.name.Named
 import com.google.inject.{ AbstractModule, Provides }
-import com.mohiva.play.silhouette.api.Environment
+import com.mohiva.play.silhouette.api.{ Environment, Silhouette, SilhouetteProvider }
 import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.FakeCache
 import org.hatdex.hat.api.controllers.RichData
 import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.api.service._
+import org.hatdex.hat.api.service.applications.{ TrustedApplicationProvider, TrustedApplicationProviderDex }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
@@ -109,14 +110,15 @@ trait HATTestContext extends Scope with Mockito {
 
   val mockLogger = mock[Logger]
 
+  lazy val remoteEC = new RemoteExecutionContext(application.actorSystem)
+
   /**
    * A fake Guice module.
    */
   class FakeModule extends AbstractModule with ScalaModule {
-    lazy val remoteEC = new RemoteExecutionContext(application.actorSystem)
-
     def configure(): Unit = {
       bind[Environment[HatApiAuthEnvironment]].toInstance(environment)
+      bind[Silhouette[HatApiAuthEnvironment]].to[SilhouetteProvider[HatApiAuthEnvironment]]
       bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
       bind[FileManager].to[FileManagerS3]
       bind[MailTokenService[MailTokenUser]].to[MailTokenUserService]

@@ -393,6 +393,14 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
     }
   }
 
+  def propertyDataMostRecentDate(endpointQueries: Seq[EndpointQuery])(implicit db: Database): Future[Option[DateTime]] = {
+    val query = propertyDataQuery(endpointQueries, None, orderingDescending = true, 0, Some(1), None)
+
+    db.run(query.result).map { results =>
+      results.headOption.map(_._1._1.date.toDateTime)
+    }
+  }
+
   def propertyData(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], orderingDescending: Boolean,
     skip: Int, limit: Option[Int], createdAfter: Option[DateTime] = None)(implicit db: Database): Future[Seq[EndpointData]] = {
 

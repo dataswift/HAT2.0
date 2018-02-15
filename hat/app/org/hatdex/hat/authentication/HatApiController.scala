@@ -28,25 +28,21 @@ import javax.inject.Inject
 
 import akka.actor.ActorSystem
 import com.digitaltangible.playguard.{ RateLimitActionFilter, RateLimiter, clientIp }
-import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.actions._
 import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models.{ ErrorMessage, User }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.libs.dal.HATPostgresProfile.api.Database
-import org.joda.time.DateTime
 import play.api.Configuration
 import play.api.i18n.I18nSupport
 import play.api.libs.json.{ Format, Json }
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
 
 abstract class HatController[T <: HatAuthEnvironment](
     components: ControllerComponents,

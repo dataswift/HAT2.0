@@ -66,9 +66,13 @@ PUT           /api/v2/data-debit/$dataDebitId<[0-9a-zA-Z-]+>                    
 GET           /api/v2/migrate                                                                       org.hatdex.hat.api.controllers.DataMigration.migrateData(fromSource: String, fromTableName: String, toNamespace: String, toEndpoint: String, includeTimestamp: Boolean = true)
 
 # APPLICATION routes
-
-GET           /api/v2/application                                                                   org.hatdex.hat.api.controllers.Applications.apps()
-POST          /api/v2/application                                                                   org.hatdex.hat.api.controllers.Applications.saveApp()
+#
+#GET           /api/v2/application                                                                   org.hatdex.hat.api.controllers.Applications.apps()
+#POST          /api/v2/application                                                                   org.hatdex.hat.api.controllers.Applications.saveApp()
+GET           /api/v2/applications                                                                  org.hatdex.hat.api.controllers.Applications.applications()
+GET           /api/v2/applications/:application                                                     org.hatdex.hat.api.controllers.Applications.applicationStatus(application)
+GET           /api/v2/applications/:application/setup                                               org.hatdex.hat.api.controllers.Applications.applicationSetup(application)
+GET           /api/v2/applications/:application/disable                                             org.hatdex.hat.api.controllers.Applications.applicationDisable(application)
 
 # Smart HAT Engine (SHE) routes
 

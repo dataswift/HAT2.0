@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{ GetResult => GR }
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(Applications.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, DataBundles.schema, DataCombinators.schema, DataDebit.schema, DataDebitBundle.schema, DataDebitContract.schema, DataField.schema, DataJson.schema, DataJsonGroupRecords.schema, DataJsonGroups.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, HatFile.schema, HatFileAccess.schema, SheFunction.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, UserAccessLog.schema, UserMailTokens.schema, UserRole.schema, UserRoleAvailable.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(Applications.schema, ApplicationStatus.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, DataBundles.schema, DataCombinators.schema, DataDebit.schema, DataDebitBundle.schema, DataDebitContract.schema, DataField.schema, DataJson.schema, DataJsonGroupRecords.schema, DataJsonGroups.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, HatFile.schema, HatFileAccess.schema, SheFunction.schema, StatsDataDebitClessBundleRecords.schema, StatsDataDebitDataFieldAccess.schema, StatsDataDebitDataTableAccess.schema, StatsDataDebitOperation.schema, StatsDataDebitRecordCount.schema, SystemEventlog.schema, UserAccessLog.schema, UserMailTokens.schema, UserRole.schema, UserRoleAvailable.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -72,6 +72,35 @@ trait Tables {
   }
   /** Collection-like TableQuery object for table Applications */
   lazy val Applications = new TableQuery(tag => new Applications(tag))
+
+  /**
+   * Entity class storing rows of table ApplicationStatus
+   *  @param id Database column id SqlType(varchar), PrimaryKey
+   *  @param version Database column version SqlType(varchar)
+   *  @param enabled Database column enabled SqlType(bool)
+   */
+  case class ApplicationStatusRow(id: String, version: String, enabled: Boolean)
+  /** GetResult implicit for fetching ApplicationStatusRow objects using plain SQL queries */
+  implicit def GetResultApplicationStatusRow(implicit e0: GR[String], e1: GR[Boolean]): GR[ApplicationStatusRow] = GR {
+    prs =>
+      import prs._
+      ApplicationStatusRow.tupled((<<[String], <<[String], <<[Boolean]))
+  }
+  /** Table description of table application_status. Objects of this class serve as prototypes for rows in queries. */
+  class ApplicationStatus(_tableTag: Tag) extends profile.api.Table[ApplicationStatusRow](_tableTag, Some("hat"), "application_status") {
+    def * = (id, version, enabled) <> (ApplicationStatusRow.tupled, ApplicationStatusRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(id), Rep.Some(version), Rep.Some(enabled)).shaped.<>({ r => import r._; _1.map(_ => ApplicationStatusRow.tupled((_1.get, _2.get, _3.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column id SqlType(varchar), PrimaryKey */
+    val id: Rep[String] = column[String]("id", O.PrimaryKey)
+    /** Database column version SqlType(varchar) */
+    val version: Rep[String] = column[String]("version")
+    /** Database column enabled SqlType(bool) */
+    val enabled: Rep[Boolean] = column[Boolean]("enabled")
+  }
+  /** Collection-like TableQuery object for table ApplicationStatus */
+  lazy val ApplicationStatus = new TableQuery(tag => new ApplicationStatus(tag))
 
   /**
    * Entity class storing rows of table BundleContextless
