@@ -19,20 +19,19 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 2 / 2017
+ * 2 / 2018
  */
 
-package org.hatdex.hat.authentication
+package org.hatdex.hat.api.service.applications
 
-import com.mohiva.play.silhouette.api.Env
-import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
-import org.hatdex.hat.resourceManagement.HatServer
+import org.hatdex.hat.api.models.applications.Application
 
-trait HatAuthEnvironment extends Env {
-  type I = models.HatUser
-  type D = HatServer
-}
+import scala.concurrent.{ ExecutionContext, Future }
 
-trait HatApiAuthEnvironment extends HatAuthEnvironment {
-  type A = JWTRS256Authenticator
+class TestApplicationProvider(apps: Seq[Application])(implicit ec: ExecutionContext) extends TrustedApplicationProvider {
+  def application(id: String): Future[Option[Application]] = {
+    applications.map(_.find(_.id == id))
+  }
+
+  def applications: Future[Seq[Application]] = Future.successful(apps)
 }

@@ -5,12 +5,14 @@ resolvers += Resolver.typesafeRepo("releases")
 libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.1")
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.7")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.11")
 
 // Code Quality
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")
 addSbtPlugin("org.scoverage" % "sbt-coveralls" % "1.2.2")
 addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.1")
+// run "sbt dependencyUpdates" to check maven for updates or "sbt ";dependencyUpdates; reload plugins; dependencyUpdates" for sbt plugins
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")
 
 
 // web plugins

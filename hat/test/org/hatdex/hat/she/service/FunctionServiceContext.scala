@@ -54,6 +54,7 @@ trait FunctionServiceContext extends HATTestContext {
   override lazy val application: Application = new GuiceApplicationBuilder()
     .configure(FakeHatConfiguration.config)
     .overrides(new FakeModule)
+    .overrides(new ExtrasModule)
     .overrides(new CustomisedFakeModule)
     .build()
 

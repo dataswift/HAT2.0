@@ -29,7 +29,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import org.hatdex.hat.api.models.applications.{ Application, ApplicationStatus, HatApplication, Version }
 import org.hatdex.hat.api.models.{ AccessToken, EndpointQuery }
 import org.hatdex.hat.api.service.richData.{ DataDebitContractService, RichDataDuplicateDebitException, RichDataService }
-import org.hatdex.hat.api.service.{ DalExecutionContext, RemoteExecutionContext, UsersService }
+import org.hatdex.hat.api.service.{ DalExecutionContext, RemoteExecutionContext }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.Tables

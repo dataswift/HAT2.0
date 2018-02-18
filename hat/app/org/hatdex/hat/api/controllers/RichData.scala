@@ -39,7 +39,7 @@ import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider }
 import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.mvc._
-import play.api.{ Configuration, Logger }
+import play.api.{ Configuration }
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.NonFatal

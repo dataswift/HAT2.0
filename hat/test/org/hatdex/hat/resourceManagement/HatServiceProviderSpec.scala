@@ -27,9 +27,10 @@ package org.hatdex.hat.resourceManagement
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.FakeCache
+import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.resourceManagement.actors.{ HatServerActor, HatServerProviderActor }
 import org.hatdex.hat.utils.{ LoggingProvider, MockLoggingProvider }
-import org.mockito.{ Mockito => MockitoMockito }
+import org.mockito.{ Mockito ⇒ MockitoMockito }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
@@ -96,7 +97,7 @@ class HatServiceProviderSpec(implicit ee: ExecutionEnv) extends PlaySpecificatio
 }
 
 trait HatServerProviderContext extends Scope with Mockito {
-
+  import scala.concurrent.ExecutionContext.Implicits.global
   val mockLogger = mock[Logger]
 
   class FakeModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
@@ -109,6 +110,7 @@ trait HatServerProviderContext extends Scope with Mockito {
       bind[HatServerProvider].to[HatServerProviderImpl]
       bind[AsyncCacheApi].to[FakeCache]
       bind[LoggingProvider].toInstance(new MockLoggingProvider(mockLogger))
+      bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(Seq()))
     }
   }
 

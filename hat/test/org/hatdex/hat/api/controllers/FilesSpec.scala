@@ -291,7 +291,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       }
 
       redirectLocation(result) must beSome
-      redirectLocation(result).get must startWith("https://hat-storage-test.s3-eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile")
+      redirectLocation(result).get must startWith("https://hat-storage-test.s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile")
     }
 
     "Redirect to file url for permitted files files" in {
@@ -308,7 +308,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       } yield result
 
       redirectLocation(result) must beSome
-      redirectLocation(result).get must startWith("https://hat-storage-test.s3-eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile")
+      redirectLocation(result).get must startWith("https://hat-storage-test.s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile")
     }
   }
 

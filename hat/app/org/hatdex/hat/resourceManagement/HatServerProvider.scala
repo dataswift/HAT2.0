@@ -37,7 +37,7 @@ import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.resourceManagement.actors.HatServerProviderActor
 import org.hatdex.hat.utils.LoggingProvider
 import play.api.cache.AsyncCacheApi
-import play.api.{ Configuration, Logger }
+import play.api.Configuration
 import play.api.mvc.Request
 
 import scala.concurrent.Future

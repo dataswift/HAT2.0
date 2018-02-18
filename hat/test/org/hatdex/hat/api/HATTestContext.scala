@@ -39,7 +39,7 @@ import org.hatdex.hat.FakeCache
 import org.hatdex.hat.api.controllers.RichData
 import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.api.service._
-import org.hatdex.hat.api.service.applications.{ TrustedApplicationProvider, TrustedApplicationProviderDex }
+import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider, TrustedApplicationProviderDex }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.SchemaMigration
@@ -127,7 +127,6 @@ trait HATTestContext extends Scope with Mockito {
       bind[AsyncCacheApi].annotatedWith(new NamedCacheImpl("user-cache")).to[FakeCache]
       bind[AsyncCacheApi].to[FakeCache]
       bind[LoggingProvider].toInstance(new MockLoggingProvider(mockLogger))
-
     }
 
     @Provides
@@ -142,9 +141,16 @@ trait HATTestContext extends Scope with Mockito {
 
   }
 
+  class ExtrasModule extends AbstractModule with ScalaModule {
+    def configure(): Unit = {
+      bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(Seq()))
+    }
+  }
+
   lazy val application: Application = new GuiceApplicationBuilder()
     .configure(FakeHatConfiguration.config)
     .overrides(new FakeModule)
+    .overrides(new ExtrasModule)
     .build()
 
   implicit lazy val materializer: Materializer = application.materializer
