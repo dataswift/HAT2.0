@@ -27,7 +27,9 @@ package org.hatdex.hat.utils
 import javax.inject.{ Inject, Singleton }
 
 import akka.stream.Materializer
-import play.api.Logger
+import com.nimbusds.jose.JWSObject
+import com.nimbusds.jwt.JWTClaimsSet
+import play.api.{ Configuration, Logger }
 import play.api.mvc.{ Filter, RequestHeader, Result }
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -42,7 +44,9 @@ class ActiveHatCounter() {
   def decrease(): Unit = this.synchronized(count -= 1)
 }
 
-class LoggingFilter @Inject() (hatCounter: ActiveHatCounter)(
+class LoggingFilter @Inject() (
+    configuration: Configuration,
+    hatCounter: ActiveHatCounter)(
     implicit
     ec: ExecutionContext,
     val mat: Materializer) extends Filter {
@@ -55,10 +59,23 @@ class LoggingFilter @Inject() (hatCounter: ActiveHatCounter)(
     nextFilter(requestHeader) map { result =>
       val active = hatCounter.get()
       val requestTime = System.currentTimeMillis - startTime
-
-      logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] [${result.header.status}] TIME [$requestTime]ms HATs [$active]")
+      logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] " +
+        s"[${result.header.status}] TIME [$requestTime]ms HATs [$active] ${tokenInfo(requestHeader)}")
 
       result.withHeaders("Request-Time" -> requestTime.toString)
     }
+  }
+
+  private val authTokenFieldName: String = configuration.get[String]("silhouette.authenticator.fieldName")
+  private def tokenInfo(requestHeader: RequestHeader): String = {
+    requestHeader.queryString.get(authTokenFieldName).flatMap(_.headOption)
+      .orElse(requestHeader.headers.get(authTokenFieldName))
+      .map(JWSObject.parse)
+      .map(o ⇒ JWTClaimsSet.parse(o.getPayload.toJSONObject))
+      .map { claimSet =>
+        s"[${Option(claimSet.getStringClaim("application")).getOrElse("api")}]@" +
+          s"[${Option(claimSet.getStringClaim("applicationVersion")).getOrElse("_")}]"
+      }
+      .getOrElse("[unauthenticated]@[_]")
   }
 }

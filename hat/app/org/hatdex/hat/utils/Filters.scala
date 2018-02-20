@@ -26,13 +26,14 @@ package org.hatdex.hat.utils
 
 import javax.inject.Inject
 
+import akka.stream.Materializer
+import play.api.Environment
 import play.api.http.DefaultHttpFilters
+import play.api.mvc._
 import play.filters.cors.CORSFilter
 import play.filters.gzip.GzipFilter
-import play.api.mvc._
-import play.api.Environment
+
 import scala.concurrent.{ ExecutionContext, Future }
-import akka.stream.Materializer
 
 class Filters @Inject() (
     tlsFilter: TLSFilter,

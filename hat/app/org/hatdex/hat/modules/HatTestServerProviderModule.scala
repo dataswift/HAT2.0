@@ -26,6 +26,7 @@ package org.hatdex.hat.modules
 
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
+import org.hatdex.hat.api.service.applications.{ TrustedApplicationProvider, TrustedApplicationProviderDex }
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.resourceManagement.actors.{ HatServerActor, HatServerProviderActor }
 import play.api.libs.concurrent.AkkaGuiceSupport
@@ -39,6 +40,8 @@ class HatTestServerProviderModule extends AbstractModule with ScalaModule with A
     bind[HatDatabaseProvider].to[HatDatabaseProviderConfig]
     bind[HatKeyProvider].to[HatKeyProviderConfig]
     bind[HatServerProvider].to[HatServerProviderImpl]
+
+    bind[TrustedApplicationProvider].to[TrustedApplicationProviderDex]
   }
 
 }

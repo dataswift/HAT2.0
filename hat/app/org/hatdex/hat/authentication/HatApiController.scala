@@ -70,7 +70,9 @@ abstract class HatApiController(
     silhouette: Silhouette[HatApiAuthEnvironment],
     clock: Clock,
     hatServerProvider: HatServerProvider,
-    configuration: Configuration) extends HatController[HatApiAuthEnvironment](components, silhouette, clock, hatServerProvider, configuration)
+    configuration: Configuration)
+  extends HatController[HatApiAuthEnvironment](
+    components, silhouette, clock, hatServerProvider, configuration)
 
 /**
  * A Limiter for user logic.
