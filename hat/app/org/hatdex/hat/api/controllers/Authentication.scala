@@ -96,9 +96,8 @@ class Authentication @Inject() (
     for {
       service <- hatServicesService.findOrCreateHatService(name, resource)
       token <- hatServicesService.hatServiceToken(request.identity, service)
-      result <- env.authenticatorService.embed(token.accessToken, Ok(Json.toJson(token)))
     } yield {
-      result
+      Ok(Json.toJson(token))
     }
   }
 

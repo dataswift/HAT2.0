@@ -29,6 +29,7 @@ import javax.inject._
 
 import com.mohiva.play.silhouette.api.actions.{ SecuredErrorHandler, UnsecuredErrorHandler }
 import com.mohiva.play.silhouette.impl.exceptions.{ IdentityNotFoundException, InvalidPasswordException }
+import org.hatdex.hat.api.models.ErrorMessage
 import org.hatdex.hat.resourceManagement.HatServerDiscoveryException
 import play.api._
 import play.api.http.{ ContentTypes, DefaultHttpErrorHandler, HttpErrorHandlerExceptions }
@@ -50,6 +51,8 @@ class ErrorHandler @Inject() (
     val messagesApi: MessagesApi) extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
   with SecuredErrorHandler with UnsecuredErrorHandler with I18nSupport with ContentTypes with RequestExtractors with Rendering {
 
+  import org.hatdex.hat.api.json.HatJsonFormats.errorMessage
+
   /**
    * Exception handler which chains the exceptions handlers from the sub types.
    *
@@ -68,7 +71,7 @@ class ErrorHandler @Inject() (
    * @param request The request header.
    * @return A partial function which maps an exception to a Play result.
    */
-  def hatExceptionHandler(implicit request: RequestHeader): PartialFunction[Throwable, Future[Result]] = {
+  protected def hatExceptionHandler(implicit request: RequestHeader): PartialFunction[Throwable, Future[Result]] = {
     case _: InvalidPasswordException        => onNotAuthenticated
     case _: IdentityNotFoundException       => onNotAuthenticated
     case _: SQLTransientConnectionException => onHatUnavailable

@@ -35,6 +35,7 @@ import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.Tables
 import org.hatdex.hat.dal.Tables.ApplicationStatusRow
 import org.hatdex.hat.resourceManagement.HatServer
+import org.hatdex.hat.utils.FutureTransformations
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.cache.AsyncCacheApi
@@ -80,9 +81,9 @@ class ApplicationsService @Inject() (
   def applicationStatus(id: String)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Option[HatApplication]] = {
     cache.getOrElseUpdate(appCacheKey(id), applicationsCacheDuration) {
       for {
-        apps <- trustedApplicationProvider.application(id)
+        maybeApp <- trustedApplicationProvider.application(id)
         setup <- applicationSetupStatus(id)(hat.db)
-        status <- apps.map(collectStatus(_, setup).map(Some(_))).getOrElse(Future.successful(None))
+        status <- FutureTransformations.transform(maybeApp.map(collectStatus(_, setup)))
       } yield status
     }
   }
@@ -198,19 +199,19 @@ class ApplicationsService @Inject() (
     setup match {
       case Some(ApplicationStatusRow(_, version, true)) =>
         for {
-          (status, token) <- checkStatus(app)
+          (status, _) <- checkStatus(app)
           mostRecentData <- mostRecentDataTime(app)
         } yield {
           logger.debug(s"Check compatibility between $version and new ${app.status}: ${Version(version).greaterThan(app.status.compatibility)}")
-          HatApplication(app, setup = true, active = status, Some(token),
+          HatApplication(app, setup = true, active = status,
             Some(app.status.compatibility.greaterThan(Version(version))), // Needs updating if setup version beyond compatible
             mostRecentData)
         }
       case Some(ApplicationStatusRow(_, _, false)) =>
         // If application has been disabled, reflect in status
-        Future.successful(HatApplication(app, setup = true, active = false, applicationToken = None, needsUpdating = None, mostRecentData = None))
+        Future.successful(HatApplication(app, setup = true, active = false, needsUpdating = None, mostRecentData = None))
       case None =>
-        Future.successful(HatApplication(app, setup = false, active = false, applicationToken = None, needsUpdating = None, mostRecentData = None))
+        Future.successful(HatApplication(app, setup = false, active = false, needsUpdating = None, mostRecentData = None))
     }
   }
 

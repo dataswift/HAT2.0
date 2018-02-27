@@ -28,9 +28,9 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
+import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import org.hatdex.hat.api.service.DalExecutionContext
-import org.hatdex.hat.authentication.Implicits._
 import org.hatdex.hat.resourceManagement.HatServer
 import play.api.Logger
 
@@ -48,7 +48,7 @@ class PasswordInfoService @Inject() (userService: AuthUserServiceImpl)(implicit 
   def find(loginInfo: LoginInfo)(implicit hat: HatServer): Future[Option[PasswordInfo]] = {
     userService.retrieve(loginInfo).map {
       case Some(user) if user.pass.isDefined =>
-        Some(user.pass.get)
+        Some(PasswordInfo(BCryptPasswordHasher.ID, user.pass.get, salt = None))
       case _ =>
         logger.info("No such user")
         None
@@ -67,7 +67,7 @@ class PasswordInfoService @Inject() (userService: AuthUserServiceImpl)(implicit 
   def update(loginInfo: LoginInfo, authInfo: PasswordInfo)(implicit hat: HatServer): Future[PasswordInfo] =
     userService.retrieve(loginInfo).map {
       case Some(user) =>
-        userService.save(user.copy(pass = Some(authInfo)))
+        userService.save(user.copy(pass = Some(authInfo.password)))
         authInfo
       case _ => throw new Exception("PasswordInfoDAO - update : the user must exists to update its password")
     }
