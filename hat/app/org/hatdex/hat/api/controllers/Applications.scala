@@ -31,13 +31,14 @@ import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.ApplicationJsonProtocol
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.applications.ApplicationsService
-import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, ContainsApplicationRole, WithRole }
+import org.hatdex.hat.api.service.richData.RichDataDuplicateBundleException
+import org.hatdex.hat.authentication.{ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole}
 import org.hatdex.hat.resourceManagement._
 import play.api.libs.json._
 import play.api.mvc._
-import play.api.{ Configuration, Logger }
+import play.api.{Configuration, Logger}
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 class Applications @Inject() (
     components: ControllerComponents,
@@ -80,6 +81,13 @@ class Applications @Inject() (
       maybeStatus map { status ⇒
         applicationsService.setup(status)
           .map(s ⇒ Ok(Json.toJson(s)))
+          .recover {
+            case e: RichDataDuplicateBundleException ⇒
+              logger.error(s"[${request.dynamicEnvironment.domain}] Error setting up applicatio - duplicate bundle: ${e.getMessage}")
+              InternalServerError(Json.toJson(ErrorMessage(
+                "Application malformed",
+                s"Application $id bundle ${status.application.permissions.dataRequired.map(_.bundle.name)} clashes with one already setup")))
+          }
       } getOrElse {
         Future.successful(
           BadRequest(Json.toJson(ErrorMessage(
