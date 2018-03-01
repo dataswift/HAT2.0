@@ -27,10 +27,10 @@ package org.hatdex.hat.she.functions
 import org.hatdex.hat.api.models.EndpointData
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.models.Request
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, DateTimeUtils }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.BeforeAll
+import org.specs2.specification.{ BeforeAfterAll, BeforeAll }
 import play.api.Logger
 import play.api.test.PlaySpecification
 

@@ -32,16 +32,17 @@ import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
 import org.hatdex.hat.she.models.FunctionConfiguration
 import org.hatdex.hat.she.service.FunctionService
+import org.joda.time.DateTimeUtils
 import org.specs2.concurrent.ExecutionEnv
-import org.specs2.specification.BeforeEach
+import org.specs2.specification.{ BeforeAfterAll, BeforeAll, BeforeEach }
 import play.api.Logger
 import play.api.mvc.Result
 import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
 
-import scala.concurrent.Future
+import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration._
 
-class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification with DataFeedDirectMapperContext with BeforeEach {
+class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification with DataFeedDirectMapperContext with BeforeAfterAll {
 
   val logger = Logger(this.getClass)
 
@@ -49,6 +50,15 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
   import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol._
 
   override implicit def defaultAwaitTimeout: util.Timeout = 60.seconds
+
+  def beforeAll: Unit = {
+    DateTimeUtils.setCurrentMillisFixed(1514764800000L)
+    Await.result(databaseReady, 60.seconds)
+  }
+
+  def afterAll: Unit = {
+    DateTimeUtils.setCurrentMillisSystem()
+  }
 
   sequential
 
