@@ -77,8 +77,8 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
       transformed.content.get.text.get must contain("RT @jupenur: Oh shit Adobe https://t.co/7rDL3LWVVz")
 
       transformed.location.get.geo.get.longitude must be equalTo -75.14310264
-      transformed.location.get.address.get.country must be equalTo "United States"
-      transformed.location.get.address.get.city must be equalTo "Washington"
+      transformed.location.get.address.get.country.get must be equalTo "United States"
+      transformed.location.get.address.get.city.get must be equalTo "Washington"
     }
 
     // TODO: update tweet with reply structure
@@ -128,7 +128,7 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
       transformed.types must contain("event")
       transformed.title.get.text must be equalTo "You are attending an event"
       transformed.content.get.text.get must contain("We're going somewhere new")
-      transformed.location.get.address.get.city must be equalTo "Singapore"
+      transformed.location.get.address.get.city.get must be equalTo "Singapore"
       transformed.location.get.address.get.name.get must be equalTo "Carlton Hotel Singapore"
     }
 

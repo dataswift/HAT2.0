@@ -26,13 +26,14 @@ package org.hatdex.hat.she.functions
 
 import java.util.UUID
 
-import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.json.DataFeedItemJsonProtocol
+import org.hatdex.hat.api.models.{ applications, _ }
+import org.hatdex.hat.api.models.applications._
 import org.hatdex.hat.she.models._
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{ DateTime, DateTimeZone }
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
@@ -204,9 +205,9 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
               (coordinates \ "coordinates" \ 1).as[Double])),
         address = (content \ "place").asOpt[JsObject]
           .map(address =>
-            LocationAddress(
-              (address \ "country").as[String],
-              (address \ "name").as[String],
+            applications.LocationAddress(
+              (address \ "country").asOpt[String],
+              (address \ "name").asOpt[String],
               None, None, None)),
         tags = None))
         .toOption
@@ -268,8 +269,8 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
         address = (content \ "place").asOpt[JsObject]
           .map(location =>
             LocationAddress(
-              (location \ "location" \ "country").as[String],
-              (location \ "location" \ "city").as[String],
+              (location \ "location" \ "country").asOpt[String],
+              (location \ "location" \ "city").asOpt[String],
               (location \ "name").asOpt[String],
               (location \ "location" \ "street").asOpt[String],
               (location \ "location" \ "zip").asOpt[String])),
@@ -407,74 +408,4 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
 
     (startString, endString)
   }
-}
-
-case class DataFeedItem(
-    source: String,
-    date: DateTime,
-    types: Seq[String],
-    title: Option[DataFeedItemTitle],
-    content: Option[DataFeedItemContent],
-    location: Option[DataFeedItemLocation]) {
-  lazy val unix: Long = date.getMillis / 1000L // UNIX timestamp in seconds
-}
-
-case class DataFeedItemTitle(
-    text: String,
-    action: Option[String])
-
-case class DataFeedItemContent(
-    text: Option[String],
-    media: Option[Seq[DataFeedItemMedia]])
-
-case class DataFeedItemMedia(
-    url: Option[String])
-
-case class DataFeedItemLocation(
-    geo: Option[LocationGeo],
-    address: Option[LocationAddress],
-    tags: Option[Seq[String]])
-
-case class LocationGeo(
-    longitude: Double,
-    latitude: Double)
-
-case class LocationAddress(
-    country: String,
-    city: String,
-    name: Option[String],
-    street: Option[String],
-    zip: Option[String])
-
-trait DataFeedItemJsonProtocol extends JodaWrites with JodaReads {
-  private implicit val locationGeoFormat: Format[LocationGeo] = Json.format[LocationGeo]
-  private implicit val locationAddressFormat: Format[LocationAddress] = Json.format[LocationAddress]
-  private implicit val locationFormat: Format[DataFeedItemLocation] = Json.format[DataFeedItemLocation]
-  private implicit val mediaFormat: Format[DataFeedItemMedia] = Json.format[DataFeedItemMedia]
-  private implicit val contentFormat: Format[DataFeedItemContent] = Json.format[DataFeedItemContent]
-  private implicit val titleFormat: Format[DataFeedItemTitle] = Json.format[DataFeedItemTitle]
-
-  implicit val feedItemWrites: Writes[DataFeedItem] = (
-    (JsPath \ "source").write[String] and
-    (JsPath \ "date" \ "iso").write[DateTime] and
-    (JsPath \ "date" \ "unix").write[Long] and
-    (JsPath \ "types").write[Seq[String]] and
-    (JsPath \ "title").writeNullable[DataFeedItemTitle] and
-    (JsPath \ "content").writeNullable[DataFeedItemContent] and
-    (JsPath \ "location").writeNullable[DataFeedItemLocation])(t =>
-      (t.source, t.date, t.date.getMillis / 1000L, t.types, t.title, t.content, t.location))
-
-  implicit val feedItemReads: Reads[DataFeedItem] = (
-    (JsPath \ "source").read[String] and
-    (JsPath \ "date" \ "iso").read[DateTime] and
-    (JsPath \ "types").read[Seq[String]] and
-    (JsPath \ "title").readNullable[DataFeedItemTitle] and
-    (JsPath \ "content").readNullable[DataFeedItemContent] and
-    (JsPath \ "location").readNullable[DataFeedItemLocation])(DataFeedItem.apply _)
-
-  implicit val feedItemFormat: Format[DataFeedItem] = Format(feedItemReads, feedItemWrites)
-}
-
-object DataFeedItemJsonProtocol extends DataFeedItemJsonProtocol {
-
 }

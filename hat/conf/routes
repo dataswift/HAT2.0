@@ -82,6 +82,8 @@ GET           /api/v2/she/function/:function                                    
 GET           /api/v2/she/function/:function/enable                                                 org.hatdex.hat.she.controllers.FunctionManager.functionEnable(function: String)
 GET           /api/v2/she/function/:function/disable                                                org.hatdex.hat.she.controllers.FunctionManager.functionDisable(function: String)
 GET           /api/v2/she/function/:function/trigger                                                org.hatdex.hat.she.controllers.FunctionManager.functionTrigger(function: String)
+GET           /api/v2/she/feed                                                                      org.hatdex.hat.she.controllers.FeedGenerator.fullFeed(since: Option[Long], until: Option[Long])
+GET           /api/v2/she/feed/$endpoint<[0-9a-z-/]+>                                               org.hatdex.hat.she.controllers.FeedGenerator.getFeed(endpoint: String, since: Option[Long], until: Option[Long])
 
 # AUTHENTICATION routes
 
