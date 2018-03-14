@@ -458,3 +458,59 @@ class FacebookFeedMapper(richDataService: RichDataService) extends DataEndpointM
   }
 }
 
+class NotablesFeedMapper(richDataService: RichDataService) extends DataEndpointMapper {
+  def feed(fromDate: Option[DateTime], untilDate: Option[DateTime])(implicit ec: ExecutionContext, hatServer: HatServer): Source[DataFeedItem, NotUsed] = {
+    val fmt = ISODateTimeFormat.dateTime()
+    val dateTimeFilter = if (fromDate.isDefined) {
+      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(fmt))), Json.toJson(untilDate.map(_.toString(fmt)))))
+    }
+    else {
+      None
+    }
+
+    val propertyQuery = PropertyQuery(
+      List(EndpointQuery("rumpel/notablesv1", None,
+        dateTimeFilter.map(f => Seq(EndpointQueryFilter("created_time", None, f))), None)), Some("created_time"), Some("descending"), None)
+
+    val feed: Future[Seq[DataFeedItem]] = richDataService.propertyData(
+      propertyQuery.endpoints,
+      propertyQuery.orderBy,
+      orderingDescending = propertyQuery.ordering.contains("descending"),
+      skip = 0, limit = None, createdAfter = None)(hatServer.db)
+      .map { endpointData =>
+        endpointData.map(item => mapRumpelNotable(item.recordId.get, item.data))
+          .collect { case Success(x) => x }
+      }
+
+    Source.fromFuture(feed)
+      .mapConcat(f => f.toList)
+  }
+
+  protected def mapRumpelNotable(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+    for {
+      title <- Try(if ((content \ "currently_shared").as[Boolean]) {
+        DataFeedItemTitle("You posted", Some("public"))
+      }
+      else {
+        DataFeedItemTitle("You posted", Some("private"))
+      })
+      itemContent <- Try(if ((content \ "photov1").isDefined && (content \ "photov1" \ "link").as[String].nonEmpty) {
+        DataFeedItemContent(Some((content \ "message").as[String]), Some(Seq(DataFeedItemMedia(Some((content \ "photov1" \ "link").as[String])))))
+      }
+      else {
+        DataFeedItemContent(Some((content \ "message").as[String]), None)
+      })
+      location <- Try(if ((content \ "locationv1").isDefined) {
+        Some(DataFeedItemLocation(Some(LocationGeo(
+          (content \ "locationv1" \ "longitude").as[Double],
+          (content \ "locationv1" \ "latitude").as[Double])), None, None))
+      }
+      else {
+        None
+      })
+      date <- Try((content \ "created_time").as[DateTime])
+      tags <- Try((content \ "shared_on").as[Seq[String]])
+    } yield DataFeedItem("notables", date, tags, Some(title), Some(itemContent), None)
+  }
+}
+
