@@ -30,6 +30,7 @@ import org.hatdex.hat.api.models.{ Owner, RetrieveApplicationToken, UserRole }
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.resourceManagement.HatServer
+import play.api.Logger
 import play.api.mvc.Request
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -63,7 +64,7 @@ case class WithRole(anyOf: UserRole*) extends Authorization[HatUser, JWTRS256Aut
 object WithRole {
   def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, anyOf: UserRole*): Boolean = {
     WithTokenParameters.roleMatchesToken(user, authenticator) &&
-      authenticator.customClaims.forall(!_.keys.contains("application")) && // must not contain application claim
+      authenticator.customClaims.forall(!_.keys.contains("application")) && // must NOT contain application claim
       (anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner()))
   }
 }
@@ -84,7 +85,7 @@ case class WithRoles(allOf: UserRole*) extends Authorization[HatUser, JWTRS256Au
 object WithRoles {
   def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, allOf: UserRole*): Boolean = {
     WithTokenParameters.roleMatchesToken(user, authenticator) &&
-      authenticator.customClaims.forall(!_.keys.contains("application")) && // must not contain application claim
+      authenticator.customClaims.forall(!_.keys.contains("application")) && // must NOT contain application claim
       (allOf.intersect(user.roles).length == allOf.length || user.roles.contains(Owner()))
   }
 }
@@ -95,8 +96,7 @@ case class ContainsApplicationRole(anyOf: UserRole*)(implicit val applicationsSe
   private val rolesRequiringExplicitApproval: Set[String] = Set(RetrieveApplicationToken("").title)
 
   def isAuthorized[B](user: HatUser, authenticator: JWTRS256Authenticator, hat: HatServer)(implicit r: Request[B]): Future[Boolean] = {
-    val containsApplicationClaim = authenticator.customClaims.forall(!_.keys.contains("application")) // must not contain application claim
-
+    val containsApplicationClaim = authenticator.customClaims.exists(_.keys.contains("application")) // MUST contain application claim
     val status = authenticator.customClaims.flatMap { customClaims ⇒
       (customClaims \ "application").asOpt[String]
     } map { app ⇒

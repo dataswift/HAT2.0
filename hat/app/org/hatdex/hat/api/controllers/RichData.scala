@@ -31,15 +31,16 @@ import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.models._
-import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
+import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider }
 import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.mvc._
-import play.api.{ Configuration }
+import play.api.Configuration
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.NonFatal
@@ -56,7 +57,8 @@ class RichData @Inject() (
     bundleService: RichBundleService,
     dataDebitService: DataDebitContractService,
     loggingProvider: LoggingProvider,
-    implicit val ec: ExecutionContext) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
+    implicit val ec: ExecutionContext,
+    implicit val applicationsService: ApplicationsService) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
 
   private val logger = loggingProvider.logger(this.getClass)
   private val defaultRecordLimit = 1000
@@ -66,7 +68,6 @@ class RichData @Inject() (
    *
    * @param namespace Namespace of the endpoint, typically restricted to a specific application
    * @param endpoint Endpoint name within the namespace, any valid URL path
-   * @param recordId Optional UUID of the record to be retrieved
    * @param orderBy Data Field within a data record by which data should be ordered
    * @param ordering The ordering to use for data sorting - default is "ascending", set to "descending" for reverse order
    * @param skip How many records to skip (used for paging)
@@ -75,7 +76,7 @@ class RichData @Inject() (
    */
   def getEndpointData(namespace: String, endpoint: String, orderBy: Option[String], ordering: Option[String],
     skip: Option[Int], take: Option[Int]): Action[AnyContent] =
-    SecuredAction(WithRole(Owner(), NamespaceRead(namespace))).async { implicit request =>
+    SecuredAction(WithRole(Owner(), NamespaceRead(namespace)) || ContainsApplicationRole(Owner(), NamespaceRead(namespace))).async { implicit request =>
       val dataEndpoint = s"$namespace/$endpoint"
       val query = Seq(EndpointQuery(dataEndpoint, None, None, None))
       val data = dataService.propertyData(query, orderBy, ordering.contains("descending"),
@@ -84,7 +85,7 @@ class RichData @Inject() (
     }
 
   def saveEndpointData(namespace: String, endpoint: String, skipErrors: Option[Boolean]): Action[JsValue] =
-    SecuredAction(WithRole(NamespaceWrite(namespace))).async(parsers.json[JsValue]) { implicit request =>
+    SecuredAction(WithRole(NamespaceWrite(namespace)) || ContainsApplicationRole(NamespaceWrite(namespace))).async(parsers.json[JsValue]) { implicit request =>
       val dataEndpoint = s"$namespace/$endpoint"
       val response = request.body match {
         case array: JsArray =>
@@ -107,7 +108,7 @@ class RichData @Inject() (
     }
 
   def deleteEndpointData(namespace: String, endpoint: String): Action[AnyContent] =
-    SecuredAction(WithRole(NamespaceWrite(namespace))).async { implicit request =>
+    SecuredAction(WithRole(NamespaceWrite(namespace)) || ContainsApplicationRole(NamespaceWrite(namespace))).async { implicit request =>
       val dataEndpoint = s"$namespace/$endpoint"
       dataService.deleteEndpoint(request.identity.userId, dataEndpoint) map { _ =>
         Ok(Json.toJson(SuccessResponse(s"All records deleted")))
@@ -115,7 +116,7 @@ class RichData @Inject() (
     }
 
   def saveBatchData: Action[Seq[EndpointData]] =
-    SecuredAction(WithRole(DataCredit(""), Owner())).async(parsers.json[Seq[EndpointData]]) { implicit request =>
+    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(DataCredit(""), Owner())).async(parsers.json[Seq[EndpointData]]) { implicit request =>
       val response = if (authorizeEndpointDataWrite(request.body)) {
         dataService.saveData(request.identity.userId, request.body)
           .andThen(dataEventDispatcher.dispatchEventDataCreated(s"saved batch data"))
@@ -150,7 +151,7 @@ class RichData @Inject() (
   }
 
   def registerCombinator(combinator: String): Action[Seq[EndpointQuery]] =
-    SecuredAction(WithRole(Owner())).async(parsers.json[Seq[EndpointQuery]]) { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async(parsers.json[Seq[EndpointQuery]]) { implicit request =>
       bundleService.saveCombinator(combinator, request.body) map { _ =>
         Created(Json.toJson(SuccessResponse(s"Combinator $combinator registered")))
       }
@@ -158,7 +159,7 @@ class RichData @Inject() (
 
   def getCombinatorData(combinator: String, recordId: Option[UUID], orderBy: Option[String],
     ordering: Option[String], skip: Option[Int], take: Option[Int]): Action[AnyContent] =
-    SecuredAction(WithRole(Owner())).async { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
       val result = for {
         query <- bundleService.combinator(combinator).map(_.get)
         data <- dataService.propertyData(query, orderBy, ordering.contains("descending"),
@@ -173,7 +174,7 @@ class RichData @Inject() (
     }
 
   def linkDataRecords(records: Seq[UUID]): Action[AnyContent] =
-    SecuredAction(WithRole(DataCredit(""), Owner())).async { implicit request =>
+    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(DataCredit(""), Owner())).async { implicit request =>
       dataService.saveRecordGroup(request.identity.userId, records) map { _ =>
         Created(Json.toJson(SuccessResponse(s"Grouping registered")))
       } recover {
@@ -183,7 +184,7 @@ class RichData @Inject() (
     }
 
   def deleteDataRecords(records: Seq[UUID]): Action[AnyContent] =
-    SecuredAction(WithRole(DataCredit(""), Owner())).async { implicit request =>
+    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(DataCredit(""), Owner())).async { implicit request =>
       dataService.deleteRecords(request.identity.userId, records) map { _ =>
         Ok(Json.toJson(SuccessResponse(s"All records deleted")))
       } recover {
@@ -191,14 +192,15 @@ class RichData @Inject() (
       }
     }
 
-  def listEndpoints: Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform(), DataCredit(""))).async { implicit request =>
-    dataService.listEndpoints() map { endpoints =>
-      Ok(Json.toJson(endpoints))
+  def listEndpoints: Action[AnyContent] =
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit("")) || ContainsApplicationRole(Owner(), Platform(), DataCredit(""))).async { implicit request =>
+      dataService.listEndpoints() map { endpoints =>
+        Ok(Json.toJson(endpoints))
+      }
     }
-  }
 
   def updateRecords(): Action[Seq[EndpointData]] =
-    SecuredAction(WithRole(DataCredit(""), Owner())).async(parsers.json[Seq[EndpointData]]) { implicit request =>
+    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(DataCredit(""), Owner())).async(parsers.json[Seq[EndpointData]]) { implicit request =>
       dataService.updateRecords(request.identity.userId, request.body) map { saved =>
         Created(Json.toJson(saved))
       } recover {
@@ -207,7 +209,7 @@ class RichData @Inject() (
     }
 
   def registerBundle(bundleId: String): Action[Map[String, PropertyQuery]] =
-    SecuredAction(WithRole(Owner())).async(parsers.json[Map[String, PropertyQuery]]) { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async(parsers.json[Map[String, PropertyQuery]]) { implicit request =>
       bundleService.saveBundle(EndpointDataBundle(bundleId, request.body))
         .map {
           _ => Created(Json.toJson(SuccessResponse(s"Bundle $bundleId registered")))
@@ -215,7 +217,7 @@ class RichData @Inject() (
     }
 
   def fetchBundle(bundleId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner())).async { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
       val result = for {
         bundle <- bundleService.bundle(bundleId).map(_.get)
         data <- dataService.bundleData(bundle)
@@ -229,7 +231,7 @@ class RichData @Inject() (
     }
 
   def bundleStructure(bundleId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner())).async { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
       val result = for {
         bundle <- bundleService.bundle(bundleId).map(_.get)
       } yield bundle
@@ -242,7 +244,7 @@ class RichData @Inject() (
     }
 
   def registerDataDebit(dataDebitId: String): Action[DataDebitRequest] =
-    SecuredAction(WithRole(Owner(), DataDebitOwner(""), Platform())).async(parsers.json[DataDebitRequest]) { implicit request =>
+    SecuredAction(WithRole(Owner(), DataDebitOwner(""), Platform()) || ContainsApplicationRole(Owner(), DataDebitOwner(""), Platform())).async(parsers.json[DataDebitRequest]) { implicit request =>
       dataDebitService.createDataDebit(dataDebitId, request.body, request.identity.userId)
         .andThen(dataEventDispatcher.dispatchEventDataDebit(DataDebitOperations.Create()))
         .map(debit => Created(Json.toJson(debit)))
@@ -253,7 +255,7 @@ class RichData @Inject() (
     }
 
   def updateDataDebit(dataDebitId: String): Action[DataDebitRequest] =
-    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId))).async(parsers.json[DataDebitRequest]) { implicit request =>
+    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(Owner(), DataDebitOwner(dataDebitId))).async(parsers.json[DataDebitRequest]) { implicit request =>
       dataDebitService.updateDataDebitBundle(dataDebitId, request.body, request.identity.userId)
         .andThen(dataEventDispatcher.dispatchEventDataDebit(DataDebitOperations.Change()))
         .map(debit => Ok(Json.toJson(debit)))
@@ -263,7 +265,7 @@ class RichData @Inject() (
     }
 
   def getDataDebit(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId))).async { implicit request =>
+    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(Owner(), DataDebitOwner(dataDebitId))).async { implicit request =>
       dataDebitService.dataDebit(dataDebitId)
         .map {
           case Some(debit) => Ok(Json.toJson(debit))
@@ -272,7 +274,7 @@ class RichData @Inject() (
     }
 
   def getDataDebitValues(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId))).async { implicit request =>
+    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(Owner(), DataDebitOwner(dataDebitId))).async { implicit request =>
       dataDebitService.dataDebit(dataDebitId)
         .flatMap {
           case Some(debit) if debit.activeBundle.isDefined =>
@@ -315,19 +317,19 @@ class RichData @Inject() (
     }
 
   def listDataDebits(): Action[AnyContent] =
-    SecuredAction(WithRole(Owner())).async { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
       dataDebitService.all map { debits =>
         Ok(Json.toJson(debits))
       }
     }
 
   def enableDataDebitBundle(dataDebitId: String, bundleId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner())).async { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
       enableDataDebit(dataDebitId, Some(bundleId))
     }
 
   def enableDataDebitNewest(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner())).async { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
       enableDataDebit(dataDebitId, None)
     }
 
@@ -346,7 +348,7 @@ class RichData @Inject() (
   }
 
   def disableDataDebit(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner())).async { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
       val disabled = for {
         _ <- dataDebitService.dataDebitDisable(dataDebitId)
         debit <- dataDebitService.dataDebit(dataDebitId)
