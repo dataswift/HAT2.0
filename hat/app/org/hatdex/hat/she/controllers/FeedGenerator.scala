@@ -28,9 +28,8 @@ import javax.inject.Inject
 
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.{ GraphDSL, MergeSorted, Sink, Source }
-import akka.stream.stage.GraphStage
-import akka.stream.{ ActorMaterializer, FanInShape2, SourceShape }
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{ Sink, Source }
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.DataFeedItemJsonProtocol
@@ -47,7 +46,6 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
-import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 
 class FeedGenerator @Inject() (

@@ -70,6 +70,7 @@ class LoggingFilter @Inject() (
   private def tokenInfo(requestHeader: RequestHeader): String = {
     requestHeader.queryString.get(authTokenFieldName).flatMap(_.headOption)
       .orElse(requestHeader.headers.get(authTokenFieldName))
+      .flatMap(t ⇒ if (t.isEmpty) { None } else { Some(t) })
       .map(JWSObject.parse)
       .map(o ⇒ JWTClaimsSet.parse(o.getPayload.toJSONObject))
       .map { claimSet =>
