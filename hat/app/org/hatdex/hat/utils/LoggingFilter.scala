@@ -33,6 +33,7 @@ import play.api.{ Configuration, Logger }
 import play.api.mvc.{ Filter, RequestHeader, Result }
 
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.Try
 
 @Singleton
 class ActiveHatCounter() {
@@ -71,7 +72,7 @@ class LoggingFilter @Inject() (
     requestHeader.queryString.get(authTokenFieldName).flatMap(_.headOption)
       .orElse(requestHeader.headers.get(authTokenFieldName))
       .flatMap(t ⇒ if (t.isEmpty) { None } else { Some(t) })
-      .map(JWSObject.parse)
+      .flatMap(t ⇒ Try(JWSObject.parse(t)).toOption)
       .map(o ⇒ JWTClaimsSet.parse(o.getPayload.toJSONObject))
       .map { claimSet =>
         s"[${Option(claimSet.getStringClaim("application")).getOrElse("api")}]@" +

@@ -36,6 +36,8 @@ lazy val hat = project
       Library.Utils.awsJavaS3Sdk,
       Library.Utils.prettyTime,
       Library.Utils.nbvcxz,
+      Library.Utils.playMemcached,
+      Library.Utils.elasticacheClusterClient,
       Library.scalaGuice
     ),
     libraryDependencies := (buildEnv.value match {

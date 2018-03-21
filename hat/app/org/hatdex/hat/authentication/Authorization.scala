@@ -30,7 +30,6 @@ import org.hatdex.hat.api.models.{ Owner, RetrieveApplicationToken, UserRole }
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.resourceManagement.HatServer
-import play.api.Logger
 import play.api.mvc.Request
 
 import scala.concurrent.{ ExecutionContext, Future }

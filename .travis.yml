@@ -8,6 +8,7 @@ jdk:
 
 services:
   - docker
+  - memcached
 addons:
   postgresql: "9.5"
 

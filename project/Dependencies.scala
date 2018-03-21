@@ -87,6 +87,8 @@ object Dependencies {
       val awsJavaS3Sdk = "com.amazonaws" % "aws-java-sdk-s3" % "1.11.281"
       val prettyTime = "org.ocpsoft.prettytime" % "prettytime" % "4.0.1.Final"
       val nbvcxz = "me.gosimple" % "nbvcxz" % "1.4.0"
+      val elasticacheClusterClient = "com.amazonaws" % "elasticache-java-cluster-client" % "1.1.1"
+      val playMemcached = "com.github.mumoshu" %% "play2-memcached-play26" % "0.9.1" exclude("net.spy", "spymemcached")
     }
 
     object Akka {

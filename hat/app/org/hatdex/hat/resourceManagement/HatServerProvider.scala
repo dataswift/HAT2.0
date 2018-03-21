@@ -36,7 +36,7 @@ import org.bouncycastle.util.io.pem.{ PemObject, PemWriter }
 import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.resourceManagement.actors.HatServerProviderActor
 import org.hatdex.hat.utils.LoggingProvider
-import play.api.cache.AsyncCacheApi
+import play.api.cache.{ AsyncCacheApi, NamedCache }
 import play.api.Configuration
 import play.api.mvc.Request
 
@@ -60,7 +60,7 @@ trait HatServerProvider extends DynamicEnvironmentProviderService[HatServer] {
 @Singleton
 class HatServerProviderImpl @Inject() (
     configuration: Configuration,
-    cache: AsyncCacheApi,
+    @NamedCache("hatserver-cache") cache: AsyncCacheApi,
     loggingProvider: LoggingProvider,
     @Named("hatServerProviderActor") serverProviderActor: ActorRef)(
     implicit
@@ -87,7 +87,7 @@ class HatServerProviderImpl @Inject() (
               cache.set(s"server:$hatAddress", server, serverInfoTimeout)
               Some(server)
             case error: HatServerDiscoveryException =>
-              logger.debug(s"Got back error $error")
+              logger.warn(s"Got back error $error")
               throw error
             case message =>
               logger.warn(s"Unknown message $message from HAT Server provider actor")
@@ -96,7 +96,7 @@ class HatServerProviderImpl @Inject() (
           } recoverWith {
             case e =>
               logger.warn(s"Error while retrieving HAT $hatAddress info: ${e.getMessage}")
-              val error = new HatServerDiscoveryException("HAT Server info retrieval failed")
+              val error = new HatServerDiscoveryException("HAT Server info retrieval failed", e)
               throw error
           }
       }

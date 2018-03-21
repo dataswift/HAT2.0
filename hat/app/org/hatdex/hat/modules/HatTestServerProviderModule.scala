@@ -24,11 +24,18 @@
 
 package org.hatdex.hat.modules
 
-import com.google.inject.AbstractModule
+import akka.actor.ActorSystem
+import com.google.inject.{ AbstractModule, Provides }
+import com.typesafe.config.ConfigValue
 import net.codingwell.scalaguice.ScalaModule
+import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.api.service.applications.{ TrustedApplicationProvider, TrustedApplicationProviderDex }
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.resourceManagement.actors.{ HatServerActor, HatServerProviderActor }
+import play.api.cache.AsyncCacheApi
+import play.api.{ Configuration, Environment }
+import play.api.cache.ehcache.EhCacheComponents
+import play.api.inject.ApplicationLifecycle
 import play.api.libs.concurrent.AkkaGuiceSupport
 
 class HatTestServerProviderModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
@@ -42,6 +49,18 @@ class HatTestServerProviderModule extends AbstractModule with ScalaModule with A
     bind[HatServerProvider].to[HatServerProviderImpl]
 
     bind[TrustedApplicationProvider].to[TrustedApplicationProviderDex]
+  }
+
+  @Provides @play.cache.NamedCache("hatserver-cache")
+  def provideHatServerCache(env: Environment, config: Configuration, lifecycle: ApplicationLifecycle, system: ActorSystem)(implicit ec: RemoteExecutionContext): AsyncCacheApi = {
+    val cacheComponents = new EhCacheComponents {
+      def environment: Environment = env
+      def configuration: Configuration = config.get[Configuration]("hat.serverProvider")
+      def applicationLifecycle: ApplicationLifecycle = lifecycle
+      def actorSystem: ActorSystem = system
+      implicit def executionContext = ec
+    }
+    cacheComponents.cacheApi("hatserver-cache", create = true)
   }
 
 }
