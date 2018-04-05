@@ -27,7 +27,7 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val crossScala = Seq("2.12.4")
+    val crossScala = Seq("2.12.5")
     val scalaVersion = crossScala.head
   }
 
@@ -48,8 +48,8 @@ object Dependencies {
       val test = "com.typesafe.play" %% "play-test" % version
       val specs2 = "com.typesafe.play" %% "play-specs2" % version
       val jdbc = "com.typesafe.play" %% "play-jdbc" % version
-      val json = "com.typesafe.play" %% "play-json" % "2.6.8"
-      val jsonJoda = "com.typesafe.play" %% "play-json-joda" % "2.6.8"
+      val json = "com.typesafe.play" %% "play-json" % "2.6.9"
+      val jsonJoda = "com.typesafe.play" %% "play-json-joda" % "2.6.9"
       val mailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
       val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
 
@@ -83,18 +83,18 @@ object Dependencies {
 
     object Utils {
       val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
-      val awsJavaSdk = "com.amazonaws" % "aws-java-sdk" % "1.10.64"
-      val awsJavaS3Sdk = "com.amazonaws" % "aws-java-sdk-s3" % "1.11.281"
+      val awsJavaSdk = "com.amazonaws" % "aws-java-sdk" % "1.11.308"
+      val awsJavaS3Sdk = "com.amazonaws" % "aws-java-sdk-s3" % "1.11.308"
       val prettyTime = "org.ocpsoft.prettytime" % "prettytime" % "4.0.1.Final"
-      val nbvcxz = "me.gosimple" % "nbvcxz" % "1.4.0"
+      val nbvcxz = "me.gosimple" % "nbvcxz" % "1.4.1"
       val elasticacheClusterClient = "com.amazonaws" % "elasticache-java-cluster-client" % "1.1.1"
       val playMemcached = "com.github.mumoshu" %% "play2-memcached-play26" % "0.9.1" exclude("net.spy", "spymemcached")
     }
 
     object Akka {
-      private val version = "2.5.8"
+      private val version = "2.5.11"
       val slf4j = "com.typesafe.akka" %% "akka-slf4j" % version
-      val httpCore = "com.typesafe.akka" %% "akka-http-core" % "10.0.11"
+      val httpCore = "com.typesafe.akka" %% "akka-http-core" % "10.1.1"
       val akkaStream = "com.typesafe.akka" %% "akka-stream" % version
       val akkaActor = "com.typesafe.akka" %% "akka-actor" % version
       val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % version
@@ -102,7 +102,7 @@ object Dependencies {
 
     object HATDeX {
       private val version = "2.5.3-SNAPSHOT"
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.6.0-SNAPSHOT"
       val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
       val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.7"
     }

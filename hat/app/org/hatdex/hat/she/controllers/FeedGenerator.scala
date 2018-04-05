@@ -32,7 +32,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{ Sink, Source }
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
-import org.hatdex.hat.api.json.DataFeedItemJsonProtocol
+import org.hatdex.hat.api.json.{ DataFeedItemJsonProtocol, RichDataJsonFormats }
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.models.applications.DataFeedItem
 import org.hatdex.hat.api.service.richData.RichDataService

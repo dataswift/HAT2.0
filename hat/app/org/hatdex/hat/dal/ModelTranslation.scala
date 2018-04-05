@@ -127,7 +127,7 @@ object ModelTranslation {
   }
 
   def fromDbModel(dataBundleRow: DataBundlesRow): EndpointDataBundle = {
-    import RichDataJsonFormats.propertyQueryFormat
+    import org.hatdex.hat.api.json.RichDataJsonFormats.propertyQueryFormat
     EndpointDataBundle(dataBundleRow.bundleId, dataBundleRow.bundle.as[Map[String, PropertyQuery]])
   }
 

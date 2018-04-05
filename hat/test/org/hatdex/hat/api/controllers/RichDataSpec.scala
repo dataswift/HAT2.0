@@ -44,7 +44,7 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
   val logger = Logger(this.getClass)
 
-  import org.hatdex.hat.api.models.RichDataJsonFormats._
+  import org.hatdex.hat.api.json.RichDataJsonFormats._
 
   sequential
 

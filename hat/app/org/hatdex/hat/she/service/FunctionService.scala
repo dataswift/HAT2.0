@@ -28,7 +28,7 @@ import java.security.MessageDigest
 import javax.inject.Inject
 
 import akka.Done
-import org.hatdex.hat.api.models.{ EndpointData, Owner, RichDataJsonFormats }
+import org.hatdex.hat.api.models.{ EndpointData, Owner }
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.models.{ FunctionConfiguration, FunctionExecutable, Request, Response }
@@ -111,7 +111,7 @@ class FunctionService @Inject() (
 
   def save(configuration: FunctionConfiguration)(implicit db: Database): Future[FunctionConfiguration] = {
     logger.debug(s"Save function configuration $configuration")
-    import RichDataJsonFormats.propertyQueryFormat
+    import org.hatdex.hat.api.json.RichDataJsonFormats.propertyQueryFormat
     import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol.triggerFormat
     val functionRow = SheFunctionRow(configuration.name, configuration.description, Json.toJson(configuration.trigger),
       configuration.enabled, configuration.dataBundle.name, configuration.lastExecution)

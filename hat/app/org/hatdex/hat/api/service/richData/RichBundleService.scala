@@ -26,6 +26,7 @@ package org.hatdex.hat.api.service.richData
 
 import javax.inject.Inject
 
+import org.hatdex.hat.api.json.RichDataJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation

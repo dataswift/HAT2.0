@@ -28,11 +28,11 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.util.Clock
 import controllers.{ AssetsFinder, AssetsFinderProvider }
-import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ EndpointDataBundle, RichDataJsonFormats }
+import org.hatdex.hat.api.json.{ HatJsonFormats, RichDataJsonFormats }
+import org.hatdex.hat.api.models.EndpointDataBundle
 import org.hatdex.hat.api.service.richData.{ RichBundleService, RichDataService }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
-import org.hatdex.hat.phata.{ views => phataViews }
+import org.hatdex.hat.phata.{ views ⇒ phataViews }
 import org.hatdex.hat.resourceManagement.HatServerProvider
 import play.api.cache.{ Cached, CachedBuilder }
 import play.api.libs.json.Json

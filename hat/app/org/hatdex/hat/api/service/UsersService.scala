@@ -30,7 +30,7 @@ import javax.inject.Inject
 import org.hatdex.hat.api.models.{ UserRole, _ }
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.Tables.{ UserRole => UserRoleDb, _ }
+import org.hatdex.hat.dal.Tables.{ UserRole ⇒ UserRoleDb, DataDebit ⇒ DataDebitDb, _ }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
@@ -66,7 +66,7 @@ class UsersService @Inject() (implicit ec: DalExecutionContext) {
   }
 
   private def queryUser(userFilter: Query[UserUser, UserUserRow, Seq])(implicit db: Database): Future[Seq[HatUser]] = {
-    val debits = DataDebit.map(d => (d.recipientId, d.dataDebitKey.asColumnOf[String]))
+    val debits = DataDebitDb.map(d => (d.recipientId, d.dataDebitKey.asColumnOf[String]))
     val debits2 = DataDebitContract.map(d => (d.clientId.asColumnOf[String], d.dataDebitKey))
     val dd = debits.unionAll(debits2)
 

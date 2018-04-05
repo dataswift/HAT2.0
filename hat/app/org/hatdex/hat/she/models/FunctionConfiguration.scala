@@ -26,7 +26,8 @@ package org.hatdex.hat.she.models
 
 import java.util.UUID
 
-import org.hatdex.hat.api.models.{ EndpointData, EndpointDataBundle, RichDataJsonFormats }
+import org.hatdex.hat.api.json.RichDataJsonFormats
+import org.hatdex.hat.api.models.{ EndpointData, EndpointDataBundle }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataBundlesRow, SheFunctionRow }
 import org.joda.time.{ DateTime, Duration }
@@ -99,19 +100,6 @@ object FunctionTrigger {
 
 trait FunctionConfigurationJsonProtocol extends JodaWrites with JodaReads with RichDataJsonFormats {
   import FunctionTrigger._
-
-  /*
-  * Duration Json formats
-   */
-  implicit val durationWrites: Writes[Duration] = new Writes[Duration] {
-    def writes(o: Duration): JsValue = JsNumber(o.getMillis)
-  }
-  implicit val durationReads: Reads[Duration] = new Reads[Duration] {
-    def reads(json: JsValue): JsResult[Duration] = json match {
-      case JsNumber(value) => JsSuccess(new Duration(value.toLong))
-      case _               => JsError(Seq(JsPath() -> Seq(JsonValidationError("validate.error.expected.period"))))
-    }
-  }
 
   protected implicit val triggerPeriodicFormat: Format[TriggerPeriodic] = Json.format[TriggerPeriodic]
 
