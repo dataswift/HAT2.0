@@ -27,6 +27,7 @@ package org.hatdex.hat.resourceManagement.actors
 import javax.inject.Inject
 
 import akka.actor._
+import akka.pattern.pipe
 import com.google.inject.assistedinject.Assisted
 import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.resourceManagement._
@@ -64,8 +65,8 @@ class HatServerActor @Inject() (
       log.debug(s"RECEIVE HATRetrieve, stashing, connecting")
       stash()
       context.become(connecting)
+      connect().pipeTo(self)
       context.setReceiveTimeout(idleTimeout)
-      connect()
 
     case message =>
       log.debug(s"RECEIVE Received unknown message: $message")
@@ -113,13 +114,11 @@ class HatServerActor @Inject() (
     hatDatabaseProvider.shutdown(server.db)
   }
 
-  private def connect() = {
-    server(hat).map { hatConnected =>
-      self ! HatConnected(hatConnected)
-    } recover {
-      case e: HatServerDiscoveryException =>
-        self ! HatFailed(e)
-    }
+  private def connect(): Future[HatServerActorMessage] = {
+    server(hat).map(hatConnected => HatConnected(hatConnected))
+      .recover {
+        case e: HatServerDiscoveryException => HatFailed(e)
+      }
   }
 
   private def server(hat: String): Future[HatServer] = {

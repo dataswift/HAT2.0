@@ -26,14 +26,12 @@ package org.hatdex.hat.phata.controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.util.Clock
 import controllers.{ AssetsFinder, AssetsFinderProvider }
 import org.hatdex.hat.api.json.{ HatJsonFormats, RichDataJsonFormats }
 import org.hatdex.hat.api.models.EndpointDataBundle
 import org.hatdex.hat.api.service.richData.{ RichBundleService, RichDataService }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.phata.{ views ⇒ phataViews }
-import org.hatdex.hat.resourceManagement.HatServerProvider
 import play.api.cache.{ Cached, CachedBuilder }
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
@@ -49,11 +47,9 @@ class Phata @Inject() (
     cached: Cached,
     configuration: Configuration,
     silhouette: Silhouette[HatApiAuthEnvironment],
-    hatServerProvider: HatServerProvider,
-    clock: Clock,
     wsClient: WSClient,
     bundleService: RichBundleService,
-    dataService: RichDataService) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats with RichDataJsonFormats {
+    dataService: RichDataService) extends HatApiController(components, silhouette) with HatJsonFormats with RichDataJsonFormats {
 
   implicit val assets: AssetsFinder = assetsFinder.get
 

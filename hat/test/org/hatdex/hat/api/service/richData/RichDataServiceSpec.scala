@@ -482,7 +482,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       val result = for {
         saved <- service.saveData(owner.userId, sampleData)
-        _ <- service.deleteRecords(owner.userId, Seq(saved(1).recordId.get, UUID.randomUUID())).recover { case e => Future.successful(()) }
+        _ <- service.deleteRecords(owner.userId, Seq(saved(1).recordId.get, UUID.randomUUID())).recover { case _ => Future.successful(()) }
         retrieved <- service.propertyData(
           List(
             EndpointQuery("test/test", Some(simpleTransformation), None, None),
@@ -554,7 +554,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         saved <- service.saveData(owner.userId, data)
         _ <- service.updateRecords(owner.userId, Seq(
           saved(1).copy(data = simpleJson2Updated),
-          EndpointData("test/complex", None, complexJson, None))).recover { case e => Future.successful(()) }
+          EndpointData("test/complex", None, complexJson, None))).recover { case _ => Future.successful(()) }
         retrieved <- service.propertyData(
           List(
             EndpointQuery("test/test", Some(simpleTransformation), None, None),

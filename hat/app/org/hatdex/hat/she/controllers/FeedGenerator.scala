@@ -31,37 +31,29 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{ Sink, Source }
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.{ DataFeedItemJsonProtocol, RichDataJsonFormats }
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.models.applications.DataFeedItem
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol
 import org.hatdex.hat.she.service._
-import org.hatdex.hat.utils.{ HatBodyParsers, SourceMergeSorter }
+import org.hatdex.hat.utils.SourceMergeSorter
 import org.joda.time.DateTime
+import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
-import play.api.{ Configuration, Logger }
 
 import scala.concurrent.ExecutionContext
 
 class FeedGenerator @Inject() (
     components: ControllerComponents,
-    configuration: Configuration,
-    parsers: HatBodyParsers,
-    silhouette: Silhouette[HatApiAuthEnvironment],
-    clock: Clock,
-    hatServerProvider: HatServerProvider,
-    functionService: FunctionService,
-    richDataService: RichDataService,
-    functionExecutionDispatcher: FunctionExecutionDispatcher)(
+    silhouette: Silhouette[HatApiAuthEnvironment])(
     implicit
+    richDataService: RichDataService,
     val actorSystem: ActorSystem,
     val ec: ExecutionContext)
-  extends HatApiController(components, silhouette, clock, hatServerProvider, configuration)
+  extends HatApiController(components, silhouette)
   with RichDataJsonFormats
   with FunctionConfigurationJsonProtocol
   with DataFeedItemJsonProtocol {
@@ -70,14 +62,15 @@ class FeedGenerator @Inject() (
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   private val dataMappers: Map[String, DataEndpointMapper] = Map(
-    "facebook/feed" → new FacebookFeedMapper(richDataService),
-    "twitter/tweets" → new TwitterFeedMapper(richDataService),
-    "fitbit/sleep" → new FitbitSleepMapper(richDataService),
-    "fitbit/weight" → new FitbitWeightMapper(richDataService),
-    "fitbit/activity" → new FitbitActivityMapper(richDataService),
-    "fitbit/activity/day/summary" → new FitbitActivityDaySummaryMapper(richDataService),
-    "calendar/google/events" → new GoogleCalendarMapper(richDataService),
-    "notables/feed" → new NotablesFeedMapper(richDataService))
+    "facebook/feed" → new FacebookFeedMapper(),
+    "facebook/events" → new FacebookEventMapper(),
+    "twitter/tweets" → new TwitterFeedMapper(),
+    "fitbit/sleep" → new FitbitSleepMapper(),
+    "fitbit/weight" → new FitbitWeightMapper(),
+    "fitbit/activity" → new FitbitActivityMapper(),
+    "fitbit/activity/day/summary" → new FitbitActivityDaySummaryMapper(),
+    "calendar/google/events" → new GoogleCalendarMapper(),
+    "notables/feed" → new NotablesFeedMapper())
 
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long]): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
     val data: Source[DataFeedItem, NotUsed] = dataMappers.get(endpoint)

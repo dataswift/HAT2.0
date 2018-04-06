@@ -27,10 +27,10 @@ package org.hatdex.hat.she.service
 import org.hatdex.hat.api.models.EndpointQuery
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
-import org.joda.time.{ DateTime, DateTimeUtils }
+import org.joda.time.DateTimeUtils
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.{ BeforeAfterAll, BeforeAll }
+import org.specs2.specification.BeforeAfterAll
 import play.api.Logger
 import play.api.test.PlaySpecification
 
@@ -52,7 +52,7 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     DateTimeUtils.setCurrentMillisSystem()
   }
 
-  override def before: Unit = {
+  override def before(): Unit = {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
@@ -202,8 +202,6 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val records = Seq(exampleTweetRetweet, exampleTweetMentions, exampleFacebookPhotoPost, exampleFacebookPost,
         facebookStory, facebookEvent, facebookEvenNoLocation, facebookEvenPartialLocation, fitbitSleepMeasurement,
         fitbitWeightMeasurement, fitbitActivity, fitbitDaySummary, googleCalendarEvent, googleCalendarFullDayEvent)
-
-      val currentDate = DateTime.now()
 
       val executed = for {
         _ <- dataService.saveData(owner.userId, records)

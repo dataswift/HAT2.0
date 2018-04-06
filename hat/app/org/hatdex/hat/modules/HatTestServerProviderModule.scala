@@ -26,21 +26,20 @@ package org.hatdex.hat.modules
 
 import akka.actor.ActorSystem
 import com.google.inject.{ AbstractModule, Provides }
-import com.typesafe.config.ConfigValue
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.api.service.applications.{ TrustedApplicationProvider, TrustedApplicationProviderDex }
 import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.resourceManagement.actors.{ HatServerActor, HatServerProviderActor }
 import play.api.cache.AsyncCacheApi
-import play.api.{ Configuration, Environment }
 import play.api.cache.ehcache.EhCacheComponents
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.concurrent.AkkaGuiceSupport
+import play.api.{ Configuration, Environment }
 
 class HatTestServerProviderModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
-  def configure = {
+  def configure() = {
     bindActor[HatServerProviderActor]("hatServerProviderActor")
     bindActorFactory[HatServerActor, HatServerActor.Factory]
 
@@ -49,6 +48,7 @@ class HatTestServerProviderModule extends AbstractModule with ScalaModule with A
     bind[HatServerProvider].to[HatServerProviderImpl]
 
     bind[TrustedApplicationProvider].to[TrustedApplicationProviderDex]
+    ()
   }
 
   @Provides @play.cache.NamedCache("hatserver-cache")

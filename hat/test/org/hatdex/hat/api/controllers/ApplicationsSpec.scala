@@ -26,11 +26,10 @@ package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.test._
 import org.hatdex.hat.api.json.ApplicationJsonProtocol
-import org.hatdex.hat.api.models.{ AccessToken, ErrorMessage }
 import org.hatdex.hat.api.models.applications.HatApplication
+import org.hatdex.hat.api.models.{ AccessToken, ErrorMessage }
 import org.hatdex.hat.api.service.applications.ApplicationsServiceContext
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
-import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
@@ -40,7 +39,7 @@ import play.api.test.{ FakeRequest, PlaySpecification }
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class ApplicationsSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with ApplicationsServiceContext with BeforeEach with BeforeAll {
+class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsServiceContext with BeforeEach with BeforeAll {
 
   val logger = Logger(this.getClass)
 
@@ -61,8 +60,7 @@ class ApplicationsSpec(implicit ee: ExecutionEnv) extends PlaySpecification with
   }
 
   import ApplicationJsonProtocol.applicationStatusFormat
-  import org.hatdex.hat.api.json.HatJsonFormats.errorMessage
-  import org.hatdex.hat.api.json.HatJsonFormats.accessTokenFormat
+  import org.hatdex.hat.api.json.HatJsonFormats.{ accessTokenFormat, errorMessage }
 
   "The `applications` method" should {
     "Return list of available applications" in {

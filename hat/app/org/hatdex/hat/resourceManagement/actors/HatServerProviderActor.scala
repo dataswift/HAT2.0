@@ -36,6 +36,7 @@ import play.api.libs.concurrent.InjectedActorSupport
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.{ Failure, Success }
 
 class HatServerProviderActor @Inject() (
     hatServerActorFactory: HatServerActor.Factory,
@@ -55,9 +56,9 @@ class HatServerProviderActor @Inject() (
       getHatServerActor(hat) map { hatServerActor =>
         log.debug(s"Got HAT server provider actor, forwarding retrieval message with sender $sender $retrievingSender")
         hatServerActor tell (HatServerActor.HatRetrieve(), retrievingSender)
-      } recover {
-        case e =>
-          log.warning(s"Error while getting HAT server provider actor: ${e.getMessage}")
+      } onComplete {
+        case Success(_) ⇒ ()
+        case Failure(e) ⇒ log.warning(s"Error while getting HAT server provider actor: ${e.getMessage}")
       }
 
     case HatServerStarted(_) =>

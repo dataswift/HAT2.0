@@ -62,7 +62,7 @@ object JsonDataTransformer {
         val transformation = (source \ "mappings").get.as[JsObject].fields.map {
           case (subDestination, subSource) =>
             nestedDataPicker(subDestination, subSource)
-        } reduceLeft { (reads, addedReads) => reads and addedReads reduce }
+        } reduceLeft { (reads, addedReads) => reads.and(addedReads).reduce }
 
         val transformed = if (destination.endsWith("[]")) {
           sourceJson.pick[JsArray].map { arr =>
@@ -95,6 +95,6 @@ object JsonDataTransformer {
   def mappingTransformer(mapping: JsObject): Reads[JsObject] = {
     mapping.fields
       .map(f => nestedDataPicker(f._1, f._2))
-      .reduceLeft((reads, addedReads) => reads and addedReads reduce)
+      .reduceLeft((reads, addedReads) => reads.and(addedReads).reduce)
   }
 }

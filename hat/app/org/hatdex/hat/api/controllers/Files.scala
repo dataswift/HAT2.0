@@ -28,35 +28,29 @@ import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.{ FileManager, FileMetadataService, UsersService }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.HatBodyParsers
 import org.joda.time.DateTime
+import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
-import play.api.{ Configuration, Logger }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
 class Files @Inject() (
     components: ControllerComponents,
-    configuration: Configuration,
     parsers: HatBodyParsers,
     silhouette: Silhouette[HatApiAuthEnvironment],
-    hatServerProvider: HatServerProvider,
-    clock: Clock,
-    hatDatabaseProvider: HatDatabaseProvider,
     fileMetadataService: FileMetadataService,
     fileManager: FileManager,
     usersService: UsersService,
     implicit val ec: ExecutionContext,
-    implicit val applicationsService: ApplicationsService) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    implicit val applicationsService: ApplicationsService) extends HatApiController(components, silhouette) with HatJsonFormats {
 
   val logger = Logger(this.getClass)
 

@@ -63,19 +63,8 @@ class FunctionExecutorActor @Inject() (
     case Execute(since) =>
       logger.debug(s"RECEIVE Execute, executing")
       stash()
+      startExecution(since).pipeTo(self)
       context.become(executing)
-      hatServerProvider.retrieve(hat) map { h =>
-        val message: Future[FunctionExecutorActorMessage] = h map { implicit hatServer =>
-          functionService.run(conf, since)(hatServer.db)
-            .map(_ => ExecutionFinished())
-            .recover {
-              case e => ExecutionFailed(e)
-            }
-        } getOrElse {
-          Future.successful(ExecutionFailed(new HatServerDiscoveryException(s"HAT $hat discovery failed for function execution")))
-        }
-        message.pipeTo(self)
-      }
 
     case message =>
       logger.warn(s"RECEIVE Received unknown message: $message")
@@ -108,5 +97,20 @@ class FunctionExecutorActor @Inject() (
     case message =>
       logger.debug(s"FINISHED received a message: $message")
       sender ! ExecutionFailed(error)
+  }
+
+  def startExecution(since: Option[DateTime]): Future[FunctionExecutorActorMessage] = {
+    hatServerProvider.retrieve(hat)
+      .flatMap {
+        _.map { implicit hatServer =>
+          functionService.run(conf, since)(hatServer.db)
+            .map(_ => ExecutionFinished())
+            .recover {
+              case e => ExecutionFailed(e)
+            }
+        } getOrElse {
+          Future.successful(ExecutionFailed(new HatServerDiscoveryException(s"HAT $hat discovery failed for function execution")))
+        }
+      }
   }
 }

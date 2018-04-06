@@ -32,9 +32,10 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 
 class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
-  def configure = {
+  def configure() = {
     bindActorFactory[FunctionExecutorActor, FunctionExecutorActor.Factory]
     bind[FunctionExecutionTriggerHandler].asEagerSingleton()
+    ()
   }
 
   @Provides

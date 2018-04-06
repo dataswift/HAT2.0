@@ -26,8 +26,9 @@ package org.hatdex.hat.api.service.monitoring
 
 import javax.inject.Inject
 
+import akka.Done
 import akka.actor.{ Actor, ActorLogging }
-import org.hatdex.hat.api.models.{ DataStats, InboundDataStats, OutboundDataStats, DataDebitEvent => DataDebitAction }
+import org.hatdex.hat.api.models.{ DataStats, InboundDataStats, OutboundDataStats, DataDebitEvent ⇒ DataDebitAction }
 import org.hatdex.hat.api.service.StatsReporter
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{ DataCreatedEvent, DataDebitEvent, DataRetrievedEvent }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerDiscoveryException, HatServerProvider }
@@ -97,7 +98,7 @@ class HatDataStatsProcessor @Inject() (
       event.time.toLocalDateTime, event.user, event.logEntry)
   }
 
-  def publishStats(hat: String, stats: Iterable[DataStats]): Future[Unit] = {
+  def publishStats(hat: String, stats: Iterable[DataStats]): Future[Done] = {
     logger.debug(s"Publish stats for $hat: $stats")
 
     hatServerProvider.retrieve(hat) flatMap {

@@ -38,11 +38,11 @@ import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.FutureTransformations
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
+import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json.{ JsObject, JsString }
 import play.api.libs.ws.WSClient
 import play.api.mvc.RequestHeader
-import play.api.{ Configuration, Logger }
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -51,13 +51,10 @@ class ApplicationStatusCheckService @Inject() (wsClient: WSClient)(implicit val 
 
   def status(statusCheck: ApplicationStatus.Status, token: String): Future[Boolean] = {
     statusCheck match {
-      case s: ApplicationStatus.Internal => status(s, token)
-      case s: ApplicationStatus.External => status(s, token)
+      case _: ApplicationStatus.Internal ⇒ Future.successful(true)
+      case s: ApplicationStatus.External ⇒ status(s, token)
     }
   }
-
-  protected def status(statusCheck: ApplicationStatus.Internal, token: String): Future[Boolean] =
-    Future.successful(true)
 
   protected def status(statusCheck: ApplicationStatus.External, token: String): Future[Boolean] =
     wsClient.url(statusCheck.statusUrl)
@@ -67,7 +64,6 @@ class ApplicationStatusCheckService @Inject() (wsClient: WSClient)(implicit val 
 }
 
 class ApplicationsService @Inject() (
-    configuration: Configuration,
     cache: AsyncCacheApi,
     richDataService: RichDataService,
     dataDebitContractService: DataDebitContractService,

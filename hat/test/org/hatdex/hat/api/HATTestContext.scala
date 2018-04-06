@@ -27,6 +27,7 @@ package org.hatdex.hat.api
 import java.io.StringReader
 import java.util.UUID
 
+import akka.Done
 import akka.stream.Materializer
 import com.amazonaws.services.s3.AmazonS3
 import com.atlassian.jwt.core.keys.KeyUtils
@@ -36,13 +37,12 @@ import com.mohiva.play.silhouette.api.{ Environment, Silhouette, SilhouetteProvi
 import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.FakeCache
-import org.hatdex.hat.api.controllers.RichData
 import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.api.service._
-import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider, TrustedApplicationProviderDex }
+import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.dal.SchemaMigration
+import org.hatdex.hat.dal.HatDbSchemaMigration
 import org.hatdex.hat.phata.models.MailTokenUser
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, LoggingProvider, MockLoggingProvider }
@@ -90,9 +90,9 @@ trait HATTestContext extends Scope with Mockito {
     "evolutions/hat-database-schema/14_newHat.sql")
 
   def databaseReady: Future[Unit] = {
-    val schemaMigration = application.injector.instanceOf[SchemaMigration]
-    schemaMigration.resetDatabase()(hatDatabase)
-      .flatMap(_ => schemaMigration.run(devHatMigrations)(hatDatabase))
+    val schemaMigration = new HatDbSchemaMigration(configuration, hatDatabase, global)
+    schemaMigration.resetDatabase()
+      .flatMap(_ => schemaMigration.run(devHatMigrations))
       .flatMap { _ =>
         val usersService = application.injector.instanceOf[UsersService]
         for {
@@ -104,7 +104,7 @@ trait HATTestContext extends Scope with Mockito {
   }
 
   val mockMailer: HatMailer = mock[HatMailer]
-  doNothing.when(mockMailer).passwordReset(any[String], any[HatUser], any[String])(any[Messages], any[HatServer])
+  doReturn(Done).when(mockMailer).passwordReset(any[String], any[HatUser], any[String])(any[Messages], any[HatServer])
 
   val fileManagerS3Mock = FileManagerS3Mock()
 
@@ -130,12 +130,12 @@ trait HATTestContext extends Scope with Mockito {
     }
 
     @Provides
-    def provideCookieAuthenticatorService(configuration: Configuration): AwsS3Configuration = {
+    def provideCookieAuthenticatorService(): AwsS3Configuration = {
       fileManagerS3Mock.s3Configuration
     }
 
     @Provides @Named("s3client-file-manager")
-    def provides3Client(configuration: AwsS3Configuration): AmazonS3 = {
+    def provides3Client(): AmazonS3 = {
       fileManagerS3Mock.mockS3client
     }
 
@@ -155,7 +155,7 @@ trait HATTestContext extends Scope with Mockito {
 
   implicit lazy val materializer: Materializer = application.materializer
 
-  def before: Unit = {
+  def before(): Unit = {
     Await.result(databaseReady, 60.seconds)
   }
 }

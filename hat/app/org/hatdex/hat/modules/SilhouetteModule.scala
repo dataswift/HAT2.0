@@ -61,7 +61,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteCo
   /**
    * Configures the module.
    */
-  def configure() {
+  def configure(): Unit = {
     bind[DynamicEnvironmentProviderService[HatServer]].to[HatServerProvider]
 
     bind[Silhouette[HatApiAuthEnvironment]].to[SilhouetteProvider[HatApiAuthEnvironment]]
@@ -167,9 +167,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteCo
    */
   @Provides
   def provideAuthenticatorService(
-    //    @Named("authenticator-cookie-signer") cookieSigner: CookieSigner,
     @Named("authenticator-crypter") crypter: Crypter,
-    fingerprintGenerator: FingerprintGenerator,
     idGenerator: IDGenerator,
     configuration: Configuration,
     clock: Clock)(implicit ec: ExecutionContext): AuthenticatorService[JWTRS256Authenticator, HatServer] = {

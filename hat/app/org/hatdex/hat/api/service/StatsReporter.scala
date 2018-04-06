@@ -25,7 +25,8 @@ package org.hatdex.hat.api.service
 
 import javax.inject.{ Inject, Singleton }
 
-import akka.actor.ActorSystem
+import akka.Done
+import akka.actor.{ ActorSystem, Scheduler }
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
 import org.hatdex.dex.api.services.DexClient
@@ -44,6 +45,7 @@ import play.api.{ Configuration, Logger }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Failure
 
 @Singleton
 class StatsReporter @Inject() (
@@ -55,7 +57,7 @@ class StatsReporter @Inject() (
 
   val logger = Logger(this.getClass)
 
-  private implicit val scheduler = system.scheduler
+  private implicit val scheduler: Scheduler = system.scheduler
   private val retryLimit = configuration.underlying.getInt("exchange.retryLimit")
   private val retryTime = FiniteDuration(configuration.underlying.getDuration("exchange.retryTime").toMillis, "millis")
   private val statsBatchSize = 100
@@ -66,7 +68,7 @@ class StatsReporter @Inject() (
     configuration.underlying.getString("exchange.scheme"))
   //  val defaultSsslConfig = AkkaSSLConfig()
 
-  def reportStatistics(stats: Seq[DataStats])(implicit server: HatServer): Future[Unit] = {
+  def reportStatistics(stats: Seq[DataStats])(implicit server: HatServer): Future[Done] = {
     logger.debug(s"Reporting statistics: $stats")
     val logged = for {
       _ <- persistStats(stats)
@@ -74,15 +76,16 @@ class StatsReporter @Inject() (
       result <- reportPendingStatistics(outstanding)
     } yield result
 
-    logged recover {
-      case e =>
+    logged.andThen {
+      case Failure(e) ⇒
         logger.error(s"Error while reporting stats: ${e.getMessage}")
+      case _ ⇒ Done
     }
   }
 
-  protected def reportPendingStatistics(batch: Seq[DataStatsLogRow])(implicit server: HatServer): Future[Unit] = {
+  protected def reportPendingStatistics(batch: Seq[DataStatsLogRow])(implicit server: HatServer): Future[Done] = {
     if (batch.isEmpty) {
-      Future.successful(())
+      Future.successful(Done)
     }
     else {
       val statsBatch = batch.map(ModelTranslation.fromDbModel)
@@ -95,10 +98,9 @@ class StatsReporter @Inject() (
     }
   }
 
-  private def clearUploadedStats(stats: Seq[DataStatsLogRow])(implicit server: HatServer): Future[Unit] = {
-    server.db.run {
-      DataStatsLog.filter(_.statsId inSet stats.map(_.statsId).toSet).delete
-    } map { _ => () }
+  private def clearUploadedStats(stats: Seq[DataStatsLogRow])(implicit server: HatServer): Future[Done] = {
+    server.db.run(DataStatsLog.filter(_.statsId inSet stats.map(_.statsId).toSet).delete)
+      .map(_ ⇒ Done)
   }
 
   private def persistStats(stats: Seq[DataStats])(implicit server: HatServer): Future[Seq[Long]] = {
@@ -118,18 +120,17 @@ class StatsReporter @Inject() (
     }
   }
 
-  private def uploadStats(stats: Seq[DataStats])(implicit server: HatServer): Future[Unit] = {
+  private def uploadStats(stats: Seq[DataStats])(implicit server: HatServer): Future[Done] = {
     logger.debug(s"Uploading stats $stats")
     val uploaded = for {
       token <- applicationToken()
-      result <- dexClient.postStats(token, stats)
-    } yield {
-      result
-    }
-    uploaded recover {
-      case e =>
+      _ <- dexClient.postStats(token, stats)
+    } yield Done
+
+    uploaded.andThen {
+      case Failure(e) ⇒
         logger.error(s"Failed to upload stats: ${e.getMessage}")
-        Future.failed(e)
+      case _ ⇒ Done
     }
   }
 

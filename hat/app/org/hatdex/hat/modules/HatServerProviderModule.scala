@@ -39,7 +39,7 @@ import play.api.{ Configuration, Environment }
 
 class HatServerProviderModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
-  def configure = {
+  def configure() = {
     bindActor[HatServerProviderActor]("hatServerProviderActor")
     bindActorFactory[HatServerActor, HatServerActor.Factory]
 
@@ -48,6 +48,7 @@ class HatServerProviderModule extends AbstractModule with ScalaModule with AkkaG
     bind[HatServerProvider].to[HatServerProviderImpl]
 
     bind[TrustedApplicationProvider].to[TrustedApplicationProviderDex]
+    ()
   }
 
   @Provides @play.cache.NamedCache("hatserver-cache")

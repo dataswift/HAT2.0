@@ -35,7 +35,7 @@ import play.api.mvc.Request
 import scala.concurrent.{ ExecutionContext, Future }
 
 object WithTokenParameters {
-  def roleMatchesToken(user: HatUser, authenticator: JWTRS256Authenticator, roles: UserRole*): Boolean = {
+  def roleMatchesToken(user: HatUser, authenticator: JWTRS256Authenticator): Boolean = {
     authenticator.customClaims.flatMap { claims =>
       (claims \ "accessScope").validate[String].asOpt.map(_.toLowerCase).map { scope =>
         user.roles.map(_.title.toLowerCase).contains(scope)

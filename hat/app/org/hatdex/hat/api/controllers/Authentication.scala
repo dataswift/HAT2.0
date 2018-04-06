@@ -28,7 +28,7 @@ import java.net.URLDecoder
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.api.util.{ Clock, Credentials, PasswordHasherRegistry }
+import com.mohiva.play.silhouette.api.util.{ Credentials, PasswordHasherRegistry }
 import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.exceptions.{ IdentityNotFoundException, InvalidPasswordException }
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
@@ -39,18 +39,16 @@ import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
 import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer }
+import play.api.Logger
 import play.api.cache.{ Cached, CachedBuilder }
 import play.api.libs.json.Json
 import play.api.mvc._
-import play.api.{ Configuration, Logger }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class Authentication @Inject() (
     components: ControllerComponents,
-
-    configuration: Configuration,
     cached: Cached,
     parsers: HatBodyParsers,
     hatServerProvider: HatServerProvider,
@@ -60,10 +58,9 @@ class Authentication @Inject() (
     passwordHasherRegistry: PasswordHasherRegistry,
     authInfoRepository: AuthInfoRepository[HatServer],
     usersService: UsersService,
-    clock: Clock,
     mailer: HatMailer,
     tokenService: MailTokenService[MailTokenUser],
-    limiter: UserLimiter) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    limiter: UserLimiter) extends HatApiController(components, silhouette) with HatJsonFormats {
 
   private val logger = Logger(this.getClass)
 

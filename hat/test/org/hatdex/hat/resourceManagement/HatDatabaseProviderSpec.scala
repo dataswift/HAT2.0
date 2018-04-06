@@ -28,12 +28,11 @@ import java.util.UUID
 
 import org.hatdex.hat.resourceManagement.models.{ DatabaseInstance, DatabaseServer, HatKeys, HatSignup }
 import org.joda.time.DateTime
-import org.specs2.concurrent.ExecutionEnv
 import play.api.test.PlaySpecification
 
 import scala.concurrent.duration._
 
-class HatDatabaseProviderSpec(implicit ee: ExecutionEnv) extends PlaySpecification with HatServerProviderContext {
+class HatDatabaseProviderSpec extends PlaySpecification with HatServerProviderContext {
   "The `signupDatabaseConfig` method" should {
     "Return a parsed database configuration" in {
       val service = application.injector.instanceOf[HatDatabaseProviderMilliner]

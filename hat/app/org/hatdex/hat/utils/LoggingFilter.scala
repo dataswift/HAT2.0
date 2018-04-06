@@ -29,8 +29,8 @@ import javax.inject.{ Inject, Singleton }
 import akka.stream.Materializer
 import com.nimbusds.jose.JWSObject
 import com.nimbusds.jwt.JWTClaimsSet
-import play.api.{ Configuration, Logger }
 import play.api.mvc.{ Filter, RequestHeader, Result }
+import play.api.{ Configuration, Logger }
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Try

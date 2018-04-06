@@ -29,7 +29,6 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
-import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.RichDataJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.applications.ApplicationsService
@@ -37,29 +36,24 @@ import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider }
 import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.mvc._
-import play.api.Configuration
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.NonFatal
 
 class RichData @Inject() (
     components: ControllerComponents,
-    configuration: Configuration,
     parsers: HatBodyParsers,
     silhouette: Silhouette[HatApiAuthEnvironment],
-    clock: Clock,
-    hatServerProvider: HatServerProvider,
     dataEventDispatcher: HatDataEventDispatcher,
     dataService: RichDataService,
     bundleService: RichBundleService,
     dataDebitService: DataDebitContractService,
     loggingProvider: LoggingProvider,
     implicit val ec: ExecutionContext,
-    implicit val applicationsService: ApplicationsService) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with RichDataJsonFormats {
+    implicit val applicationsService: ApplicationsService) extends HatApiController(components, silhouette) with RichDataJsonFormats {
 
   private val logger = loggingProvider.logger(this.getClass)
   private val defaultRecordLimit = 1000
@@ -111,7 +105,7 @@ class RichData @Inject() (
   def deleteEndpointData(namespace: String, endpoint: String): Action[AnyContent] =
     SecuredAction(WithRole(NamespaceWrite(namespace)) || ContainsApplicationRole(NamespaceWrite(namespace))).async { implicit request =>
       val dataEndpoint = s"$namespace/$endpoint"
-      dataService.deleteEndpoint(request.identity.userId, dataEndpoint) map { _ =>
+      dataService.deleteEndpoint(dataEndpoint) map { _ =>
         Ok(Json.toJson(SuccessResponse(s"All records deleted")))
       }
     }
@@ -158,7 +152,7 @@ class RichData @Inject() (
       }
     }
 
-  def getCombinatorData(combinator: String, recordId: Option[UUID], orderBy: Option[String],
+  def getCombinatorData(combinator: String, orderBy: Option[String],
     ordering: Option[String], skip: Option[Int], take: Option[Int]): Action[AnyContent] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
       val result = for {

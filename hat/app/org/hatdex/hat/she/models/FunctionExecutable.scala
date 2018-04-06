@@ -32,5 +32,9 @@ import scala.concurrent.{ ExecutionContext, Future }
 trait FunctionExecutable {
   val configuration: FunctionConfiguration
   def execute(configuration: FunctionConfiguration, request: Request)(implicit ec: ExecutionContext): Future[Seq[Response]]
-  def bundleFilterByDate(fromDate: Option[DateTime], untilDate: Option[DateTime]): EndpointDataBundle = configuration.dataBundle
+  def bundleFilterByDate(fromDate: Option[DateTime], untilDate: Option[DateTime]): EndpointDataBundle = {
+    // Explicitly ignore the parameters - compiler complains about unused parameters
+    (fromDate, untilDate)
+    configuration.dataBundle
+  }
 }

@@ -60,11 +60,6 @@ class UsersService @Inject() (implicit ec: DalExecutionContext) {
     queryUser(query)
   }
 
-  def getUserForCredentials(username: String, passwordHash: String)(implicit db: Database): Future[Option[HatUser]] = {
-    queryUser(UserUser.filter(_.email === username))
-      .map(_.headOption)
-  }
-
   private def queryUser(userFilter: Query[UserUser, UserUserRow, Seq])(implicit db: Database): Future[Seq[HatUser]] = {
     val debits = DataDebitDb.map(d => (d.recipientId, d.dataDebitKey.asColumnOf[String]))
     val debits2 = DataDebitContract.map(d => (d.clientId.asColumnOf[String], d.dataDebitKey))

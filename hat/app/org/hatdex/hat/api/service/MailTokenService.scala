@@ -26,6 +26,7 @@ package org.hatdex.hat.api.service
 
 import javax.inject.Inject
 
+import akka.Done
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.phata.models.{ MailToken, MailTokenUser }
@@ -36,7 +37,7 @@ import scala.concurrent._
 trait MailTokenService[T <: MailToken] {
   def create(token: T)(implicit db: Database): Future[Option[T]]
   def retrieve(id: String)(implicit db: Database): Future[Option[T]]
-  def consume(id: String)(implicit db: Database): Unit
+  def consume(id: String)(implicit db: Database): Future[Done]
 }
 
 class MailTokenUserService @Inject() (implicit val ec: DalExecutionContext) extends MailTokenService[MailTokenUser] {
@@ -46,7 +47,7 @@ class MailTokenUserService @Inject() (implicit val ec: DalExecutionContext) exte
   def retrieve(id: String)(implicit db: Database): Future[Option[MailTokenUser]] = {
     findById(id)
   }
-  def consume(id: String)(implicit db: Database): Unit = {
+  def consume(id: String)(implicit db: Database): Future[Done] = {
     delete(id)
   }
 
@@ -62,7 +63,7 @@ class MailTokenUserService @Inject() (implicit val ec: DalExecutionContext) exte
       .map(ModelTranslation.fromDbModel)
   }
 
-  private def delete(id: String)(implicit db: Database): Unit = {
-    db.run(UserMailTokens.filter(_.id === id).delete)
+  private def delete(id: String)(implicit db: Database): Future[Done] = {
+    db.run(UserMailTokens.filter(_.id === id).delete).map(_ ⇒ Done)
   }
 }

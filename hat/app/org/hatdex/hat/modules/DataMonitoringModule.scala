@@ -34,6 +34,7 @@ class DataMonitoringModule extends AbstractModule with ScalaModule with AkkaGuic
   protected def configure(): Unit = {
     bindActor[HatDataStatsProcessorActor]("hatDataStatsProcessor")
     bind[HatDataEventRouter].to[HatDataEventRouterImpl].asEagerSingleton()
+    ()
   }
 
 }

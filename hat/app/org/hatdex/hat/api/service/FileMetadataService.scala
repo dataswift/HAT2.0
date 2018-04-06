@@ -124,7 +124,7 @@ class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
       file <- findFilesQuery(fileTemplate)
     } yield file.id
 
-    val filePermissionRemove = HatFileAccess.filter(_.fileId in matchingFileQuery).delete
+    val filePermissionRemove = HatFileAccess.filter(_.fileId in matchingFileQuery).filter(_.userId === user.userId).delete
     db.run(filePermissionRemove).map(_ => ())
   }
 

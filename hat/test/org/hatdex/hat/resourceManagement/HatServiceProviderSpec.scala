@@ -24,11 +24,9 @@
 
 package org.hatdex.hat.resourceManagement
 
-import akka.actor.ActorSystem
 import com.google.inject.{ AbstractModule, Provides }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.FakeCache
-import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.resourceManagement.actors.{ HatServerActor, HatServerProviderActor }
 import org.hatdex.hat.utils.{ LoggingProvider, MockLoggingProvider }
@@ -37,11 +35,10 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.cache.AsyncCacheApi
-import play.api.inject.ApplicationLifecycle
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.test.{ FakeRequest, PlaySpecification }
-import play.api.{ Application, Configuration, Environment, Logger }
+import play.api.{ Application, Logger }
 
 import scala.concurrent.duration._
 

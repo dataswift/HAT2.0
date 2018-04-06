@@ -127,7 +127,7 @@ class FunctionService @Inject() (
   def run(configuration: FunctionConfiguration, startTime: Option[DateTime])(implicit db: Database): Future[Done] = {
     functionRegistry.get[FunctionExecutable](configuration.name)
       .map { function: FunctionExecutable =>
-        val fromDate = Some(DateTime.now().minusMonths(6))
+        val fromDate = startTime.orElse(Some(DateTime.now().minusMonths(6)))
         val untilDate = Some(DateTime.now().plusMonths(3))
         val executionTime = DateTime.now()
         for {
@@ -146,19 +146,15 @@ class FunctionService @Inject() (
   //TODO: expensive operation!
   private def removeDuplicateData(response: Seq[Response]): Seq[Response] = {
     val md = MessageDigest.getInstance("SHA-256")
-    response.map { r =>
+    response.map({ r ⇒
       val digest = md.digest(r.data.head.toString().getBytes)
       (BigInt(digest), r)
-    }
+    })
       .sortBy(_._1)
-      .foldRight(Seq[(BigInt, Response)]()) {
-        case (e, ls) if ls.isEmpty || ls.head._1 != e._1 => e +: ls
-        case (_, ls)                                     => ls
-      }
-      .zipWithIndex
-      .map {
-        case ((hash, response), i) =>
-          response
-      }
+      .foldRight(Seq[(BigInt, Response)]())({
+        case (e, ls) if ls.isEmpty || ls.head._1 != e._1 ⇒ e +: ls
+        case (_, ls)                                     ⇒ ls
+      })
+      .unzip._2 // Drop the digest
   }
 }

@@ -28,33 +28,26 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
-import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.RichDataJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.resourceManagement._
 import org.hatdex.hat.she.models.{ FunctionConfiguration, FunctionConfigurationJsonProtocol }
 import org.hatdex.hat.she.service.{ FunctionExecutionDispatcher, FunctionService }
-import org.hatdex.hat.utils.HatBodyParsers
+import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
-import play.api.{ Configuration, Logger }
 
-import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.duration._
+import scala.concurrent.{ ExecutionContext, Future }
 
 class FunctionManager @Inject() (
     components: ControllerComponents,
-    configuration: Configuration,
-    parsers: HatBodyParsers,
     silhouette: Silhouette[HatApiAuthEnvironment],
-    clock: Clock,
-    hatServerProvider: HatServerProvider,
     functionService: FunctionService,
     functionExecutionDispatcher: FunctionExecutionDispatcher)(
     implicit
     val ec: ExecutionContext)
-  extends HatApiController(components, silhouette, clock, hatServerProvider, configuration)
+  extends HatApiController(components, silhouette)
   with RichDataJsonFormats
   with FunctionConfigurationJsonProtocol {
 

@@ -29,7 +29,6 @@ import javax.inject._
 
 import com.mohiva.play.silhouette.api.actions.{ SecuredErrorHandler, UnsecuredErrorHandler }
 import com.mohiva.play.silhouette.impl.exceptions.{ IdentityNotFoundException, InvalidPasswordException }
-import org.hatdex.hat.api.models.ErrorMessage
 import org.hatdex.hat.resourceManagement.HatServerDiscoveryException
 import play.api._
 import play.api.http.{ ContentTypes, DefaultHttpErrorHandler, HttpErrorHandlerExceptions }
@@ -50,8 +49,6 @@ class ErrorHandler @Inject() (
     hatMailer: HatMailer,
     val messagesApi: MessagesApi) extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
   with SecuredErrorHandler with UnsecuredErrorHandler with I18nSupport with ContentTypes with RequestExtractors with Rendering {
-
-  import org.hatdex.hat.api.json.HatJsonFormats.errorMessage
 
   /**
    * Exception handler which chains the exceptions handlers from the sub types.
@@ -155,15 +152,15 @@ class ErrorHandler @Inject() (
     implicit val _request = request
     Future.successful {
       render {
-        case Accepts.Json() =>
+        case Accepts.Json() ⇒
           val jsonMessage = Try(Json.parse(message))
-          jsonMessage map { parsed =>
-            BadRequest(Json.obj("error" -> "Bad Request", "message" -> parsed))
-          } recover {
-            case _ =>
-              BadRequest(Json.obj("error" -> "Bad Request", "message" -> message))
-          } get
-        case _ => BadRequest(views.html.defaultpages.badRequest(request.method, request.uri, message))
+          jsonMessage.map(parsed ⇒ BadRequest(Json.obj("error" -> "Bad Request", "message" -> parsed)))
+            .recover({
+              case _ ⇒
+                BadRequest(Json.obj("error" -> "Bad Request", "message" -> message))
+            })
+            .get
+        case _ ⇒ BadRequest(views.html.defaultpages.badRequest(request.method, request.uri, message))
       }
     }
   }

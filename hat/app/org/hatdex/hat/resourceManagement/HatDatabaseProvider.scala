@@ -27,7 +27,7 @@ package org.hatdex.hat.resourceManagement
 import javax.inject.{ Inject, Singleton }
 
 import com.typesafe.config.{ Config, ConfigFactory }
-import org.hatdex.hat.dal.SchemaMigration
+import org.hatdex.hat.dal.HatDbSchemaMigration
 import org.hatdex.hat.resourceManagement.models.HatSignup
 import org.hatdex.libs.dal.HATPostgresProfile.api.Database
 import play.api.cache.AsyncCacheApi
@@ -39,7 +39,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 
 trait HatDatabaseProvider {
-  val schemaMigration: SchemaMigration
+  protected val configuration: Configuration
 
   def database(hat: String)(implicit ec: ExecutionContext): Future[Database]
 
@@ -49,13 +49,13 @@ trait HatDatabaseProvider {
     db.shutdown
   }
 
-  def update(db: Database): Future[Unit] = {
-    schemaMigration.run()(db)
+  def update(db: Database)(implicit ec: ExecutionContext): Future[Unit] = {
+    new HatDbSchemaMigration(configuration, db, ec).run("hat.schemaMigrations")
   }
 }
 
 @Singleton
-class HatDatabaseProviderConfig @Inject() (configuration: Configuration, val schemaMigration: SchemaMigration) extends HatDatabaseProvider {
+class HatDatabaseProviderConfig @Inject() (val configuration: Configuration) extends HatDatabaseProvider {
   def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {
     Future {
       Database.forConfig(s"hat.${hat.replace(':', '.')}.database", configuration.underlying)
@@ -70,8 +70,7 @@ class HatDatabaseProviderConfig @Inject() (configuration: Configuration, val sch
 class HatDatabaseProviderMilliner @Inject() (
     val configuration: Configuration,
     val cache: AsyncCacheApi,
-    val ws: WSClient,
-    val schemaMigration: SchemaMigration) extends HatDatabaseProvider with MillinerHatSignup {
+    val ws: WSClient) extends HatDatabaseProvider with MillinerHatSignup {
   val logger = Logger(this.getClass)
 
   def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {

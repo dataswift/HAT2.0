@@ -29,7 +29,6 @@ import javax.inject.Inject
 import akka.actor.ActorSystem
 import com.digitaltangible.playguard.{ RateLimitActionFilter, RateLimiter, clientIp }
 import com.mohiva.play.silhouette.api.actions._
-import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models.{ ErrorMessage, User }
@@ -46,10 +45,7 @@ import scala.concurrent.ExecutionContext
 
 abstract class HatController[T <: HatAuthEnvironment](
     components: ControllerComponents,
-    silhouette: Silhouette[T],
-    clock: Clock,
-    hatServerProvider: HatServerProvider,
-    configuration: Configuration) extends AbstractController(components) with I18nSupport {
+    silhouette: Silhouette[T]) extends AbstractController(components) with I18nSupport {
 
   def env: Environment[T] = silhouette.env
   def SecuredAction: SecuredActionBuilder[T, AnyContent] = silhouette.securedAction(env)
@@ -67,12 +63,8 @@ abstract class HatController[T <: HatAuthEnvironment](
 
 abstract class HatApiController(
     components: ControllerComponents,
-    silhouette: Silhouette[HatApiAuthEnvironment],
-    clock: Clock,
-    hatServerProvider: HatServerProvider,
-    configuration: Configuration)
-  extends HatController[HatApiAuthEnvironment](
-    components, silhouette, clock, hatServerProvider, configuration)
+    silhouette: Silhouette[HatApiAuthEnvironment])
+  extends HatController[HatApiAuthEnvironment](components, silhouette)
 
 /**
  * A Limiter for user logic.
@@ -109,7 +101,7 @@ class UserLimiter @Inject() (implicit
 
   private implicit val errorMesageFormat: Format[ErrorMessage] = HatJsonFormats.errorMessage
   private def response(r: RequestHeader) = Results.BadRequest(
-    Json.toJson(ErrorMessage("Request rate exceeded", "Rate of requests from your IP exceeded")))
+    Json.toJson(ErrorMessage("Request rate exceeded", "Rate of requests from your IP exceeded", Some(Seq(s"Request to ${r.path}")))))
 
   def UserAwareRateLimit: RateLimitActionFilter[UserAware] with ActionFunction[UserAware, UserAware] =
     createUserAware[HatApiAuthEnvironment, UserAware, String](rl)(response, clientIp)

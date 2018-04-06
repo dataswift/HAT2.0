@@ -35,8 +35,9 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 
 class FileManagerModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
-  def configure = {
+  def configure() = {
     bind[FileManager].to[FileManagerS3]
+    ()
   }
 
   @Provides

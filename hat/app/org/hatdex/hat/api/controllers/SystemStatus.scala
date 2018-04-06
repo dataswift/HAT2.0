@@ -27,7 +27,6 @@ package org.hatdex.hat.api.controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.applications.ApplicationsService
@@ -35,25 +34,22 @@ import org.hatdex.hat.api.service.{ SystemStatusService, UsersService }
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.ocpsoft.prettytime.PrettyTime
+import play.api.Logger
 import play.api.cache.Cached
 import play.api.libs.json._
 import play.api.mvc._
-import play.api.{ Configuration, Logger }
 
 import scala.concurrent.ExecutionContext
 
 class SystemStatus @Inject() (
     components: ControllerComponents,
     cached: Cached,
-    configuration: Configuration,
     silhouette: Silhouette[HatApiAuthEnvironment],
-    hatServerProvider: HatServerProvider,
     systemStatusService: SystemStatusService,
     usersService: UsersService,
-    clock: Clock,
     hatDatabaseProvider: HatDatabaseProvider,
     implicit val ec: ExecutionContext,
-    implicit val applicationsService: ApplicationsService) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    implicit val applicationsService: ApplicationsService) extends HatApiController(components, silhouette) with HatJsonFormats {
 
   private val logger = Logger(this.getClass)
 

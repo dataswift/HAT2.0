@@ -34,13 +34,13 @@ import org.hatdex.hat.she.models.FunctionConfiguration
 import org.hatdex.hat.she.service.FunctionService
 import org.joda.time.DateTimeUtils
 import org.specs2.concurrent.ExecutionEnv
-import org.specs2.specification.{ BeforeAfterAll, BeforeAll, BeforeEach }
+import org.specs2.specification.BeforeAfterAll
 import play.api.Logger
 import play.api.mvc.Result
 import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
 
-import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
 
 class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification with DataFeedDirectMapperContext with BeforeAfterAll {
 

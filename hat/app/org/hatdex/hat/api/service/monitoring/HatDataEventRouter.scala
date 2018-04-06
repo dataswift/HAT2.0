@@ -26,7 +26,7 @@ package org.hatdex.hat.api.service.monitoring
 
 import javax.inject.{ Inject, Named }
 
-import akka.NotUsed
+import akka.{ Done, NotUsed }
 import akka.actor.{ ActorRef, ActorSystem }
 import akka.stream.scaladsl.{ Sink, Source }
 import akka.stream.{ ActorMaterializer, OverflowStrategy }
@@ -34,7 +34,7 @@ import akka.stream.{ ActorMaterializer, OverflowStrategy }
 import scala.concurrent.duration._
 
 trait HatDataEventRouter {
-  def init(): Unit
+  def init(): Done
 }
 
 class HatDataEventRouterImpl @Inject() (
@@ -46,12 +46,13 @@ class HatDataEventRouterImpl @Inject() (
 
   init()
 
-  def init(): Unit = {
+  def init(): Done = {
     // Inbound/outbound data stats are reported via a buffering stage to control load and network traffic
     dataEventBus.subscribe(buffer(statsProcessor), classOf[HatDataEventBus.DataCreatedEvent])
     dataEventBus.subscribe(buffer(statsProcessor), classOf[HatDataEventBus.DataRetrievedEvent])
     // Data Debit Events are dispatched without buffering
     dataEventBus.subscribe(statsProcessor, classOf[HatDataEventBus.DataDebitEvent])
+    Done
   }
 
   /**

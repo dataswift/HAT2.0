@@ -28,7 +28,7 @@ import org.hatdex.hat.api.json.RichDataJsonFormats
 import org.hatdex.hat.api.models.EndpointData
 import org.hatdex.hat.she.service.FunctionServiceContext
 import org.specs2.specification.Scope
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.{ Format, Json }
 
 trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
   private implicit val endpointDataFormat: Format[EndpointData] = RichDataJsonFormats.endpointDataFormat

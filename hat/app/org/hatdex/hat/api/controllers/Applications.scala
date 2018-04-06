@@ -27,32 +27,26 @@ package org.hatdex.hat.api.controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.util.Clock
 import org.hatdex.hat.api.json.ApplicationJsonProtocol
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.richData.RichDataDuplicateBundleException
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.resourceManagement._
+import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
-import play.api.{ Configuration, Logger }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
 class Applications @Inject() (
     components: ControllerComponents,
-    configuration: Configuration,
-    silhouette: Silhouette[HatApiAuthEnvironment],
-    hatServerProvider: HatServerProvider,
-    clock: Clock)(
+    silhouette: Silhouette[HatApiAuthEnvironment])(
     implicit
     val ec: ExecutionContext,
     applicationsService: ApplicationsService)
-  extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with ApplicationJsonProtocol {
+  extends HatApiController(components, silhouette) with ApplicationJsonProtocol {
 
-  import org.hatdex.hat.api.json.HatJsonFormats.errorMessage
-  import org.hatdex.hat.api.json.HatJsonFormats.accessTokenFormat
+  import org.hatdex.hat.api.json.HatJsonFormats.{ accessTokenFormat, errorMessage }
 
   val logger = Logger(this.getClass)
 

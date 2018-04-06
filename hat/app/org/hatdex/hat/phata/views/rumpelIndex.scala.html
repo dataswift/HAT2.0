@@ -1,3 +1,6 @@
+@import play.api.mvc._
+@import controllers.AssetsFinder
+
 @(assets: AssetsFinder)(implicit request: RequestHeader)
 
 @protocol = @{ if(request.secure) { "https" } else { "http" } }
