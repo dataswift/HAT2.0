@@ -31,8 +31,8 @@ import akka.pattern.pipe
 import com.google.inject.assistedinject.Assisted
 import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.resourceManagement._
-import play.api.Configuration
 import play.api.cache.AsyncCacheApi
+import play.api.{ Configuration, Logger }
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -56,8 +56,9 @@ class HatServerActor @Inject() (
     configuration: Configuration,
     hatDatabaseProvider: HatDatabaseProvider,
     hatKeyProvider: HatKeyProvider,
-    cacheApi: AsyncCacheApi)(implicit ec: RemoteExecutionContext) extends Actor with ActorLogging with Stash {
+    cacheApi: AsyncCacheApi)(implicit ec: RemoteExecutionContext) extends Actor with Stash {
   import HatServerActor._
+  private val log = Logger(this.getClass)
   val idleTimeout: FiniteDuration = configuration.get[FiniteDuration]("resourceManagement.serverIdleTimeout")
 
   def receive: Receive = {
@@ -95,7 +96,7 @@ class HatServerActor @Inject() (
       context.become(receive)
       context.parent ! HatServerProviderActor.HatServerStopped(hat)
     case message =>
-      log.warning(s"CONNECTED Received unknown message: $message")
+      log.warn(s"CONNECTED Received unknown message: $message")
   }
 
   def failed(e: HatServerDiscoveryException): Actor.Receive = {
@@ -106,7 +107,7 @@ class HatServerActor @Inject() (
       log.debug(s"HAT failed timeout, becoming neutral")
       context.become(receive)
     case message =>
-      log.warning(s"FAILED Received unknown message: $message")
+      log.warn(s"FAILED Received unknown message: $message")
   }
 
   private def shutdown(server: HatServer): Future[Unit] = {
@@ -135,7 +136,7 @@ class HatServerActor @Inject() (
 
     server onComplete {
       case Success(_) => log.debug(s"Server $hat information retrieved")
-      case Failure(e) => log.warning(s"Error while trying to fetch HAT $hat Server configuration: ${e.getMessage}")
+      case Failure(e) => log.warn(s"Error while trying to fetch HAT $hat Server configuration: ${e.getMessage}")
     }
 
     server

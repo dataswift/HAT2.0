@@ -30,8 +30,8 @@ import akka.actor.{ Props, _ }
 import akka.util.Timeout
 import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.utils.ActiveHatCounter
-import play.api.Configuration
 import play.api.libs.concurrent.InjectedActorSupport
+import play.api.{ Configuration, Logger }
 
 import scala.collection.mutable
 import scala.concurrent.Future
@@ -43,7 +43,8 @@ class HatServerProviderActor @Inject() (
     activeHatcounter: ActiveHatCounter,
     configuration: Configuration)(
     implicit
-    val ec: RemoteExecutionContext) extends Actor with ActorLogging with InjectedActorSupport {
+    val ec: RemoteExecutionContext) extends Actor with InjectedActorSupport {
+  private val log = Logger(this.getClass)
   import HatServerProviderActor._
 
   private val activeServers = mutable.HashMap[String, ActorRef]()
@@ -58,7 +59,7 @@ class HatServerProviderActor @Inject() (
         hatServerActor tell (HatServerActor.HatRetrieve(), retrievingSender)
       } onComplete {
         case Success(_) ⇒ ()
-        case Failure(e) ⇒ log.warning(s"Error while getting HAT server provider actor: ${e.getMessage}")
+        case Failure(e) ⇒ log.warn(s"Error while getting HAT server provider actor: ${e.getMessage}")
       }
 
     case HatServerStarted(_) =>

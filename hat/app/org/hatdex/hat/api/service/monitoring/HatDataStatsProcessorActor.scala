@@ -27,7 +27,7 @@ package org.hatdex.hat.api.service.monitoring
 import javax.inject.Inject
 
 import akka.Done
-import akka.actor.{ Actor, ActorLogging }
+import akka.actor.Actor
 import org.hatdex.hat.api.models.{ DataStats, InboundDataStats, OutboundDataStats, DataDebitEvent ⇒ DataDebitAction }
 import org.hatdex.hat.api.service.StatsReporter
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{ DataCreatedEvent, DataDebitEvent, DataRetrievedEvent }
@@ -37,7 +37,9 @@ import play.api.Logger
 import scala.concurrent.{ ExecutionContext, Future }
 
 class HatDataStatsProcessorActor @Inject() (
-    processor: HatDataStatsProcessor) extends Actor with ActorLogging {
+    processor: HatDataStatsProcessor) extends Actor {
+
+  private val log = Logger(this.getClass)
 
   import HatDataEventBus._
 
@@ -46,7 +48,7 @@ class HatDataStatsProcessorActor @Inject() (
     case d: DataRetrievedEvent => processBatchedStats(Seq(d))
     case d: DataDebitEvent     => processBatchedStats(Seq(d))
     case d: Seq[_]             => processBatchedStats(d)
-    case m                     => log.warning(s"Received something else: $m")
+    case m                     => log.warn(s"Received something else: $m")
   }
 
   private def processBatchedStats(d: Seq[Any]) = {
