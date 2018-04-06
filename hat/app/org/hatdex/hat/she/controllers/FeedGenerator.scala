@@ -62,15 +62,16 @@ class FeedGenerator @Inject() (
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   private val dataMappers: Map[String, DataEndpointMapper] = Map(
-    "facebook/feed" → new FacebookFeedMapper(),
     "facebook/events" → new FacebookEventMapper(),
-    "twitter/tweets" → new TwitterFeedMapper(),
-    "fitbit/sleep" → new FitbitSleepMapper(),
-    "fitbit/weight" → new FitbitWeightMapper(),
-    "fitbit/activity" → new FitbitActivityMapper(),
-    "fitbit/activity/day/summary" → new FitbitActivityDaySummaryMapper(),
-    "calendar/google/events" → new GoogleCalendarMapper(),
-    "notables/feed" → new NotablesFeedMapper())
+    "facebook/feed" → new FacebookFeedMapper(richDataService),
+    "twitter/tweets" → new TwitterFeedMapper(richDataService),
+    "fitbit/sleep" → new FitbitSleepMapper(richDataService),
+    "fitbit/weight" → new FitbitWeightMapper(richDataService),
+    "fitbit/activity" → new FitbitActivityMapper(richDataService),
+    "fitbit/activity/day/summary" → new FitbitActivityDaySummaryMapper(richDataService),
+    "calendar/google/events" → new GoogleCalendarMapper(richDataService),
+    "notables/feed" → new NotablesFeedMapper(richDataService),
+    "spotify/feed" -> new SpotifyFeedMapper(richDataService))
 
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long]): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
     val data: Source[DataFeedItem, NotUsed] = dataMappers.get(endpoint)

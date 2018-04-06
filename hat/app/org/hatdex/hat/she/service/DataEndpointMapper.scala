@@ -588,3 +588,48 @@ class NotablesFeedMapper extends DataEndpointMapper {
   }
 }
 
+class SpotifyFeedMapper extends DataEndpointMapper {
+  def feed(fromDate: Option[DateTime], untilDate: Option[DateTime])(implicit ec: ExecutionContext, hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
+    val fmt = ISODateTimeFormat.dateTime()
+    val dateTimeFilter = if (fromDate.isDefined) {
+      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(fmt))), Json.toJson(untilDate.map(_.toString(fmt)))))
+    }
+    else {
+      None
+    }
+
+    val propertyQuery = PropertyQuery(
+      List(EndpointQuery("spotify/feed", None,
+        dateTimeFilter.map(f => Seq(EndpointQueryFilter("played_at", None, f))), None)), Some("played_at"), Some("descending"), None)
+
+    val feed: Future[Seq[DataFeedItem]] = richDataService.propertyData(
+      propertyQuery.endpoints,
+      propertyQuery.orderBy,
+      orderingDescending = propertyQuery.ordering.contains("descending"),
+      skip = 0, limit = None, createdAfter = None)(hatServer.db)
+      .map { endpointData =>
+        endpointData.map(item => mapDataRecord(item.recordId.get, item.data))
+          .collect { case Success(x) => x }
+      }
+
+    Source.fromFuture(feed)
+      .mapConcat(f => f.toList)
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+    val durationSeconds = (content \ "track" \ "duration_ms").as[Int] / 1000
+    for {
+      title <- Try(
+        DataFeedItemTitle("You listened", Some(s"${"%02d".format(durationSeconds / 60)}:${"%02d".format(durationSeconds % 60)}")))
+      itemContent <- Try(DataFeedItemContent(
+        Some(
+          s"""${(content \ "track" \ "name").as[String]},
+          |${(content \ "track" \ "artists").as[Seq[JsObject]].map(a => (a \ "name").as[String]).mkString(", ")},
+          |${(content \ "track" \ "album" \ "name").as[String]}""".stripMargin),
+        Some(
+          Seq(DataFeedItemMedia((content \ "track" \ "album" \ "images" \ 0 \ "url").asOpt[String])))))
+      date <- Try((content \ "played_at").as[DateTime])
+    } yield DataFeedItem("spotify", date, Seq(), Some(title), Some(itemContent), None)
+  }
+}
+

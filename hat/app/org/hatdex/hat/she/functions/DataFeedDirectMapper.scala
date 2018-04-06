@@ -133,7 +133,7 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
             case (recordId, Success(data)) => Response(namespace, endpoint, Seq(Json.toJson(data)), Seq(recordId))
           }
       }
-    
+
     Future.successful(response.toSeq)
   }
 
