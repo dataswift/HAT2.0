@@ -23,6 +23,6 @@ addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.11")
 
 // S3 based SBT resolver
 
-resolvers += "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com"
+resolvers += "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com"
 
-addSbtPlugin("org.hatdex" % "sbt-slick-postgres-generator" % "0.0.7-SNAPSHOT")
+addSbtPlugin("org.hatdex" % "sbt-slick-postgres-generator" % "0.0.8")
