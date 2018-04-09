@@ -61,7 +61,8 @@ class FeedGenerator @Inject() (
   private val logger = Logger(this.getClass)
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  private val dataMappers: Map[String, DataEndpointMapper] = Map(
+  private val dataMappers: Seq[(String, DataEndpointMapper)] = Seq(
+    "facebook/feed" → new FacebookFeedMapper(),
     "facebook/events" → new FacebookEventMapper(),
     "facebook/feed" → new FacebookFeedMapper(richDataService),
     "twitter/tweets" → new TwitterFeedMapper(richDataService),
@@ -74,34 +75,35 @@ class FeedGenerator @Inject() (
     "spotify/feed" -> new SpotifyFeedMapper(richDataService))
 
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long]): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
-    val data: Source[DataFeedItem, NotUsed] = dataMappers.get(endpoint)
+    val sources: Seq[Source[DataFeedItem, NotUsed]] = dataMappers.filter(_._1.startsWith(endpoint))
+      .unzip._2
       .map {
         _.feed(
           since.map(t ⇒ new DateTime(t * 1000L)).orElse(Some(DateTime.now().minusMonths(6))),
           until.map(t ⇒ new DateTime(t * 1000L)).orElse(Some(DateTime.now().plusMonths(3))))
-      } getOrElse {
-        logger.debug(s"No mapper for $endpoint")
-        Source.empty[DataFeedItem]
       }
 
-    data.runWith(Sink.seq)
+    new SourceMergeSorter()
+      .mergeWithSorter(sources)
+      .runWith(Sink.seq)
       .map { items ⇒
         Ok(Json.toJson(items))
       }
-
   }
 
   def fullFeed(since: Option[Long], until: Option[Long]): Action[AnyContent] = SecuredAction(WithRole(Owner())).async { implicit request =>
     logger.debug(s"Mapping all known endpoints' data to feed")
-    val sources = dataMappers.values.map {
-      _.feed(
-        since.map(t ⇒ new DateTime(t * 1000L)).orElse(Some(DateTime.now().minusMonths(6))),
-        until.map(t ⇒ new DateTime(t * 1000L)).orElse(Some(DateTime.now().plusMonths(3))))
-    }
-    val sorter = new SourceMergeSorter()
-    val data: Source[DataFeedItem, NotUsed] = sorter.mergeWithSorter(sources.toSeq)
+    val sources = dataMappers
+      .unzip._2
+      .map {
+        _.feed(
+          since.map(t ⇒ new DateTime(t * 1000L)).orElse(Some(DateTime.now().minusMonths(6))),
+          until.map(t ⇒ new DateTime(t * 1000L)).orElse(Some(DateTime.now().plusMonths(3))))
+      }
 
-    data.runWith(Sink.seq)
+    new SourceMergeSorter()
+      .mergeWithSorter(sources)
+      .runWith(Sink.seq)
       .map { items ⇒
         Ok(Json.toJson(items))
       }
