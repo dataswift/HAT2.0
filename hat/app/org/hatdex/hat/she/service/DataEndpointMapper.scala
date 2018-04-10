@@ -28,26 +28,69 @@ import java.util.UUID
 
 import akka.NotUsed
 import akka.stream.scaladsl.Source
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.models.applications._
-import org.hatdex.hat.api.models.{ EndpointQuery, EndpointQueryFilter, FilterOperator, PropertyQuery }
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.SourceMergeSorter
+import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter, ISODateTimeFormat }
 import org.joda.time.{ DateTime, DateTimeZone }
-import org.joda.time.format.ISODateTimeFormat
 import play.api.Logger
 import play.api.libs.json._
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
 
 trait DataEndpointMapper extends JodaWrites with JodaReads {
-  def feed(fromDate: Option[DateTime], untilDate: Option[DateTime])(implicit ec: ExecutionContext, hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed]
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem]
-}
+  protected lazy val logger: Logger = Logger(this.getClass)
+  protected val dateTimeFormat: DateTimeFormatter = ISODateTimeFormat.dateTime()
+  protected val dataDeduplicationField: Option[String] = None
 
-object FeedUtils {
-  def eventTimeIntervalString(start: DateTime, end: Option[DateTime]): (String, Option[String]) = {
+  protected def dateFilter(fromDate: Option[DateTime], untilDate: Option[DateTime]): Option[FilterOperator.Operator] = {
+    if (fromDate.isDefined) {
+      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(dateTimeFormat))), Json.toJson(untilDate.map(_.toString(dateTimeFormat)))))
+    }
+    else {
+      None
+    }
+  }
+
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery]
+  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem]
+
+  private implicit def dataFeedItemOrdering: Ordering[DataFeedItem] = Ordering.fromLessThan(_.date isAfter _.date)
+
+  final def feed(fromDate: Option[DateTime], untilDate: Option[DateTime])(
+    implicit
+    hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
+
+    val feeds = dataQueries(fromDate, untilDate).map({ query ⇒
+      val eventualFeed: Future[Seq[EndpointData]] = richDataService.propertyData(query.endpoints, query.orderBy,
+        orderingDescending = query.ordering.contains("descending"), skip = 0, limit = None, createdAfter = None)(hatServer.db)
+
+      val dataSource = Source.fromFuture(eventualFeed)
+        .mapConcat(f ⇒ f.toList)
+
+      val deduplicated = dataDeduplicationField.map { field ⇒
+        dataSource.sliding(2, 1)
+          .collect({
+            case Seq(a, b) if a.data \ field != b.data \ field ⇒ b
+            case Seq(a)                                        ⇒ a // only a single element, e.g. last element in sliding window
+          })
+      } getOrElse {
+        dataSource
+      }
+
+      deduplicated
+        .map(item ⇒ mapDataRecord(item.recordId.get, item.data))
+        .collect({
+          case Success(x) => x
+        })
+    })
+    new SourceMergeSorter().mergeWithSorter(feeds)
+  }
+
+  protected def eventTimeIntervalString(start: DateTime, end: Option[DateTime]): (String, Option[String]) = {
     val startString = if (start.getMillisOfDay == 0) {
       s"${start.toString("dd MMMM")}"
     }
@@ -72,23 +115,16 @@ object FeedUtils {
 }
 
 class GoogleCalendarMapper extends DataEndpointMapper {
+  override protected val dataDeduplicationField: Option[String] = Some("id")
 
-  def feed(fromDate: Option[DateTime], untilDate: Option[DateTime])(implicit ec: ExecutionContext, hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
-    val fmt = ISODateTimeFormat.dateTime()
-    val dateTimeFilter = if (fromDate.isDefined) {
-      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(fmt))), Json.toJson(untilDate.map(_.toString(fmt)))))
-    }
-    else {
-      None
-    }
-
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     val eventDateTimePropertyQuery = PropertyQuery(
       List(
         EndpointQuery("calendar/google/events", None, Some(Seq(
-          dateTimeFilter.map(f => EndpointQueryFilter("start.dateTime", None, f))).flatten), None)),
+          dateFilter(fromDate, untilDate).map(f => EndpointQueryFilter("start.dateTime", None, f))).flatten), None)),
       Some("start.dateTime"), Some("descending"), None)
 
-    val dateFilter = if (fromDate.isDefined) {
+    val dateOnlyFilter = if (fromDate.isDefined) {
       Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString("yyyy-MM-dd"))), Json.toJson(untilDate.map(_.toString("yyyy-MM-dd")))))
     }
     else {
@@ -98,32 +134,11 @@ class GoogleCalendarMapper extends DataEndpointMapper {
     val eventDatePropertyQuery = PropertyQuery(
       List(
         EndpointQuery("calendar/google/events", None, Some(Seq(
-          dateFilter.map(f => EndpointQueryFilter("start.date", None, f))).flatten), None)),
+          dateOnlyFilter.map(f => EndpointQueryFilter("start.date", None, f))).flatten), None)),
       Some("start.date"), Some("descending"), None)
 
-    new SourceMergeSorter().mergeWithSorter(Seq(
-      dataFeed(eventDateTimePropertyQuery),
-      dataFeed(eventDatePropertyQuery)))
-
+    Seq(eventDateTimePropertyQuery, eventDatePropertyQuery)
   }
-
-  protected def dataFeed(propertyQuery: PropertyQuery)(implicit hatServer: HatServer, ec: ExecutionContext, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
-    val eventualFeed: Future[Seq[DataFeedItem]] = richDataService.propertyData(propertyQuery.endpoints, propertyQuery.orderBy,
-      orderingDescending = propertyQuery.ordering.contains("descending"), skip = 0, limit = None, createdAfter = None)(hatServer.db)
-      .map { events ⇒
-        if (events.nonEmpty) {
-          (events.head :: events.sliding(2).collect { case Seq(a, b) if a.data \ "id" != b.data \ "id" => b }.toList)
-            .map(item ⇒ mapDataRecord(item.recordId.get, item.data))
-            .collect { case Success(x) => x }
-        }
-        else {
-          Seq()
-        }
-      }
-    Source.fromFuture(eventualFeed).mapConcat(f ⇒ f.toList)
-  }
-
-  protected implicit def dataFeedItemOrdering: Ordering[DataFeedItem] = Ordering.fromLessThan(_.date isAfter _.date)
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     for {
@@ -133,7 +148,7 @@ class GoogleCalendarMapper extends DataEndpointMapper {
       endDate <- Try((content \ "end" \ "dateTime").asOpt[DateTime]
         .getOrElse((content \ "end" \ "date").as[DateTime])
         .withZone((content \ "end" \ "timeZone").asOpt[String].flatMap(z => Try(DateTimeZone.forID(z)).toOption).getOrElse(DateTimeZone.getDefault)))
-      timeIntervalString <- Try(FeedUtils.eventTimeIntervalString(startDate, Some(endDate)))
+      timeIntervalString <- Try(eventTimeIntervalString(startDate, Some(endDate)))
       itemContent <- Try(DataFeedItemContent(
         Some(s"${timeIntervalString._1} ${timeIntervalString._2.getOrElse("")}"), None))
       location <- Try(DataFeedItemLocation(
@@ -150,29 +165,13 @@ class GoogleCalendarMapper extends DataEndpointMapper {
 }
 
 class FitbitWeightMapper extends DataEndpointMapper {
+  override val dateTimeFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
 
-  def feed(fromDate: Option[DateTime], untilDate: Option[DateTime])(implicit ec: ExecutionContext, hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
-    val dateFilter = if (fromDate.isDefined) {
-      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString("yyyy-MM-dd"))), Json.toJson(untilDate.map(_.toString("yyyy-MM-dd")))))
-    }
-    else {
-      None
-    }
-
-    val propertyQuery = PropertyQuery(
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/weight", None, dateFilter.map(f => Seq(EndpointQueryFilter("date", None, f))), None)),
-      Some("date"), Some("descending"), None)
-
-    val feed: Future[Seq[DataFeedItem]] = richDataService.propertyData(propertyQuery.endpoints, propertyQuery.orderBy,
-      orderingDescending = propertyQuery.ordering.contains("descending"), skip = 0, limit = None, createdAfter = None)(hatServer.db)
-      .map {
-        _.map(item ⇒ mapDataRecord(item.recordId.get, item.data))
-          .collect { case Success(x) => x }
-      }
-
-    Source.fromFuture(feed)
-      .mapConcat(f ⇒ f.toList)
+        EndpointQuery("fitbit/weight", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("date", None, f))), None)),
+      Some("date"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
@@ -195,29 +194,11 @@ class FitbitWeightMapper extends DataEndpointMapper {
 // facebook events
 
 class FitbitActivityMapper extends DataEndpointMapper {
-  def feed(fromDate: Option[DateTime], untilDate: Option[DateTime])(implicit ec: ExecutionContext, hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
-    val fmt = ISODateTimeFormat.dateTime()
-    val dateTimeFilter = if (fromDate.isDefined) {
-      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(fmt))), Json.toJson(untilDate.map(_.toString(fmt)))))
-    }
-    else {
-      None
-    }
-
-    val propertyQuery = PropertyQuery(
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/activity", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("originalStartTime", None, f))), None)),
-      Some("originalStartTime"), Some("descending"), None)
-
-    val feed: Future[Seq[DataFeedItem]] = richDataService.propertyData(propertyQuery.endpoints, propertyQuery.orderBy,
-      orderingDescending = propertyQuery.ordering.contains("descending"), skip = 0, limit = None, createdAfter = None)(hatServer.db)
-      .map {
-        _.map(item ⇒ mapDataRecord(item.recordId.get, item.data))
-          .collect { case Success(x) => x }
-      }
-
-    Source.fromFuture(feed)
-      .mapConcat(f ⇒ f.toList)
+        EndpointQuery("fitbit/activity", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("originalStartTime", None, f))), None)),
+      Some("originalStartTime"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
@@ -240,28 +221,12 @@ class FitbitActivityMapper extends DataEndpointMapper {
 }
 
 class FitbitActivityDaySummaryMapper extends DataEndpointMapper {
-  def feed(fromDate: Option[DateTime], untilDate: Option[DateTime])(implicit ec: ExecutionContext, hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
-    val dateFilter = if (fromDate.isDefined) {
-      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString("yyyy-MM-dd"))), Json.toJson(untilDate.map(_.toString("yyyy-MM-dd")))))
-    }
-    else {
-      None
-    }
-
-    val propertyQuery = PropertyQuery(
+  override val dateTimeFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/activity/day/summary", None, dateFilter.map(f => Seq(EndpointQueryFilter("dateCreated", None, f))), None)),
-      Some("dateCreated"), Some("descending"), None)
-
-    val feed: Future[Seq[DataFeedItem]] = richDataService.propertyData(propertyQuery.endpoints, propertyQuery.orderBy,
-      orderingDescending = propertyQuery.ordering.contains("descending"), skip = 0, limit = None, createdAfter = None)(hatServer.db)
-      .map {
-        _.map(item ⇒ mapDataRecord(item.recordId.get, item.data))
-          .collect { case Success(x) => x }
-      }
-
-    Source.fromFuture(feed)
-      .mapConcat(f ⇒ f.toList)
+        EndpointQuery("fitbit/activity/day/summary", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("dateCreated", None, f))), None)),
+      Some("dateCreated"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
@@ -287,31 +252,11 @@ class FitbitActivityDaySummaryMapper extends DataEndpointMapper {
 }
 
 class FitbitSleepMapper extends DataEndpointMapper {
-  protected val logger: Logger = Logger(this.getClass)
-
-  def feed(fromDate: Option[DateTime], untilDate: Option[DateTime])(implicit ec: ExecutionContext, hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
-    val fmt = ISODateTimeFormat.dateTime()
-    val dateTimeFilter = if (fromDate.isDefined) {
-      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(fmt))), Json.toJson(untilDate.map(_.toString(fmt)))))
-    }
-    else {
-      None
-    }
-
-    val propertyQuery = PropertyQuery(
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/sleep", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("endTime", None, f))), None)),
-      Some("endTime"), Some("descending"), None)
-
-    val feed: Future[Seq[DataFeedItem]] = richDataService.propertyData(propertyQuery.endpoints, propertyQuery.orderBy,
-      orderingDescending = propertyQuery.ordering.contains("descending"), skip = 0, limit = None, createdAfter = None)(hatServer.db)
-      .map {
-        _.map(item ⇒ mapDataRecord(item.recordId.get, item.data))
-          .collect { case Success(x) => x }
-      }
-
-    Source.fromFuture(feed)
-      .mapConcat(f ⇒ f.toList)
+        EndpointQuery("fitbit/sleep", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("endTime", None, f))), None)),
+      Some("endTime"), Some("descending"), None))
   }
 
   def fitbitDateCorrector(date: String): String = {
@@ -352,29 +297,11 @@ class FitbitSleepMapper extends DataEndpointMapper {
 }
 
 class TwitterFeedMapper extends DataEndpointMapper {
-  def feed(fromDate: Option[DateTime], untilDate: Option[DateTime])(implicit ec: ExecutionContext, hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
-    val fmt = ISODateTimeFormat.dateTime()
-    val dateTimeFilter = if (fromDate.isDefined) {
-      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(fmt))), Json.toJson(untilDate.map(_.toString(fmt)))))
-    }
-    else {
-      None
-    }
-
-    val propertyQuery = PropertyQuery(
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
       List(
-        EndpointQuery("twitter/tweets", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("lastUpdated", None, f))), None)),
-      Some("lastUpdated"), Some("descending"), None)
-
-    val feed: Future[Seq[DataFeedItem]] = richDataService.propertyData(propertyQuery.endpoints, propertyQuery.orderBy,
-      orderingDescending = propertyQuery.ordering.contains("descending"), skip = 0, limit = None, createdAfter = None)(hatServer.db)
-      .map {
-        _.map(item ⇒ mapDataRecord(item.recordId.get, item.data))
-          .collect { case Success(x) => x }
-      }
-
-    Source.fromFuture(feed)
-      .mapConcat(f ⇒ f.toList)
+        EndpointQuery("twitter/tweets", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("lastUpdated", None, f))), None)),
+      Some("lastUpdated"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
@@ -413,34 +340,16 @@ class TwitterFeedMapper extends DataEndpointMapper {
 }
 
 class FacebookEventMapper extends DataEndpointMapper {
-  def feed(fromDate: Option[DateTime], untilDate: Option[DateTime])(implicit ec: ExecutionContext, hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
-    val fmt = ISODateTimeFormat.dateTime()
-    val dateTimeFilter = if (fromDate.isDefined) {
-      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(fmt))), Json.toJson(untilDate.map(_.toString(fmt)))))
-    }
-    else {
-      None
-    }
-
-    val propertyQuery = PropertyQuery(
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
       List(
-        EndpointQuery("facebook/events", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("start_time", None, f))), None)),
-      Some("start_time"), None, None)
-
-    val feed: Future[Seq[DataFeedItem]] = richDataService.propertyData(propertyQuery.endpoints, propertyQuery.orderBy,
-      orderingDescending = propertyQuery.ordering.contains("descending"), skip = 0, limit = None, createdAfter = None)(hatServer.db)
-      .map {
-        _.map(item ⇒ mapDataRecord(item.recordId.get, item.data))
-          .collect { case Success(x) => x }
-      }
-
-    Source.fromFuture(feed)
-      .mapConcat(f ⇒ f.toList)
+        EndpointQuery("facebook/events", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("start_time", None, f))), None)),
+      Some("start_time"), None, None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     for {
-      timeIntervalString <- Try(FeedUtils.eventTimeIntervalString(
+      timeIntervalString <- Try(eventTimeIntervalString(
         (content \ "start_time").as[DateTime],
         Some((content \ "end_time").as[DateTime])))
 
@@ -484,29 +393,11 @@ class FacebookEventMapper extends DataEndpointMapper {
 }
 
 class FacebookFeedMapper extends DataEndpointMapper {
-  def feed(fromDate: Option[DateTime], untilDate: Option[DateTime])(implicit ec: ExecutionContext, hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
-    val fmt = ISODateTimeFormat.dateTime()
-    val dateTimeFilter = if (fromDate.isDefined) {
-      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(fmt))), Json.toJson(untilDate.map(_.toString(fmt)))))
-    }
-    else {
-      None
-    }
-
-    val propertyQuery = PropertyQuery(
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
       List(
-        EndpointQuery("facebook/feed", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("created_time", None, f))), None)),
-      Some("created_time"), Some("descending"), None)
-
-    val feed: Future[Seq[DataFeedItem]] = richDataService.propertyData(propertyQuery.endpoints, propertyQuery.orderBy,
-      orderingDescending = propertyQuery.ordering.contains("descending"), skip = 0, limit = None, createdAfter = None)(hatServer.db)
-      .map {
-        _.map(item ⇒ mapDataRecord(item.recordId.get, item.data))
-          .collect { case Success(x) => x }
-      }
-
-    Source.fromFuture(feed)
-      .mapConcat(f ⇒ f.toList)
+        EndpointQuery("facebook/feed", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("created_time", None, f))), None)),
+      Some("created_time"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
@@ -533,31 +424,10 @@ class FacebookFeedMapper extends DataEndpointMapper {
 }
 
 class NotablesFeedMapper extends DataEndpointMapper {
-  def feed(fromDate: Option[DateTime], untilDate: Option[DateTime])(implicit ec: ExecutionContext, hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
-    val fmt = ISODateTimeFormat.dateTime()
-    val dateTimeFilter = if (fromDate.isDefined) {
-      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(fmt))), Json.toJson(untilDate.map(_.toString(fmt)))))
-    }
-    else {
-      None
-    }
-
-    val propertyQuery = PropertyQuery(
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
       List(EndpointQuery("rumpel/notablesv1", None,
-        dateTimeFilter.map(f => Seq(EndpointQueryFilter("created_time", None, f))), None)), Some("created_time"), Some("descending"), None)
-
-    val feed: Future[Seq[DataFeedItem]] = richDataService.propertyData(
-      propertyQuery.endpoints,
-      propertyQuery.orderBy,
-      orderingDescending = propertyQuery.ordering.contains("descending"),
-      skip = 0, limit = None, createdAfter = None)(hatServer.db)
-      .map { endpointData =>
-        endpointData.map(item => mapDataRecord(item.recordId.get, item.data))
-          .collect { case Success(x) => x }
-      }
-
-    Source.fromFuture(feed)
-      .mapConcat(f => f.toList)
+        dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("created_time", None, f))), None)), Some("created_time"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
@@ -589,31 +459,10 @@ class NotablesFeedMapper extends DataEndpointMapper {
 }
 
 class SpotifyFeedMapper extends DataEndpointMapper {
-  def feed(fromDate: Option[DateTime], untilDate: Option[DateTime])(implicit ec: ExecutionContext, hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
-    val fmt = ISODateTimeFormat.dateTime()
-    val dateTimeFilter = if (fromDate.isDefined) {
-      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(fmt))), Json.toJson(untilDate.map(_.toString(fmt)))))
-    }
-    else {
-      None
-    }
-
-    val propertyQuery = PropertyQuery(
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
       List(EndpointQuery("spotify/feed", None,
-        dateTimeFilter.map(f => Seq(EndpointQueryFilter("played_at", None, f))), None)), Some("played_at"), Some("descending"), None)
-
-    val feed: Future[Seq[DataFeedItem]] = richDataService.propertyData(
-      propertyQuery.endpoints,
-      propertyQuery.orderBy,
-      orderingDescending = propertyQuery.ordering.contains("descending"),
-      skip = 0, limit = None, createdAfter = None)(hatServer.db)
-      .map { endpointData =>
-        endpointData.map(item => mapDataRecord(item.recordId.get, item.data))
-          .collect { case Success(x) => x }
-      }
-
-    Source.fromFuture(feed)
-      .mapConcat(f => f.toList)
+        dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("played_at", None, f))), None)), Some("played_at"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {

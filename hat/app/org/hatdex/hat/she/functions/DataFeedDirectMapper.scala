@@ -29,7 +29,6 @@ import org.hatdex.hat.api.models._
 import org.hatdex.hat.she.models._
 import org.hatdex.hat.she.service._
 import org.joda.time.DateTime
-import org.joda.time.format.ISODateTimeFormat
 import play.api.Logger
 import play.api.libs.json._
 
@@ -39,78 +38,31 @@ import scala.util.{ Failure, Success }
 class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProtocol with JodaWrites with JodaReads {
   val namespace = "she"
   val endpoint = "feed"
+  private val logger: Logger = Logger(this.getClass)
+
+  private val dataMappers: Map[String, DataEndpointMapper] = Map(
+    "twitter" → new TwitterFeedMapper(),
+    "facebook/feed" → new FacebookFeedMapper(),
+    "facebook/events" → new FacebookEventMapper(),
+    "fitbit/sleep" → new FitbitSleepMapper(),
+    "fitbit/weight" → new FitbitWeightMapper(),
+    "fitbit/activity" → new FitbitActivityMapper(),
+    "fitbit/activity/day/summary" → new FitbitActivityDaySummaryMapper(),
+    "calendar" → new GoogleCalendarMapper(),
+    "notables/feed" → new NotablesFeedMapper())
+
+  override def bundleFilterByDate(fromDate: Option[DateTime], untilDate: Option[DateTime]): EndpointDataBundle = {
+    EndpointDataBundle("data-feed-direct-mapper", dataMappers.map {
+      case (name, mapper) ⇒
+        name → mapper.dataQueries(fromDate, untilDate)
+          .reduce({ (query, secondary) ⇒ query.copy(endpoints = query.endpoints ++ secondary.endpoints) })
+    })
+  }
 
   val configuration: FunctionConfiguration = FunctionConfiguration("data-feed-direct-mapper", "",
     FunctionTrigger.TriggerIndividual(), available = true, enabled = false,
     dataBundle = bundleFilterByDate(None, None),
     None)
-
-  private val dataMappers: Map[String, DataEndpointMapper] = {
-    Map(
-      "facebook/feed" → new FacebookFeedMapper(),
-      "facebook/events" → new FacebookEventMapper(),
-      "twitter" → new TwitterFeedMapper(),
-      "fitbit/sleep" → new FitbitSleepMapper(),
-      "fitbit/weight" → new FitbitWeightMapper(),
-      "fitbit/activity" → new FitbitActivityMapper(),
-      "fitbit/activity/day/summary" → new FitbitActivityDaySummaryMapper(),
-      "calendar" → new GoogleCalendarMapper(),
-      "notables/feed" → new NotablesFeedMapper())
-  }
-
-  override def bundleFilterByDate(fromDate: Option[DateTime], untilDate: Option[DateTime]): EndpointDataBundle = {
-    val fmt = ISODateTimeFormat.dateTime()
-    val dateTimeFilter = if (fromDate.isDefined) {
-      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(fmt))), Json.toJson(untilDate.map(_.toString(fmt)))))
-    }
-    else {
-      None
-    }
-    val dateFilter = if (fromDate.isDefined) {
-      Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString("yyyy-MM-dd"))), Json.toJson(untilDate.map(_.toString("yyyy-MM-dd")))))
-    }
-    else {
-      None
-    }
-    EndpointDataBundle("data-feed-direct-mapper", Map(
-      "twitter" -> PropertyQuery(
-        List(
-          EndpointQuery("twitter/tweets", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("lastUpdated", None, f))), None)),
-        Some("lastUpdated"), None, None),
-      "facebook/feed" -> PropertyQuery(
-        List(
-          EndpointQuery("facebook/feed", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("created_time", None, f))), None)),
-        Some("created_time"), None, None),
-      "facebook/events" -> PropertyQuery(
-        List(
-          EndpointQuery("facebook/events", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("start_time", None, f))), None)),
-        Some("start_time"), None, None),
-      "calendar" -> PropertyQuery(
-        List(
-          EndpointQuery("calendar/google/events", None, Some(Seq(
-            dateFilter.map(f => EndpointQueryFilter("start.date", None, f))).flatten), None),
-          EndpointQuery("calendar/google/events", None, Some(Seq(
-            dateTimeFilter.map(f => EndpointQueryFilter("start.dateTime", None, f))).flatten), None)),
-        Some("created"), None, None),
-      "fitbit/sleep" -> PropertyQuery(
-        List(
-          EndpointQuery("fitbit/sleep", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("endTime", None, f))), None)),
-        Some("endTime"), None, None),
-      "fitbit/weight" -> PropertyQuery(
-        List(
-          EndpointQuery("fitbit/weight", None, dateFilter.map(f => Seq(EndpointQueryFilter("date", None, f))), None)),
-        Some("date"), None, None),
-      "fitbit/activity" -> PropertyQuery(
-        List(
-          EndpointQuery("fitbit/activity", None, dateTimeFilter.map(f => Seq(EndpointQueryFilter("originalStartTime", None, f))), None)),
-        Some("originalStartTime"), None, None),
-      "fitbit/activity/day/summary" -> PropertyQuery(
-        List(
-          EndpointQuery("fitbit/activity/day/summary", None, dateFilter.map(f => Seq(EndpointQueryFilter("dateCreated", None, f))), None)),
-        Some("dateCreated"), None, None)))
-  }
-
-  private val logger: Logger = Logger(this.getClass)
 
   def execute(configuration: FunctionConfiguration, request: Request)(implicit ec: ExecutionContext): Future[Seq[Response]] = {
     val response = request.data
