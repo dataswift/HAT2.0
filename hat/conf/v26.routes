@@ -1,0 +1,61 @@
+
+# FILE routes
+POST          /files/upload                                                                  org.hatdex.hat.api.controllers.Files.startUpload
+POST          /files/search                                                                  org.hatdex.hat.api.controllers.Files.listFiles()
+PUT           /files/file/:fileId/complete                                                   org.hatdex.hat.api.controllers.Files.completeUpload(fileId)
+GET           /files/file/:fileId                                                            org.hatdex.hat.api.controllers.Files.getDetail(fileId)
+PUT           /files/file/:fileId                                                            org.hatdex.hat.api.controllers.Files.updateFile(fileId)
+DELETE        /files/file/:fileId                                                            org.hatdex.hat.api.controllers.Files.deleteFile(fileId)
+GET           /files/content/:fileId                                                         org.hatdex.hat.api.controllers.Files.getContent(fileId)
+
+# FILE permissions
+POST          /files/allowAccess/:userId                                                     org.hatdex.hat.api.controllers.Files.allowAccessPattern(userId: java.util.UUID, content: Boolean)
+POST          /files/restrictAccess/:userId                                                  org.hatdex.hat.api.controllers.Files.restrictAccessPattern(userId: java.util.UUID)
+GET           /files/allowAccess/:fileId/:userId                                             org.hatdex.hat.api.controllers.Files.allowAccess(fileId, userId: java.util.UUID, content: Boolean)
+GET           /files/restrictAccess/:fileId/:userId                                          org.hatdex.hat.api.controllers.Files.restrictAccess(fileId, userId: java.util.UUID)
+GET           /files/allowAccessPublic/:fileId                                               org.hatdex.hat.api.controllers.Files.changePublicAccess(fileId, public: Boolean = true)
+GET           /files/restrictAccessPublic/:fileId                                            org.hatdex.hat.api.controllers.Files.changePublicAccess(fileId, public: Boolean = true)
+
+# RICH DATA routes
+
+POST          /combinator/$combinator<[0-9a-z-/]+>                                           org.hatdex.hat.api.controllers.RichData.registerCombinator(combinator)
+GET           /combinator/$combinator<[0-9a-z-/]+>                                           org.hatdex.hat.api.controllers.RichData.getCombinatorData(combinator, orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
+GET           /data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                            org.hatdex.hat.api.controllers.RichData.getEndpointData(namespace, endpoint, orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
+POST          /data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                            org.hatdex.hat.api.controllers.RichData.saveEndpointData(namespace, endpoint, skipErrors: Option[Boolean])
+DELETE        /data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                            org.hatdex.hat.api.controllers.RichData.deleteEndpointData(namespace, endpoint)
+PUT           /data                                                                          org.hatdex.hat.api.controllers.RichData.updateRecords()
+DELETE        /data                                                                          org.hatdex.hat.api.controllers.RichData.deleteDataRecords(records: Seq[java.util.UUID])
+GET           /data/sources                                                                  org.hatdex.hat.api.controllers.RichData.listEndpoints
+POST          /data-link                                                                     org.hatdex.hat.api.controllers.RichData.linkDataRecords(records: Seq[java.util.UUID])
+POST          /data-batch                                                                    org.hatdex.hat.api.controllers.RichData.saveBatchData
+POST          /data-bundle/$bundleId<[0-9a-zA-Z-]+>                                          org.hatdex.hat.api.controllers.RichData.registerBundle(bundleId)
+GET           /data-bundle/$bundleId<[0-9a-zA-Z-]+>                                          org.hatdex.hat.api.controllers.RichData.fetchBundle(bundleId)
+GET           /data-bundle/$bundleId<[0-9a-zA-Z-]+>/structure                                org.hatdex.hat.api.controllers.RichData.bundleStructure(bundleId)
+
+GET           /data-debit/$dataDebitId<[0-9a-zA-Z-]+>                                        org.hatdex.hat.api.controllers.DataDebits.getDataDebit(dataDebitId: String)
+GET           /data-debit/$dataDebitId<[0-9a-zA-Z-]+>/values                                 org.hatdex.hat.api.controllers.DataDebits.getDataDebitValues(dataDebitId: String)
+GET           /data-debit                                                                    org.hatdex.hat.api.controllers.DataDebits.listDataDebits()
+GET           /data-debit/$dataDebitId<[0-9a-zA-Z-]+>/enable                                 org.hatdex.hat.api.controllers.DataDebits.enableDataDebitNewest(dataDebitId)
+GET           /data-debit/$dataDebitId<[0-9a-zA-Z-]+>/disable                                org.hatdex.hat.api.controllers.DataDebits.disableDataDebit(dataDebitId, atPeriodEnd: Boolean)
+POST          /data-debit/$dataDebitId<[0-9a-zA-Z-]+>                                        org.hatdex.hat.api.controllers.DataDebits.registerDataDebit(dataDebitId)
+PUT           /data-debit/$dataDebitId<[0-9a-zA-Z-]+>                                        org.hatdex.hat.api.controllers.DataDebits.updateDataDebit(dataDebitId)
+
+GET           /migrate                                                                       org.hatdex.hat.api.controllers.DataMigration.migrateData(fromSource: String, fromTableName: String, toNamespace: String, toEndpoint: String, includeTimestamp: Boolean = true)
+
+# APPLICATION routes
+
+GET           /applications                                                                  org.hatdex.hat.api.controllers.Applications.applications()
+GET           /applications/:application                                                     org.hatdex.hat.api.controllers.Applications.applicationStatus(application)
+GET           /applications/:application/setup                                               org.hatdex.hat.api.controllers.Applications.applicationSetup(application)
+GET           /applications/:application/disable                                             org.hatdex.hat.api.controllers.Applications.applicationDisable(application)
+GET           /applications/:application/access-token                                        org.hatdex.hat.api.controllers.Applications.applicationToken(application)
+
+# Smart HAT Engine (SHE) routes
+
+GET           /she/function                                                                  org.hatdex.hat.she.controllers.FunctionManager.functionList()
+GET           /she/function/:function                                                        org.hatdex.hat.she.controllers.FunctionManager.functionGet(function: String)
+GET           /she/function/:function/enable                                                 org.hatdex.hat.she.controllers.FunctionManager.functionEnable(function: String)
+GET           /she/function/:function/disable                                                org.hatdex.hat.she.controllers.FunctionManager.functionDisable(function: String)
+GET           /she/function/:function/trigger                                                org.hatdex.hat.she.controllers.FunctionManager.functionTrigger(function: String)
+GET           /she/feed                                                                      org.hatdex.hat.she.controllers.FeedGenerator.fullFeed(since: Option[Long], until: Option[Long])
+GET           /she/feed/$endpoint<[0-9a-z-/]+>                                               org.hatdex.hat.she.controllers.FeedGenerator.getFeed(endpoint: String, since: Option[Long], until: Option[Long])

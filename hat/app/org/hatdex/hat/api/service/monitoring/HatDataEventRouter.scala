@@ -49,9 +49,9 @@ class HatDataEventRouterImpl @Inject() (
   def init(): Done = {
     // Inbound/outbound data stats are reported via a buffering stage to control load and network traffic
     dataEventBus.subscribe(buffer(statsProcessor), classOf[HatDataEventBus.DataCreatedEvent])
-    dataEventBus.subscribe(buffer(statsProcessor), classOf[HatDataEventBus.DataRetrievedEvent])
+    dataEventBus.subscribe(buffer(statsProcessor), classOf[HatDataEventBus.RichDataRetrievedEvent])
     // Data Debit Events are dispatched without buffering
-    dataEventBus.subscribe(statsProcessor, classOf[HatDataEventBus.DataDebitEvent])
+    dataEventBus.subscribe(statsProcessor, classOf[HatDataEventBus.RichDataDebitEvent])
     Done
   }
 

@@ -32,8 +32,8 @@ import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.models.{ Owner, Platform }
 import org.hatdex.hat.api.service.{ DalExecutionContext, UsersService }
 import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.dal.HatDbSchemaMigration
 import org.hatdex.libs.dal.HATPostgresProfile.api.Database
-import org.hatdex.libs.dal.SchemaMigration
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.{ ConfigLoader, Configuration, Logger }
 
@@ -51,7 +51,6 @@ class DevHatInitializationModule extends ScalaModule with AkkaGuiceSupport {
 
 class DevHatInitializer @Inject() (
     configuration: Configuration,
-    schemaMigration: SchemaMigration,
     usersService: UsersService)(implicit ec: DalExecutionContext) {
   val logger = Logger(this.getClass)
 
@@ -67,7 +66,7 @@ class DevHatInitializer @Inject() (
     implicit val database = Database.forConfig("", hat.database)
 
     val eventuallyMigrated = for {
-      _ <- schemaMigration.run(devHatMigrations)
+      _ <- new HatDbSchemaMigration(configuration, database, ec).run(devHatMigrations)
       _ <- setupCredentials(hat)
     } yield ()
 

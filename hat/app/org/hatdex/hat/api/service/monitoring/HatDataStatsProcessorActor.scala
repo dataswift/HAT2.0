@@ -30,7 +30,7 @@ import akka.Done
 import akka.actor.Actor
 import org.hatdex.hat.api.models.{ DataStats, InboundDataStats, OutboundDataStats, DataDebitEvent ⇒ DataDebitAction }
 import org.hatdex.hat.api.service.StatsReporter
-import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{ DataCreatedEvent, DataDebitEvent, DataRetrievedEvent }
+import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{ DataCreatedEvent, RichDataDebitEvent, RichDataRetrievedEvent }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerDiscoveryException, HatServerProvider }
 import play.api.Logger
 
@@ -44,11 +44,11 @@ class HatDataStatsProcessorActor @Inject() (
   import HatDataEventBus._
 
   def receive: Receive = {
-    case d: DataCreatedEvent   => processBatchedStats(Seq(d))
-    case d: DataRetrievedEvent => processBatchedStats(Seq(d))
-    case d: DataDebitEvent     => processBatchedStats(Seq(d))
-    case d: Seq[_]             => processBatchedStats(d)
-    case m                     => log.warn(s"Received something else: $m")
+    case d: DataCreatedEvent       => processBatchedStats(Seq(d))
+    case d: RichDataRetrievedEvent => processBatchedStats(Seq(d))
+    case d: RichDataDebitEvent     => processBatchedStats(Seq(d))
+    case d: Seq[_]                 => processBatchedStats(d)
+    case m                         => log.warn(s"Received something else: $m")
   }
 
   private def processBatchedStats(d: Seq[Any]) = {
@@ -59,9 +59,9 @@ class HatDataStatsProcessorActor @Inject() (
       .map {
         case (hat, stats) =>
           val aggregated = stats.collect {
-            case s: DataCreatedEvent   => processor.computeInboundStats(s)
-            case s: DataRetrievedEvent => processor.computeOutboundStats(s)
-            case e: DataDebitEvent     => processor.reportDataDebitEvent(e)
+            case s: DataCreatedEvent       => processor.computeInboundStats(s)
+            case s: RichDataRetrievedEvent => processor.computeOutboundStats(s)
+            case e: RichDataDebitEvent     => processor.reportDataDebitEvent(e)
           }
           hat -> aggregated
       }
@@ -89,13 +89,13 @@ class HatDataStatsProcessor @Inject() (
       endpointStats.toSeq, event.logEntry)
   }
 
-  def computeOutboundStats(event: DataRetrievedEvent): OutboundDataStats = {
+  def computeOutboundStats(event: RichDataRetrievedEvent): OutboundDataStats = {
     val endpointStats = JsonStatsService.endpointDataCounts(event.data)
     OutboundDataStats(event.time.toLocalDateTime, event.user,
       event.dataDebit.dataDebitKey, endpointStats.toSeq, event.logEntry)
   }
 
-  def reportDataDebitEvent(event: DataDebitEvent): DataDebitAction = {
+  def reportDataDebitEvent(event: RichDataDebitEvent): DataDebitAction = {
     DataDebitAction(event.dataDebit, event.operation.toString,
       event.time.toLocalDateTime, event.user, event.logEntry)
   }
