@@ -37,7 +37,7 @@
     </appender>
 
 
-    <root level="WARN">
+    <root level="INFO">
         <appender-ref ref="ASYNCCONSOLE" />
     </root>
 
@@ -45,9 +45,6 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
     <logger name="akka" level="WARN" >
-        <appender-ref ref="ASYNCCONSOLE"/>
-    </logger>
-    <logger name="SchemaMigration" level="DEBUG" >
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
     <logger name="scala.slick.session" level="INFO" >
@@ -117,6 +114,13 @@
     </logger>
 
     <logger name="com.github.tminglei.slickpg*" level="DEBUG">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
+    <logger name="org.hatdex.libs.dal.SlickCodeGeneratorPlugin" level="DEBUG">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+    <logger name="org.hatdex.libs.dal.*" level="DEBUG">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 

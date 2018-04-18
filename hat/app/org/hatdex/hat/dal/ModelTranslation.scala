@@ -25,12 +25,14 @@
 package org.hatdex.hat.dal
 
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ UserRole, _ }
+import org.hatdex.hat.api.models.{ DataDebit ⇒ ApiDataDebit, DataDebitPermissions ⇒ ApiDataDebitPermissions, UserRole ⇒ ApiUserRole, _ }
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.phata.models.MailTokenUser
 
 import scala.annotation.tailrec
+import scala.concurrent.duration.{ _ }
+import org.joda.time.Duration
 
 object ModelTranslation {
   def fromDbModel(user: UserUserRow): HatUser = {
@@ -39,7 +41,7 @@ object ModelTranslation {
   }
 
   def fromDbModel(userInfo: (UserUserRow, Seq[UserRoleRow])): HatUser = {
-    val roles = userInfo._2.map(r => UserRole.userRoleDeserialize(r.role, r.extra))
+    val roles = userInfo._2.map(r => ApiUserRole.userRoleDeserialize(r.role, r.extra))
     val user = userInfo._1
     HatUser(user.userId, user.email, user.pass, user.name, roles, user.enabled)
   }
@@ -48,7 +50,7 @@ object ModelTranslation {
     User(user.userId, user.email, user.pass, user.name, user.primaryRole.title.toLowerCase(), user.roles)
   }
   def fromExternalModel(user: User, enabled: Boolean): HatUser = {
-    HatUser(user.userId, user.email, user.pass, user.name, user.roles, enabled).withRoles(UserRole.userRoleDeserialize(user.role, None))
+    HatUser(user.userId, user.email, user.pass, user.name, user.roles, enabled).withRoles(ApiUserRole.userRoleDeserialize(user.role, None))
   }
 
   def fromDbModel(field: DataFieldRow): ApiDataField = {
@@ -140,6 +142,18 @@ object ModelTranslation {
   def fromDbModel(dataDebit: DataDebitContractRow, client: UserUserRow, dataDebitBundle: Seq[(DataDebitBundleRow, DataBundlesRow, Option[DataBundlesRow])]): RichDataDebit = {
     RichDataDebit(dataDebit.dataDebitKey, dataDebit.dateCreated,
       userFromDbModel(client), dataDebitBundle.map(d => ModelTranslation.fromDbModel(d._1, d._2, d._3)))
+  }
+
+  def fromDbModel(ddp: DataDebitPermissionsRow, bundle: DataBundlesRow, conditions: Option[DataBundlesRow]): ApiDataDebitPermissions = {
+    ApiDataDebitPermissions(ddp.dateCreated, ddp.purpose, ddp.start.toDateTime, Duration.standardSeconds(ddp.period),
+      ddp.cancelAtPeriodEnd, ddp.canceledAt.map(_.toDateTime),
+      ddp.termsUrl, conditions.map(fromDbModel), fromDbModel(bundle), ddp.accepted)
+  }
+
+  def fromDbModel(dataDebit: DataDebitRow, dataDebitBundle: Seq[(DataDebitPermissionsRow, DataBundlesRow, Option[DataBundlesRow])]): ApiDataDebit = {
+    ApiDataDebit(dataDebit.dataDebitKey, dataDebit.dateCreated, dataDebitBundle.map(d => ModelTranslation.fromDbModel(d._1, d._2, d._3)),
+      dataDebit.requestClientName, dataDebit.requestClientUrl, dataDebit.requestClientLogoUrl,
+      dataDebit.requestApplicationId, dataDebit.requestDescription)
   }
 
   def userFromDbModel(user: UserUserRow): User = {

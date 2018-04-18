@@ -81,9 +81,10 @@ lazy val hat = project
   .enablePlugins(SlickCodeGeneratorPlugin)
   .settings(
     codegenPackageName in gentables := "org.hatdex.hat.dal",
-    codegenOutputDir in gentables := (baseDirectory.value / "app").getPath,
+    codegenBaseDir in gentables := (baseDirectory.value / "app").getCanonicalPath,
     codegenClassName in gentables := "Tables",
     codegenExcludedTables in gentables := Seq("databasechangelog", "databasechangeloglock"),
     codegenDatabase in gentables := "devdb",
-    codegenConfig in gentables := "dev.conf"
+    codegenConfig in gentables := "dev.conf",
+    codegenEvolutions in gentables := "devhatMigrations"
   )

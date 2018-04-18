@@ -30,7 +30,7 @@ import javax.inject.Inject
 import org.hatdex.hat.api.models.{ UserRole, _ }
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.Tables.{ UserRole ⇒ UserRoleDb, DataDebit ⇒ DataDebitDb, _ }
+import org.hatdex.hat.dal.Tables.{ UserRole ⇒ UserRoleDb, _ }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
@@ -61,27 +61,7 @@ class UsersService @Inject() (implicit ec: DalExecutionContext) {
   }
 
   private def queryUser(userFilter: Query[UserUser, UserUserRow, Seq])(implicit db: Database): Future[Seq[HatUser]] = {
-    val debits = DataDebitDb.map(d => (d.recipientId, d.dataDebitKey.asColumnOf[String]))
-    val debits2 = DataDebitContract.map(d => (d.clientId.asColumnOf[String], d.dataDebitKey))
-    val dd = debits.unionAll(debits2)
-
-    val eventualUsers = queryUsers(userFilter)
-
-    val userDataDebits = userFilter
-      .joinLeft(dd)
-      .on(_.userId.asColumnOf[String] === _._1)
-
-    for {
-      users <- eventualUsers
-      dataDebits <- db.run(userDataDebits.result)
-    } yield {
-      users map { user =>
-        val roles = dataDebits.filter(_._1.userId == user.userId) map { userDataDebit =>
-          UserRole.userRoleDeserialize("datadebit", userDataDebit._2.map(_._2))
-        }
-        user.withRoles(roles: _*)
-      }
-    }
+    queryUsers(userFilter)
   }
 
   implicit def equalDataJsonRowIdentity(a: UserUserRow, b: UserUserRow): Boolean = {
