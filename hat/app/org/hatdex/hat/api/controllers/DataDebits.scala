@@ -54,49 +54,46 @@ class DataDebits @Inject() (
   private val logger = loggingProvider.logger(this.getClass)
 
   def registerDataDebit(dataDebitId: String): Action[DataDebitSetupRequest] =
-    SecuredAction(WithRole(Owner(), DataDebitOwner(""), Platform()) || ContainsApplicationRole(Owner(), DataDebitOwner(""), Platform())).async(parsers.json[DataDebitSetupRequest]) { implicit request =>
+    SecuredAction(WithRole(Owner(), DataDebitOwner(""), Platform()) || ContainsApplicationRole(Owner(), DataDebitOwner(""), Platform())).async(parsers.json[DataDebitSetupRequest]) { implicit request ⇒
       dataDebitService.createDataDebit(dataDebitId, request.body, request.identity.userId)
         .andThen(dataEventDispatcher.dispatchEventDataDebit(DataDebitOperations.Create()))
-        .map(debit => Created(Json.toJson(debit)))
+        .map(debit ⇒ Created(Json.toJson(debit)))
         .recover {
-          case err: RichDataDuplicateBundleException => BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
-          case err: RichDataDuplicateDebitException  => BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
+          case err: RichDataDuplicateBundleException ⇒ BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
+          case err: RichDataDuplicateDebitException  ⇒ BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
         }
     }
 
   def updateDataDebit(dataDebitId: String): Action[DataDebitSetupRequest] =
-    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(Owner(), DataDebitOwner(dataDebitId))).async(parsers.json[DataDebitSetupRequest]) { implicit request =>
+    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(Owner(), DataDebitOwner(dataDebitId))).async(parsers.json[DataDebitSetupRequest]) { implicit request ⇒
       dataDebitService.updateDataDebitPermissions(dataDebitId, request.body, request.identity.userId)
         .andThen(dataEventDispatcher.dispatchEventDataDebit(DataDebitOperations.Change()))
-        .map(debit => Ok(Json.toJson(debit)))
+        .map(debit ⇒ Ok(Json.toJson(debit)))
         .recover {
-          case err: RichDataServiceException => BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
+          case err: RichDataServiceException ⇒ BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
         }
     }
 
   def getDataDebit(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(Owner(), DataDebitOwner(dataDebitId))).async { implicit request =>
+    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(Owner(), DataDebitOwner(dataDebitId))).async { implicit request ⇒
       logger.warn("Running new controller")
       dataDebitService.dataDebit(dataDebitId)
         .map {
-          case Some(debit) => Ok(Json.toJson(debit))
-          case None        => NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId)))
+          case Some(debit) ⇒ Ok(Json.toJson(debit))
+          case None        ⇒ NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId)))
         }
     }
 
   def getDataDebitValues(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(Owner(), DataDebitOwner(dataDebitId))).async { implicit request =>
+    SecuredAction(WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(Owner(), DataDebitOwner(dataDebitId))).async { implicit request ⇒
       dataDebitService.dataDebit(dataDebitId)
         .flatMap {
-          case Some(debit) if debit.activePermissions.isDefined =>
+          case Some(debit) if debit.active ⇒
             logger.debug("Got Data Debit, fetching data")
-            val eventualData = debit.activePermissions.get.conditions map { bundleConditions =>
+            val eventualData = debit.activePermissions.get.conditions map { bundleConditions ⇒
               logger.debug("Getting data for conditions")
-              dataService.bundleData(bundleConditions).flatMap { conditionValues =>
-                val conditionFulfillment: Map[String, Boolean] = conditionValues map {
-                  case (condition, values) =>
-                    (condition, values.nonEmpty)
-                }
+              dataService.bundleData(bundleConditions).flatMap { conditionValues ⇒
+                val conditionFulfillment: Map[String, Boolean] = conditionValues.map(c ⇒ (c._1, c._2.nonEmpty))
 
                 if (conditionFulfillment.forall(_._2)) {
                   logger.debug(s"Data Debit $dataDebitId conditions satisfied")
@@ -117,54 +114,54 @@ class DataDebits @Inject() (
 
             eventualData
               .andThen(dataEventDispatcher.dispatchEventDataDebitValues(debit))
-              .map(d => Ok(Json.toJson(d)))
+              .map(d ⇒ Ok(Json.toJson(d)))
 
-          case Some(_) => Future.successful(BadRequest(Json.toJson(Errors.dataDebitNotEnabled(dataDebitId))))
-          case None    => Future.successful(NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId))))
+          case Some(_) ⇒ Future.successful(BadRequest(Json.toJson(Errors.dataDebitNotEnabled(dataDebitId))))
+          case None    ⇒ Future.successful(NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId))))
         }
         .recover {
-          case err: RichDataBundleFormatException => BadRequest(Json.toJson(Errors.dataDebitBundleMalformed(dataDebitId, err)))
+          case err: RichDataBundleFormatException ⇒ BadRequest(Json.toJson(Errors.dataDebitBundleMalformed(dataDebitId, err)))
         }
     }
 
   def listDataDebits(): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
-      dataDebitService.all map { debits =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request ⇒
+      dataDebitService.all map { debits ⇒
         Ok(Json.toJson(debits))
       }
     }
 
   def enableDataDebitNewest(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request ⇒
       enableDataDebit(dataDebitId)
     }
 
   protected def enableDataDebit(dataDebitId: String)(implicit request: SecuredRequest[HatApiAuthEnvironment, AnyContent]): Future[Result] = {
     val enabled = for {
-      _ <- dataDebitService.dataDebitEnableNewestPermissions(dataDebitId)
-      debit <- dataDebitService.dataDebit(dataDebitId)
+      _ ← dataDebitService.dataDebitEnableNewestPermissions(dataDebitId)
+      debit ← dataDebitService.dataDebit(dataDebitId)
     } yield debit
 
     enabled
       .andThen(dataEventDispatcher.dispatchEventMaybeDataDebit(DataDebitOperations.Enable()))
       .map {
-        case Some(debit) => Ok(Json.toJson(debit))
-        case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
+        case Some(debit) ⇒ Ok(Json.toJson(debit))
+        case None        ⇒ BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
       }
   }
 
   def disableDataDebit(dataDebitId: String, atPeriodEnd: Boolean): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request ⇒
       val disabled = for {
-        _ <- dataDebitService.dataDebitDisable(dataDebitId, atPeriodEnd)
-        debit <- dataDebitService.dataDebit(dataDebitId)
+        _ ← dataDebitService.dataDebitDisable(dataDebitId, atPeriodEnd)
+        debit ← dataDebitService.dataDebit(dataDebitId)
       } yield debit
 
       disabled
         .andThen(dataEventDispatcher.dispatchEventMaybeDataDebit(DataDebitOperations.Disable()))
         .map {
-          case Some(debit) => Ok(Json.toJson(debit))
-          case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
+          case Some(debit) ⇒ Ok(Json.toJson(debit))
+          case None        ⇒ BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
         }
     }
 

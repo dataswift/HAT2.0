@@ -99,6 +99,7 @@ class DataDebitServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification 
       val service = application.injector.instanceOf[DataDebitService]
       val saved = for {
         _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+        _ <- service.createDataDebit("testdd2", testDataDebitRequestUpdate, owner.userId)
         saved <- service.dataDebit("testdd")
       } yield saved
 
@@ -108,6 +109,7 @@ class DataDebitServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification 
         debit.dataDebitKey must be equalTo "testdd"
         debit.permissions.length must be equalTo 1
         debit.permissions.head.active must beFalse
+        debit.permissions.head.bundle.name must be equalTo testDataDebitRequest.bundle.name
       } await (3, 10.seconds)
     }
 

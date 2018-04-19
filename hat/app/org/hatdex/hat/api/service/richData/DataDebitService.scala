@@ -140,11 +140,11 @@ class DataDebitService @Inject() (usersService: UsersService)(implicit val ec: R
       bundleDefinition ← ddb.dataBundlesFk1
     } yield (dd, (ddb, bundleDefinition, conditions))
 
-    db.run(query.result).map(_.unzip) map {
-      case (dd, ddBundle) ⇒
-        dd.map { dataDebit ⇒
-          ModelTranslation.fromDbModel(dataDebit, ddBundle)
-        }
+    db.run(query.result).map { ddData ⇒
+      ddData.groupBy(_._1.dataDebitKey)
+        .values
+        .map(ddb ⇒ ModelTranslation.fromDbModel(ddb.head._1, ddb.unzip._2))
+        .toSeq
     }
   }
 
