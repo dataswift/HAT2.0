@@ -1,33 +1,33 @@
 
 # USER Routes
-GET           /users/user                                          org.hatdex.hat.api.controllers.Users.listUsers
-POST          /users/user                                          org.hatdex.hat.api.controllers.Users.createUser
-GET           /publickey                                           org.hatdex.hat.api.controllers.Authentication.publicKey
-GET           /users/access_token/validate                         org.hatdex.hat.api.controllers.Authentication.validateToken
-GET           /users/application_token                             org.hatdex.hat.api.controllers.Authentication.applicationToken(name: String, resource: String)
-GET           /users/access_token                                  org.hatdex.hat.api.controllers.Authentication.accessToken
-PUT           /users/user/:userId/enable                           org.hatdex.hat.api.controllers.Users.enableUser(userId: java.util.UUID)
-PUT           /users/user/:userId/disable                          org.hatdex.hat.api.controllers.Users.disableUser(userId: java.util.UUID)
-PUT           /users/user/:userId/delete                           org.hatdex.hat.api.controllers.Users.deleteUser(userId: java.util.UUID)
-PUT           /users/user/:userId/update                           org.hatdex.hat.api.controllers.Users.updateUser(userId: java.util.UUID)
+GET         /users/user                                          org.hatdex.hat.api.controllers.Users.listUsers
+POST        /users/user                                          org.hatdex.hat.api.controllers.Users.createUser
+GET         /publickey                                           org.hatdex.hat.api.controllers.Authentication.publicKey
+GET         /users/access_token/validate                         org.hatdex.hat.api.controllers.Authentication.validateToken
+GET         /users/application_token                             org.hatdex.hat.api.controllers.Authentication.applicationToken(name: String, resource: String)
+GET         /users/access_token                                  org.hatdex.hat.api.controllers.Authentication.accessToken
+PUT         /users/user/:userId/enable                           org.hatdex.hat.api.controllers.Users.enableUser(userId: java.util.UUID)
+PUT         /users/user/:userId/disable                          org.hatdex.hat.api.controllers.Users.disableUser(userId: java.util.UUID)
+PUT         /users/user/:userId/delete                           org.hatdex.hat.api.controllers.Users.deleteUser(userId: java.util.UUID)
+PUT         /users/user/:userId/update                           org.hatdex.hat.api.controllers.Users.updateUser(userId: java.util.UUID)
 
 # SYSTEM routes
-GET           /system/update                                       org.hatdex.hat.api.controllers.SystemStatus.update()
-GET           /api/v2/system/status                                org.hatdex.hat.api.controllers.SystemStatus.status()
+GET         /system/update                                       org.hatdex.hat.api.controllers.SystemStatus.update()
+GET         /api/v2/system/status                                org.hatdex.hat.api.controllers.SystemStatus.status()
 
 # PHATA routes
-GET           /assets/*file                                        controllers.Assets.at(file)
-GET           /hatlogin                                            org.hatdex.hat.phata.controllers.Phata.hatLogin(name: String, redirect: String)
-GET           /                                                    org.hatdex.hat.phata.controllers.Phata.rumpelIndex
-GET           /api/v2/phata/profile                                org.hatdex.hat.phata.controllers.Phata.profile
+GET         /assets/*file                                        controllers.Assets.at(file)
+GET         /hatlogin                                            org.hatdex.hat.phata.controllers.Phata.hatLogin(name: String, redirect: String)
+GET         /                                                    org.hatdex.hat.phata.controllers.Phata.rumpelIndex
+GET         /api/v2/phata/profile                                org.hatdex.hat.phata.controllers.Phata.profile
 
 # AUTHENTICATION routes
 
-GET           /control/v2/auth/hatlogin                            org.hatdex.hat.api.controllers.Authentication.hatLogin(name: String, redirect: String)
-POST          /control/v2/auth/password                            org.hatdex.hat.api.controllers.Authentication.passwordChangeProcess
-POST          /control/v2/auth/passwordReset                       org.hatdex.hat.api.controllers.Authentication.handleForgotPassword
-POST          /control/v2/auth/passwordreset/confirm/:token        org.hatdex.hat.api.controllers.Authentication.handleResetPassword(token: String)
+GET         /control/v2/auth/hatlogin                            org.hatdex.hat.api.controllers.Authentication.hatLogin(name: String, redirect: String)
+POST        /control/v2/auth/password                            org.hatdex.hat.api.controllers.Authentication.passwordChangeProcess
+POST        /control/v2/auth/passwordReset                       org.hatdex.hat.api.controllers.Authentication.handleForgotPassword
+POST        /control/v2/auth/passwordreset/confirm/:token        org.hatdex.hat.api.controllers.Authentication.handleResetPassword(token: String)
 
-->      /api/v2                          v20.Routes
-->      /api/v2.0                        v20.Routes
-->      /api/v2.6                        v26.Routes
+->          /api/v2                                              v20.Routes
+->          /api/v2.0                                            v20.Routes
+->          /api/v2.6                                            v26.Routes

@@ -195,7 +195,7 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
     "return status 400 if new password too weak" in {
       val request = FakeRequest[JsValue](
         Helpers.POST,
-        org.hatdex.hat.api.controllers.routes.Authentication.passwordChangeProcess().url,
+        "/control/v2/auth/password",
         headers = FakeHeaders(Seq((HeaderNames.ACCEPT, MimeTypes.JSON), (HeaderNames.CONTENT_TYPE, MimeTypes.JSON))),
         body = Json.toJson(passwordChangeSimple),
         remoteAddress = "hat.hubofallthings.net")
