@@ -61,7 +61,25 @@ class UsersService @Inject() (implicit ec: DalExecutionContext) {
   }
 
   private def queryUser(userFilter: Query[UserUser, UserUserRow, Seq])(implicit db: Database): Future[Seq[HatUser]] = {
-    queryUsers(userFilter)
+    val debits2 = DataDebitContract.map(d => (d.clientId.asColumnOf[String], d.dataDebitKey))
+
+    val eventualUsers = queryUsers(userFilter)
+
+    val userDataDebits = userFilter
+      .joinLeft(debits2)
+      .on(_.userId.asColumnOf[String] === _._1)
+
+    for {
+      users <- eventualUsers
+      dataDebits <- db.run(userDataDebits.result)
+    } yield {
+      users map { user =>
+        val roles = dataDebits.filter(_._1.userId == user.userId) map { userDataDebit =>
+          UserRole.userRoleDeserialize("datadebit", userDataDebit._2.map(_._2))
+        }
+        user.withRoles(roles: _*)
+      }
+    }
   }
 
   implicit def equalDataJsonRowIdentity(a: UserUserRow, b: UserUserRow): Boolean = {

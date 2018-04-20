@@ -74,6 +74,8 @@ trait ApplicationsServiceContext extends HATTestContext {
       |                "markdown": "\n Anything you write online is your data – searches, social media posts, comments and notes.\n\n Start your notes here on Notables, where they will be stored completely privately in your HAT.\n\n Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.\n\n Add images or pin locations as reminders of where you were or what you saw.\n          ",
       |                "html": "\n <p>Anything you write online is your data – searches, social media posts, comments and notes.</p>\n\n <p>Start your notes here on Notables, where they will be stored completely privately in your HAT.</p>\n\n <p>Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.</p>\n\n <p>Add images or pin locations as reminders of where you were or what you saw.</p>\n          "
       |            },
+      |            "termsUrl": "https://example.com/terms",
+      |            "dataUsePurpose": "Data Will be processed by Notables for the following purpose...",
       |            "dataPreview": [
       |                {
       |                    "source": "notables",
@@ -148,6 +150,54 @@ trait ApplicationsServiceContext extends HATTestContext {
       |                    "detail": "app-notables"
       |                }
       |            ],
+      |            "dataRetrieved": {
+      |                    "name": "notablesapp",
+      |                    "bundle": {
+      |                        "profile": {
+      |                            "endpoints": [
+      |                                {
+      |                                    "endpoint": "rumpel/profile",
+      |                                    "filters": [
+      |                                        {
+      |                                            "field": "shared",
+      |                                            "operator": {
+      |                                                "value": true,
+      |                                                "operator": "contains"
+      |                                            }
+      |                                        }
+      |                                    ]
+      |                                }
+      |                            ],
+      |                            "orderBy": "dateCreated",
+      |                            "ordering": "descending",
+      |                            "limit": 1
+      |                        },
+      |                        "notables": {
+      |                            "endpoints": [
+      |                                {
+      |                                    "endpoint": "rumpel/notablesv1",
+      |                                    "mapping": {
+      |                                        "name": "personal.preferredName",
+      |                                        "nick": "personal.nickName",
+      |                                        "photo_url": "photo.avatar"
+      |                                    },
+      |                                    "filters": [
+      |                                        {
+      |                                            "field": "shared",
+      |                                            "operator": {
+      |                                                "value": true,
+      |                                                "operator": "contains"
+      |                                            }
+      |                                        }
+      |                                    ]
+      |                                }
+      |                            ],
+      |                            "orderBy": "updated_time",
+      |                            "ordering": "descending",
+      |                            "limit": 1
+      |                        }
+      |                    }
+      |            },
       |            "dataRequired": {
       |                "bundle": {
       |                    "name": "notablesapp",
