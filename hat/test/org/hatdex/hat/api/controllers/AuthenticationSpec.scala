@@ -271,8 +271,11 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
       val controller = application.injector.instanceOf[Authentication]
       val tokenService = application.injector.instanceOf[MailTokenUserService]
       val tokenId = UUID.randomUUID().toString
-      tokenService.create(MailTokenUser(tokenId, "hat@hat.org", DateTime.now().minusHours(1), isSignUp = false))
-      val result: Future[Result] = Helpers.call(controller.handleResetPassword(tokenId), request)
+
+      val result: Future[Result] = for {
+        _ ← tokenService.create(MailTokenUser(tokenId, "hat@hat.org", DateTime.now().minusHours(1), isSignUp = false))
+        result ← Helpers.call(controller.handleResetPassword(tokenId), request)
+      } yield result
 
       status(result) must equalTo(UNAUTHORIZED)
       (contentAsJson(result) \ "cause").as[String] must equalTo("Token expired or invalid")
@@ -286,8 +289,11 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
       val controller = application.injector.instanceOf[Authentication]
       val tokenService = application.injector.instanceOf[MailTokenUserService]
       val tokenId = UUID.randomUUID().toString
-      tokenService.create(MailTokenUser(tokenId, "email@hat.org", DateTime.now().plusHours(1), isSignUp = false))
-      val result: Future[Result] = Helpers.call(controller.handleResetPassword(tokenId), request)
+
+      val result: Future[Result] = for {
+        _ ← tokenService.create(MailTokenUser(tokenId, "email@hat.org", DateTime.now().plusHours(1), isSignUp = false))
+        result ← Helpers.call(controller.handleResetPassword(tokenId), request)
+      } yield result
 
       status(result) must equalTo(UNAUTHORIZED)
       (contentAsJson(result) \ "cause").as[String] must equalTo("Only HAT owner can reset their password")
@@ -301,8 +307,10 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
       val controller = application.injector.instanceOf[Authentication]
       val tokenService = application.injector.instanceOf[MailTokenUserService]
       val tokenId = UUID.randomUUID().toString
-      tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
-      val result: Future[Result] = Helpers.call(controller.handleResetPassword(tokenId), request)
+      val result: Future[Result] = for {
+        _ ← tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
+        result ← Helpers.call(controller.handleResetPassword(tokenId), request)
+      } yield result
 
       logger.warn(s"reset pass response: ${contentAsJson(result)}")
 
@@ -317,12 +325,13 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
       val controller = application.injector.instanceOf[Authentication]
       val tokenService = application.injector.instanceOf[MailTokenUserService]
       val tokenId = UUID.randomUUID().toString
-      tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
       val usersService = application.injector.instanceOf[UsersService]
-      val result: Future[Result] = usersService.saveUser(owner.copy(roles = Seq(DataDebitOwner("")))) // forcing owner user to a different role for the test
-        .flatMap { _ =>
-          Helpers.call(controller.handleResetPassword(tokenId), request)
-        }
+
+      val result: Future[Result] = for {
+        _ ← tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
+        _ ← usersService.saveUser(owner.copy(roles = Seq(DataDebitOwner("")))) // forcing owner user to a different role for the test
+        result ← Helpers.call(controller.handleResetPassword(tokenId), request)
+      } yield result
 
       status(result) must equalTo(UNAUTHORIZED)
       (contentAsJson(result) \ "cause").as[String] must equalTo("No user matching token")
