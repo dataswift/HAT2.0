@@ -415,7 +415,7 @@ class FacebookFeedMapper extends DataEndpointMapper {
       })
       itemContent ← Try(DataFeedItemContent(
         Some(
-          s"""${(content \ "message").as[String]}
+          s"""${(content \ "message").asOpt[String].getOrElse((content \ "story").as[String])}
              |
              |${(content \ "link").asOpt[String].getOrElse("")}""".stripMargin), None,
         (content \ "picture").asOpt[String].map(url ⇒ List(DataFeedItemMedia(Some(url), (content \ "full_picture").asOpt[String])))))
@@ -426,6 +426,7 @@ class FacebookFeedMapper extends DataEndpointMapper {
       val locationGeo = Try(LocationGeo(
         (content \ "place" \ "location" \ "longitude").as[Double],
         (content \ "place" \ "location" \ "latitude").as[Double])).toOption
+
       val locationAddress = Try(LocationAddress(
         (content \ "place" \ "location" \ "country").asOpt[String],
         (content \ "place" \ "location" \ "city").asOpt[String],
@@ -433,7 +434,14 @@ class FacebookFeedMapper extends DataEndpointMapper {
         (content \ "place" \ "location" \ "street").asOpt[String],
         (content \ "place" \ "location" \ "zip").asOpt[String])).toOption
 
-      val location = locationGeo.orElse(locationAddress).map(_ ⇒ DataFeedItemLocation(locationGeo, locationAddress, None))
+      val maybeLocation = if (locationAddress.contains(LocationAddress(None, None, None, None, None))) {
+        None
+      }
+      else {
+        locationAddress
+      }
+
+      val location = locationGeo.orElse(maybeLocation).map(_ ⇒ DataFeedItemLocation(locationGeo, maybeLocation, None))
 
       DataFeedItem("facebook", date, tags, Some(title), Some(itemContent), location)
     }
