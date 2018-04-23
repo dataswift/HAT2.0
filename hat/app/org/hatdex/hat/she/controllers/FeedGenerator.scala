@@ -26,34 +26,23 @@ package org.hatdex.hat.she.controllers
 
 import javax.inject.Inject
 
-import akka.NotUsed
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{ Sink, Source }
 import com.mohiva.play.silhouette.api.Silhouette
 import org.hatdex.hat.api.json.{ DataFeedItemJsonProtocol, RichDataJsonFormats }
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.models.applications.DataFeedItem
-import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol
 import org.hatdex.hat.she.service._
-import org.hatdex.hat.utils.SourceMergeSorter
-import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
 
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 
 class FeedGenerator @Inject() (
     components: ControllerComponents,
-    silhouette: Silhouette[HatApiAuthEnvironment])(
+    silhouette: Silhouette[HatApiAuthEnvironment],
+    feedGeneratorService: FeedGeneratorService)(
     implicit
-    richDataService: RichDataService,
-    val actorSystem: ActorSystem,
     val ec: ExecutionContext)
   extends HatApiController(components, silhouette)
   with RichDataJsonFormats
@@ -61,57 +50,17 @@ class FeedGenerator @Inject() (
   with DataFeedItemJsonProtocol {
 
   private val logger = Logger(this.getClass)
-  protected implicit val materializer: ActorMaterializer = ActorMaterializer()
-
-  private val dataMappers: Seq[(String, DataEndpointMapper)] = Seq(
-    "facebook/feed" → new FacebookFeedMapper(),
-    "facebook/events" → new FacebookEventMapper(),
-    "facebook/feed" → new FacebookFeedMapper(richDataService),
-    "twitter/tweets" → new TwitterFeedMapper(richDataService),
-    "fitbit/sleep" → new FitbitSleepMapper(richDataService),
-    "fitbit/weight" → new FitbitWeightMapper(richDataService),
-    "fitbit/activity" → new FitbitActivityMapper(richDataService),
-    "fitbit/activity/day/summary" → new FitbitActivityDaySummaryMapper(richDataService),
-    "calendar/google/events" → new GoogleCalendarMapper(richDataService),
-    "notables/feed" → new NotablesFeedMapper(richDataService),
-    "spotify/feed" -> new SpotifyFeedMapper(richDataService))
 
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long]): Action[AnyContent] =
-    SecuredAction(WithRole(Owner())).async { implicit request =>
-      feedForMappers(dataMappers.filter(_._1.startsWith(endpoint)), since, until)
-        .map { items ⇒
-          Ok(Json.toJson(items))
-        }
+    SecuredAction(WithRole(Owner())).async { implicit request ⇒
+      logger.debug(s"Get feed for $endpoint")
+      feedGeneratorService.getFeed(endpoint, since, until)
+        .map(items ⇒ Ok(Json.toJson(items)))
     }
 
   def fullFeed(since: Option[Long], until: Option[Long]): Action[AnyContent] =
-    SecuredAction(WithRole(Owner())).async { implicit request =>
-      feedForMappers(dataMappers, since, until)
-        .map { items ⇒
-          Ok(Json.toJson(items))
-        }
+    SecuredAction(WithRole(Owner())).async { implicit request ⇒
+      feedGeneratorService.fullFeed(since, until)
+        .map(items ⇒ Ok(Json.toJson(items)))
     }
-
-  private val defaultTimeBack = 180.days
-  private val defaultTimeForward = 90.days
-  protected def feedForMappers(mappers: Seq[(String, DataEndpointMapper)], since: Option[Long], until: Option[Long])(
-    implicit
-    hatServer: HatServer): Future[Seq[DataFeedItem]] = {
-    logger.debug(s"Fetching feed data for ${mappers.unzip._1}")
-    val now = DateTime.now()
-    val sources: Seq[Source[DataFeedItem, NotUsed]] = mappers
-      .unzip._2
-      .map {
-        _.feed(
-          since.map(t ⇒ new DateTime(t * 1000L)).orElse(Some(now.minus(defaultTimeBack.toMillis))),
-          until.map(t ⇒ new DateTime(t * 1000L)).orElse(Some(now.plus(defaultTimeForward.toMillis))))
-      }
-
-    new SourceMergeSorter()
-      .mergeWithSorter(sources)
-      .runWith(Sink.seq)
-  }
-
-  protected implicit def dataFeedItemOrdering: Ordering[DataFeedItem] = Ordering.fromLessThan(_.date isAfter _.date)
-
 }
