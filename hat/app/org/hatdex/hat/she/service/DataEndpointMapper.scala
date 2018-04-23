@@ -84,7 +84,7 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
       deduplicated
         .map(item ⇒ mapDataRecord(item.recordId.get, item.data))
         .collect({
-          case Success(x) => x
+          case Success(x) ⇒ x
         })
     })
     new SourceMergeSorter().mergeWithSorter(feeds)
@@ -99,15 +99,15 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
     }
 
     val endString = end.map {
-      case t if t.isAfter(start.withTimeAtStartOfDay().plusDays(1)) =>
+      case t if t.isAfter(start.withTimeAtStartOfDay().plusDays(1)) ⇒
         if (t.hourOfDay().get() == 0) {
           s"- ${t.minusMinutes(1).toString("dd MMMM")}"
         }
         else {
           s"- ${t.withZone(start.getZone).toString("dd MMMM HH:mm z")}"
         }
-      case t if t.hourOfDay().get() == 0 => ""
-      case t                             => s"- ${t.withZone(start.getZone).toString("HH:mm z")}"
+      case t if t.hourOfDay().get() == 0 ⇒ ""
+      case t                             ⇒ s"- ${t.withZone(start.getZone).toString("HH:mm z")}"
     }
 
     (startString, endString)
@@ -121,7 +121,7 @@ class GoogleCalendarMapper extends DataEndpointMapper {
     val eventDateTimePropertyQuery = PropertyQuery(
       List(
         EndpointQuery("calendar/google/events", None, Some(Seq(
-          dateFilter(fromDate, untilDate).map(f => EndpointQueryFilter("start.dateTime", None, f))).flatten), None)),
+          dateFilter(fromDate, untilDate).map(f ⇒ EndpointQueryFilter("start.dateTime", None, f))).flatten), None)),
       Some("start.dateTime"), Some("descending"), None)
 
     val dateOnlyFilter = if (fromDate.isDefined) {
@@ -134,7 +134,7 @@ class GoogleCalendarMapper extends DataEndpointMapper {
     val eventDatePropertyQuery = PropertyQuery(
       List(
         EndpointQuery("calendar/google/events", None, Some(Seq(
-          dateOnlyFilter.map(f => EndpointQueryFilter("start.date", None, f))).flatten), None)),
+          dateOnlyFilter.map(f ⇒ EndpointQueryFilter("start.date", None, f))).flatten), None)),
       Some("start.date"), Some("descending"), None)
 
     Seq(eventDateTimePropertyQuery, eventDatePropertyQuery)
@@ -142,22 +142,22 @@ class GoogleCalendarMapper extends DataEndpointMapper {
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     for {
-      startDate <- Try((content \ "start" \ "dateTime").asOpt[DateTime]
+      startDate ← Try((content \ "start" \ "dateTime").asOpt[DateTime]
         .getOrElse((content \ "start" \ "date").as[DateTime])
-        .withZone((content \ "start" \ "timeZone").asOpt[String].flatMap(z => Try(DateTimeZone.forID(z)).toOption).getOrElse(DateTimeZone.getDefault)))
-      endDate <- Try((content \ "end" \ "dateTime").asOpt[DateTime]
+        .withZone((content \ "start" \ "timeZone").asOpt[String].flatMap(z ⇒ Try(DateTimeZone.forID(z)).toOption).getOrElse(DateTimeZone.getDefault)))
+      endDate ← Try((content \ "end" \ "dateTime").asOpt[DateTime]
         .getOrElse((content \ "end" \ "date").as[DateTime])
-        .withZone((content \ "end" \ "timeZone").asOpt[String].flatMap(z => Try(DateTimeZone.forID(z)).toOption).getOrElse(DateTimeZone.getDefault)))
-      timeIntervalString <- Try(eventTimeIntervalString(startDate, Some(endDate)))
-      itemContent <- Try(DataFeedItemContent(
+        .withZone((content \ "end" \ "timeZone").asOpt[String].flatMap(z ⇒ Try(DateTimeZone.forID(z)).toOption).getOrElse(DateTimeZone.getDefault)))
+      timeIntervalString ← Try(eventTimeIntervalString(startDate, Some(endDate)))
+      itemContent ← Try(DataFeedItemContent(
         Some(s"${timeIntervalString._1} ${timeIntervalString._2.getOrElse("")}"), None, None))
-      location <- Try(DataFeedItemLocation(
+      location ← Try(DataFeedItemLocation(
         geo = None,
         address = (content \ "location").asOpt[String].map(l ⇒ LocationAddress(None, None, Some(l), None, None)), // TODO integrate with geocoding API for full location information?
         tags = None))
     } yield {
       val title = DataFeedItemTitle(s"${(content \ "summary").as[String]}", Some(s"${timeIntervalString._1} ${timeIntervalString._2.getOrElse("")}"), Some("event"))
-      val loc = Some(location).filter(l => l.address.isDefined || l.geo.isDefined || l.tags.isDefined)
+      val loc = Some(location).filter(l ⇒ l.address.isDefined || l.geo.isDefined || l.tags.isDefined)
       DataFeedItem("google", startDate, Seq("event"),
         Some(title), Some(itemContent), loc)
     }
@@ -170,7 +170,7 @@ class FitbitWeightMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/weight", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("date", None, f))), None)),
+        EndpointQuery("fitbit/weight", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("date", None, f))), None)),
       Some("date"), Some("descending"), None))
   }
 
@@ -179,14 +179,14 @@ class FitbitWeightMapper extends DataEndpointMapper {
 
     val itemContent = DataFeedItemContent(
       Some(Seq(
-        (content \ "weight").asOpt[Double].map(w => s"- Weight: $w"),
-        (content \ "fat").asOpt[Double].map(w => s"- Body Fat: $w"),
-        (content \ "bmi").asOpt[Double].map(w => s"- BMI: $w")).flatten.mkString("\n")),
+        (content \ "weight").asOpt[Double].map(w ⇒ s"- Weight: $w"),
+        (content \ "fat").asOpt[Double].map(w ⇒ s"- Body Fat: $w"),
+        (content \ "bmi").asOpt[Double].map(w ⇒ s"- BMI: $w")).flatten.mkString("\n")),
       None,
       None)
 
     for {
-      date <- Try(JsString(s"${(content \ "date").as[String]}T${(content \ "time").as[String]}").as[DateTime])
+      date ← Try(JsString(s"${(content \ "date").as[String]}T${(content \ "time").as[String]}").as[DateTime])
     } yield DataFeedItem("fitbit", date, Seq("fitness", "weight"), Some(title), Some(itemContent), None)
   }
 }
@@ -198,21 +198,21 @@ class FitbitActivityMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/activity", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("originalStartTime", None, f))), None)),
+        EndpointQuery("fitbit/activity", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("originalStartTime", None, f))), None)),
       Some("originalStartTime"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     for {
-      date <- Try((content \ "originalStartTime").as[DateTime])
+      date ← Try((content \ "originalStartTime").as[DateTime])
     } yield {
       val title = DataFeedItemTitle("You logged Fitbit activity", None, Some("fitness"))
 
       val message = Seq(
-        (content \ "activityName").asOpt[String].map(c => s"- Activity: $c"),
-        (content \ "duration").asOpt[Long].map(c => s"- Duration: ${c / 1000 / 60} minutes"),
-        (content \ "averageHeartRate").asOpt[Long].map(c => s"- Average heart rate: $c"),
-        (content \ "calories").asOpt[Long].map(c => s"- Calories burned: $c")).flatten.mkString("\n")
+        (content \ "activityName").asOpt[String].map(c ⇒ s"- Activity: $c"),
+        (content \ "duration").asOpt[Long].map(c ⇒ s"- Duration: ${c / 1000 / 60} minutes"),
+        (content \ "averageHeartRate").asOpt[Long].map(c ⇒ s"- Average heart rate: $c"),
+        (content \ "calories").asOpt[Long].map(c ⇒ s"- Calories burned: $c")).flatten.mkString("\n")
 
       DataFeedItem(
         "fitbit", date, Seq("fitness", "activity"),
@@ -226,14 +226,14 @@ class FitbitActivityDaySummaryMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/activity/day/summary", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("dateCreated", None, f))), None)),
+        EndpointQuery("fitbit/activity/day/summary", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("dateCreated", None, f))), None)),
       Some("dateCreated"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     val fitbitSummary = for {
-      count <- Try((content \ "steps").as[Int]) if count > 0
-      date <- Try((content \ "dateCreated").as[DateTime])
+      count ← Try((content \ "steps").as[Int]) if count > 0
+      date ← Try((content \ "dateCreated").as[DateTime])
     } yield {
       val adjustedDate = if (date.getSecondOfDay == 0) {
         date.secondOfDay().withMaximumValue()
@@ -247,7 +247,7 @@ class FitbitActivityDaySummaryMapper extends DataEndpointMapper {
     }
 
     fitbitSummary recoverWith {
-      case _: NoSuchElementException => Failure(new RuntimeException("Fitbit empty day summary"))
+      case _: NoSuchElementException ⇒ Failure(new RuntimeException("Fitbit empty day summary"))
     }
   }
 }
@@ -256,7 +256,7 @@ class FitbitSleepMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/sleep", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("endTime", None, f))), None)),
+        EndpointQuery("fitbit/sleep", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("endTime", None, f))), None)),
       Some("endTime"), Some("descending"), None))
   }
 
@@ -276,13 +276,13 @@ class FitbitSleepMapper extends DataEndpointMapper {
     val title = DataFeedItemTitle("You woke up!", None, Some("sleep"))
 
     val timeInBed = (content \ "timeInBed").asOpt[Int]
-      .map(t => s"You spent ${t / 60} hours and ${t % 60} minutes in bed.")
+      .map(t ⇒ s"You spent ${t / 60} hours and ${t % 60} minutes in bed.")
     val minutesAsleep = (content \ "minutesAsleep").asOpt[Int]
-      .map(asleep => s"You slept for ${asleep / 60} hours and ${asleep % 60} minutes" +
-        (content \ "minutesAwake").asOpt[Int].map(t => s" and were awake for $t minutes").getOrElse("") +
+      .map(asleep ⇒ s"You slept for ${asleep / 60} hours and ${asleep % 60} minutes" +
+        (content \ "minutesAwake").asOpt[Int].map(t ⇒ s" and were awake for $t minutes").getOrElse("") +
         ".")
     val efficiency = (content \ "efficiency").asOpt[Int]
-      .map(e => s"Your sleep efficiency score tonight was $e.")
+      .map(e ⇒ s"Your sleep efficiency score tonight was $e.")
 
     val itemContent = DataFeedItemContent(
       Some(Seq(timeInBed, minutesAsleep, efficiency).flatten.mkString(" ")),
@@ -290,7 +290,7 @@ class FitbitSleepMapper extends DataEndpointMapper {
       None)
 
     for {
-      date <- Try((content \ "endTime").as[DateTime])
+      date ← Try((content \ "endTime").as[DateTime])
     } yield {
       DataFeedItem("fitbit", date, Seq("fitness", "sleep"), Some(title), Some(itemContent), None)
     }
@@ -302,13 +302,13 @@ class TwitterFeedMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("twitter/tweets", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("lastUpdated", None, f))), None)),
+        EndpointQuery("twitter/tweets", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("lastUpdated", None, f))), None)),
       Some("lastUpdated"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     for {
-      title <- Try(if ((content \ "retweeted").as[Boolean]) {
+      title ← Try(if ((content \ "retweeted").as[Boolean]) {
         DataFeedItemTitle("You retweeted", None, Some("repeat"))
       }
       else if ((content \ "in_reply_to_user_id").isDefined && !((content \ "in_reply_to_user_id").get == JsNull)) {
@@ -317,24 +317,24 @@ class TwitterFeedMapper extends DataEndpointMapper {
       else {
         DataFeedItemTitle("You tweeted", None, None)
       })
-      itemContent <- Try(DataFeedItemContent((content \ "text").asOpt[String], None, None))
-      date <- Try((content \ "lastUpdated").as[DateTime])
+      itemContent ← Try(DataFeedItemContent((content \ "text").asOpt[String], None, None))
+      date ← Try((content \ "lastUpdated").as[DateTime])
     } yield {
       val location = Try(DataFeedItemLocation(
         geo = (content \ "coordinates").asOpt[JsObject]
-          .map(coordinates =>
+          .map(coordinates ⇒
             LocationGeo(
               (coordinates \ "coordinates" \ 0).as[Double],
               (coordinates \ "coordinates" \ 1).as[Double])),
         address = (content \ "place").asOpt[JsObject]
-          .map(address =>
+          .map(address ⇒
             LocationAddress(
               (address \ "country").asOpt[String],
               (address \ "name").asOpt[String],
               None, None, None)),
         tags = None))
         .toOption
-        .filter(l => l.address.isDefined || l.geo.isDefined || l.tags.isDefined)
+        .filter(l ⇒ l.address.isDefined || l.geo.isDefined || l.tags.isDefined)
 
       DataFeedItem("twitter", date, Seq("post"), Some(title), Some(itemContent), location)
     }
@@ -345,17 +345,17 @@ class FacebookEventMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("facebook/events", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("start_time", None, f))), None)),
+        EndpointQuery("facebook/events", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("start_time", None, f))), None)),
       Some("start_time"), None, None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     for {
-      timeIntervalString <- Try(eventTimeIntervalString(
+      timeIntervalString ← Try(eventTimeIntervalString(
         (content \ "start_time").as[DateTime],
         Some((content \ "end_time").as[DateTime])))
 
-      itemContent <- Try(DataFeedItemContent(
+      itemContent ← Try(DataFeedItemContent(
         Some(
           s"""## ${(content \ "name").as[String]}
              |
@@ -363,7 +363,7 @@ class FacebookEventMapper extends DataEndpointMapper {
              |
            |${(content \ "description").as[String]}
              |""".stripMargin), None, None))
-      title <- Try(if ((content \ "rsvp_status").as[String] == "attending") {
+      title ← Try(if ((content \ "rsvp_status").as[String] == "attending") {
         DataFeedItemTitle("You are attending an event", None, Some("event"))
       }
       else {
@@ -372,12 +372,12 @@ class FacebookEventMapper extends DataEndpointMapper {
     } yield {
       val location = Try(DataFeedItemLocation(
         geo = (content \ "place").asOpt[JsObject]
-          .map(location =>
+          .map(location ⇒
             LocationGeo(
               (location \ "location" \ "longitude").as[String].toDouble,
               (location \ "location" \ "latitude").as[String].toDouble)),
         address = (content \ "place").asOpt[JsObject]
-          .map(location =>
+          .map(location ⇒
             LocationAddress(
               (location \ "location" \ "country").asOpt[String],
               (location \ "location" \ "city").asOpt[String],
@@ -386,7 +386,7 @@ class FacebookEventMapper extends DataEndpointMapper {
               (location \ "location" \ "zip").asOpt[String])),
         tags = None))
         .toOption
-        .filter(l => l.address.isDefined || l.geo.isDefined || l.tags.isDefined)
+        .filter(l ⇒ l.address.isDefined || l.geo.isDefined || l.tags.isDefined)
 
       DataFeedItem("facebook", (content \ "start_time").as[DateTime], Seq("event"),
         Some(title), Some(itemContent), location)
@@ -398,13 +398,13 @@ class FacebookFeedMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("facebook/feed", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("created_time", None, f))), None)),
+        EndpointQuery("facebook/feed", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("created_time", None, f))), None)),
       Some("created_time"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     for {
-      title <- Try(if ((content \ "type").as[String] == "photo") {
+      title ← Try(if ((content \ "type").as[String] == "photo") {
         DataFeedItemTitle("You posted a photo", None, Some("photo"))
       }
       else if ((content \ "type").as[String] == "link") {
@@ -413,25 +413,25 @@ class FacebookFeedMapper extends DataEndpointMapper {
       else {
         DataFeedItemTitle("You posted", None, None)
       })
-      itemContent <- Try(DataFeedItemContent(
+      itemContent ← Try(DataFeedItemContent(
         Some(
           s"""${(content \ "message").as[String]}
              |
              |${(content \ "link").asOpt[String].getOrElse("")}""".stripMargin), None,
-        (content \ "picture").asOpt[String].map(url => List(DataFeedItemMedia(Some(url), (content \ "full_picture").asOpt[String])))))
-      date <- Try((content \ "created_time").as[DateTime])
-      tags <- Try(Seq("post", (content \ "type").as[String]))
+        (content \ "picture").asOpt[String].map(url ⇒ List(DataFeedItemMedia(Some(url), (content \ "full_picture").asOpt[String])))))
+      date ← Try((content \ "created_time").as[DateTime])
+      tags ← Try(Seq("post", (content \ "type").as[String]))
     } yield {
 
       val locationGeo = Try(LocationGeo(
-          (content \ "place" \ "location" \ "longitude").as[Double],
-          (content \ "place" \ "location" \ "latitude").as[Double])).toOption
+        (content \ "place" \ "location" \ "longitude").as[Double],
+        (content \ "place" \ "location" \ "latitude").as[Double])).toOption
       val locationAddress = Try(LocationAddress(
-          (content \ "place" \ "location" \ "country").asOpt[String],
-          (content \ "place" \ "location" \ "city").asOpt[String],
-          (content \ "place" \ "name").asOpt[String],
-          (content \ "place" \ "location" \ "street").asOpt[String],
-          (content \ "place" \ "location" \ "zip").asOpt[String])).toOption
+        (content \ "place" \ "location" \ "country").asOpt[String],
+        (content \ "place" \ "location" \ "city").asOpt[String],
+        (content \ "place" \ "name").asOpt[String],
+        (content \ "place" \ "location" \ "street").asOpt[String],
+        (content \ "place" \ "location" \ "zip").asOpt[String])).toOption
 
       val location = locationGeo.orElse(locationAddress).map(_ ⇒ DataFeedItemLocation(locationGeo, locationAddress, None))
 
@@ -444,25 +444,25 @@ class NotablesFeedMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(EndpointQuery("rumpel/notablesv1", None,
-        dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("created_time", None, f))), None)), Some("created_time"), Some("descending"), None))
+        dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("created_time", None, f))), None)), Some("created_time"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     for {
-      title <- Try(if ((content \ "currently_shared").as[Boolean]) {
+      title ← Try(if ((content \ "currently_shared").as[Boolean]) {
         DataFeedItemTitle("You posted", None, Some("public"))
       }
       else {
         DataFeedItemTitle("You posted", None, Some("private"))
       })
-      itemContent <- Try(if ((content \ "photov1").isDefined && (content \ "photov1" \ "link").as[String].nonEmpty) {
+      itemContent ← Try(if ((content \ "photov1").isDefined && (content \ "photov1" \ "link").as[String].nonEmpty) {
         DataFeedItemContent(Some((content \ "message").as[String]), None, Some(Seq(
           DataFeedItemMedia(Some((content \ "photov1" \ "link").as[String]), Some((content \ "photov1" \ "link").as[String])))))
       }
       else {
         DataFeedItemContent(Some((content \ "message").as[String]), None, None)
       })
-      location <- Try(if ((content \ "locationv1").isDefined) {
+      location ← Try(if ((content \ "locationv1").isDefined) {
         Some(DataFeedItemLocation(Some(LocationGeo(
           (content \ "locationv1" \ "longitude").as[Double],
           (content \ "locationv1" \ "latitude").as[Double])), None, None))
@@ -470,8 +470,8 @@ class NotablesFeedMapper extends DataEndpointMapper {
       else {
         None
       })
-      date <- Try((content \ "created_time").as[DateTime])
-      tags <- Try((content \ "shared_on").as[Seq[String]])
+      date ← Try((content \ "created_time").as[DateTime])
+      tags ← Try((content \ "shared_on").as[Seq[String]])
     } yield DataFeedItem("notables", date, tags, Some(title), Some(itemContent), location)
   }
 }
@@ -480,23 +480,23 @@ class SpotifyFeedMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(EndpointQuery("spotify/feed", None,
-        dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("played_at", None, f))), None)), Some("played_at"), Some("descending"), None))
+        dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("played_at", None, f))), None)), Some("played_at"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     val durationSeconds = (content \ "track" \ "duration_ms").as[Int] / 1000
     for {
-      title <- Try(
+      title ← Try(
         DataFeedItemTitle("You listened", None, Some(s"${"%02d".format(durationSeconds / 60)}:${"%02d".format(durationSeconds % 60)}")))
-      itemContent <- Try(DataFeedItemContent(
+      itemContent ← Try(DataFeedItemContent(
         Some(
           s"""${(content \ "track" \ "name").as[String]},
-          |${(content \ "track" \ "artists").as[Seq[JsObject]].map(a => (a \ "name").as[String]).mkString(", ")},
+          |${(content \ "track" \ "artists").as[Seq[JsObject]].map(a ⇒ (a \ "name").as[String]).mkString(", ")},
           |${(content \ "track" \ "album" \ "name").as[String]}""".stripMargin),
         None,
         Some(
           Seq(DataFeedItemMedia((content \ "track" \ "album" \ "images" \ 0 \ "url").asOpt[String], (content \ "track" \ "album" \ "images" \ 0 \ "url").asOpt[String])))))
-      date <- Try((content \ "played_at").as[DateTime])
+      date ← Try((content \ "played_at").as[DateTime])
     } yield DataFeedItem("spotify", date, Seq(), Some(title), Some(itemContent), None)
   }
 }
