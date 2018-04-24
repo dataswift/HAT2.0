@@ -38,7 +38,6 @@ import org.joda.time.{ DateTime, DateTimeZone }
 import play.api.Logger
 import play.api.libs.json._
 
-import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
 
 trait DataEndpointMapper extends JodaWrites with JodaReads {
@@ -65,11 +64,8 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
     hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
 
     val feeds = dataQueries(fromDate, untilDate).map({ query ⇒
-      val eventualFeed: Future[Seq[EndpointData]] = richDataService.propertyData(query.endpoints, query.orderBy,
+      val dataSource: Source[EndpointData, NotUsed] = richDataService.propertyDataStreaming(query.endpoints, query.orderBy,
         orderingDescending = query.ordering.contains("descending"), skip = 0, limit = None, createdAfter = None)(hatServer.db)
-
-      val dataSource = Source.fromFuture(eventualFeed)
-        .mapConcat(f ⇒ f.toList)
 
       val deduplicated = dataDeduplicationField.map { field ⇒
         dataSource.sliding(2, 1)

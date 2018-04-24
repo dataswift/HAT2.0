@@ -28,15 +28,13 @@ import javax.inject.Inject
 
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.event.Logging
 import akka.stream._
-import akka.stream.scaladsl.{ GraphDSL, Sink, Source }
-import akka.stream.stage.{ GraphStage, GraphStageLogic }
+import akka.stream.scaladsl.{ Sink, Source }
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.models.applications.{ DataFeedItem, DataFeedItemLocation, LocationGeo }
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.resourceManagement.HatServer
-import org.hatdex.hat.utils.SourceMergeSorter
+import org.hatdex.hat.utils.{ SourceAugmenter, SourceMergeSorter }
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.JsNumber
@@ -52,7 +50,6 @@ class FeedGeneratorService @Inject() ()(
     val ec: ExecutionContext) {
 
   private val logger = Logger(this.getClass)
-  private val streamLogger = Logging(actorSystem, this.getClass)
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   private val dataMappers: Seq[(String, DataEndpointMapper)] = Seq(
@@ -86,18 +83,14 @@ class FeedGeneratorService @Inject() ()(
       .unzip._2
       .map(_.feed(Some(sinceTime), Some(untilTime)))
 
-    val locations = locationStream(sinceTime.getMillis / 1000L, untilTime.getMillis / 1000L)
-      .log("locations")(streamLogger)
-      .map(l ⇒ { logger.debug(s"Got location $l"); l })
-
     val sortedSources = new SourceMergeSorter()
       .mergeWithSorter(sources)
-      //      .log("org.hatdex.hat.she.service.FeedGeneratorService")(streamLogger)
-      .map(l ⇒ { logger.debug(s"Got feed item $l"); l })
 
-    combineFeedLocations(new MergeLocations, sortedSources, locations.sliding(2, 1)) { (_, _) => NotUsed }
-      //    sortedSources
-      .runWith(Sink.seq)
+    val locations = locationStream(sinceTime.getMillis / 1000L, untilTime.getMillis / 1000L)
+    val augmenter = new SourceAugmenter().augment(sortedSources, locations.sliding(2, 1), locationAugmentFunction)
+
+    //    sortedSources.runWith(Sink.seq)
+    augmenter.runWith(Sink.seq)
   }
 
   def locationStream(since: Long, until: Long)(implicit hatServer: HatServer): Source[(DateTime, LocationGeo), NotUsed] = {
@@ -105,14 +98,10 @@ class FeedGeneratorService @Inject() ()(
     val endpointQuery = EndpointQuery(endpoint, None, Some(Seq(EndpointQueryFilter("dateCreated", None, FilterOperator.Between(JsNumber(since), JsNumber(until))))), None)
     val query = PropertyQuery(List(endpointQuery), Some("dateCreated"), Some("descending"), None)
 
-    val eventualFeed: Future[Seq[EndpointData]] = richDataService.propertyData(query.endpoints, query.orderBy,
+    val eventualFeed: Source[EndpointData, NotUsed] = richDataService.propertyDataStreaming(query.endpoints, query.orderBy,
       orderingDescending = query.ordering.contains("descending"), skip = 0, limit = None, createdAfter = None)(hatServer.db)
-    val dataSource = Source.fromFuture(eventualFeed)
-      .mapConcat(f ⇒ f.toList)
 
-    //    import play.api.libs.json.JodaReads._
-
-    dataSource.map(d ⇒ Try(new DateTime((d.data \ "dateCreated").as[Long] * 1000L) → LocationGeo((d.data \ "longitude").as[Double], (d.data \ "latitude").as[Double])))
+    eventualFeed.map(d ⇒ Try(new DateTime((d.data \ "dateCreated").as[Long] * 1000L) → LocationGeo((d.data \ "longitude").as[Double], (d.data \ "latitude").as[Double])))
       .collect({
         case Success(x) ⇒ x
       })
@@ -120,78 +109,44 @@ class FeedGeneratorService @Inject() ()(
 
   protected implicit def dataFeedItemOrdering: Ordering[DataFeedItem] = Ordering.fromLessThan(_.date isAfter _.date)
 
-  def combineFeedLocations[MatIn0, MatIn1, Mat](
-    combinator: GraphStage[FanInShape2[DataFeedItem, Seq[(DateTime, LocationGeo)], DataFeedItem]],
-    s0: Source[DataFeedItem, MatIn0],
-    s1: Source[Seq[(DateTime, LocationGeo)], MatIn1])(combineMat: (MatIn0, MatIn1) => Mat): Source[DataFeedItem, Mat] =
-
-    Source.fromGraph(GraphDSL.create(s0, s1)(combineMat) { implicit builder => (s0, s1) =>
-      import GraphDSL.Implicits._
-      val merge = builder.add(combinator)
-      s0 ~> merge.in0
-      s1 ~> merge.in1
-      SourceShape(merge.out)
-    })
-
-  final class MergeLocations extends GraphStage[FanInShape2[DataFeedItem, Seq[(DateTime, LocationGeo)], DataFeedItem]] {
-    private val left = Inlet[DataFeedItem]("left")
-    private val right = Inlet[Seq[(DateTime, LocationGeo)]]("right")
-    private val out = Outlet[DataFeedItem]("out")
-
-    override val shape = new FanInShape2(left, right, out)
-
-    override def createLogic(attr: Attributes) = new GraphStageLogic(shape) {
-      setHandler(left, eagerTerminateInput)
-      setHandler(right, ignoreTerminateInput)
-      setHandler(out, eagerTerminateOutput)
-
-      var feedItem: DataFeedItem = _
-      var timedLocation: Seq[(DateTime, LocationGeo)] = _
-
-      def dispatch(l: DataFeedItem, r: Seq[(DateTime, LocationGeo)]): Unit = {
-        logger.debug(s"Dispatching event for $l with $r")
-        if (l.location.isDefined) {
-          logger.debug("Location defined, skip")
-          timedLocation = r; emit(out, l, readL)
-        }
-        else if (l.date.isBefore(r(0)._1) && l.date.isAfter(r(1)._1)) {
-          logger.debug(s"Location close, process")
-          timedLocation = r; emit(out, l.copy(location = Some(DataFeedItemLocation(Some(r.head._2), None, None))), readL)
-        }
-        else if (l.date.isAfter(r(0)._1)) {
-          logger.debug(s"Item newer than location, process")
-          timedLocation = r; emit(out, l.copy(location = Some(DataFeedItemLocation(Some(r.head._2), None, None))), readL)
-        }
-        else {
-          logger.debug(s"Item older than location, find new location")
-          feedItem = l; readR()
-        }
+  private def locationAugmentFunction(feedItem: DataFeedItem, locations: Seq[(DateTime, LocationGeo)]): Either[DataFeedItem, Seq[(DateTime, LocationGeo)]] = {
+    //    logger.debug(s"Dispatching event for $feedItem with $locations")
+    if (feedItem.location.isDefined) {
+      //      logger.debug("Location defined, skip")
+      Left(feedItem)
+    }
+    else {
+      val feedItemInstance = feedItem.date.getMillis
+      val startLocationInstance = locations.head._1.getMillis
+      val endLocationInstance = locations.last._1.getMillis
+      if (feedItemInstance < startLocationInstance && feedItemInstance > endLocationInstance) {
+        val closest = pickClosest(feedItemInstance, (startLocationInstance, locations.head._2), (endLocationInstance, locations.last._2))
+        Left(feedItem.copy(location = closest.map(l ⇒ DataFeedItemLocation(Some(l), None, None))))
       }
-
-      val dispatchR = { r: Seq[(DateTime, LocationGeo)] ⇒
-        logger.debug(s"dispatchR ${r}")
-        dispatch(feedItem, r: Seq[(DateTime, LocationGeo)])
+      else if (feedItemInstance > startLocationInstance) {
+        val closest = pickClosest(feedItemInstance, (startLocationInstance, locations.head._2), (endLocationInstance, locations.last._2))
+        Left(feedItem.copy(location = closest.map(l ⇒ DataFeedItemLocation(Some(l), None, None))))
       }
-      val dispatchL = { l: DataFeedItem ⇒
-        logger.debug(s"dispatchL ${l}")
-        dispatch(l: DataFeedItem, timedLocation)
-      }
-      val passL = () ⇒ emit(out, feedItem, () ⇒ { logger.debug("Passing along L"); passAlong(left, out, doPull = true) })
-      val readR = () ⇒ read(right)(dispatchR, passL)
-      val readL = () ⇒ read(left)(dispatchL, readR)
-
-      override def preStart(): Unit = {
-        // all fan-in stages need to eagerly pull all inputs to get cycles started
-        pull(right)
-        read(left)(l ⇒ {
-          logger.debug(s"Prestarting with $l, read R")
-          feedItem = l
-          readR()
-        }, () ⇒ {
-          logger.debug(s"Abort reading R")
-          abortReading(right)
-        })
+      else {
+        //        logger.debug(s"Item older than location, find new location")
+        Right(locations)
       }
     }
   }
+
+  private def pickClosest[T](anchorInstance: Long, startItem: (Long, T), endItem: (Long, T)): Option[T] = {
+    val timeDiffStart = Math.abs(anchorInstance - startItem._1)
+    val timeDiffEnd = Math.abs(anchorInstance - endItem._1)
+    val timeBound = 12.hours.toMillis
+    if (timeDiffStart < timeDiffEnd && timeDiffStart < timeBound) { // if closer to start item and sufficiently close
+      Some(startItem._2)
+    }
+    else if (timeDiffEnd < timeBound) { // otherwise if sufficiently close to end item
+      Some(endItem._2)
+    }
+    else {
+      None
+    }
+  }
+
 }

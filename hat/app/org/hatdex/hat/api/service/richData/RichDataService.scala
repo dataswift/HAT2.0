@@ -28,10 +28,11 @@ import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
 
-import akka.Done
+import akka.stream.scaladsl.Source
+import akka.{ Done, NotUsed }
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.DalExecutionContext
-import org.hatdex.hat.dal.ModelTranslation
+import org.hatdex.hat.dal.{ ModelTranslation, Tables }
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.{ DateTime, LocalDateTime }
@@ -426,6 +427,34 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
       case e: PSQLException if e.getMessage.contains("cannot cast type") =>
         throw RichDataBundleFormatException("Invalid bundle format - cannot cast between types to satisfy query", e)
     }
+  }
+
+  def propertyDataStreaming(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], orderingDescending: Boolean,
+    skip: Int, limit: Option[Int], createdAfter: Option[DateTime] = None)(implicit db: Database): Source[EndpointData, NotUsed] = {
+
+    val query = propertyDataQuery(endpointQueries, orderBy, orderingDescending, skip, limit, createdAfter)
+    val mappers = queryMappers(endpointQueries)
+
+    Source.fromPublisher(db.stream(query.result.transactionally.withStatementParameters(fetchSize = 500)))
+      .map(r ⇒ (r._1, Seq[(Tables.DataJsonRow, String)]())) // TODO add the item grouping
+      .collect {
+        case ((record, queryId), linkedResults) =>
+          val linked = linkedResults.map {
+            case (linkedRecord, linkedQueryId) =>
+              endpointDataWithMappers(linkedRecord, linkedQueryId, mappers)
+          }
+          val endpointData = endpointDataWithMappers(record, queryId.toString, mappers)
+          if (linked.nonEmpty) {
+            endpointData.copy(links = Some(linked))
+          }
+          else {
+            endpointData
+          }
+
+      } recover {
+        case e: PSQLException if e.getMessage.contains("cannot cast type") =>
+          throw RichDataBundleFormatException("Invalid bundle format - cannot cast between types to satisfy query", e)
+      }
   }
 
   private def endpointDataWithMappers(record: DataJsonRow, queryId: String, mappers: HashMap[String, Reads[JsObject]]): EndpointData = {
