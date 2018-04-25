@@ -26,6 +26,7 @@ package org.hatdex.hat.api.service.richData
 
 import java.util.UUID
 
+import akka.stream.scaladsl.Sink
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.dal.Tables.{ DataJson, DataJsonGroups }
@@ -39,6 +40,152 @@ import play.api.test.PlaySpecification
 
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
+
+class RichDataStreamingServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichDataServiceContext with BeforeEach with BeforeAll {
+  val logger = Logger(this.getClass)
+
+  sequential
+
+  def beforeAll: Unit = {
+    Await.result(databaseReady, 60.seconds)
+  }
+
+  override def before: Unit = {
+    import org.hatdex.hat.dal.Tables._
+    import org.hatdex.libs.dal.HATPostgresProfile.api._
+
+    val endpointRecrodsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
+
+    val action = DBIO.seq(
+      DataDebitBundle.filter(_.bundleId.like("test%")).delete,
+      DataDebitContract.filter(_.dataDebitKey.like("test%")).delete,
+      DataCombinators.filter(_.combinatorId.like("test%")).delete,
+      DataBundles.filter(_.bundleId.like("test%")).delete,
+      DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
+      DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+
+    Await.result(hatDatabase.run(action), 60.seconds)
+  }
+
+  "The `propertyDataStreaming` method" should {
+    "Find test endpoint values and map them to expected json output" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val result = for {
+        _ <- service.saveData(owner.userId, sampleData)
+        retrieved <- service.propertyDataStreaming(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), false, 0, Some(1)).runWith(Sink.seq)
+      } yield retrieved
+
+      result map { result =>
+        result.length must equalTo(1)
+        (result.head.data \ "data" \ "newField").as[String] must equalTo("anotherFieldDifferentValue")
+      } await (3, 10.seconds)
+    }
+
+    "Correctly sort retrieved results" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val result = for {
+        _ <- service.saveData(owner.userId, sampleData)
+        retrieved <- service.propertyDataStreaming(
+          List(
+            EndpointQuery("test/test", Some(simpleTransformation), None, None),
+            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
+          Some("data.newField"), false, 0, Some(3)).runWith(Sink.seq)
+      } yield retrieved
+
+      result map { result =>
+        result.length must equalTo(3)
+        (result(0).data \ "data" \ "newField").as[String] must equalTo("anotherFieldDifferentValue")
+        (result(1).data \ "data" \ "newField").as[String] must equalTo("anotherFieldValue")
+        (result(2).data \ "data" \ "newField").as[String] must equalTo("london, uk")
+      } await (3, 10.seconds)
+    }
+
+    "Apply different mappers converting from different endpoints into a single format" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val result = for {
+        _ <- service.saveData(owner.userId, sampleData)
+        retrieved <- service.propertyDataStreaming(
+          List(
+            EndpointQuery("test/test", Some(simpleTransformation), None, None),
+            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
+          Some("data.newField"), false, 0, Some(3)).runWith(Sink.seq)
+      } yield retrieved
+
+      result map { result =>
+        result.length must equalTo(3)
+        (result.head.data \ "data" \ "newField").as[String] must equalTo("anotherFieldDifferentValue")
+      } await (3, 10.seconds)
+    }
+
+    "Retrieved linked object records" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val result = for {
+        _ <- service.saveData(owner.userId, linkedSampleData)
+        retrieved <- service.propertyDataStreaming(
+          List(EndpointQuery("test/test", Some(simpleTransformation), None,
+            Some(List(
+              EndpointQuery("test/testlinked", None, None, None),
+              EndpointQuery("test/complex", None, None, None))))),
+          Some("data.newField"), false, 0, Some(1)).runWith(Sink.seq)
+      } yield retrieved
+
+      result map { result =>
+        result.length must equalTo(1)
+        (result.head.data \ "data" \ "newField").as[String] must equalTo("anotherFieldValue")
+        result.head.links must beSome
+        result.head.links.get.length must equalTo(2)
+        result.head.links.get(0).endpoint must equalTo("test/testlinked")
+        result.head.links.get(1).endpoint must equalTo("test/complex")
+      } await (3, 10.seconds)
+    }
+
+    "Leave out unrequested object records" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val result = for {
+        _ <- service.saveData(owner.userId, linkedSampleData)
+        retrieved <- service.propertyDataStreaming(
+          List(EndpointQuery("test/test", Some(simpleTransformation), None,
+            Some(List(EndpointQuery("test/testlinked", None, None, None))))),
+          Some("data.newField"), false, 0, Some(1)).runWith(Sink.seq)
+      } yield retrieved
+
+      result map { result =>
+        result.length must equalTo(1)
+        (result.head.data \ "data" \ "newField").as[String] must equalTo("anotherFieldValue")
+        result.head.links must beSome
+        result.head.links.get.length must equalTo(1)
+        (result.head.links.get.head.data \ "field").as[String] must equalTo("value2")
+      } await (3, 10.seconds)
+    }
+
+    "Apply mappers to linked objects if provided" in {
+      val service = application.injector.instanceOf[RichDataService]
+
+      val result = for {
+        _ <- service.saveData(owner.userId, linkedSampleData)
+        retrieved <- service.propertyDataStreaming(
+          List(EndpointQuery("test/test", Some(simpleTransformation), None,
+            Some(List(EndpointQuery("test/testlinked", Some(simpleTransformation), None, None))))),
+          Some("data.newField"), false, 0, Some(1)).runWith(Sink.seq)
+      } yield retrieved
+
+      result map { result =>
+        result.length must equalTo(1)
+        (result.head.data \ "data" \ "newField").as[String] must equalTo("anotherFieldValue")
+        result.head.links must beSome
+        result.head.links.get.length must equalTo(1)
+        (result.head.links.get.head.data \ "data" \ "newField").as[String] must equalTo("anotherFieldDifferentValue")
+      } await (3, 10.seconds)
+    }
+  }
+
+}
 
 class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichDataServiceContext with BeforeEach with BeforeAll {
 

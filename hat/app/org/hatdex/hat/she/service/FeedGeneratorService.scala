@@ -89,7 +89,6 @@ class FeedGeneratorService @Inject() ()(
     val locations = locationStream(sinceTime.getMillis / 1000L, untilTime.getMillis / 1000L)
     val augmenter = new SourceAugmenter().augment(sortedSources, locations.sliding(2, 1), locationAugmentFunction)
 
-    //    sortedSources.runWith(Sink.seq)
     augmenter.runWith(Sink.seq)
   }
 

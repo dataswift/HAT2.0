@@ -488,8 +488,8 @@ class SpotifyFeedMapper extends DataEndpointMapper {
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
-    val durationSeconds = (content \ "track" \ "duration_ms").as[Int] / 1000
     for {
+      durationSeconds ← Try((content \ "track" \ "duration_ms").as[Int] / 1000)
       title ← Try(
         DataFeedItemTitle("You listened", None, Some(s"${"%02d".format(durationSeconds / 60)}:${"%02d".format(durationSeconds % 60)}")))
       itemContent ← Try(DataFeedItemContent(
