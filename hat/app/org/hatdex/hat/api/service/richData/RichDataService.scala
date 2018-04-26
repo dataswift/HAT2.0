@@ -450,10 +450,7 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
       .concatSubstreams // concatenate substreams allowing to run only one substream at a time - substreams happen sequentially anyway
       .collect({
         case ((record, queryId), linkedResults) ⇒
-          val linked = linkedResults.map {
-            case (linkedRecord, linkedQueryId) ⇒
-              endpointDataWithMappers(linkedRecord, linkedQueryId, mappers)
-          }
+          val linked = linkedResults.map(l ⇒ endpointDataWithMappers(l._1, l._2, mappers))
           endpointDataWithMappers(record, queryId.toString, mappers)
             .copy(links = Utils.seqOption(linked))
       })

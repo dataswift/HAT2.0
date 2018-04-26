@@ -119,11 +119,11 @@ class FeedGeneratorService @Inject() ()(
       val startLocationInstance = locations.head._1.getMillis
       val endLocationInstance = locations.last._1.getMillis
       if (feedItemInstance < startLocationInstance && feedItemInstance > endLocationInstance) {
-        val closest = pickClosest(feedItemInstance, (startLocationInstance, locations.head._2), (endLocationInstance, locations.last._2))
+        val closest = interpolateLocation(feedItemInstance, (startLocationInstance, locations.head._2), (endLocationInstance, locations.last._2))
         Left(feedItem.copy(location = closest.map(l ⇒ DataFeedItemLocation(Some(l), None, None))))
       }
       else if (feedItemInstance > startLocationInstance) {
-        val closest = pickClosest(feedItemInstance, (startLocationInstance, locations.head._2), (endLocationInstance, locations.last._2))
+        val closest = interpolateLocation(feedItemInstance, (startLocationInstance, locations.head._2), (endLocationInstance, locations.last._2))
         Left(feedItem.copy(location = closest.map(l ⇒ DataFeedItemLocation(Some(l), None, None))))
       }
       else {
@@ -133,15 +133,15 @@ class FeedGeneratorService @Inject() ()(
     }
   }
 
-  private def pickClosest[T](anchorInstance: Long, startItem: (Long, T), endItem: (Long, T)): Option[T] = {
+  private def interpolateLocation(anchorInstance: Long, startItem: (Long, LocationGeo), endItem: (Long, LocationGeo)): Option[LocationGeo] = {
     val timeDiffStart = Math.abs(anchorInstance - startItem._1)
     val timeDiffEnd = Math.abs(anchorInstance - endItem._1)
     val timeBound = 12.hours.toMillis
-    if (timeDiffStart < timeDiffEnd && timeDiffStart < timeBound) { // if closer to start item and sufficiently close
-      Some(startItem._2)
-    }
-    else if (timeDiffEnd < timeBound) { // otherwise if sufficiently close to end item
-      Some(endItem._2)
+    if (timeDiffStart < timeBound || timeDiffEnd < timeBound) { // if either location is sufficiently close
+      val ratio = timeDiffStart.toDouble / (timeDiffStart + timeDiffEnd).toDouble
+      Some(LocationGeo(
+        startItem._2.longitude * (1 - ratio) + endItem._2.longitude * ratio,
+        startItem._2.latitude * (1 - ratio) + endItem._2.latitude * ratio))
     }
     else {
       None
