@@ -145,11 +145,25 @@ class DataDebitService @Inject() (usersService: UsersService)(implicit val ec: R
         .values
         .map(ddb ⇒ ModelTranslation.fromDbModel(ddb.head._1, ddb.unzip._2))
         .toSeq
+        .sorted(Ordering.by((_: DataDebit).dateCreated.getEra).reverse)
     }
   }
 
   def all()(implicit db: Database): Future[Seq[DataDebit]] = {
+    val legacyWarning = "This Data Debit is in a legacy format, and the HAT App is unable to display all the information associated with it fully. This may include a logo, title and full description"
     filterDataDebits(DbDataDebitPermissions)
+      .map(_.map(dd ⇒ dd.copy(
+        permissions = dd.permissions.map { p =>
+          if (p.purpose.isEmpty) {
+            p.copy(purpose = legacyWarning)
+          }
+          else {
+            p
+          }
+        },
+        requestClientName = if (dd.requestClientName.isEmpty) { "Data Exchange" } else { dd.requestClientName },
+        requestClientLogoUrl = if (dd.requestClientName.isEmpty) { "https://dex.hubofallthings.com/assets//images/dex.png" } else { dd.requestClientLogoUrl },
+        requestClientUrl = if (dd.requestClientName.isEmpty) { "https://dex.hubofallthings.com/" } else { dd.requestClientUrl })))
   }
 
   def dataDebitDisable(dataDebitKey: String, cancelAtPeriodEnd: Boolean)(implicit db: Database): Future[Done] = {
