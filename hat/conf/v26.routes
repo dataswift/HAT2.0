@@ -1,4 +1,7 @@
 
+GET           /system/status                                                                 org.hatdex.hat.api.controllers.SystemStatus.status()
+GET           /phata/profile                                                                 org.hatdex.hat.phata.controllers.Phata.profile
+
 # FILE routes
 POST          /files/upload                                                                  org.hatdex.hat.api.controllers.Files.startUpload
 POST          /files/search                                                                  org.hatdex.hat.api.controllers.Files.listFiles()
