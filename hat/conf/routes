@@ -1,3 +1,7 @@
+# PHATA routes
+GET         /                                                    org.hatdex.hat.phata.controllers.Phata.rumpelIndex
+GET         /assets/*file                                        controllers.Assets.at(file)
+GET         /hatlogin                                            org.hatdex.hat.phata.controllers.Phata.hatLogin(name: String, redirect: String)
 
 # USER Routes
 GET         /users/user                                          org.hatdex.hat.api.controllers.Users.listUsers
@@ -13,13 +17,6 @@ PUT         /users/user/:userId/update                           org.hatdex.hat.
 
 # SYSTEM routes
 GET         /system/update                                       org.hatdex.hat.api.controllers.SystemStatus.update()
-GET         /api/v2/system/status                                org.hatdex.hat.api.controllers.SystemStatus.status()
-
-# PHATA routes
-GET         /assets/*file                                        controllers.Assets.at(file)
-GET         /hatlogin                                            org.hatdex.hat.phata.controllers.Phata.hatLogin(name: String, redirect: String)
-GET         /                                                    org.hatdex.hat.phata.controllers.Phata.rumpelIndex
-GET         /api/v2/phata/profile                                org.hatdex.hat.phata.controllers.Phata.profile
 
 # AUTHENTICATION routes
 

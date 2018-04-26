@@ -77,8 +77,9 @@ class Phata @Inject() (
 
   def hatLogin(name: String, redirectUrl: String) = indefiniteSuccessCaching {
     Action { implicit request =>
-      val uri = wsClient.url(routes.Phata.hatLogin(name, redirectUrl).absoluteURL()).uri
-      val newRedirectUrl = s"${uri.getScheme}://${uri.getAuthority}/#/hatlogin?${uri.getQuery}"
+      val uri = wsClient.url(redirectUrl).uri
+      val scheme = if (request.secure) { "https://" } else { "http://" }
+      val newRedirectUrl = s"$scheme${request.domain}/#/hatlogin?name=$name&redirect=${uri.toURL}"
       logger.debug(s"Redirect url from ${request.uri}: $newRedirectUrl")
       Redirect(newRedirectUrl)
     }
