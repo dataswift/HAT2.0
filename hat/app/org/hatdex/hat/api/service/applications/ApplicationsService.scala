@@ -28,7 +28,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import org.hatdex.hat.api.models.applications.{ Application, ApplicationStatus, HatApplication, Version }
 import org.hatdex.hat.api.models.{ AccessToken, EndpointQuery }
-import org.hatdex.hat.api.service.richData.{ DataDebitContractService, RichDataDuplicateDebitException, RichDataService }
+import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataDuplicateDebitException, RichDataService }
 import org.hatdex.hat.api.service.{ DalExecutionContext, RemoteExecutionContext }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
@@ -66,7 +66,7 @@ class ApplicationStatusCheckService @Inject() (wsClient: WSClient)(implicit val 
 class ApplicationsService @Inject() (
     cache: AsyncCacheApi,
     richDataService: RichDataService,
-    dataDebitContractService: DataDebitContractService,
+    dataDebitService: DataDebitService,
     statusCheckService: ApplicationStatusCheckService,
     trustedApplicationProvider: TrustedApplicationProvider,
     silhouette: Silhouette[HatApiAuthEnvironment])(implicit val ec: DalExecutionContext) {
@@ -99,17 +99,17 @@ class ApplicationsService @Inject() (
   def setup(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
     // Create and enable the data debit
     val maybeDataDebitSetup = for {
-      ddRequest <- application.application.permissions.dataRequired
       ddId <- application.application.dataDebitId
+      ddsRequest ← application.application.dataDebitSetupRequest
     } yield {
       logger.debug(s"Enable data debit $ddId for ${application.application.id}")
       for {
-        dd <- dataDebitContractService.createDataDebit(ddId, ddRequest, user.userId)(hat.db)
+        dds ← dataDebitService.createDataDebit(ddId, ddsRequest, user.userId)(hat.db)
           .recover({
-            case _: RichDataDuplicateDebitException => dataDebitContractService.updateDataDebitBundle(ddId, ddRequest, user.userId)(hat.db)
+            case _: RichDataDuplicateDebitException => dataDebitService.updateDataDebitPermissions(ddId, ddsRequest, user.userId)(hat.db)
           })
-        _ <- dataDebitContractService.dataDebitEnableBundle(ddId, Some(ddRequest.bundle.name))(hat.db)
-      } yield dd
+        _ ← dataDebitService.dataDebitEnableNewestPermissions(ddId)(hat.db)
+      } yield dds
     }
 
     // Set up the app
@@ -127,7 +127,8 @@ class ApplicationsService @Inject() (
 
     appSetup.recoverWith {
       case e: RuntimeException ⇒
-        application.application.dataDebitId.map(dataDebitContractService.dataDebitDisable(_)(hat.db))
+        logger.warn(s"Application setup failed: ${e.getMessage}")
+        application.application.dataDebitId.map(dataDebitService.dataDebitDisable(_, cancelAtPeriodEnd = false)(hat.db))
           .getOrElse(Future.successful(()))
           .map(_ ⇒ throw e)
     }
@@ -135,7 +136,7 @@ class ApplicationsService @Inject() (
 
   def disable(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
     for {
-      _ <- application.application.dataDebitId.map(dataDebitContractService.dataDebitDisable(_)(hat.db))
+      _ ← application.application.dataDebitId.map(dataDebitService.dataDebitDisable(_, cancelAtPeriodEnd = false)(hat.db))
         .getOrElse(Future.successful(())) // If data debit was there, disable
       _ <- applicationSetupStatusUpdate(application, enabled = false)(hat.db) // Update status
       _ <- cache.remove(appCacheKey(application))
@@ -160,10 +161,10 @@ class ApplicationsService @Inject() (
   }
 
   protected def checkDataDebit(app: Application)(implicit hatServer: HatServer): Future[Boolean] = {
-    app.permissions.dataRequired
-      .map { dataDebitRequest =>
-        dataDebitContractService.dataDebit(app.dataDebitId.get)(hatServer.db) // dataDebitId will return true if data debit request exists
-          .map(_.flatMap(_.activeBundle.map(_.bundle.name == dataDebitRequest.bundle.name))) // Check that the active bundle (if any) is the same as requested
+    app.permissions.dataRetrieved
+      .map { dataBundle =>
+        dataDebitService.dataDebit(app.dataDebitId.get)(hatServer.db) // dataDebitId will return true if data debit request exists
+          .map(_.flatMap(_.activePermissions.map(_.bundle.name == dataBundle.name))) // Check that the active bundle (if any) is the same as requested
           .map(_.getOrElse(false)) // If no data debit or active bundle - not active
       }
       .getOrElse(Future.successful(true)) // If no data debit is required - OK

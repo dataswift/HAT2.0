@@ -28,14 +28,15 @@ import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
 import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, JWTRS256AuthenticatorSettings }
 import org.hatdex.hat.api.models.EndpointData
 import org.hatdex.hat.api.models.applications.{ ApplicationStatus, HatApplication, Version }
-import org.hatdex.hat.api.service.richData.{ DataDebitContractService, RichDataService }
+import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataService }
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeAll, BeforeEach }
+import play.api.Logger
+import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
 import play.api.test.PlaySpecification
-import play.api.Logger
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -55,6 +56,9 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
     val action = DBIO.seq(
+      Tables.DataDebitPermissions.delete,
+      Tables.DataBundles.filter(_.bundleId like "notables%").delete,
+      Tables.DataDebit.delete,
       Tables.ApplicationStatus.delete)
 
     Await.result(hatDatabase.run(action), 60.seconds)
@@ -198,11 +202,13 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
 
     "Return `active=false` status for apps where data debit has been disabled" in {
       val service = application.injector.instanceOf[ApplicationsService]
-      val dataDebitService = application.injector.instanceOf[DataDebitContractService]
+      val dataDebitService = application.injector.instanceOf[DataDebitService]
+      val cache = application.injector.instanceOf[AsyncCacheApi]
       val result = for {
         app <- service.applicationStatus(notablesApp.id)
         _ <- service.setup(app.get)(hatServer, owner, fakeRequest)
-        _ <- dataDebitService.dataDebitDisable(app.get.application.dataDebitId.get)
+        _ <- dataDebitService.dataDebitDisable(app.get.application.dataDebitId.get, cancelAtPeriodEnd = false)
+        _ ← cache.remove(s"apps:${hatAddress}:${notablesApp.id}")
         setup <- service.applicationStatus(app.get.application.id)
       } yield {
         setup must beSome
@@ -217,16 +223,17 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   "The `setup` method" should {
     "Enable an application and update its status as well as enable data debit if set up" in {
       val service = application.injector.instanceOf[ApplicationsService]
-      val dataDebitService = application.injector.instanceOf[DataDebitContractService]
+      val dataDebitService = application.injector.instanceOf[DataDebitService]
       val result = for {
         app <- service.applicationStatus(notablesApp.id)
         setup <- service.setup(app.get)
         dd <- dataDebitService.dataDebit(notablesApp.dataDebitId.get)
+        _ <- dataDebitService.dataDebit(app.get.application.dataDebitId.get)
       } yield {
         setup.active must beTrue
         dd must beSome
-        dd.get.activeBundle must beSome
-        dd.get.activeBundle.get.bundle.name must be equalTo notablesApp.permissions.dataRequired.get.bundle.name
+        dd.get.activePermissions must beSome
+        dd.get.activePermissions.get.bundle.name must be equalTo notablesApp.permissions.dataRequired.get.bundle.name
       }
 
       result await (1, 20.seconds)
@@ -257,7 +264,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   "The `disable` method" should {
     "Disable an application with associated data debit" in {
       val service = application.injector.instanceOf[ApplicationsService]
-      val dataDebitService = application.injector.instanceOf[DataDebitContractService]
+      val dataDebitService = application.injector.instanceOf[DataDebitService]
       val result = for {
         app ← service.applicationStatus(notablesApp.id)
         _ ← service.setup(app.get)
@@ -266,7 +273,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       } yield {
         setup.active must beFalse
         dd must beSome
-        dd.get.activeBundle must beNone
+        dd.get.activePermissions must beNone
       }
 
       result await (1, 20.seconds)

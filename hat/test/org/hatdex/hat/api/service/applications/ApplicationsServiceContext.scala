@@ -272,17 +272,17 @@ trait ApplicationsServiceContext extends HATTestContext {
   val notablesApp: Application = Json.parse(sampleNotablesAppJson).as[Application]
   val notablesAppDebitless: Application = notablesApp.copy(
     id = "notables-debitless",
-    permissions = notablesApp.permissions.copy(dataRequired = None))
+    permissions = notablesApp.permissions.copy(dataRetrieved = None))
   val notablesAppMissing: Application = notablesAppDebitless.copy(
     id = "notables-missing",
     permissions = notablesApp.permissions.copy(
-      dataRequired = Some(notablesApp.permissions.dataRequired.get.copy(
-        bundle = notablesApp.permissions.dataRequired.get.bundle.copy(name = "notables-missing-bundle")))))
+      dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
+        name = "notables-missing-bundle"))))
   val notablesAppIncompatible: Application = notablesApp.copy(
     id = "notables-incompatible",
     permissions = notablesApp.permissions.copy(
-      dataRequired = Some(notablesApp.permissions.dataRequired.get.copy(
-        bundle = notablesApp.permissions.dataRequired.get.bundle.copy(name = "notables-incompatible-bundle")))))
+      dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
+        name = "notables-incompatible-bundle"))))
   val notablesAppIncompatibleUpdated: Application = notablesAppIncompatible.copy(
     info = notablesApp.info.copy(version = Version("1.1.0")),
     status = ApplicationStatus.Internal(Version("1.1.0"), None))
@@ -291,14 +291,14 @@ trait ApplicationsServiceContext extends HATTestContext {
     id = "notables-external",
     status = ApplicationStatus.External(Version("1.0.0"), "/status", 200, None),
     permissions = notablesApp.permissions.copy(
-      dataRequired = Some(notablesApp.permissions.dataRequired.get.copy(
-        bundle = notablesApp.permissions.dataRequired.get.bundle.copy(name = "notables-external")))))
+      dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
+        name = "notables-external"))))
   val notablesAppExternalFailing: Application = notablesApp.copy(
     id = "notables-external-failing",
     status = ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None),
     permissions = notablesApp.permissions.copy(
-      dataRequired = Some(notablesApp.permissions.dataRequired.get.copy(
-        bundle = notablesApp.permissions.dataRequired.get.bundle.copy(name = "notables-external-failing")))))
+      dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
+        name = "notables-external-failing"))))
 
   def withMockWsClient[T](block: WSClient => T): T = {
     Server.withRouterFromComponents() { components =>
