@@ -34,7 +34,6 @@ import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.phata.{ views ⇒ phataViews }
 import play.api.cache.{ Cached, CachedBuilder }
 import play.api.libs.json.Json
-import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
 
@@ -47,7 +46,6 @@ class Phata @Inject() (
     cached: Cached,
     configuration: Configuration,
     silhouette: Silhouette[HatApiAuthEnvironment],
-    wsClient: WSClient,
     bundleService: RichBundleService,
     dataService: RichDataService) extends HatApiController(components, silhouette) with HatJsonFormats with RichDataJsonFormats {
 

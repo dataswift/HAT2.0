@@ -38,7 +38,7 @@ import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.FutureTransformations
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
-import play.api.Logger
+import play.api.{ Configuration, Logger }
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json.{ JsObject, JsString }
 import play.api.libs.ws.WSClient
@@ -47,7 +47,8 @@ import play.api.mvc.RequestHeader
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ApplicationStatusCheckService @Inject() (wsClient: WSClient)(implicit val rec: RemoteExecutionContext) {
+class ApplicationStatusCheckService @Inject() (wsClient: WSClient, configuration: Configuration)(implicit val rec: RemoteExecutionContext) {
+  private val beta: Boolean = configuration.getOptional[Boolean]("exchange.beta").getOrElse(false)
 
   def status(statusCheck: ApplicationStatus.Status, token: String): Future[Boolean] = {
     statusCheck match {
@@ -58,7 +59,8 @@ class ApplicationStatusCheckService @Inject() (wsClient: WSClient)(implicit val 
 
   protected def status(statusCheck: ApplicationStatus.External, token: String): Future[Boolean] =
     wsClient.url(statusCheck.statusUrl)
-      .withHttpHeaders("x-auth-token" -> token)
+      .withHttpHeaders("x-auth-token" → token)
+      .withQueryStringParameters("unpublished" → beta.toString)
       .get()
       .map(_.status == statusCheck.expectedStatus)
 }
