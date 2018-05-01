@@ -85,6 +85,14 @@ class DataDebitService @Inject() (usersService: UsersService)(implicit val ec: R
       }
   }
 
+  def updateDataDebitInfo(key: String, ddRequest: DataDebitSetupRequest)(implicit db: Database): Future[DataDebit] = {
+    val updateQuery = DbDataDebit.filter(_.dataDebitKey === key)
+      .map(dd ⇒ (dd.requestClientName, dd.requestClientUrl, dd.requestClientLogoUrl, dd.requestApplicationId, dd.requestDescription))
+      .update((ddRequest.requestClientName, ddRequest.requestClientUrl, ddRequest.requestClientLogoUrl, ddRequest.requestApplicationId, ddRequest.requestDescription))
+    db.run(updateQuery)
+      .flatMap(_ ⇒ dataDebit(key).map(_.get))
+  }
+
   def updateDataDebitPermissions(key: String, ddRequest: DataDebitSetupRequest, userId: UUID)(implicit db: Database): Future[DataDebit] = {
 
     val bundleRow = DataBundlesRow(ddRequest.bundle.name, Json.toJson(ddRequest.bundle.bundle))

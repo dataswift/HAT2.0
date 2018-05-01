@@ -38,7 +38,7 @@ import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.FutureTransformations
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
-import play.api.{ Configuration, Logger }
+import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json.{ JsObject, JsString }
 import play.api.libs.ws.WSClient
@@ -47,8 +47,7 @@ import play.api.mvc.RequestHeader
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ApplicationStatusCheckService @Inject() (wsClient: WSClient, configuration: Configuration)(implicit val rec: RemoteExecutionContext) {
-  private val beta: Boolean = configuration.getOptional[Boolean]("exchange.beta").getOrElse(false)
+class ApplicationStatusCheckService @Inject() (wsClient: WSClient)(implicit val rec: RemoteExecutionContext) {
 
   def status(statusCheck: ApplicationStatus.Status, token: String): Future[Boolean] = {
     statusCheck match {
@@ -60,7 +59,6 @@ class ApplicationStatusCheckService @Inject() (wsClient: WSClient, configuration
   protected def status(statusCheck: ApplicationStatus.External, token: String): Future[Boolean] =
     wsClient.url(statusCheck.statusUrl)
       .withHttpHeaders("x-auth-token" → token)
-      .withQueryStringParameters("unpublished" → beta.toString)
       .get()
       .map(_.status == statusCheck.expectedStatus)
 }
@@ -108,7 +106,9 @@ class ApplicationsService @Inject() (
       for {
         dds ← dataDebitService.createDataDebit(ddId, ddsRequest, user.userId)(hat.db)
           .recover({
-            case _: RichDataDuplicateDebitException => dataDebitService.updateDataDebitPermissions(ddId, ddsRequest, user.userId)(hat.db)
+            case _: RichDataDuplicateDebitException ⇒
+              dataDebitService.updateDataDebitInfo(ddId, ddsRequest)(hat.db)
+                .flatMap(_ ⇒ dataDebitService.updateDataDebitPermissions(ddId, ddsRequest, user.userId)(hat.db))
           })
         _ ← dataDebitService.dataDebitEnableNewestPermissions(ddId)(hat.db)
       } yield dds

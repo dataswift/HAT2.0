@@ -33,7 +33,7 @@ import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeAll, BeforeEach }
-import play.api.{ Configuration, Logger }
+import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
 import play.api.test.PlaySpecification
@@ -327,8 +327,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
   "The `ApplicationStatusCheckService` `status` method" should {
     "Return `true` for internal status checks" in {
       withMockWsClient { client ⇒
-        val configuration = application.injector.instanceOf[Configuration]
-        val service = new ApplicationStatusCheckService(client, configuration)(remoteEC)
+        val service = new ApplicationStatusCheckService(client)(remoteEC)
         service.status(ApplicationStatus.Internal(Version("1.0.0"), None), "token")
           .map { result ⇒
             result must beTrue
@@ -339,8 +338,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
 
     "Return `true` for external check with matching status" in {
       withMockWsClient { client ⇒
-        val configuration = application.injector.instanceOf[Configuration]
-        val service = new ApplicationStatusCheckService(client, configuration)(remoteEC)
+        val service = new ApplicationStatusCheckService(client)(remoteEC)
         service.status(ApplicationStatus.External(Version("1.0.0"), "/status", 200, None), "token")
           .map { result ⇒
             result must beTrue
@@ -351,8 +349,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
 
     "Return `false` for external check with non-matching status" in {
       withMockWsClient { client ⇒
-        val configuration = application.injector.instanceOf[Configuration]
-        val service = new ApplicationStatusCheckService(client, configuration)(remoteEC)
+        val service = new ApplicationStatusCheckService(client)(remoteEC)
         service.status(ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None), "token")
           .map { result ⇒
             result must beFalse

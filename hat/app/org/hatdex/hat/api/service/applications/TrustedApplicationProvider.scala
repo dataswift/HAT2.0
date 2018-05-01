@@ -53,11 +53,13 @@ class TrustedApplicationProviderDex @Inject() (
     configuration.underlying.getString("exchange.address"),
     configuration.underlying.getString("exchange.scheme"))
 
+  private val includeUnpublished: Boolean = configuration.getOptional[Boolean]("exchange.beta").getOrElse(false)
+
   private val dexApplicationsCacheDuration: FiniteDuration = 30.minutes
 
   def applications: Future[Seq[Application]] = {
     cache.getOrElseUpdate("apps:dexApplications", dexApplicationsCacheDuration) {
-      dexClient.applications()
+      dexClient.applications(includeUnpublished = includeUnpublished)
     }
   }
 
