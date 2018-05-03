@@ -93,6 +93,9 @@
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
 
+    <logger name="org.hatdex.hat.she.controllers.FeedGenerator" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE" />
+    </logger>
 
     <logger name="org.hatdex.hat.authentication.UserLimiter" level="ERROR">
         <appender-ref ref="ASYNCCONSOLE"/>

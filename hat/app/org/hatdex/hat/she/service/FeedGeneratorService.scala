@@ -64,15 +64,15 @@ class FeedGeneratorService @Inject() ()(
     "notables/feed" → new NotablesFeedMapper(),
     "spotify/feed" → new SpotifyFeedMapper())
 
-  def getFeed(endpoint: String, since: Option[Long], until: Option[Long])(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
-    feedForMappers(dataMappers.filter(_._1.startsWith(endpoint)), since, until)
+  def getFeed(endpoint: String, since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
+    feedForMappers(dataMappers.filter(_._1.startsWith(endpoint)), since, until, mergeLocations)
 
-  def fullFeed(since: Option[Long], until: Option[Long])(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
-    feedForMappers(dataMappers, since, until)
+  def fullFeed(since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
+    feedForMappers(dataMappers, since, until, mergeLocations)
 
   private val defaultTimeBack = 360.days
   private val defaultTimeForward = 90.days
-  protected def feedForMappers(mappers: Seq[(String, DataEndpointMapper)], since: Option[Long], until: Option[Long])(
+  protected def feedForMappers(mappers: Seq[(String, DataEndpointMapper)], since: Option[Long], until: Option[Long], mergeLocations: Boolean)(
     implicit
     hatServer: HatServer): Future[Seq[DataFeedItem]] = {
     logger.debug(s"Fetching feed data for ${mappers.unzip._1}")
@@ -86,10 +86,15 @@ class FeedGeneratorService @Inject() ()(
     val sortedSources = new SourceMergeSorter()
       .mergeWithSorter(sources)
 
-    val locations = locationStream(sinceTime.getMillis / 1000L, untilTime.getMillis / 1000L)
-    val augmenter = new SourceAugmenter().augment(sortedSources, locations.sliding(2, 1), locationAugmentFunction)
+    val outputStream = if (mergeLocations) {
+      val locations = locationStream(sinceTime.getMillis / 1000L, untilTime.getMillis / 1000L)
+      new SourceAugmenter().augment(sortedSources, locations.sliding(2, 1), locationAugmentFunction)
+    }
+    else {
+      sortedSources
+    }
 
-    augmenter.runWith(Sink.seq)
+    outputStream.runWith(Sink.seq)
   }
 
   def locationStream(since: Long, until: Long)(implicit hatServer: HatServer): Source[(DateTime, LocationGeo), NotUsed] = {

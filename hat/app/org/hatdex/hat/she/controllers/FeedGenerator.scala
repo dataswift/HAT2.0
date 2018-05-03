@@ -29,14 +29,15 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import org.hatdex.hat.api.json.{ DataFeedItemJsonProtocol, RichDataJsonFormats }
 import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.models.applications.Version
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol
 import org.hatdex.hat.she.service._
-import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 class FeedGenerator @Inject() (
     components: ControllerComponents,
@@ -49,18 +50,30 @@ class FeedGenerator @Inject() (
   with FunctionConfigurationJsonProtocol
   with DataFeedItemJsonProtocol {
 
-  private val logger = Logger(this.getClass)
-
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long]): Action[AnyContent] =
     SecuredAction(WithRole(Owner())).async { implicit request ⇒
-      logger.debug(s"Get feed for $endpoint")
-      feedGeneratorService.getFeed(endpoint, since, until)
+      feedGeneratorService.getFeed(endpoint, since, until, appHandlesLocations)
         .map(items ⇒ Ok(Json.toJson(items)))
     }
 
   def fullFeed(since: Option[Long], until: Option[Long]): Action[AnyContent] =
     SecuredAction(WithRole(Owner())).async { implicit request ⇒
-      feedGeneratorService.fullFeed(since, until)
+      feedGeneratorService.fullFeed(since, until, appHandlesLocations)
         .map(items ⇒ Ok(Json.toJson(items)))
     }
+
+  private val locationCompatibleVersion = Version("1.2.2")
+  private val agentAppVersion = "^([\\w\\s]+)/([\\d\\.]+).*".r
+  private def appHandlesLocations()(implicit requestHeader: RequestHeader): Boolean =
+    requestingAppVersion().exists(app ⇒ app._1 != "HAT" || app._2 >= locationCompatibleVersion)
+
+  private def requestingAppVersion()(implicit requestHeader: RequestHeader): Option[(String, Version)] = {
+    requestHeader.headers.get("User-Agent").flatMap {
+      _ match {
+        case agentAppVersion(app, version) if app.startsWith("HAT Testing") ⇒ Try(("HAT", Version(version))).toOption
+        case agentAppVersion(app, version) ⇒ Try((app, Version(version))).toOption
+        case _ ⇒ None
+      }
+    }
+  }
 }
