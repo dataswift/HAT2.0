@@ -58,7 +58,7 @@ class Phata @Inject() (
     .includeStatus(404, 600)
 
   def rumpelIndex(): EssentialAction = indefiniteSuccessCaching {
-    Action.async { implicit request =>
+    UserAwareAction.async { implicit request =>
       Future.successful(Ok(phataViews.html.rumpelIndex(assets)))
     }
   }
