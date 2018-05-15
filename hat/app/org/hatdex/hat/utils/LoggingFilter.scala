@@ -25,10 +25,10 @@
 package org.hatdex.hat.utils
 
 import javax.inject.{ Inject, Singleton }
-
 import akka.stream.Materializer
 import com.nimbusds.jose.JWSObject
 import com.nimbusds.jwt.JWTClaimsSet
+import play.api.http.HttpErrorHandler
 import play.api.mvc.{ Filter, RequestHeader, Result }
 import play.api.{ Configuration, Logger }
 
@@ -46,6 +46,7 @@ class ActiveHatCounter() {
 }
 
 class LoggingFilter @Inject() (
+    errorHandler: HttpErrorHandler,
     configuration: Configuration,
     hatCounter: ActiveHatCounter)(
     implicit
@@ -57,14 +58,18 @@ class LoggingFilter @Inject() (
 
     val startTime = System.currentTimeMillis
 
-    nextFilter(requestHeader) map { result =>
-      val active = hatCounter.get()
-      val requestTime = System.currentTimeMillis - startTime
-      logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] " +
-        s"[${result.header.status}] TIME [$requestTime]ms HATs [$active] ${tokenInfo(requestHeader)}")
+    nextFilter(requestHeader)
+      .recoverWith({
+        case e ⇒ errorHandler.onServerError(requestHeader, e)
+      })
+      .map { result =>
+        val active = hatCounter.get()
+        val requestTime = System.currentTimeMillis - startTime
+        logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] " +
+          s"[${result.header.status}] TIME [$requestTime]ms HATs [$active] ${tokenInfo(requestHeader)}")
 
-      result.withHeaders("Request-Time" -> requestTime.toString)
-    }
+        result.withHeaders("Request-Time" -> requestTime.toString)
+      }
   }
 
   private val authTokenFieldName: String = configuration.get[String]("silhouette.authenticator.fieldName")
