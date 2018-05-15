@@ -135,7 +135,7 @@ class StatsReporter @Inject() (
   }
 
   private def platformUser()(implicit server: HatServer): Future[HatUser] = {
-    usersService.getUserByRole(Platform())(server.db).map(_.head)
+    usersService.getUserByRole(Platform())(server).map(_.head)
   }
 
   private def applicationToken()(implicit server: HatServer): Future[String] = {

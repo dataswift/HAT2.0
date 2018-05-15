@@ -103,7 +103,7 @@ class FunctionExecutorActor @Inject() (
     hatServerProvider.retrieve(hat)
       .flatMap {
         _.map { implicit hatServer =>
-          functionService.run(conf, since)(hatServer.db)
+          functionService.run(conf, since)(hatServer)
             .map(_ => ExecutionFinished())
             .recover {
               case e => ExecutionFailed(e)

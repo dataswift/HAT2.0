@@ -25,8 +25,8 @@
 package org.hatdex.hat.she.service
 
 import java.security.MessageDigest
-import javax.inject.Inject
 
+import javax.inject.Inject
 import akka.Done
 import org.hatdex.hat.api.models.{ EndpointData, Owner }
 import org.hatdex.hat.api.service.UsersService
@@ -35,6 +35,7 @@ import org.hatdex.hat.she.models.{ FunctionConfiguration, FunctionExecutable, Re
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import org.hatdex.hat.dal.Tables._
+import org.hatdex.hat.resourceManagement.HatServer
 import play.api.Logger
 import play.api.libs.json.Json
 
@@ -49,6 +50,8 @@ class FunctionService @Inject() (
     ec: ExecutionContext) {
 
   private val logger = Logger(this.getClass)
+
+  private implicit def hatServer2db(implicit hatServer: HatServer): Database = hatServer.db
 
   protected def mergeRegisteredSaved(registeredFunctions: Seq[FunctionConfiguration], savedFunctions: Seq[FunctionConfiguration]): Seq[FunctionConfiguration] = {
     val registered: Map[String, FunctionConfiguration] = registeredFunctions.map(r => r.name -> r).toMap
@@ -124,7 +127,7 @@ class FunctionService @Inject() (
       .map(_.get)
   }
 
-  def run(configuration: FunctionConfiguration, startTime: Option[DateTime])(implicit db: Database): Future[Done] = {
+  def run(configuration: FunctionConfiguration, startTime: Option[DateTime])(implicit hatServer: HatServer): Future[Done] = {
     functionRegistry.get[FunctionExecutable](configuration.name)
       .map { function: FunctionExecutable =>
         val fromDate = startTime.orElse(Some(DateTime.now().minusMonths(6)))

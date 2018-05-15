@@ -104,13 +104,13 @@ class ApplicationsService @Inject() (
     } yield {
       logger.debug(s"Enable data debit $ddId for ${application.application.id}")
       for {
-        dds ← dataDebitService.createDataDebit(ddId, ddsRequest, user.userId)(hat.db)
+        dds ← dataDebitService.createDataDebit(ddId, ddsRequest, user.userId)(hat)
           .recover({
             case _: RichDataDuplicateDebitException ⇒
-              dataDebitService.updateDataDebitInfo(ddId, ddsRequest)(hat.db)
-                .flatMap(_ ⇒ dataDebitService.updateDataDebitPermissions(ddId, ddsRequest, user.userId)(hat.db))
+              dataDebitService.updateDataDebitInfo(ddId, ddsRequest)(hat)
+                .flatMap(_ ⇒ dataDebitService.updateDataDebitPermissions(ddId, ddsRequest, user.userId)(hat))
           })
-        _ ← dataDebitService.dataDebitEnableNewestPermissions(ddId)(hat.db)
+        _ ← dataDebitService.dataDebitEnableNewestPermissions(ddId)(hat)
       } yield dds
     }
 
@@ -130,7 +130,7 @@ class ApplicationsService @Inject() (
     appSetup.recoverWith {
       case e: RuntimeException ⇒
         logger.warn(s"Application setup failed: ${e.getMessage}")
-        application.application.dataDebitId.map(dataDebitService.dataDebitDisable(_, cancelAtPeriodEnd = false)(hat.db))
+        application.application.dataDebitId.map(dataDebitService.dataDebitDisable(_, cancelAtPeriodEnd = false)(hat))
           .getOrElse(Future.successful(()))
           .map(_ ⇒ throw e)
     }
@@ -138,7 +138,7 @@ class ApplicationsService @Inject() (
 
   def disable(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
     for {
-      _ ← application.application.dataDebitId.map(dataDebitService.dataDebitDisable(_, cancelAtPeriodEnd = false)(hat.db))
+      _ ← application.application.dataDebitId.map(dataDebitService.dataDebitDisable(_, cancelAtPeriodEnd = false)(hat))
         .getOrElse(Future.successful(())) // If data debit was there, disable
       _ <- applicationSetupStatusUpdate(application, enabled = false)(hat.db) // Update status
       _ <- cache.remove(appCacheKey(application))

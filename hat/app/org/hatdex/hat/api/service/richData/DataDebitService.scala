@@ -26,14 +26,15 @@ package org.hatdex.hat.api.service.richData
 
 import java.sql.SQLException
 import java.util.UUID
-import javax.inject.Inject
 
+import javax.inject.Inject
 import akka.Done
 import org.hatdex.hat.api.json.RichDataJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.{ RemoteExecutionContext, UsersService }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataDebit ⇒ DbDataDebit, DataDebitPermissions ⇒ DbDataDebitPermissions, _ }
+import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.FutureTransformations
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
@@ -47,7 +48,7 @@ class DataDebitService @Inject() (usersService: UsersService)(implicit val ec: R
 
   val logger = Logger(this.getClass)
 
-  def createDataDebit(key: String, ddRequest: DataDebitSetupRequest, userId: UUID)(implicit db: Database): Future[DataDebit] = {
+  def createDataDebit(key: String, ddRequest: DataDebitSetupRequest, userId: UUID)(implicit server: HatServer): Future[DataDebit] = {
     val dataDebitInsert = (DbDataDebit returning DbDataDebit) += DataDebitRow(key, LocalDateTime.now(),
       ddRequest.requestClientName, ddRequest.requestClientUrl, ddRequest.requestClientLogoUrl,
       ddRequest.requestApplicationId, ddRequest.requestDescription)
@@ -65,8 +66,8 @@ class DataDebitService @Inject() (usersService: UsersService)(implicit val ec: R
       _ ← dataDebitBundleLinkInserts
     } yield Done
 
-    db.run(query.transactionally)
-      .flatMap(_ ⇒ dataDebit(key)) // Retrieve the data debit
+    server.db.run(query.transactionally)
+      .flatMap(_ ⇒ dataDebit(key)(server.db)) // Retrieve the data debit
       .map(_.get) // Data Debit must be Some as it has been inserted
       .recover {
         case e: SQLException if e.getMessage.contains("duplicate key value violates unique constraint \"data_bundles_pkey\"") =>
@@ -85,15 +86,15 @@ class DataDebitService @Inject() (usersService: UsersService)(implicit val ec: R
       }
   }
 
-  def updateDataDebitInfo(key: String, ddRequest: DataDebitSetupRequest)(implicit db: Database): Future[DataDebit] = {
+  def updateDataDebitInfo(key: String, ddRequest: DataDebitSetupRequest)(implicit server: HatServer): Future[DataDebit] = {
     val updateQuery = DbDataDebit.filter(_.dataDebitKey === key)
       .map(dd ⇒ (dd.requestClientName, dd.requestClientUrl, dd.requestClientLogoUrl, dd.requestApplicationId, dd.requestDescription))
       .update((ddRequest.requestClientName, ddRequest.requestClientUrl, ddRequest.requestClientLogoUrl, ddRequest.requestApplicationId, ddRequest.requestDescription))
-    db.run(updateQuery)
-      .flatMap(_ ⇒ dataDebit(key).map(_.get))
+    server.db.run(updateQuery)
+      .flatMap(_ ⇒ dataDebit(key)(server.db).map(_.get))
   }
 
-  def updateDataDebitPermissions(key: String, ddRequest: DataDebitSetupRequest, userId: UUID)(implicit db: Database): Future[DataDebit] = {
+  def updateDataDebitPermissions(key: String, ddRequest: DataDebitSetupRequest, userId: UUID)(implicit server: HatServer): Future[DataDebit] = {
 
     val bundleRow = DataBundlesRow(ddRequest.bundle.name, Json.toJson(ddRequest.bundle.bundle))
     val conditionsRow = ddRequest.conditions.map(c ⇒ DataBundlesRow(c.name, Json.toJson(c.bundle)))
@@ -119,8 +120,8 @@ class DataDebitService @Inject() (usersService: UsersService)(implicit val ec: R
         ddRequest.cancelAtPeriodEnd, None, ddRequest.termsUrl, ddRequest.bundle.name, ddRequest.conditions.map(_.name), accepted = false) // Insert a new permissions record
     } yield ddb
 
-    db.run(query.transactionally)
-      .flatMap(_ ⇒ dataDebit(key)) // Retrieve the data debit
+    server.db.run(query.transactionally)
+      .flatMap(_ ⇒ dataDebit(key)(server.db)) // Retrieve the data debit
       .map(_.get) // Data Debit must be Some as it has been inserted
       .recover {
         case e: org.postgresql.util.PSQLException if e.getMessage.contains("insert or update on table \"data_debit_permissions\" violates foreign key constraint \"data_debit_permissions_data_debit_key_fkey\"") ⇒
@@ -157,9 +158,9 @@ class DataDebitService @Inject() (usersService: UsersService)(implicit val ec: R
     }
   }
 
-  def all()(implicit db: Database): Future[Seq[DataDebit]] = {
+  def all()(implicit server: HatServer): Future[Seq[DataDebit]] = {
     val legacyWarning = "This Data Debit is in a legacy format, and the HAT App is unable to display all the information associated with it fully. This may include a logo, title and full description"
-    filterDataDebits(DbDataDebitPermissions)
+    filterDataDebits(DbDataDebitPermissions)(server.db)
       .map(_.map(dd ⇒ dd.copy(
         permissions = dd.permissions.map { p =>
           if (p.purpose.isEmpty) {
@@ -174,15 +175,15 @@ class DataDebitService @Inject() (usersService: UsersService)(implicit val ec: R
         requestClientUrl = if (dd.requestClientName.isEmpty) { "https://dex.hubofallthings.com/" } else { dd.requestClientUrl })))
   }
 
-  def dataDebitDisable(dataDebitKey: String, cancelAtPeriodEnd: Boolean)(implicit db: Database): Future[Done] = {
+  def dataDebitDisable(dataDebitKey: String, cancelAtPeriodEnd: Boolean)(implicit server: HatServer): Future[Done] = {
     val dataBundlesDisabled = DbDataDebitPermissions.filter(_.dataDebitKey === dataDebitKey)
       .map(ddp ⇒ (ddp.canceledAt, ddp.cancelAtPeriodEnd))
       .update((Some(LocalDateTime.now()), cancelAtPeriodEnd))
-    db.run(dataBundlesDisabled)
+    server.db.run(dataBundlesDisabled)
       .map(_ ⇒ Done)
   }
 
-  def dataDebitEnableNewestPermissions(dataDebitKey: String)(implicit db: Database): Future[Done] = {
+  def dataDebitEnableNewestPermissions(dataDebitKey: String)(implicit server: HatServer): Future[Done] = {
     val oldPermissionsDisabled = DbDataDebitPermissions
       .filter(_.dataDebitKey === dataDebitKey)
       .map(_.accepted)
@@ -198,7 +199,7 @@ class DataDebitService @Inject() (usersService: UsersService)(implicit val ec: R
       .map(_.accepted)
       .update(true)
 
-    db.run(DBIO.seq(oldPermissionsDisabled, permissionsEnabled).transactionally)
+    server.db.run(DBIO.seq(oldPermissionsDisabled, permissionsEnabled).transactionally)
       .map(_ => Done)
   }
 
