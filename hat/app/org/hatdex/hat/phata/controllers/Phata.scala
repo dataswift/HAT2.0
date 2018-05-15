@@ -23,10 +23,11 @@
  */
 package org.hatdex.hat.phata.controllers
 
-import javax.inject.Inject
-
 import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.api.crypto.Base64
+import com.mohiva.play.silhouette.api.util.IDGenerator
 import controllers.{ AssetsFinder, AssetsFinderProvider }
+import javax.inject.Inject
 import org.hatdex.hat.api.json.{ HatJsonFormats, RichDataJsonFormats }
 import org.hatdex.hat.api.models.EndpointDataBundle
 import org.hatdex.hat.api.service.richData.{ RichBundleService, RichDataService }
@@ -36,14 +37,15 @@ import play.api.cache.{ Cached, CachedBuilder }
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
+import play.filters.headers.SecurityHeadersFilter
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class Phata @Inject() (
     components: ControllerComponents,
     assetsFinder: AssetsFinderProvider,
     cached: Cached,
+    idGenerator: IDGenerator,
     configuration: Configuration,
     silhouette: Silhouette[HatApiAuthEnvironment],
     bundleService: RichBundleService,
@@ -57,11 +59,33 @@ class Phata @Inject() (
     .status(req => s"${req.host}${req.path}", 200)
     .includeStatus(404, 600)
 
-  def rumpelIndex(): EssentialAction = indefiniteSuccessCaching {
+  val csp: Map[String, String] = configuration.get[String]("play.filters.headers.contentSecurityPolicy")
+    .split(';')
+    .map(_.trim)
+    .map({ p ⇒
+      val splits = p.split(' ')
+      splits.head → splits.tail.mkString(" ")
+    })
+    .toMap
+
+  def rumpelIndex(): EssentialAction = /*indefiniteSuccessCaching {*/
     UserAwareAction.async { implicit request =>
-      Future.successful(Ok(phataViews.html.rumpelIndex(assets)))
+      val rumpelConfigScript = s"""var httpProtocol = "${if (request.secure) { "http" } else { "https" }}:";"""
+      idGenerator.generate map { nonce ⇒
+        val nonceEncoded = Base64.encode(nonce)
+        logger.warn(s"Generated nonce $nonce - ${nonceEncoded}")
+        val cspMap: Map[String, String] = csp + ("script-src" → (csp.getOrElse("script-src", "") + s" 'nonce-${nonceEncoded}'"))
+        val cspCustom = cspMap
+          .map({
+            case (k: String, v: String) ⇒ s"$k $v"
+          })
+          .mkString("; ")
+
+        Ok(phataViews.html.rumpelIndex(rumpelConfigScript, nonceEncoded, assets))
+          .withHeaders(SecurityHeadersFilter.CONTENT_SECURITY_POLICY_HEADER → cspCustom)
+      }
     }
-  }
+  //}
 
   def profile: Action[AnyContent] = UserAwareAction.async { implicit request =>
     val defaultBundleDefinition = Json.parse(configuration.get[String]("phata.defaultBundle")).as[EndpointDataBundle]
@@ -81,4 +105,11 @@ class Phata @Inject() (
       Redirect(newRedirectUrl)
     }
   }
+
+  //  def remoteAsset(file: String): String = {
+  //    val versionedUrl = assets.path(file)
+  //    val maybeAssetsUrl = Some("https://rumpel.hubat.net/assets") //configuration.getOptional[String]("assets.url")
+  //    maybeAssetsUrl.fold(versionedUrl)(_ + file)
+  //  }
+
 }

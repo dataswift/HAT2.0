@@ -1,9 +1,7 @@
 @import play.api.mvc._
 @import controllers.AssetsFinder
-
-@(assets: AssetsFinder)(implicit request: RequestHeader)
-
-@protocol = @{ if(request.secure) { "https" } else { "http" } }
+@import play.twirl.api.Html
+@(configScript: String, nonce: String, assets: AssetsFinder)(implicit request: RequestHeader)
 
 <!DOCTYPE html>
 <html>
@@ -11,9 +9,7 @@
         <meta charset="utf-8">
         <title>Hub of All Things @request.host</title>
         <base href="/">
-        <script>
-            var httpProtocol = "@protocol:";
-        </script>
+        <script nonce="@nonce">@Html(configScript)</script>
 
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="twitter:card" content="summary_large_image">
@@ -37,13 +33,13 @@
         <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.2.0/MarkerCluster.css">
         <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.2.0/MarkerCluster.Default.css">
         <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
-        <link rel="stylesheet" type="text/css" href="assets/webfonts/filled/ss-glyphish-filled.css">
-        <link rel="stylesheet" type="text/css" href="assets/webfonts/outlined/ss-glyphish-outlined.css">
+        <link rel="stylesheet" type="text/css" href="@assets.path("webfonts/filled/ss-glyphish-filled.css")">
+        <link rel="stylesheet" type="text/css" href="@assets.path("webfonts/outlined/ss-glyphish-outlined.css")">
         <link rel="stylesheet" type="text/css" href="@assets.path("stylesheets/styles.bundle.css")">
-        <link rel="icon" type="image/x-icon" href="favicon.ico">
+        <link rel="icon" type="image/x-icon" href="@assets.path("favicon.ico")">
     </head>
     <body>
-        <rum-app>Loading...</rum-app>
+        <rum-app>Loading... Please refresh if you see this screen fore more than a few seconds.</rum-app>
     </body>
 
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/packery/2.1.1/packery.pkgd.min.js"></script>
