@@ -57,10 +57,18 @@ class UsersService @Inject() (cache: AsyncCacheApi)(implicit ec: DalExecutionCon
   }
 
   def getUser(username: String)(implicit server: HatServer): Future[Option[HatUser]] = {
-    cache.getOrElseUpdate(s"${server.domain}:user:$username") {
-      queryUser(UserUser.filter(_.email === username))
-        .map(_.headOption)
-    }
+    cache.get[HatUser](s"${server.domain}:user:$username")
+      .flatMap {
+        case Some(cached) ⇒ Future.successful(Some(cached))
+        case None ⇒
+          queryUser(UserUser.filter(_.email === username))
+            .map(_.headOption)
+            .andThen({
+              case Success(Some(u)) ⇒
+                cache.set(s"${server.domain}:user:${u.userId}", u)
+                cache.set(s"${server.domain}:user:${u.email}", u)
+            })
+      }
   }
 
   def getUserByRole(role: UserRole)(implicit server: HatServer): Future[Seq[HatUser]] = {
@@ -158,11 +166,15 @@ class UsersService @Inject() (cache: AsyncCacheApi)(implicit ec: DalExecutionCon
   }
 
   def previousLogin(user: HatUser)(implicit server: HatServer): Future[Option[HatAccessLog]] = {
+    logger.error(s"Getting previous login for $user")
     val query = for {
       access <- UserAccessLog.filter(l => l.userId === user.userId).sortBy(_.date.desc).take(2).drop(1)
       user <- access.userUserFk
     } yield (access, user)
     server.db.run(query.result)
+      .andThen {
+        case Success(h) ⇒ logger.error(s"Got previous logins $h")
+      }
       .map(_.headOption)
       .map(_.map(au => ModelTranslation.fromDbModel(au._1, ModelTranslation.fromDbModel(au._2))))
   }

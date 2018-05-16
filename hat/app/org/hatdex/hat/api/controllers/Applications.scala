@@ -77,7 +77,7 @@ class Applications @Inject() (
           .map(s ⇒ Ok(Json.toJson(s)))
           .recover {
             case e: RichDataDuplicateBundleException ⇒
-              logger.error(s"[${request.dynamicEnvironment.domain}] Error setting up applicatio - duplicate bundle: ${e.getMessage}")
+              logger.error(s"[${request.dynamicEnvironment.domain}] Error setting up application - duplicate bundle: ${e.getMessage}")
               InternalServerError(Json.toJson(ErrorMessage(
                 "Application malformed",
                 s"Application $id bundle ${status.application.permissions.dataRequired.map(_.bundle.name)} clashes with one already setup")))

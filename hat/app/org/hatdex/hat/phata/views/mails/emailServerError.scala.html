@@ -22,7 +22,13 @@
         <p>Request </p>
         <ul>
             <li>URI: @request.uri</li>
-            <li>Headers: @request.headers</li>
+            <li>Headers:
+                <ul>
+                @request.headers.toSimpleMap.map { case (h, v) =>
+                    <li>@h: @v</li>
+                }
+                </ul>
+            </li>
             <li>Stringified: @request.toString()</li>
         </ul>
 
