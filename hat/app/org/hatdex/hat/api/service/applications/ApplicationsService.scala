@@ -24,12 +24,11 @@
 package org.hatdex.hat.api.service.applications
 
 import javax.inject.Inject
-
 import com.mohiva.play.silhouette.api.Silhouette
-import org.hatdex.hat.api.models.applications.{ Application, ApplicationStatus, HatApplication, Version }
-import org.hatdex.hat.api.models.{ AccessToken, EndpointQuery }
-import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataDuplicateDebitException, RichDataService }
-import org.hatdex.hat.api.service.{ DalExecutionContext, RemoteExecutionContext }
+import org.hatdex.hat.api.models.applications.{Application, ApplicationStatus, HatApplication, Version}
+import org.hatdex.hat.api.models.{AccessToken, DataDebit, EndpointQuery}
+import org.hatdex.hat.api.service.richData.{DataDebitService, RichDataDuplicateDebitException, RichDataService}
+import org.hatdex.hat.api.service.{DalExecutionContext, RemoteExecutionContext}
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.Tables
@@ -40,7 +39,7 @@ import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.cache.AsyncCacheApi
-import play.api.libs.json.{ JsObject, JsString }
+import play.api.libs.json.{JsObject, JsString}
 import play.api.libs.ws.WSClient
 import play.api.mvc.RequestHeader
 
@@ -98,14 +97,14 @@ class ApplicationsService @Inject() (
 
   def setup(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
     // Create and enable the data debit
-    val maybeDataDebitSetup = for {
+    val maybeDataDebitSetup: Option[Future[DataDebit]] = for {
       ddId <- application.application.dataDebitId
       ddsRequest ← application.application.dataDebitSetupRequest
     } yield {
       logger.debug(s"Enable data debit $ddId for ${application.application.id}")
       for {
         dds ← dataDebitService.createDataDebit(ddId, ddsRequest, user.userId)(hat)
-          .recover({
+          .recoverWith({
             case _: RichDataDuplicateDebitException ⇒
               dataDebitService.updateDataDebitInfo(ddId, ddsRequest)(hat)
                 .flatMap(_ ⇒ dataDebitService.updateDataDebitPermissions(ddId, ddsRequest, user.userId)(hat))
