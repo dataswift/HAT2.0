@@ -50,14 +50,24 @@ class Applications @Inject() (
 
   val logger = Logger(this.getClass)
 
-  def applications(): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner())).async { implicit request =>
-    applicationsService.applicationStatus()
-      .map { apps ⇒
+  def applications(): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationList()) || WithRole(Owner())).async { implicit request =>
+    for {
+      apps ← applicationsService.applicationStatus()
+      filterApps ← ContainsApplicationRole(ApplicationList()).isAuthorized(request.identity, request.authenticator, request.dynamicEnvironment)
+    } yield {
+      if (filterApps) {
+        val permitted = request.identity.roles.collect({
+          case ApplicationManage(applicationId) ⇒ applicationId
+        }).toSet
+        val filtered = apps.filter(a ⇒ permitted.contains(a.application.id))
+        Ok(Json.toJson(filtered))
+      } else {
         Ok(Json.toJson(apps))
       }
+    }
   }
 
-  def applicationStatus(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner())).async { implicit request =>
+  def applicationStatus(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(Owner())).async { implicit request =>
     applicationsService.applicationStatus(id).map { maybeStatus ⇒
       maybeStatus map { status ⇒
         Ok(Json.toJson(status))
@@ -70,7 +80,7 @@ class Applications @Inject() (
 
   }
 
-  def applicationSetup(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner())).async { implicit request =>
+  def applicationSetup(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(Owner())).async { implicit request =>
     applicationsService.applicationStatus(id).flatMap { maybeStatus ⇒
       maybeStatus map { status ⇒
         applicationsService.setup(status)
@@ -91,7 +101,7 @@ class Applications @Inject() (
     }
   }
 
-  def applicationDisable(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner())).async { implicit request =>
+  def applicationDisable(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(Owner())).async { implicit request =>
     applicationsService.applicationStatus(id).flatMap { maybeStatus =>
       maybeStatus map { status ⇒
         applicationsService.disable(status)
