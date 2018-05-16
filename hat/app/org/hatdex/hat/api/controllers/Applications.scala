@@ -61,7 +61,8 @@ class Applications @Inject() (
         }).toSet
         val filtered = apps.filter(a ⇒ permitted.contains(a.application.id))
         Ok(Json.toJson(filtered))
-      } else {
+      }
+      else {
         Ok(Json.toJson(apps))
       }
     }

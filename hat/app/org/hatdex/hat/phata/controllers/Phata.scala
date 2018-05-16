@@ -23,9 +23,10 @@
  */
 package org.hatdex.hat.phata.controllers
 
+import java.security.MessageDigest
+
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.crypto.Base64
-import com.mohiva.play.silhouette.api.util.IDGenerator
 import controllers.{ AssetsFinder, AssetsFinderProvider }
 import javax.inject.Inject
 import org.hatdex.hat.api.json.{ HatJsonFormats, RichDataJsonFormats }
@@ -40,12 +41,12 @@ import play.api.{ Configuration, Logger }
 import play.filters.headers.SecurityHeadersFilter
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class Phata @Inject() (
     components: ControllerComponents,
     assetsFinder: AssetsFinderProvider,
     cached: Cached,
-    idGenerator: IDGenerator,
     configuration: Configuration,
     silhouette: Silhouette[HatApiAuthEnvironment],
     bundleService: RichBundleService,
@@ -68,24 +69,23 @@ class Phata @Inject() (
     })
     .toMap
 
-  def rumpelIndex(): EssentialAction = /*indefiniteSuccessCaching {*/
+  def rumpelIndex(): EssentialAction = indefiniteSuccessCaching {
     UserAwareAction.async { implicit request =>
-      val rumpelConfigScript = s"""var httpProtocol = "${if (request.secure) { "http" } else { "https" }}:";"""
-      idGenerator.generate map { nonce ⇒
-        val nonceEncoded = Base64.encode(nonce)
-        logger.warn(s"Generated nonce $nonce - ${nonceEncoded}")
-        val cspMap: Map[String, String] = csp + ("script-src" → (csp.getOrElse("script-src", "") + s" 'nonce-${nonceEncoded}'"))
-        val cspCustom = cspMap
-          .map({
-            case (k: String, v: String) ⇒ s"$k $v"
-          })
-          .mkString("; ")
+      logger.warn(s"Secure request? ${request.secure}")
+      val rumpelConfigScript = s"""var httpProtocol = "${if (request.secure) { "https" } else { "http" }}:";"""
 
-        Ok(phataViews.html.rumpelIndex(rumpelConfigScript, nonceEncoded, assets))
-          .withHeaders(SecurityHeadersFilter.CONTENT_SECURITY_POLICY_HEADER → cspCustom)
-      }
+      val sha256Encoded = Base64.encode(MessageDigest.getInstance("SHA-256").digest(rumpelConfigScript.getBytes("UTF-8")))
+      val cspMap: Map[String, String] = csp + ("script-src" → (csp.getOrElse("script-src", "") + s" 'sha256-$sha256Encoded'"))
+      val cspCustom = cspMap
+        .map({
+          case (k: String, v: String) ⇒ s"$k $v"
+        })
+        .mkString("; ")
+
+      Future.successful(Ok(phataViews.html.rumpelIndex(rumpelConfigScript, assets))
+        .withHeaders(SecurityHeadersFilter.CONTENT_SECURITY_POLICY_HEADER → cspCustom))
     }
-  //}
+  }
 
   def profile: Action[AnyContent] = UserAwareAction.async { implicit request =>
     val defaultBundleDefinition = Json.parse(configuration.get[String]("phata.defaultBundle")).as[EndpointDataBundle]
