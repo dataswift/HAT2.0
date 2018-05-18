@@ -25,10 +25,10 @@ package org.hatdex.hat.api.service.applications
 
 import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
-import org.hatdex.hat.api.models.applications.{Application, ApplicationStatus, HatApplication, Version}
-import org.hatdex.hat.api.models.{AccessToken, DataDebit, EndpointQuery}
-import org.hatdex.hat.api.service.richData.{DataDebitService, RichDataDuplicateDebitException, RichDataService}
-import org.hatdex.hat.api.service.{DalExecutionContext, RemoteExecutionContext}
+import org.hatdex.hat.api.models.applications.{ Application, ApplicationStatus, HatApplication, Version }
+import org.hatdex.hat.api.models.{ AccessToken, DataDebit, EndpointQuery }
+import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataDuplicateDebitException, RichDataService }
+import org.hatdex.hat.api.service.{ DalExecutionContext, RemoteExecutionContext }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.Tables
@@ -39,7 +39,7 @@ import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.cache.AsyncCacheApi
-import play.api.libs.json.{JsObject, JsString}
+import play.api.libs.json.{ JsObject, JsString }
 import play.api.libs.ws.WSClient
 import play.api.mvc.RequestHeader
 
@@ -73,7 +73,10 @@ class ApplicationsService @Inject() (
   private val logger = Logger(this.getClass)
   private val applicationsCacheDuration: FiniteDuration = 30.minutes
 
-  def applicationStatus(id: String)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Option[HatApplication]] = {
+  def applicationStatus(id: String, bustCache: Boolean = false)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Option[HatApplication]] = {
+    if (bustCache) {
+      cache.remove(appCacheKey(id))
+    }
     cache.getOrElseUpdate(appCacheKey(id), applicationsCacheDuration) {
       for {
         maybeApp <- trustedApplicationProvider.application(id)
@@ -201,15 +204,15 @@ class ApplicationsService @Inject() (
           mostRecentData <- mostRecentDataTime(app)
         } yield {
           logger.debug(s"Check compatibility between $version and new ${app.status}: ${Version(version).greaterThan(app.status.compatibility)}")
-          HatApplication(app, setup = true, active = status,
+          HatApplication(app, setup = true, enabled = true, active = status,
             Some(app.status.compatibility.greaterThan(Version(version))), // Needs updating if setup version beyond compatible
             mostRecentData)
         }
       case Some(ApplicationStatusRow(_, _, false)) =>
         // If application has been disabled, reflect in status
-        Future.successful(HatApplication(app, setup = true, active = false, needsUpdating = None, mostRecentData = None))
+        Future.successful(HatApplication(app, setup = true, enabled = false, active = false, needsUpdating = None, mostRecentData = None))
       case None =>
-        Future.successful(HatApplication(app, setup = false, active = false, needsUpdating = None, mostRecentData = None))
+        Future.successful(HatApplication(app, setup = false, enabled = false, active = false, needsUpdating = None, mostRecentData = None))
     }
   }
 

@@ -24,9 +24,8 @@
 
 package org.hatdex.hat.api.controllers
 
-import javax.inject.Inject
-
 import com.mohiva.play.silhouette.api.Silhouette
+import javax.inject.Inject
 import org.hatdex.hat.api.json.ApplicationJsonProtocol
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.applications.ApplicationsService
@@ -54,11 +53,15 @@ class Applications @Inject() (
     for {
       apps ← applicationsService.applicationStatus()
       filterApps ← ContainsApplicationRole(ApplicationList()).isAuthorized(request.identity, request.authenticator, request.dynamicEnvironment)
+      maybeApp ← request.authenticator.customClaims.flatMap(customClaims ⇒ (customClaims \ "application").asOpt[String])
+        .map(app ⇒ applicationsService.applicationStatus(app)(request.dynamicEnvironment, request.identity, request))
+        .getOrElse(Future.successful(None))
     } yield {
       if (filterApps) {
-        val permitted = request.identity.roles.collect({
+        val permitted = maybeApp.map(_.application.permissions.rolesGranted.collect({
           case ApplicationManage(applicationId) ⇒ applicationId
-        }).toSet
+        }).toSet).getOrElse(Set())
+
         val filtered = apps.filter(a ⇒ permitted.contains(a.application.id))
         Ok(Json.toJson(filtered))
       }
@@ -69,7 +72,8 @@ class Applications @Inject() (
   }
 
   def applicationStatus(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(Owner())).async { implicit request =>
-    applicationsService.applicationStatus(id).map { maybeStatus ⇒
+    val bustCache = request.headers.get("Cache-Control").exists(_ == "no-cache")
+    applicationsService.applicationStatus(id, bustCache).map { maybeStatus ⇒
       maybeStatus map { status ⇒
         Ok(Json.toJson(status))
       } getOrElse {

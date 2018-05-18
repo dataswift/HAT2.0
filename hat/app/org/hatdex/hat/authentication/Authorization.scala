@@ -105,11 +105,11 @@ case class ContainsApplicationRole(anyOf: UserRole*)(implicit val applicationsSe
     }
 
     status map { maybeAppStatus ⇒
-      val appStatusOk = maybeAppStatus map { appStatus ⇒
-        (appStatus.active && appStatus.application.permissions.rolesGranted.intersect(anyOf).nonEmpty) || // App has been granted a specific role
+      val appStatusOk = maybeAppStatus exists { appStatus ⇒
+        (appStatus.enabled && appStatus.application.permissions.rolesGranted.intersect(anyOf).nonEmpty) || // App has been granted a specific role
           (appStatus.application.permissions.rolesGranted.contains(Owner()) && // Or is an owner app
             anyOf.exists(r ⇒ !rolesRequiringExplicitApproval.contains(r.title))) // is there a required role that does not require explicit approval even for owner scope
-      } getOrElse false // Unauthorized if app status not found
+      } // Unauthorized if app status not found
       val userRoleAuthorized = anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner())
       containsApplicationClaim && appStatusOk && userRoleAuthorized
     }

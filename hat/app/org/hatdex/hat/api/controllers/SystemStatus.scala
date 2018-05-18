@@ -47,9 +47,10 @@ class SystemStatus @Inject() (
     silhouette: Silhouette[HatApiAuthEnvironment],
     systemStatusService: SystemStatusService,
     usersService: UsersService,
-    hatDatabaseProvider: HatDatabaseProvider,
-    implicit val ec: ExecutionContext,
-    implicit val applicationsService: ApplicationsService) extends HatApiController(components, silhouette) with HatJsonFormats {
+    hatDatabaseProvider: HatDatabaseProvider)(
+    implicit
+    val ec: ExecutionContext,
+    val applicationsService: ApplicationsService) extends HatApiController(components, silhouette) with HatJsonFormats {
 
   private val logger = Logger(this.getClass)
 
