@@ -339,7 +339,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
     "Return `true` for external check with matching status" in {
       withMockWsClient { client ⇒
         val service = new ApplicationStatusCheckService(client)(remoteEC)
-        service.status(ApplicationStatus.External(Version("1.0.0"), "/status", 200, None), "token")
+        service.status(ApplicationStatus.External(Version("1.0.0"), "/status", 200, None, None), "token")
           .map { result ⇒
             result must beTrue
           }
@@ -350,7 +350,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
     "Return `false` for external check with non-matching status" in {
       withMockWsClient { client ⇒
         val service = new ApplicationStatusCheckService(client)(remoteEC)
-        service.status(ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None), "token")
+        service.status(ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None, None), "token")
           .map { result ⇒
             result must beFalse
           }

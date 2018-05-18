@@ -289,13 +289,13 @@ trait ApplicationsServiceContext extends HATTestContext {
 
   val notablesAppExternal: Application = notablesApp.copy(
     id = "notables-external",
-    status = ApplicationStatus.External(Version("1.0.0"), "/status", 200, None),
+    status = ApplicationStatus.External(Version("1.0.0"), "/status", 200, None, None),
     permissions = notablesApp.permissions.copy(
       dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
         name = "notables-external"))))
   val notablesAppExternalFailing: Application = notablesApp.copy(
     id = "notables-external-failing",
-    status = ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None),
+    status = ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None, None),
     permissions = notablesApp.permissions.copy(
       dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
         name = "notables-external-failing"))))
@@ -325,7 +325,7 @@ trait ApplicationsServiceContext extends HATTestContext {
         val s = invocation.getArguments()(0).asInstanceOf[ApplicationStatus.Status]
         s match {
           case ApplicationStatus.Internal(_, _) ⇒ Future.successful(true)
-          case ApplicationStatus.External(_, "/status", _, _) ⇒ Future.successful(true)
+          case ApplicationStatus.External(_, "/status", _, _, _) ⇒ Future.successful(true)
           case _ ⇒ Future.successful(false)
         }
       }
