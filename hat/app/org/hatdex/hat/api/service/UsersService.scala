@@ -50,10 +50,18 @@ class UsersService @Inject() (cache: AsyncCacheApi)(implicit ec: DalExecutionCon
   }
 
   def getUser(userId: UUID)(implicit server: HatServer): Future[Option[HatUser]] = {
-    cache.getOrElseUpdate(s"${server.domain}:user:$userId") {
-      queryUser(UserUser.filter(_.userId === userId))
-        .map(_.headOption)
-    }
+    cache.get[HatUser](s"${server.domain}:user:$userId")
+      .flatMap {
+        case Some(cached) ⇒ Future.successful(Some(cached))
+        case None ⇒
+          queryUser(UserUser.filter(_.userId === userId))
+            .map(_.headOption)
+            .andThen({
+              case Success(Some(u)) ⇒
+                cache.set(s"${server.domain}:user:${u.userId}", u)
+                cache.set(s"${server.domain}:user:${u.email}", u)
+            })
+      }
   }
 
   def getUser(username: String)(implicit server: HatServer): Future[Option[HatUser]] = {
