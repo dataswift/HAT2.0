@@ -146,7 +146,7 @@ class GoogleCalendarMapper extends DataEndpointMapper {
         .withZone((content \ "end" \ "timeZone").asOpt[String].flatMap(z ⇒ Try(DateTimeZone.forID(z)).toOption).getOrElse(DateTimeZone.getDefault)))
       timeIntervalString ← Try(eventTimeIntervalString(startDate, Some(endDate)))
       itemContent ← Try(DataFeedItemContent(
-        Some(s"${timeIntervalString._1} ${timeIntervalString._2.getOrElse("")}"), None, None))
+        (content \ "description").asOpt[String], None, None))
       location ← Try(DataFeedItemLocation(
         geo = None,
         address = (content \ "location").asOpt[String].map(l ⇒ LocationAddress(None, None, Some(l), None, None)), // TODO integrate with geocoding API for full location information?
@@ -352,18 +352,12 @@ class FacebookEventMapper extends DataEndpointMapper {
         Some((content \ "end_time").as[DateTime])))
 
       itemContent ← Try(DataFeedItemContent(
-        Some(
-          s"""## ${(content \ "name").as[String]}
-             |
-           |${timeIntervalString._1} ${timeIntervalString._2.getOrElse("")}
-             |
-           |${(content \ "description").as[String]}
-             |""".stripMargin), None, None))
+        Some((content \ "description").as[String]), None, None))
       title ← Try(if ((content \ "rsvp_status").as[String] == "attending") {
-        DataFeedItemTitle("You are attending an event", None, Some("event"))
+        DataFeedItemTitle("You are attending an event", Some(s"${timeIntervalString._1} ${timeIntervalString._2.getOrElse("")}"), Some("event"))
       }
       else {
-        DataFeedItemTitle("You have an event", None, Some("event"))
+        DataFeedItemTitle("You have an event", Some(s"${timeIntervalString._1} ${timeIntervalString._2.getOrElse("")}"), Some("event"))
       })
     } yield {
       val location = Try(DataFeedItemLocation(
@@ -413,7 +407,7 @@ class FacebookFeedMapper extends DataEndpointMapper {
         Some(
           s"""${(content \ "message").asOpt[String].getOrElse((content \ "story").as[String])}
              |
-             |${(content \ "link").asOpt[String].getOrElse("")}""".stripMargin), None,
+             |${(content \ "link").asOpt[String].getOrElse("")}""".stripMargin.trim), None,
         (content \ "picture").asOpt[String].map(url ⇒ List(DataFeedItemMedia(Some(url), (content \ "full_picture").asOpt[String])))))
       date ← Try((content \ "created_time").as[DateTime])
       tags ← Try(Seq("post", (content \ "type").as[String]))
@@ -505,3 +499,62 @@ class SpotifyFeedMapper extends DataEndpointMapper {
   }
 }
 
+class MonzoTransactionMapper extends DataEndpointMapper {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(EndpointQuery("monzo/transactions", None,
+        dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("created", None, f))), None)), Some("created"), Some("descending"), None))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+    for {
+      title ← Try(if ((content \ "is_load").as[Boolean]) {
+        DataFeedItemTitle("You topped up", Some(s"${Math.abs((content \ "local_amount").as[Int]) / 100.0} ${(content \ "local_currency").as[String]}"), Some("money"))
+      }
+      else if ((content \ "metadata" \ "p2p_transfer_id").as[String].nonEmpty) {
+        if ((content \ "originator").as[Boolean]) {
+          DataFeedItemTitle("You paid a friend", Some(s"${(content \ "description").asOpt[String]} ${Math.abs((content \ "local_amount").as[Int]) / 100.0} ${(content \ "local_currency").as[String]}"), Some("money"))
+        }
+        else {
+          DataFeedItemTitle("You received money from a friend", Some(s"${(content \ "description").asOpt[String]}, ${Math.abs((content \ "local_amount").as[Int]) / 100.0} ${(content \ "local_currency").as[String]}"), Some("money"))
+        }
+      }
+      else {
+        DataFeedItemTitle("You spent", Some(s"${Math.abs((content \ "local_amount").as[Int]) / 100.0} ${(content \ "local_currency").as[String]}"), Some("money"))
+      })
+      itemContent ← Try(DataFeedItemContent(
+        Some(
+          s"""| ${(content \ "note").asOpt[String].getOrElse("")}
+             |
+             |${(content \ "merchant" \ "name").asOpt[String].getOrElse("")}
+             |
+             |${(content \ "merchant" \ "address" \ "short_formatted").asOpt[String].getOrElse("")}""".stripMargin.trim), None,
+        None))
+      date ← Try((content \ "created").as[DateTime])
+      tags ← Try(Seq("transaction", (content \ "category").as[String]))
+    } yield {
+
+      val locationGeo = Try(LocationGeo(
+        (content \ "merchant" \ "address" \ "longitude").as[Double],
+        (content \ "merchant" \ "address" \ "latitude").as[Double])).toOption
+
+      val locationAddress = Try(LocationAddress(
+        (content \ "merchant" \ "address" \ "country").asOpt[String],
+        (content \ "merchant" \ "address" \ "city").asOpt[String],
+        (content \ "merchant" \ "name").asOpt[String],
+        (content \ "merchant" \ "address" \ "address").asOpt[String],
+        (content \ "merchant" \ "address" \ "postcode").asOpt[String])).toOption
+
+      val maybeLocation = if (locationAddress.contains(LocationAddress(None, None, None, None, None))) {
+        None
+      }
+      else {
+        locationAddress
+      }
+
+      val location = locationGeo.orElse(maybeLocation).map(_ ⇒ DataFeedItemLocation(locationGeo, maybeLocation, None))
+
+      DataFeedItem("monzo", date, tags, Some(title), Some(itemContent), location)
+    }
+  }
+}

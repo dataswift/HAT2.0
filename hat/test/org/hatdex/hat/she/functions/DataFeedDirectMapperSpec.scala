@@ -147,7 +147,7 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
       transformed.source must be equalTo "facebook"
       transformed.types must contain("event")
       transformed.title.get.text must be equalTo "You are attending an event"
-      transformed.content.get.text.get must contain("Personal Data")
+      transformed.content.get.text.get must contain("privacy, security, access rights, regulation")
       transformed.location must beNone
     }
 
@@ -158,7 +158,7 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
       transformed.source must be equalTo "facebook"
       transformed.types must contain("event")
       transformed.title.get.text must be equalTo "You are attending an event"
-      transformed.content.get.text.get must contain("Personal Data")
+      transformed.content.get.text.get must contain("privacy, security, access rights, regulation")
       transformed.location must beNone
     }
   }
@@ -230,7 +230,8 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
       transformed.source must be equalTo "google"
       transformed.types must contain("event")
       transformed.title.get.text must contain("MadHATTERs Tea Party: The Boston Party")
-      transformed.content.get.text.get must contain("12 December 18:30 - 22:30 EST")
+      transformed.title.get.subtitle.get must contain("12 December 18:30 - 22:30 EST")
+      transformed.content.get.text.get must contain("personal data, user accounts, security and value")
     }
 
     "translate google calendar full-day event" in {
@@ -238,7 +239,7 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
       val transformed = mapper.mapDataRecord(googleCalendarFullDayEvent.recordId.get, googleCalendarFullDayEvent.data).get
       transformed.source must be equalTo "google"
       transformed.types must contain("event")
-      transformed.content.get.text.get must contain("27 October - 29 October")
+      transformed.content.get.text must beNone
     }
   }
 
