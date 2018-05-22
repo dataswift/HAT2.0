@@ -506,29 +506,54 @@ class MonzoTransactionMapper extends DataEndpointMapper {
         dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("created", None, f))), None)), Some("created"), Some("descending"), None))
   }
 
+  private val currencyMap = Map(
+    "EUR" → "\u20AC",
+    "GBP" → "\u00A3",
+    "USD" → "\u0024",
+    "JPY" → "\u00A5",
+    "THB" → "\u0E3F")
+
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     for {
-      title ← Try(if ((content \ "is_load").as[Boolean]) {
-        DataFeedItemTitle("You topped up", Some(s"${Math.abs((content \ "local_amount").as[Int]) / 100.0} ${(content \ "local_currency").as[String]}"), Some("money"))
+      paymentAmount ← Try((content \ "local_amount").as[Int] / 100.0)
+      paymentCurrency ← Try({
+        val currencyCode = (content \ "local_currency").as[String]
+        currencyMap.getOrElse(currencyCode, currencyCode)
+      })
+      title ← Try(if ((content \ "is_load").as[Boolean] && (content \ "metadata" \ "p2p_transfer_id").asOpt[String].isEmpty) {
+        DataFeedItemTitle("You topped up", Some(s"$paymentCurrency$paymentAmount"), Some("money"))
       }
-      else if ((content \ "metadata" \ "p2p_transfer_id").as[String].nonEmpty) {
+      else if ((content \ "metadata" \ "p2p_transfer_id").asOpt[String].nonEmpty) {
         if ((content \ "originator").as[Boolean]) {
-          DataFeedItemTitle("You paid a friend", Some(s"${(content \ "description").asOpt[String]} ${Math.abs((content \ "local_amount").as[Int]) / 100.0} ${(content \ "local_currency").as[String]}"), Some("money"))
+          DataFeedItemTitle("You paid a friend", Some(s"$paymentCurrency${-paymentAmount}"), Some("money"))
         }
         else {
-          DataFeedItemTitle("You received money from a friend", Some(s"${(content \ "description").asOpt[String]}, ${Math.abs((content \ "local_amount").as[Int]) / 100.0} ${(content \ "local_currency").as[String]}"), Some("money"))
+          DataFeedItemTitle("You received money from a friend", Some(s"$paymentCurrency$paymentAmount"), Some("money"))
         }
       }
       else {
-        DataFeedItemTitle("You spent", Some(s"${Math.abs((content \ "local_amount").as[Int]) / 100.0} ${(content \ "local_currency").as[String]}"), Some("money"))
+        if ((content \ "metadata" \ "is_reversal").asOpt[String].contains("true")) {
+          DataFeedItemTitle("Your payment was refunded", Some(s"$paymentCurrency$paymentAmount"), Some("money"))
+        }
+        else if (paymentAmount > 0) {
+          DataFeedItemTitle("You received", Some(s"$paymentCurrency$paymentAmount"), Some("money"))
+        }
+        else {
+          DataFeedItemTitle("You spent", Some(s"$paymentCurrency${-paymentAmount}"), Some("money"))
+        }
       })
       itemContent ← Try(DataFeedItemContent(
-        Some(
-          s"""| ${(content \ "note").asOpt[String].getOrElse("")}
+        Option(
+          s"""|${(content \ "counterparty" \ "name").asOpt[String].orElse((content \ "merchant" \ "name").asOpt[String]).getOrElse("")}
              |
-             |${(content \ "merchant" \ "name").asOpt[String].getOrElse("")}
+             |${(content \ "notes").asOpt[String].getOrElse("")}
              |
-             |${(content \ "merchant" \ "address" \ "short_formatted").asOpt[String].getOrElse("")}""".stripMargin.trim), None,
+             |${(content \ "description").asOpt[String].getOrElse("")}
+             |
+             |${(content \ "merchant" \ "address" \ "short_formatted").asOpt[String].getOrElse("")}"""
+            .stripMargin.replaceAll("\n\n\n", "").trim)
+          .filter(_.nonEmpty),
+        None,
         None))
       date ← Try((content \ "created").as[DateTime])
       tags ← Try(Seq("transaction", (content \ "category").as[String]))
@@ -553,8 +578,14 @@ class MonzoTransactionMapper extends DataEndpointMapper {
       }
 
       val location = locationGeo.orElse(maybeLocation).map(_ ⇒ DataFeedItemLocation(locationGeo, maybeLocation, None))
+      val feedItemContent = if (itemContent == DataFeedItemContent(None, None, None)) {
+        None
+      }
+      else {
+        Some(itemContent)
+      }
 
-      DataFeedItem("monzo", date, tags, Some(title), Some(itemContent), location)
+      DataFeedItem("monzo", date, tags, Some(title), feedItemContent, location)
     }
   }
 }
