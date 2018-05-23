@@ -16,3 +16,4 @@ target/
 *.pem
 deployment/docker/docker-deploy
 /deployment/docker/docker-deploy/
+.ensime*

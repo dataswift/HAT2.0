@@ -25,12 +25,12 @@
 package org.hatdex.hat.she.controllers
 
 import javax.inject.Inject
-
 import com.mohiva.play.silhouette.api.Silhouette
 import org.hatdex.hat.api.json.{ DataFeedItemJsonProtocol, RichDataJsonFormats }
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.models.applications.Version
-import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
+import org.hatdex.hat.api.service.applications.ApplicationsService
+import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol
 import org.hatdex.hat.she.service._
 import play.api.libs.json.Json
@@ -44,20 +44,21 @@ class FeedGenerator @Inject() (
     silhouette: Silhouette[HatApiAuthEnvironment],
     feedGeneratorService: FeedGeneratorService)(
     implicit
-    val ec: ExecutionContext)
+    val ec: ExecutionContext,
+    applicationsService: ApplicationsService)
   extends HatApiController(components, silhouette)
   with RichDataJsonFormats
   with FunctionConfigurationJsonProtocol
   with DataFeedItemJsonProtocol {
 
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long]): Action[AnyContent] =
-    SecuredAction(WithRole(Owner())).async { implicit request ⇒
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request ⇒
       feedGeneratorService.getFeed(endpoint, since, until, appHandlesLocations)
         .map(items ⇒ Ok(Json.toJson(items)))
     }
 
   def fullFeed(since: Option[Long], until: Option[Long]): Action[AnyContent] =
-    SecuredAction(WithRole(Owner())).async { implicit request ⇒
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request ⇒
       feedGeneratorService.fullFeed(since, until, appHandlesLocations)
         .map(items ⇒ Ok(Json.toJson(items)))
     }
