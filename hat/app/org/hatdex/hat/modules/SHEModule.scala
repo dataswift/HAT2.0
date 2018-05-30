@@ -26,7 +26,7 @@ package org.hatdex.hat.modules
 
 import com.google.inject.{ AbstractModule, Provides }
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.she.functions.DataFeedDirectMapper
+import org.hatdex.hat.she.functions.{ DataFeedCounter, DataFeedDirectMapper }
 import org.hatdex.hat.she.service.{ FunctionExecutableRegistry, FunctionExecutionTriggerHandler, FunctionExecutorActor }
 import play.api.libs.concurrent.AkkaGuiceSupport
 
@@ -40,9 +40,11 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
   @Provides
   def provideFunctionExecutableRegistry(): FunctionExecutableRegistry = {
-    val registeredFunction = new DataFeedDirectMapper()
+    val functions = Seq(
+      new DataFeedCounter(),
+      new DataFeedDirectMapper())
 
-    new FunctionExecutableRegistry(Seq(registeredFunction))
+    new FunctionExecutableRegistry(functions)
   }
 
 }

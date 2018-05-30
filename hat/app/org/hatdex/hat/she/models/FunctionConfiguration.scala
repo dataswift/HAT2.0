@@ -30,7 +30,7 @@ import org.hatdex.hat.api.json.RichDataJsonFormats
 import org.hatdex.hat.api.models.{ EndpointData, EndpointDataBundle }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataBundlesRow, SheFunctionRow }
-import org.joda.time.{ DateTime, Duration }
+import org.joda.time.{ DateTime, Period }
 import play.api.libs.json._
 
 case class Response(
@@ -65,8 +65,8 @@ case class FunctionConfiguration(
 
 object FunctionConfiguration {
   def apply(function: SheFunctionRow, bundle: DataBundlesRow, available: Boolean = false): FunctionConfiguration = {
-    import org.hatdex.hat.she.models.FunctionTrigger.Trigger
     import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol.triggerFormat
+    import org.hatdex.hat.she.models.FunctionTrigger.Trigger
     FunctionConfiguration(
       function.name,
       function.description,
@@ -84,7 +84,7 @@ object FunctionTrigger {
     val triggerType: String
   }
 
-  case class TriggerPeriodic(period: Duration) extends Trigger {
+  case class TriggerPeriodic(period: Period) extends Trigger {
     final val triggerType: String = "periodic"
   }
 
