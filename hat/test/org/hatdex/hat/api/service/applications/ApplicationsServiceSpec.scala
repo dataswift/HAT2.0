@@ -328,7 +328,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
     "Return `true` for internal status checks" in {
       withMockWsClient { client ⇒
         val service = new ApplicationStatusCheckService(client)(remoteEC)
-        service.status(ApplicationStatus.Internal(Version("1.0.0"), None), "token")
+        service.status(ApplicationStatus.Internal(Version("1.0.0"), None, None), "token")
           .map { result ⇒
             result must beTrue
           }

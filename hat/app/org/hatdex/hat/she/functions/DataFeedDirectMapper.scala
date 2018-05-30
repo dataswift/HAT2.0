@@ -60,7 +60,7 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
   }
 
   val configuration: FunctionConfiguration = FunctionConfiguration("data-feed-direct-mapper", "",
-    FunctionTrigger.TriggerIndividual(), available = true, enabled = false,
+    FunctionTrigger.TriggerIndividual(), available = false, enabled = false,
     dataBundle = bundleFilterByDate(None, None),
     None)
 

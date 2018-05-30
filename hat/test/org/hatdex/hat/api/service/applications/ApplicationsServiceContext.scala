@@ -285,7 +285,7 @@ trait ApplicationsServiceContext extends HATTestContext {
         name = "notables-incompatible-bundle"))))
   val notablesAppIncompatibleUpdated: Application = notablesAppIncompatible.copy(
     info = notablesApp.info.copy(version = Version("1.1.0")),
-    status = ApplicationStatus.Internal(Version("1.1.0"), None))
+    status = ApplicationStatus.Internal(Version("1.1.0"), None, None))
 
   val notablesAppExternal: Application = notablesApp.copy(
     id = "notables-external",
@@ -324,7 +324,7 @@ trait ApplicationsServiceContext extends HATTestContext {
       override def answer(invocation: InvocationOnMock) = {
         val s = invocation.getArguments()(0).asInstanceOf[ApplicationStatus.Status]
         s match {
-          case ApplicationStatus.Internal(_, _) ⇒ Future.successful(true)
+          case ApplicationStatus.Internal(_, _, _) ⇒ Future.successful(true)
           case ApplicationStatus.External(_, "/status", _, _, _) ⇒ Future.successful(true)
           case _ ⇒ Future.successful(false)
         }

@@ -29,7 +29,7 @@ import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models.EndpointDataBundle
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
-import org.hatdex.hat.she.functions.DataFeedDirectMapper
+import org.hatdex.hat.she.functions.{ DataFeedCounter, DataFeedDirectMapper }
 import org.hatdex.hat.she.models._
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -78,7 +78,13 @@ trait FunctionServiceContext extends HATTestContext {
     dataBundle = EndpointDataBundle("test-unavailable-function-bundler", Map()),
     None)
 
-  val registeredFunction = new DataFeedDirectMapper()
+  val registeredFunction = new DataFeedDirectMapper() {
+    override val configuration = FunctionConfiguration("data-feed-direct-mapper", "",
+      FunctionTrigger.TriggerIndividual(), available = true, enabled = false,
+      dataBundle = bundleFilterByDate(None, None),
+      None)
+  }
+  val dataFeedCounterFunction = new DataFeedCounter()
   val registeredDummyFunction: FunctionExecutable = new DummyFunctionExecutable(dummyFunctionConfiguration)
   val registeredDummyFunctionAvailable: FunctionExecutable = new DummyFunctionExecutable(dummyFunctionConfigurationAvailable)
 }

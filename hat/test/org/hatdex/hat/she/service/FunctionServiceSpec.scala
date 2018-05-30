@@ -56,14 +56,14 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
-    val endpointRecrodsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
+    val endpointRecordsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
 
     val action = DBIO.seq(
       DataBundles.filter(_.bundleId.like("test%")).delete,
       SheFunction.filter(_.name.like("test%")).delete,
-      DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
+      DataJsonGroupRecords.filter(_.recordId in endpointRecordsQuery).delete,
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+      DataJson.filter(r => r.recordId in endpointRecordsQuery).delete)
 
     Await.result(hatDatabase.run(action), 60.seconds)
   }

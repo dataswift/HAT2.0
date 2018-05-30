@@ -28,21 +28,26 @@ import org.hatdex.hat.api.models.EndpointData
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.models.Request
 import org.hatdex.hat.she.service._
-import org.joda.time.DateTime
+import org.joda.time.{ DateTime, DateTimeUtils }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.BeforeAll
+import org.specs2.specification.BeforeAfterAll
 import play.api.Logger
 import play.api.test.PlaySpecification
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirectMapper with PlaySpecification with Mockito with DataFeedDirectMapperContext with BeforeAll {
+class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirectMapper with PlaySpecification with Mockito with DataFeedDirectMapperContext with BeforeAfterAll {
   val logger = Logger(this.getClass)
 
   def beforeAll: Unit = {
+    DateTimeUtils.setCurrentMillisFixed(1514764800000L)
     Await.result(databaseReady, 60.seconds)
+  }
+
+  def afterAll: Unit = {
+    DateTimeUtils.setCurrentMillisSystem()
   }
 
   override def before(): Unit = {

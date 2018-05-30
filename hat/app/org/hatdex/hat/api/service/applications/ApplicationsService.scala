@@ -76,8 +76,10 @@ class ApplicationsService @Inject() (
   def applicationStatus(id: String, bustCache: Boolean = false)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Option[HatApplication]] = {
     if (bustCache) {
       cache.remove(appCacheKey(id))
+      cache.remove(s"apps:${hat.domain}")
     }
     cache.getOrElseUpdate(appCacheKey(id), applicationsCacheDuration) {
+      cache.remove(s"apps:${hat.domain}") // if any item has expired, the aggregated statuses must be refreshed
       for {
         maybeApp <- trustedApplicationProvider.application(id)
         setup <- applicationSetupStatus(id)(hat.db)
@@ -89,11 +91,12 @@ class ApplicationsService @Inject() (
   def applicationStatus()(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Seq[HatApplication]] = {
     cache.getOrElseUpdate(s"apps:${hat.domain}", applicationsCacheDuration) {
       for {
-        apps <- trustedApplicationProvider.applications
-        setup <- applicationSetupStatus()(hat.db)
+        apps <- trustedApplicationProvider.applications // potentially caching
+        setup <- applicationSetupStatus()(hat.db) // database
         statuses <- Future.sequence(apps
           .map(a => (a, setup.find(_.id == a.id)))
           .map(as => collectStatus(as._1, as._2)))
+        _ ← Future.sequence(statuses.map(app ⇒ cache.set(appCacheKey(app.application.id), app, applicationsCacheDuration))) // reinject all fetched items as individual cached items
       } yield statuses
     }
   }

@@ -66,7 +66,7 @@ class FeedGenerator @Inject() (
   private val locationCompatibleVersion = Version("1.2.2")
   private val agentAppVersion = "^([\\w\\s]+)/([\\d\\.]+).*".r
   private def appHandlesLocations()(implicit requestHeader: RequestHeader): Boolean =
-    requestingAppVersion().exists(app ⇒ app._1 != "HAT" || app._2 >= locationCompatibleVersion)
+    requestingAppVersion().forall(app ⇒ app._1 != "HAT" || app._2 >= locationCompatibleVersion)
 
   private def requestingAppVersion()(implicit requestHeader: RequestHeader): Option[(String, Version)] = {
     requestHeader.headers.get("User-Agent").flatMap {
