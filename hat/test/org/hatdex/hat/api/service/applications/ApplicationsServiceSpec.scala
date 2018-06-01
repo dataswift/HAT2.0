@@ -61,6 +61,9 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       Tables.DataDebit.delete,
       Tables.ApplicationStatus.delete)
 
+    val cache = application.injector.instanceOf[AsyncCacheApi]
+    cache.removeAll()
+
     Await.result(hatDatabase.run(action), 60.seconds)
   }
 
@@ -144,7 +147,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
           owner.userId,
           Seq(EndpointData(notablesApp.status.recentDataCheckEndpoint.get, None,
             JsObject(Map("test" -> JsString("test"))), None)), skipErrors = true)
-        app <- service.applicationStatus(notablesApp.id)
+        app <- service.applicationStatus(notablesApp.id, bustCache = true)
       } yield {
         app must beSome
         app.get.setup must beTrue
@@ -205,10 +208,11 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       val dataDebitService = application.injector.instanceOf[DataDebitService]
       val cache = application.injector.instanceOf[AsyncCacheApi]
       val result = for {
-        app <- service.applicationStatus(notablesApp.id)
-        _ <- service.setup(app.get)(hatServer, owner, fakeRequest)
-        _ <- dataDebitService.dataDebitDisable(app.get.application.dataDebitId.get, cancelAtPeriodEnd = false)
-        _ ← cache.remove(s"apps:${hatAddress}:${notablesApp.id}")
+        app ← service.applicationStatus(notablesApp.id)
+        _ ← service.setup(app.get)(hatServer, owner, fakeRequest)
+        _ ← dataDebitService.dataDebitDisable(app.get.application.dataDebitId.get, cancelAtPeriodEnd = false)
+        _ ← cache.remove(service.appCacheKey(app.get.application.id)) //cache.remove(s"apps:${hatServer.domain}:${app.get.application.id}")
+        what ← cache.get(service.appCacheKey(app.get.application.id))
         setup <- service.applicationStatus(app.get.application.id)
       } yield {
         setup must beSome

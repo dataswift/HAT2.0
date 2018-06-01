@@ -23,6 +23,7 @@
  */
 package org.hatdex.hat.api.service.applications
 
+import akka.Done
 import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import org.hatdex.hat.api.models.applications.{ Application, ApplicationStatus, HatApplication, Version }
@@ -74,18 +75,22 @@ class ApplicationsService @Inject() (
   private val applicationsCacheDuration: FiniteDuration = 30.minutes
 
   def applicationStatus(id: String, bustCache: Boolean = false)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Option[HatApplication]] = {
-    if (bustCache) {
-      cache.remove(appCacheKey(id))
-      cache.remove(s"apps:${hat.domain}")
-    }
-    cache.getOrElseUpdate(appCacheKey(id), applicationsCacheDuration) {
-      cache.remove(s"apps:${hat.domain}") // if any item has expired, the aggregated statuses must be refreshed
-      for {
-        maybeApp <- trustedApplicationProvider.application(id)
-        setup <- applicationSetupStatus(id)(hat.db)
-        status <- FutureTransformations.transform(maybeApp.map(collectStatus(_, setup)))
-      } yield status
-    }
+    for {
+      _ ← if (bustCache) { cache.remove(appCacheKey(id)) } else { Future.successful(Done) }
+      _ ← if (bustCache) { cache.remove(s"apps:${hat.domain}") } else { Future.successful(Done) }
+      application ← cache.get[HatApplication](appCacheKey(id))
+        .flatMap {
+          case Some(application) ⇒ Future.successful(Some(application))
+          case None ⇒
+            cache.remove(s"apps:${hat.domain}") // if any item has expired, the aggregated statuses must be refreshed
+            for {
+              maybeApp <- trustedApplicationProvider.application(id)
+              setup <- applicationSetupStatus(id)(hat.db)
+              status <- FutureTransformations.transform(maybeApp.map(collectStatus(_, setup)))
+              _ ← status.map(cache.set(appCacheKey(id), _, applicationsCacheDuration)).getOrElse(Future.successful(Done))
+            } yield status
+        }
+    } yield application
   }
 
   def applicationStatus()(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Seq[HatApplication]] = {
@@ -104,7 +109,7 @@ class ApplicationsService @Inject() (
   def setup(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
     // Create and enable the data debit
     val maybeDataDebitSetup: Option[Future[DataDebit]] = for {
-      ddId <- application.application.dataDebitId
+      ddId ← application.application.dataDebitId
       ddsRequest ← application.application.dataDebitSetupRequest
     } yield {
       logger.debug(s"Enable data debit $ddId for ${application.application.id}")
@@ -123,9 +128,7 @@ class ApplicationsService @Inject() (
     val appSetup = for {
       _ ← maybeDataDebitSetup.getOrElse(Future.successful(())) // If data debit was there, must have been setup successfully
       _ ← applicationSetupStatusUpdate(application, enabled = true)(hat.db) // Update status
-      _ ← cache.remove(appCacheKey(application))
-      _ ← cache.remove(s"apps:${hat.domain}")
-      app ← applicationStatus(application.application.id) // Refetch all information
+      app ← applicationStatus(application.application.id, bustCache = true) // Refetch all information
         .map(_.getOrElse(throw new RuntimeException("Application information not found during setup")))
     } yield {
       logger.debug(s"Application status for ${app.application.id}: active = ${app.active}, setup = ${app.setup}, needs updating = ${app.needsUpdating}")
@@ -146,9 +149,7 @@ class ApplicationsService @Inject() (
       _ ← application.application.dataDebitId.map(dataDebitService.dataDebitDisable(_, cancelAtPeriodEnd = false)(hat))
         .getOrElse(Future.successful(())) // If data debit was there, disable
       _ <- applicationSetupStatusUpdate(application, enabled = false)(hat.db) // Update status
-      _ <- cache.remove(appCacheKey(application))
-      _ <- cache.remove(s"apps:${hat.domain}")
-      app <- applicationStatus(application.application.id) // Refetch all information
+      app <- applicationStatus(application.application.id, bustCache = true) // Refetch all information
         .map(_.getOrElse(throw new RuntimeException("Application information not found during setup")))
     } yield {
       logger.debug(s"Application status for ${app.application.id}: active = ${app.active}, setup = ${app.setup}, needs updating = ${app.needsUpdating}")
@@ -235,6 +236,5 @@ class ApplicationsService @Inject() (
     db.run(query).map(_ => status)
   }
 
-  private def appCacheKey(application: HatApplication)(implicit hat: HatServer): String = s"apps:${hat.domain}:${application.application.id}"
-  private def appCacheKey(id: String)(implicit hat: HatServer): String = s"apps:${hat.domain}:$id"
+  def appCacheKey(id: String)(implicit hat: HatServer): String = s"apps:${hat.domain}:$id"
 }
