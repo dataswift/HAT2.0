@@ -589,3 +589,52 @@ class MonzoTransactionMapper extends DataEndpointMapper {
     }
   }
 }
+
+class InstagramMediaMapper extends DataEndpointMapper {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    val unixDateFilter = fromDate.flatMap { _ =>
+      Some(FilterOperator.Between(Json.toJson(fromDate.map(t => (t.getMillis / 1000).toString)), Json.toJson(untilDate.map(t => (t.getMillis / 1000).toString))))
+    }
+
+    Seq(PropertyQuery(
+      List(EndpointQuery("instagram/feed", None,
+        unixDateFilter.map(f ⇒ Seq(EndpointQueryFilter("created_time", None, f))), None)), Some("created_time"), Some("descending"), None))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+    for {
+      createdTime <- Try(new DateTime((content \ "created_time").as[String].toLong * 1000))
+      tags <- Try((content \ "tags").as[List[String]])
+      kind <- Try((content \ "type").as[String])
+      title <- Try(Some(DataFeedItemTitle("You posted", None, Some(kind))))
+      feedItemContent <- Try(Some(DataFeedItemContent(
+        (content \ "caption" \ "text").asOpt[String],
+        None,
+        kind match {
+          case "image" =>
+            Some(Seq(DataFeedItemMedia(
+              (content \ "images" \ "thumbnail" \ "url").asOpt[String],
+              (content \ "images" \ "standard_resolution" \ "url").asOpt[String])))
+          case "carousel" =>
+            Some((content \ "carousel_media").as[Seq[JsObject]].map { imageInfo =>
+              DataFeedItemMedia(
+                (imageInfo \ "images" \ "thumbnail" \ "url").asOpt[String],
+                (imageInfo \ "images" \ "standard_resolution" \ "url").asOpt[String])
+            })
+          case _ => None
+        })))
+    } yield {
+      val location = Try(DataFeedItemLocation(
+        geo = (content \ "location").asOpt[JsObject]
+          .map(location =>
+            LocationGeo(
+              (location \ "latitude").as[Double],
+              (location \ "longitude").as[Double])),
+        address = (content \ "location" \ "street_address").asOpt[String]
+          .map(fullAddress => LocationAddress(None, None, Some(fullAddress), None, None)),
+        tags = None)).toOption
+
+      DataFeedItem("instagram", createdTime, tags, title, feedItemContent, location)
+    }
+  }
+}

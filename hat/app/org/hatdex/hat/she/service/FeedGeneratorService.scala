@@ -63,7 +63,8 @@ class FeedGeneratorService @Inject() ()(
     "calendar/google/events" → new GoogleCalendarMapper(),
     "notables/feed" → new NotablesFeedMapper(),
     "spotify/feed" → new SpotifyFeedMapper(),
-    "monzo/transactions" → new MonzoTransactionMapper())
+    "monzo/transactions" → new MonzoTransactionMapper(),
+    "instagram/feed" → new InstagramMediaMapper())
 
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
     feedForMappers(dataMappers.filter(_._1.startsWith(endpoint)), since, until, mergeLocations)
