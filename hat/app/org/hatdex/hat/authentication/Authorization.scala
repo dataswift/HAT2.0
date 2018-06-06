@@ -26,6 +26,7 @@ package org.hatdex.hat.authentication
 
 import com.mohiva.play.silhouette.api.Authorization
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
+import org.hatdex.hat.api.models.applications.HatApplication
 import org.hatdex.hat.api.models.{ Owner, RetrieveApplicationToken, UserRole }
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.models._
@@ -92,8 +93,6 @@ object WithRoles {
 case class ContainsApplicationRole(anyOf: UserRole*)(implicit val applicationsService: ApplicationsService, ec: ExecutionContext)
   extends Authorization[HatUser, JWTRS256Authenticator, HatServer] {
 
-  private val rolesRequiringExplicitApproval: Set[String] = Set(RetrieveApplicationToken("").title)
-
   def isAuthorized[B](user: HatUser, authenticator: JWTRS256Authenticator, hat: HatServer)(implicit r: Request[B]): Future[Boolean] = {
     val containsApplicationClaim = authenticator.customClaims.exists(_.keys.contains("application")) // MUST contain application claim
     val status = authenticator.customClaims.flatMap { customClaims ⇒
@@ -106,12 +105,24 @@ case class ContainsApplicationRole(anyOf: UserRole*)(implicit val applicationsSe
 
     status map { maybeAppStatus ⇒
       val appStatusOk = maybeAppStatus exists { appStatus ⇒
-        (appStatus.enabled && appStatus.application.permissions.rolesGranted.intersect(anyOf).nonEmpty) || // App has been granted a specific role
-          (appStatus.application.permissions.rolesGranted.contains(Owner()) && // Or is an owner app
-            anyOf.exists(r ⇒ !rolesRequiringExplicitApproval.contains(r.title))) // is there a required role that does not require explicit approval even for owner scope
+        ContainsApplicationRole.isAuthorized(user, appStatus, authenticator, anyOf: _*)
       } // Unauthorized if app status not found
-      val userRoleAuthorized = anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner())
-      containsApplicationClaim && appStatusOk && userRoleAuthorized
+      containsApplicationClaim && appStatusOk
     }
+  }
+}
+
+object ContainsApplicationRole {
+  private val rolesRequiringExplicitApproval: Set[String] = Set(RetrieveApplicationToken("").title)
+
+  def isAuthorized[B](user: HatUser, appStatus: HatApplication, authenticator: JWTRS256Authenticator, anyOf: UserRole*): Boolean = {
+    val containsApplicationClaim = authenticator.customClaims.forall(_.keys.contains("application")) // must NOT contain application claim
+    val appStatusOk =
+      (appStatus.enabled && appStatus.application.permissions.rolesGranted.intersect(anyOf).nonEmpty) || // App has been granted a specific role
+        (appStatus.application.permissions.rolesGranted.contains(Owner()) && // Or is an owner app
+          anyOf.exists(r ⇒ !rolesRequiringExplicitApproval.contains(r.title))) // is there a required role that does not require explicit approval even for owner scope
+
+    val userRoleAuthorized = anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner())
+    containsApplicationClaim && appStatusOk && userRoleAuthorized
   }
 }
