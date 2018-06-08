@@ -72,6 +72,7 @@ class DataFeedCounter extends FunctionExecutable with DataFeedItemJsonProtocol w
     logger.info(s"Recorded records since ${configuration.lastExecution}: ${counters}")
 
     val data = Json.obj(
+      "timestamp" → Json.toJson(DateTime.now()),
       "since" → Json.toJson(configuration.lastExecution),
       "counters" → Json.toJson(counters))
 

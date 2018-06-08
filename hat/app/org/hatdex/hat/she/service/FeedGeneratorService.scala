@@ -66,11 +66,27 @@ class FeedGeneratorService @Inject() ()(
     "monzo/transactions" → new MonzoTransactionMapper(),
     "instagram/feed" → new InstagramMediaMapper())
 
+  private val insightMappers: Seq[(String, InsightsMapper)] = Seq(
+    "activity-records" → new InsightsMapper())
+
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
     feedForMappers(dataMappers.filter(_._1.startsWith(endpoint)), since, until, mergeLocations)
 
   def fullFeed(since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
     feedForMappers(dataMappers, since, until, mergeLocations)
+
+  def insights(since: Option[Long], until: Option[Long])(implicit hatServer: HatServer): Source[DataFeedItem, NotUsed] = {
+    val now = DateTime.now()
+    val sinceTime = since.map(t ⇒ new DateTime(t * 1000L)).getOrElse(now.minus(defaultTimeBack.toMillis))
+    val untilTime = until.map(t ⇒ new DateTime(t * 1000L)).getOrElse(now.plus(defaultTimeForward.toMillis))
+
+    val sources: Seq[Source[DataFeedItem, NotUsed]] = insightMappers
+      .unzip._2
+      .map(_.feed(Some(sinceTime), Some(untilTime)))
+
+    new SourceMergeSorter()
+      .mergeWithSorter(sources)
+  }
 
   private val defaultTimeBack = 360.days
   private val defaultTimeForward = 90.days
@@ -96,7 +112,11 @@ class FeedGeneratorService @Inject() ()(
       sortedSources
     }
 
-    outputStream.runWith(Sink.seq)
+    val insightsFeed = insights(since, until)
+
+    new SourceMergeSorter()
+      .mergeWithSorter(Seq(outputStream, insightsFeed))
+      .runWith(Sink.seq)
   }
 
   def locationStream(since: Long, until: Long)(implicit hatServer: HatServer): Source[(DateTime, LocationGeo), NotUsed] = {
@@ -156,3 +176,4 @@ class FeedGeneratorService @Inject() ()(
   }
 
 }
+

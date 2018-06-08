@@ -110,6 +110,59 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
   }
 }
 
+class InsightsMapper extends DataEndpointMapper {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(
+        EndpointQuery("she/insights/activity-records", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("timestamp", None, f))), None)),
+      Some("timestamp"), Some("descending"), None))
+  }
+
+  private val textMappings = Map(
+    "twitter/tweets" → "Tweets sent",
+    "facebook/feed" → "Posts composed",
+    "notables/feed" → "Notes taken",
+    "spotify/feed" → "Songs listened to",
+    "calendar/google/events" → "Calendar events recorded",
+    "monzo/transactions" → "Transactions performed")
+
+  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+    for {
+      startDate ← Try((content \ "since").asOpt[DateTime])
+      endDate ← Try((content \ "timestamp").asOpt[DateTime])
+      timeIntervalString ← Try(startDate.map(eventTimeIntervalString(_, endDate)))
+      counters ← Try((content \ "counters").as[Map[String, Int]]) if counters.exists(_._2 != 0)
+    } yield {
+      val title = DataFeedItemTitle(
+        "Your recent activity summary",
+        timeIntervalString.map(interval => s"${interval._1} ${interval._2.getOrElse("")}"), Some("insight"))
+
+      val nested: Map[String, Seq[DataFeedNestedStructureItem]] = counters.foldLeft(Seq[(String, DataFeedNestedStructureItem)]())({
+        (structured, newitem) ⇒
+          val item = DataFeedNestedStructureItem(textMappings.getOrElse(newitem._1, "unrecognised"), Some(newitem._2.toString), None)
+          val source = newitem._1.split("/").head
+          structured :+ (source → item)
+      })
+        .filterNot(_._2.content == "unrecognised")
+        .filterNot(_._2.badge.contains("0"))
+        .groupBy(_._1).map({
+          case (k, v) ⇒ k → v.unzip._2
+        })
+
+      val simplified: String = nested.map({
+        case (source, info) ⇒
+          s"""${source.capitalize}:
+           |  ${info.map(i ⇒ s"${i.content}: ${i.badge.getOrElse("")}").mkString("\n  ")}
+           |""".stripMargin
+      }).mkString("\n")
+
+      val itemContent = DataFeedItemContent(text = Some(simplified), html = None, media = None, nestedStructure = Some(nested))
+
+      DataFeedItem("she", endDate.getOrElse(DateTime.now()), Seq("insight", "activity"), Some(title), Some(itemContent), None)
+    }
+  }
+}
+
 class GoogleCalendarMapper extends DataEndpointMapper {
   override protected val dataDeduplicationField: Option[String] = Some("id")
 
@@ -146,7 +199,7 @@ class GoogleCalendarMapper extends DataEndpointMapper {
         .withZone((content \ "end" \ "timeZone").asOpt[String].flatMap(z ⇒ Try(DateTimeZone.forID(z)).toOption).getOrElse(DateTimeZone.getDefault)))
       timeIntervalString ← Try(eventTimeIntervalString(startDate, Some(endDate)))
       itemContent ← Try(DataFeedItemContent(
-        (content \ "description").asOpt[String], None, None))
+        (content \ "description").asOpt[String], None, None, None))
       location ← Try(DataFeedItemLocation(
         geo = None,
         address = (content \ "location").asOpt[String].map(l ⇒ LocationAddress(None, None, Some(l), None, None)), // TODO integrate with geocoding API for full location information?
@@ -178,6 +231,7 @@ class FitbitWeightMapper extends DataEndpointMapper {
         (content \ "weight").asOpt[Double].map(w ⇒ s"- Weight: $w"),
         (content \ "fat").asOpt[Double].map(w ⇒ s"- Body Fat: $w"),
         (content \ "bmi").asOpt[Double].map(w ⇒ s"- BMI: $w")).flatten.mkString("\n")),
+      None,
       None,
       None)
 
@@ -212,7 +266,7 @@ class FitbitActivityMapper extends DataEndpointMapper {
 
       DataFeedItem(
         "fitbit", date, Seq("fitness", "activity"),
-        Some(title), Some(DataFeedItemContent(Some(message), None, None)), None)
+        Some(title), Some(DataFeedItemContent(Some(message), None, None, None)), None)
     }
   }
 }
@@ -283,6 +337,7 @@ class FitbitSleepMapper extends DataEndpointMapper {
     val itemContent = DataFeedItemContent(
       Some(Seq(timeInBed, minutesAsleep, efficiency).flatten.mkString(" ")),
       None,
+      None,
       None)
 
     for {
@@ -313,7 +368,7 @@ class TwitterFeedMapper extends DataEndpointMapper {
       else {
         DataFeedItemTitle("You tweeted", None, None)
       })
-      itemContent ← Try(DataFeedItemContent((content \ "text").asOpt[String], None, None))
+      itemContent ← Try(DataFeedItemContent((content \ "text").asOpt[String], None, None, None))
       date ← Try((content \ "lastUpdated").as[DateTime])
     } yield {
       val location = Try(DataFeedItemLocation(
@@ -352,7 +407,7 @@ class FacebookEventMapper extends DataEndpointMapper {
         Some((content \ "end_time").as[DateTime])))
 
       itemContent ← Try(DataFeedItemContent(
-        Some((content \ "description").as[String]), None, None))
+        Some((content \ "description").as[String]), None, None, None))
       title ← Try(if ((content \ "rsvp_status").as[String] == "attending") {
         DataFeedItemTitle("You are attending an event", Some(s"${timeIntervalString._1} ${timeIntervalString._2.getOrElse("")}"), Some("event"))
       }
@@ -408,7 +463,7 @@ class FacebookFeedMapper extends DataEndpointMapper {
           s"""${(content \ "message").asOpt[String].getOrElse((content \ "story").as[String])}
              |
              |${(content \ "link").asOpt[String].getOrElse("")}""".stripMargin.trim), None,
-        (content \ "picture").asOpt[String].map(url ⇒ List(DataFeedItemMedia(Some(url), (content \ "full_picture").asOpt[String])))))
+        (content \ "picture").asOpt[String].map(url ⇒ List(DataFeedItemMedia(Some(url), (content \ "full_picture").asOpt[String]))), None))
       date ← Try((content \ "created_time").as[DateTime])
       tags ← Try(Seq("post", (content \ "type").as[String]))
     } yield {
@@ -455,10 +510,10 @@ class NotablesFeedMapper extends DataEndpointMapper {
       })
       itemContent ← Try(if ((content \ "photov1").isDefined && (content \ "photov1" \ "link").as[String].nonEmpty) {
         DataFeedItemContent(Some((content \ "message").as[String]), None, Some(Seq(
-          DataFeedItemMedia(Some((content \ "photov1" \ "link").as[String]), Some((content \ "photov1" \ "link").as[String])))))
+          DataFeedItemMedia(Some((content \ "photov1" \ "link").as[String]), Some((content \ "photov1" \ "link").as[String])))), None)
       }
       else {
-        DataFeedItemContent(Some((content \ "message").as[String]), None, None)
+        DataFeedItemContent(Some((content \ "message").as[String]), None, None, None)
       })
       location ← Try(if ((content \ "locationv1").isDefined) {
         Some(DataFeedItemLocation(Some(LocationGeo(
@@ -493,7 +548,8 @@ class SpotifyFeedMapper extends DataEndpointMapper {
           |${(content \ "track" \ "album" \ "name").as[String]}""".stripMargin),
         None,
         Some(
-          Seq(DataFeedItemMedia((content \ "track" \ "album" \ "images" \ 0 \ "url").asOpt[String], (content \ "track" \ "album" \ "images" \ 0 \ "url").asOpt[String])))))
+          Seq(DataFeedItemMedia((content \ "track" \ "album" \ "images" \ 0 \ "url").asOpt[String], (content \ "track" \ "album" \ "images" \ 0 \ "url").asOpt[String]))),
+        None))
       date ← Try((content \ "played_at").as[DateTime])
     } yield DataFeedItem("spotify", date, Seq(), Some(title), Some(itemContent), None)
   }
@@ -554,6 +610,7 @@ class MonzoTransactionMapper extends DataEndpointMapper {
             .stripMargin.replaceAll("\n\n\n", "").trim)
           .filter(_.nonEmpty),
         None,
+        None,
         None))
       date ← Try((content \ "created").as[DateTime])
       tags ← Try(Seq("transaction", (content \ "category").as[String]))
@@ -578,7 +635,7 @@ class MonzoTransactionMapper extends DataEndpointMapper {
       }
 
       val location = locationGeo.orElse(maybeLocation).map(_ ⇒ DataFeedItemLocation(locationGeo, maybeLocation, None))
-      val feedItemContent = if (itemContent == DataFeedItemContent(None, None, None)) {
+      val feedItemContent = if (itemContent == DataFeedItemContent(None, None, None, None)) {
         None
       }
       else {
@@ -622,7 +679,8 @@ class InstagramMediaMapper extends DataEndpointMapper {
                 (imageInfo \ "images" \ "standard_resolution" \ "url").asOpt[String])
             })
           case _ => None
-        })))
+        },
+        None)))
     } yield {
       val location = Try(DataFeedItemLocation(
         geo = (content \ "location").asOpt[JsObject]
