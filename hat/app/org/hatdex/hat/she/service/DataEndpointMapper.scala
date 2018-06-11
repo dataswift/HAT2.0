@@ -189,6 +189,12 @@ class GoogleCalendarMapper extends DataEndpointMapper {
     Seq(eventDateTimePropertyQuery, eventDatePropertyQuery)
   }
 
+  def cleanHtmlTags(input: String): String = {
+    input.replaceAll("<br/?>", "\n")
+      .replaceAll("&nbsp;", " ")
+      .replaceAll("<a [^>]*>([^<]*)</a>", "$1")
+  }
+
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     for {
       startDate ← Try((content \ "start" \ "dateTime").asOpt[DateTime]
@@ -199,7 +205,7 @@ class GoogleCalendarMapper extends DataEndpointMapper {
         .withZone((content \ "end" \ "timeZone").asOpt[String].flatMap(z ⇒ Try(DateTimeZone.forID(z)).toOption).getOrElse(DateTimeZone.getDefault)))
       timeIntervalString ← Try(eventTimeIntervalString(startDate, Some(endDate)))
       itemContent ← Try(DataFeedItemContent(
-        (content \ "description").asOpt[String], None, None, None))
+        (content \ "description").asOpt[String].map(cleanHtmlTags), None, None, None))
       location ← Try(DataFeedItemLocation(
         geo = None,
         address = (content \ "location").asOpt[String].map(l ⇒ LocationAddress(None, None, Some(l), None, None)), // TODO integrate with geocoding API for full location information?

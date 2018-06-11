@@ -915,6 +915,51 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
 
   val googleCalendarEvent: EndpointData = Json.parse(googleCalendaEventText).as[EndpointData]
 
+  private val googleCalendaEventHtmlText =
+    """
+      |{
+      |        "endpoint": "calendar/google/events",
+      |        "recordId": "bff0fbbd-78af-4999-a1fa-f7e70864d85b",
+      |        "data": {
+      |            "id": "1084m8261rnnk0g5k5en7da63u",
+      |            "end": {
+      |                "dateTime": "2017-12-13T03:30:00Z",
+      |                "timeZone": "America/New_York"
+      |            },
+      |            "etag": "\"3019071330104000\"",
+      |            "kind": "calendar#event",
+      |            "start": {
+      |                "dateTime": "2017-12-12T23:30:00Z",
+      |                "timeZone": "America/New_York"
+      |            },
+      |            "status": "confirmed",
+      |            "created": "2017-11-01T11:26:05.000Z",
+      |            "creator": {
+      |                "email": "holtby.jonathan@gmail.com",
+      |                "displayName": "Jonathan Holtby"
+      |            },
+      |            "iCalUID": "1084m8261rnnk0g5k5en7da63u@google.com",
+      |            "summary": "MadHATTERs Tea Party: The Boston Party",
+      |            "updated": "2017-11-01T11:27:45.052Z",
+      |            "htmlLink": "https://www.google.com/calendar/event?eid=MTA4NG04MjYxcm5uazBnNWs1ZW43ZGE2M3UgZjRsZHZqbDd0a3RvZjBtcGVqZjQxMTU0Y3NAZw",
+      |            "location": "Boston, MA, USA",
+      |            "sequence": 1,
+      |            "organizer": {
+      |                "self": true,
+      |                "email": "f4ldvjl7tktof0mpejf41154cs@group.calendar.google.com",
+      |                "displayName": "HAT Platform"
+      |            },
+      |            "reminders": {
+      |                "useDefault": true
+      |            },
+      |            "calendarId": "f4ldvjl7tktof0mpejf41154cs@group.calendar.google.com",
+      |            "description": "BD call&nbsp;<br><br>Please join my meeting from your computer, tablet or smartphone.&nbsp;<br><a href=\"https://global.gotomeeting.com/join/00000000\" target=\"_blank\">https://global.gotomeeting.com/join/00000000&nbsp;</a><br><br>You can also dial in using your phone.&nbsp;<br>United Kingdom: +44 20 3713 5028&nbsp;<br><br>Access Code:&nbsp;000-000-000&nbsp;<br><br>More phone numbers&nbsp;<br>United States: +1 (571) 317-3129&nbsp;<br>Canada: +1 (647) 497-9391&nbsp;<br><br>First GoToMeeting? Let's do a quick system check:<a href=\"https://link.gotomeeting.com/system-check\" target=\"_blank\">https://link.gotomeeting.com/system-check</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+      |        }
+      |      }
+    """.stripMargin
+
+  val googleCalendarEventHtml: EndpointData = Json.parse(googleCalendaEventHtmlText).as[EndpointData]
+
   private val googleCalendarFullDayEventText =
     """
       | {

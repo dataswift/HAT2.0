@@ -88,8 +88,8 @@ class FeedGeneratorService @Inject() ()(
       .mergeWithSorter(sources)
   }
 
-  private val defaultTimeBack = 360.days
-  private val defaultTimeForward = 90.days
+  private val defaultTimeBack = 90.days
+  private val defaultTimeForward = 30.days
   protected def feedForMappers(mappers: Seq[(String, DataEndpointMapper)], since: Option[Long], until: Option[Long], mergeLocations: Boolean)(
     implicit
     hatServer: HatServer): Future[Seq[DataFeedItem]] = {

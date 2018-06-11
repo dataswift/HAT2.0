@@ -74,6 +74,39 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
     Await.result(hatDatabase.run(action), 60.seconds)
   }
 
+  "The `mapGoogleCalendarEvent` method" should {
+    "translate google calendar event with timezone information" in {
+      val mapper = new GoogleCalendarMapper()
+      val transformed = mapper.mapDataRecord(googleCalendarEvent.recordId.get, googleCalendarEvent.data).get
+      transformed.source must be equalTo "google"
+      transformed.types must contain("event")
+      transformed.title.get.text must contain("MadHATTERs Tea Party: The Boston Party")
+      transformed.title.get.subtitle.get must contain("12 December 18:30 - 22:30 EST")
+      transformed.content.get.text.get must contain("personal data, user accounts, security and value")
+    }
+
+    "remove html tags from google calendar event description" in {
+      val mapper = new GoogleCalendarMapper()
+      val transformed = mapper.mapDataRecord(googleCalendarEventHtml.recordId.get, googleCalendarEventHtml.data).get
+      transformed.source must be equalTo "google"
+      transformed.types must contain("event")
+      transformed.title.get.text must contain("MadHATTERs Tea Party: The Boston Party")
+      transformed.title.get.subtitle.get must contain("12 December 18:30 - 22:30 EST")
+      transformed.content.get.text.get must contain("BD call")
+      transformed.content.get.text.get must not contain ("<br>")
+      transformed.content.get.text.get must not contain ("&nbsp;")
+      transformed.content.get.text.get must not contain ("</a>")
+    }
+
+    "translate google calendar full-day event" in {
+      val mapper = new GoogleCalendarMapper()
+      val transformed = mapper.mapDataRecord(googleCalendarFullDayEvent.recordId.get, googleCalendarFullDayEvent.data).get
+      transformed.source must be equalTo "google"
+      transformed.types must contain("event")
+      transformed.content.get.text must beNone
+    }
+  }
+
   // TODO: updated tweet with retweet structure
   "The `mapTweet` method" should {
     "translate twitter retweets" in {
@@ -262,26 +295,6 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
       transformed.types must contain("fitness")
       transformed.title.get.text must contain("You walked 12135 steps")
       transformed.content must beNone
-    }
-  }
-
-  "The `mapGoogleCalendarEvent` method" should {
-    "translate google calendar event with timezone information" in {
-      val mapper = new GoogleCalendarMapper()
-      val transformed = mapper.mapDataRecord(googleCalendarEvent.recordId.get, googleCalendarEvent.data).get
-      transformed.source must be equalTo "google"
-      transformed.types must contain("event")
-      transformed.title.get.text must contain("MadHATTERs Tea Party: The Boston Party")
-      transformed.title.get.subtitle.get must contain("12 December 18:30 - 22:30 EST")
-      transformed.content.get.text.get must contain("personal data, user accounts, security and value")
-    }
-
-    "translate google calendar full-day event" in {
-      val mapper = new GoogleCalendarMapper()
-      val transformed = mapper.mapDataRecord(googleCalendarFullDayEvent.recordId.get, googleCalendarFullDayEvent.data).get
-      transformed.source must be equalTo "google"
-      transformed.types must contain("event")
-      transformed.content.get.text must beNone
     }
   }
 
