@@ -126,6 +126,14 @@ class InsightsMapper extends DataEndpointMapper {
     "calendar/google/events" → "Calendar events recorded",
     "monzo/transactions" → "Transactions performed")
 
+  private val sourceMappings = Map(
+    "twitter/tweets" → "twitter",
+    "facebook/feed" → "facebook",
+    "notables/feed" → "notables",
+    "spotify/feed" → "spotify",
+    "calendar/google/events" → "google",
+    "monzo/transactions" → "monzo")
+
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     for {
       startDate ← Try((content \ "since").asOpt[DateTime])
@@ -140,7 +148,7 @@ class InsightsMapper extends DataEndpointMapper {
       val nested: Map[String, Seq[DataFeedNestedStructureItem]] = counters.foldLeft(Seq[(String, DataFeedNestedStructureItem)]())({
         (structured, newitem) ⇒
           val item = DataFeedNestedStructureItem(textMappings.getOrElse(newitem._1, "unrecognised"), Some(newitem._2.toString), None)
-          val source = newitem._1.split("/").head
+          val source = sourceMappings.getOrElse(newitem._1, "unrecognised")
           structured :+ (source → item)
       })
         .filterNot(_._2.content == "unrecognised")

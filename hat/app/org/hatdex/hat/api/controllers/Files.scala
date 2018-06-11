@@ -57,7 +57,7 @@ class Files @Inject() (
   val logger = Logger(this.getClass)
 
   def startUpload: Action[ApiHatFile] =
-    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(DataCredit(""), Owner())).async(parsers.json[ApiHatFile]) { implicit request =>
+    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(ManageFiles("*"), Owner())).async(parsers.json[ApiHatFile]) { implicit request =>
       val cleanFile = request.body.copy(fileId = None, status = Some(HatFileStatus.New()),
         contentUrl = None, contentPublic = Some(false), permissions = None)
       val eventualUploadUrl = for {
@@ -77,7 +77,7 @@ class Files @Inject() (
     }
 
   def completeUpload(fileId: String): Action[AnyContent] =
-    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(DataCredit(""), Owner())).async { implicit request =>
+    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(ManageFiles("*"), Owner())).async { implicit request =>
       requestingApplicationStatus(request) flatMap { maybeAsApplication ⇒
         fileMetadataService.getById(fileId) flatMap {
           case Some(file) if fileContentAccessAllowed(file, maybeAsApplication) =>
@@ -102,7 +102,7 @@ class Files @Inject() (
     }
 
   private def fileContentAccessAllowed(file: ApiHatFile, appStatus: Option[HatApplication])(implicit user: HatUser, authenticator: HatApiAuthEnvironment#A): Boolean = {
-    appStatus.exists(ContainsApplicationRole.isAuthorized(user, _, authenticator, Owner())) ||
+    appStatus.exists(ContainsApplicationRole.isAuthorized(user, _, authenticator, ManageFiles("*"))) ||
       WithRole.isAuthorized(user, authenticator, Owner()) ||
       (file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) &&
         file.permissions.isDefined &&
@@ -191,7 +191,7 @@ class Files @Inject() (
   }
 
   private def fileAccessAllowed(file: ApiHatFile, appStatus: Option[HatApplication])(implicit user: HatUser, authenticator: HatApiAuthEnvironment#A): Boolean = {
-    appStatus.exists(ContainsApplicationRole.isAuthorized(user, _, authenticator, Owner())) ||
+    appStatus.exists(ContainsApplicationRole.isAuthorized(user, _, authenticator, ManageFiles(file.source))) ||
       WithRole.isAuthorized(user, authenticator, Owner()) ||
       (file.permissions.isDefined &&
         file.permissions.get.exists(_.userId == user.userId))
@@ -225,7 +225,7 @@ class Files @Inject() (
   }
 
   def deleteFile(fileId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))).async { implicit request =>
       fileMetadataService.getById(fileId) flatMap {
         case Some(file) =>
           val eventuallyDeleted = for {
@@ -239,7 +239,7 @@ class Files @Inject() (
     }
 
   def allowAccess(fileId: String, userId: UUID, content: Boolean): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))).async { implicit request =>
       requestingApplicationStatus(request) flatMap { maybeAsApplication ⇒
         fileMetadataService.getById(fileId) flatMap {
           case Some(file) if fileAccessAllowed(file, maybeAsApplication) =>
@@ -255,7 +255,7 @@ class Files @Inject() (
     }
 
   def restrictAccess(fileId: String, userId: UUID): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))).async { implicit request =>
       requestingApplicationStatus(request) flatMap { maybeAsApplication ⇒
         fileMetadataService.getById(fileId) flatMap {
           case Some(file) if fileAccessAllowed(file, maybeAsApplication) =>
@@ -271,7 +271,7 @@ class Files @Inject() (
     }
 
   def changePublicAccess(fileId: String, public: Boolean): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))).async { implicit request =>
       requestingApplicationStatus(request) flatMap { maybeAsApplication ⇒
         fileMetadataService.getById(fileId) flatMap {
           case Some(file) if fileAccessAllowed(file, maybeAsApplication) =>
@@ -286,7 +286,7 @@ class Files @Inject() (
     }
 
   def allowAccessPattern(userId: UUID, content: Boolean): Action[ApiHatFile] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async(parsers.json[ApiHatFile]) { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))).async(parsers.json[ApiHatFile]) { implicit request =>
       val eventuallyAllowedFiles = for {
         user <- usersService.getUser(userId) if user.isDefined
         _ <- fileMetadataService.grantAccessPattern(request.body, user.get, content)
@@ -303,7 +303,7 @@ class Files @Inject() (
     }
 
   def restrictAccessPattern(userId: UUID): Action[ApiHatFile] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async(parsers.json[ApiHatFile]) { implicit request =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))).async(parsers.json[ApiHatFile]) { implicit request =>
       val eventuallyAllowedFiles = for {
         user <- usersService.getUser(userId) if user.isDefined
         _ <- fileMetadataService.restrictAccessPattern(request.body, user.get)

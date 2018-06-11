@@ -118,11 +118,16 @@ object ContainsApplicationRole {
   def isAuthorized[B](user: HatUser, appStatus: HatApplication, authenticator: JWTRS256Authenticator, anyOf: UserRole*): Boolean = {
     val containsApplicationClaim = authenticator.customClaims.forall(_.keys.contains("application")) // must NOT contain application claim
     val appStatusOk =
-      (appStatus.enabled && appStatus.application.permissions.rolesGranted.intersect(anyOf).nonEmpty) || // App has been granted a specific role
+      (appStatus.enabled && appStatus.application.permissions.rolesGranted.exists(role ⇒ anyOf.exists(req ⇒ roleSatisfiesRequirement(role, req)))) || // App has been granted a specific role
         (appStatus.application.permissions.rolesGranted.contains(Owner()) && // Or is an owner app
           anyOf.exists(r ⇒ !rolesRequiringExplicitApproval.contains(r.title))) // is there a required role that does not require explicit approval even for owner scope
 
     val userRoleAuthorized = anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner())
     containsApplicationClaim && appStatusOk && userRoleAuthorized
   }
+
+  def roleSatisfiesRequirement(role: UserRole, requirement: UserRole): Boolean =
+    role.getClass == requirement.getClass &&
+      role.title == requirement.title &&
+      (role.extra == requirement.extra || requirement.extra.contains("*"))
 }
