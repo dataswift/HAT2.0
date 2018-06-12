@@ -25,13 +25,14 @@
 package org.hatdex.hat.authentication
 
 import javax.inject.Inject
-
 import akka.actor.ActorSystem
 import com.digitaltangible.playguard.{ RateLimitActionFilter, RateLimiter, clientIp }
 import com.mohiva.play.silhouette.api.actions._
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
 import org.hatdex.hat.api.json.HatJsonFormats
+import org.hatdex.hat.api.models.applications.HatApplication
 import org.hatdex.hat.api.models.{ ErrorMessage, User }
+import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement._
@@ -41,7 +42,7 @@ import play.api.i18n.I18nSupport
 import play.api.libs.json.{ Format, Json }
 import play.api.mvc._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ ExecutionContext, Future }
 
 abstract class HatController[T <: HatAuthEnvironment](
     components: ControllerComponents,
@@ -59,6 +60,30 @@ abstract class HatController[T <: HatAuthEnvironment](
   implicit def securedRequest2Authenticator[A](implicit request: SecuredRequest[T, A]): T#A = request.authenticator
   implicit def hatServer2db(implicit hatServer: HatServer): Database = hatServer.db
   implicit def identity2ApiUser(implicit identity: T#I): User = ModelTranslation.fromInternalModel(identity)
+
+  def request2ApplicationStatus(request: SecuredRequest[HatApiAuthEnvironment, _])(implicit applicationsService: ApplicationsService): Future[Option[HatApplication]] = {
+    request.authenticator.customClaims.flatMap { customClaims ⇒
+      (customClaims \ "application").asOpt[String]
+    } map { app ⇒
+      applicationsService.applicationStatus(app)(request.dynamicEnvironment, request.identity, request)
+    } getOrElse {
+      Future.successful(None)
+    }
+  }
+
+  def request2ApplicationStatus(request: UserAwareRequest[HatApiAuthEnvironment, _])(implicit applicationsService: ApplicationsService): Future[Option[HatApplication]] = {
+    (request.authenticator, request.identity) match {
+      case (Some(authenticator), Some(identity)) ⇒
+        authenticator.customClaims.flatMap { customClaims ⇒
+          (customClaims \ "application").asOpt[String]
+        } map { app ⇒
+          applicationsService.applicationStatus(app)(request.dynamicEnvironment, identity, request)
+        } getOrElse {
+          Future.successful(None)
+        }
+      case _ ⇒ Future.successful(None) // if no authenticator, certainly no application
+    }
+  }
 }
 
 abstract class HatApiController(

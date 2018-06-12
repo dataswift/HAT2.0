@@ -26,9 +26,8 @@ package org.hatdex.hat.api.controllers
 
 import java.util.UUID
 
-import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.actions.{ SecuredRequest, UserAwareRequest }
+import javax.inject.Inject
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.models.applications.HatApplication
@@ -78,7 +77,7 @@ class Files @Inject() (
 
   def completeUpload(fileId: String): Action[AnyContent] =
     SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(ManageFiles("*"), Owner())).async { implicit request =>
-      requestingApplicationStatus(request) flatMap { maybeAsApplication ⇒
+      request2ApplicationStatus(request) flatMap { maybeAsApplication ⇒
         fileMetadataService.getById(fileId) flatMap {
           case Some(file) if fileContentAccessAllowed(file, maybeAsApplication) =>
             logger.debug(s"Marking $file complete ")
@@ -112,7 +111,7 @@ class Files @Inject() (
   def getDetail(fileId: String): Action[AnyContent] = SecuredAction.async { implicit request =>
     val fileWithApp = for {
       metadata ← fileMetadataService.getById(fileId)
-      app ← requestingApplicationStatus(request)
+      app ← request2ApplicationStatus(request)
     } yield (metadata, app)
     fileWithApp flatMap {
       case (Some(file), app) if fileContentAccessAllowed(file, app) =>
@@ -132,7 +131,7 @@ class Files @Inject() (
   def getContent(fileId: String): Action[AnyContent] = UserAwareAction.async { implicit request =>
     val fileWithApp = for {
       metadata ← fileMetadataService.getById(fileId)
-      app ← requestingApplicationStatus(request)
+      app ← request2ApplicationStatus(request)
     } yield (metadata, request.identity, request.authenticator, app)
 
     fileWithApp flatMap {
@@ -147,7 +146,7 @@ class Files @Inject() (
   }
 
   def listFiles(): Action[ApiHatFile] = SecuredAction.async(parsers.json[ApiHatFile]) { implicit request =>
-    requestingApplicationStatus(request) flatMap { maybeAsApplication ⇒
+    request2ApplicationStatus(request) flatMap { maybeAsApplication ⇒
       fileMetadataService.search(request.body)
         .map(_.filter(fileAccessAllowed(_, maybeAsApplication)))
         .flatMap { foundFiles =>
@@ -163,30 +162,6 @@ class Files @Inject() (
           }
           Future.sequence(fileContentsEventual).map(files => Ok(Json.toJson(files)))
         }
-    }
-  }
-
-  private def requestingApplicationStatus(request: SecuredRequest[HatApiAuthEnvironment, _]): Future[Option[HatApplication]] = {
-    request.authenticator.customClaims.flatMap { customClaims ⇒
-      (customClaims \ "application").asOpt[String]
-    } map { app ⇒
-      applicationsService.applicationStatus(app)(request.dynamicEnvironment, request.identity, request)
-    } getOrElse {
-      Future.successful(None)
-    }
-  }
-
-  private def requestingApplicationStatus(request: UserAwareRequest[HatApiAuthEnvironment, _]): Future[Option[HatApplication]] = {
-    (request.authenticator, request.identity) match {
-      case (Some(authenticator), Some(identity)) ⇒
-        authenticator.customClaims.flatMap { customClaims ⇒
-          (customClaims \ "application").asOpt[String]
-        } map { app ⇒
-          applicationsService.applicationStatus(app)(request.dynamicEnvironment, identity, request)
-        } getOrElse {
-          Future.successful(None)
-        }
-      case _ ⇒ Future.successful(None) // if no authenticator, certainly no application
     }
   }
 
@@ -207,7 +182,7 @@ class Files @Inject() (
   }
 
   def updateFile(fileId: String): Action[ApiHatFile] = SecuredAction.async(parsers.json[ApiHatFile]) { implicit request =>
-    requestingApplicationStatus(request) flatMap { maybeAsApplication ⇒
+    request2ApplicationStatus(request) flatMap { maybeAsApplication ⇒
       fileMetadataService.getById(fileId) flatMap {
         case Some(file) if fileContentAccessAllowed(file, maybeAsApplication) =>
           val updatedFile = file.copy(
@@ -240,7 +215,7 @@ class Files @Inject() (
 
   def allowAccess(fileId: String, userId: UUID, content: Boolean): Action[AnyContent] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))).async { implicit request =>
-      requestingApplicationStatus(request) flatMap { maybeAsApplication ⇒
+      request2ApplicationStatus(request) flatMap { maybeAsApplication ⇒
         fileMetadataService.getById(fileId) flatMap {
           case Some(file) if fileAccessAllowed(file, maybeAsApplication) =>
             val eventuallyGranted = for {
@@ -256,7 +231,7 @@ class Files @Inject() (
 
   def restrictAccess(fileId: String, userId: UUID): Action[AnyContent] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))).async { implicit request =>
-      requestingApplicationStatus(request) flatMap { maybeAsApplication ⇒
+      request2ApplicationStatus(request) flatMap { maybeAsApplication ⇒
         fileMetadataService.getById(fileId) flatMap {
           case Some(file) if fileAccessAllowed(file, maybeAsApplication) =>
             val eventuallyGranted = for {
@@ -272,7 +247,7 @@ class Files @Inject() (
 
   def changePublicAccess(fileId: String, public: Boolean): Action[AnyContent] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))).async { implicit request =>
-      requestingApplicationStatus(request) flatMap { maybeAsApplication ⇒
+      request2ApplicationStatus(request) flatMap { maybeAsApplication ⇒
         fileMetadataService.getById(fileId) flatMap {
           case Some(file) if fileAccessAllowed(file, maybeAsApplication) =>
             val eventuallyGranted = for {

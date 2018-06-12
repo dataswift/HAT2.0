@@ -25,12 +25,13 @@
 package org.hatdex.hat.api.controllers
 
 import java.util.UUID
-import javax.inject.Inject
 
+import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import org.hatdex.hat.api.json.RichDataJsonFormats
 import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.models.applications.HatApplication
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData._
@@ -111,14 +112,16 @@ class RichData @Inject() (
     }
 
   def saveBatchData: Action[Seq[EndpointData]] =
-    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(DataCredit(""), Owner())).async(parsers.json[Seq[EndpointData]]) { implicit request =>
-      val response = if (authorizeEndpointDataWrite(request.body)) {
-        dataService.saveData(request.identity.userId, request.body)
-          .andThen(dataEventDispatcher.dispatchEventDataCreated(s"saved batch data"))
-          .map(d => Created(Json.toJson(d)))
-      }
-      else {
-        Future.failed(RichDataPermissionsException("No rights to insert some or all of the data in the batch"))
+    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(NamespaceWrite("*"), Owner())).async(parsers.json[Seq[EndpointData]]) { implicit request =>
+      val response = request2ApplicationStatus(request).flatMap { maybeAppStatus ⇒
+        if (authorizeEndpointDataWrite(request.body, maybeAppStatus)) {
+          dataService.saveData(request.identity.userId, request.body)
+            .andThen(dataEventDispatcher.dispatchEventDataCreated(s"saved batch data"))
+            .map(d => Created(Json.toJson(d)))
+        }
+        else {
+          Future.failed(RichDataPermissionsException("No rights to insert some or all of the data in the batch"))
+        }
       }
 
       response recover {
@@ -138,11 +141,11 @@ class RichData @Inject() (
     } getOrElse Set()
   }
 
-  private def authorizeEndpointDataWrite(data: Seq[EndpointData])(implicit user: HatUser, authenticator: HatApiAuthEnvironment#A): Boolean = {
+  private def authorizeEndpointDataWrite(data: Seq[EndpointData], appStatus: Option[HatApplication])(implicit user: HatUser, authenticator: HatApiAuthEnvironment#A): Boolean = {
     data.map(endpointDataNamespaces)
       .reduce((set, namespaces) => set ++ namespaces)
       .map(namespace => NamespaceWrite(namespace))
-      .forall(role => WithRole.isAuthorized(user, authenticator, role))
+      .forall(role => WithRole.isAuthorized(user, authenticator, role) || appStatus.exists(ContainsApplicationRole.isAuthorized(user, _, authenticator, role)))
   }
 
   def registerCombinator(combinator: String): Action[Seq[EndpointQuery]] =
@@ -169,7 +172,7 @@ class RichData @Inject() (
     }
 
   def linkDataRecords(records: Seq[UUID]): Action[AnyContent] =
-    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(DataCredit(""), Owner())).async { implicit request =>
+    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(NamespaceWrite("*"), Owner())).async { implicit request =>
       dataService.saveRecordGroup(request.identity.userId, records) map { _ =>
         Created(Json.toJson(SuccessResponse(s"Grouping registered")))
       } recover {
@@ -179,29 +182,54 @@ class RichData @Inject() (
     }
 
   def deleteDataRecords(records: Seq[UUID]): Action[AnyContent] =
-    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(DataCredit(""), Owner())).async { implicit request =>
-      dataService.deleteRecords(request.identity.userId, records) map { _ =>
-        Ok(Json.toJson(SuccessResponse(s"All records deleted")))
-      } recover {
-        case RichDataMissingException(message, _) => BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
+    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(NamespaceWrite("*"), Owner())).async { implicit request =>
+      val eventualPermissionContext = for {
+        maybeAppStatus ← request2ApplicationStatus(request)
+        recordNamespaces ← dataService.uniqueRecordNamespaces(records)
+      } yield (maybeAppStatus, recordNamespaces)
+
+      eventualPermissionContext flatMap {
+        case (Some(appStatus), requiredNamespaces) if requiredNamespaces.forall(n ⇒ ContainsApplicationRole.isAuthorized(request.identity, appStatus, request.authenticator, NamespaceWrite(n))) ⇒
+          dataService.deleteRecords(request.identity.userId, records) map { _ =>
+            Ok(Json.toJson(SuccessResponse(s"All records deleted")))
+          } recover {
+            case RichDataMissingException(message, _) => BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
+          }
+        case (Some(_), _) ⇒
+          Future.successful(Forbidden(Json.toJson(Errors.forbidden("Permissions to modify records in some of the namespaces missing"))))
+        // TODO: remove after non-application tokens are phased out
+        case (None, _) ⇒
+          dataService.deleteRecords(request.identity.userId, records) map { _ =>
+            Ok(Json.toJson(SuccessResponse(s"All records deleted")))
+          } recover {
+            case RichDataMissingException(message, _) => BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
+          }
       }
     }
 
   def listEndpoints: Action[AnyContent] =
-    SecuredAction(WithRole(Owner(), Platform(), DataCredit("")) || ContainsApplicationRole(Owner(), Platform(), DataCredit(""))).async { implicit request =>
+    SecuredAction(WithRole(Owner(), Platform(), DataCredit("")) || ContainsApplicationRole(Owner(), Platform(), NamespaceWrite("*"))).async { implicit request =>
       dataService.listEndpoints() map { endpoints =>
         Ok(Json.toJson(endpoints))
       }
     }
 
   def updateRecords(): Action[Seq[EndpointData]] =
-    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(DataCredit(""), Owner())).async(parsers.json[Seq[EndpointData]]) { implicit request =>
-      dataService.updateRecords(request.identity.userId, request.body) map { saved =>
-        Created(Json.toJson(saved))
-      } recover {
-        case RichDataMissingException(message, _) => BadRequest(Json.toJson(Errors.dataUpdateMissing(message)))
+    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(NamespaceWrite("*"), Owner()))
+      .async(parsers.json[Seq[EndpointData]]) { implicit request =>
+        request2ApplicationStatus(request).flatMap { maybeAppStatus ⇒
+          if (authorizeEndpointDataWrite(request.body, maybeAppStatus)) {
+            dataService.updateRecords(request.identity.userId, request.body) map { saved =>
+              Created(Json.toJson(saved))
+            } recover {
+              case RichDataMissingException(message, _) => BadRequest(Json.toJson(Errors.dataUpdateMissing(message)))
+            }
+          }
+          else {
+            Future.failed(RichDataPermissionsException("No rights to update some or all of the data requested"))
+          }
+        }
       }
-    }
 
   def registerBundle(bundleId: String): Action[Map[String, PropertyQuery]] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async(parsers.json[Map[String, PropertyQuery]]) { implicit request =>
@@ -375,6 +403,7 @@ class RichData @Inject() (
     def richDataDuplicate(error: Throwable) = ErrorMessage("Bad Request", s"Duplicate data - ${error.getMessage}")
     def richDataError(error: Throwable) = ErrorMessage("Bad Request", s"Could not insert data - ${error.getMessage}")
     def forbidden(error: Throwable) = ErrorMessage("Forbidden", s"Access Denied - ${error.getMessage}")
+    def forbidden(message: String) = ErrorMessage("Forbidden", s"Access Denied - ${message}")
   }
 }
 

@@ -160,16 +160,25 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
   }
 
   def deleteEndpoint(dataEndpoint: String)(implicit db: Database): Future[Done] = {
-    val endpointRecrodsQuery = DataJson.filter(r => r.source === dataEndpoint).map(_.recordId)
+    val endpointRecordsQuery = DataJson.filter(r => r.source === dataEndpoint).map(_.recordId)
     val query = for {
-      deletedGroupRecords <- DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete // delete links between records and groups
+      deletedGroupRecords <- DataJsonGroupRecords.filter(_.recordId in endpointRecordsQuery).delete // delete links between records and groups
       deletedGroups <- DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete // delete any groups that have become empty
-      deletedRecords <- DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete // delete the records, but only if all requested records are found
+      deletedRecords <- DataJson.filter(r => r.recordId in endpointRecordsQuery).delete // delete the records, but only if all requested records are found
     } yield (deletedGroupRecords, deletedGroups, deletedRecords)
 
     db.run(query.transactionally).map(_ => Done) recover {
       case e: NoSuchElementException => throw RichDataMissingException("Records missing for deleting", e)
     }
+  }
+
+  def uniqueRecordNamespaces(recordIds: Seq[UUID])(implicit db: Database): Future[Set[String]] = {
+    val uniqueEndpointQuery = DataJson.filter(r => r.recordId inSet recordIds)
+      .map(_.source)
+      .distinct
+
+    db.run(uniqueEndpointQuery.result)
+      .map(endpoints ⇒ endpoints.flatMap(_.split("/").headOption).toSet)
   }
 
   def deleteRecords(userId: UUID, recordIds: Seq[UUID])(implicit db: Database): Future[Unit] = {
