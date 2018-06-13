@@ -70,10 +70,10 @@ class FeedGeneratorService @Inject() ()(
     "activity-records" → new InsightsMapper())
 
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
-    feedForMappers(dataMappers.filter(_._1.startsWith(endpoint)), since, until, mergeLocations)
+    feedForMappers(dataMappers.filter(_._1.startsWith(endpoint)), since, until, mergeLocations, includeInsights = false)
 
   def fullFeed(since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
-    feedForMappers(dataMappers, since, until, mergeLocations)
+    feedForMappers(dataMappers, since, until, mergeLocations, includeInsights = true)
 
   def insights(since: Option[Long], until: Option[Long])(implicit hatServer: HatServer): Source[DataFeedItem, NotUsed] = {
     val now = DateTime.now()
@@ -88,9 +88,10 @@ class FeedGeneratorService @Inject() ()(
       .mergeWithSorter(sources)
   }
 
-  private val defaultTimeBack = 90.days
+  private val defaultTimeBack = 180.days
   private val defaultTimeForward = 30.days
-  protected def feedForMappers(mappers: Seq[(String, DataEndpointMapper)], since: Option[Long], until: Option[Long], mergeLocations: Boolean)(
+  protected def feedForMappers(mappers: Seq[(String, DataEndpointMapper)], since: Option[Long], until: Option[Long],
+      mergeLocations: Boolean, includeInsights: Boolean)(
     implicit
     hatServer: HatServer): Future[Seq[DataFeedItem]] = {
     logger.debug(s"Fetching feed data for ${mappers.unzip._1}")
@@ -104,7 +105,7 @@ class FeedGeneratorService @Inject() ()(
     val sortedSources = new SourceMergeSorter()
       .mergeWithSorter(sources)
 
-    val outputStream = if (mergeLocations) {
+    val geotaggedStream = if (mergeLocations) {
       val locations = locationStream(sinceTime.getMillis / 1000L, untilTime.getMillis / 1000L)
       new SourceAugmenter().augment(sortedSources, locations.sliding(2, 1), locationAugmentFunction)
     }
@@ -112,10 +113,14 @@ class FeedGeneratorService @Inject() ()(
       sortedSources
     }
 
-    val insightsFeed = insights(since, until)
+    val outputStream = if (includeInsights) {
+      new SourceMergeSorter()
+        .mergeWithSorter(Seq(geotaggedStream, insights(since, until)))
+    } else {
+      geotaggedStream
+    }
 
-    new SourceMergeSorter()
-      .mergeWithSorter(Seq(outputStream, insightsFeed))
+    outputStream
       .runWith(Sink.seq)
   }
 
