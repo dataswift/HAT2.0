@@ -700,8 +700,8 @@ class InstagramMediaMapper extends DataEndpointMapper {
         geo = (content \ "location").asOpt[JsObject]
           .map(location =>
             LocationGeo(
-              (location \ "latitude").as[Double],
-              (location \ "longitude").as[Double])),
+              (location \ "longitude").as[Double],
+              (location \ "latitude").as[Double])),
         address = (content \ "location" \ "street_address").asOpt[String]
           .map(fullAddress => LocationAddress(None, None, Some(fullAddress), None, None)),
         tags = None)).toOption
