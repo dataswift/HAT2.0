@@ -35,9 +35,19 @@ class WellKnown @Inject() (components: ControllerComponents) extends AbstractCon
       val webcredentials =
         """
           |{
-          |    "webcredentials" : {
-          |        "apps" : ["84XHE3A5BA.com.hubofallthings.hatappbeta", "84XHE3A5BA.com.hubofallthings.hatapp"]
+          |  "applinks": {
+          |    "apps": [],
+          |    "details": [
+          |    {
+          |      "appID": "84XHE3A5BA.com.hubofallthings.hatappbeta",
+          |      "paths": ["*"]
+          |    },
+          |    {
+          |      "appID": "84XHE3A5BA.com.hubofallthings.hatapp",
+          |      "paths": ["*"]
           |    }
+          |    ]
+          |  }
           |}
         """.stripMargin
 
