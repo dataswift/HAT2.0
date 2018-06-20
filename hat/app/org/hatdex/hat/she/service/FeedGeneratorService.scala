@@ -91,7 +91,7 @@ class FeedGeneratorService @Inject() ()(
   private val defaultTimeBack = 180.days
   private val defaultTimeForward = 30.days
   protected def feedForMappers(mappers: Seq[(String, DataEndpointMapper)], since: Option[Long], until: Option[Long],
-      mergeLocations: Boolean, includeInsights: Boolean)(
+    mergeLocations: Boolean, includeInsights: Boolean)(
     implicit
     hatServer: HatServer): Future[Seq[DataFeedItem]] = {
     logger.debug(s"Fetching feed data for ${mappers.unzip._1}")
@@ -116,7 +116,8 @@ class FeedGeneratorService @Inject() ()(
     val outputStream = if (includeInsights) {
       new SourceMergeSorter()
         .mergeWithSorter(Seq(geotaggedStream, insights(since, until)))
-    } else {
+    }
+    else {
       geotaggedStream
     }
 

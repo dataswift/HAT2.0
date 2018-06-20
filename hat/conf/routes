@@ -2,6 +2,7 @@
 GET         /                                                    org.hatdex.hat.phata.controllers.Phata.rumpelIndex
 GET         /assets/*file                                        controllers.Assets.at(file)
 GET         /hatlogin                                            org.hatdex.hat.phata.controllers.Phata.hatLogin(name: String, redirect: String)
+GET         /.well-known/apple-app-site-association              org.hatdex.hat.phata.controllers.WellKnown.appleAppSiteAssociation
 
 # USER Routes
 GET         /users/user                                          org.hatdex.hat.api.controllers.Users.listUsers
