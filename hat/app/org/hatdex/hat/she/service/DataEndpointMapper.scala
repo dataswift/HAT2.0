@@ -662,6 +662,8 @@ class MonzoTransactionMapper extends DataEndpointMapper {
 }
 
 class InstagramMediaMapper extends DataEndpointMapper {
+  override protected val dataDeduplicationField: Option[String] = Some("id")
+
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     val unixDateFilter = fromDate.flatMap { _ =>
       Some(FilterOperator.Between(Json.toJson(fromDate.map(t => (t.getMillis / 1000).toString)), Json.toJson(untilDate.map(t => (t.getMillis / 1000).toString))))
