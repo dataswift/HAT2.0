@@ -46,6 +46,7 @@ case class Request(
 case class FunctionConfiguration(
     name: String,
     description: String,
+    headline: String,
     trigger: FunctionTrigger.Trigger,
     available: Boolean,
     enabled: Boolean,
@@ -55,6 +56,7 @@ case class FunctionConfiguration(
     FunctionConfiguration(
       this.name,
       other.description,
+      other.headline,
       other.trigger,
       other.available,
       this.enabled || other.enabled,
@@ -70,6 +72,7 @@ object FunctionConfiguration {
     FunctionConfiguration(
       function.name,
       function.description,
+      function.headline,
       function.trigger.as[Trigger],
       available, // false by default, needs to take current runtime configuration into account to update
       function.enabled,

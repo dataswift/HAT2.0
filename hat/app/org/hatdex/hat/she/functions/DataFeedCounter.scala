@@ -58,7 +58,13 @@ class DataFeedCounter extends FunctionExecutable with DataFeedItemJsonProtocol w
     })
   }
 
-  val configuration: FunctionConfiguration = FunctionConfiguration("data-feed-counter", "",
+  val configuration: FunctionConfiguration = FunctionConfiguration(
+    "data-feed-counter",
+    """The Weekly Summary show your weekly activities. Weekly summary is private to you,
+      |but shareable as data.\n\nWeekly summary is powered by SHE, the Smart HAT Engine,
+      |the part of your HAT microserver that can install pre-trained analytics and algorithmic
+      |functions and outputs the results privately into your HAT. """.stripMargin,
+    "A summary of your week’s digital activities",
     FunctionTrigger.TriggerPeriodic(Period.parse("P1W")), available = true, enabled = false,
     dataBundle = bundleFilterByDate(None, None),
     None)
