@@ -58,28 +58,28 @@ trait FunctionServiceContext extends HATTestContext {
     .overrides(new CustomisedFakeModule)
     .build()
 
-  val dummyFunctionConfiguration = FunctionConfiguration("test-dummy-function", "Dummy Function",
+  val dummyFunctionConfiguration = FunctionConfiguration("test-dummy-function", "Dummy Function", "Dummy Function",
     FunctionTrigger.TriggerIndividual(), available = false, enabled = false,
     dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper", Map()),
     None)
 
-  val dummyFunctionConfigurationAvailable = FunctionConfiguration("test-dummy-function-available", "Dummy Function",
+  val dummyFunctionConfigurationAvailable = FunctionConfiguration("test-dummy-function-available", "Dummy Function", "Dummy Function",
     FunctionTrigger.TriggerIndividual(), available = true, enabled = false,
     dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper-vailable", Map()),
     None)
 
-  val dummyFunctionConfigurationUpdated = FunctionConfiguration("test-dummy-function", "Updated Function",
+  val dummyFunctionConfigurationUpdated = FunctionConfiguration("test-dummy-function", "Updated Function", "Dummy Function",
     FunctionTrigger.TriggerIndividual(), available = false, enabled = true,
     dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper", Map()),
     None)
 
-  val unavailableFunctionConfiguration = FunctionConfiguration("test-test-unavailable-function", "Unavailable Function",
+  val unavailableFunctionConfiguration = FunctionConfiguration("test-test-unavailable-function", "Unavailable Function", "Dummy Function",
     FunctionTrigger.TriggerIndividual(), available = false, enabled = false,
     dataBundle = EndpointDataBundle("test-unavailable-function-bundler", Map()),
     None)
 
   val registeredFunction = new DataFeedDirectMapper() {
-    override val configuration = FunctionConfiguration("data-feed-direct-mapper", "",
+    override val configuration = FunctionConfiguration("data-feed-direct-mapper", "", "Dummy Function",
       FunctionTrigger.TriggerIndividual(), available = true, enabled = false,
       dataBundle = bundleFilterByDate(None, None),
       None)

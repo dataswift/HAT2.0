@@ -29,7 +29,7 @@ import org.hatdex.hat.api.models.FilterOperator.Between
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.models.Request
 import org.hatdex.hat.she.service._
-import org.joda.time.{ DateTime, DateTimeUtils, DateTimeZone }
+import org.joda.time.{ DateTime, DateTimeUtils }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.BeforeAfterAll
