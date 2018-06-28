@@ -67,9 +67,9 @@ class FunctionExecutionTriggerHandler @Inject() (
         functionService.all(active = true)(hatServer.db)
           .map(
             _.filter({
-              case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerPeriodic(period), true, true, _, Some(lastExecution)) if lastExecution.isBefore(DateTime.now().minus(period)) ⇒ true
-              case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerPeriodic(_), true, true, _, None) ⇒ true // no execution recoded yet
-              case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerIndividual(), true, true, _, _) ⇒ true
+              case FunctionConfiguration(_, _, _, _, FunctionTrigger.TriggerPeriodic(period), true, true, _, Some(lastExecution), Seq()) if lastExecution.isBefore(DateTime.now().minus(period)) ⇒ true
+              case FunctionConfiguration(_, _, _, _, FunctionTrigger.TriggerPeriodic(_), true, true, _, None, Seq()) ⇒ true // no execution recoded yet
+              case FunctionConfiguration(_, _, _, _, FunctionTrigger.TriggerIndividual(), true, true, _, _, Seq()) ⇒ true
               case _ ⇒ false
             })
               .filter(_.dataBundle.flatEndpointQueries.map(_.endpoint).toSet

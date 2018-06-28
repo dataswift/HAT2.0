@@ -942,19 +942,21 @@ trait Tables {
    *  @param bundleId Database column bundle_id SqlType(varchar)
    *  @param lastExecution Database column last_execution SqlType(timestamptz), Default(None)
    *  @param headline Database column headline SqlType(varchar), Default()
+   *  @param dataPreview Database column data_preview SqlType(jsonb), Default(None)
+   *  @param logo Database column logo SqlType(varchar), Default(None)
    */
-  case class SheFunctionRow(name: String, description: String, trigger: play.api.libs.json.JsValue, enabled: Boolean, bundleId: String, lastExecution: Option[org.joda.time.DateTime] = None, headline: String = "")
+  case class SheFunctionRow(name: String, description: String, trigger: play.api.libs.json.JsValue, enabled: Boolean, bundleId: String, lastExecution: Option[org.joda.time.DateTime] = None, headline: String = "", dataPreview: Option[play.api.libs.json.JsValue] = None, logo: Option[String] = None)
   /** GetResult implicit for fetching SheFunctionRow objects using plain SQL queries */
-  implicit def GetResultSheFunctionRow(implicit e0: GR[String], e1: GR[play.api.libs.json.JsValue], e2: GR[Boolean], e3: GR[Option[org.joda.time.DateTime]]): GR[SheFunctionRow] = GR {
+  implicit def GetResultSheFunctionRow(implicit e0: GR[String], e1: GR[play.api.libs.json.JsValue], e2: GR[Boolean], e3: GR[Option[org.joda.time.DateTime]], e4: GR[Option[play.api.libs.json.JsValue]], e5: GR[Option[String]]): GR[SheFunctionRow] = GR {
     prs =>
       import prs._
-      SheFunctionRow.tupled((<<[String], <<[String], <<[play.api.libs.json.JsValue], <<[Boolean], <<[String], <<?[org.joda.time.DateTime], <<[String]))
+      SheFunctionRow.tupled((<<[String], <<[String], <<[play.api.libs.json.JsValue], <<[Boolean], <<[String], <<?[org.joda.time.DateTime], <<[String], <<?[play.api.libs.json.JsValue], <<?[String]))
   }
   /** Table description of table she_function. Objects of this class serve as prototypes for rows in queries. */
   class SheFunction(_tableTag: Tag) extends profile.api.Table[SheFunctionRow](_tableTag, Some("hat"), "she_function") {
-    def * = (name, description, trigger, enabled, bundleId, lastExecution, headline) <> (SheFunctionRow.tupled, SheFunctionRow.unapply)
+    def * = (name, description, trigger, enabled, bundleId, lastExecution, headline, dataPreview, logo) <> (SheFunctionRow.tupled, SheFunctionRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(name), Rep.Some(description), Rep.Some(trigger), Rep.Some(enabled), Rep.Some(bundleId), lastExecution, Rep.Some(headline)).shaped.<>({ r => import r._; _1.map(_ => SheFunctionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(name), Rep.Some(description), Rep.Some(trigger), Rep.Some(enabled), Rep.Some(bundleId), lastExecution, Rep.Some(headline), dataPreview, logo).shaped.<>({ r => import r._; _1.map(_ => SheFunctionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7.get, _8, _9))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column name SqlType(varchar), PrimaryKey */
     val name: Rep[String] = column[String]("name", O.PrimaryKey)
@@ -970,6 +972,10 @@ trait Tables {
     val lastExecution: Rep[Option[org.joda.time.DateTime]] = column[Option[org.joda.time.DateTime]]("last_execution", O.Default(None))
     /** Database column headline SqlType(varchar), Default() */
     val headline: Rep[String] = column[String]("headline", O.Default(""))
+    /** Database column data_preview SqlType(jsonb), Default(None) */
+    val dataPreview: Rep[Option[play.api.libs.json.JsValue]] = column[Option[play.api.libs.json.JsValue]]("data_preview", O.Default(None))
+    /** Database column logo SqlType(varchar), Default(None) */
+    val logo: Rep[Option[String]] = column[Option[String]]("logo", O.Default(None))
 
     /** Foreign key referencing DataBundles (database name she_function_bundle_id_fkey) */
     lazy val dataBundlesFk = foreignKey("she_function_bundle_id_fkey", bundleId, DataBundles)(r => r.bundleId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)

@@ -26,6 +26,7 @@ package org.hatdex.hat.she.functions
 
 import org.hatdex.hat.api.json.DataFeedItemJsonProtocol
 import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.models.applications.{ DataFeedItem, DataFeedItemContent, DataFeedItemTitle, DataFeedNestedStructureItem }
 import org.hatdex.hat.she.models._
 import org.hatdex.hat.she.service._
 import org.joda.time.{ DateTime, Period }
@@ -65,9 +66,21 @@ class DataFeedCounter extends FunctionExecutable with DataFeedItemJsonProtocol w
       |the part of your HAT microserver that can install pre-trained analytics and algorithmic
       |functions and outputs the results privately into your HAT. """.stripMargin,
     "A summary of your week’s digital activities",
-    FunctionTrigger.TriggerPeriodic(Period.parse("P1W")), available = true, enabled = false,
+    Some(""),
+    FunctionTrigger.TriggerPeriodic(Period.parse("P1W")),
+    available = true,
+    enabled = false,
     dataBundle = bundleFilterByDate(None, None),
-    None)
+    None,
+    Some(Seq(
+      DataFeedItem("she", DateTime.now(), Seq("note"),
+        Some(DataFeedItemTitle("HAT Private Micro-server created", Some("21 June 23:00 - 29 June 06:42 GMT"), Some("insight"))),
+        Some(DataFeedItemContent(Some("Twitter:\n  Tweets sent: 1\n\nFacebook:\n  Posts composed: 13\n"), None, None, Some(Map("twitter" -> Seq(DataFeedNestedStructureItem("Tweets sent", Some("1"), None), DataFeedNestedStructureItem("Posts composed", Some("13"), None)))))),
+        None),
+      DataFeedItem("she", DateTime.now(), Seq("note"),
+        Some(DataFeedItemTitle("HAT Private Micro-server created", Some("21 June 23:00 - 29 June 06:42 GMT"), Some("insight"))),
+        Some(DataFeedItemContent(Some("Twitter:\n  Tweets sent: 1\n\nFacebook:\n  Posts composed: 13\n"), None, None, Some(Map("twitter" -> Seq(DataFeedNestedStructureItem("Tweets sent", Some("4"), None), DataFeedNestedStructureItem("Posts composed", Some("2"), None), DataFeedNestedStructureItem("Notes taken", Some("4"), None)))))),
+        None))))
 
   def execute(configuration: FunctionConfiguration, request: Request)(implicit ec: ExecutionContext): Future[Seq[Response]] = {
     val counters = request.data

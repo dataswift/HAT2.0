@@ -63,8 +63,12 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
     "data-feed-direct-mapper",
     "",
     "",
-    FunctionTrigger.TriggerIndividual(), available = false, enabled = false,
+    Some(""),
+    FunctionTrigger.TriggerIndividual(),
+    available = false,
+    enabled = false,
     dataBundle = bundleFilterByDate(None, None),
+    None,
     None)
 
   def execute(configuration: FunctionConfiguration, request: Request)(implicit ec: ExecutionContext): Future[Seq[Response]] = {
