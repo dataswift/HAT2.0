@@ -191,7 +191,7 @@ class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification
       } yield combinator
 
       saved map { r =>
-        r.length must equalTo(3)
+        r.length must be greaterThan 1
       } await (3, 10.seconds)
     }
   }
@@ -207,7 +207,7 @@ class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification
       } yield combinators
 
       saved map { r =>
-        r.length must equalTo(2)
+        r.find(_.name == testBundle.name) must beNone
         r.find(_.name == testBundle2.name) must beSome
       } await (3, 10.seconds)
     }
