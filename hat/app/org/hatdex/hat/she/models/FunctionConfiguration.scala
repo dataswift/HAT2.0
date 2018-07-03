@@ -54,7 +54,8 @@ case class FunctionConfiguration(
     enabled: Boolean,
     dataBundle: EndpointDataBundle,
     lastExecution: Option[DateTime],
-    dataPreview: Option[Seq[DataFeedItem]]) {
+    dataPreview: Option[Seq[DataFeedItem]],
+    datePreviewEndpoint: Option[String]) {
   def update(other: FunctionConfiguration): FunctionConfiguration = {
     FunctionConfiguration(
       this.name,
@@ -66,7 +67,8 @@ case class FunctionConfiguration(
       this.enabled || other.enabled,
       other.dataBundle,
       this.lastExecution.orElse(other.lastExecution),
-      other.dataPreview)
+      other.dataPreview,
+      other.datePreviewEndpoint)
   }
 }
 
@@ -86,7 +88,8 @@ object FunctionConfiguration {
       function.enabled,
       ModelTranslation.fromDbModel(bundle),
       function.lastExecution,
-      function.dataPreview.map(_.as[Seq[DataFeedItem]]))
+      function.dataPreview.map(_.as[Seq[DataFeedItem]]),
+      function.dataPreviewEndpoint)
   }
 }
 

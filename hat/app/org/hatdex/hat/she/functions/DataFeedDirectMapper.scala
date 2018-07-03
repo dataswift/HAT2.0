@@ -69,6 +69,7 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
     enabled = false,
     dataBundle = bundleFilterByDate(None, None),
     None,
+    None,
     None)
 
   def execute(configuration: FunctionConfiguration, request: Request)(implicit ec: ExecutionContext): Future[Seq[Response]] = {

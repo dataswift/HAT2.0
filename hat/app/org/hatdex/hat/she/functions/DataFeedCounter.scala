@@ -80,7 +80,8 @@ class DataFeedCounter extends FunctionExecutable with DataFeedItemJsonProtocol w
       DataFeedItem("she", DateTime.now(), Seq("note"),
         Some(DataFeedItemTitle("HAT Private Micro-server created", Some("21 June 23:00 - 29 June 06:42 GMT"), Some("insight"))),
         Some(DataFeedItemContent(Some("Twitter:\n  Tweets sent: 1\n\nFacebook:\n  Posts composed: 13\n"), None, None, Some(Map("twitter" -> Seq(DataFeedNestedStructureItem("Tweets sent", Some("4"), None), DataFeedNestedStructureItem("Posts composed", Some("2"), None), DataFeedNestedStructureItem("Notes taken", Some("4"), None)))))),
-        None))))
+        None))),
+    Some(s"$namespace/$endpoint"))
 
   def execute(configuration: FunctionConfiguration, request: Request)(implicit ec: ExecutionContext): Future[Seq[Response]] = {
     val counters = request.data
