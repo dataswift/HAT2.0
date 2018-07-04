@@ -69,20 +69,27 @@ class FeedGeneratorService @Inject() ()(
   private val insightMappers: Seq[(String, InsightsMapper)] = Seq(
     "activity-records" → new InsightsMapper())
 
-  def getFeed(endpoint: String, since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
-    feedForMappers(dataMappers.filter(_._1.startsWith(endpoint)), since, until, mergeLocations, includeInsights = false)
+  def getFeed(endpoint: String, since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] = {
+    if (endpoint.startsWith("she/")) {
+      insights(since, until, Some(endpoint)).runWith(Sink.seq)
+    }
+    else {
+      feedForMappers(dataMappers.filter(_._1.startsWith(endpoint)), since, until, mergeLocations, includeInsights = false)
+    }
+  }
 
   def fullFeed(since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
     feedForMappers(dataMappers, since, until, mergeLocations, includeInsights = true)
 
-  def insights(since: Option[Long], until: Option[Long])(implicit hatServer: HatServer): Source[DataFeedItem, NotUsed] = {
+  def insights(since: Option[Long], until: Option[Long], endpoint: Option[String])(implicit hatServer: HatServer): Source[DataFeedItem, NotUsed] = {
     val now = DateTime.now()
     val sinceTime = since.map(t ⇒ new DateTime(t * 1000L)).getOrElse(now.minus(defaultTimeBack.toMillis))
     val untilTime = until.map(t ⇒ new DateTime(t * 1000L)).getOrElse(now.plus(defaultTimeForward.toMillis))
 
-    val sources: Seq[Source[DataFeedItem, NotUsed]] = insightMappers
-      .unzip._2
-      .map(_.feed(Some(sinceTime), Some(untilTime)))
+    val sources: Seq[Source[DataFeedItem, NotUsed]] =
+      endpoint.fold(insightMappers)(e ⇒ insightMappers.filter(_._1.startsWith(e)))
+        .unzip._2
+        .map(_.feed(Some(sinceTime), Some(untilTime)))
 
     new SourceMergeSorter()
       .mergeWithSorter(sources)
@@ -115,7 +122,7 @@ class FeedGeneratorService @Inject() ()(
 
     val outputStream = if (includeInsights) {
       new SourceMergeSorter()
-        .mergeWithSorter(Seq(geotaggedStream, insights(since, until)))
+        .mergeWithSorter(Seq(geotaggedStream, insights(since, until, None)))
     }
     else {
       geotaggedStream
