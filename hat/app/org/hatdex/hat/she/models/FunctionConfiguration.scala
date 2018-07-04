@@ -55,7 +55,7 @@ case class FunctionConfiguration(
     dataBundle: EndpointDataBundle,
     lastExecution: Option[DateTime],
     dataPreview: Option[Seq[DataFeedItem]],
-    datePreviewEndpoint: Option[String]) {
+    dataPreviewEndpoint: Option[String]) {
   def update(other: FunctionConfiguration): FunctionConfiguration = {
     FunctionConfiguration(
       this.name,
@@ -68,7 +68,7 @@ case class FunctionConfiguration(
       other.dataBundle,
       this.lastExecution.orElse(other.lastExecution),
       other.dataPreview,
-      other.datePreviewEndpoint)
+      other.dataPreviewEndpoint)
   }
 }
 
