@@ -25,6 +25,7 @@
 package org.hatdex.hat
 
 import akka.Done
+import javax.inject.Singleton
 import play.api.cache.AsyncCacheApi
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -32,6 +33,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
+@Singleton
 class FakeCache extends AsyncCacheApi {
 
   private var store = Map[String, Any]()

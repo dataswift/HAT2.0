@@ -27,24 +27,24 @@ package org.hatdex.hat.api.controllers
 import com.mohiva.play.silhouette.test._
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.service.richData.{DataDebitContractService, RichDataService}
+import org.hatdex.hat.api.service.richData.{ DataDebitContractService, RichDataService }
 import org.joda.time.LocalDateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.{BeforeAll, BeforeEach}
+import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsObject, JsValue, Json}
+import play.api.libs.json.{ JsArray, JsObject, JsValue, Json }
 import play.api.mvc.Result
-import play.api.test.{FakeRequest, Helpers, PlaySpecification}
+import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{ Await, Future }
 
 class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichDataContext with BeforeEach with BeforeAll {
 
   val logger = Logger(this.getClass)
 
-  import org.hatdex.hat.api.models.RichDataJsonFormats._
+  import org.hatdex.hat.api.json.RichDataJsonFormats._
 
   sequential
 
@@ -464,6 +464,8 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
       status(result) must equalTo(OK)
       val data = contentAsJson(result).as[RichDataDebitData].bundle
+      there was one(mockLogger).debug("Got Data Debit, fetching data")
+
       data("test").length must not equalTo 0
       data("test").length must not equalTo 0
     }
@@ -509,6 +511,7 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
       status(result) must equalTo(OK)
       val data = contentAsJson(result).as[RichDataDebitData].bundle
+      there was one(mockLogger).debug(s"Data Debit testdd conditions satisfied")
       data("test").length must not equalTo 0
       data("test").length must not equalTo 0
     }

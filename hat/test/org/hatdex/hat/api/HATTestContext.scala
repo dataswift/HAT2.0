@@ -27,23 +27,25 @@ package org.hatdex.hat.api
 import java.io.StringReader
 import java.util.UUID
 
+import akka.Done
 import akka.stream.Materializer
 import com.amazonaws.services.s3.AmazonS3
 import com.atlassian.jwt.core.keys.KeyUtils
 import com.google.inject.name.Named
-import com.google.inject.{AbstractModule, Provides}
-import com.mohiva.play.silhouette.api.Environment
+import com.google.inject.{ AbstractModule, Provides }
+import com.mohiva.play.silhouette.api.{ Environment, Silhouette, SilhouetteProvider }
 import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.FakeCache
-import org.hatdex.hat.api.models.{DataCredit, DataDebitOwner, Owner}
+import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.api.service._
+import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.dal.SchemaMigration
+import org.hatdex.hat.dal.HatDbSchemaMigration
 import org.hatdex.hat.phata.models.MailTokenUser
-import org.hatdex.hat.resourceManagement.{FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider}
-import org.hatdex.hat.utils.{ErrorHandler, HatMailer}
+import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
+import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, LoggingProvider, MockLoggingProvider }
 import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
@@ -51,11 +53,11 @@ import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
 import play.api.i18n.Messages
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.{Application, Configuration}
+import play.api.{ Application, Configuration, Logger }
 import play.cache.NamedCacheImpl
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{ Await, Future }
 
 trait HATTestContext extends Scope with Mockito {
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -88,9 +90,9 @@ trait HATTestContext extends Scope with Mockito {
     "evolutions/hat-database-schema/14_newHat.sql")
 
   def databaseReady: Future[Unit] = {
-    val schemaMigration = application.injector.instanceOf[SchemaMigration]
-    schemaMigration.resetDatabase()(hatDatabase)
-      .flatMap(_ => schemaMigration.run(devHatMigrations)(hatDatabase))
+    val schemaMigration = new HatDbSchemaMigration(configuration, hatDatabase, global)
+    schemaMigration.resetDatabase()
+      .flatMap(_ => schemaMigration.run(devHatMigrations))
       .flatMap { _ =>
         val usersService = application.injector.instanceOf[UsersService]
         for {
@@ -102,18 +104,21 @@ trait HATTestContext extends Scope with Mockito {
   }
 
   val mockMailer: HatMailer = mock[HatMailer]
-  doNothing.when(mockMailer).passwordReset(any[String], any[HatUser], any[String])(any[Messages], any[HatServer])
+  doReturn(Done).when(mockMailer).passwordReset(any[String], any[HatUser], any[String])(any[Messages], any[HatServer])
 
   val fileManagerS3Mock = FileManagerS3Mock()
+
+  val mockLogger = mock[Logger]
+
+  lazy val remoteEC = new RemoteExecutionContext(application.actorSystem)
 
   /**
    * A fake Guice module.
    */
   class FakeModule extends AbstractModule with ScalaModule {
-    lazy val remoteEC = new RemoteExecutionContext(application.actorSystem)
-
     def configure(): Unit = {
       bind[Environment[HatApiAuthEnvironment]].toInstance(environment)
+      bind[Silhouette[HatApiAuthEnvironment]].to[SilhouetteProvider[HatApiAuthEnvironment]]
       bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
       bind[FileManager].to[FileManagerS3]
       bind[MailTokenService[MailTokenUser]].to[MailTokenUserService]
@@ -121,28 +126,36 @@ trait HATTestContext extends Scope with Mockito {
       bind[HttpErrorHandler].to[ErrorHandler]
       bind[AsyncCacheApi].annotatedWith(new NamedCacheImpl("user-cache")).to[FakeCache]
       bind[AsyncCacheApi].to[FakeCache]
+      bind[LoggingProvider].toInstance(new MockLoggingProvider(mockLogger))
     }
 
     @Provides
-    def provideCookieAuthenticatorService(configuration: Configuration): AwsS3Configuration = {
+    def provideCookieAuthenticatorService(): AwsS3Configuration = {
       fileManagerS3Mock.s3Configuration
     }
 
     @Provides @Named("s3client-file-manager")
-    def provides3Client(configuration: AwsS3Configuration): AmazonS3 = {
+    def provides3Client(): AmazonS3 = {
       fileManagerS3Mock.mockS3client
     }
 
   }
 
+  class ExtrasModule extends AbstractModule with ScalaModule {
+    def configure(): Unit = {
+      bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(Seq()))
+    }
+  }
+
   lazy val application: Application = new GuiceApplicationBuilder()
     .configure(FakeHatConfiguration.config)
     .overrides(new FakeModule)
+    .overrides(new ExtrasModule)
     .build()
 
   implicit lazy val materializer: Materializer = application.materializer
 
-  def before: Unit = {
+  def before(): Unit = {
     Await.result(databaseReady, 60.seconds)
   }
 }

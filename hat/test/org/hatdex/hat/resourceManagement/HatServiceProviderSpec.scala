@@ -24,15 +24,21 @@
 
 package org.hatdex.hat.resourceManagement
 
-import com.google.inject.AbstractModule
+import com.google.inject.{ AbstractModule, Provides }
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.resourceManagement.actors.{HatServerActor, HatServerProviderActor}
+import org.hatdex.hat.FakeCache
+import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
+import org.hatdex.hat.resourceManagement.actors.{ HatServerActor, HatServerProviderActor }
+import org.hatdex.hat.utils.{ LoggingProvider, MockLoggingProvider }
+import org.mockito.{ Mockito ⇒ MockitoMockito }
 import org.specs2.concurrent.ExecutionEnv
+import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
+import play.api.cache.AsyncCacheApi
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.concurrent.AkkaGuiceSupport
-import play.api.test.{FakeRequest, PlaySpecification}
-import play.api.{Application, Logger}
+import play.api.test.{ FakeRequest, PlaySpecification }
+import play.api.{ Application, Logger }
 
 import scala.concurrent.duration._
 
@@ -55,7 +61,30 @@ class HatServiceProviderSpec(implicit ee: ExecutionEnv) extends PlaySpecificatio
         server.ownerEmail must be equalTo "user@hat.org"
         server.privateKey.getAlgorithm must be equalTo "RSA"
         server.publicKey.getAlgorithm must be equalTo "RSA"
+        there was one(mockLogger).debug(s"Got back server $server")
       } await (1, 30.seconds)
+    }
+
+    "Return HAT Server configuration for a repeated request, cached" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      val service = application.injector.instanceOf[HatServerProvider]
+      MockitoMockito.reset(mockLogger)
+
+      val result = for {
+        _ <- service.retrieve(request)
+        maybeServer <- service.retrieve(request)
+      } yield {
+        maybeServer must beSome
+        val server = maybeServer.get
+        server.hatName must be equalTo "hat"
+        server.domain must be equalTo "hat.hubofallthings.net"
+        server.ownerEmail must be equalTo "user@hat.org"
+        server.privateKey.getAlgorithm must be equalTo "RSA"
+        server.publicKey.getAlgorithm must be equalTo "RSA"
+        there was no(mockLogger).debug(any)(any)
+      }
+
+      result await (1, 30.seconds)
     }
 
     "Return a failure for an unknown address" in {
@@ -67,7 +96,9 @@ class HatServiceProviderSpec(implicit ee: ExecutionEnv) extends PlaySpecificatio
   }
 }
 
-trait HatServerProviderContext extends Scope {
+trait HatServerProviderContext extends Scope with Mockito {
+  import scala.concurrent.ExecutionContext.Implicits.global
+  val mockLogger = mock[Logger]
 
   class FakeModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     override def configure(): Unit = {
@@ -77,6 +108,14 @@ trait HatServerProviderContext extends Scope {
       bind[HatDatabaseProvider].to[HatDatabaseProviderConfig]
       bind[HatKeyProvider].to[HatKeyProviderConfig]
       bind[HatServerProvider].to[HatServerProviderImpl]
+      bind[AsyncCacheApi].to[FakeCache]
+      bind[LoggingProvider].toInstance(new MockLoggingProvider(mockLogger))
+      bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(Seq()))
+    }
+
+    @Provides @play.cache.NamedCache("hatserver-cache")
+    def provideHatServerCache(): AsyncCacheApi = {
+      new FakeCache()
     }
   }
 

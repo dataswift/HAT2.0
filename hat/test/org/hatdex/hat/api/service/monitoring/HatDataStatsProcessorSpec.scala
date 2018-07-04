@@ -27,7 +27,10 @@ package org.hatdex.hat.api.service.monitoring
 import java.util.UUID
 
 import akka.stream.Materializer
-import org.hatdex.hat.api.models.{EndpointData, Owner}
+import com.google.inject.AbstractModule
+import net.codingwell.scalaguice.ScalaModule
+import org.hatdex.hat.api.models.{ EndpointData, Owner }
+import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.DataCreatedEvent
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
@@ -36,9 +39,9 @@ import org.joda.time.DateTime
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{ JsValue, Json }
 import play.api.test.PlaySpecification
-import play.api.{Application, Logger}
+import play.api.{ Application, Logger }
 
 class HatDataStatsProcessorSpec extends PlaySpecification with Mockito with HatDataStatsProcessorContext {
 
@@ -74,11 +77,19 @@ class HatDataStatsProcessorSpec extends PlaySpecification with Mockito with HatD
 }
 
 trait HatDataStatsProcessorContext extends Scope {
+  import scala.concurrent.ExecutionContext.Implicits.global
   // Setup default users for testing
   val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
 
+  class ExtrasModule extends AbstractModule with ScalaModule {
+    def configure(): Unit = {
+      bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(Seq()))
+    }
+  }
+
   lazy val application: Application = new GuiceApplicationBuilder()
     .configure(FakeHatConfiguration.config)
+    .overrides(new ExtrasModule)
     .build()
 
   implicit lazy val materializer: Materializer = application.materializer

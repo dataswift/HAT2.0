@@ -28,11 +28,14 @@ import java.security.MessageDigest
 import java.util.UUID
 import javax.inject.Inject
 
-import akka.Done
+import akka.stream.SubstreamCancelStrategy
+import akka.stream.scaladsl.Source
+import akka.{ Done, NotUsed }
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
+import org.hatdex.hat.utils.Utils
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.{ DateTime, LocalDateTime }
 import org.postgresql.util.PSQLException
@@ -110,19 +113,29 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
           throw RichDataDuplicateException("Duplicate data", e)
         case e: PSQLException =>
           throw RichDataDuplicateException("Unexpected issue with inserting data", e)
-        case e =>
-          logger.error(s"Error inserting data: ${e.getMessage}")
-          throw e
       }
   }
 
-  def saveDataGroups(userId: UUID, dataGroups: Seq[(Seq[EndpointData], Seq[UUID])])(implicit db: Database): Future[Seq[EndpointData]] = {
+  def saveDataGroups(userId: UUID, dataGroups: Seq[(Seq[EndpointData], Seq[UUID])], skipErrors: Boolean = false)(implicit db: Database): Future[Seq[EndpointData]] = {
     val queries = dataGroups flatMap {
       case (endpointData, linkedRecords) =>
         saveDataQuery(userId, endpointData, Some(linkedRecords))
     }
 
-    db.run(DBIO.sequence(queries).transactionally)
+    val insertAction = if (skipErrors) {
+      val temp = queries.map(q => q.asTry)
+      db.run(DBIO.sequence(temp))
+        .map {
+          _.collect {
+            case Success(d) => d
+          }
+        }
+    }
+    else {
+      db.run(DBIO.sequence(queries).transactionally)
+    }
+
+    insertAction
       .map {
         _.map { inserted =>
           ModelTranslation.fromDbModel(inserted._1, inserted._2)
@@ -132,9 +145,6 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
           throw RichDataDuplicateException("Duplicate data", e)
         case e: PSQLException =>
           throw RichDataDuplicateException("Unexpected issue with inserting data", e)
-        case e =>
-          logger.error(s"Error inserting data: ${e.getMessage}")
-          throw e
       }
   }
 
@@ -149,17 +159,26 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
     }
   }
 
-  def deleteEndpoint(userId: UUID, dataEndpoint: String)(implicit db: Database): Future[Done] = {
-    val endpointRecrodsQuery = DataJson.filter(r => r.source === dataEndpoint).map(_.recordId)
+  def deleteEndpoint(dataEndpoint: String)(implicit db: Database): Future[Done] = {
+    val endpointRecordsQuery = DataJson.filter(r => r.source === dataEndpoint).map(_.recordId)
     val query = for {
-      deletedGroupRecords <- DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete // delete links between records and groups
+      deletedGroupRecords <- DataJsonGroupRecords.filter(_.recordId in endpointRecordsQuery).delete // delete links between records and groups
       deletedGroups <- DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete // delete any groups that have become empty
-      deletedRecords <- DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete // delete the records, but only if all requested records are found
+      deletedRecords <- DataJson.filter(r => r.recordId in endpointRecordsQuery).delete // delete the records, but only if all requested records are found
     } yield (deletedGroupRecords, deletedGroups, deletedRecords)
 
     db.run(query.transactionally).map(_ => Done) recover {
       case e: NoSuchElementException => throw RichDataMissingException("Records missing for deleting", e)
     }
+  }
+
+  def uniqueRecordNamespaces(recordIds: Seq[UUID])(implicit db: Database): Future[Set[String]] = {
+    val uniqueEndpointQuery = DataJson.filter(r => r.recordId inSet recordIds)
+      .map(_.source)
+      .distinct
+
+    db.run(uniqueEndpointQuery.result)
+      .map(endpoints ⇒ endpoints.flatMap(_.split("/").headOption).toSet)
   }
 
   def deleteRecords(userId: UUID, recordIds: Seq[UUID])(implicit db: Database): Future[Unit] = {
@@ -386,6 +405,14 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
     }
   }
 
+  def propertyDataMostRecentDate(endpointQueries: Seq[EndpointQuery])(implicit db: Database): Future[Option[DateTime]] = {
+    val query = propertyDataQuery(endpointQueries, None, orderingDescending = true, 0, Some(1), None)
+
+    db.run(query.result).map { results =>
+      results.headOption.map(_._1._1.date.toDateTime)
+    }
+  }
+
   def propertyData(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], orderingDescending: Boolean,
     skip: Int, limit: Option[Int], createdAfter: Option[DateTime] = None)(implicit db: Database): Future[Seq[EndpointData]] = {
 
@@ -407,7 +434,39 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
             endpointData
           }
       }
+    } recover {
+      case e: PSQLException if e.getMessage.contains("cannot cast type") =>
+        throw RichDataBundleFormatException("Invalid bundle format - cannot cast between types to satisfy query", e)
     }
+  }
+
+  def propertyDataStreaming(endpointQueries: Seq[EndpointQuery], orderBy: Option[String], orderingDescending: Boolean,
+    skip: Int, limit: Option[Int], createdAfter: Option[DateTime] = None)(implicit db: Database): Source[EndpointData, NotUsed] = {
+
+    val query = propertyDataQuery(endpointQueries, orderBy, orderingDescending, skip, limit, createdAfter)
+    val mappers = queryMappers(endpointQueries)
+
+    val zerouuid = UUID.fromString("00000000-0000-0000-0000-000000000000")
+    val zerothItem: ((DataJsonRow, Int), Option[(DataJsonRow, String)]) = ((DataJsonRow(zerouuid, "", zerouuid, LocalDateTime.now(), JsNull, Array[Byte]()), 0),
+      Option[(DataJsonRow, String)](null))
+
+    Source.fromPublisher(db.stream(query.result.transactionally.withStatementParameters(fetchSize = 500)))
+      .prepend(Source.single(zerothItem))
+      .sliding(2, 1)
+      .splitWhen(SubstreamCancelStrategy.drain)(w ⇒ w.head._1._1.recordId != w.last._1._1.recordId) // items arrive ordered by record id, all items with same record ID on the left form part of the same group
+      .map(w ⇒ (w.last._1, w.last._2.map(Seq(_)).getOrElse(Seq()))) // remap linked items from optionals to lists
+      .reduce((acc, next) ⇒ (acc._1, acc._2 ++ next._2)) // reduce the whole substream to one item
+      .concatSubstreams // concatenate substreams allowing to run only one substream at a time - substreams happen sequentially anyway
+      .collect({
+        case ((record, queryId), linkedResults) ⇒
+          val linked = linkedResults.map(l ⇒ endpointDataWithMappers(l._1, l._2, mappers))
+          endpointDataWithMappers(record, queryId.toString, mappers)
+            .copy(links = Utils.seqOption(linked))
+      })
+      .recover {
+        case e: PSQLException if e.getMessage.contains("cannot cast type") ⇒
+          throw RichDataBundleFormatException("Invalid bundle format - cannot cast between types to satisfy query", e)
+      }
   }
 
   private def endpointDataWithMappers(record: DataJsonRow, queryId: String, mappers: HashMap[String, Reads[JsObject]]): EndpointData = {

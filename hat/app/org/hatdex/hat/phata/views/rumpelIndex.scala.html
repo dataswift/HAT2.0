@@ -1,6 +1,7 @@
-@(assets: AssetsFinder)(implicit request: RequestHeader)
-
-@protocol = @{ if(request.secure) { "https" } else { "http" } }
+@import play.api.mvc._
+@import controllers.AssetsFinder
+@import play.twirl.api.Html
+@(configScript: String, assets: AssetsFinder)(implicit request: RequestHeader)
 
 <!DOCTYPE html>
 <html>
@@ -8,9 +9,7 @@
         <meta charset="utf-8">
         <title>Hub of All Things @request.host</title>
         <base href="/">
-        <script>
-            var httpProtocol = "@protocol:";
-        </script>
+        <script>@Html(configScript)</script>
 
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="twitter:card" content="summary_large_image">
@@ -30,31 +29,20 @@
         <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:200,300i,400,600,700">
         <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/icon?family=Material+Icons">
         <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css">
-        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0-rc.1/leaflet.css">
-        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0-rc.1.0/MarkerCluster.css">
-        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0-rc.1.0/MarkerCluster.Default.css">
-        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.9.0/fullcalendar.min.css">
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.2.0/leaflet.css">
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.2.0/MarkerCluster.css">
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.2.0/MarkerCluster.Default.css">
         <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
-        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.3.0/introjs.min.css">
-        <link rel="stylesheet" type="text/css" href="assets/webfonts/filled/ss-glyphish-filled.css">
-        <link rel="stylesheet" type="text/css" href="assets/webfonts/outlined/ss-glyphish-outlined.css">
+        <link rel="stylesheet" type="text/css" href="@assets.path("webfonts/filled/ss-glyphish-filled.css")">
+        <link rel="stylesheet" type="text/css" href="@assets.path("webfonts/outlined/ss-glyphish-outlined.css")">
         <link rel="stylesheet" type="text/css" href="@assets.path("stylesheets/styles.bundle.css")">
-        <link rel="icon" type="image/x-icon" href="favicon.ico">
+        <link rel="icon" type="image/x-icon" href="@assets.path("favicon.ico")">
     </head>
     <body>
-        <rump-app>Loading...</rump-app>
+        <rum-app>Loading... Please refresh if you see this screen fore more than a few seconds.</rum-app>
     </body>
 
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0-rc.1/leaflet-src.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.0.0-rc.1.0/leaflet.markercluster-src.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"></script>
-    <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
-    <script type="text/javascript" src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/packery/2.1.1/packery.pkgd.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-ui-timepicker-addon/1.6.1/jquery-ui-timepicker-addon.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.9.0/fullcalendar.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/2.3.0/intro.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.js"></script>
     <script type="text/javascript" src="@assets.path("js/zxcvbn.min.js")"></script>
 

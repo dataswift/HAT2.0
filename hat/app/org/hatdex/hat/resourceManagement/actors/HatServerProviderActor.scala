@@ -29,23 +29,26 @@ import javax.inject.Inject
 import akka.actor.{ Props, _ }
 import akka.util.Timeout
 import org.hatdex.hat.api.service.RemoteExecutionContext
-import play.api.Configuration
+import org.hatdex.hat.utils.ActiveHatCounter
 import play.api.libs.concurrent.InjectedActorSupport
+import play.api.{ Configuration, Logger }
 
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.{ Failure, Success }
 
 class HatServerProviderActor @Inject() (
     hatServerActorFactory: HatServerActor.Factory,
+    activeHatcounter: ActiveHatCounter,
     configuration: Configuration)(
     implicit
-    val ec: RemoteExecutionContext) extends Actor with ActorLogging with InjectedActorSupport {
+    val ec: RemoteExecutionContext) extends Actor with InjectedActorSupport {
+  private val log = Logger(this.getClass)
   import HatServerProviderActor._
 
   private val activeServers = mutable.HashMap[String, ActorRef]()
   private implicit val hatServerTimeout: Timeout = configuration.get[FiniteDuration]("resourceManagement.serverProvisioningTimeout")
-  private var hatsActive: Long = 0L
 
   def receive: Receive = {
     case HatServerRetrieve(hat) =>
@@ -54,24 +57,19 @@ class HatServerProviderActor @Inject() (
       getHatServerActor(hat) map { hatServerActor =>
         log.debug(s"Got HAT server provider actor, forwarding retrieval message with sender $sender $retrievingSender")
         hatServerActor tell (HatServerActor.HatRetrieve(), retrievingSender)
-      } recover {
-        case e =>
-          log.warning(s"Error while getting HAT server provider actor: ${e.getMessage}")
+      } onComplete {
+        case Success(_) ⇒ ()
+        case Failure(e) ⇒ log.warn(s"Error while getting HAT server provider actor: ${e.getMessage}")
       }
 
     case HatServerStarted(_) =>
-      hatsActive += 1
-      log.debug(s"Total HATs active: $hatsActive")
+      activeHatcounter.increase()
 
     case HatServerStopped(_) =>
-      hatsActive -= 1
-
-    case GetHatServersActive() =>
-      sender ! HatServersActive(hatsActive)
+      activeHatcounter.decrease()
 
     case message =>
       log.debug(s"Received unexpected message $message")
-      log.debug(s"Total HATs active: $hatsActive")
   }
 
   private def getHatServerActor(hat: String): Future[ActorRef] = {
@@ -90,7 +88,7 @@ class HatServerProviderActor @Inject() (
       log.debug(s"HAT server actor $selection resolved")
       hatServerActor
     } recoverWith {
-      case ActorNotFound(actorSelection) =>
+      case ActorNotFound(_) =>
         log.debug(s"HAT server actor ($selection) not found, injecting child")
         val hatServerActor = injectedChild(hatServerActorFactory(hat), s"hat:$hat", props = (props: Props) => props.withDispatcher("hat-server-provider-actor-dispatcher"))
         activeServers(hat) = hatServerActor
@@ -106,8 +104,5 @@ object HatServerProviderActor {
 
   case class HatServerStarted(hat: String)
   case class HatServerStopped(hat: String)
-
-  case class GetHatServersActive()
-  case class HatServersActive(active: Long)
 }
 

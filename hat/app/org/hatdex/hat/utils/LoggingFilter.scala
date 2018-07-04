@@ -24,19 +24,31 @@
 
 package org.hatdex.hat.utils
 
-import javax.inject.{ Inject, Named }
-
-import akka.actor.ActorRef
-import akka.pattern.ask
+import javax.inject.{ Inject, Singleton }
 import akka.stream.Materializer
-import org.hatdex.hat.resourceManagement.actors.HatServerProviderActor
-import play.api.Logger
+import com.nimbusds.jose.JWSObject
+import com.nimbusds.jwt.JWTClaimsSet
+import play.api.http.HttpErrorHandler
 import play.api.mvc.{ Filter, RequestHeader, Result }
+import play.api.{ Configuration, Logger }
 
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.concurrent.duration._
+import scala.util.Try
 
-class LoggingFilter @Inject() (@Named("hatServerProviderActor") serverProviderActor: ActorRef)(
+@Singleton
+class ActiveHatCounter() {
+  // Careful! Mutable state
+  private var count: Long = 0
+
+  def get(): Long = count
+  def increase(): Unit = this.synchronized(count += 1)
+  def decrease(): Unit = this.synchronized(count -= 1)
+}
+
+class LoggingFilter @Inject() (
+    errorHandler: HttpErrorHandler,
+    configuration: Configuration,
+    hatCounter: ActiveHatCounter)(
     implicit
     ec: ExecutionContext,
     val mat: Materializer) extends Filter {
@@ -45,19 +57,32 @@ class LoggingFilter @Inject() (@Named("hatServerProviderActor") serverProviderAc
   def apply(nextFilter: RequestHeader => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
 
     val startTime = System.currentTimeMillis
-    implicit val timeout: akka.util.Timeout = 200 milliseconds
 
-    nextFilter(requestHeader) flatMap { result =>
-      serverProviderActor.ask(HatServerProviderActor.GetHatServersActive()).mapTo[HatServerProviderActor.HatServersActive] recover {
-        case _ => HatServerProviderActor.HatServersActive(-1) // Could not fetch the number of active HATs
-      } map { activeHats =>
-        val endTime = System.currentTimeMillis
-        val requestTime = endTime - startTime
-
-        logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] [${result.header.status}] TIME [${requestTime}]ms HATs [${activeHats.active}]")
+    nextFilter(requestHeader)
+      .recoverWith({
+        case e ⇒ errorHandler.onServerError(requestHeader, e)
+      })
+      .map { result =>
+        val active = hatCounter.get()
+        val requestTime = System.currentTimeMillis - startTime
+        logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] " +
+          s"[${result.header.status}] TIME [$requestTime]ms HATs [$active] ${tokenInfo(requestHeader)}")
 
         result.withHeaders("Request-Time" -> requestTime.toString)
       }
-    }
+  }
+
+  private val authTokenFieldName: String = configuration.get[String]("silhouette.authenticator.fieldName")
+  private def tokenInfo(requestHeader: RequestHeader): String = {
+    requestHeader.queryString.get(authTokenFieldName).flatMap(_.headOption)
+      .orElse(requestHeader.headers.get(authTokenFieldName))
+      .flatMap(t ⇒ if (t.isEmpty) { None } else { Some(t) })
+      .flatMap(t ⇒ Try(JWSObject.parse(t)).toOption)
+      .map(o ⇒ JWTClaimsSet.parse(o.getPayload.toJSONObject))
+      .map { claimSet =>
+        s"[${Option(claimSet.getStringClaim("application")).getOrElse("api")}]@" +
+          s"[${Option(claimSet.getStringClaim("applicationVersion")).getOrElse("_")}]"
+      }
+      .getOrElse("[unauthenticated]@[_]")
   }
 }

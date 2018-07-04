@@ -24,41 +24,115 @@
 
 package org.hatdex.hat.api.controllers
 
-import javax.inject.Inject
-
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.util.Clock
-import org.hatdex.hat.api.json.HatJsonFormats
+import javax.inject.Inject
+import org.hatdex.hat.api.json.ApplicationJsonProtocol
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.service.HatServicesService
-import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.resourceManagement._
+import org.hatdex.hat.api.service.applications.ApplicationsService
+import org.hatdex.hat.api.service.richData.RichDataDuplicateBundleException
+import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
+import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
-import play.api.{ Configuration, Logger }
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ ExecutionContext, Future }
 
 class Applications @Inject() (
     components: ControllerComponents,
-    configuration: Configuration,
-    silhouette: Silhouette[HatApiAuthEnvironment],
-    hatServerProvider: HatServerProvider,
-    hatServicesService: HatServicesService,
-    clock: Clock)(implicit val ec: ExecutionContext) extends HatApiController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats {
+    silhouette: Silhouette[HatApiAuthEnvironment])(
+    implicit
+    val ec: ExecutionContext,
+    applicationsService: ApplicationsService)
+  extends HatApiController(components, silhouette) with ApplicationJsonProtocol {
+
+  import org.hatdex.hat.api.json.HatJsonFormats.{ accessTokenFormat, errorMessage }
 
   val logger = Logger(this.getClass)
 
-  def apps(): Action[AnyContent] = SecuredAction(WithRole(Owner(), Platform())).async { implicit request =>
-    hatServicesService.hatServices(Set("app", "dataplug", "testapp")) map { apps =>
-      Ok(Json.toJson(apps))
+  def applications(): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationList()) || WithRole(Owner())).async { implicit request =>
+    for {
+      apps ← applicationsService.applicationStatus()
+      filterApps ← ContainsApplicationRole(ApplicationList()).isAuthorized(request.identity, request.authenticator, request.dynamicEnvironment)
+      maybeApp ← request.authenticator.customClaims.flatMap(customClaims ⇒ (customClaims \ "application").asOpt[String])
+        .map(app ⇒ applicationsService.applicationStatus(app)(request.dynamicEnvironment, request.identity, request))
+        .getOrElse(Future.successful(None))
+    } yield {
+      if (filterApps) {
+        val permitted = maybeApp.map(_.application.permissions.rolesGranted.collect({
+          case ApplicationManage(applicationId) ⇒ applicationId
+        }).toSet).getOrElse(Set())
+
+        val filtered = apps.filter(a ⇒ permitted.contains(a.application.id))
+        Ok(Json.toJson(filtered))
+      }
+      else {
+        Ok(Json.toJson(apps))
+      }
     }
   }
 
-  def saveApp(): Action[HatService] = SecuredAction(WithRole(Platform())).async(parse.json[HatService]) { implicit request =>
-    hatServicesService.save(request.body) map { app =>
-      Ok(Json.toJson(app))
+  def applicationStatus(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(Owner())).async { implicit request =>
+    val bustCache = request.headers.get("Cache-Control").exists(_ == "no-cache")
+    applicationsService.applicationStatus(id, bustCache).map { maybeStatus ⇒
+      maybeStatus map { status ⇒
+        Ok(Json.toJson(status))
+      } getOrElse {
+        NotFound(Json.toJson(ErrorMessage(
+          "Application not Found",
+          s"Application $id does not appear to be a valid application registered with the DEX")))
+      }
     }
+
+  }
+
+  def applicationSetup(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(Owner())).async { implicit request =>
+    applicationsService.applicationStatus(id).flatMap { maybeStatus ⇒
+      maybeStatus map { status ⇒
+        applicationsService.setup(status)
+          .map(s ⇒ Ok(Json.toJson(s)))
+          .recover {
+            case e: RichDataDuplicateBundleException ⇒
+              logger.error(s"[${request.dynamicEnvironment.domain}] Error setting up application - duplicate bundle: ${e.getMessage}")
+              InternalServerError(Json.toJson(ErrorMessage(
+                "Application malformed",
+                s"Application $id bundle ${status.application.permissions.dataRequired.map(_.bundle.name)} clashes with one already setup")))
+          }
+      } getOrElse {
+        Future.successful(
+          BadRequest(Json.toJson(ErrorMessage(
+            "Application not Found",
+            s"Application $id does not appear to be a valid application registered with the DEX"))))
+      }
+    }
+  }
+
+  def applicationDisable(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(Owner())).async { implicit request =>
+    applicationsService.applicationStatus(id).flatMap { maybeStatus =>
+      maybeStatus map { status ⇒
+        applicationsService.disable(status)
+          .map(s ⇒ Ok(Json.toJson(s)))
+      } getOrElse {
+        Future.successful(
+          BadRequest(Json.toJson(ErrorMessage(
+            "Application not Found",
+            s"Application $id does not appear to be a valid application registered with the DEX"))))
+      }
+    }
+  }
+
+  def applicationToken(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(RetrieveApplicationToken(id)) || WithRole(Owner())).async { implicit request =>
+    applicationsService.applicationStatus(id)
+      .flatMap { maybeStatus =>
+        maybeStatus map { status ⇒
+          applicationsService.applicationToken(request.identity, status.application) map { token ⇒
+            Ok(Json.toJson(token))
+          }
+        } getOrElse {
+          Future.successful(NotFound(Json.toJson(ErrorMessage(
+            "Application not Found",
+            s"Application $id does not appear to be a valid application registered with the DEX"))))
+        }
+      }
   }
 
 }

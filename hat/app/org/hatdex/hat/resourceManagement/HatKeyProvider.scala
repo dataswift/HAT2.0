@@ -130,7 +130,7 @@ class HatKeyProviderMilliner @Inject() (
       logger.debug(s"Received signup info, parsing private key ${signup.keys.map(_.privateKey)}")
       readRsaPrivateKey(signup.keys.get.privateKey)
     } recoverWith {
-      case e =>
+      case _ =>
         Future.failed(new HatServerDiscoveryException(s"Private Key for $hat not found"))
     }
   }
@@ -139,7 +139,7 @@ class HatKeyProviderMilliner @Inject() (
     getHatSignup(hat) map { signup =>
       signup.email
     } recoverWith {
-      case e =>
+      case _ =>
         Future.failed(new HatServerDiscoveryException(s"Owner email for $hat not found"))
     }
   }

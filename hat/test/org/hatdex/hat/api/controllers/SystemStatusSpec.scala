@@ -27,12 +27,12 @@ package org.hatdex.hat.api.controllers
 import com.mohiva.play.silhouette.test._
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{HatStatus, StatusKind}
+import org.hatdex.hat.api.models.{ HatStatus, StatusKind }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.BeforeAll
 import play.api.Logger
-import play.api.test.{FakeRequest, PlaySpecification}
+import play.api.test.{ FakeRequest, PlaySpecification }
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

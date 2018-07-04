@@ -31,14 +31,14 @@ import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.{BeforeAll, BeforeEach}
+import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Result
-import play.api.test.{FakeRequest, Helpers, PlaySpecification}
+import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{ Await, Future }
 
 class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with FilesContext with BeforeAll with BeforeEach {
 
@@ -291,7 +291,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       }
 
       redirectLocation(result) must beSome
-      redirectLocation(result).get must startWith("https://hat-storage-test.s3-eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile")
+      redirectLocation(result).get must startWith("https://hat-storage-test.s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile")
     }
 
     "Redirect to file url for permitted files files" in {
@@ -308,7 +308,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       } yield result
 
       redirectLocation(result) must beSome
-      redirectLocation(result).get must startWith("https://hat-storage-test.s3-eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile")
+      redirectLocation(result).get must startWith("https://hat-storage-test.s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile")
     }
   }
 

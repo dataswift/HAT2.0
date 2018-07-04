@@ -19,21 +19,19 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 2 / 2017
+ * 2 / 2018
  */
 
-package org.hatdex.hat.authentication
+package org.hatdex.hat.api.service.applications
 
-import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.api.util.PasswordInfo
-import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import com.mohiva.play.silhouette.password.BCryptPasswordHasher
+import org.hatdex.hat.api.models.applications.Application
 
-object Implicits {
-  import scala.language.implicitConversions
+import scala.concurrent.{ ExecutionContext, Future }
 
-  implicit def key2loginInfo(key: String): LoginInfo = LoginInfo(CredentialsProvider.ID, key)
-  implicit def loginInfo2key(loginInfo: LoginInfo): String = loginInfo.providerKey
-  implicit def pwd2passwordInfo(pwd: String): PasswordInfo = PasswordInfo(BCryptPasswordHasher.ID, pwd, salt = Some("your-salt"))
-  implicit def passwordInfo2pwd(passwordInfo: PasswordInfo): String = passwordInfo.password
+class TestApplicationProvider(apps: Seq[Application])(implicit ec: ExecutionContext) extends TrustedApplicationProvider {
+  def application(id: String): Future[Option[Application]] = {
+    applications.map(_.find(_.id == id))
+  }
+
+  def applications: Future[Seq[Application]] = Future.successful(apps)
 }

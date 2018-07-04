@@ -19,32 +19,17 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 2 / 2017
+ * 5 / 2018
  */
 
 package org.hatdex.hat.utils
 
-import javax.inject.Inject
-
-import play.api.http.DefaultHttpFilters
-import play.filters.cors.CORSFilter
-import play.filters.gzip.GzipFilter
-import play.api.mvc._
-import play.api.Environment
-import scala.concurrent.{ ExecutionContext, Future }
 import akka.stream.Materializer
+import javax.inject.Inject
+import play.api.Environment
+import play.api.mvc._
 
-class Filters @Inject() (
-    tlsFilter: TLSFilter,
-    gzip: GzipFilter,
-    corsFilter: CORSFilter,
-    log: LoggingFilter) extends DefaultHttpFilters(log, tlsFilter, gzip, corsFilter)
-
-class DevFilters @Inject() (
-    tlsFilter: TLSFilter,
-    gzip: GzipFilter,
-    corsFilter: CORSFilter,
-    log: LoggingFilter) extends DefaultHttpFilters(log, gzip, corsFilter)
+import scala.concurrent.{ ExecutionContext, Future }
 
 class TLSFilter @Inject() (
     implicit

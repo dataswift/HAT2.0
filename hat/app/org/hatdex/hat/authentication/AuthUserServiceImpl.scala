@@ -46,7 +46,7 @@ class AuthUserServiceImpl @Inject() (usersService: UsersService) extends AuthUse
    * @return The retrieved user or None if no user could be retrieved for the given login info.
    */
   def retrieve(loginInfo: LoginInfo)(implicit dyn: HatServer): Future[Option[HatUser]] = {
-    usersService.getUser(loginInfo.providerKey)(dyn.db)
+    usersService.getUser(loginInfo.providerKey)(dyn)
   }
 
   /**
@@ -55,7 +55,7 @@ class AuthUserServiceImpl @Inject() (usersService: UsersService) extends AuthUse
    * @param user The user to save.
    * @return The saved user.
    */
-  def save(user: HatUser)(implicit dyn: HatServer) = usersService.saveUser(user)(dyn.db)
+  def save(user: HatUser)(implicit dyn: HatServer) = usersService.saveUser(user)(dyn)
 
   /**
    * Removes a user.
@@ -64,7 +64,7 @@ class AuthUserServiceImpl @Inject() (usersService: UsersService) extends AuthUse
    * @return The saved user.
    */
   def remove(loginInfo: LoginInfo)(implicit dyn: HatServer): Future[Unit] =
-    usersService.removeUser(loginInfo.providerKey)(dyn.db)
+    usersService.removeUser(loginInfo.providerKey)(dyn)
 
   /**
    * Link user profiles together

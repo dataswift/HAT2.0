@@ -25,26 +25,33 @@
 package org.hatdex.hat.she.functions
 
 import org.hatdex.hat.api.models.EndpointData
+import org.hatdex.hat.api.models.FilterOperator.Between
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.models.Request
-import org.joda.time.DateTime
+import org.hatdex.hat.she.service._
+import org.joda.time.{ DateTime, DateTimeUtils }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.BeforeAll
+import org.specs2.specification.BeforeAfterAll
 import play.api.Logger
 import play.api.test.PlaySpecification
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirectMapper with PlaySpecification with Mockito with DataFeedDirectMapperContext with BeforeAll {
+class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirectMapper with PlaySpecification with Mockito with DataFeedDirectMapperContext with BeforeAfterAll {
   val logger = Logger(this.getClass)
 
   def beforeAll: Unit = {
+    DateTimeUtils.setCurrentMillisFixed(1514764800000L)
     Await.result(databaseReady, 60.seconds)
   }
 
-  override def before: Unit = {
+  def afterAll: Unit = {
+    DateTimeUtils.setCurrentMillisSystem()
+  }
+
+  override def before(): Unit = {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
@@ -67,29 +74,110 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
     Await.result(hatDatabase.run(action), 60.seconds)
   }
 
+  "The `mapGoogleCalendarEvent` method" should {
+    "translate google calendar event with timezone information" in {
+      val mapper = new GoogleCalendarMapper()
+      val transformed = mapper.mapDataRecord(googleCalendarEvent.recordId.get, googleCalendarEvent.data).get
+      transformed.source must be equalTo "google"
+      transformed.types must contain("event")
+      transformed.title.get.text must contain("MadHATTERs Tea Party: The Boston Party")
+      transformed.title.get.subtitle.get must contain("12 December 18:30 - 22:30 EST")
+      transformed.content.get.text.get must contain("personal data, user accounts, security and value")
+    }
+
+    "remove html tags from google calendar event description" in {
+      val mapper = new GoogleCalendarMapper()
+      val transformed = mapper.mapDataRecord(googleCalendarEventHtml.recordId.get, googleCalendarEventHtml.data).get
+      transformed.source must be equalTo "google"
+      transformed.types must contain("event")
+      transformed.title.get.text must contain("MadHATTERs Tea Party: The Boston Party")
+      transformed.title.get.subtitle.get must contain("12 December 18:30 - 22:30 EST")
+      transformed.content.get.text.get must contain("BD call")
+      transformed.content.get.text.get must not contain ("<br>")
+      transformed.content.get.text.get must not contain ("&nbsp;")
+      transformed.content.get.text.get must not contain ("</a>")
+    }
+
+    "translate google calendar full-day event" in {
+      val mapper = new GoogleCalendarMapper()
+      val transformed = mapper.mapDataRecord(googleCalendarFullDayEvent.recordId.get, googleCalendarFullDayEvent.data).get
+      transformed.source must be equalTo "google"
+      transformed.types must contain("event")
+      transformed.content.get.text must beNone
+    }
+  }
+
+  // TODO: updated tweet with retweet structure
   "The `mapTweet` method" should {
     "translate twitter retweets" in {
-      val transformed = mapTweet(exampleTweetRetweet.recordId.get, exampleTweetRetweet.data).get
+      val mapper = new TwitterFeedMapper()
+      val transformed = mapper.mapDataRecord(exampleTweetRetweet.recordId.get, exampleTweetRetweet.data).get
       transformed.source must be equalTo "twitter"
       transformed.types must contain("post")
       transformed.title.get.text must contain("You retweeted")
       transformed.content.get.text.get must contain("RT @jupenur: Oh shit Adobe https://t.co/7rDL3LWVVz")
 
       transformed.location.get.geo.get.longitude must be equalTo -75.14310264
-      transformed.location.get.address.get.country must be equalTo "United States"
-      transformed.location.get.address.get.city must be equalTo "Washington"
+      transformed.location.get.address.get.country.get must be equalTo "United States"
+      transformed.location.get.address.get.city.get must be equalTo "Washington"
     }
 
+    // TODO: update tweet with reply structure
     "translate twitter replies" in {
-      val transformed = mapTweet(exampleTweetMentions.recordId.get, exampleTweetMentions.data).get
+      val mapper = new TwitterFeedMapper()
+      val transformed = mapper.mapDataRecord(exampleTweetMentions.recordId.get, exampleTweetMentions.data).get
       transformed.source must be equalTo "twitter"
       transformed.title.get.text must contain("You replied to @drgeep")
+    }
+
+    "translate minimal tweet structure correctly" in {
+      val mapper = new TwitterFeedMapper()
+      val transformed = mapper.mapDataRecord(exampleTweetMinimalFields.recordId.get, exampleTweetMinimalFields.data).get
+      transformed.source must be equalTo "twitter"
+      transformed.content.get.text.get must contain("Tweet from Portugal.")
+    }
+  }
+
+  "The `InstagramMediaMapper` class" should {
+    "translate single image posts" in {
+      val mapper = new InstagramMediaMapper()
+      val transformed = mapper.mapDataRecord(exampleInstagramImage.recordId.get, exampleInstagramImage.data).get
+      transformed.source must be equalTo "instagram"
+      transformed.title.get.text must contain("You posted")
+      transformed.title.get.action.get must be equalTo "image"
+      transformed.content.get.text.get must contain("Saturday breakfast magic")
+      transformed.content.get.media.get.length must be equalTo 1
+      transformed.content.get.media.get.head.url.get must be startingWith "https://scontent.cdninstagram.com/vp"
+    }
+
+    "translate multiple image carousel posts" in {
+      val mapper = new InstagramMediaMapper()
+      val transformed = mapper.mapDataRecord(exampleMultipleInstagramImages.recordId.get, exampleMultipleInstagramImages.data).get
+      transformed.source must be equalTo "instagram"
+      transformed.title.get.text must contain("You posted")
+      transformed.title.get.action.get must be equalTo "carousel"
+      transformed.content.get.text.get must contain("The beauty of Richmond park...")
+      transformed.content.get.media.get.length must be equalTo 3
+      transformed.content.get.media.get.head.url.get must be startingWith "https://scontent.cdninstagram.com/vp"
+    }
+
+    "create data queries using correct unix timestamp format" in {
+      val mapper = new InstagramMediaMapper()
+      val fromDate = new DateTime("2018-05-01T09:00:00Z")
+      val untilDate = fromDate.plusDays(1)
+
+      val propertyQuery = mapper.dataQueries(Some(fromDate), Some(untilDate))
+      propertyQuery.head.orderBy.get must be equalTo "created_time"
+      propertyQuery.head.endpoints.head.endpoint must be equalTo "instagram/feed"
+      propertyQuery.head.endpoints.head.filters.get.head.operator.asInstanceOf[Between].lower.as[String] must be equalTo "1525165200"
+      propertyQuery.head.endpoints.head.filters.get.head.operator.asInstanceOf[Between].upper.as[String] must be equalTo "1525251600"
     }
   }
 
   "The `mapFacebookPost` method" should {
     "translate facebook photo posts" in {
-      val transformed = mapFacebookPost(exampleFacebookPhotoPost.recordId.get, exampleFacebookPhotoPost.data).get
+      val mapper = new FacebookFeedMapper()
+      val transformed = mapper.mapDataRecord(exampleFacebookPhotoPost.recordId.get, exampleFacebookPhotoPost.data).get
 
       transformed.source must be equalTo "facebook"
       transformed.title.get.text must be equalTo "You posted a photo"
@@ -97,14 +185,16 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
     }
 
     "translate facebook replies" in {
-      val transformed = mapFacebookPost(exampleFacebookPost.recordId.get, exampleFacebookPost.data).get
+      val mapper = new FacebookFeedMapper()
+      val transformed = mapper.mapDataRecord(exampleFacebookPost.recordId.get, exampleFacebookPost.data).get
       transformed.source must be equalTo "facebook"
       transformed.title.get.text must be equalTo "You posted"
       transformed.content.get.text.get must be startingWith "jetlag wouldn't be so bad if not for  Aileen signing (whistling?) out the window overnight..."
     }
 
     "translate facebook stories" in {
-      val transformed = mapFacebookPost(facebookStory.recordId.get, facebookStory.data).get
+      val mapper = new FacebookFeedMapper()
+      val transformed = mapper.mapDataRecord(facebookStory.recordId.get, facebookStory.data).get
       transformed.source must be equalTo "facebook"
       transformed.title.get.text must be equalTo "You shared a story"
       transformed.content.get.text.get must be startingWith "Guilty. Though works for startups too."
@@ -114,40 +204,44 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
 
   "The `mapFacebookEvent` method" should {
     "translate facebook events with location" in {
-      val transformed = mapFacebookEvent(facebookEvent.recordId.get, facebookEvent.data).get
+      val mapper = new FacebookEventMapper()
+      val transformed = mapper.mapDataRecord(facebookEvent.recordId.get, facebookEvent.data).get
 
       transformed.source must be equalTo "facebook"
       transformed.types must contain("event")
       transformed.title.get.text must be equalTo "You are attending an event"
       transformed.content.get.text.get must contain("We're going somewhere new")
-      transformed.location.get.address.get.city must be equalTo "Singapore"
+      transformed.location.get.address.get.city.get must be equalTo "Singapore"
       transformed.location.get.address.get.name.get must be equalTo "Carlton Hotel Singapore"
     }
 
     "translate facebook events without location" in {
-      val transformed = mapFacebookEvent(facebookEvenNoLocation.recordId.get, facebookEvenNoLocation.data).get
+      val mapper = new FacebookEventMapper()
+      val transformed = mapper.mapDataRecord(facebookEvenNoLocation.recordId.get, facebookEvenNoLocation.data).get
 
       transformed.source must be equalTo "facebook"
       transformed.types must contain("event")
       transformed.title.get.text must be equalTo "You are attending an event"
-      transformed.content.get.text.get must contain("Personal Data")
+      transformed.content.get.text.get must contain("privacy, security, access rights, regulation")
       transformed.location must beNone
     }
 
     "translate facebook events with incomplete location" in {
-      val transformed = mapFacebookEvent(facebookEvenPartialLocation.recordId.get, facebookEvenPartialLocation.data).get
+      val mapper = new FacebookEventMapper()
+      val transformed = mapper.mapDataRecord(facebookEvenPartialLocation.recordId.get, facebookEvenPartialLocation.data).get
 
       transformed.source must be equalTo "facebook"
       transformed.types must contain("event")
       transformed.title.get.text must be equalTo "You are attending an event"
-      transformed.content.get.text.get must contain("Personal Data")
+      transformed.content.get.text.get must contain("privacy, security, access rights, regulation")
       transformed.location must beNone
     }
   }
 
   "The `mapFitbitWeight` method" should {
     "translate fitbit weight" in {
-      val transformed = mapFitbitWeight(fitbitWeightMeasurement.recordId.get, fitbitWeightMeasurement.data).get
+      val mapper = new FitbitWeightMapper()
+      val transformed = mapper.mapDataRecord(fitbitWeightMeasurement.recordId.get, fitbitWeightMeasurement.data).get
 
       transformed.source must be equalTo "fitbit"
       transformed.types must contain("fitness", "weight")
@@ -160,7 +254,8 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
 
   "The `mapFitbitSleep` method" should {
     "translate fitbit sleep" in {
-      val transformed = mapFitbitSleep(fitbitSleepMeasurement.recordId.get, fitbitSleepMeasurement.data).get
+      val mapper = new FitbitSleepMapper()
+      val transformed = mapper.mapDataRecord(fitbitSleepMeasurement.recordId.get, fitbitSleepMeasurement.data).get
 
       transformed.source must be equalTo "fitbit"
       transformed.types must contain("fitness", "sleep")
@@ -173,7 +268,8 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
 
   "The `mapFitbitActivity` method" should {
     "translate fitbit activity" in {
-      val transformed = mapFitbitActivity(fitbitActivity.recordId.get, fitbitActivity.data).get
+      val mapper = new FitbitActivityMapper()
+      val transformed = mapper.mapDataRecord(fitbitActivity.recordId.get, fitbitActivity.data).get
 
       transformed.source must be equalTo "fitbit"
       transformed.types must contain("fitness")
@@ -187,35 +283,18 @@ class DataFeedDirectMapperSpec(implicit ee: ExecutionEnv) extends DataFeedDirect
 
   "The `mapFitbitDaySummarySteps` method" should {
     "not generate a feed item for days with 0 steps recorded" in {
-      val transformed = mapFitbitDaySummarySteps(fitbitDayEmptySummary.recordId.get, fitbitDayEmptySummary.data)
+      val mapper = new FitbitActivityDaySummaryMapper()
+      val transformed = mapper.mapDataRecord(fitbitDayEmptySummary.recordId.get, fitbitDayEmptySummary.data)
       transformed must beAFailedTry
     }
 
     "translate fitbit day summary to steps" in {
-      val transformed = mapFitbitDaySummarySteps(fitbitDaySummary.recordId.get, fitbitDaySummary.data).get
+      val mapper = new FitbitActivityDaySummaryMapper()
+      val transformed = mapper.mapDataRecord(fitbitDaySummary.recordId.get, fitbitDaySummary.data).get
       transformed.source must be equalTo "fitbit"
       transformed.types must contain("fitness")
       transformed.title.get.text must contain("You walked 12135 steps")
       transformed.content must beNone
-    }
-  }
-
-  "The `mapGoogleCalendarEvent` method" should {
-    "translate google calendar event with timezone information" in {
-      val transformed = mapGoogleCalendarEvent(googleCalendarEvent.recordId.get, googleCalendarEvent.data).get
-      transformed.source must be equalTo "google"
-      transformed.types must contain("event")
-      transformed.title.get.text must contain("You have an event")
-      transformed.content.get.text.get must contain("MadHATTERs Tea Party: The Boston Party")
-      transformed.content.get.text.get must contain("Join Prof. Irene Ng")
-      transformed.content.get.text.get must contain("12 December 18:30 - 22:30 EST")
-    }
-
-    "translate google calendar full-day event" in {
-      val transformed = mapGoogleCalendarEvent(googleCalendarFullDayEvent.recordId.get, googleCalendarFullDayEvent.data).get
-      transformed.source must be equalTo "google"
-      transformed.types must contain("event")
-      transformed.content.get.text.get must contain("27 October - 29 October")
     }
   }
 

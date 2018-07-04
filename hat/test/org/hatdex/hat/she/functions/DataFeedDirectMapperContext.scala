@@ -24,10 +24,11 @@
 
 package org.hatdex.hat.she.functions
 
-import org.hatdex.hat.api.models.{EndpointData, RichDataJsonFormats}
+import org.hatdex.hat.api.json.RichDataJsonFormats
+import org.hatdex.hat.api.models.EndpointData
 import org.hatdex.hat.she.service.FunctionServiceContext
 import org.specs2.specification.Scope
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.{ Format, Json }
 
 trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
   private implicit val endpointDataFormat: Format[EndpointData] = RichDataJsonFormats.endpointDataFormat
@@ -53,9 +54,9 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
       |                "favourites_count": "39"
       |            },
       |            "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
-      |            "favorited": "false",
-      |            "retweeted": "true",
-      |            "truncated": "false",
+      |            "favorited": false,
+      |            "retweeted": true,
+      |            "truncated": false,
       |            "created_at": "Sat Sep 23 09:24:51 +0000 2017",
       |            "lastUpdated": "2017-09-20T09:24:51+0000",
       |            "retweet_count": "2937",
@@ -116,9 +117,9 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
       |                "favourites_count": "39"
       |            },
       |            "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
-      |            "favorited": "false",
-      |            "retweeted": "false",
-      |            "truncated": "true",
+      |            "favorited": false,
+      |            "retweeted": false,
+      |            "truncated": true,
       |            "created_at": "Sat Sep 23 19:24:47 +0000 2017",
       |            "lastUpdated": "2017-09-23T19:24:47+0000",
       |            "retweet_count": "0",
@@ -131,6 +132,93 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
     """.stripMargin
 
   val exampleTweetMentions: EndpointData = Json.parse(exampleTweetMentionsText).as[EndpointData]
+
+  private val exampleTweetMinimalFieldsText =
+    """
+      |{
+      |        "endpoint": "twitter/tweets",
+      |        "recordId": "8c9c541c-21e5-4094-875d-ede01c9bf613",
+      |        "data": {
+      |            "id": 953685879859679233,
+      |            "geo": null,
+      |            "lang": "en",
+      |            "text": "Tweet from Portugal.",
+      |            "user": {
+      |                "id": 819125281931792384,
+      |                "url": null,
+      |                "lang": "en",
+      |                "name": "Augustinas",
+      |                "id_str": "819125281931792384",
+      |                "entities": {
+      |                    "description": {
+      |                        "urls": []
+      |                    }
+      |                },
+      |                "location": "",
+      |                "verified": false,
+      |                "following": false,
+      |                "protected": true,
+      |                "time_zone": null,
+      |                "created_at": "Wed Jan 11 10:14:20 +0000 2017",
+      |                "utc_offset": null,
+      |                "description": "",
+      |                "geo_enabled": false,
+      |                "screen_name": "augustinas_test",
+      |                "listed_count": 0,
+      |                "friends_count": 28,
+      |                "is_translator": false,
+      |                "notifications": false,
+      |                "statuses_count": 22,
+      |                "default_profile": true,
+      |                "followers_count": 0,
+      |                "translator_type": "none",
+      |                "favourites_count": 0,
+      |                "profile_image_url": "http://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png",
+      |                "profile_link_color": "1DA1F2",
+      |                "profile_text_color": "333333",
+      |                "follow_request_sent": false,
+      |                "contributors_enabled": false,
+      |                "has_extended_profile": false,
+      |                "default_profile_image": true,
+      |                "is_translation_enabled": false,
+      |                "profile_background_tile": false,
+      |                "profile_image_url_https": "https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png",
+      |                "profile_background_color": "F5F8FA",
+      |                "profile_sidebar_fill_color": "DDEEF6",
+      |                "profile_background_image_url": null,
+      |                "profile_sidebar_border_color": "C0DEED",
+      |                "profile_use_background_image": true,
+      |                "profile_background_image_url_https": null
+      |            },
+      |            "place": null,
+      |            "id_str": "953685879859679233",
+      |            "source": "<a href=\"http://twitter.com\" rel=\"nofollow\">Twitter Web Client</a>",
+      |            "entities": {
+      |                "urls": [],
+      |                "symbols": [],
+      |                "hashtags": [],
+      |                "user_mentions": []
+      |            },
+      |            "favorited": false,
+      |            "retweeted": false,
+      |            "truncated": false,
+      |            "created_at": "Wed Jan 17 17:50:07 +0000 2018",
+      |            "coordinates": null,
+      |            "lastUpdated": "2018-01-17T17:50:07.000Z",
+      |            "contributors": null,
+      |            "retweet_count": 0,
+      |            "favorite_count": 0,
+      |            "is_quote_status": false,
+      |            "in_reply_to_user_id": null,
+      |            "in_reply_to_status_id": null,
+      |            "in_reply_to_screen_name": null,
+      |            "in_reply_to_user_id_str": null,
+      |            "in_reply_to_status_id_str": null
+      |        }
+      |    }
+    """.stripMargin
+
+  val exampleTweetMinimalFields: EndpointData = Json.parse(exampleTweetMinimalFieldsText).as[EndpointData]
 
   private val exampleFacebookPhotoPostText =
     """
@@ -827,6 +915,51 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
 
   val googleCalendarEvent: EndpointData = Json.parse(googleCalendaEventText).as[EndpointData]
 
+  private val googleCalendaEventHtmlText =
+    """
+      |{
+      |        "endpoint": "calendar/google/events",
+      |        "recordId": "bff0fbbd-78af-4999-a1fa-f7e70864d85b",
+      |        "data": {
+      |            "id": "1084m8261rnnk0g5k5en7da63u",
+      |            "end": {
+      |                "dateTime": "2017-12-13T03:30:00Z",
+      |                "timeZone": "America/New_York"
+      |            },
+      |            "etag": "\"3019071330104000\"",
+      |            "kind": "calendar#event",
+      |            "start": {
+      |                "dateTime": "2017-12-12T23:30:00Z",
+      |                "timeZone": "America/New_York"
+      |            },
+      |            "status": "confirmed",
+      |            "created": "2017-11-01T11:26:05.000Z",
+      |            "creator": {
+      |                "email": "holtby.jonathan@gmail.com",
+      |                "displayName": "Jonathan Holtby"
+      |            },
+      |            "iCalUID": "1084m8261rnnk0g5k5en7da63u@google.com",
+      |            "summary": "MadHATTERs Tea Party: The Boston Party",
+      |            "updated": "2017-11-01T11:27:45.052Z",
+      |            "htmlLink": "https://www.google.com/calendar/event?eid=MTA4NG04MjYxcm5uazBnNWs1ZW43ZGE2M3UgZjRsZHZqbDd0a3RvZjBtcGVqZjQxMTU0Y3NAZw",
+      |            "location": "Boston, MA, USA",
+      |            "sequence": 1,
+      |            "organizer": {
+      |                "self": true,
+      |                "email": "f4ldvjl7tktof0mpejf41154cs@group.calendar.google.com",
+      |                "displayName": "HAT Platform"
+      |            },
+      |            "reminders": {
+      |                "useDefault": true
+      |            },
+      |            "calendarId": "f4ldvjl7tktof0mpejf41154cs@group.calendar.google.com",
+      |            "description": "BD call&nbsp;<br><br>Please join my meeting from your computer, tablet or smartphone.&nbsp;<br><a href=\"https://global.gotomeeting.com/join/00000000\" target=\"_blank\">https://global.gotomeeting.com/join/00000000&nbsp;</a><br><br>You can also dial in using your phone.&nbsp;<br>United Kingdom: +44 20 3713 5028&nbsp;<br><br>Access Code:&nbsp;000-000-000&nbsp;<br><br>More phone numbers&nbsp;<br>United States: +1 (571) 317-3129&nbsp;<br>Canada: +1 (647) 497-9391&nbsp;<br><br>First GoToMeeting? Let's do a quick system check:<a href=\"https://link.gotomeeting.com/system-check\" target=\"_blank\">https://link.gotomeeting.com/system-check</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+      |        }
+      |      }
+    """.stripMargin
+
+  val googleCalendarEventHtml: EndpointData = Json.parse(googleCalendaEventHtmlText).as[EndpointData]
+
   private val googleCalendarFullDayEventText =
     """
       | {
@@ -868,4 +1001,206 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
     """.stripMargin
 
   val googleCalendarFullDayEvent: EndpointData = Json.parse(googleCalendarFullDayEventText).as[EndpointData]
+
+  private val instagramImagePost =
+    """
+      |{
+      |        "endpoint": "instagram/feed",
+      |        "recordId": "2ab1ba13-1f52-4340-b5d6-6cb99bc2b8f1",
+      |        "data": {
+      |            "id": "1772411616076286885_239605641",
+      |            "link": "https://www.instagram.com/p/BiY3vlkAMul/",
+      |            "tags": [
+      |                "goodmorning",
+      |                "saturday",
+      |                "healthyfood"
+      |            ],
+      |            "type": "image",
+      |            "user": {
+      |                "id": "239605641",
+      |                "username": "thetallfoodmaker",
+      |                "full_name": "Gus Marke",
+      |                "profile_picture": "https://scontent.cdninstagram.com/vp/f6c87f56dbf4bee40c6433113db61ac6/5BABD075/t51.2885-19/s150x150/22794237_238331963364835_6773830520112414720_n.jpg"
+      |            },
+      |            "likes": {
+      |                "count": 6
+      |            },
+      |            "filter": "Juno",
+      |            "images": {
+      |                "thumbnail": {
+      |                    "url": "https://scontent.cdninstagram.com/vp/fe1112fbf722cc7e0c9d7c24a4614d79/5BC3EA61/t51.2885-15/s150x150/e35/31168755_584427071935823_5068176866590851072_n.jpg",
+      |                    "width": 150,
+      |                    "height": 150
+      |                },
+      |                "low_resolution": {
+      |                    "url": "https://scontent.cdninstagram.com/vp/5eed293c762c178710761ba2f839bcad/5BA89426/t51.2885-15/s320x320/e35/31168755_584427071935823_5068176866590851072_n.jpg",
+      |                    "width": 320,
+      |                    "height": 320
+      |                },
+      |                "standard_resolution": {
+      |                    "url": "https://scontent.cdninstagram.com/vp/1012761e9acf47e0dc95a793b904c3ba/5BAF6465/t51.2885-15/s640x640/sh0.08/e35/31168755_584427071935823_5068176866590851072_n.jpg",
+      |                    "width": 640,
+      |                    "height": 640
+      |                }
+      |            },
+      |            "caption": {
+      |                "id": "17881349008217653",
+      |                "from": {
+      |                    "id": "239605641",
+      |                    "username": "thetallfoodmaker",
+      |                    "full_name": "Gus Marke",
+      |                    "profile_picture": "https://scontent.cdninstagram.com/vp/f6c87f56dbf4bee40c6433113db61ac6/5BABD075/t51.2885-19/s150x150/22794237_238331963364835_6773830520112414720_n.jpg"
+      |                },
+      |                "text": "Saturday breakfast magic. Made with quinoa, strawberries, blueberries, açai and tad bit of honey.  #healthyfood #goodmorning #saturday",
+      |                "created_time": "1525507951"
+      |            },
+      |            "comments": {
+      |                "count": 0
+      |            },
+      |            "location": null,
+      |            "attribution": null,
+      |            "created_time": "1525507951",
+      |            "user_has_liked": false,
+      |            "users_in_photo": []
+      |        }
+      |    }
+    """.stripMargin
+
+  val exampleInstagramImage: EndpointData = Json.parse(instagramImagePost).as[EndpointData]
+
+  private val instagramMultipleImagePost =
+    """
+      |{
+      |        "endpoint": "instagram/feed",
+      |        "recordId": "83e82952-cc3c-44b8-9127-405671bc37cb",
+      |        "data": {
+      |            "id": "1636442711489664731_239605641",
+      |            "link": "https://www.instagram.com/p/Ba1z_nRnlbb/",
+      |            "tags": [
+      |                "london",
+      |                "nature",
+      |                "wildlife",
+      |                "active",
+      |                "richmond",
+      |                "stayactive",
+      |                "sundaywalk",
+      |                "happyday"
+      |            ],
+      |            "type": "carousel",
+      |            "user": {
+      |                "id": "239605641",
+      |                "username": "thetallfoodmaker",
+      |                "full_name": "Gus Marke",
+      |                "profile_picture": "https://scontent.cdninstagram.com/vp/f6c87f56dbf4bee40c6433113db61ac6/5BABD075/t51.2885-19/s150x150/22794237_238331963364835_6773830520112414720_n.jpg"
+      |            },
+      |            "likes": {
+      |                "count": 7
+      |            },
+      |            "filter": "Normal",
+      |            "images": {
+      |                "thumbnail": {
+      |                    "url": "https://scontent.cdninstagram.com/vp/842f47bf6577fb0a86a4107bec37de37/5BA18E77/t51.2885-15/s150x150/e35/23101195_391308361303260_9190986119427129344_n.jpg",
+      |                    "width": 150,
+      |                    "height": 150
+      |                },
+      |                "low_resolution": {
+      |                    "url": "https://scontent.cdninstagram.com/vp/219747f95097fd95bf80b2b5cac02de8/5BAAEE30/t51.2885-15/s320x320/e35/23101195_391308361303260_9190986119427129344_n.jpg",
+      |                    "width": 320,
+      |                    "height": 320
+      |                },
+      |                "standard_resolution": {
+      |                    "url": "https://scontent.cdninstagram.com/vp/ce03d9c34ceb42cca7d2d27940d31b9c/5BA46973/t51.2885-15/s640x640/sh0.08/e35/23101195_391308361303260_9190986119427129344_n.jpg",
+      |                    "width": 640,
+      |                    "height": 640
+      |                }
+      |            },
+      |            "caption": {
+      |                "id": "17879428666148826",
+      |                "from": {
+      |                    "id": "239605641",
+      |                    "username": "thetallfoodmaker",
+      |                    "full_name": "Gus Marke",
+      |                    "profile_picture": "https://scontent.cdninstagram.com/vp/f6c87f56dbf4bee40c6433113db61ac6/5BABD075/t51.2885-19/s150x150/22794237_238331963364835_6773830520112414720_n.jpg"
+      |                },
+      |                "text": "The beauty of Richmond park... Have to be there to experience it.\n.\n#london #richmond #nature #wildlife #sundaywalk #happyday #active #stayactive",
+      |                "created_time": "1509299194"
+      |            },
+      |            "comments": {
+      |                "count": 0
+      |            },
+      |            "location": null,
+      |            "attribution": null,
+      |            "created_time": "1509299194",
+      |            "carousel_media": [
+      |                {
+      |                    "type": "image",
+      |                    "images": {
+      |                        "thumbnail": {
+      |                            "url": "https://scontent.cdninstagram.com/vp/842f47bf6577fb0a86a4107bec37de37/5BA18E77/t51.2885-15/s150x150/e35/23101195_391308361303260_9190986119427129344_n.jpg",
+      |                            "width": 150,
+      |                            "height": 150
+      |                        },
+      |                        "low_resolution": {
+      |                            "url": "https://scontent.cdninstagram.com/vp/219747f95097fd95bf80b2b5cac02de8/5BAAEE30/t51.2885-15/s320x320/e35/23101195_391308361303260_9190986119427129344_n.jpg",
+      |                            "width": 320,
+      |                            "height": 320
+      |                        },
+      |                        "standard_resolution": {
+      |                            "url": "https://scontent.cdninstagram.com/vp/ce03d9c34ceb42cca7d2d27940d31b9c/5BA46973/t51.2885-15/s640x640/sh0.08/e35/23101195_391308361303260_9190986119427129344_n.jpg",
+      |                            "width": 640,
+      |                            "height": 640
+      |                        }
+      |                    },
+      |                    "users_in_photo": []
+      |                },
+      |                {
+      |                    "type": "image",
+      |                    "images": {
+      |                        "thumbnail": {
+      |                            "url": "https://scontent.cdninstagram.com/vp/6fd590bc431f0191b0a6dfdb248afbeb/5BC179AF/t51.2885-15/s150x150/e35/23098918_144561552831373_5461840495061762048_n.jpg",
+      |                            "width": 150,
+      |                            "height": 150
+      |                        },
+      |                        "low_resolution": {
+      |                            "url": "https://scontent.cdninstagram.com/vp/e5e119054d8738038b7b0d747fe3729e/5BBDADE8/t51.2885-15/s320x320/e35/23098918_144561552831373_5461840495061762048_n.jpg",
+      |                            "width": 320,
+      |                            "height": 320
+      |                        },
+      |                        "standard_resolution": {
+      |                            "url": "https://scontent.cdninstagram.com/vp/e84cef695046324811d0d930b348d97c/5BC338AB/t51.2885-15/s640x640/sh0.08/e35/23098918_144561552831373_5461840495061762048_n.jpg",
+      |                            "width": 640,
+      |                            "height": 640
+      |                        }
+      |                    },
+      |                    "users_in_photo": []
+      |                },
+      |                {
+      |                    "type": "image",
+      |                    "images": {
+      |                        "thumbnail": {
+      |                            "url": "https://scontent.cdninstagram.com/vp/a0c9eda093058e546974db4376fbe28b/5BAC2472/t51.2885-15/s150x150/e35/22861138_887949221363887_2950919806850695168_n.jpg",
+      |                            "width": 150,
+      |                            "height": 150
+      |                        },
+      |                        "low_resolution": {
+      |                            "url": "https://scontent.cdninstagram.com/vp/950932d341a67a4fa2580ae3a634d90f/5BB76B35/t51.2885-15/s320x320/e35/22861138_887949221363887_2950919806850695168_n.jpg",
+      |                            "width": 320,
+      |                            "height": 320
+      |                        },
+      |                        "standard_resolution": {
+      |                            "url": "https://scontent.cdninstagram.com/vp/225a6154b4dd2efe2c1f1caf93095c7c/5BB26576/t51.2885-15/s640x640/sh0.08/e35/22861138_887949221363887_2950919806850695168_n.jpg",
+      |                            "width": 640,
+      |                            "height": 640
+      |                        }
+      |                    },
+      |                    "users_in_photo": []
+      |                }
+      |            ],
+      |            "user_has_liked": false,
+      |            "users_in_photo": []
+      |        }
+      |    }
+    """.stripMargin
+
+  val exampleMultipleInstagramImages: EndpointData = Json.parse(instagramMultipleImagePost).as[EndpointData]
 }

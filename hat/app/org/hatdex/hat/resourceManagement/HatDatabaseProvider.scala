@@ -26,31 +26,36 @@ package org.hatdex.hat.resourceManagement
 
 import javax.inject.{ Inject, Singleton }
 
-import org.hatdex.hat.dal.SchemaMigration
+import com.typesafe.config.{ Config, ConfigFactory }
+import org.hatdex.hat.dal.HatDbSchemaMigration
+import org.hatdex.hat.resourceManagement.models.HatSignup
 import org.hatdex.libs.dal.HATPostgresProfile.api.Database
 import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
 import play.api.{ Configuration, Logger }
 
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.collection.JavaConverters._
+import scala.concurrent.duration.Duration
 
 trait HatDatabaseProvider {
-  val schemaMigration: SchemaMigration
+  protected val configuration: Configuration
 
   def database(hat: String)(implicit ec: ExecutionContext): Future[Database]
 
   def shutdown(db: Database): Future[Unit] = {
     // Execution context for the future is defined by specifying the executor during initialisation
+
     db.shutdown
   }
 
-  def update(db: Database): Future[Unit] = {
-    schemaMigration.run()(db)
+  def update(db: Database)(implicit ec: ExecutionContext): Future[Unit] = {
+    new HatDbSchemaMigration(configuration, db, ec).run("hat.schemaMigrations")
   }
 }
 
 @Singleton
-class HatDatabaseProviderConfig @Inject() (configuration: Configuration, val schemaMigration: SchemaMigration) extends HatDatabaseProvider {
+class HatDatabaseProviderConfig @Inject() (val configuration: Configuration) extends HatDatabaseProvider {
   def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {
     Future {
       Database.forConfig(s"hat.${hat.replace(':', '.')}.database", configuration.underlying)
@@ -65,16 +70,33 @@ class HatDatabaseProviderConfig @Inject() (configuration: Configuration, val sch
 class HatDatabaseProviderMilliner @Inject() (
     val configuration: Configuration,
     val cache: AsyncCacheApi,
-    val ws: WSClient,
-    val schemaMigration: SchemaMigration) extends HatDatabaseProvider with MillinerHatSignup {
+    val ws: WSClient) extends HatDatabaseProvider with MillinerHatSignup {
   val logger = Logger(this.getClass)
 
   def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {
     getHatSignup(hat) map { signup =>
-      val databaseUrl = s"jdbc:postgresql://${signup.databaseServer.get.host}:${signup.databaseServer.get.port}/${signup.database.get.name}"
+      val config = signupDatabaseConfig(signup)
+      //      val databaseUrl = s"jdbc:postgresql://${signup.databaseServer.get.host}:${signup.databaseServer.get.port}/${signup.database.get.name}"
       //      val executor = AsyncExecutor(hat, numThreads = 3, queueSize = 1000)
-      Database.forURL(databaseUrl, signup.database.get.name, signup.database.get.password, driver = "org.postgresql.Driver" /*, executor = slickAsyncExecutor*/ )
+      //      Database.forURL(databaseUrl, signup.database.get.name, signup.database.get.password, driver = "org.postgresql.Driver" /*, executor = slickAsyncExecutor*/ )
+      Database.forConfig("", config)
     }
+  }
+
+  def signupDatabaseConfig(signup: HatSignup): Config = {
+    val database = signup.database.get
+    val config = Map(
+      "dataSourceClass" -> "org.postgresql.ds.PGSimpleDataSource",
+      "properties" -> Map[String, String](
+        "user" -> database.name,
+        "password" -> database.password,
+        "databaseName" -> database.name,
+        "portNumber" -> signup.databaseServer.get.port.toString,
+        "serverName" -> signup.databaseServer.get.host).asJava,
+      "numThreads" -> configuration.get[Int]("resourceManagement.hatDBThreads").toString,
+      "idleTimeout" -> configuration.get[Duration]("resourceManagement.hatDBIdleTimeout").toMillis.toString).asJava
+
+    ConfigFactory.parseMap(config)
   }
 }
 

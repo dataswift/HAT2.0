@@ -69,7 +69,7 @@ object ApiPasswordChange {
       reads.reads(js)
         .flatMap { a =>
           val estimate = nbvcxz.estimate(a)
-          if (passwordGuessesToScore(estimate.getGuesses) >= 3) {
+          if (passwordGuessesToScore(estimate.getGuesses) >= 2) {
             JsSuccess(a)
           }
           else {

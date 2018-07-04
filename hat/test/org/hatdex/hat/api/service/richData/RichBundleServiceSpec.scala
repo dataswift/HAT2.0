@@ -28,9 +28,9 @@ import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.{BeforeAll, BeforeEach}
+import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{ JsObject, Json }
 import play.api.test.PlaySpecification
 
 import scala.concurrent.Await
@@ -191,7 +191,7 @@ class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification
       } yield combinator
 
       saved map { r =>
-        r.length must equalTo(3)
+        r.length must be greaterThan 1
       } await (3, 10.seconds)
     }
   }
@@ -207,7 +207,7 @@ class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification
       } yield combinators
 
       saved map { r =>
-        r.length must equalTo(2)
+        r.find(_.name == testBundle.name) must beNone
         r.find(_.name == testBundle2.name) must beSome
       } await (3, 10.seconds)
     }
@@ -247,6 +247,14 @@ trait RichBundleServiceContext extends HATTestContext {
     "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
 
   val testBundle2 = EndpointDataBundle("testBundle2", Map(
+    "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
+    "complex" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)), Some("data.newField"), None, Some(1))))
+
+  val conditionsBundle = EndpointDataBundle("testConditionsBundle", Map(
+    "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
+    "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
+
+  val conditionsBundle2 = EndpointDataBundle("testConditionsBundle2", Map(
     "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
     "complex" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)), Some("data.newField"), None, Some(1))))
 }

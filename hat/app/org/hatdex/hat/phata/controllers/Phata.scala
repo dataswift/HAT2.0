@@ -23,22 +23,22 @@
  */
 package org.hatdex.hat.phata.controllers
 
-import javax.inject.Inject
+import java.security.MessageDigest
 
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.util.Clock
+import com.mohiva.play.silhouette.api.crypto.Base64
 import controllers.{ AssetsFinder, AssetsFinderProvider }
-import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ EndpointDataBundle, RichDataJsonFormats }
+import javax.inject.Inject
+import org.hatdex.hat.api.json.{ HatJsonFormats, RichDataJsonFormats }
+import org.hatdex.hat.api.models.EndpointDataBundle
 import org.hatdex.hat.api.service.richData.{ RichBundleService, RichDataService }
-import org.hatdex.hat.authentication.{ HatFrontendAuthEnvironment, HatFrontendController }
-import org.hatdex.hat.phata.{ views => phataViews }
-import org.hatdex.hat.resourceManagement.HatServerProvider
+import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
+import org.hatdex.hat.phata.{ views ⇒ phataViews }
 import play.api.cache.{ Cached, CachedBuilder }
 import play.api.libs.json.Json
-import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
+import play.filters.headers.SecurityHeadersFilter
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -48,12 +48,9 @@ class Phata @Inject() (
     assetsFinder: AssetsFinderProvider,
     cached: Cached,
     configuration: Configuration,
-    silhouette: Silhouette[HatFrontendAuthEnvironment],
-    hatServerProvider: HatServerProvider,
-    clock: Clock,
-    wsClient: WSClient,
+    silhouette: Silhouette[HatApiAuthEnvironment],
     bundleService: RichBundleService,
-    dataService: RichDataService) extends HatFrontendController(components, silhouette, clock, hatServerProvider, configuration) with HatJsonFormats with RichDataJsonFormats {
+    dataService: RichDataService) extends HatApiController(components, silhouette) with HatJsonFormats with RichDataJsonFormats {
 
   implicit val assets: AssetsFinder = assetsFinder.get
 
@@ -63,9 +60,29 @@ class Phata @Inject() (
     .status(req => s"${req.host}${req.path}", 200)
     .includeStatus(404, 600)
 
+  val csp: Map[String, String] = configuration.get[String]("play.filters.headers.contentSecurityPolicy")
+    .split(';')
+    .map(_.trim)
+    .map({ p ⇒
+      val splits = p.split(' ')
+      splits.head → splits.tail.mkString(" ")
+    })
+    .toMap
+
   def rumpelIndex(): EssentialAction = indefiniteSuccessCaching {
     UserAwareAction.async { implicit request =>
-      Future.successful(Ok(phataViews.html.rumpelIndex(assets)))
+      val rumpelConfigScript = s"""var httpProtocol = "${if (request.secure) { "https" } else { "http" }}:";"""
+
+      val sha256Encoded = Base64.encode(MessageDigest.getInstance("SHA-256").digest(rumpelConfigScript.getBytes("UTF-8")))
+      val cspMap: Map[String, String] = csp + ("script-src" → (csp.getOrElse("script-src", "") + s" 'sha256-$sha256Encoded'"))
+      val cspCustom = cspMap
+        .map({
+          case (k: String, v: String) ⇒ s"$k $v"
+        })
+        .mkString("; ")
+
+      Future.successful(Ok(phataViews.html.rumpelIndex(rumpelConfigScript, assets))
+        .withHeaders(SecurityHeadersFilter.CONTENT_SECURITY_POLICY_HEADER → cspCustom))
     }
   }
 
@@ -80,11 +97,18 @@ class Phata @Inject() (
   }
 
   def hatLogin(name: String, redirectUrl: String) = indefiniteSuccessCaching {
-    UserAwareAction { implicit request =>
-      val uri = wsClient.url(routes.Phata.hatLogin(name, redirectUrl).absoluteURL()).uri
-      val newRedirectUrl = s"${uri.getScheme}://${uri.getAuthority}/#/hatlogin?${uri.getQuery}"
+    Action { implicit request =>
+      val scheme = if (request.secure) { "https://" } else { "http://" }
+      val newRedirectUrl = s"$scheme${request.domain}/#/hatlogin?name=$name&redirect=${redirectUrl}"
       logger.debug(s"Redirect url from ${request.uri}: $newRedirectUrl")
       Redirect(newRedirectUrl)
     }
   }
+
+  //  def remoteAsset(file: String): String = {
+  //    val versionedUrl = assets.path(file)
+  //    val maybeAssetsUrl = Some("https://rumpel.hubat.net/assets") //configuration.getOptional[String]("assets.url")
+  //    maybeAssetsUrl.fold(versionedUrl)(_ + file)
+  //  }
+
 }

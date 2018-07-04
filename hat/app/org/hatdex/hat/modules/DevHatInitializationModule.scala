@@ -25,15 +25,15 @@
 package org.hatdex.hat.modules
 
 import java.util.UUID
-import javax.inject.Inject
 
 import com.typesafe.config.Config
+import javax.inject.Inject
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.models.{ Owner, Platform }
 import org.hatdex.hat.api.service.{ DalExecutionContext, UsersService }
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.dal.SchemaMigration
-import org.hatdex.libs.dal.HATPostgresProfile.api.Database
+import org.hatdex.hat.dal.HatDbSchemaMigration
+import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider }
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.{ ConfigLoader, Configuration, Logger }
 
@@ -44,14 +44,14 @@ class DevHatInitializationModule extends ScalaModule with AkkaGuiceSupport {
   /**
    * Configures the module.
    */
-  def configure() = {
+  protected def configure(): Unit = {
     bind[DevHatInitializer].asEagerSingleton()
   }
 }
 
 class DevHatInitializer @Inject() (
     configuration: Configuration,
-    schemaMigration: SchemaMigration,
+    serverProvider: HatServerProvider,
     usersService: UsersService)(implicit ec: DalExecutionContext) {
   val logger = Logger(this.getClass)
 
@@ -64,27 +64,26 @@ class DevHatInitializer @Inject() (
   devHats.values.map(initializeHat)
 
   def initializeHat(hat: DevHatConfig) = {
-    implicit val database = Database.forConfig("", hat.database)
+    val hatServer: Future[HatServer] = serverProvider.retrieve(hat.domain).map(_.get)
 
     val eventuallyMigrated = for {
-      _ <- schemaMigration.run(devHatMigrations)
-      _ <- setupCredentials(hat)
+      server ← hatServer
+      _ ← new HatDbSchemaMigration(configuration, server.db, ec).run(devHatMigrations)
+      _ ← setupCredentials(hat)(server)
     } yield ()
 
-    eventuallyMigrated map {
-      case _ =>
-        logger.info(s"Database successfully initialized for ${hat.owner}")
+    eventuallyMigrated map { _ =>
+      logger.info(s"Database successfully initialized for ${hat.owner}")
     } recover {
       case e =>
         logger.error(s"Database initialisation failed for ${hat.owner}: ${e.getMessage}", e)
-    } map {
-      case _ =>
-        logger.debug(s"Shutting down connection to database for ${hat.owner}")
-        database.shutdown
+    } map { _ =>
+      logger.debug(s"Shutting down connection to database for ${hat.owner}")
+      //      hatServer.map(_.db.shutdown)
     }
   }
 
-  def setupCredentials(hat: DevHatConfig)(implicit database: Database): Future[Unit] = {
+  def setupCredentials(hat: DevHatConfig)(implicit server: HatServer): Future[Unit] = {
     logger.debug(s"Setup credentials for ${hat.owner}")
     val ownerId = UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42")
     val platformId = UUID.fromString("6507ae16-13d7-479b-8ebc-65c28fec1634")
@@ -101,6 +100,7 @@ class DevHatInitializer @Inject() (
 
 case class DevHatConfig(
     owner: String,
+    domain: String,
     ownerName: String,
     ownerPasswordHash: String,
     platform: String,
@@ -114,6 +114,7 @@ object DevHatConfig {
       val config = ConfigLoader.configurationLoader.load(rootConfig, path)
       DevHatConfig(
         owner = config.get[String]("owner"),
+        domain = config.get[String]("domain"),
         ownerName = config.get[String]("ownerName"),
         ownerPasswordHash = config.get[String]("ownerPasswordHash"),
         platform = config.get[String]("platform"),

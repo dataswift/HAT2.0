@@ -25,16 +25,17 @@
 package org.hatdex.hat.she.service
 
 import java.security.MessageDigest
-import javax.inject.Inject
 
+import javax.inject.Inject
 import akka.Done
-import org.hatdex.hat.api.models.{ EndpointData, Owner, RichDataJsonFormats }
+import org.hatdex.hat.api.models.{ EndpointData, Owner }
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.models.{ FunctionConfiguration, FunctionExecutable, Request, Response }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import org.hatdex.hat.dal.Tables._
+import org.hatdex.hat.resourceManagement.HatServer
 import play.api.Logger
 import play.api.libs.json.Json
 
@@ -49,6 +50,8 @@ class FunctionService @Inject() (
     ec: ExecutionContext) {
 
   private val logger = Logger(this.getClass)
+
+  private implicit def hatServer2db(implicit hatServer: HatServer): Database = hatServer.db
 
   protected def mergeRegisteredSaved(registeredFunctions: Seq[FunctionConfiguration], savedFunctions: Seq[FunctionConfiguration]): Seq[FunctionConfiguration] = {
     val registered: Map[String, FunctionConfiguration] = registeredFunctions.map(r => r.name -> r).toMap
@@ -111,7 +114,7 @@ class FunctionService @Inject() (
 
   def save(configuration: FunctionConfiguration)(implicit db: Database): Future[FunctionConfiguration] = {
     logger.debug(s"Save function configuration $configuration")
-    import RichDataJsonFormats.propertyQueryFormat
+    import org.hatdex.hat.api.json.RichDataJsonFormats.propertyQueryFormat
     import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol.triggerFormat
     val functionRow = SheFunctionRow(configuration.name, configuration.description, Json.toJson(configuration.trigger),
       configuration.enabled, configuration.dataBundle.name, configuration.lastExecution)
@@ -124,10 +127,10 @@ class FunctionService @Inject() (
       .map(_.get)
   }
 
-  def run(configuration: FunctionConfiguration, startTime: Option[DateTime])(implicit db: Database): Future[Done] = {
+  def run(configuration: FunctionConfiguration, startTime: Option[DateTime])(implicit hatServer: HatServer): Future[Done] = {
     functionRegistry.get[FunctionExecutable](configuration.name)
       .map { function: FunctionExecutable =>
-        val fromDate = Some(DateTime.now().minusMonths(6))
+        val fromDate = startTime.orElse(Some(DateTime.now().minusMonths(6)))
         val untilDate = Some(DateTime.now().plusMonths(3))
         val executionTime = DateTime.now()
         for {
@@ -135,7 +138,7 @@ class FunctionService @Inject() (
           response <- function.execute(configuration, Request(data, linkRecords = true)) // Execute the function
             .map(removeDuplicateData) // Remove duplicate data in case some records mapped onto the same values when transformed
           owner <- usersService.getUserByRole(Owner()).map(_.head) // Fetch the owner user - functions run on their behalf
-          _ <- dataService.saveDataGroups(owner.userId, response.map(r => (r.data.map(EndpointData(s"${r.namespace}/${r.endpoint}", None, _, None)), r.linkedRecords)))
+          _ <- dataService.saveDataGroups(owner.userId, response.map(r => (r.data.map(EndpointData(s"${r.namespace}/${r.endpoint}", None, _, None)), r.linkedRecords)), skipErrors = true)
           _ <- save(configuration.copy(lastExecution = Some(executionTime)))
         } yield Done
       } getOrElse {
@@ -146,19 +149,15 @@ class FunctionService @Inject() (
   //TODO: expensive operation!
   private def removeDuplicateData(response: Seq[Response]): Seq[Response] = {
     val md = MessageDigest.getInstance("SHA-256")
-    response.map { r =>
+    response.map({ r ⇒
       val digest = md.digest(r.data.head.toString().getBytes)
       (BigInt(digest), r)
-    }
+    })
       .sortBy(_._1)
-      .foldRight(Seq[(BigInt, Response)]()) {
-        case (e, ls) if ls.isEmpty || ls.head._1 != e._1 => e +: ls
-        case (_, ls)                                     => ls
-      }
-      .zipWithIndex
-      .map {
-        case ((hash, response), i) =>
-          response
-      }
+      .foldRight(Seq[(BigInt, Response)]())({
+        case (e, ls) if ls.isEmpty || ls.head._1 != e._1 ⇒ e +: ls
+        case (_, ls)                                     ⇒ ls
+      })
+      .unzip._2 // Drop the digest
   }
 }

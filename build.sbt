@@ -7,7 +7,7 @@ lazy val hat = project
   .in(file("hat"))
   .enablePlugins(PlayScala)
   .enablePlugins(SbtWeb, SbtSassify, SbtGzip, SbtDigest)
-    .enablePlugins(BasicSettings)
+  .enablePlugins(BasicSettings)
   .settings(
     libraryDependencies ++= Seq(
       Library.Play.ws,
@@ -25,8 +25,10 @@ lazy val hat = project
       Library.Play.Silhouette.cryptoJca,
       Library.Play.Silhouette.silhouette,
       Library.Play.Jwt.atlassianJwtCore,
-      Library.Play.Jwt.atlassianJwtApi,
       Library.Play.Jwt.bouncyCastlePkix,
+      Library.Specs2.core,
+      Library.Specs2.matcherExtra,
+      Library.Specs2.mock,
       Library.HATDeX.hatClient,
       Library.HATDeX.dexClient,
       Library.HATDeX.codegen,
@@ -34,6 +36,8 @@ lazy val hat = project
       Library.Utils.awsJavaS3Sdk,
       Library.Utils.prettyTime,
       Library.Utils.nbvcxz,
+      Library.Utils.playMemcached,
+      Library.Utils.elasticacheClusterClient,
       Library.scalaGuice
     ),
     libraryDependencies := (buildEnv.value match {
@@ -52,6 +56,8 @@ lazy val hat = project
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     aggregate in update := false,
     testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "exclude", "REMOTE"),
+    TwirlKeys.templateImports := Seq(),
+    play.sbt.routes.RoutesKeys.routesImport := Seq.empty,
     routesGenerator := InjectedRoutesGenerator,
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
     coverageExcludedPackages := """.*\.controllers\..*Reverse.*;router.Routes.*;org.hatdex.hat.dal.Tables.*;org.hatdex.hat.phata.views.*;controllers.javascript\..*""",
@@ -75,8 +81,10 @@ lazy val hat = project
   .enablePlugins(SlickCodeGeneratorPlugin)
   .settings(
     codegenPackageName in gentables := "org.hatdex.hat.dal",
-    codegenOutputDir in gentables := (baseDirectory.value / "app").getPath,
+    codegenBaseDir in gentables := (baseDirectory.value / "app").getCanonicalPath,
     codegenClassName in gentables := "Tables",
     codegenExcludedTables in gentables := Seq("databasechangelog", "databasechangeloglock"),
-    codegenDatabase in gentables := "devdb"
+    codegenDatabase in gentables := "devdb",
+    codegenConfig in gentables := "dev.conf",
+    codegenEvolutions in gentables := "devhatMigrations"
   )

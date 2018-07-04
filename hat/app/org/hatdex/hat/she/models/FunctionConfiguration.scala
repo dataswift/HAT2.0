@@ -26,10 +26,12 @@ package org.hatdex.hat.she.models
 
 import java.util.UUID
 
-import org.hatdex.hat.api.models.{ EndpointData, EndpointDataBundle, RichDataJsonFormats }
+import org.hatdex.hat.api.json.{ DataFeedItemJsonProtocol, RichDataJsonFormats }
+import org.hatdex.hat.api.models.applications.DataFeedItem
+import org.hatdex.hat.api.models.{ EndpointData, EndpointDataBundle }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataBundlesRow, SheFunctionRow }
-import org.joda.time.{ DateTime, Duration }
+import org.joda.time.{ DateTime, Period }
 import play.api.libs.json._
 
 case class Response(
@@ -45,35 +47,49 @@ case class Request(
 case class FunctionConfiguration(
     name: String,
     description: String,
+    headline: String,
+    logo: Option[String],
     trigger: FunctionTrigger.Trigger,
     available: Boolean,
     enabled: Boolean,
     dataBundle: EndpointDataBundle,
-    lastExecution: Option[DateTime]) {
+    lastExecution: Option[DateTime],
+    dataPreview: Option[Seq[DataFeedItem]],
+    dataPreviewEndpoint: Option[String]) {
   def update(other: FunctionConfiguration): FunctionConfiguration = {
     FunctionConfiguration(
       this.name,
       other.description,
+      other.headline,
+      other.logo,
       other.trigger,
       other.available,
       this.enabled || other.enabled,
       other.dataBundle,
-      this.lastExecution.orElse(other.lastExecution))
+      this.lastExecution.orElse(other.lastExecution),
+      other.dataPreview,
+      other.dataPreviewEndpoint)
   }
 }
 
 object FunctionConfiguration {
   def apply(function: SheFunctionRow, bundle: DataBundlesRow, available: Boolean = false): FunctionConfiguration = {
-    import org.hatdex.hat.she.models.FunctionTrigger.Trigger
     import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol.triggerFormat
+    import org.hatdex.hat.she.models.FunctionTrigger.Trigger
+    import DataFeedItemJsonProtocol.feedItemFormat
+
     FunctionConfiguration(
       function.name,
       function.description,
+      function.headline,
+      function.logo,
       function.trigger.as[Trigger],
       available, // false by default, needs to take current runtime configuration into account to update
       function.enabled,
       ModelTranslation.fromDbModel(bundle),
-      function.lastExecution)
+      function.lastExecution,
+      function.dataPreview.map(_.as[Seq[DataFeedItem]]),
+      function.dataPreviewEndpoint)
   }
 }
 
@@ -83,7 +99,7 @@ object FunctionTrigger {
     val triggerType: String
   }
 
-  case class TriggerPeriodic(period: Duration) extends Trigger {
+  case class TriggerPeriodic(period: Period) extends Trigger {
     final val triggerType: String = "periodic"
   }
 
@@ -97,21 +113,8 @@ object FunctionTrigger {
 
 }
 
-trait FunctionConfigurationJsonProtocol extends JodaWrites with JodaReads with RichDataJsonFormats {
+trait FunctionConfigurationJsonProtocol extends JodaWrites with JodaReads with RichDataJsonFormats with DataFeedItemJsonProtocol {
   import FunctionTrigger._
-
-  /*
-  * Duration Json formats
-   */
-  implicit val durationWrites: Writes[Duration] = new Writes[Duration] {
-    def writes(o: Duration): JsValue = JsNumber(o.getMillis)
-  }
-  implicit val durationReads: Reads[Duration] = new Reads[Duration] {
-    def reads(json: JsValue): JsResult[Duration] = json match {
-      case JsNumber(value) => JsSuccess(new Duration(value.toLong))
-      case _               => JsError(Seq(JsPath() -> Seq(JsonValidationError("validate.error.expected.period"))))
-    }
-  }
 
   protected implicit val triggerPeriodicFormat: Format[TriggerPeriodic] = Json.format[TriggerPeriodic]
 

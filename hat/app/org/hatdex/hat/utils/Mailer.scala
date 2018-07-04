@@ -39,7 +39,6 @@ import play.api.{ Configuration, UsefulException }
 import play.twirl.api.Html
 
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.Try
 
 trait Mailer {
   protected val configuration: Configuration
@@ -50,9 +49,9 @@ trait Mailer {
 
   implicit def html2String(html: Html): String = html.toString
 
-  def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Unit
+  def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Done
 
-  def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Unit
+  def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Done
 
   def sendEmail(recipients: String*)(from: String, subject: String, bodyHtml: String, bodyText: String)(implicit ec: ExecutionContext): Future[Done] = {
     Future(mailerClient.send(Email(subject, from, recipients, Some(bodyText), Some(bodyHtml))))
@@ -61,10 +60,10 @@ trait Mailer {
 }
 
 trait HatMailer extends Mailer {
-  def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Unit
-  def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Unit
-  def passwordReset(email: String, user: HatUser, resetLink: String)(implicit m: Messages, server: HatServer): Unit
-  def passwordChanged(email: String, user: HatUser)(implicit m: Messages, server: HatServer): Unit
+  def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Done
+  def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Done
+  def passwordReset(email: String, user: HatUser, resetLink: String)(implicit m: Messages, server: HatServer): Done
+  def passwordChanged(email: String, user: HatUser)(implicit m: Messages, server: HatServer): Done
 }
 
 class HatMailerImpl @Inject() (
@@ -74,46 +73,40 @@ class HatMailerImpl @Inject() (
   private val emailFrom = configuration.get[String]("play.mailer.from")
   private val adminEmails = configuration.get[Seq[String]]("exchange.admin")
 
-  def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Unit = {
-    // wrap any errors
-    Try {
-      sendEmail(adminEmails: _*)(
-        from = emailFrom,
-        subject = s"HAT server ${request.host} errorr #${exception.id}",
-        bodyHtml = views.html.mails.emailServerError(request, exception),
-        bodyText = views.html.mails.emailServerError(request, exception).toString())
-    }
+  def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Done = {
+    sendEmail(adminEmails: _*)(
+      from = emailFrom,
+      subject = s"HAT server ${request.host} errorr #${exception.id}",
+      bodyHtml = views.html.mails.emailServerError(request, exception),
+      bodyText = views.html.mails.emailServerError(request, exception).toString())
+    Done
   }
 
-  def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Unit = {
-    // wrap any errors
-    Try {
-      sendEmail(adminEmails: _*)(
-        from = emailFrom,
-        subject = s"HAT server ${request.host} error: ${exception.getMessage} for ${request.path + request.rawQueryString}",
-        bodyHtml = views.html.mails.emailServerThrowable(request, exception),
-        bodyText = views.html.mails.emailServerThrowable(request, exception).toString())
-    }
+  def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Done = {
+    sendEmail(adminEmails: _*)(
+      from = emailFrom,
+      subject = s"HAT server ${request.host} error: ${exception.getMessage} for ${request.path + request.rawQueryString}",
+      bodyHtml = views.html.mails.emailServerThrowable(request, exception),
+      bodyText = views.html.mails.emailServerThrowable(request, exception).toString())
+    Done
   }
 
-  def passwordReset(email: String, user: HatUser, resetLink: String)(implicit m: Messages, server: HatServer): Unit = {
-    Try {
-      sendEmail(email)(
-        from = emailFrom,
-        subject = s"HAT ${server.domain} - reset your password",
-        bodyHtml = views.html.mails.emailPasswordReset(user, resetLink),
-        bodyText = views.txt.mails.emailPasswordReset(user, resetLink).toString())
-    }
+  def passwordReset(email: String, user: HatUser, resetLink: String)(implicit m: Messages, server: HatServer): Done = {
+    sendEmail(email)(
+      from = emailFrom,
+      subject = s"HAT ${server.domain} - reset your password",
+      bodyHtml = views.html.mails.emailPasswordReset(user, resetLink),
+      bodyText = views.txt.mails.emailPasswordReset(user, resetLink).toString())
+    Done
   }
 
-  def passwordChanged(email: String, user: HatUser)(implicit m: Messages, server: HatServer): Unit = {
-    Try {
-      sendEmail(email)(
-        from = emailFrom,
-        subject = s"HAT ${server.domain} - password changed",
-        bodyHtml = views.html.mails.emailPasswordChanged(user),
-        bodyText = views.txt.mails.emailPasswordChanged(user).toString())
-    }
+  def passwordChanged(email: String, user: HatUser)(implicit m: Messages, server: HatServer): Done = {
+    sendEmail(email)(
+      from = emailFrom,
+      subject = s"HAT ${server.domain} - password changed",
+      bodyHtml = views.html.mails.emailPasswordChanged(user),
+      bodyText = views.txt.mails.emailPasswordChanged(user).toString())
+    Done
   }
 }
 

@@ -68,7 +68,7 @@ class ErrorHandler @Inject() (
    * @param request The request header.
    * @return A partial function which maps an exception to a Play result.
    */
-  def hatExceptionHandler(implicit request: RequestHeader): PartialFunction[Throwable, Future[Result]] = {
+  protected def hatExceptionHandler(implicit request: RequestHeader): PartialFunction[Throwable, Future[Result]] = {
     case _: InvalidPasswordException        => onNotAuthenticated
     case _: IdentityNotFoundException       => onNotAuthenticated
     case _: SQLTransientConnectionException => onHatUnavailable
@@ -80,7 +80,7 @@ class ErrorHandler @Inject() (
     Future.successful {
       render {
         case Accepts.Json() => Unauthorized(Json.obj("error" -> "Not Authenticated", "message" -> s"Not Authenticated"))
-        case _              => Redirect(org.hatdex.hat.phata.controllers.routes.Phata.rumpelIndex())
+        case _              => Redirect("/")
       }
     }
   }
@@ -90,7 +90,7 @@ class ErrorHandler @Inject() (
     Future.successful {
       render {
         case Accepts.Json() => Forbidden(Json.obj("error" -> "Forbidden", "message" -> s"Access Denied"))
-        case _              => Redirect(org.hatdex.hat.phata.controllers.routes.Phata.rumpelIndex())
+        case _              => Redirect("/")
       }
     }
   }
@@ -152,15 +152,15 @@ class ErrorHandler @Inject() (
     implicit val _request = request
     Future.successful {
       render {
-        case Accepts.Json() =>
+        case Accepts.Json() ⇒
           val jsonMessage = Try(Json.parse(message))
-          jsonMessage map { parsed =>
-            BadRequest(Json.obj("error" -> "Bad Request", "message" -> parsed))
-          } recover {
-            case _ =>
-              BadRequest(Json.obj("error" -> "Bad Request", "message" -> message))
-          } get
-        case _ => BadRequest(views.html.defaultpages.badRequest(request.method, request.uri, message))
+          jsonMessage.map(parsed ⇒ BadRequest(Json.obj("error" -> "Bad Request", "message" -> parsed)))
+            .recover({
+              case _ ⇒
+                BadRequest(Json.obj("error" -> "Bad Request", "message" -> message))
+            })
+            .get
+        case _ ⇒ BadRequest(views.html.defaultpages.badRequest(request.method, request.uri, message))
       }
     }
   }

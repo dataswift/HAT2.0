@@ -47,9 +47,6 @@
     <logger name="akka" level="WARN" >
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
-    <logger name="SchemaMigration" level="DEBUG" >
-        <appender-ref ref="ASYNCCONSOLE"/>
-    </logger>
     <logger name="scala.slick.session" level="INFO" >
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
@@ -75,6 +72,9 @@
     <logger name="org.hatdex.hat.api.service.UsersService" level="WARN" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
+    <logger name="org.hatdex.hat.api.service.applications.ApplicationsService" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
     <logger name="org.hatdex.hat.api.controllers" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
@@ -86,6 +86,14 @@
     </logger>
 
     <logger name="org.hatdex.hat.she.*" level="INFO" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE" />
+    </logger>
+
+    <logger name="org.hatdex.hat.she.service.FeedGeneratorService" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE" />
+    </logger>
+
+    <logger name="org.hatdex.hat.she.controllers.FeedGenerator" level="DEBUG" additivity="false">
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
 
@@ -117,6 +125,13 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
+    <logger name="org.hatdex.libs.dal.SlickCodeGeneratorPlugin" level="DEBUG">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+    <logger name="org.hatdex.libs.dal.*" level="DEBUG">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
     <!--<logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG">-->
         <!--<appender-ref ref="ASYNCCONSOLE"/>-->
     <!--</logger>-->
@@ -125,5 +140,11 @@
         <!--<appender-ref ref="ASYNCCONSOLE"/>-->
     <!--</logger>-->
 
+    <!--<logger name="com.zaxxer.hikari.HikariDataSource" level="DEBUG" additivity="false">-->
+        <!--<appender-ref ref="ASYNCCONSOLE"/>-->
+    <!--</logger>-->
+    <!--<logger name="com.zaxxer.hikari.pool.HikariPool" level="DEBUG" additivity="false">-->
+        <!--<appender-ref ref="ASYNCCONSOLE"/>-->
+    <!--</logger>-->
 
 </configuration>

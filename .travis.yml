@@ -8,6 +8,7 @@ jdk:
 
 services:
   - docker
+  - memcached
 addons:
   postgresql: "9.5"
 
@@ -46,14 +47,8 @@ env:
 matrix:
   include:
     - env:
-      - REPOSITORY_NAME=surreycode
-      - RUMPEL=surreycode
-    - env:
       - REPOSITORY_NAME=hubat
       - RUMPEL=hubat
-    - env:
-      - REPOSITORY_NAME=tamouk
-      - RUMPEL=tamo
     - env:
       - REPOSITORY_NAME=hubofallthings
       - RUMPEL=rumpel

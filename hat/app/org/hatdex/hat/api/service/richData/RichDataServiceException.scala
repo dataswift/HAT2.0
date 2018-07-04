@@ -31,3 +31,4 @@ case class RichDataMissingException(message: String = "", cause: Throwable = Non
 case class RichDataDuplicateBundleException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
 case class RichDataDuplicateDebitException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
 case class RichDataDebitException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
+case class RichDataBundleFormatException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)

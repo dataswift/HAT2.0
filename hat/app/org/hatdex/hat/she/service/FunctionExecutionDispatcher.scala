@@ -25,10 +25,9 @@
 package org.hatdex.hat.she.service
 
 import javax.inject.{ Inject, Singleton }
-
 import akka.actor.{ Actor, ActorNotFound, ActorRef, ActorSystem, Props }
 import akka.pattern.ask
-import akka.stream.scaladsl.{ Sink, Source }
+import akka.stream.scaladsl.{ Flow, Sink, Source }
 import akka.stream.{ ActorMaterializer, OverflowStrategy }
 import akka.util.Timeout
 import akka.{ Done, NotUsed }
@@ -36,6 +35,7 @@ import org.hatdex.hat.api.service.monitoring.HatDataEventBus
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.DataCreatedEvent
 import org.hatdex.hat.resourceManagement.{ HatServerDiscoveryException, HatServerProvider }
 import org.hatdex.hat.she.models.{ FunctionConfiguration, FunctionTrigger }
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.concurrent.InjectedActorSupport
 
@@ -63,16 +63,20 @@ class FunctionExecutionTriggerHandler @Inject() (
   protected def findMatchingFunctions(hat: String, endpoints: Set[String]): Future[Iterable[FunctionConfiguration]] = {
     logger.debug(s"Finding matching functions: $hat for $endpoints")
     hatServerProvider.retrieve(hat) flatMap {
-      case Some(h) =>
-        functionService.all(active = true)(h.db)
+      case Some(hatServer) ⇒
+        functionService.all(active = true)(hatServer.db)
           .map(
-            _.filter(f => /*f.trigger.isInstanceOf[FunctionTrigger.TriggerPeriodic] || */ f.trigger.isInstanceOf[FunctionTrigger.TriggerIndividual])
-              .filter(_.dataBundle
-                .flatEndpointQueries.map(_.endpoint).toSet
+            _.filter({
+              case FunctionConfiguration(_, _, _, _, FunctionTrigger.TriggerPeriodic(period), true, true, _, Some(lastExecution), Seq(), _) if lastExecution.isBefore(DateTime.now().minus(period)) ⇒ true
+              case FunctionConfiguration(_, _, _, _, FunctionTrigger.TriggerPeriodic(_), true, true, _, None, Seq(), _) ⇒ true // no execution recoded yet
+              case FunctionConfiguration(_, _, _, _, FunctionTrigger.TriggerIndividual(), true, true, _, _, Seq(), _) ⇒ true
+              case _ ⇒ false
+            })
+              .filter(_.dataBundle.flatEndpointQueries.map(_.endpoint).toSet
                 .intersect(endpoints)
                 .nonEmpty))
 
-      case None =>
+      case None ⇒
         Future.failed(new HatServerDiscoveryException(s"HAT $hat discovery failed for function execution"))
     }
   }
@@ -86,10 +90,7 @@ class FunctionExecutionTriggerHandler @Inject() (
 
   protected val functionTriggerLogger: ActorRef = actorSystem.actorOf(Props[FunctionTriggerLogger])
 
-  protected val triggerStream: ActorRef = Source.actorRef[DataCreatedEvent](bufferSize = 1000, OverflowStrategy.dropNew)
-    .collect({
-      case DataCreatedEvent(hat, _, _, _, data) => (hat, data.map(_.endpoint).toSet)
-    })
+  protected val functionTriggerFlow: Flow[(String, Set[String]), (String, FunctionConfiguration, Done), _] = Flow[(String, Set[String])]
     .groupBy[String](maxHats, (event: (String, Set[String])) => event._1)
     .groupedWithin(messageBatch, messagePeriod)
     .map(d => d.reduce((l, r) => l._1 -> (l._2 ++ r._2)))
@@ -98,6 +99,22 @@ class FunctionExecutionTriggerHandler @Inject() (
     .mapConcat[(String, FunctionConfiguration)](_.asInstanceOf[scala.collection.immutable.Iterable[(String, FunctionConfiguration)]])
     .mergeSubstreams
     .mapAsyncUnordered(functionExecutionParallelism)(d => dispatcher.trigger(d._1, d._2).map((d._1, d._2, _)))
+
+  // A flow that chunks information about data coming through into separate substreams to pass through the bounded function trigger flow
+  // mitigates th issue with groupBy needing to know maximum number of different keys (K) by ensuring that no more than K items
+  // will go through the subflow
+  protected val dataEventShaperFlow: Flow[(String, Set[String]), (String, FunctionConfiguration, Done), _] = Flow[(String, Set[String])]
+    .zipWithIndex
+    .splitAfter(i ⇒ i._2 % maxHats == 0)
+    .map(_._1)
+    .via(functionTriggerFlow)
+    .mergeSubstreams
+
+  protected val triggerStream: ActorRef = Source.actorRef[DataCreatedEvent](bufferSize = 1000, OverflowStrategy.dropNew)
+    .collect({
+      case DataCreatedEvent(hat, _, _, _, data) => (hat, data.map(_.endpoint).toSet) // only interested in new data coming in
+    })
+    .via(dataEventShaperFlow)
     .to(Sink.actorRef(functionTriggerLogger, NotUsed))
     .run()
 
