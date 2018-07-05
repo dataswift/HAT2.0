@@ -28,7 +28,7 @@ import java.util.UUID
 
 import org.hatdex.hat.api.json.{ DataFeedItemJsonProtocol, RichDataJsonFormats }
 import org.hatdex.hat.api.models.applications.DataFeedItem
-import org.hatdex.hat.api.models.{ EndpointData, EndpointDataBundle }
+import org.hatdex.hat.api.models.{ Drawable, EndpointData, EndpointDataBundle }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataBundlesRow, SheFunctionRow }
 import org.joda.time.{ DateTime, Period }
@@ -44,11 +44,15 @@ case class Request(
     data: Map[String, Seq[EndpointData]],
     linkRecords: Boolean)
 
+case class FunctionGraphics(
+    logo: Drawable,
+    screenshots: Seq[Drawable])
+
 case class FunctionConfiguration(
     name: String,
     description: String,
     headline: String,
-    logo: Option[String],
+    graphics: Option[FunctionGraphics],
     trigger: FunctionTrigger.Trigger,
     available: Boolean,
     enabled: Boolean,
@@ -61,7 +65,7 @@ case class FunctionConfiguration(
       this.name,
       other.description,
       other.headline,
-      other.logo,
+      other.graphics,
       other.trigger,
       other.available,
       this.enabled || other.enabled,
@@ -74,7 +78,7 @@ case class FunctionConfiguration(
 
 object FunctionConfiguration {
   def apply(function: SheFunctionRow, bundle: DataBundlesRow, available: Boolean = false): FunctionConfiguration = {
-    import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol.triggerFormat
+    import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol._
     import org.hatdex.hat.she.models.FunctionTrigger.Trigger
     import DataFeedItemJsonProtocol.feedItemFormat
 
@@ -82,7 +86,7 @@ object FunctionConfiguration {
       function.name,
       function.description,
       function.headline,
-      function.logo,
+      function.graphics.map(_.as[FunctionGraphics]),
       function.trigger.as[Trigger],
       available, // false by default, needs to take current runtime configuration into account to update
       function.enabled,
@@ -136,7 +140,10 @@ trait FunctionConfigurationJsonProtocol extends JodaWrites with JodaReads with R
     }
   }
 
-  implicit val functionConfigurationForamt: Format[FunctionConfiguration] = Json.format[FunctionConfiguration]
+  implicit val drawableFormat: Format[Drawable] = Json.format[Drawable]
+  implicit val functionGraphicsFormat: Format[FunctionGraphics] = Json.format[FunctionGraphics]
+
+  implicit val functionConfigurationFormat: Format[FunctionConfiguration] = Json.format[FunctionConfiguration]
   implicit val responseFormat: Format[Response] = Json.format[Response]
   implicit val requestFormat: Format[Request] = Json.format[Request]
 }
