@@ -66,7 +66,7 @@ class DataFeedCounter extends FunctionExecutable with DataFeedItemJsonProtocol w
       |the part of your HAT microserver that can install pre-trained analytics and algorithmic
       |functions and outputs the results privately into your HAT. """.stripMargin,
     "A summary of your week’s digital activities",
-    Some(""),
+    Some(FunctionGraphics(Drawable(None, "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/insights-activity-summary/logo.png", None, None), Seq(Drawable(None, "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/insights-activity-summary/screenshot1.jpg", None, None), Drawable(None, "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/insights-activity-summary/screenshot2.jpg", None, None)))),
     FunctionTrigger.TriggerPeriodic(Period.parse("P1W")),
     available = true,
     enabled = false,

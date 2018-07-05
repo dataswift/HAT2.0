@@ -63,7 +63,7 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
     "data-feed-direct-mapper",
     "",
     "",
-    Some(""),
+    Some(FunctionGraphics(Drawable(None, "", None, None), Seq(Drawable(None, "", None, None)))),
     FunctionTrigger.TriggerIndividual(),
     available = false,
     enabled = false,

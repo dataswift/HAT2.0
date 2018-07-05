@@ -58,28 +58,28 @@ trait FunctionServiceContext extends HATTestContext {
     .overrides(new CustomisedFakeModule)
     .build()
 
-  val dummyFunctionConfiguration = FunctionConfiguration("test-dummy-function", "Dummy Function", "Dummy Function", Some("Dummy url"),
+  val dummyFunctionConfiguration = FunctionConfiguration("test-dummy-function", "Dummy Function", "Dummy Function", None,
     FunctionTrigger.TriggerIndividual(), available = false, enabled = false,
     dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper", Map()),
     None, None, None)
 
-  val dummyFunctionConfigurationAvailable = FunctionConfiguration("test-dummy-function-available", "Dummy Function", "Dummy Function", Some("Dummy url"),
+  val dummyFunctionConfigurationAvailable = FunctionConfiguration("test-dummy-function-available", "Dummy Function", "Dummy Function", None,
     FunctionTrigger.TriggerIndividual(), available = true, enabled = false,
     dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper-vailable", Map()),
     None, None, None)
 
-  val dummyFunctionConfigurationUpdated = FunctionConfiguration("test-dummy-function", "Updated Function", "Dummy Function", Some("Dumy url"),
+  val dummyFunctionConfigurationUpdated = FunctionConfiguration("test-dummy-function", "Updated Function", "Dummy Function", None,
     FunctionTrigger.TriggerIndividual(), available = false, enabled = true,
     dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper", Map()),
     None, None, None)
 
-  val unavailableFunctionConfiguration = FunctionConfiguration("test-test-unavailable-function", "Unavailable Function", "Dummy Function", Some("Dumy url"),
+  val unavailableFunctionConfiguration = FunctionConfiguration("test-test-unavailable-function", "Unavailable Function", "Dummy Function", None,
     FunctionTrigger.TriggerIndividual(), available = false, enabled = false,
     dataBundle = EndpointDataBundle("test-unavailable-function-bundler", Map()),
     None, None, None)
 
   val registeredFunction = new DataFeedDirectMapper() {
-    override val configuration = FunctionConfiguration("data-feed-direct-mapper", "", "Dummy Function", Some("Dumy url"),
+    override val configuration = FunctionConfiguration("data-feed-direct-mapper", "", "Dummy Function", None,
       FunctionTrigger.TriggerIndividual(), available = true, enabled = false,
       dataBundle = bundleFilterByDate(None, None),
       None, None, None)
