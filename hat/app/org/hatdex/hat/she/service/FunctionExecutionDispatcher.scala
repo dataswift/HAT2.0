@@ -46,7 +46,7 @@ class FunctionTriggerLogger extends Actor {
   private val logger: Logger = Logger(this.getClass)
   def receive: Receive = {
     case (hat: String, configuration: FunctionConfiguration, _: Done) =>
-      logger.info(s"Successfully executed function ${configuration.name} for $hat")
+      logger.info(s"Successfully executed function ${configuration.id} for $hat")
   }
 }
 
@@ -67,9 +67,9 @@ class FunctionExecutionTriggerHandler @Inject() (
         functionService.all(active = true)(hatServer.db)
           .map(
             _.filter({
-              case FunctionConfiguration(_, _, _, _, FunctionTrigger.TriggerPeriodic(period), true, true, _, Some(lastExecution), Seq(), _) if lastExecution.isBefore(DateTime.now().minus(period)) ⇒ true
-              case FunctionConfiguration(_, _, _, _, FunctionTrigger.TriggerPeriodic(_), true, true, _, None, Seq(), _) ⇒ true // no execution recoded yet
-              case FunctionConfiguration(_, _, _, _, FunctionTrigger.TriggerIndividual(), true, true, _, _, Seq(), _) ⇒ true
+              case FunctionConfiguration(_, _, _, _, _, FunctionTrigger.TriggerPeriodic(period), true, true, _, Some(lastExecution), Seq(), _) if lastExecution.isBefore(DateTime.now().minus(period)) ⇒ true
+              case FunctionConfiguration(_, _, _, _, _, FunctionTrigger.TriggerPeriodic(_), true, true, _, None, Seq(), _) ⇒ true // no execution recoded yet
+              case FunctionConfiguration(_, _, _, _, _, FunctionTrigger.TriggerIndividual(), true, true, _, _, Seq(), _) ⇒ true
               case _ ⇒ false
             })
               .filter(_.dataBundle.flatEndpointQueries.map(_.endpoint).toSet
@@ -129,12 +129,12 @@ class FunctionExecutionDispatcher @Inject() (
   private val logger = Logger(this.getClass)
 
   def trigger(hat: String, conf: FunctionConfiguration)(implicit timeout: FiniteDuration, ec: ExecutionContext): Future[Done] = {
-    logger.debug(s"Triggered function ${conf.name} by $hat")
+    logger.debug(s"Triggered function ${conf.id} by $hat")
     implicit val resultTimeout: Timeout = timeout
     doFindOrCreate(hat, conf, timeout) flatMap { actor =>
       actor.ask(FunctionExecutorActor.Execute(None)) map {
         case _: FunctionExecutorActor.ExecutionFinished =>
-          logger.debug(s"Finished executing function ${conf.name} by $hat")
+          logger.debug(s"Finished executing function ${conf.id} by $hat")
           Done
         case FunctionExecutorActor.ExecutionFailed(e) =>
           throw e
@@ -144,7 +144,7 @@ class FunctionExecutionDispatcher @Inject() (
 
   private val maxAttempts = 3
   def doFindOrCreate(hat: String, conf: FunctionConfiguration, timeout: FiniteDuration, depth: Int = 0)(implicit ec: ExecutionContext): Future[ActorRef] = {
-    val actorName = s"function:$hat:${conf.name}"
+    val actorName = s"function:$hat:${conf.id}"
     if (depth >= maxAttempts) {
       logger.error(s"Function executor actor for $actorName not resolved")
       throw new RuntimeException(s"Can not create actor for executor $actorName and reached max attempts of $maxAttempts")

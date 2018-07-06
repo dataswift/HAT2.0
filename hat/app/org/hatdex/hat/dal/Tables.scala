@@ -935,7 +935,7 @@ trait Tables {
 
   /**
    * Entity class storing rows of table SheFunction
-   *  @param name Database column name SqlType(varchar), PrimaryKey
+   *  @param id Database column id SqlType(varchar), PrimaryKey
    *  @param description Database column description SqlType(varchar)
    *  @param trigger Database column trigger SqlType(jsonb)
    *  @param enabled Database column enabled SqlType(bool)
@@ -945,22 +945,23 @@ trait Tables {
    *  @param dataPreview Database column data_preview SqlType(jsonb), Default(None)
    *  @param dataPreviewEndpoint Database column data_preview_endpoint SqlType(varchar), Default(None)
    *  @param graphics Database column graphics SqlType(jsonb), Default(None)
+   *  @param name Database column name SqlType(varchar), Default()
    */
-  case class SheFunctionRow(name: String, description: String, trigger: play.api.libs.json.JsValue, enabled: Boolean, bundleId: String, lastExecution: Option[org.joda.time.DateTime] = None, headline: String = "", dataPreview: Option[play.api.libs.json.JsValue] = None, dataPreviewEndpoint: Option[String] = None, graphics: Option[play.api.libs.json.JsValue] = None)
+  case class SheFunctionRow(id: String, description: String, trigger: play.api.libs.json.JsValue, enabled: Boolean, bundleId: String, lastExecution: Option[org.joda.time.DateTime] = None, headline: String = "", dataPreview: Option[play.api.libs.json.JsValue] = None, dataPreviewEndpoint: Option[String] = None, graphics: Option[play.api.libs.json.JsValue] = None, name: String = "")
   /** GetResult implicit for fetching SheFunctionRow objects using plain SQL queries */
   implicit def GetResultSheFunctionRow(implicit e0: GR[String], e1: GR[play.api.libs.json.JsValue], e2: GR[Boolean], e3: GR[Option[org.joda.time.DateTime]], e4: GR[Option[play.api.libs.json.JsValue]], e5: GR[Option[String]]): GR[SheFunctionRow] = GR {
     prs =>
       import prs._
-      SheFunctionRow.tupled((<<[String], <<[String], <<[play.api.libs.json.JsValue], <<[Boolean], <<[String], <<?[org.joda.time.DateTime], <<[String], <<?[play.api.libs.json.JsValue], <<?[String], <<?[play.api.libs.json.JsValue]))
+      SheFunctionRow.tupled((<<[String], <<[String], <<[play.api.libs.json.JsValue], <<[Boolean], <<[String], <<?[org.joda.time.DateTime], <<[String], <<?[play.api.libs.json.JsValue], <<?[String], <<?[play.api.libs.json.JsValue], <<[String]))
   }
   /** Table description of table she_function. Objects of this class serve as prototypes for rows in queries. */
   class SheFunction(_tableTag: Tag) extends profile.api.Table[SheFunctionRow](_tableTag, Some("hat"), "she_function") {
-    def * = (name, description, trigger, enabled, bundleId, lastExecution, headline, dataPreview, dataPreviewEndpoint, graphics) <> (SheFunctionRow.tupled, SheFunctionRow.unapply)
+    def * = (id, description, trigger, enabled, bundleId, lastExecution, headline, dataPreview, dataPreviewEndpoint, graphics, name) <> (SheFunctionRow.tupled, SheFunctionRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(name), Rep.Some(description), Rep.Some(trigger), Rep.Some(enabled), Rep.Some(bundleId), lastExecution, Rep.Some(headline), dataPreview, dataPreviewEndpoint, graphics).shaped.<>({ r => import r._; _1.map(_ => SheFunctionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7.get, _8, _9, _10))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(description), Rep.Some(trigger), Rep.Some(enabled), Rep.Some(bundleId), lastExecution, Rep.Some(headline), dataPreview, dataPreviewEndpoint, graphics, Rep.Some(name)).shaped.<>({ r => import r._; _1.map(_ => SheFunctionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7.get, _8, _9, _10, _11.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column name SqlType(varchar), PrimaryKey */
-    val name: Rep[String] = column[String]("name", O.PrimaryKey)
+    /** Database column id SqlType(varchar), PrimaryKey */
+    val id: Rep[String] = column[String]("id", O.PrimaryKey)
     /** Database column description SqlType(varchar) */
     val description: Rep[String] = column[String]("description")
     /** Database column trigger SqlType(jsonb) */
@@ -979,6 +980,8 @@ trait Tables {
     val dataPreviewEndpoint: Rep[Option[String]] = column[Option[String]]("data_preview_endpoint", O.Default(None))
     /** Database column graphics SqlType(jsonb), Default(None) */
     val graphics: Rep[Option[play.api.libs.json.JsValue]] = column[Option[play.api.libs.json.JsValue]]("graphics", O.Default(None))
+    /** Database column name SqlType(varchar), Default() */
+    val name: Rep[String] = column[String]("name", O.Default(""))
 
     /** Foreign key referencing DataBundles (database name she_function_bundle_id_fkey) */
     lazy val dataBundlesFk = foreignKey("she_function_bundle_id_fkey", bundleId, DataBundles)(r => r.bundleId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)

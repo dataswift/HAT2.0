@@ -61,6 +61,7 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
 
   val configuration: FunctionConfiguration = FunctionConfiguration(
     "data-feed-direct-mapper",
+    "Feed mapper",
     "",
     "",
     Some(FunctionGraphics(Drawable(None, "", None, None), Seq(Drawable(None, "", None, None)))),

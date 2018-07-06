@@ -63,7 +63,7 @@ class FunctionManager @Inject() (
 
   def functionGet(function: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner(), Platform())).async { implicit request =>
     logger.debug(s"Get function $function")
-    functionService.get(name = function).map { maybeFunction =>
+    functionService.get(id = function).map { maybeFunction =>
       maybeFunction.map { function =>
         Ok(Json.toJson(function))
       } getOrElse {
@@ -104,9 +104,9 @@ class FunctionManager @Inject() (
                 logger.error(s"Function $function execution errored with ${e.getMessage}", e)
                 InternalServerError(Json.toJson(ErrorMessage("Function Execution Failed", s"Function $function execution errored with ${e.getMessage}")))
             }
-        case FunctionConfiguration(_, _, _, _, _, false, _, _, _, _, _) =>
+        case FunctionConfiguration(_, _, _, _, _, _, false, _, _, _, _, _) =>
           Future.successful(BadRequest(Json.toJson(ErrorMessage("Function Not Available", s"Function $function not available for execution"))))
-        case FunctionConfiguration(_, _, _, _, _, true, false, _, _, _, _) =>
+        case FunctionConfiguration(_, _, _, _, _, _, true, false, _, _, _, _) =>
           Future.successful(BadRequest(Json.toJson(ErrorMessage("Function Not Enabled", s"Function $function not enabled for execution"))))
       } getOrElse {
         Future.successful(NotFound(Json.toJson(ErrorMessage("Function Not Found", s"Function $function not found"))))
