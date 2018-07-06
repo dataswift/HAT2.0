@@ -60,13 +60,13 @@ class DataFeedCounter extends FunctionExecutable with DataFeedItemJsonProtocol w
   }
 
   val configuration: FunctionConfiguration = FunctionConfiguration(
-    "data-feed-counter",
+    "Weekly summary",
     """The Weekly Summary show your weekly activities. Weekly summary is private to you,
       |but shareable as data.\n\nWeekly summary is powered by SHE, the Smart HAT Engine,
       |the part of your HAT microserver that can install pre-trained analytics and algorithmic
       |functions and outputs the results privately into your HAT. """.stripMargin,
     "A summary of your week’s digital activities",
-    Some(FunctionGraphics(Drawable(None, "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/insights-activity-summary/logo.png", None, None), Seq(Drawable(None, "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/insights-activity-summary/screenshot1.jpg", None, None), Drawable(None, "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/insights-activity-summary/screenshot2.jpg", None, None)))),
+    Some(FunctionGraphics(Drawable(None, "https://github.com/Hub-of-all-Things/exchange-assets/blob/master/insights-activity-summary/logo.png?raw=true", None, None), Seq(Drawable(None, "https://github.com/Hub-of-all-Things/exchange-assets/blob/master/insights-activity-summary/screenshot1.jpg?raw=true", None, None), Drawable(None, "https://github.com/Hub-of-all-Things/exchange-assets/blob/master/insights-activity-summary/screenshot2.jpg?raw=true", None, None)))),
     FunctionTrigger.TriggerPeriodic(Period.parse("P1W")),
     available = true,
     enabled = false,
