@@ -49,6 +49,7 @@ case class FunctionGraphics(
     screenshots: Seq[Drawable])
 
 case class FunctionConfiguration(
+    id: String,
     name: String,
     description: String,
     headline: String,
@@ -62,7 +63,8 @@ case class FunctionConfiguration(
     dataPreviewEndpoint: Option[String]) {
   def update(other: FunctionConfiguration): FunctionConfiguration = {
     FunctionConfiguration(
-      this.name,
+      this.id,
+      other.name,
       other.description,
       other.headline,
       other.graphics,
@@ -83,6 +85,7 @@ object FunctionConfiguration {
     import DataFeedItemJsonProtocol.feedItemFormat
 
     FunctionConfiguration(
+      function.id,
       function.name,
       function.description,
       function.headline,

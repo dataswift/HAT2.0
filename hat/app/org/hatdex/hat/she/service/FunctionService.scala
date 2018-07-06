@@ -54,8 +54,8 @@ class FunctionService @Inject() (
   private implicit def hatServer2db(implicit hatServer: HatServer): Database = hatServer.db
 
   protected def mergeRegisteredSaved(registeredFunctions: Seq[FunctionConfiguration], savedFunctions: Seq[FunctionConfiguration]): Seq[FunctionConfiguration] = {
-    val registered: Map[String, FunctionConfiguration] = registeredFunctions.map(r => r.name -> r).toMap
-    val saved: Map[String, FunctionConfiguration] = savedFunctions.map(r => r.name -> r).toMap
+    val registered: Map[String, FunctionConfiguration] = registeredFunctions.map(r => r.id -> r).toMap
+    val saved: Map[String, FunctionConfiguration] = savedFunctions.map(r => r.id -> r).toMap
 
     val functions = for ((k, v) <- saved ++ registered)
       yield k -> (if ((saved contains k) && (registered contains k)) saved(k).update(v) else v)
@@ -77,16 +77,16 @@ class FunctionService @Inject() (
     }
   }
 
-  def get(name: String)(implicit db: Database): Future[Option[FunctionConfiguration]] = {
+  def get(id: String)(implicit db: Database): Future[Option[FunctionConfiguration]] = {
     val query = for {
-      function <- SheFunction.filter(_.name === name)
+      function <- SheFunction.filter(_.id === id)
       bundle <- function.dataBundlesFk
     } yield (function, bundle)
 
     for {
-      r <- Future.successful(functionRegistry.getSeq[FunctionExecutable].map(_.configuration).filter(_.name == name))
+      r <- Future.successful(functionRegistry.getSeq[FunctionExecutable].map(_.configuration).filter(_.id == id))
       f <- db.run(query.take(1).result)
-        .map(_.map(f => FunctionConfiguration(f._1, f._2).copy(available = r.exists(_.name == f._1.name))))
+        .map(_.map(f => FunctionConfiguration(f._1, f._2).copy(available = r.exists(_.id == f._1.id))))
     } yield {
       mergeRegisteredSaved(r, f)
         .headOption
@@ -105,7 +105,7 @@ class FunctionService @Inject() (
           case Success(s) => logger.debug(s"Got registered functions: $s")
         }
       f <- db.run(query.result)
-        .map(_.map(f => FunctionConfiguration(f._1, f._2).copy(available = r.exists(_.name == f._1.name))))
+        .map(_.map(f => FunctionConfiguration(f._1, f._2).copy(available = r.exists(_.id == f._1.id))))
         .andThen {
           case Success(s) => logger.debug(s"Got saved functions: $s")
         }
@@ -116,19 +116,19 @@ class FunctionService @Inject() (
     logger.debug(s"Save function configuration $configuration")
     import org.hatdex.hat.api.json.RichDataJsonFormats.propertyQueryFormat
     import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol.triggerFormat
-    val functionRow = SheFunctionRow(configuration.name, configuration.description, Json.toJson(configuration.trigger),
-      configuration.enabled, configuration.dataBundle.name, configuration.lastExecution)
+    val functionRow = SheFunctionRow(configuration.id, configuration.description, Json.toJson(configuration.trigger),
+      configuration.enabled, configuration.dataBundle.name, configuration.lastExecution, configuration.id)
     val bundleRow = DataBundlesRow(configuration.dataBundle.name, Json.toJson(configuration.dataBundle.bundle))
 
     db.run(DBIO.seq(
       DataBundles.insertOrUpdate(bundleRow),
       SheFunction.insertOrUpdate(functionRow)).transactionally)
-      .flatMap(_ => get(configuration.name))
+      .flatMap(_ => get(configuration.id))
       .map(_.get)
   }
 
   def run(configuration: FunctionConfiguration, startTime: Option[DateTime])(implicit hatServer: HatServer): Future[Done] = {
-    functionRegistry.get[FunctionExecutable](configuration.name)
+    functionRegistry.get[FunctionExecutable](configuration.id)
       .map { function: FunctionExecutable =>
         val fromDate = startTime.orElse(Some(DateTime.now().minusMonths(6)))
         val untilDate = Some(DateTime.now().plusMonths(3))
