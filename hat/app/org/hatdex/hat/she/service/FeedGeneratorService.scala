@@ -176,7 +176,7 @@ class FeedGeneratorService @Inject() ()(
   private def interpolateLocation(anchorInstance: Long, startItem: (Long, LocationGeo), endItem: (Long, LocationGeo)): Option[LocationGeo] = {
     val timeDiffStart = Math.abs(anchorInstance - startItem._1)
     val timeDiffEnd = Math.abs(anchorInstance - endItem._1)
-    val timeBound = 12.hours.toMillis
+    val timeBound = 7.hours.toMillis
     if (timeDiffStart < timeBound || timeDiffEnd < timeBound) { // if either location is sufficiently close
       val ratio = timeDiffStart.toDouble / (timeDiffStart + timeDiffEnd).toDouble
       Some(LocationGeo(
