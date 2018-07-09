@@ -70,10 +70,10 @@ class FeedGeneratorService @Inject() ()(
     "activity-records" → new InsightsMapper())
 
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
-    feedForMappers(dataMappers.filter(_._1.startsWith(endpoint)), since, until, mergeLocations, includeInsights = false)
+    feedForMappers(dataMappers.filter(_._1.startsWith(endpoint)), since, until, mergeLocations)
 
   def fullFeed(since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
-    feedForMappers(dataMappers, since, until, mergeLocations, includeInsights = true)
+    feedForMappers(dataMappers, since, until, mergeLocations)
 
   def insights(since: Option[Long], until: Option[Long])(implicit hatServer: HatServer): Source[DataFeedItem, NotUsed] = {
     val now = DateTime.now()
@@ -91,7 +91,7 @@ class FeedGeneratorService @Inject() ()(
   private val defaultTimeBack = 180.days
   private val defaultTimeForward = 30.days
   protected def feedForMappers(mappers: Seq[(String, DataEndpointMapper)], since: Option[Long], until: Option[Long],
-    mergeLocations: Boolean, includeInsights: Boolean)(
+    mergeLocations: Boolean)(
     implicit
     hatServer: HatServer): Future[Seq[DataFeedItem]] = {
     logger.debug(s"Fetching feed data for ${mappers.unzip._1}")
