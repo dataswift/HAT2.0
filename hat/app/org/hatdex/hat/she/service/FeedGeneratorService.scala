@@ -113,15 +113,7 @@ class FeedGeneratorService @Inject() ()(
       sortedSources
     }
 
-    val outputStream = if (includeInsights) {
-      new SourceMergeSorter()
-        .mergeWithSorter(Seq(geotaggedStream, insights(since, until)))
-    }
-    else {
-      geotaggedStream
-    }
-
-    outputStream
+    geotaggedStream
       .runWith(Sink.seq)
   }
 
