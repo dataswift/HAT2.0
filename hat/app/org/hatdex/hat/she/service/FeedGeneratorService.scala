@@ -70,7 +70,7 @@ class FeedGeneratorService @Inject() ()(
     "she/activity-records" → new InsightsMapper())
 
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] = {
-    if (endpoint.startsWith("she/")) {
+    if (endpoint.startsWith("she")) {
       insights(since, until, Some(endpoint)).runWith(Sink.seq)
     }
     else {

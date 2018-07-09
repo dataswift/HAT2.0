@@ -76,7 +76,7 @@ class HatMailerImpl @Inject() (
   def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Done = {
     sendEmail(adminEmails: _*)(
       from = emailFrom,
-      subject = s"HAT server ${request.host} errorr #${exception.id}",
+      subject = s"HAT server ${request.host} error #${exception.id}",
       bodyHtml = views.html.mails.emailServerError(request, exception),
       bodyText = views.html.mails.emailServerError(request, exception).toString())
     Done
@@ -95,8 +95,8 @@ class HatMailerImpl @Inject() (
     sendEmail(email)(
       from = emailFrom,
       subject = s"HAT ${server.domain} - reset your password",
-      bodyHtml = views.html.mails.emailPasswordReset(user, resetLink),
-      bodyText = views.txt.mails.emailPasswordReset(user, resetLink).toString())
+      bodyHtml = views.html.mails.emailPasswordReset(user, server.domain, resetLink),
+      bodyText = views.txt.mails.emailPasswordReset(user, server.domain, resetLink).toString())
     Done
   }
 
@@ -104,8 +104,8 @@ class HatMailerImpl @Inject() (
     sendEmail(email)(
       from = emailFrom,
       subject = s"HAT ${server.domain} - password changed",
-      bodyHtml = views.html.mails.emailPasswordChanged(user),
-      bodyText = views.txt.mails.emailPasswordChanged(user).toString())
+      bodyHtml = views.html.mails.emailPasswordChanged(user, server.domain),
+      bodyText = views.txt.mails.emailPasswordChanged(user, server.domain).toString())
     Done
   }
 }
