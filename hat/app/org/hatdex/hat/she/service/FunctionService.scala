@@ -138,7 +138,8 @@ class FunctionService @Inject() (
           response <- function.execute(configuration, Request(data, linkRecords = true)) // Execute the function
             .map(removeDuplicateData) // Remove duplicate data in case some records mapped onto the same values when transformed
           owner <- usersService.getUserByRole(Owner()).map(_.head) // Fetch the owner user - functions run on their behalf
-          _ <- dataService.saveDataGroups(owner.userId, response.map(r => (r.data.map(EndpointData(s"${r.namespace}/${r.endpoint}", None, _, None)), r.linkedRecords)), skipErrors = true)
+          _ <- dataService.saveDataGroups(owner.userId, response.map(r => (r.data.map(
+            EndpointData(s"${r.namespace}/${r.endpoint}", None, None, None, _, None)), r.linkedRecords)), skipErrors = true)
           _ <- save(configuration.copy(lastExecution = Some(executionTime)))
         } yield Done
       } getOrElse {

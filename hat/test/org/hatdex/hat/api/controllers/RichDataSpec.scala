@@ -90,9 +90,9 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
-        EndpointData("test/endpoint", None, simpleJson, None),
-        EndpointData("test/endpoint", None, simpleJson2, None),
-        EndpointData("test/endpoint", None, complexJson, None))
+        EndpointData("test/endpoint", None, None, None, simpleJson, None),
+        EndpointData("test/endpoint", None, None, None, simpleJson2, None),
+        EndpointData("test/endpoint", None, None, None, complexJson, None))
 
       val response = for {
         _ <- service.saveData(owner.userId, data).map(_.head)
@@ -111,9 +111,9 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
-        EndpointData("test/endpoint", None, simpleJson, None),
-        EndpointData("test/endpoint", None, simpleJson2, None),
-        EndpointData("test/endpoint", None, complexJson, None))
+        EndpointData("test/endpoint", None, None, None, simpleJson, None),
+        EndpointData("test/endpoint", None, None, None, simpleJson2, None),
+        EndpointData("test/endpoint", None, None, None, complexJson, None))
 
       val response = for {
         _ <- service.saveData(owner.userId, data).map(_.head)
@@ -200,9 +200,9 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val controller = application.injector.instanceOf[RichData]
 
       val data = List(
-        EndpointData("test/test", None, simpleJson, None),
-        EndpointData("test2/test2", None, simpleJson2, None),
-        EndpointData("test/test3", None, complexJson, None))
+        EndpointData("test/test", None, None, None, simpleJson, None),
+        EndpointData("test2/test2", None, None, None, simpleJson2, None),
+        EndpointData("test/test3", None, None, None, complexJson, None))
 
       val dataService = application.injector.instanceOf[RichDataService]
 
@@ -229,9 +229,9 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val controller = application.injector.instanceOf[RichData]
 
       val data = List(
-        EndpointData("test/test", None, simpleJson, None),
-        EndpointData("test2/test2", None, simpleJson2, None),
-        EndpointData("test/test3", None, complexJson, None))
+        EndpointData("test/test", None, None, None, simpleJson, None),
+        EndpointData("test2/test2", None, None, None, simpleJson2, None),
+        EndpointData("test/test3", None, None, None, complexJson, None))
 
       val dataService = application.injector.instanceOf[RichDataService]
 
@@ -249,9 +249,9 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
   "The `saveBatchData` method" should {
     "Save all data included in a batch" in {
       val data = List(
-        EndpointData("test/test", None, simpleJson, None),
-        EndpointData("test2/test2", None, simpleJson2, None),
-        EndpointData("test/test", None, complexJson, None))
+        EndpointData("test/test", None, None, None, simpleJson, None),
+        EndpointData("test2/test2", None, None, None, simpleJson2, None),
+        EndpointData("test/test3", None, None, None, complexJson, None))
 
       val request = FakeRequest("POST", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
@@ -271,9 +271,9 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
     "Reject all data if user has no permissions to write some of it" in {
       val data = List(
-        EndpointData("test/test", None, simpleJson, None),
-        EndpointData("test/test2", None, simpleJson2, None),
-        EndpointData("test/test", None, complexJson, None))
+        EndpointData("test/test", None, None, None, simpleJson, None),
+        EndpointData("test2/test2", None, None, None, simpleJson2, None),
+        EndpointData("test/test3", None, None, None, complexJson, None))
 
       val request = FakeRequest("POST", "http://hat.hubofallthings.net")
         .withAuthenticator(dataCreditUser.loginInfo)
@@ -290,9 +290,9 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
     "Return an error when inserting duplicate data" in {
       val data = List(
-        EndpointData("namespace/test", None, simpleJson, None),
-        EndpointData("namespace2/test2", None, simpleJson2, None),
-        EndpointData("namespace/test", None, simpleJson, None))
+        EndpointData("test/test", None, None, None, simpleJson, None),
+        EndpointData("test2/test2", None, None, None, simpleJson2, None),
+        EndpointData("test/test3", None, None, None, complexJson, None))
 
       val request = FakeRequest("POST", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
@@ -454,9 +454,9 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val dataService = application.injector.instanceOf[RichDataService]
 
       val result = for {
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, simpleJson, None)))
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, simpleJson2, None)))
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test/complex", None, complexJson, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson2, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/complex", None, None, None, complexJson, None)))
         _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
         _ <- service.dataDebitEnableBundle("testdd", None)
         data <- Helpers.call(controller.getDataDebitValues("testdd"), request)
@@ -479,9 +479,9 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val dataService = application.injector.instanceOf[RichDataService]
 
       val result = for {
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, simpleJson, None)))
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, simpleJson2, None)))
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test/complex", None, complexJson, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson2, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/complex", None, None, None, complexJson, None)))
         _ <- service.createDataDebit("testdd", ddRequestionConditionsFailed, owner.userId)
         _ <- service.dataDebitEnableBundle("testdd", Some(ddRequestionConditionsFailed.bundle.name))
         data <- Helpers.call(controller.getDataDebitValues("testdd"), request)
@@ -501,9 +501,9 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val dataService = application.injector.instanceOf[RichDataService]
 
       val result = for {
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, simpleJson, None)))
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, simpleJson2, None)))
-        _ <- dataService.saveData(owner.userId, List(EndpointData("test/complex", None, complexJson, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson2, None)))
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/complex", None, None, None, complexJson, None)))
         _ <- service.createDataDebit("testdd", ddRequestionConditionsFulfilled, owner.userId)
         _ <- service.dataDebitEnableBundle("testdd", Some(ddRequestionConditionsFulfilled.bundle.name))
         data <- Helpers.call(controller.getDataDebitValues("testdd"), request)

@@ -61,7 +61,7 @@ class JsonStatsServiceSpec extends PlaySpecification with Mockito with JsonStats
   "The `countEndpointData` method" should {
     "Correctly count numbers of values for simple endpoint data objects" in {
 
-      val counts = JsonStatsService.countEndpointData(EndpointData("test", None, simpleJson, None))
+      val counts = JsonStatsService.countEndpointData(EndpointData("test", None, None, None, simpleJson, None))
       val result = counts("test")
       result("field") must equalTo(1)
       result("date") must equalTo(1)
@@ -76,7 +76,7 @@ class JsonStatsServiceSpec extends PlaySpecification with Mockito with JsonStats
     "Correctly count numbers of values for linked endpoint data objects" in {
 
       val counts = JsonStatsService.countEndpointData(
-        EndpointData("test", None, simpleJson, Some(Seq(EndpointData("test", None, simpleJson, None)))))
+        EndpointData("test", None, None, None, simpleJson, Some(Seq(EndpointData("test", None, None, None, simpleJson, None)))))
       val result = counts("test")
       result("field") must equalTo(2)
       result("date") must equalTo(2)
@@ -94,8 +94,8 @@ class JsonStatsServiceSpec extends PlaySpecification with Mockito with JsonStats
 
       val counts = JsonStatsService.endpointDataCounts(
         Seq(
-          EndpointData("test", None, simpleJson, Some(Seq(EndpointData("test", None, simpleJson, None)))),
-          EndpointData("test", None, simpleJson, None)))
+          EndpointData("test", None, None, None, simpleJson, Some(Seq(EndpointData("test", None, None, None, simpleJson, None)))),
+          EndpointData("test", None, None, None, simpleJson, None)))
 
       counts.headOption must beSome
       val result = counts.head.propertyStats

@@ -176,5 +176,5 @@ trait EndpointSubscriberServiceContext extends Scope {
       | }
     """.stripMargin)
 
-  val simpleEndpointData = EndpointData("test/test", Some(UUID.randomUUID()), simpleJson, None)
+  val simpleEndpointData = EndpointData("test/test", Some(UUID.randomUUID()), None, None, simpleJson, None)
 }

@@ -85,13 +85,15 @@ class RichData @Inject() (
       val dataEndpoint = s"$namespace/$endpoint"
       val response = request.body match {
         case array: JsArray =>
-          val values = array.value.map(EndpointData(dataEndpoint, None, _, None))
+          // TODO: extract unique ID and timestamp
+          val values = array.value.map(EndpointData(dataEndpoint, None, None, None, _, None))
           dataService.saveData(request.identity.userId, values, skipErrors.getOrElse(false))
             .andThen(dataEventDispatcher.dispatchEventDataCreated(s"saved batch for $dataEndpoint"))
             .map(saved => Created(Json.toJson(saved)))
 
         case value: JsValue =>
-          val values = Seq(EndpointData(dataEndpoint, None, value, None))
+          // TODO: extract unique ID and timestamp
+          val values = Seq(EndpointData(dataEndpoint, None, None, None, value, None))
           dataService.saveData(request.identity.userId, values)
             .andThen(dataEventDispatcher.dispatchEventDataCreated(s"saved data for $dataEndpoint"))
             .map(saved => Created(Json.toJson(saved.head)))
