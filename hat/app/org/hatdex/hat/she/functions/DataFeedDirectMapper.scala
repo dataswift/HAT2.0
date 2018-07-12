@@ -79,7 +79,7 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
         case (mappingEndpoint, data) ⇒
           val records = dataMappers.get(mappingEndpoint).map { m ⇒
             data.collect {
-              case EndpointData(_, Some(recordId), content, _) ⇒ (recordId, m.mapDataRecord(recordId, content))
+              case EndpointData(_, Some(recordId), _, _, content, _) ⇒ (recordId, m.mapDataRecord(recordId, content))
             }
           }
           (mappingEndpoint, records.getOrElse(Seq.empty))
