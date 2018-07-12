@@ -46,7 +46,7 @@ class FunctionExecutableRegistry(interfaces: Seq[FunctionExecutable]) {
    * @param id The ID of the provider to return.
    * @return Some specific FunctionExecutable or None if no function for the given name could be found.
    */
-  def get[T <: FunctionExecutable: ClassTag](name: String): Option[T] = getSeq[T].find(_.configuration.name == name)
+  def get[T <: FunctionExecutable: ClassTag](id: String): Option[T] = getSeq[T].find(_.configuration.id == id)
 
   /**
    * Gets a list of function that match a certain type.
