@@ -62,7 +62,7 @@ class DataFeedCounter extends FunctionExecutable with DataFeedItemJsonProtocol w
   val configuration: FunctionConfiguration = FunctionConfiguration(
     "data-feed-counter",
     "Weekly summary",
-    """Weekly Summary show your weekly online activities.
+    """Weekly Summary shows your weekly online activities.
       |It allows you to to have an overview of your data accumulated in a week. The first weekly summary establish the start date of the tool and is a summary of your history of activities""".stripMargin,
     "A summary of your week’s digital activities",
     Some(FunctionGraphics(Drawable(None, "https://github.com/Hub-of-all-Things/exchange-assets/blob/master/insights-activity-summary/logo.png?raw=true", None, None), Seq(Drawable(None, "https://github.com/Hub-of-all-Things/exchange-assets/blob/master/insights-activity-summary/screenshot1.jpg?raw=true", None, None), Drawable(None, "https://github.com/Hub-of-all-Things/exchange-assets/blob/master/insights-activity-summary/screenshot2.jpg?raw=true", None, None)))),
