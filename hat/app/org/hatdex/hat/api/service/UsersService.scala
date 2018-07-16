@@ -174,14 +174,14 @@ class UsersService @Inject() (cache: AsyncCacheApi)(implicit ec: DalExecutionCon
   }
 
   def previousLogin(user: HatUser)(implicit server: HatServer): Future[Option[HatAccessLog]] = {
-    logger.error(s"Getting previous login for $user")
+    logger.debug(s"Getting previous login for $user@${server.domain}")
     val query = for {
       access <- UserAccessLog.filter(l => l.userId === user.userId).sortBy(_.date.desc).take(2).drop(1)
       user <- access.userUserFk
     } yield (access, user)
     server.db.run(query.result)
       .andThen {
-        case Success(h) ⇒ logger.error(s"Got previous logins $h")
+        case Success(h) ⇒ logger.error(s"Got previous logins $h @${server.domain}")
       }
       .map(_.headOption)
       .map(_.map(au => ModelTranslation.fromDbModel(au._1, ModelTranslation.fromDbModel(au._2))))
