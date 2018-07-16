@@ -27,7 +27,7 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val crossScala = Seq("2.12.5")
+    val crossScala = Seq("2.12.6")
     val scalaVersion = crossScala.head
   }
 
@@ -57,7 +57,7 @@ object Dependencies {
       val playGuard = "com.digitaltangible" %% "play-guard" % "2.1.0"
 
       object Jwt {
-        private val bouncyCastleVersion = "1.59"
+        private val bouncyCastleVersion = "1.60"
         val bouncyCastle = "org.bouncycastle" % "bcprov-jdk15on" % bouncyCastleVersion
         val bouncyCastlePkix = "org.bouncycastle" % "bcpkix-jdk15on" % bouncyCastleVersion
         val atlassianJwtVersion = "2.0.1"
@@ -92,9 +92,9 @@ object Dependencies {
     }
 
     object Akka {
-      private val version = "2.5.11"
+      private val version = "2.5.14"
       val slf4j = "com.typesafe.akka" %% "akka-slf4j" % version
-      val httpCore = "com.typesafe.akka" %% "akka-http-core" % "10.1.1"
+      val httpCore = "com.typesafe.akka" %% "akka-http-core" % "10.1.3"
       val akkaStream = "com.typesafe.akka" %% "akka-stream" % version
       val akkaActor = "com.typesafe.akka" %% "akka-actor" % version
       val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % version

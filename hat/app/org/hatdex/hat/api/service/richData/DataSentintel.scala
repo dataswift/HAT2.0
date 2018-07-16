@@ -43,9 +43,9 @@ class DataSentintel @Inject() (implicit ec: DalExecutionContext, actorSystem: Ac
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
   protected val updateBatchSize = 500
 
-  def validateDataStructure(data: JsValue, configuration: EndpointConfiguration): (JsValue, Option[String], Option[DateTime]) = {
-    throw new RuntimeException("Not Implemented")
-  }
+  //  def validateDataStructure(data: JsValue, configuration: EndpointConfiguration): (JsValue, Option[String], Option[DateTime]) = {
+  //    throw new RuntimeException("Not Implemented")
+  //  }
 
   def ensureUniquenessKey(source: String, key: String)(implicit db: Database): Future[Done] = {
     import com.github.tminglei.slickpg.window.PgWindowFuncSupport.WindowFunctions._
