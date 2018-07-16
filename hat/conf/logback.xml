@@ -72,7 +72,7 @@
     <logger name="org.hatdex.hat.api.service.UsersService" level="WARN" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
-    <logger name="org.hatdex.hat.api.service.applications.ApplicationsService" level="DEBUG" additivity="false">
+    <logger name="org.hatdex.hat.api.service.applications.ApplicationsService" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
     <logger name="org.hatdex.hat.api.controllers" level="INFO" additivity="false">
@@ -85,7 +85,11 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="org.hatdex.hat.she.*" level="INFO" additivity="false">
+    <logger name="org.hatdex.hat.she.*" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE" />
+    </logger>
+
+    <logger name="org.hatdex.hat.she.service.*" level="DEBUG" additivity="false">
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
 
@@ -108,6 +112,10 @@
     <logger name="play.api.libs.ws" level="ERROR" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
+    <logger name="play.filters.hosts.AllowedHostsFilter" level="ERROR" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
     
     <logger name="org.asynchttpclient" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>
