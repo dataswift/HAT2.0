@@ -61,21 +61,21 @@ class FunctionExecutorActor @Inject() (
 
   def receive: Receive = {
     case Execute(since) =>
-      logger.debug(s"RECEIVE Execute, executing")
+      logger.debug(s"[$hat] function [${conf.id}] RECEIVE Execute, executing")
       stash()
       startExecution(since).pipeTo(self)
       context.become(executing)
 
     case message =>
-      logger.warn(s"RECEIVE Received unknown message: $message")
+      logger.warn(s"[$hat] function [${conf.id}] RECEIVE Received unknown message: $message")
   }
 
   def executing: Actor.Receive = {
     case Execute(_) =>
-      logger.debug(s"EXECUTING Execute, stashing")
+      logger.debug(s"[$hat] function [${conf.id}] EXECUTING Execute, stashing")
       stash()
     case ExecutionFinished() =>
-      logger.debug(s"EXECUTING ExecutionFinished, stashing")
+      logger.debug(s"[$hat] function [${conf.id}] EXECUTING ExecutionFinished, stashing")
       context.become(finished)
       unstashAll()
       self ! PoisonPill
@@ -84,18 +84,18 @@ class FunctionExecutorActor @Inject() (
       unstashAll()
       self ! PoisonPill
     case message =>
-      logger.warn(s"EXECUTING Received unknown message: $message")
+      logger.warn(s"[$hat] function [${conf.id}] EXECUTING Received unknown message: $message")
   }
 
   def finished: Actor.Receive = {
     case message =>
-      logger.debug(s"FINISHED received a message: $message")
+      logger.debug(s"[$hat] function [${conf.id}] FINISHED received a message: $message")
       sender ! ExecutionFinished()
   }
 
   def failed(error: Throwable): Actor.Receive = {
     case message =>
-      logger.debug(s"FINISHED received a message: $message")
+      logger.debug(s"[$hat] function [${conf.id}] FINISHED received a message: $message")
       sender ! ExecutionFailed(error)
   }
 
@@ -109,7 +109,7 @@ class FunctionExecutorActor @Inject() (
               case e => ExecutionFailed(e)
             }
         } getOrElse {
-          Future.successful(ExecutionFailed(new HatServerDiscoveryException(s"HAT $hat discovery failed for function execution")))
+          Future.successful(ExecutionFailed(new HatServerDiscoveryException(s"[$hat] function [${conf.id}] HAT $hat discovery failed for function execution")))
         }
       }
   }

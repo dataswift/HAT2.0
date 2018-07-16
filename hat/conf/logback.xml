@@ -93,6 +93,17 @@
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
 
+    <logger name="org.hatdex.hat.she.service.FunctionService" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE" />
+    </logger>
+    <logger name="org.hatdex.hat.she.service.FunctionExecutorActor" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE" />
+    </logger>
+
+    <logger name="org.hatdex.hat.she.service.FunctionExecutionTriggerHandler" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE" />
+    </logger>
+
     <logger name="org.hatdex.hat.she.service.FeedGeneratorService" level="DEBUG" additivity="false">
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
