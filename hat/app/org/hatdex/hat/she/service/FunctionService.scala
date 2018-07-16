@@ -28,10 +28,10 @@ import java.security.MessageDigest
 
 import javax.inject.Inject
 import akka.Done
-import org.hatdex.hat.api.models.{ EndpointData, Owner }
+import org.hatdex.hat.api.models.{EndpointData, Owner}
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.richData.RichDataService
-import org.hatdex.hat.she.models.{ FunctionConfiguration, FunctionExecutable, Request, Response }
+import org.hatdex.hat.she.models.{FunctionConfiguration, FunctionExecutable, Request, Response}
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import org.hatdex.hat.dal.Tables._
@@ -39,8 +39,8 @@ import org.hatdex.hat.resourceManagement.HatServer
 import play.api.Logger
 import play.api.libs.json.Json
 
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.Success
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class FunctionService @Inject() (
     functionRegistry: FunctionExecutableRegistry,
@@ -68,10 +68,6 @@ class FunctionService @Inject() (
       registeredFunctions <- Future.successful(functionRegistry.getSeq[FunctionExecutable].map(_.configuration))
       savedFunctions <- saved()
     } yield {
-      logger.debug(
-        s"""Got a list of registered and saved functions:
-           | $registeredFunctions
-           | $savedFunctions""".stripMargin)
       mergeRegisteredSaved(registeredFunctions, savedFunctions)
         .filter(f => !active || f.enabled && f.available) // only return enabled ones if filtering is on
     }
@@ -128,19 +124,28 @@ class FunctionService @Inject() (
   }
 
   def run(configuration: FunctionConfiguration, startTime: Option[DateTime])(implicit hatServer: HatServer): Future[Done] = {
+    val executionTime = DateTime.now()
+    logger.info(s"[${hatServer.domain}] SHE function [${configuration.id}] run @$executionTime (previously $startTime)")
     functionRegistry.get[FunctionExecutable](configuration.id)
       .map { function: FunctionExecutable =>
         val fromDate = startTime.orElse(Some(DateTime.now().minusMonths(6)))
         val untilDate = Some(DateTime.now().plusMonths(3))
-        val executionTime = DateTime.now()
-        for {
+        val executionResult = for {
           data <- dataService.bundleData(function.bundleFilterByDate(fromDate, untilDate), createdAfter = configuration.lastExecution) // Get all bundle data from a specific date until now
           response <- function.execute(configuration, Request(data, linkRecords = true)) // Execute the function
             .map(removeDuplicateData) // Remove duplicate data in case some records mapped onto the same values when transformed
           owner <- usersService.getUserByRole(Owner()).map(_.head) // Fetch the owner user - functions run on their behalf
           _ <- dataService.saveDataGroups(owner.userId, response.map(r => (r.data.map(EndpointData(s"${r.namespace}/${r.endpoint}", None, _, None)), r.linkedRecords)), skipErrors = true)
           _ <- save(configuration.copy(lastExecution = Some(executionTime)))
-        } yield Done
+        } yield (data.values.map(_.length).sum, Done)
+
+        executionResult onComplete {
+          case Success((totalRecords, _)) ⇒ logger.info(s"[${hatServer.domain}] SHE function [${configuration.id}] finished, generated $totalRecords records")
+          case Failure(e) ⇒ logger.error(s"[${hatServer.domain}] SHE function [${configuration.id}] error: ${e.getMessage}")
+        }
+
+        executionResult.map(_._2)
+
       } getOrElse {
         Future.failed(new RuntimeException("The requested function is not available"))
       }
