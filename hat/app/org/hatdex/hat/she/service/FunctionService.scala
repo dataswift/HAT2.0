@@ -28,10 +28,10 @@ import java.security.MessageDigest
 
 import javax.inject.Inject
 import akka.Done
-import org.hatdex.hat.api.models.{EndpointData, Owner}
+import org.hatdex.hat.api.models.{ EndpointData, Owner }
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.richData.RichDataService
-import org.hatdex.hat.she.models.{FunctionConfiguration, FunctionExecutable, Request, Response}
+import org.hatdex.hat.she.models.{ FunctionConfiguration, FunctionExecutable, Request, Response }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import org.hatdex.hat.dal.Tables._
@@ -39,8 +39,8 @@ import org.hatdex.hat.resourceManagement.HatServer
 import play.api.Logger
 import play.api.libs.json.Json
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success }
 
 class FunctionService @Inject() (
     functionRegistry: FunctionExecutableRegistry,
@@ -97,14 +97,8 @@ class FunctionService @Inject() (
 
     for {
       r <- Future.successful(functionRegistry.getSeq[FunctionExecutable].map(_.configuration))
-        .andThen {
-          case Success(s) => logger.debug(s"Got registered functions: $s")
-        }
       f <- db.run(query.result)
         .map(_.map(f => FunctionConfiguration(f._1, f._2).copy(available = r.exists(_.id == f._1.id))))
-        .andThen {
-          case Success(s) => logger.debug(s"Got saved functions: $s")
-        }
     } yield f
   }
 
@@ -141,7 +135,7 @@ class FunctionService @Inject() (
 
         executionResult onComplete {
           case Success((totalRecords, _)) ⇒ logger.info(s"[${hatServer.domain}] SHE function [${configuration.id}] finished, generated $totalRecords records")
-          case Failure(e) ⇒ logger.error(s"[${hatServer.domain}] SHE function [${configuration.id}] error: ${e.getMessage}")
+          case Failure(e)                 ⇒ logger.error(s"[${hatServer.domain}] SHE function [${configuration.id}] error: ${e.getMessage}")
         }
 
         executionResult.map(_._2)

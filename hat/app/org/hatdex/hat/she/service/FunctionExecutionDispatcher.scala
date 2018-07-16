@@ -61,8 +61,9 @@ class FunctionExecutionTriggerHandler @Inject() (
   private implicit val materializer: ActorMaterializer = ActorMaterializer()(actorSystem)
 
   protected def findMatchingFunctions(hat: String, endpoints: Set[String]): Future[Iterable[FunctionConfiguration]] = {
-    logger.debug(s"Finding matching functions: $hat for $endpoints")
-    hatServerProvider.retrieve(hat) flatMap {
+    logger.debug(s"[$hat] Finding matching functions for $endpoints")
+    hatServerProvider.retrieve(hat)
+      .flatMap {
       case Some(hatServer) ⇒
         functionService.all(active = true)(hatServer.db)
           .map(
@@ -77,7 +78,7 @@ class FunctionExecutionTriggerHandler @Inject() (
                 .nonEmpty))
 
       case None ⇒
-        Future.failed(new HatServerDiscoveryException(s"HAT $hat discovery failed for function execution"))
+        Future.failed(new HatServerDiscoveryException(s"[$hat] HAT discovery failed during function execution"))
     }
   }
 
@@ -103,7 +104,7 @@ class FunctionExecutionTriggerHandler @Inject() (
         .map((d._1, d._2, _))
         .recover({
           case e ⇒
-            logger.error(s"Error when triggering SHE function ${d._2.id}@${d._1} (last execution ${d._2.lastExecution}): ${e.getMessage}", e)
+            logger.error(s"[${d._1}] Error when triggering SHE function ${d._2.id} (last execution ${d._2.lastExecution}): ${e.getMessage}", e)
             (d._1, d._2, Done)
         })
     })
@@ -142,7 +143,7 @@ class FunctionExecutionDispatcher @Inject() (
     doFindOrCreate(hat, conf, timeout) flatMap { actor =>
       actor.ask(FunctionExecutorActor.Execute(None)) map {
         case _: FunctionExecutorActor.ExecutionFinished =>
-          logger.debug(s"Finished executing function ${conf.id} by $hat")
+          logger.debug(s"[$hat] Finished executing function ${conf.id}")
           Done
         case FunctionExecutorActor.ExecutionFailed(e) =>
           throw e
@@ -154,20 +155,20 @@ class FunctionExecutionDispatcher @Inject() (
   def doFindOrCreate(hat: String, conf: FunctionConfiguration, timeout: FiniteDuration, depth: Int = 0)(implicit ec: ExecutionContext): Future[ActorRef] = {
     val actorName = s"function:$hat:${conf.id}"
     if (depth >= maxAttempts) {
-      logger.error(s"Function executor actor for $actorName not resolved")
-      throw new RuntimeException(s"Can not create actor for executor $actorName and reached max attempts of $maxAttempts")
+      logger.error(s"[$hat] Function executor actor for $actorName not resolved")
+      throw new RuntimeException(s"[$hat] Can not create actor for executor $actorName and reached max attempts of $maxAttempts")
     }
     val selection = s"/user/$actorName"
 
     actorSystem.actorSelection(selection).resolveOne(timeout) map { hatServerActor =>
-      logger.debug(s"HAT function executor actor $selection resolved")
+      logger.debug(s"[$hat] function executor actor $selection resolved")
       hatServerActor
     } recoverWith {
       case ActorNotFound(_) =>
-        logger.debug(s"HAT function executor actor ($selection) not found, injecting child")
+        logger.debug(s"[$hat] function executor actor ($selection) not found, injecting child")
         val functionExecutorActor = actorSystem.actorOf(Props(functionExecutorActorFactory(hat, conf))
           .withDispatcher("she-function-execution-actor-dispatcher"), actorName)
-        logger.debug(s"Injected actor $functionExecutorActor")
+        logger.debug(s"[$hat] injected actor $functionExecutorActor")
         doFindOrCreate(hat, conf, timeout, depth + 1)
     }
   }
