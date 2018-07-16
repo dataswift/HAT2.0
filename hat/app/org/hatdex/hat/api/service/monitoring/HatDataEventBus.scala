@@ -86,7 +86,7 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
   protected val logger: Logger = Logger(this.getClass)
 
   def dispatchEventDataCreated(message: String)(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[Seq[EndpointData]], Unit] = {
-    case Success(saved) =>
+    case Success(saved) if saved.nonEmpty =>
       logger.debug(s"Dispatch data created event: $message")
       dataEventBus.publish(HatDataEventBus.DataCreatedEvent(
         request.dynamicEnvironment.domain,
