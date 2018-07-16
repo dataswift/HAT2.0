@@ -251,7 +251,7 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val data = List(
         EndpointData("test/test", None, None, None, simpleJson, None),
         EndpointData("test2/test2", None, None, None, simpleJson2, None),
-        EndpointData("test/test3", None, None, None, complexJson, None))
+        EndpointData("test/test", None, None, None, complexJson, None))
 
       val request = FakeRequest("POST", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
@@ -292,7 +292,7 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
       val data = List(
         EndpointData("test/test", None, None, None, simpleJson, None),
         EndpointData("test2/test2", None, None, None, simpleJson2, None),
-        EndpointData("test/test3", None, None, None, complexJson, None))
+        EndpointData("test/test", None, None, None, simpleJson, None))
 
       val request = FakeRequest("POST", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
