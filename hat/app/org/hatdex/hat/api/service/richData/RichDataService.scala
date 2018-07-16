@@ -26,11 +26,11 @@ package org.hatdex.hat.api.service.richData
 
 import java.security.MessageDigest
 import java.util.UUID
-import javax.inject.Inject
 
 import akka.stream.SubstreamCancelStrategy
 import akka.stream.scaladsl.Source
 import akka.{ Done, NotUsed }
+import javax.inject.Inject
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
@@ -275,12 +275,15 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
         currentTransformation match {
           case t: Identity =>
             def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+
             query.filter(d => f(d.data #> filter.originalField) @> value)
           case t: DateTimeExtract =>
             def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+
             query.filter(d => f(d.data #> filter.originalField) @> value)
           case t: TimestampExtract =>
             def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+
             query.filter(d => f(d.data #> filter.originalField) @> value)
           case _ => query
         }
@@ -289,12 +292,15 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
         currentTransformation match {
           case t: Identity =>
             def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+
             query.filter(d => value <@: f(d.data #> filter.originalField))
           case t: DateTimeExtract =>
             def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+
             query.filter(d => value <@: f(d.data #> filter.originalField))
           case t: TimestampExtract =>
             def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+
             query.filter(d => value <@: f(d.data #> filter.originalField))
           case _ => query
         }
@@ -303,12 +309,15 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
         currentTransformation match {
           case t: Identity =>
             def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+
             query.filter(d => f(d.data #> filter.originalField) between (lower, upper))
           case t: DateTimeExtract =>
             def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+
             query.filter(d => f(d.data #> filter.originalField) between (lower, upper))
           case t: TimestampExtract =>
             def f: Rep[JsValue] => Rep[JsValue] = FieldTransformable.process(t)
+
             query.filter(d => f(d.data #> filter.originalField) between (lower, upper))
           case _ => query
         }
@@ -345,7 +354,12 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
 
     val endpointDataQuery = queriesWithMappers
       .reduce((aggregate, query) => aggregate.unionAll(query)) // merge all the queries together
-      .sortBy(d => if (orderingDescending) { d._2.desc.nullsLast } else { d._2.asc.nullsLast }) // order all the results by the chosen column
+      .sortBy(d => if (orderingDescending) {
+        d._2.desc.nullsLast
+      }
+      else {
+        d._2.asc.nullsLast
+      }) // order all the results by the chosen column
       .filter(d => createdAfter.fold(true.bind)(t => d._1.date > t.toLocalDateTime))
 
     val endpointDataQueryWithLimits = limit map { take =>
@@ -383,7 +397,12 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
     val resultQuery = endpointDataQueryWithLimits
       .joinLeft(groupRecords)
       .on((l, r) => l._1.recordId === r._3 && l._3 === r._1) // join on the main query record ID with the linked query record ID AND the query index
-      .sortBy(if (orderingDescending) { _._1._2.desc.nullsLast } else { _._1._2.asc.nullsLast }) // join does not maintain data ordering - sort data by the chosen sort field
+      .sortBy(if (orderingDescending) {
+        _._1._2.desc.nullsLast
+      }
+      else {
+        _._1._2.asc.nullsLast
+      }) // join does not maintain data ordering - sort data by the chosen sort field
       .map(v => ((v._1._1, v._1._3), v._2.map(lr => (lr._4, lr._2)))) // pull out only the required data
 
     resultQuery
@@ -473,6 +492,8 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
     EndpointData(
       record.source,
       Some(record.recordId),
+      record.sourceTimestamp,
+      record.sourceUniqueId,
       mappers.get(queryId)
         .map(record.data.transform) // apply JSON transformation if it is present
         .map(_.getOrElse(Json.obj())) // quietly empty object of transformation fails
@@ -502,5 +523,5 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
       propertyMap + response
     }
   }
-}
 
+}

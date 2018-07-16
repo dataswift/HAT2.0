@@ -219,7 +219,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "Save a single JSON datapoint and add ID" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val saved = service.saveData(owner.userId, List(EndpointData("test", None, simpleJson, None)))
+      val saved = service.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson, None)))
 
       saved map { record =>
         record.length must equalTo(1)
@@ -241,7 +241,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val service = application.injector.instanceOf[RichDataService]
 
       val saved = for {
-        _ <- service.saveData(owner.userId, List(EndpointData("test/test", None, simpleJson, None)))
+        _ <- service.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson, None)))
         saved <- service.saveData(owner.userId, sampleData)
       } yield saved
 
@@ -252,8 +252,8 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
-        EndpointData("test/test", None, simpleJson,
-          Some(List(EndpointData("test/test", None, simpleJson2, None)))))
+        EndpointData("test/test", None, None, None, simpleJson,
+          Some(List(EndpointData("test/test", None, None, None, simpleJson2, None)))))
       val saved = service.saveData(owner.userId, data)
 
       saved map { record =>
@@ -694,14 +694,14 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
-        EndpointData("test/test", None, simpleJson, None),
-        EndpointData("test/test", None, simpleJson2, None))
+        EndpointData("test/test", None, None, None, simpleJson, None),
+        EndpointData("test/test", None, None, None, simpleJson2, None))
 
       val result = for {
         saved <- service.saveData(owner.userId, data)
         _ <- service.updateRecords(owner.userId, Seq(
           saved(1).copy(data = simpleJson2Updated),
-          EndpointData("test/complex", None, complexJson, None))).recover { case _ => Future.successful(()) }
+          EndpointData("test/complex", None, None, None, complexJson, None))).recover { case _ => Future.successful(()) }
         retrieved <- service.propertyData(
           List(
             EndpointQuery("test/test", Some(simpleTransformation), None, None),
@@ -727,7 +727,6 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       result must throwA[Exception].await(3, 10.seconds)
     }
   }
-
 }
 
 trait RichDataServiceContext extends HATTestContext {
@@ -735,11 +734,16 @@ trait RichDataServiceContext extends HATTestContext {
     """
       | {
       |   "field": "value",
+      |   "testUniqueID": "1234567",
       |   "date": 1492699047,
+      |   "date_ms": 1492699047000,
       |   "date_iso": "2017-04-20T14:37:27+00:00",
       |   "anotherField": "anotherFieldValue",
       |   "object": {
       |     "objectField": "objectFieldValue",
+      |     "nestedInfo": {
+      |       "deeplyLocatedUniqueId": "7654321"
+      |     },
       |     "objectFieldArray": ["objectFieldArray1", "objectFieldArray2", "objectFieldArray3"],
       |     "objectFieldObjectArray": [
       |       {"subObjectName": "subObject1", "subObjectName2": "subObject1-2"},
@@ -764,7 +768,7 @@ trait RichDataServiceContext extends HATTestContext {
     """
       | {
       |   "field": "value2",
-      |   "date": 1492799047,
+      |   "date": 1492799048,
       |   "date_iso": "2017-04-21T18:24:07+00:00",
       |   "anotherField": "anotherFieldDifferentValue",
       |   "object": {
@@ -782,7 +786,7 @@ trait RichDataServiceContext extends HATTestContext {
     """
       | {
       |   "field": "value2",
-      |   "date": 1492799047,
+      |   "date": 1492799048,
       |   "date_iso": "2017-04-21T18:24:07+00:00",
       |   "anotherField": "aaa",
       |   "differentField": "new"
@@ -857,13 +861,13 @@ trait RichDataServiceContext extends HATTestContext {
     """.stripMargin).as[JsObject]
 
   val sampleData = List(
-    EndpointData("test/test", None, simpleJson, None),
-    EndpointData("test/test", None, simpleJson2, None),
-    EndpointData("test/complex", None, complexJson, None))
+    EndpointData("test/test", None, None, None, simpleJson, None),
+    EndpointData("test/test", None, None, None, simpleJson2, None),
+    EndpointData("test/complex", None, None, None, complexJson, None))
 
   val linkedSampleData = List(
-    EndpointData("test/test", None, simpleJson,
+    EndpointData("test/test", None, None, None, simpleJson,
       Some(List(
-        EndpointData("test/testlinked", None, simpleJson2, None),
-        EndpointData("test/complex", None, complexJson, None)))))
+        EndpointData("test/testlinked", None, None, None, simpleJson2, None),
+        EndpointData("test/complex", None, None, None, complexJson, None)))))
 }

@@ -474,19 +474,21 @@ trait Tables {
    *  @param date Database column date SqlType(timestamp)
    *  @param data Database column data SqlType(jsonb)
    *  @param hash Database column hash SqlType(bytea)
+   *  @param sourceTimestamp Database column source_timestamp SqlType(timestamptz), Default(None)
+   *  @param sourceUniqueId Database column source_unique_id SqlType(varchar), Default(None)
    */
-  case class DataJsonRow(recordId: java.util.UUID, source: String, owner: java.util.UUID, date: org.joda.time.LocalDateTime, data: play.api.libs.json.JsValue, hash: Array[Byte])
+  case class DataJsonRow(recordId: java.util.UUID, source: String, owner: java.util.UUID, date: org.joda.time.LocalDateTime, data: play.api.libs.json.JsValue, hash: Array[Byte], sourceTimestamp: Option[org.joda.time.DateTime] = None, sourceUniqueId: Option[String] = None)
   /** GetResult implicit for fetching DataJsonRow objects using plain SQL queries */
-  implicit def GetResultDataJsonRow(implicit e0: GR[java.util.UUID], e1: GR[String], e2: GR[org.joda.time.LocalDateTime], e3: GR[play.api.libs.json.JsValue], e4: GR[Array[Byte]]): GR[DataJsonRow] = GR {
+  implicit def GetResultDataJsonRow(implicit e0: GR[java.util.UUID], e1: GR[String], e2: GR[org.joda.time.LocalDateTime], e3: GR[play.api.libs.json.JsValue], e4: GR[Array[Byte]], e5: GR[Option[org.joda.time.DateTime]], e6: GR[Option[String]]): GR[DataJsonRow] = GR {
     prs =>
       import prs._
-      DataJsonRow.tupled((<<[java.util.UUID], <<[String], <<[java.util.UUID], <<[org.joda.time.LocalDateTime], <<[play.api.libs.json.JsValue], <<[Array[Byte]]))
+      DataJsonRow.tupled((<<[java.util.UUID], <<[String], <<[java.util.UUID], <<[org.joda.time.LocalDateTime], <<[play.api.libs.json.JsValue], <<[Array[Byte]], <<?[org.joda.time.DateTime], <<?[String]))
   }
   /** Table description of table data_json. Objects of this class serve as prototypes for rows in queries. */
   class DataJson(_tableTag: Tag) extends profile.api.Table[DataJsonRow](_tableTag, Some("hat"), "data_json") {
-    def * = (recordId, source, owner, date, data, hash) <> (DataJsonRow.tupled, DataJsonRow.unapply)
+    def * = (recordId, source, owner, date, data, hash, sourceTimestamp, sourceUniqueId) <> (DataJsonRow.tupled, DataJsonRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(recordId), Rep.Some(source), Rep.Some(owner), Rep.Some(date), Rep.Some(data), Rep.Some(hash)).shaped.<>({ r => import r._; _1.map(_ => DataJsonRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(recordId), Rep.Some(source), Rep.Some(owner), Rep.Some(date), Rep.Some(data), Rep.Some(hash), sourceTimestamp, sourceUniqueId).shaped.<>({ r => import r._; _1.map(_ => DataJsonRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7, _8))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column record_id SqlType(uuid), PrimaryKey */
     val recordId: Rep[java.util.UUID] = column[java.util.UUID]("record_id", O.PrimaryKey)
@@ -500,12 +502,18 @@ trait Tables {
     val data: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("data")
     /** Database column hash SqlType(bytea) */
     val hash: Rep[Array[Byte]] = column[Array[Byte]]("hash")
+    /** Database column source_timestamp SqlType(timestamptz), Default(None) */
+    val sourceTimestamp: Rep[Option[org.joda.time.DateTime]] = column[Option[org.joda.time.DateTime]]("source_timestamp", O.Default(None))
+    /** Database column source_unique_id SqlType(varchar), Default(None) */
+    val sourceUniqueId: Rep[Option[String]] = column[Option[String]]("source_unique_id", O.Default(None))
 
     /** Foreign key referencing UserUser (database name data_json_owner_fkey) */
     lazy val userUserFk = foreignKey("data_json_owner_fkey", owner, UserUser)(r => r.userId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
 
     /** Uniqueness Index over (hash) (database name data_json_hash_key) */
     val index1 = index("data_json_hash_key", hash, unique = true)
+    /** Uniqueness Index over (source,sourceUniqueId) (database name data_json_source_unique) */
+    val index2 = index("data_json_source_unique", (source, sourceUniqueId), unique = true)
   }
   /** Collection-like TableQuery object for table DataJson */
   lazy val DataJson = new TableQuery(tag => new DataJson(tag))

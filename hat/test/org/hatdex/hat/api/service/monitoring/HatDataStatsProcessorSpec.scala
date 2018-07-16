@@ -117,5 +117,5 @@ trait HatDataStatsProcessorContext extends Scope {
     ModelTranslation.fromInternalModel(owner).clean,
     DateTime.now(), "test item",
     Seq(
-      EndpointData("testendpoint", Option(UUID.randomUUID()), simpleJson, None)))
+      EndpointData("testendpoint", Option(UUID.randomUUID()), None, None, simpleJson, None)))
 }

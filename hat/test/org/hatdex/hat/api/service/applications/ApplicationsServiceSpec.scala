@@ -145,7 +145,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
         _ ← service.setup(app.get)
         _ ← dataService.saveData(
           owner.userId,
-          Seq(EndpointData(notablesApp.status.recentDataCheckEndpoint.get, None,
+          Seq(EndpointData(notablesApp.status.recentDataCheckEndpoint.get, None, None, None,
             JsObject(Map("test" -> JsString("test"))), None)), skipErrors = true)
         app <- service.applicationStatus(notablesApp.id, bustCache = true)
       } yield {
