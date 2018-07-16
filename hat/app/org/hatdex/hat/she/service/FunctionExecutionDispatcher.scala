@@ -98,7 +98,15 @@ class FunctionExecutionTriggerHandler @Inject() (
       d => findMatchingFunctions(d._1, d._2).map(c => c.map((d._1, _))))
     .mapConcat[(String, FunctionConfiguration)](_.asInstanceOf[scala.collection.immutable.Iterable[(String, FunctionConfiguration)]])
     .mergeSubstreams
-    .mapAsyncUnordered(functionExecutionParallelism)(d => dispatcher.trigger(d._1, d._2).map((d._1, d._2, _)))
+    .mapAsyncUnordered(functionExecutionParallelism)({ d =>
+      dispatcher.trigger(d._1, d._2)
+        .map((d._1, d._2, _))
+        .recover({
+          case e ⇒
+            logger.error(s"Error when triggering SHE function ${d._2.id}@${d._1} (last execution ${d._2.lastExecution}): ${e.getMessage}", e)
+            (d._1, d._2, Done)
+        })
+    })
 
   // A flow that chunks information about data coming through into separate substreams to pass through the bounded function trigger flow
   // mitigates th issue with groupBy needing to know maximum number of different keys (K) by ensuring that no more than K items
@@ -129,7 +137,7 @@ class FunctionExecutionDispatcher @Inject() (
   private val logger = Logger(this.getClass)
 
   def trigger(hat: String, conf: FunctionConfiguration)(implicit timeout: FiniteDuration, ec: ExecutionContext): Future[Done] = {
-    logger.debug(s"Triggered function ${conf.id} by $hat")
+    logger.info(s"Triggered function ${conf.id} by $hat")
     implicit val resultTimeout: Timeout = timeout
     doFindOrCreate(hat, conf, timeout) flatMap { actor =>
       actor.ask(FunctionExecutorActor.Execute(None)) map {
