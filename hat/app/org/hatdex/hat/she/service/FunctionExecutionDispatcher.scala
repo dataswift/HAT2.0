@@ -24,20 +24,17 @@
 
 package org.hatdex.hat.she.service
 
-import javax.inject.{ Inject, Singleton }
-import akka.actor.{ Actor, ActorNotFound, ActorRef, ActorSystem, Props }
-import akka.pattern.ask
+import akka.actor.{ Actor, ActorRef, ActorSystem, Props }
 import akka.stream.scaladsl.{ Flow, Sink, Source }
 import akka.stream.{ ActorMaterializer, OverflowStrategy }
-import akka.util.Timeout
 import akka.{ Done, NotUsed }
+import javax.inject.Inject
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.DataCreatedEvent
 import org.hatdex.hat.resourceManagement.{ HatServerDiscoveryException, HatServerProvider }
-import org.hatdex.hat.she.models.{ FunctionConfiguration, FunctionTrigger }
+import org.hatdex.hat.she.models._
 import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.concurrent.InjectedActorSupport
 
 import scala.concurrent.duration.{ FiniteDuration, _ }
 import scala.concurrent.{ ExecutionContext, Future }
@@ -54,7 +51,6 @@ class FunctionExecutionTriggerHandler @Inject() (
     dataEventBus: HatDataEventBus,
     hatServerProvider: HatServerProvider,
     functionService: FunctionService,
-    dispatcher: FunctionExecutionDispatcher,
     actorSystem: ActorSystem)(implicit ec: ExecutionContext) {
 
   private val logger: Logger = Logger(this.getClass)
@@ -68,10 +64,12 @@ class FunctionExecutionTriggerHandler @Inject() (
           functionService.all(active = true)(hatServer.db)
             .map(
               _.filter({
-                case FunctionConfiguration(_, _, _, _, _, FunctionTrigger.TriggerPeriodic(period), true, true, _, Some(lastExecution), _, _) if lastExecution.isBefore(DateTime.now().minus(period)) ⇒ true
-                case FunctionConfiguration(_, _, _, _, _, FunctionTrigger.TriggerPeriodic(_), true, true, _, None, _, _) ⇒ true // no execution recoded yet
-                case FunctionConfiguration(_, _, _, _, _, FunctionTrigger.TriggerIndividual(), true, true, _, _, _, _) ⇒ true
-                case _ ⇒ false
+                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerPeriodic(period), _, FunctionStatus(true, true, Some(lastExecution), None)) if lastExecution.isBefore(DateTime.now().minus(period)) ⇒ true
+                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerPeriodic(period), _, FunctionStatus(true, true, Some(lastExecution), Some(started))) if lastExecution.isBefore(DateTime.now().minus(period)) && started.isBefore(DateTime.now().minus(functionExecutionTimeout.toMillis)) ⇒ true
+                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerPeriodic(_), _, FunctionStatus(true, true, None, None)) ⇒ true // no execution recoded yet
+                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerPeriodic(_), _, FunctionStatus(true, true, None, Some(started))) if started.isBefore(DateTime.now().minus(functionExecutionTimeout.toMillis)) ⇒ true // no successful execution, current one timed out
+                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerIndividual(), _, FunctionStatus(true, true, _, _)) ⇒ true
+                case _ ⇒ false // in all other cases, do not trigger
               })
                 .filter(_.dataBundle.flatEndpointQueries.map(_.endpoint).toSet
                   .intersect(endpoints)
@@ -100,11 +98,11 @@ class FunctionExecutionTriggerHandler @Inject() (
     .mapConcat[(String, FunctionConfiguration)](_.asInstanceOf[scala.collection.immutable.Iterable[(String, FunctionConfiguration)]])
     .mergeSubstreams
     .mapAsyncUnordered(functionExecutionParallelism)({ d =>
-      dispatcher.trigger(d._1, d._2)
+      trigger(d._1, d._2)
         .map((d._1, d._2, _))
         .recover({
           case e ⇒
-            logger.error(s"[${d._1}] Error when triggering SHE function ${d._2.id} (last execution ${d._2.lastExecution}): ${e.getMessage}", e)
+            logger.error(s"[${d._1}] Error when triggering SHE function ${d._2.id} (last execution ${d._2.status.lastExecution}): ${e.getMessage}", e)
             (d._1, d._2, Done)
         })
     })
@@ -129,47 +127,19 @@ class FunctionExecutionTriggerHandler @Inject() (
 
   logger.info("Function Executor Trigger Handler starting")
   dataEventBus.subscribe(triggerStream, classOf[HatDataEventBus.DataCreatedEvent])
-}
 
-@Singleton
-class FunctionExecutionDispatcher @Inject() (
-    functionExecutorActorFactory: FunctionExecutorActor.Factory,
-    actorSystem: ActorSystem) extends InjectedActorSupport {
-  private val logger = Logger(this.getClass)
-
-  def trigger(hat: String, conf: FunctionConfiguration)(implicit timeout: FiniteDuration, ec: ExecutionContext): Future[Done] = {
-    logger.info(s"Triggered function ${conf.id} by $hat")
-    implicit val resultTimeout: Timeout = timeout
-    doFindOrCreate(hat, conf, timeout) flatMap { actor =>
-      actor.ask(FunctionExecutorActor.Execute(None)) map {
-        case _: FunctionExecutorActor.ExecutionFinished =>
-          logger.debug(s"[$hat] Finished executing function ${conf.id}")
-          Done
-        case FunctionExecutorActor.ExecutionFailed(e) =>
-          throw e
+  def trigger(hat: String, conf: FunctionConfiguration)(implicit ec: ExecutionContext): Future[Done] = {
+    logger.info(s"[$hat] Triggered function ${conf.id}")
+    hatServerProvider.retrieve(hat)
+      .flatMap {
+        _.map { hatServer =>
+          functionService.run(conf, conf.status.lastExecution)(hatServer)
+            .recover {
+              case e => throw SHEFunctionExecutionFailureException(s"$hat function ${conf.id} failed", e)
+            }
+        } getOrElse {
+          Future.failed(new HatServerDiscoveryException(s"$hat function ${conf.id} HAT $hat discovery failed for function execution"))
+        }
       }
-    }
-  }
-
-  private val maxAttempts = 3
-  def doFindOrCreate(hat: String, conf: FunctionConfiguration, timeout: FiniteDuration, depth: Int = 0)(implicit ec: ExecutionContext): Future[ActorRef] = {
-    val actorName = s"function:$hat:${conf.id}"
-    if (depth >= maxAttempts) {
-      logger.error(s"[$hat] Function executor actor for $actorName not resolved")
-      throw new RuntimeException(s"[$hat] Can not create actor for executor $actorName and reached max attempts of $maxAttempts")
-    }
-    val selection = s"/user/$actorName"
-
-    actorSystem.actorSelection(selection).resolveOne(timeout) map { hatServerActor =>
-      logger.debug(s"[$hat] function executor actor $selection resolved")
-      hatServerActor
-    } recoverWith {
-      case ActorNotFound(_) =>
-        logger.debug(s"[$hat] function executor actor ($selection) not found, injecting child")
-        val functionExecutorActor = actorSystem.actorOf(Props(functionExecutorActorFactory(hat, conf))
-          .withDispatcher("she-function-execution-actor-dispatcher"), actorName)
-        logger.debug(s"[$hat] injected actor $functionExecutorActor")
-        doFindOrCreate(hat, conf, timeout, depth + 1)
-    }
   }
 }

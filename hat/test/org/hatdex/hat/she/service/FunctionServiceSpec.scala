@@ -86,7 +86,7 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         mSaved must beSome
         val c = mSaved.get
         c.id must be equalTo unavailableFunctionConfiguration.id
-        c.available must beFalse
+        c.status.available must beFalse
       }.await(3, 10.seconds)
     }
 
@@ -102,7 +102,7 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         mAvailable must beSome
         val c2 = mAvailable.get
         c2.id must be equalTo registeredFunction.configuration.id
-        c2.available must beTrue
+        c2.status.available must beTrue
       }.await(3, 10.seconds)
     }
   }
@@ -120,7 +120,7 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         functions.length must be greaterThan 0
         val dummy = functions.find(_.id == unavailableFunctionConfiguration.id)
         dummy must beSome
-        dummy.get.available must beFalse
+        dummy.get.status.available must beFalse
       }.await(3, 10.seconds)
     }
 
@@ -137,11 +137,11 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         functions.length must be greaterThanOrEqualTo 2
         val dummy = functions.find(_.id == unavailableFunctionConfiguration.id)
         dummy must beSome
-        dummy.get.available must beFalse
+        dummy.get.status.available must beFalse
 
         val available = functions.find(_.id == registeredFunction.configuration.id)
         available must beSome
-        available.get.available must beTrue
+        available.get.status.available must beTrue
       }.await(3, 10.seconds)
     }
   }
@@ -158,11 +158,11 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       all.map { functions =>
         val dummy = functions.find(_.id == dummyFunctionConfiguration.id)
         dummy must beSome
-        dummy.get.available must beFalse
+        dummy.get.status.available must beFalse
 
         val available = functions.find(_.id == registeredFunction.configuration.id)
         available must beSome
-        available.get.available must beTrue
+        available.get.status.available must beTrue
       }.await(3, 10.seconds)
     }
   }
@@ -174,7 +174,7 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       service.save(dummyFunctionConfiguration)
         .map { c =>
           c.id must be equalTo dummyFunctionConfiguration.id
-          c.available must beFalse
+          c.status.available must beFalse
         }.await(3, 10.seconds)
     }
 
@@ -188,8 +188,8 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       saved.map { c =>
         c.id must be equalTo dummyFunctionConfiguration.id
-        c.enabled must beTrue
-        c.description must be equalTo dummyFunctionConfiguration.description
+        c.status.enabled must beTrue
+        c.info.headline must be equalTo dummyFunctionConfiguration.info.headline
       }.await(3, 10.seconds)
     }
   }
@@ -214,7 +214,7 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         data.length must be greaterThanOrEqualTo records.length
         data.forall(_.endpoint == "she/feed") must be equalTo true
         functionUpdated must beSome
-        functionUpdated.get.lastExecution must beSome
+        functionUpdated.get.status.lastExecution must beSome
       }
 
       executed await (1, 60.seconds)
