@@ -26,7 +26,7 @@ package org.hatdex.hat.she.functions
 
 import org.hatdex.hat.api.json.DataFeedItemJsonProtocol
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.models.applications.{ DataFeedItem, DataFeedItemContent, DataFeedItemTitle, DataFeedNestedStructureItem }
+import org.hatdex.hat.api.models.applications._
 import org.hatdex.hat.she.models._
 import org.hatdex.hat.she.service._
 import org.joda.time.{ DateTime, Period }
@@ -61,26 +61,34 @@ class DataFeedCounter extends FunctionExecutable with DataFeedItemJsonProtocol w
 
   val configuration: FunctionConfiguration = FunctionConfiguration(
     "data-feed-counter",
-    "Weekly summary",
-    """Weekly Summary shows your weekly online activities.
-      |It allows you to to have an overview of your data accumulated in a week. The first weekly summary establish the start date of the tool and is a summary of your history of activities""".stripMargin,
-    "A summary of your week’s digital activities",
-    Some(FunctionGraphics(Drawable(None, "https://github.com/Hub-of-all-Things/exchange-assets/blob/master/insights-activity-summary/logo.png?raw=true", None, None), Seq(Drawable(None, "https://github.com/Hub-of-all-Things/exchange-assets/blob/master/insights-activity-summary/screenshot1.jpg?raw=true", None, None), Drawable(None, "https://github.com/Hub-of-all-Things/exchange-assets/blob/master/insights-activity-summary/screenshot2.jpg?raw=true", None, None)))),
+    FunctionInfo(
+      Version("1.0.0"),
+      None,
+      "Weekly Summary",
+      "A summary of your week’s digital activities",
+      FormattedText(
+        text = """Weekly Summary shows your weekly online activities.
+                             |It allows you to to have an overview of your data accumulated in a week. The first weekly summary establish the start date of the tool and is a summary of your history of activities""".stripMargin,
+        None, None),
+      "terms",
+      Some(Seq(
+        DataFeedItem("she", DateTime.now(), Seq("note"),
+          Some(DataFeedItemTitle("HAT Private Micro-server created", Some("21 June 23:00 - 29 June 06:42 GMT"), Some("insight"))),
+          Some(DataFeedItemContent(Some("Twitter:\n  Tweets sent: 1\n\nFacebook:\n  Posts composed: 13\n"), None, None, Some(Map("twitter" -> Seq(DataFeedNestedStructureItem("Tweets sent", Some("1"), None), DataFeedNestedStructureItem("Posts composed", Some("13"), None)))))),
+          None),
+        DataFeedItem("she", DateTime.now(), Seq("note"),
+          Some(DataFeedItemTitle("HAT Private Micro-server created", Some("21 June 23:00 - 29 June 06:42 GMT"), Some("insight"))),
+          Some(DataFeedItemContent(Some("Twitter:\n  Tweets sent: 1\n\nFacebook:\n  Posts composed: 13\n"), None, None, Some(Map("twitter" -> Seq(DataFeedNestedStructureItem("Tweets sent", Some("4"), None), DataFeedNestedStructureItem("Posts composed", Some("2"), None), DataFeedNestedStructureItem("Notes taken", Some("4"), None)))))),
+          None))),
+      ApplicationGraphics(
+        Drawable(None, "", None, None),
+        Drawable(None, "https://github.com/Hub-of-all-Things/exchange-assets/blob/master/insights-activity-summary/logo.png?raw=true", None, None),
+        Seq(Drawable(None, "https://github.com/Hub-of-all-Things/exchange-assets/blob/master/insights-activity-summary/screenshot1.jpg?raw=true", None, None), Drawable(None, "https://github.com/Hub-of-all-Things/exchange-assets/blob/master/insights-activity-summary/screenshot2.jpg?raw=true", None, None))),
+      Some(s"$namespace/$endpoint")),
+    ApplicationDeveloper("hatdex", "HATDeX", "https://hatdex.org", Some("United Kingdom"), None),
     FunctionTrigger.TriggerPeriodic(Period.parse("P1W")),
-    available = true,
-    enabled = false,
     dataBundle = bundleFilterByDate(None, None),
-    None,
-    Some(Seq(
-      DataFeedItem("she", DateTime.now(), Seq("note"),
-        Some(DataFeedItemTitle("HAT Private Micro-server created", Some("21 June 23:00 - 29 June 06:42 GMT"), Some("insight"))),
-        Some(DataFeedItemContent(Some("Twitter:\n  Tweets sent: 1\n\nFacebook:\n  Posts composed: 13\n"), None, None, Some(Map("twitter" -> Seq(DataFeedNestedStructureItem("Tweets sent", Some("1"), None), DataFeedNestedStructureItem("Posts composed", Some("13"), None)))))),
-        None),
-      DataFeedItem("she", DateTime.now(), Seq("note"),
-        Some(DataFeedItemTitle("HAT Private Micro-server created", Some("21 June 23:00 - 29 June 06:42 GMT"), Some("insight"))),
-        Some(DataFeedItemContent(Some("Twitter:\n  Tweets sent: 1\n\nFacebook:\n  Posts composed: 13\n"), None, None, Some(Map("twitter" -> Seq(DataFeedNestedStructureItem("Tweets sent", Some("4"), None), DataFeedNestedStructureItem("Posts composed", Some("2"), None), DataFeedNestedStructureItem("Notes taken", Some("4"), None)))))),
-        None))),
-    Some(s"$namespace/$endpoint"))
+    status = FunctionStatus(available = true, enabled = false, lastExecution = None, executionStarted = None))
 
   def execute(configuration: FunctionConfiguration, request: Request)(implicit ec: ExecutionContext): Future[Seq[Response]] = {
     val counters = request.data
@@ -88,11 +96,11 @@ class DataFeedCounter extends FunctionExecutable with DataFeedItemJsonProtocol w
         case (mappingEndpoint, records) ⇒ (mappingEndpoint, records.length)
       }
 
-    logger.info(s"Recorded records since ${configuration.lastExecution}: ${counters}")
+    logger.info(s"Recorded records since ${configuration.status.lastExecution}: ${counters}")
 
     val data = Json.obj(
       "timestamp" → Json.toJson(DateTime.now()),
-      "since" → Json.toJson(configuration.lastExecution),
+      "since" → Json.toJson(configuration.status.lastExecution),
       "counters" → Json.toJson(counters))
 
     val response = Response(namespace, endpoint, Seq(data), Seq())

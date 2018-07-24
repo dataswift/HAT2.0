@@ -27,7 +27,8 @@ package org.hatdex.hat.she.service
 import com.google.inject.{ AbstractModule, Provides }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models.EndpointDataBundle
+import org.hatdex.hat.api.models.applications._
+import org.hatdex.hat.api.models.{ Drawable, EndpointDataBundle, FormattedText }
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
 import org.hatdex.hat.she.functions.{ DataFeedCounter, DataFeedDirectMapper }
 import org.hatdex.hat.she.models._
@@ -58,31 +59,60 @@ trait FunctionServiceContext extends HATTestContext {
     .overrides(new CustomisedFakeModule)
     .build()
 
-  val dummyFunctionConfiguration = FunctionConfiguration("test-dummy-function", "test-dummy-function", "Dummy Function", "Dummy Function", None,
-    FunctionTrigger.TriggerIndividual(), available = false, enabled = false,
+  val dummyFunctionConfiguration = FunctionConfiguration(
+    "test-dummy-function",
+    FunctionInfo(
+      Version("1.0.0"),
+      None,
+      "test-dummy-function",
+      "Dummy Function",
+      FormattedText(text = "Dummy Function", None, None),
+      "terms",
+      None,
+      ApplicationGraphics(
+        Drawable(None, "", None, None),
+        Drawable(None, "", None, None),
+        Seq(Drawable(None, "", None, None))),
+      None),
+    ApplicationDeveloper("hatdex", "HATDeX", "https://hatdex.org", Some("United Kingdom"), None),
+    FunctionTrigger.TriggerIndividual(),
     dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper", Map()),
-    None, None, None)
+    status = FunctionStatus(available = false, enabled = false, lastExecution = None, executionStarted = None))
 
-  val dummyFunctionConfigurationAvailable = FunctionConfiguration("test-dummy-function-available", "test-dummy-function-available", "Dummy Function", "Dummy Function", None,
-    FunctionTrigger.TriggerIndividual(), available = true, enabled = false,
+  val dummyFunctionConfigurationAvailable = dummyFunctionConfiguration.copy(
+    id = "test-dummy-function-available",
+    info = dummyFunctionConfiguration.info.copy(name = "test-dummy-function-available"),
     dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper-vailable", Map()),
-    None, None, None)
+    status = dummyFunctionConfiguration.status.copy(available = true))
 
-  val dummyFunctionConfigurationUpdated = FunctionConfiguration("test-dummy-function", "test-dummy-function", "Updated Function", "Dummy Function", None,
-    FunctionTrigger.TriggerIndividual(), available = false, enabled = true,
+  val dummyFunctionConfigurationUpdated = dummyFunctionConfiguration.copy(
+    id = "test-dummy-function",
+    info = dummyFunctionConfiguration.info.copy(name = "test-dummy-function", headline = "Updated Function"),
     dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper", Map()),
-    None, None, None)
+    status = dummyFunctionConfiguration.status.copy(available = false, enabled = true))
 
-  val unavailableFunctionConfiguration = FunctionConfiguration("test-test-unavailable-function", "test-test-unavailable-function", "Unavailable Function", "Dummy Function", None,
-    FunctionTrigger.TriggerIndividual(), available = false, enabled = false,
+  //  FunctionConfiguration("test-dummy-function", "test-dummy-function", "Updated Function", "Dummy Function", None,
+  //    FunctionTrigger.TriggerIndividual(), available = false, enabled = true,
+  //    dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper", Map()),
+  //    None, None, None)
+
+  val unavailableFunctionConfiguration = dummyFunctionConfiguration.copy(
+    id = "test-test-unavailable-function",
+    info = dummyFunctionConfiguration.info.copy(name = "test-test-unavailable-function", headline = "Unavailable Function"),
     dataBundle = EndpointDataBundle("test-unavailable-function-bundler", Map()),
-    None, None, None)
+    status = dummyFunctionConfiguration.status.copy(available = false, enabled = false))
+
+  //  val unavailableFunctionConfiguration = FunctionConfiguration("test-test-unavailable-function", "test-test-unavailable-function", "Unavailable Function", "Dummy Function", None,
+  //    FunctionTrigger.TriggerIndividual(), available = false, enabled = false,
+  //    dataBundle = EndpointDataBundle("test-unavailable-function-bundler", Map()),
+  //    None, None, None)
 
   val registeredFunction = new DataFeedDirectMapper() {
-    override val configuration = FunctionConfiguration("data-feed-direct-mapper", "data-feed-direct-mapper", "", "Dummy Function", None,
-      FunctionTrigger.TriggerIndividual(), available = true, enabled = false,
+    override val configuration = dummyFunctionConfiguration.copy(
+      id = "data-feed-direct-mapper",
+      info = dummyFunctionConfiguration.info.copy(name = "data-feed-direct-mapper", headline = "Dummy Function"),
       dataBundle = bundleFilterByDate(None, None),
-      None, None, None)
+      status = dummyFunctionConfiguration.status.copy(available = true, enabled = false))
   }
   val dataFeedCounterFunction = new DataFeedCounter()
   val registeredDummyFunction: FunctionExecutable = new DummyFunctionExecutable(dummyFunctionConfiguration)

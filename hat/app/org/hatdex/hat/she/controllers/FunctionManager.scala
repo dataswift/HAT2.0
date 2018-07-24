@@ -24,27 +24,26 @@
 
 package org.hatdex.hat.she.controllers
 
-import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
+import javax.inject.Inject
 import org.hatdex.hat.api.json.RichDataJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.she.models.{ FunctionConfiguration, FunctionConfigurationJsonProtocol }
-import org.hatdex.hat.she.service.{ FunctionExecutionDispatcher, FunctionService }
+import org.hatdex.hat.she.models.{ FunctionConfiguration, FunctionConfigurationJsonProtocol, FunctionStatus }
+import org.hatdex.hat.she.service.{ FunctionExecutionTriggerHandler, FunctionService }
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
 
-import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 
 class FunctionManager @Inject() (
     components: ControllerComponents,
     silhouette: Silhouette[HatApiAuthEnvironment],
     functionService: FunctionService,
-    functionExecutionDispatcher: FunctionExecutionDispatcher)(
+    functionExecutionDispatcher: FunctionExecutionTriggerHandler)(
     implicit
     val ec: ExecutionContext,
     applicationsService: ApplicationsService)
@@ -83,7 +82,7 @@ class FunctionManager @Inject() (
     logger.debug(s"Enable function $function = $enabled")
     functionService.get(function).flatMap { maybeFunction ⇒
       maybeFunction.map { function ⇒
-        functionService.save(function.copy(enabled = enabled))
+        functionService.save(function.copy(status = function.status.copy(enabled = enabled)))
           .map(f ⇒ Ok(Json.toJson(f)))
       } getOrElse {
         Future.successful(NotFound(Json.toJson(ErrorMessage("Function Not Found", s"Function $function not found"))))
@@ -95,17 +94,17 @@ class FunctionManager @Inject() (
     logger.debug(s"Trigger function $function")
     functionService.get(function).flatMap { maybeFunction ⇒
       maybeFunction.map {
-        case c: FunctionConfiguration if c.available && c.enabled ⇒
-          functionExecutionDispatcher.trigger(request.dynamicEnvironment.domain, c)(60.seconds, ec)
+        case c: FunctionConfiguration if c.status.available && c.status.enabled ⇒
+          functionExecutionDispatcher.trigger(request.dynamicEnvironment.domain, c)(ec)
             .map(_ ⇒ Ok(Json.toJson(SuccessResponse("Function Executed"))))
             .recover {
               case e ⇒
                 logger.error(s"Function $function execution errored with ${e.getMessage}", e)
                 InternalServerError(Json.toJson(ErrorMessage("Function Execution Failed", s"Function $function execution errored with ${e.getMessage}")))
             }
-        case FunctionConfiguration(_, _, _, _, _, _, false, _, _, _, _, _) ⇒
+        case FunctionConfiguration(_, _, _, _, _, FunctionStatus(false, _, _, _)) ⇒
           Future.successful(BadRequest(Json.toJson(ErrorMessage("Function Not Available", s"Function $function not available for execution"))))
-        case FunctionConfiguration(_, _, _, _, _, _, true, false, _, _, _, _) ⇒
+        case FunctionConfiguration(_, _, _, _, _, FunctionStatus(true, false, _, _)) ⇒
           Future.successful(BadRequest(Json.toJson(ErrorMessage("Function Not Enabled", s"Function $function not enabled for execution"))))
       } getOrElse {
         Future.successful(NotFound(Json.toJson(ErrorMessage("Function Not Found", s"Function $function not found"))))

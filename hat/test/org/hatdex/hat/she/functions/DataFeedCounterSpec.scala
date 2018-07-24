@@ -104,7 +104,7 @@ class DataFeedCounterSpec(implicit ee: ExecutionEnv) extends DataFeedCounter wit
         "fitbit/activity/day/summary" -> Seq(fitbitDaySummary),
         "calendar" -> Seq(googleCalendarEvent, googleCalendarFullDayEvent)), linkRecords = true)
 
-      val response = execute(configuration.copy(lastExecution = Some(DateTime.now().minusDays(7))), request)
+      val response = execute(configuration.copy(status = configuration.status.copy(lastExecution = Some(DateTime.now().minusDays(7)))), request)
 
       response map { responseRecords =>
         responseRecords.headOption must beSome
