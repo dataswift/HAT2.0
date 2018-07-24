@@ -79,6 +79,11 @@ class ApplicationsService @Inject() (
       _ ← if (bustCache) { cache.remove(appCacheKey(id)) } else { Future.successful(Done) }
       _ ← if (bustCache) { cache.remove(s"apps:${hat.domain}") } else { Future.successful(Done) }
       application ← cache.get[HatApplication](appCacheKey(id))
+        .recover({
+          case e ⇒
+            logger.warn(s"Error while loading application info from cache: ${e.getMessage}")
+            None
+        })
         .flatMap {
           case Some(application) ⇒ Future.successful(Some(application))
           case None ⇒
@@ -94,16 +99,25 @@ class ApplicationsService @Inject() (
   }
 
   def applicationStatus()(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Seq[HatApplication]] = {
-    cache.getOrElseUpdate(s"apps:${hat.domain}", applicationsCacheDuration) {
-      for {
-        apps <- trustedApplicationProvider.applications // potentially caching
-        setup <- applicationSetupStatus()(hat.db) // database
-        statuses <- Future.sequence(apps
-          .map(a => (a, setup.find(_.id == a.id)))
-          .map(as => collectStatus(as._1, as._2)))
-        _ ← Future.sequence(statuses.map(app ⇒ cache.set(appCacheKey(app.application.id), app, applicationsCacheDuration))) // reinject all fetched items as individual cached items
-      } yield statuses
-    }
+    cache.get[Seq[HatApplication]](s"apps:${hat.domain}")
+      .recover({
+        case e ⇒
+          logger.warn(s"Error while loading application list info from cache: ${e.getMessage}")
+          None
+      })
+      .flatMap({
+        case Some(applications) ⇒ Future.successful(applications)
+        case None ⇒
+          for {
+            apps <- trustedApplicationProvider.applications // potentially caching
+            setup <- applicationSetupStatus()(hat.db) // database
+            statuses <- Future.sequence(apps
+              .map(a => (a, setup.find(_.id == a.id)))
+              .map(as => collectStatus(as._1, as._2)))
+            _ ← Future.sequence(statuses.map(app ⇒ cache.set(appCacheKey(app.application.id), app, applicationsCacheDuration))) // reinject all fetched items as individual cached items
+            _ ← cache.set(s"apps:${hat.domain}", statuses, applicationsCacheDuration)
+          } yield statuses
+      })
   }
 
   def setup(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
