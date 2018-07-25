@@ -82,7 +82,7 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
     ApplicationDeveloper("hatdex", "HATDeX", "https://hatdex.org", Some("United Kingdom"), None),
     FunctionTrigger.TriggerIndividual(),
     dataBundle = bundleFilterByDate(None, None),
-    status = FunctionStatus(available = true, enabled = false, lastExecution = None, executionStarted = None))
+    status = FunctionStatus(available = false, enabled = false, lastExecution = None, executionStarted = None))
 
   def execute(configuration: FunctionConfiguration, request: Request)(implicit ec: ExecutionContext): Future[Seq[Response]] = {
     val response = request.data
