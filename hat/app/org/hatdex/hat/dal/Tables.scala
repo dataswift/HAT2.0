@@ -955,22 +955,24 @@ trait Tables {
    *  @param version Database column version SqlType(varchar), Default(1.0.0)
    *  @param termsUrl Database column terms_url SqlType(varchar), Default(https://hatdex.org/terms-of-service-hat-owner-agreement)
    *  @param developerId Database column developer_id SqlType(varchar), Default(hatdex)
-   *  @param developerName Database column developer_name SqlType(varchar), Default(HATDeX)
+   *  @param developerName Database column developer_name SqlType(varchar), Default(HAT Data Exchange Ltd)
    *  @param developerUrl Database column developer_url SqlType(varchar), Default(https://hatdex.org)
    *  @param developerCountry Database column developer_country SqlType(varchar), Default(None)
+   *  @param versionReleaseDate Database column version_release_date SqlType(timestamptz)
+   *  @param developerSupportEmail Database column developer_support_email SqlType(varchar), Default(contact@hatdex.org)
    */
-  case class SheFunctionRow(id: String, description: play.api.libs.json.JsValue, trigger: play.api.libs.json.JsValue, bundleId: String, headline: String = "", dataPreview: Option[play.api.libs.json.JsValue] = None, dataPreviewEndpoint: Option[String] = None, graphics: play.api.libs.json.JsValue, name: String = "", version: String = "1.0.0", termsUrl: String = "https://hatdex.org/terms-of-service-hat-owner-agreement", developerId: String = "hatdex", developerName: String = "HATDeX", developerUrl: String = "https://hatdex.org", developerCountry: Option[String] = None)
+  case class SheFunctionRow(id: String, description: play.api.libs.json.JsValue, trigger: play.api.libs.json.JsValue, bundleId: String, headline: String = "", dataPreview: Option[play.api.libs.json.JsValue] = None, dataPreviewEndpoint: Option[String] = None, graphics: play.api.libs.json.JsValue, name: String = "", version: String = "1.0.0", termsUrl: String = "https://hatdex.org/terms-of-service-hat-owner-agreement", developerId: String = "hatdex", developerName: String = "HAT Data Exchange Ltd", developerUrl: String = "https://hatdex.org", developerCountry: Option[String] = None, versionReleaseDate: org.joda.time.DateTime, developerSupportEmail: String = "contact@hatdex.org")
   /** GetResult implicit for fetching SheFunctionRow objects using plain SQL queries */
-  implicit def GetResultSheFunctionRow(implicit e0: GR[String], e1: GR[play.api.libs.json.JsValue], e2: GR[Option[play.api.libs.json.JsValue]], e3: GR[Option[String]]): GR[SheFunctionRow] = GR {
+  implicit def GetResultSheFunctionRow(implicit e0: GR[String], e1: GR[play.api.libs.json.JsValue], e2: GR[Option[play.api.libs.json.JsValue]], e3: GR[Option[String]], e4: GR[org.joda.time.DateTime]): GR[SheFunctionRow] = GR {
     prs =>
       import prs._
-      SheFunctionRow.tupled((<<[String], <<[play.api.libs.json.JsValue], <<[play.api.libs.json.JsValue], <<[String], <<[String], <<?[play.api.libs.json.JsValue], <<?[String], <<[play.api.libs.json.JsValue], <<[String], <<[String], <<[String], <<[String], <<[String], <<[String], <<?[String]))
+      SheFunctionRow.tupled((<<[String], <<[play.api.libs.json.JsValue], <<[play.api.libs.json.JsValue], <<[String], <<[String], <<?[play.api.libs.json.JsValue], <<?[String], <<[play.api.libs.json.JsValue], <<[String], <<[String], <<[String], <<[String], <<[String], <<[String], <<?[String], <<[org.joda.time.DateTime], <<[String]))
   }
   /** Table description of table she_function. Objects of this class serve as prototypes for rows in queries. */
   class SheFunction(_tableTag: Tag) extends profile.api.Table[SheFunctionRow](_tableTag, Some("hat"), "she_function") {
-    def * = (id, description, trigger, bundleId, headline, dataPreview, dataPreviewEndpoint, graphics, name, version, termsUrl, developerId, developerName, developerUrl, developerCountry) <> (SheFunctionRow.tupled, SheFunctionRow.unapply)
+    def * = (id, description, trigger, bundleId, headline, dataPreview, dataPreviewEndpoint, graphics, name, version, termsUrl, developerId, developerName, developerUrl, developerCountry, versionReleaseDate, developerSupportEmail) <> (SheFunctionRow.tupled, SheFunctionRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(id), Rep.Some(description), Rep.Some(trigger), Rep.Some(bundleId), Rep.Some(headline), dataPreview, dataPreviewEndpoint, Rep.Some(graphics), Rep.Some(name), Rep.Some(version), Rep.Some(termsUrl), Rep.Some(developerId), Rep.Some(developerName), Rep.Some(developerUrl), developerCountry).shaped.<>({ r => import r._; _1.map(_ => SheFunctionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7, _8.get, _9.get, _10.get, _11.get, _12.get, _13.get, _14.get, _15))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(description), Rep.Some(trigger), Rep.Some(bundleId), Rep.Some(headline), dataPreview, dataPreviewEndpoint, Rep.Some(graphics), Rep.Some(name), Rep.Some(version), Rep.Some(termsUrl), Rep.Some(developerId), Rep.Some(developerName), Rep.Some(developerUrl), developerCountry, Rep.Some(versionReleaseDate), Rep.Some(developerSupportEmail)).shaped.<>({ r => import r._; _1.map(_ => SheFunctionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7, _8.get, _9.get, _10.get, _11.get, _12.get, _13.get, _14.get, _15, _16.get, _17.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column id SqlType(varchar), PrimaryKey */
     val id: Rep[String] = column[String]("id", O.PrimaryKey)
@@ -996,12 +998,16 @@ trait Tables {
     val termsUrl: Rep[String] = column[String]("terms_url", O.Default("https://hatdex.org/terms-of-service-hat-owner-agreement"))
     /** Database column developer_id SqlType(varchar), Default(hatdex) */
     val developerId: Rep[String] = column[String]("developer_id", O.Default("hatdex"))
-    /** Database column developer_name SqlType(varchar), Default(HATDeX) */
-    val developerName: Rep[String] = column[String]("developer_name", O.Default("HATDeX"))
+    /** Database column developer_name SqlType(varchar), Default(HAT Data Exchange Ltd) */
+    val developerName: Rep[String] = column[String]("developer_name", O.Default("HAT Data Exchange Ltd"))
     /** Database column developer_url SqlType(varchar), Default(https://hatdex.org) */
     val developerUrl: Rep[String] = column[String]("developer_url", O.Default("https://hatdex.org"))
     /** Database column developer_country SqlType(varchar), Default(None) */
     val developerCountry: Rep[Option[String]] = column[Option[String]]("developer_country", O.Default(None))
+    /** Database column version_release_date SqlType(timestamptz) */
+    val versionReleaseDate: Rep[org.joda.time.DateTime] = column[org.joda.time.DateTime]("version_release_date")
+    /** Database column developer_support_email SqlType(varchar), Default(contact@hatdex.org) */
+    val developerSupportEmail: Rep[String] = column[String]("developer_support_email", O.Default("contact@hatdex.org"))
 
     /** Foreign key referencing DataBundles (database name she_function_bundle_id_fkey) */
     lazy val dataBundlesFk = foreignKey("she_function_bundle_id_fkey", bundleId, DataBundles)(r => r.bundleId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)

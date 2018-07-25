@@ -119,7 +119,8 @@ class FunctionService @Inject() (
       Json.toJson(configuration.info.graphics), configuration.info.name,
       configuration.info.version.toString(), configuration.info.termsUrl,
       configuration.developer.id, configuration.developer.name,
-      configuration.developer.url, configuration.developer.country)
+      configuration.developer.url, configuration.developer.country,
+      configuration.info.versionReleaseDate, configuration.info.supportContact)
 
     val bundleRow = DataBundlesRow(configuration.dataBundle.name, Json.toJson(configuration.dataBundle.bundle))
     val statusRow = SheFunctionStatusRow(configuration.id, configuration.status.enabled,

@@ -64,6 +64,7 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
     "data-feed-direct-mapper",
     FunctionInfo(
       Version("1.0.0"),
+      new DateTime("2018-01-01T12:00:00+00:00"),
       None,
       "Feed Mapper",
       "",
@@ -71,6 +72,7 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
         text = """""".stripMargin,
         None, None),
       "terms",
+      "contact@hatdex.org",
       None,
       ApplicationGraphics(
         Drawable(None, "", None, None),

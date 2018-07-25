@@ -32,6 +32,7 @@ import org.hatdex.hat.api.models.{ Drawable, EndpointDataBundle, FormattedText }
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
 import org.hatdex.hat.she.functions.{ DataFeedCounter, DataFeedDirectMapper }
 import org.hatdex.hat.she.models._
+import org.joda.time.DateTime
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 
@@ -63,11 +64,13 @@ trait FunctionServiceContext extends HATTestContext {
     "test-dummy-function",
     FunctionInfo(
       Version("1.0.0"),
+      DateTime.now(),
       None,
       "test-dummy-function",
       "Dummy Function",
       FormattedText(text = "Dummy Function", None, None),
       "terms",
+      "contact@email.com",
       None,
       ApplicationGraphics(
         Drawable(None, "", None, None),
