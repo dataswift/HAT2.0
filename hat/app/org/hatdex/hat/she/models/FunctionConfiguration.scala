@@ -46,11 +46,13 @@ case class Request(
 
 case class FunctionInfo(
     version: Version,
+    versionReleaseDate: DateTime,
     updateNotes: Option[ApplicationUpdateNotes],
     name: String,
     headline: String,
     description: FormattedText,
     termsUrl: String,
+    supportContact: String,
     dataPreview: Option[Seq[DataFeedItem]],
     graphics: ApplicationGraphics,
     dataPreviewEndpoint: Option[String])
@@ -95,8 +97,10 @@ object FunctionConfiguration {
       function.id,
       FunctionInfo(
         Version(function.version),
+        function.versionReleaseDate,
         None,
         function.name, function.headline, function.description.as[FormattedText], function.termsUrl,
+        function.developerSupportEmail,
         function.dataPreview.map(_.as[Seq[DataFeedItem]]),
         function.graphics.as[ApplicationGraphics],
         function.dataPreviewEndpoint),

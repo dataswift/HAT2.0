@@ -24,6 +24,7 @@
 
 package org.hatdex.hat.she.functions
 
+import org.joda.time.DateTime
 import org.hatdex.hat.api.json.DataFeedItemJsonProtocol
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.models.applications._
@@ -63,6 +64,7 @@ class DataFeedCounter extends FunctionExecutable with DataFeedItemJsonProtocol w
     "data-feed-counter",
     FunctionInfo(
       Version("1.0.0"),
+      new DateTime("2018-01-01T12:00:00+00:00"),
       None,
       "Weekly Summary",
       "A summary of your week’s digital activities",
@@ -70,7 +72,8 @@ class DataFeedCounter extends FunctionExecutable with DataFeedItemJsonProtocol w
         text = """Weekly Summary shows your weekly online activities.
                              |It allows you to to have an overview of your data accumulated in a week. The first weekly summary establish the start date of the tool and is a summary of your history of activities""".stripMargin,
         None, None),
-      "terms",
+      "https://hatdex.org/terms-of-service-hat-owner-agreement",
+      "contact@hatdex.org",
       Some(Seq(
         DataFeedItem("she", DateTime.now(), Seq("note"),
           Some(DataFeedItemTitle("HAT Private Micro-server created", Some("21 June 23:00 - 29 June 06:42 GMT"), Some("insight"))),
