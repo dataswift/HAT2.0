@@ -70,7 +70,7 @@ class DataFeedCounter extends FunctionExecutable with DataFeedItemJsonProtocol w
       "A summary of your week’s digital activities",
       FormattedText(
         text = """Weekly Summary shows your weekly online activities.
-                             |It allows you to to have an overview of your data accumulated in a week. The first weekly summary establish the start date of the tool and is a summary of your history of activities""".stripMargin,
+                             |It allows you to to have an overview of your data accumulated in a week. The first weekly summary establish the start date of the tool and is a summary of your history of activities.""".stripMargin,
         None, None),
       "https://hatdex.org/terms-of-service-hat-owner-agreement",
       "contact@hatdex.org",
