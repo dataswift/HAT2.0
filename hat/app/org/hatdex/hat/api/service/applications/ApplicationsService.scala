@@ -35,7 +35,7 @@ import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.Tables
 import org.hatdex.hat.dal.Tables.ApplicationStatusRow
 import org.hatdex.hat.resourceManagement.HatServer
-import org.hatdex.hat.utils.FutureTransformations
+import org.hatdex.hat.utils.{ FutureTransformations, Utils }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.Logger
@@ -75,9 +75,13 @@ class ApplicationsService @Inject() (
   private val applicationsCacheDuration: FiniteDuration = 30.minutes
 
   def applicationStatus(id: String, bustCache: Boolean = false)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Option[HatApplication]] = {
+    val eventuallyCleanedCache = if (bustCache) {
+      cache.remove(s"apps:${hat.domain}")
+      cache.remove(appCacheKey(id))
+    }
+    else { Future.successful(Done) }
     for {
-      _ ← if (bustCache) { cache.remove(appCacheKey(id)) } else { Future.successful(Done) }
-      _ ← if (bustCache) { cache.remove(s"apps:${hat.domain}") } else { Future.successful(Done) }
+      _ ← eventuallyCleanedCache
       application ← cache.get[HatApplication](appCacheKey(id))
         .recover({
           case e ⇒
@@ -109,11 +113,11 @@ class ApplicationsService @Inject() (
         case Some(applications) ⇒ Future.successful(applications)
         case None ⇒
           for {
-            apps <- trustedApplicationProvider.applications // potentially caching
-            setup <- applicationSetupStatus()(hat.db) // database
-            statuses <- Future.sequence(apps
-              .map(a => (a, setup.find(_.id == a.id)))
-              .map(as => collectStatus(as._1, as._2)))
+            apps ← trustedApplicationProvider.applications // potentially caching
+            setup ← applicationSetupStatus()(hat.db) // database
+            statuses ← Future.sequence(apps
+              .map(a ⇒ (a, setup.find(_.id == a.id)))
+              .map(as ⇒ Utils.timeFuture(s"${hat.domain} ${as._1.id} status", logger)(collectStatus(as._1, as._2))))
             _ ← Future.sequence(statuses.map(app ⇒ cache.set(appCacheKey(app.application.id), app, applicationsCacheDuration))) // reinject all fetched items as individual cached items
             _ ← cache.set(s"apps:${hat.domain}", statuses, applicationsCacheDuration)
           } yield statuses
