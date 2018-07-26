@@ -72,7 +72,8 @@ class Applications @Inject() (
   }
 
   def applicationStatus(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(Owner())).async { implicit request =>
-    val bustCache = request.headers.get("Cache-Control").exists(_ == "no-cache")
+    val bustCache = request.headers.get("Cache-Control").contains("no-cache")
+    logger.info(s"Getting app $id status (bust cache: $bustCache)")
     applicationsService.applicationStatus(id, bustCache).map { maybeStatus ⇒
       maybeStatus map { status ⇒
         Ok(Json.toJson(status))
