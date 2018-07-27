@@ -37,9 +37,80 @@
         <link rel="stylesheet" type="text/css" href="@assets.path("webfonts/outlined/ss-glyphish-outlined.css")">
         <link rel="stylesheet" type="text/css" href="@assets.path("stylesheets/styles.bundle.css")">
         <link rel="icon" type="image/x-icon" href="@assets.path("favicon.ico")">
+        <style>
+            .loading {
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              height: 200px;
+              width: 200px;
+              margin: -100px 0 0 -100px;
+            }
+
+            .loading-spinner,
+            .loading-spinner::before,
+            .loading-spinner::after {
+              border: 2px solid rgba(74, 85, 107, 0.6);
+              -webkit-border-radius: 999px;
+              -moz-border-radius: 999px;
+              border-radius: 999px;
+            }
+
+            .loading-spinner {
+                margin: 20px auto;
+                height: 75px;
+                width: 75px;
+                border-radius: 75px;
+                border-width: 2px;
+                border-style: solid;
+                background-image: linear-gradient(#eee, #eee), linear-gradient(rgba(74, 85, 107, 1), rgba(74, 85, 107, 0));
+                background-origin: border-box;
+                background-clip: content-box, border-box;
+                -webkit-animation: animation-rotate 1250ms linear infinite;
+                -moz-animation: animation-rotate 1250ms linear infinite;
+                -o-animation: animation-rotate 1250ms linear infinite;
+                animation: animation-rotate 1250ms linear infinite;
+            }
+
+            @@-webkit-keyframes animation-rotate {
+            100% {
+                -webkit-transform: rotate(360deg);
+            }
+            }
+
+            @@-moz-keyframes animation-rotate {
+            100% {
+                -moz-transform: rotate(360deg);
+            }
+            }
+
+            @@-o-keyframes animation-rotate {
+            100% {
+                -o-transform: rotate(360deg);
+            }
+            }
+
+            @@keyframes animation-rotate {
+            100% {
+                transform: rotate(360deg);
+            }
+            }
+
+            .loading-text {
+              color: rgba(74, 85, 107, 0.6);
+              font-size: 14px;
+              font-variant: small-caps;
+              text-align: center;
+            }
+        </style>
     </head>
     <body>
-        <rum-app>Loading... Please refresh if you see this screen fore more than a few seconds.</rum-app>
+        <rum-appp>
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Loading... Please refresh if you see this screen for more than a few seconds.</div>
+        </div>
+        </rum-appp>
     </body>
 
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/packery/2.1.1/packery.pkgd.min.js"></script>
