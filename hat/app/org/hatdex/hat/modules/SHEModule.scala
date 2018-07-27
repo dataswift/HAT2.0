@@ -27,13 +27,13 @@ package org.hatdex.hat.modules
 import com.google.inject.{ AbstractModule, Provides }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.she.functions.{ DataFeedCounter, DataFeedDirectMapper }
-import org.hatdex.hat.she.service.{ FunctionExecutableRegistry, FunctionExecutionTriggerHandler, FunctionExecutorActor }
+import org.hatdex.hat.she.service.{ FunctionExecutableRegistry, FunctionExecutionTriggerHandler }
 import play.api.libs.concurrent.AkkaGuiceSupport
 
 class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
   def configure() = {
-    bindActorFactory[FunctionExecutorActor, FunctionExecutorActor.Factory]
+    //    bindActorFactory[FunctionExecutorActor, FunctionExecutorActor.Factory]
     bind[FunctionExecutionTriggerHandler].asEagerSingleton()
     ()
   }

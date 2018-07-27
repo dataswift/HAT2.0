@@ -26,6 +26,7 @@ package org.hatdex.hat.she.functions
 
 import org.hatdex.hat.api.json.DataFeedItemJsonProtocol
 import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.models.applications._
 import org.hatdex.hat.she.models._
 import org.hatdex.hat.she.service._
 import org.joda.time.DateTime
@@ -61,16 +62,27 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
 
   val configuration: FunctionConfiguration = FunctionConfiguration(
     "data-feed-direct-mapper",
-    "",
-    "",
-    Some(""),
+    FunctionInfo(
+      Version("1.0.0"),
+      new DateTime("2018-01-01T12:00:00+00:00"),
+      None,
+      "Feed Mapper",
+      "",
+      FormattedText(
+        text = """""".stripMargin,
+        None, None),
+      "terms",
+      "contact@hatdex.org",
+      None,
+      ApplicationGraphics(
+        Drawable(None, "", None, None),
+        Drawable(None, "", None, None),
+        Seq(Drawable(None, "", None, None), Drawable(None, "https://github.com/Hub-of-all-Things/exchange-assets/blob/master/insights-activity-summary/screenshot2.jpg?raw=true", None, None))),
+      Some(s"$namespace/$endpoint")),
+    ApplicationDeveloper("hatdex", "HATDeX", "https://hatdex.org", Some("United Kingdom"), None),
     FunctionTrigger.TriggerIndividual(),
-    available = false,
-    enabled = false,
     dataBundle = bundleFilterByDate(None, None),
-    None,
-    None,
-    None)
+    status = FunctionStatus(available = false, enabled = false, lastExecution = None, executionStarted = None))
 
   def execute(configuration: FunctionConfiguration, request: Request)(implicit ec: ExecutionContext): Future[Seq[Response]] = {
     val response = request.data
@@ -78,7 +90,7 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
         case (mappingEndpoint, data) ⇒
           val records = dataMappers.get(mappingEndpoint).map { m ⇒
             data.collect {
-              case EndpointData(_, Some(recordId), content, _) ⇒ (recordId, m.mapDataRecord(recordId, content))
+              case EndpointData(_, Some(recordId), _, _, content, _) ⇒ (recordId, m.mapDataRecord(recordId, content))
             }
           }
           (mappingEndpoint, records.getOrElse(Seq.empty))

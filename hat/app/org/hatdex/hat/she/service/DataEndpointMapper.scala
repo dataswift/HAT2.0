@@ -108,6 +108,35 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
 
     (startString, endString)
   }
+
+  protected def eventTimeIntervalString(start: Option[DateTime], end: Option[DateTime]): (Option[String], Option[String]) = {
+    val startString = start.map {
+      case t if t.getMillisOfDay == 0 ⇒ s"${t.toString("dd MMMM")}"
+      case t                          ⇒ s"${t.withZone(t.getZone).toString("dd MMMM HH:mm")}"
+    }
+
+    val endString = (start, end) match {
+      case (None, Some(t)) ⇒
+        if (t.hourOfDay().get() == 0) {
+          Some(s"before ${t.minusMinutes(1).toString("dd MMMM")}")
+        }
+        else {
+          Some(s"before ${t.toString("dd MMMM HH:mm z")}")
+        }
+      case (Some(s), Some(t)) if t.isAfter(s.withTimeAtStartOfDay().plusDays(1)) ⇒
+        if (t.hourOfDay().get() == 0) {
+          Some(s"- ${t.minusMinutes(1).toString("dd MMMM")}")
+        }
+        else {
+          Some(s"- ${t.withZone(s.getZone).toString("dd MMMM HH:mm z")}")
+        }
+      case (_, Some(t)) if t.hourOfDay().get() == 0 ⇒ None
+      case (Some(s), Some(t))                       ⇒ Some(s"- ${t.withZone(s.getZone).toString("HH:mm z")}")
+      case (_, None)                                ⇒ None
+    }
+
+    (startString, endString)
+  }
 }
 
 class InsightsMapper extends DataEndpointMapper {
@@ -138,12 +167,13 @@ class InsightsMapper extends DataEndpointMapper {
     for {
       startDate ← Try((content \ "since").asOpt[DateTime])
       endDate ← Try((content \ "timestamp").asOpt[DateTime])
-      timeIntervalString ← Try(startDate.map(eventTimeIntervalString(_, endDate)))
+      timeIntervalString ← Try(eventTimeIntervalString(startDate, endDate))
       counters ← Try((content \ "counters").as[Map[String, Int]]) if counters.exists(_._2 != 0)
     } yield {
       val title = DataFeedItemTitle(
         "Your recent activity summary",
-        timeIntervalString.map(interval => s"${interval._1} ${interval._2.getOrElse("")}"), Some("insight"))
+        Some(s"${timeIntervalString._1.getOrElse("")} ${timeIntervalString._2.getOrElse("")}"),
+        Some("insight"))
 
       val nested: Map[String, Seq[DataFeedNestedStructureItem]] = counters.foldLeft(Seq[(String, DataFeedNestedStructureItem)]())({
         (structured, newitem) ⇒

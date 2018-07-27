@@ -31,6 +31,7 @@ import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models.applications.{ Application, ApplicationStatus, Version }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
+import org.joda.time.DateTime
 import org.mockito.Mockito.when
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -76,6 +77,7 @@ trait ApplicationsServiceContext extends HATTestContext {
       |            },
       |            "termsUrl": "https://example.com/terms",
       |            "dataUsePurpose": "Data Will be processed by Notables for the following purpose...",
+      |            "supportContact": "contact@hatdex.org",
       |            "dataPreview": [
       |                {
       |                    "source": "notables",
@@ -133,6 +135,15 @@ trait ApplicationsServiceContext extends HATTestContext {
       |                        "large": "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-7.jpg"
       |                    }
       |                ]
+      |            }
+      |        },
+      |        "developer": {
+      |            "id": "dex",
+      |            "name": "HATDeX",
+      |            "url": "https://hatdex.org",
+      |            "country": "United Kingdom",
+      |            "logo": {
+      |                "normal": "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss.png"
       |            }
       |        },
       |        "permissions": {
@@ -259,7 +270,8 @@ trait ApplicationsServiceContext extends HATTestContext {
       |        "status": {
       |            "compatibility": "1.0.0",
       |            "recentDataCheckEndpoint": "/rumpel/notablesv1",
-      |            "kind": "Internal"
+      |            "kind": "Internal",
+      |            "versionReleaseDate": "2018-07-24T12:00:00"
       |        }
       |    }
       |
@@ -285,17 +297,17 @@ trait ApplicationsServiceContext extends HATTestContext {
         name = "notables-incompatible-bundle"))))
   val notablesAppIncompatibleUpdated: Application = notablesAppIncompatible.copy(
     info = notablesApp.info.copy(version = Version("1.1.0")),
-    status = ApplicationStatus.Internal(Version("1.1.0"), None, None))
+    status = ApplicationStatus.Internal(Version("1.1.0"), None, None, DateTime.now()))
 
   val notablesAppExternal: Application = notablesApp.copy(
     id = "notables-external",
-    status = ApplicationStatus.External(Version("1.0.0"), "/status", 200, None, None),
+    status = ApplicationStatus.External(Version("1.0.0"), "/status", 200, None, None, DateTime.now()),
     permissions = notablesApp.permissions.copy(
       dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
         name = "notables-external"))))
   val notablesAppExternalFailing: Application = notablesApp.copy(
     id = "notables-external-failing",
-    status = ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None, None),
+    status = ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None, None, DateTime.now()),
     permissions = notablesApp.permissions.copy(
       dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
         name = "notables-external-failing"))))
@@ -324,8 +336,8 @@ trait ApplicationsServiceContext extends HATTestContext {
       override def answer(invocation: InvocationOnMock) = {
         val s = invocation.getArguments()(0).asInstanceOf[ApplicationStatus.Status]
         s match {
-          case ApplicationStatus.Internal(_, _, _) ⇒ Future.successful(true)
-          case ApplicationStatus.External(_, "/status", _, _, _) ⇒ Future.successful(true)
+          case ApplicationStatus.Internal(_, _, _, _) ⇒ Future.successful(true)
+          case ApplicationStatus.External(_, "/status", _, _, _, _) ⇒ Future.successful(true)
           case _ ⇒ Future.successful(false)
         }
       }

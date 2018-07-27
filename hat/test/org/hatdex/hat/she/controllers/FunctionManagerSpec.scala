@@ -93,9 +93,9 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       status(result) must equalTo(OK)
       val functions = contentAsJson(result).as[Seq[FunctionConfiguration]]
       functions.length must be greaterThanOrEqualTo 2
-      val registered = functions.find(_.name == registeredDummyFunctionAvailable.configuration.name).get
-      registered.available must be equalTo true
-      registered.enabled must be equalTo false
+      val registered = functions.find(_.id == registeredDummyFunctionAvailable.configuration.id).get
+      registered.status.available must be equalTo true
+      registered.status.enabled must be equalTo false
     }
   }
 
@@ -105,12 +105,12 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = Helpers.call(controller.functionGet(registeredDummyFunctionAvailable.configuration.name), request)
+      val result: Future[Result] = Helpers.call(controller.functionGet(registeredDummyFunctionAvailable.configuration.id), request)
 
       status(result) must equalTo(OK)
       val function = contentAsJson(result).as[FunctionConfiguration]
-      function.available must be equalTo true
-      function.enabled must be equalTo false
+      function.status.available must be equalTo true
+      function.status.enabled must be equalTo false
     }
 
     "return 404 if requested function not found" in {
@@ -142,15 +142,15 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       status(enabled) must equalTo(OK)
       val fEnabled = contentAsJson(result).as[FunctionConfiguration]
-      fEnabled.name must be equalTo "data-feed-direct-mapper"
-      fEnabled.available must be equalTo true
-      fEnabled.enabled must be equalTo true
+      fEnabled.id must be equalTo "data-feed-direct-mapper"
+      fEnabled.status.available must be equalTo true
+      fEnabled.status.enabled must be equalTo true
 
       status(result) must equalTo(OK)
       val function = contentAsJson(result).as[FunctionConfiguration]
-      function.name must be equalTo "data-feed-direct-mapper"
-      function.available must be equalTo true
-      function.enabled must be equalTo true
+      function.id must be equalTo "data-feed-direct-mapper"
+      function.status.available must be equalTo true
+      function.status.enabled must be equalTo true
     }
 
     "return 404 if requested function not found" in {
@@ -183,15 +183,15 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       status(disabled) must equalTo(OK)
       val fDisabled = contentAsJson(result).as[FunctionConfiguration]
-      fDisabled.name must be equalTo "data-feed-direct-mapper"
-      fDisabled.available must be equalTo true
-      fDisabled.enabled must be equalTo false
+      fDisabled.id must be equalTo "data-feed-direct-mapper"
+      fDisabled.status.available must be equalTo true
+      fDisabled.status.enabled must be equalTo false
 
       status(result) must equalTo(OK)
       val function = contentAsJson(result).as[FunctionConfiguration]
-      function.name must be equalTo "data-feed-direct-mapper"
-      function.available must be equalTo true
-      function.enabled must be equalTo false
+      function.id must be equalTo "data-feed-direct-mapper"
+      function.status.available must be equalTo true
+      function.status.enabled must be equalTo false
     }
   }
 
@@ -213,7 +213,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = Helpers.call(controller.functionTrigger(registeredDummyFunctionAvailable.configuration.name), request)
+      val result: Future[Result] = Helpers.call(controller.functionTrigger(registeredDummyFunctionAvailable.configuration.id), request)
 
       status(result) must equalTo(BAD_REQUEST)
       val message = contentAsJson(result).as[ErrorMessage]

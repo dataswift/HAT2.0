@@ -24,8 +24,9 @@
 package org.hatdex.hat.api.service.applications
 
 import akka.Done
-import javax.inject.Inject
+import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
+import javax.inject.Inject
 import org.hatdex.hat.api.models.applications.{ Application, ApplicationStatus, HatApplication, Version }
 import org.hatdex.hat.api.models.{ AccessToken, DataDebit, EndpointQuery }
 import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataDuplicateDebitException, RichDataService }
@@ -35,7 +36,7 @@ import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.Tables
 import org.hatdex.hat.dal.Tables.ApplicationStatusRow
 import org.hatdex.hat.resourceManagement.HatServer
-import org.hatdex.hat.utils.FutureTransformations
+import org.hatdex.hat.utils.{ FutureTransformations, Utils }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.Logger
@@ -46,6 +47,7 @@ import play.api.mvc.RequestHeader
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Success
 
 class ApplicationStatusCheckService @Inject() (wsClient: WSClient)(implicit val rec: RemoteExecutionContext) {
 
@@ -56,11 +58,13 @@ class ApplicationStatusCheckService @Inject() (wsClient: WSClient)(implicit val 
     }
   }
 
-  protected def status(statusCheck: ApplicationStatus.External, token: String): Future[Boolean] =
+  protected def status(statusCheck: ApplicationStatus.External, token: String): Future[Boolean] = {
     wsClient.url(statusCheck.statusUrl)
       .withHttpHeaders("x-auth-token" → token)
+      .withRequestTimeout(5000.millis)
       .get()
       .map(_.status == statusCheck.expectedStatus)
+  }
 }
 
 class ApplicationsService @Inject() (
@@ -69,15 +73,20 @@ class ApplicationsService @Inject() (
     dataDebitService: DataDebitService,
     statusCheckService: ApplicationStatusCheckService,
     trustedApplicationProvider: TrustedApplicationProvider,
-    silhouette: Silhouette[HatApiAuthEnvironment])(implicit val ec: DalExecutionContext) {
+    silhouette: Silhouette[HatApiAuthEnvironment],
+    system: ActorSystem)(implicit val ec: DalExecutionContext) {
 
   private val logger = Logger(this.getClass)
   private val applicationsCacheDuration: FiniteDuration = 30.minutes
 
   def applicationStatus(id: String, bustCache: Boolean = false)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Option[HatApplication]] = {
+    val eventuallyCleanedCache = if (bustCache) {
+      cache.remove(s"apps:${hat.domain}")
+      cache.remove(appCacheKey(id))
+    }
+    else { Future.successful(Done) }
     for {
-      _ ← if (bustCache) { cache.remove(appCacheKey(id)) } else { Future.successful(Done) }
-      _ ← if (bustCache) { cache.remove(s"apps:${hat.domain}") } else { Future.successful(Done) }
+      _ ← eventuallyCleanedCache
       application ← cache.get[HatApplication](appCacheKey(id))
         .flatMap {
           case Some(application) ⇒ Future.successful(Some(application))
@@ -86,24 +95,33 @@ class ApplicationsService @Inject() (
             for {
               maybeApp <- trustedApplicationProvider.application(id)
               setup <- applicationSetupStatus(id)(hat.db)
-              status <- FutureTransformations.transform(maybeApp.map(collectStatus(_, setup)))
-              _ ← status.map(cache.set(appCacheKey(id), _, applicationsCacheDuration)).getOrElse(Future.successful(Done))
-            } yield status
+              status <- FutureTransformations.transform(maybeApp.map(refetchApplicationsStatus(_, Seq(setup).flatten)))
+              _ ← status.map(s ⇒ cache.set(appCacheKey(id), s._1, applicationsCacheDuration)).getOrElse(Future.successful(Done))
+            } yield status.map(_._1)
         }
     } yield application
   }
 
   def applicationStatus()(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Seq[HatApplication]] = {
-    cache.getOrElseUpdate(s"apps:${hat.domain}", applicationsCacheDuration) {
-      for {
-        apps <- trustedApplicationProvider.applications // potentially caching
-        setup <- applicationSetupStatus()(hat.db) // database
-        statuses <- Future.sequence(apps
-          .map(a => (a, setup.find(_.id == a.id)))
-          .map(as => collectStatus(as._1, as._2)))
-        _ ← Future.sequence(statuses.map(app ⇒ cache.set(appCacheKey(app.application.id), app, applicationsCacheDuration))) // reinject all fetched items as individual cached items
-      } yield statuses
-    }
+    cache.get[Seq[HatApplication]](s"apps:${hat.domain}")
+      .flatMap({
+        case Some(applications) ⇒ Future.successful(applications)
+        case None ⇒
+          for {
+            apps ← trustedApplicationProvider.applications // potentially caching
+            setup ← applicationSetupStatus()(hat.db) // database
+            statuses ← Future.sequence(apps.map(refetchApplicationsStatus(_, setup)))
+            _ ← if (statuses.forall(_._2)) { cache.set(s"apps:${hat.domain}", statuses.unzip._1, applicationsCacheDuration) } else { Future.successful(Done) }
+          } yield statuses.unzip._1
+      })
+  }
+
+  private def refetchApplicationsStatus(app: Application, setup: Seq[Tables.ApplicationStatusRow])(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader) = {
+    val aSetup = setup.find(_.id == app.id)
+    Utils.timeFuture(s"${hat.domain} ${app.id} status", logger)(collectStatus(app, aSetup))
+      .andThen {
+        case Success((a, true)) ⇒ cache.set(appCacheKey(a.application.id), a, applicationsCacheDuration)
+      }
   }
 
   def setup(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
@@ -197,26 +215,33 @@ class ApplicationsService @Inject() (
     }
   }
 
+  private def fastOrDefault[T](timeout: FiniteDuration, default: T)(block: => Future[T]): Future[(T, Boolean)] = {
+    val fallback = akka.pattern.after(timeout, using = system.scheduler)(Future.successful((default, false)))
+    Future.firstCompletedOf(Seq(block.map((_, true)), fallback))
+  }
+
   private def collectStatus(app: Application, setup: Option[ApplicationStatusRow])(
     implicit
-    hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
+    hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[(HatApplication, Boolean)] = { // return status as well as flag indicating if it is successfully generated
 
     setup match {
       case Some(ApplicationStatusRow(_, version, true)) =>
+        val eventualStatus = fastOrDefault(5.seconds, (false, ""))(checkStatus(app))
+        val eventualMostRecentData = fastOrDefault(5.seconds, Option[DateTime](null))(mostRecentDataTime(app))
         for {
-          (status, _) <- checkStatus(app)
-          mostRecentData <- mostRecentDataTime(app)
+          ((status, _), canCacheStatus) <- eventualStatus
+          (mostRecentData, canCacheData) <- eventualMostRecentData
         } yield {
           logger.debug(s"Check compatibility between $version and new ${app.status}: ${Version(version).greaterThan(app.status.compatibility)}")
-          HatApplication(app, setup = true, enabled = true, active = status,
+          (HatApplication(app, setup = true, enabled = true, active = status,
             Some(app.status.compatibility.greaterThan(Version(version))), // Needs updating if setup version beyond compatible
-            mostRecentData)
+            mostRecentData), canCacheStatus && canCacheData)
         }
       case Some(ApplicationStatusRow(_, _, false)) =>
         // If application has been disabled, reflect in status
-        Future.successful(HatApplication(app, setup = true, enabled = false, active = false, needsUpdating = None, mostRecentData = None))
+        Future.successful((HatApplication(app, setup = true, enabled = false, active = false, needsUpdating = None, mostRecentData = None), true))
       case None =>
-        Future.successful(HatApplication(app, setup = false, enabled = false, active = false, needsUpdating = None, mostRecentData = None))
+        Future.successful((HatApplication(app, setup = false, enabled = false, active = false, needsUpdating = None, mostRecentData = None), true))
     }
   }
 

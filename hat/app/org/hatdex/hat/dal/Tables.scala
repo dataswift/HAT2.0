@@ -13,7 +13,7 @@ trait Tables {
   import slick.jdbc.{ GetResult => GR }
 
   /** DDL for all tables. Call .create to execute. */
-  lazy val schema: profile.SchemaDescription = Array(Applications.schema, ApplicationStatus.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, DataBundles.schema, DataCombinators.schema, DataDebit.schema, DataDebitBundle.schema, DataDebitContract.schema, DataDebitPermissions.schema, DataField.schema, DataJson.schema, DataJsonGroupRecords.schema, DataJsonGroups.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, HatFile.schema, HatFileAccess.schema, SheFunction.schema, SystemEventlog.schema, UserAccessLog.schema, UserMailTokens.schema, UserRole.schema, UserRoleAvailable.schema, UserUser.schema).reduceLeft(_ ++ _)
+  lazy val schema: profile.SchemaDescription = Array(Applications.schema, ApplicationStatus.schema, BundleContextless.schema, BundleContextlessDataSourceDataset.schema, DataBundles.schema, DataCombinators.schema, DataDebit.schema, DataDebitBundle.schema, DataDebitContract.schema, DataDebitPermissions.schema, DataField.schema, DataJson.schema, DataJsonGroupRecords.schema, DataJsonGroups.schema, DataRecord.schema, DataStatsLog.schema, DataTable.schema, DataTableSize.schema, DataTabletotablecrossref.schema, DataTableTree.schema, DataValue.schema, HatFile.schema, HatFileAccess.schema, SheFunction.schema, SheFunctionStatus.schema, SystemEventlog.schema, UserAccessLog.schema, UserMailTokens.schema, UserRole.schema, UserRoleAvailable.schema, UserUser.schema).reduceLeft(_ ++ _)
   @deprecated("Use .schema instead of .ddl", "3.0")
   def ddl = schema
 
@@ -474,19 +474,21 @@ trait Tables {
    *  @param date Database column date SqlType(timestamp)
    *  @param data Database column data SqlType(jsonb)
    *  @param hash Database column hash SqlType(bytea)
+   *  @param sourceTimestamp Database column source_timestamp SqlType(timestamptz), Default(None)
+   *  @param sourceUniqueId Database column source_unique_id SqlType(varchar), Default(None)
    */
-  case class DataJsonRow(recordId: java.util.UUID, source: String, owner: java.util.UUID, date: org.joda.time.LocalDateTime, data: play.api.libs.json.JsValue, hash: Array[Byte])
+  case class DataJsonRow(recordId: java.util.UUID, source: String, owner: java.util.UUID, date: org.joda.time.LocalDateTime, data: play.api.libs.json.JsValue, hash: Array[Byte], sourceTimestamp: Option[org.joda.time.DateTime] = None, sourceUniqueId: Option[String] = None)
   /** GetResult implicit for fetching DataJsonRow objects using plain SQL queries */
-  implicit def GetResultDataJsonRow(implicit e0: GR[java.util.UUID], e1: GR[String], e2: GR[org.joda.time.LocalDateTime], e3: GR[play.api.libs.json.JsValue], e4: GR[Array[Byte]]): GR[DataJsonRow] = GR {
+  implicit def GetResultDataJsonRow(implicit e0: GR[java.util.UUID], e1: GR[String], e2: GR[org.joda.time.LocalDateTime], e3: GR[play.api.libs.json.JsValue], e4: GR[Array[Byte]], e5: GR[Option[org.joda.time.DateTime]], e6: GR[Option[String]]): GR[DataJsonRow] = GR {
     prs =>
       import prs._
-      DataJsonRow.tupled((<<[java.util.UUID], <<[String], <<[java.util.UUID], <<[org.joda.time.LocalDateTime], <<[play.api.libs.json.JsValue], <<[Array[Byte]]))
+      DataJsonRow.tupled((<<[java.util.UUID], <<[String], <<[java.util.UUID], <<[org.joda.time.LocalDateTime], <<[play.api.libs.json.JsValue], <<[Array[Byte]], <<?[org.joda.time.DateTime], <<?[String]))
   }
   /** Table description of table data_json. Objects of this class serve as prototypes for rows in queries. */
   class DataJson(_tableTag: Tag) extends profile.api.Table[DataJsonRow](_tableTag, Some("hat"), "data_json") {
-    def * = (recordId, source, owner, date, data, hash) <> (DataJsonRow.tupled, DataJsonRow.unapply)
+    def * = (recordId, source, owner, date, data, hash, sourceTimestamp, sourceUniqueId) <> (DataJsonRow.tupled, DataJsonRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(recordId), Rep.Some(source), Rep.Some(owner), Rep.Some(date), Rep.Some(data), Rep.Some(hash)).shaped.<>({ r => import r._; _1.map(_ => DataJsonRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(recordId), Rep.Some(source), Rep.Some(owner), Rep.Some(date), Rep.Some(data), Rep.Some(hash), sourceTimestamp, sourceUniqueId).shaped.<>({ r => import r._; _1.map(_ => DataJsonRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6.get, _7, _8))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column record_id SqlType(uuid), PrimaryKey */
     val recordId: Rep[java.util.UUID] = column[java.util.UUID]("record_id", O.PrimaryKey)
@@ -500,12 +502,18 @@ trait Tables {
     val data: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("data")
     /** Database column hash SqlType(bytea) */
     val hash: Rep[Array[Byte]] = column[Array[Byte]]("hash")
+    /** Database column source_timestamp SqlType(timestamptz), Default(None) */
+    val sourceTimestamp: Rep[Option[org.joda.time.DateTime]] = column[Option[org.joda.time.DateTime]]("source_timestamp", O.Default(None))
+    /** Database column source_unique_id SqlType(varchar), Default(None) */
+    val sourceUniqueId: Rep[Option[String]] = column[Option[String]]("source_unique_id", O.Default(None))
 
     /** Foreign key referencing UserUser (database name data_json_owner_fkey) */
     lazy val userUserFk = foreignKey("data_json_owner_fkey", owner, UserUser)(r => r.userId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
 
     /** Uniqueness Index over (hash) (database name data_json_hash_key) */
     val index1 = index("data_json_hash_key", hash, unique = true)
+    /** Uniqueness Index over (source,sourceUniqueId) (database name data_json_source_unique) */
+    val index2 = index("data_json_source_unique", (source, sourceUniqueId), unique = true)
   }
   /** Collection-like TableQuery object for table DataJson */
   lazy val DataJson = new TableQuery(tag => new DataJson(tag))
@@ -935,56 +943,109 @@ trait Tables {
 
   /**
    * Entity class storing rows of table SheFunction
-   *  @param name Database column name SqlType(varchar), PrimaryKey
-   *  @param description Database column description SqlType(varchar)
+   *  @param id Database column id SqlType(varchar), PrimaryKey
+   *  @param description Database column description SqlType(jsonb)
    *  @param trigger Database column trigger SqlType(jsonb)
-   *  @param enabled Database column enabled SqlType(bool)
    *  @param bundleId Database column bundle_id SqlType(varchar)
-   *  @param lastExecution Database column last_execution SqlType(timestamptz), Default(None)
    *  @param headline Database column headline SqlType(varchar), Default()
    *  @param dataPreview Database column data_preview SqlType(jsonb), Default(None)
-   *  @param logo Database column logo SqlType(varchar), Default(None)
    *  @param dataPreviewEndpoint Database column data_preview_endpoint SqlType(varchar), Default(None)
+   *  @param graphics Database column graphics SqlType(jsonb)
+   *  @param name Database column name SqlType(varchar), Default()
+   *  @param version Database column version SqlType(varchar), Default(1.0.0)
+   *  @param termsUrl Database column terms_url SqlType(varchar), Default(https://hatdex.org/terms-of-service-hat-owner-agreement)
+   *  @param developerId Database column developer_id SqlType(varchar), Default(hatdex)
+   *  @param developerName Database column developer_name SqlType(varchar), Default(HAT Data Exchange Ltd)
+   *  @param developerUrl Database column developer_url SqlType(varchar), Default(https://hatdex.org)
+   *  @param developerCountry Database column developer_country SqlType(varchar), Default(None)
+   *  @param versionReleaseDate Database column version_release_date SqlType(timestamptz)
+   *  @param developerSupportEmail Database column developer_support_email SqlType(varchar), Default(contact@hatdex.org)
    */
-  case class SheFunctionRow(name: String, description: String, trigger: play.api.libs.json.JsValue, enabled: Boolean, bundleId: String, lastExecution: Option[org.joda.time.DateTime] = None, headline: String = "", dataPreview: Option[play.api.libs.json.JsValue] = None, logo: Option[String] = None, dataPreviewEndpoint: Option[String] = None)
+  case class SheFunctionRow(id: String, description: play.api.libs.json.JsValue, trigger: play.api.libs.json.JsValue, bundleId: String, headline: String = "", dataPreview: Option[play.api.libs.json.JsValue] = None, dataPreviewEndpoint: Option[String] = None, graphics: play.api.libs.json.JsValue, name: String = "", version: String = "1.0.0", termsUrl: String = "https://hatdex.org/terms-of-service-hat-owner-agreement", developerId: String = "hatdex", developerName: String = "HAT Data Exchange Ltd", developerUrl: String = "https://hatdex.org", developerCountry: Option[String] = None, versionReleaseDate: org.joda.time.DateTime, developerSupportEmail: String = "contact@hatdex.org")
   /** GetResult implicit for fetching SheFunctionRow objects using plain SQL queries */
-  implicit def GetResultSheFunctionRow(implicit e0: GR[String], e1: GR[play.api.libs.json.JsValue], e2: GR[Boolean], e3: GR[Option[org.joda.time.DateTime]], e4: GR[Option[play.api.libs.json.JsValue]], e5: GR[Option[String]]): GR[SheFunctionRow] = GR {
+  implicit def GetResultSheFunctionRow(implicit e0: GR[String], e1: GR[play.api.libs.json.JsValue], e2: GR[Option[play.api.libs.json.JsValue]], e3: GR[Option[String]], e4: GR[org.joda.time.DateTime]): GR[SheFunctionRow] = GR {
     prs =>
       import prs._
-      SheFunctionRow.tupled((<<[String], <<[String], <<[play.api.libs.json.JsValue], <<[Boolean], <<[String], <<?[org.joda.time.DateTime], <<[String], <<?[play.api.libs.json.JsValue], <<?[String], <<?[String]))
+      SheFunctionRow.tupled((<<[String], <<[play.api.libs.json.JsValue], <<[play.api.libs.json.JsValue], <<[String], <<[String], <<?[play.api.libs.json.JsValue], <<?[String], <<[play.api.libs.json.JsValue], <<[String], <<[String], <<[String], <<[String], <<[String], <<[String], <<?[String], <<[org.joda.time.DateTime], <<[String]))
   }
   /** Table description of table she_function. Objects of this class serve as prototypes for rows in queries. */
   class SheFunction(_tableTag: Tag) extends profile.api.Table[SheFunctionRow](_tableTag, Some("hat"), "she_function") {
-    def * = (name, description, trigger, enabled, bundleId, lastExecution, headline, dataPreview, logo, dataPreviewEndpoint) <> (SheFunctionRow.tupled, SheFunctionRow.unapply)
+    def * = (id, description, trigger, bundleId, headline, dataPreview, dataPreviewEndpoint, graphics, name, version, termsUrl, developerId, developerName, developerUrl, developerCountry, versionReleaseDate, developerSupportEmail) <> (SheFunctionRow.tupled, SheFunctionRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(name), Rep.Some(description), Rep.Some(trigger), Rep.Some(enabled), Rep.Some(bundleId), lastExecution, Rep.Some(headline), dataPreview, logo, dataPreviewEndpoint).shaped.<>({ r => import r._; _1.map(_ => SheFunctionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7.get, _8, _9, _10))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(id), Rep.Some(description), Rep.Some(trigger), Rep.Some(bundleId), Rep.Some(headline), dataPreview, dataPreviewEndpoint, Rep.Some(graphics), Rep.Some(name), Rep.Some(version), Rep.Some(termsUrl), Rep.Some(developerId), Rep.Some(developerName), Rep.Some(developerUrl), developerCountry, Rep.Some(versionReleaseDate), Rep.Some(developerSupportEmail)).shaped.<>({ r => import r._; _1.map(_ => SheFunctionRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7, _8.get, _9.get, _10.get, _11.get, _12.get, _13.get, _14.get, _15, _16.get, _17.get))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
 
-    /** Database column name SqlType(varchar), PrimaryKey */
-    val name: Rep[String] = column[String]("name", O.PrimaryKey)
-    /** Database column description SqlType(varchar) */
-    val description: Rep[String] = column[String]("description")
+    /** Database column id SqlType(varchar), PrimaryKey */
+    val id: Rep[String] = column[String]("id", O.PrimaryKey)
+    /** Database column description SqlType(jsonb) */
+    val description: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("description")
     /** Database column trigger SqlType(jsonb) */
     val trigger: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("trigger")
-    /** Database column enabled SqlType(bool) */
-    val enabled: Rep[Boolean] = column[Boolean]("enabled")
     /** Database column bundle_id SqlType(varchar) */
     val bundleId: Rep[String] = column[String]("bundle_id")
-    /** Database column last_execution SqlType(timestamptz), Default(None) */
-    val lastExecution: Rep[Option[org.joda.time.DateTime]] = column[Option[org.joda.time.DateTime]]("last_execution", O.Default(None))
     /** Database column headline SqlType(varchar), Default() */
     val headline: Rep[String] = column[String]("headline", O.Default(""))
     /** Database column data_preview SqlType(jsonb), Default(None) */
     val dataPreview: Rep[Option[play.api.libs.json.JsValue]] = column[Option[play.api.libs.json.JsValue]]("data_preview", O.Default(None))
-    /** Database column logo SqlType(varchar), Default(None) */
-    val logo: Rep[Option[String]] = column[Option[String]]("logo", O.Default(None))
     /** Database column data_preview_endpoint SqlType(varchar), Default(None) */
     val dataPreviewEndpoint: Rep[Option[String]] = column[Option[String]]("data_preview_endpoint", O.Default(None))
+    /** Database column graphics SqlType(jsonb) */
+    val graphics: Rep[play.api.libs.json.JsValue] = column[play.api.libs.json.JsValue]("graphics")
+    /** Database column name SqlType(varchar), Default() */
+    val name: Rep[String] = column[String]("name", O.Default(""))
+    /** Database column version SqlType(varchar), Default(1.0.0) */
+    val version: Rep[String] = column[String]("version", O.Default("1.0.0"))
+    /** Database column terms_url SqlType(varchar), Default(https://hatdex.org/terms-of-service-hat-owner-agreement) */
+    val termsUrl: Rep[String] = column[String]("terms_url", O.Default("https://hatdex.org/terms-of-service-hat-owner-agreement"))
+    /** Database column developer_id SqlType(varchar), Default(hatdex) */
+    val developerId: Rep[String] = column[String]("developer_id", O.Default("hatdex"))
+    /** Database column developer_name SqlType(varchar), Default(HAT Data Exchange Ltd) */
+    val developerName: Rep[String] = column[String]("developer_name", O.Default("HAT Data Exchange Ltd"))
+    /** Database column developer_url SqlType(varchar), Default(https://hatdex.org) */
+    val developerUrl: Rep[String] = column[String]("developer_url", O.Default("https://hatdex.org"))
+    /** Database column developer_country SqlType(varchar), Default(None) */
+    val developerCountry: Rep[Option[String]] = column[Option[String]]("developer_country", O.Default(None))
+    /** Database column version_release_date SqlType(timestamptz) */
+    val versionReleaseDate: Rep[org.joda.time.DateTime] = column[org.joda.time.DateTime]("version_release_date")
+    /** Database column developer_support_email SqlType(varchar), Default(contact@hatdex.org) */
+    val developerSupportEmail: Rep[String] = column[String]("developer_support_email", O.Default("contact@hatdex.org"))
 
     /** Foreign key referencing DataBundles (database name she_function_bundle_id_fkey) */
     lazy val dataBundlesFk = foreignKey("she_function_bundle_id_fkey", bundleId, DataBundles)(r => r.bundleId, onUpdate = ForeignKeyAction.NoAction, onDelete = ForeignKeyAction.NoAction)
   }
   /** Collection-like TableQuery object for table SheFunction */
   lazy val SheFunction = new TableQuery(tag => new SheFunction(tag))
+
+  /**
+   * Entity class storing rows of table SheFunctionStatus
+   *  @param id Database column id SqlType(varchar), PrimaryKey
+   *  @param enabled Database column enabled SqlType(bool)
+   *  @param lastExecution Database column last_execution SqlType(timestamptz), Default(None)
+   *  @param executionStarted Database column execution_started SqlType(timestamptz), Default(None)
+   */
+  case class SheFunctionStatusRow(id: String, enabled: Boolean, lastExecution: Option[org.joda.time.DateTime] = None, executionStarted: Option[org.joda.time.DateTime] = None)
+  /** GetResult implicit for fetching SheFunctionStatusRow objects using plain SQL queries */
+  implicit def GetResultSheFunctionStatusRow(implicit e0: GR[String], e1: GR[Boolean], e2: GR[Option[org.joda.time.DateTime]]): GR[SheFunctionStatusRow] = GR {
+    prs =>
+      import prs._
+      SheFunctionStatusRow.tupled((<<[String], <<[Boolean], <<?[org.joda.time.DateTime], <<?[org.joda.time.DateTime]))
+  }
+  /** Table description of table she_function_status. Objects of this class serve as prototypes for rows in queries. */
+  class SheFunctionStatus(_tableTag: Tag) extends profile.api.Table[SheFunctionStatusRow](_tableTag, Some("hat"), "she_function_status") {
+    def * = (id, enabled, lastExecution, executionStarted) <> (SheFunctionStatusRow.tupled, SheFunctionStatusRow.unapply)
+    /** Maps whole row to an option. Useful for outer joins. */
+    def ? = (Rep.Some(id), Rep.Some(enabled), lastExecution, executionStarted).shaped.<>({ r => import r._; _1.map(_ => SheFunctionStatusRow.tupled((_1.get, _2.get, _3, _4))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+
+    /** Database column id SqlType(varchar), PrimaryKey */
+    val id: Rep[String] = column[String]("id", O.PrimaryKey)
+    /** Database column enabled SqlType(bool) */
+    val enabled: Rep[Boolean] = column[Boolean]("enabled")
+    /** Database column last_execution SqlType(timestamptz), Default(None) */
+    val lastExecution: Rep[Option[org.joda.time.DateTime]] = column[Option[org.joda.time.DateTime]]("last_execution", O.Default(None))
+    /** Database column execution_started SqlType(timestamptz), Default(None) */
+    val executionStarted: Rep[Option[org.joda.time.DateTime]] = column[Option[org.joda.time.DateTime]]("execution_started", O.Default(None))
+  }
+  /** Collection-like TableQuery object for table SheFunctionStatus */
+  lazy val SheFunctionStatus = new TableQuery(tag => new SheFunctionStatus(tag))
 
   /**
    * Entity class storing rows of table SystemEventlog
