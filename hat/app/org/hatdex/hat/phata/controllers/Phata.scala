@@ -23,10 +23,7 @@
  */
 package org.hatdex.hat.phata.controllers
 
-import java.security.MessageDigest
-
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.crypto.Base64
 import controllers.{ AssetsFinder, AssetsFinderProvider }
 import javax.inject.Inject
 import org.hatdex.hat.api.json.{ HatJsonFormats, RichDataJsonFormats }
@@ -38,7 +35,6 @@ import play.api.cache.{ Cached, CachedBuilder }
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
-import play.filters.headers.SecurityHeadersFilter
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -73,16 +69,7 @@ class Phata @Inject() (
     UserAwareAction.async { implicit request =>
       val rumpelConfigScript = s"""var httpProtocol = "${if (request.secure) { "https" } else { "http" }}:";"""
 
-      val sha256Encoded = Base64.encode(MessageDigest.getInstance("SHA-256").digest(rumpelConfigScript.getBytes("UTF-8")))
-      val cspMap: Map[String, String] = csp + ("script-src" → (csp.getOrElse("script-src", "") + s" 'sha256-$sha256Encoded'"))
-      val cspCustom = cspMap
-        .map({
-          case (k: String, v: String) ⇒ s"$k $v"
-        })
-        .mkString("; ")
-
-      Future.successful(Ok(phataViews.html.rumpelIndex(rumpelConfigScript, assets))
-        .withHeaders(SecurityHeadersFilter.CONTENT_SECURITY_POLICY_HEADER → cspCustom))
+      Future.successful(Ok(phataViews.html.rumpelIndex(rumpelConfigScript, assets)))
     }
   }
 
