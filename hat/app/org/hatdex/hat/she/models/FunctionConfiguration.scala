@@ -26,11 +26,11 @@ package org.hatdex.hat.she.models
 
 import java.util.UUID
 
-import org.hatdex.hat.api.json.{ DataFeedItemJsonProtocol, RichDataJsonFormats }
-import org.hatdex.hat.api.models.applications.DataFeedItem
-import org.hatdex.hat.api.models.{ EndpointData, EndpointDataBundle }
+import org.hatdex.hat.api.json.{ ApplicationJsonProtocol, DataFeedItemJsonProtocol, RichDataJsonFormats }
+import org.hatdex.hat.api.models.applications._
+import org.hatdex.hat.api.models.{ EndpointData, EndpointDataBundle, FormattedText }
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.Tables.{ DataBundlesRow, SheFunctionRow }
+import org.hatdex.hat.dal.Tables.{ DataBundlesRow, SheFunctionRow, SheFunctionStatusRow }
 import org.joda.time.{ DateTime, Period }
 import play.api.libs.json._
 
@@ -44,52 +44,75 @@ case class Request(
     data: Map[String, Seq[EndpointData]],
     linkRecords: Boolean)
 
-case class FunctionConfiguration(
+case class FunctionInfo(
+    version: Version,
+    versionReleaseDate: DateTime,
+    updateNotes: Option[ApplicationUpdateNotes],
     name: String,
-    description: String,
     headline: String,
-    logo: Option[String],
-    trigger: FunctionTrigger.Trigger,
+    description: FormattedText,
+    termsUrl: String,
+    supportContact: String,
+    dataPreview: Option[Seq[DataFeedItem]],
+    graphics: ApplicationGraphics,
+    dataPreviewEndpoint: Option[String])
+
+case class FunctionStatus(
     available: Boolean,
     enabled: Boolean,
-    dataBundle: EndpointDataBundle,
     lastExecution: Option[DateTime],
-    dataPreview: Option[Seq[DataFeedItem]],
-    dataPreviewEndpoint: Option[String]) {
+    executionStarted: Option[DateTime])
+
+case class FunctionConfiguration(
+    id: String,
+    info: FunctionInfo,
+    developer: ApplicationDeveloper,
+    trigger: FunctionTrigger.Trigger,
+    dataBundle: EndpointDataBundle,
+    status: FunctionStatus) {
   def update(other: FunctionConfiguration): FunctionConfiguration = {
     FunctionConfiguration(
-      this.name,
-      other.description,
-      other.headline,
-      other.logo,
+      this.id,
+      other.info,
+      other.developer,
       other.trigger,
-      other.available,
-      this.enabled || other.enabled,
       other.dataBundle,
-      this.lastExecution.orElse(other.lastExecution),
-      other.dataPreview,
-      other.dataPreviewEndpoint)
+      this.status.copy(
+        other.status.available,
+        this.status.enabled || other.status.enabled,
+        this.status.lastExecution.orElse(other.status.lastExecution),
+        this.status.executionStarted.orElse(other.status.executionStarted)))
   }
 }
 
 object FunctionConfiguration {
-  def apply(function: SheFunctionRow, bundle: DataBundlesRow, available: Boolean = false): FunctionConfiguration = {
-    import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol.triggerFormat
-    import org.hatdex.hat.she.models.FunctionTrigger.Trigger
+  def apply(function: SheFunctionRow, functionStatus: Option[SheFunctionStatusRow], bundle: DataBundlesRow, available: Boolean = false): FunctionConfiguration = {
     import DataFeedItemJsonProtocol.feedItemFormat
+    import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol._
+    import org.hatdex.hat.she.models.FunctionTrigger.Trigger
+    import ApplicationJsonProtocol.formattedTextFormat
+    import ApplicationJsonProtocol.applicationGraphicsFormat
 
     FunctionConfiguration(
-      function.name,
-      function.description,
-      function.headline,
-      function.logo,
+      function.id,
+      FunctionInfo(
+        Version(function.version),
+        function.versionReleaseDate,
+        None,
+        function.name, function.headline, function.description.as[FormattedText], function.termsUrl,
+        function.developerSupportEmail,
+        function.dataPreview.map(_.as[Seq[DataFeedItem]]),
+        function.graphics.as[ApplicationGraphics],
+        function.dataPreviewEndpoint),
+      ApplicationDeveloper(function.developerId, function.developerName, function.developerUrl, function.developerCountry, None),
       function.trigger.as[Trigger],
-      available, // false by default, needs to take current runtime configuration into account to update
-      function.enabled,
       ModelTranslation.fromDbModel(bundle),
-      function.lastExecution,
-      function.dataPreview.map(_.as[Seq[DataFeedItem]]),
-      function.dataPreviewEndpoint)
+      FunctionStatus(
+        available,
+        functionStatus.exists(_.enabled),
+        functionStatus.flatMap(_.lastExecution),
+        functionStatus.flatMap(_.executionStarted)))
+
   }
 }
 
@@ -115,6 +138,11 @@ object FunctionTrigger {
 
 trait FunctionConfigurationJsonProtocol extends JodaWrites with JodaReads with RichDataJsonFormats with DataFeedItemJsonProtocol {
   import FunctionTrigger._
+  import ApplicationJsonProtocol.applicationDeveloperFormat
+  import ApplicationJsonProtocol.applicationGraphicsFormat
+  import ApplicationJsonProtocol.versionFormat
+  import ApplicationJsonProtocol.applicationUpdateNotesFormat
+  import ApplicationJsonProtocol.formattedTextFormat
 
   protected implicit val triggerPeriodicFormat: Format[TriggerPeriodic] = Json.format[TriggerPeriodic]
 
@@ -136,7 +164,9 @@ trait FunctionConfigurationJsonProtocol extends JodaWrites with JodaReads with R
     }
   }
 
-  implicit val functionConfigurationForamt: Format[FunctionConfiguration] = Json.format[FunctionConfiguration]
+  implicit val functionInfoFormat: Format[FunctionInfo] = Json.format[FunctionInfo]
+  implicit val functionStatusFormat: Format[FunctionStatus] = Json.format[FunctionStatus]
+  implicit val functionConfigurationFormat: Format[FunctionConfiguration] = Json.format[FunctionConfiguration]
   implicit val responseFormat: Format[Response] = Json.format[Response]
   implicit val requestFormat: Format[Request] = Json.format[Request]
 }

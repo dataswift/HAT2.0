@@ -28,10 +28,11 @@ import java.security.MessageDigest
 
 import javax.inject.Inject
 import akka.Done
+import org.hatdex.hat.api.json.{ ApplicationJsonProtocol, DataFeedItemJsonProtocol }
 import org.hatdex.hat.api.models.{ EndpointData, Owner }
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.richData.RichDataService
-import org.hatdex.hat.she.models.{ FunctionConfiguration, FunctionExecutable, Request, Response }
+import org.hatdex.hat.she.models._
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import org.hatdex.hat.dal.Tables._
@@ -39,8 +40,10 @@ import org.hatdex.hat.resourceManagement.HatServer
 import play.api.Logger
 import play.api.libs.json.Json
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.Success
+import scala.concurrent.duration._
+import scala.util.{ Failure, Success }
 
 class FunctionService @Inject() (
     functionRegistry: FunctionExecutableRegistry,
@@ -50,12 +53,12 @@ class FunctionService @Inject() (
     ec: ExecutionContext) {
 
   private val logger = Logger(this.getClass)
-
+  private val functionExecutionTimeout: FiniteDuration = 5.minutes
   private implicit def hatServer2db(implicit hatServer: HatServer): Database = hatServer.db
 
   protected def mergeRegisteredSaved(registeredFunctions: Seq[FunctionConfiguration], savedFunctions: Seq[FunctionConfiguration]): Seq[FunctionConfiguration] = {
-    val registered: Map[String, FunctionConfiguration] = registeredFunctions.map(r => r.name -> r).toMap
-    val saved: Map[String, FunctionConfiguration] = savedFunctions.map(r => r.name -> r).toMap
+    val registered: Map[String, FunctionConfiguration] = registeredFunctions.map(r => r.id -> r).toMap
+    val saved: Map[String, FunctionConfiguration] = savedFunctions.map(r => r.id -> r).toMap
 
     val functions = for ((k, v) <- saved ++ registered)
       yield k -> (if ((saved contains k) && (registered contains k)) saved(k).update(v) else v)
@@ -68,25 +71,21 @@ class FunctionService @Inject() (
       registeredFunctions <- Future.successful(functionRegistry.getSeq[FunctionExecutable].map(_.configuration))
       savedFunctions <- saved()
     } yield {
-      logger.debug(
-        s"""Got a list of registered and saved functions:
-           | $registeredFunctions
-           | $savedFunctions""".stripMargin)
       mergeRegisteredSaved(registeredFunctions, savedFunctions)
-        .filter(f => !active || f.enabled && f.available) // only return enabled ones if filtering is on
+        .filter(f => !active || f.status.enabled && f.status.available) // only return enabled ones if filtering is on
     }
   }
 
-  def get(name: String)(implicit db: Database): Future[Option[FunctionConfiguration]] = {
+  def get(id: String)(implicit db: Database): Future[Option[FunctionConfiguration]] = {
     val query = for {
-      function <- SheFunction.filter(_.name === name)
-      bundle <- function.dataBundlesFk
-    } yield (function, bundle)
+      (function, status) ← SheFunction.filter(_.id === id).joinLeft(SheFunctionStatus).on(_.id === _.id)
+      bundle ← function.dataBundlesFk
+    } yield (function, status, bundle)
 
     for {
-      r <- Future.successful(functionRegistry.getSeq[FunctionExecutable].map(_.configuration).filter(_.name == name))
+      r <- Future.successful(functionRegistry.getSeq[FunctionExecutable].map(_.configuration).filter(_.id == id))
       f <- db.run(query.take(1).result)
-        .map(_.map(f => FunctionConfiguration(f._1, f._2).copy(available = r.exists(_.name == f._1.name))))
+        .map(_.map(f => FunctionConfiguration(f._1, f._2, f._3, available = r.exists(rf ⇒ rf.id == f._1.id && rf.status.available))))
     } yield {
       mergeRegisteredSaved(r, f)
         .headOption
@@ -95,20 +94,14 @@ class FunctionService @Inject() (
 
   def saved()(implicit db: Database): Future[Seq[FunctionConfiguration]] = {
     val query = for {
-      function <- SheFunction
+      (function, status) <- SheFunction.joinLeft(SheFunctionStatus).on(_.id === _.id)
       bundle <- function.dataBundlesFk
-    } yield (function, bundle)
+    } yield (function, status, bundle)
 
     for {
       r <- Future.successful(functionRegistry.getSeq[FunctionExecutable].map(_.configuration))
-        .andThen {
-          case Success(s) => logger.debug(s"Got registered functions: $s")
-        }
       f <- db.run(query.result)
-        .map(_.map(f => FunctionConfiguration(f._1, f._2).copy(available = r.exists(_.name == f._1.name))))
-        .andThen {
-          case Success(s) => logger.debug(s"Got saved functions: $s")
-        }
+        .map(_.map(f => FunctionConfiguration(f._1, f._2, f._3, available = r.exists(rf ⇒ rf.id == f._1.id && rf.status.available))))
     } yield f
   }
 
@@ -116,34 +109,92 @@ class FunctionService @Inject() (
     logger.debug(s"Save function configuration $configuration")
     import org.hatdex.hat.api.json.RichDataJsonFormats.propertyQueryFormat
     import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol.triggerFormat
-    val functionRow = SheFunctionRow(configuration.name, configuration.description, Json.toJson(configuration.trigger),
-      configuration.enabled, configuration.dataBundle.name, configuration.lastExecution)
+    import ApplicationJsonProtocol.formattedTextFormat
+    import DataFeedItemJsonProtocol.feedItemFormat
+    import ApplicationJsonProtocol.applicationGraphicsFormat
+
+    val functionRow = SheFunctionRow(configuration.id, Json.toJson(configuration.info.description), Json.toJson(configuration.trigger),
+      configuration.dataBundle.name, configuration.info.headline,
+      configuration.info.dataPreview.map(dp ⇒ Json.toJson(dp)), configuration.info.dataPreviewEndpoint,
+      Json.toJson(configuration.info.graphics), configuration.info.name,
+      configuration.info.version.toString(), configuration.info.termsUrl,
+      configuration.developer.id, configuration.developer.name,
+      configuration.developer.url, configuration.developer.country,
+      configuration.info.versionReleaseDate, configuration.info.supportContact)
+
     val bundleRow = DataBundlesRow(configuration.dataBundle.name, Json.toJson(configuration.dataBundle.bundle))
+    val statusRow = SheFunctionStatusRow(configuration.id, configuration.status.enabled,
+      configuration.status.lastExecution, configuration.status.executionStarted)
 
     db.run(DBIO.seq(
       DataBundles.insertOrUpdate(bundleRow),
-      SheFunction.insertOrUpdate(functionRow)).transactionally)
-      .flatMap(_ => get(configuration.name))
+      SheFunction.insertOrUpdate(functionRow),
+      SheFunctionStatus.insertOrUpdate(statusRow)).transactionally)
+      .flatMap(_ => get(configuration.id))
       .map(_.get)
   }
 
   def run(configuration: FunctionConfiguration, startTime: Option[DateTime])(implicit hatServer: HatServer): Future[Done] = {
-    functionRegistry.get[FunctionExecutable](configuration.name)
+    val executionTime = DateTime.now()
+    logger.info(s"[${hatServer.domain}] SHE function [${configuration.id}] run @$executionTime (previously $startTime)")
+    functionRegistry.get[FunctionExecutable](configuration.id)
       .map { function: FunctionExecutable =>
         val fromDate = startTime.orElse(Some(DateTime.now().minusMonths(6)))
         val untilDate = Some(DateTime.now().plusMonths(3))
-        val executionTime = DateTime.now()
-        for {
-          data <- dataService.bundleData(function.bundleFilterByDate(fromDate, untilDate), createdAfter = configuration.lastExecution) // Get all bundle data from a specific date until now
-          response <- function.execute(configuration, Request(data, linkRecords = true)) // Execute the function
+        val executionResult = for {
+          _ ← markExecuting(configuration)
+          data ← dataService.bundleData(function.bundleFilterByDate(fromDate, untilDate), createdAfter = configuration.status.lastExecution) // Get all bundle data from a specific date until now
+          response ← function.execute(configuration, Request(data, linkRecords = true)) // Execute the function
             .map(removeDuplicateData) // Remove duplicate data in case some records mapped onto the same values when transformed
+          // TODO handle cases when function runs for longer and connection to DB needs to be reestablished
           owner <- usersService.getUserByRole(Owner()).map(_.head) // Fetch the owner user - functions run on their behalf
-          _ <- dataService.saveDataGroups(owner.userId, response.map(r => (r.data.map(EndpointData(s"${r.namespace}/${r.endpoint}", None, _, None)), r.linkedRecords)), skipErrors = true)
-          _ <- save(configuration.copy(lastExecution = Some(executionTime)))
-        } yield Done
+          _ <- dataService.saveDataGroups(owner.userId, response.map(r => (r.data.map(
+            EndpointData(s"${r.namespace}/${r.endpoint}", None, None, None, _, None)), r.linkedRecords)), skipErrors = true)
+          _ <- markCompleted(configuration)
+        } yield (data.values.map(_.length).sum, Done)
+
+        executionResult
+          .andThen({
+            case Success((totalRecords, _)) ⇒ logger.info(s"[${hatServer.domain}] SHE function [${configuration.id}] finished, generated $totalRecords records")
+            case Failure(e)                 ⇒ logger.error(s"[${hatServer.domain}] SHE function [${configuration.id}] error: ${e.getMessage}")
+          })
+          .map(_._2)
+
       } getOrElse {
-        Future.failed(new RuntimeException("The requested function is not available"))
+        Future.failed(SHEFunctionNotAvailableException("The requested function is not available"))
       }
+  }
+
+  private def markExecuting(function: FunctionConfiguration)(implicit hatServer: HatServer): Future[Done] = {
+    val notExecuting = SheFunctionStatus.filter(_.id === function.id)
+      .filter(s ⇒ s.lastExecution > DateTime.now().minus(functionExecutionTimeout.toMillis))
+      .result
+      .flatMap(r ⇒
+        if (r.isEmpty) {
+          DBIO.successful("No current execution")
+        }
+        else {
+          DBIO.failed(SHEFunctionBusyExecutingException("The function is being executed"))
+        })
+
+    val mark = SheFunctionStatus.filter(_.id === function.id)
+      .map(s ⇒ s.executionStarted)
+      .update(Some(DateTime.now()))
+
+    hatServer.db.run(DBIO.seq(notExecuting, mark).transactionally)
+      .map(_ ⇒ Done)
+  }
+
+  private def markCompleted(function: FunctionConfiguration)(implicit hatServer: HatServer): Future[Done] = {
+    val now = DateTime.now()
+    logger.info(s"[${hatServer.domain}] Successfully executed function ${function.id} at $now")
+
+    val update = SheFunctionStatus.filter(_.id === function.id)
+      .map(s ⇒ (s.executionStarted, s.lastExecution))
+      .update((None, Some(now)))
+
+    hatServer.db.run(update)
+      .map(_ ⇒ Done)
   }
 
   //TODO: expensive operation!

@@ -145,7 +145,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
         _ ← service.setup(app.get)
         _ ← dataService.saveData(
           owner.userId,
-          Seq(EndpointData(notablesApp.status.recentDataCheckEndpoint.get, None,
+          Seq(EndpointData(notablesApp.status.recentDataCheckEndpoint.get, None, None, None,
             JsObject(Map("test" -> JsString("test"))), None)), skipErrors = true)
         app <- service.applicationStatus(notablesApp.id, bustCache = true)
       } yield {
@@ -332,7 +332,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
     "Return `true` for internal status checks" in {
       withMockWsClient { client ⇒
         val service = new ApplicationStatusCheckService(client)(remoteEC)
-        service.status(ApplicationStatus.Internal(Version("1.0.0"), None, None), "token")
+        service.status(ApplicationStatus.Internal(Version("1.0.0"), None, None, DateTime.now()), "token")
           .map { result ⇒
             result must beTrue
           }
@@ -343,7 +343,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
     "Return `true` for external check with matching status" in {
       withMockWsClient { client ⇒
         val service = new ApplicationStatusCheckService(client)(remoteEC)
-        service.status(ApplicationStatus.External(Version("1.0.0"), "/status", 200, None, None), "token")
+        service.status(ApplicationStatus.External(Version("1.0.0"), "/status", 200, None, None, DateTime.now()), "token")
           .map { result ⇒
             result must beTrue
           }
@@ -354,7 +354,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
     "Return `false` for external check with non-matching status" in {
       withMockWsClient { client ⇒
         val service = new ApplicationStatusCheckService(client)(remoteEC)
-        service.status(ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None, None), "token")
+        service.status(ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None, None, DateTime.now()), "token")
           .map { result ⇒
             result must beFalse
           }

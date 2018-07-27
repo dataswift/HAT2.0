@@ -77,9 +77,9 @@ class PhataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val dataService = application.injector.instanceOf[RichDataService]
 
       val data = List(
-        EndpointData("rumpel/notablesv1", None, samplePublicNotable, None),
-        EndpointData("rumpel/notablesv1", None, samplePrivateNotable, None),
-        EndpointData("rumpel/notablesv1", None, sampleSocialNotable, None))
+        EndpointData("rumpel/notablesv1", None, None, None, samplePublicNotable, None),
+        EndpointData("rumpel/notablesv1", None, None, None, samplePrivateNotable, None),
+        EndpointData("rumpel/notablesv1", None, None, None, sampleSocialNotable, None))
 
       val result = for {
         _ <- dataService.saveData(owner.userId, data)

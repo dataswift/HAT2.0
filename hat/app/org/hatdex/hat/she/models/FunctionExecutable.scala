@@ -38,3 +38,8 @@ trait FunctionExecutable {
     configuration.dataBundle
   }
 }
+
+class SHEException(message: String = "", cause: Throwable = None.orNull) extends RuntimeException(message, cause)
+case class SHEFunctionNotAvailableException(message: String = "", cause: Throwable = None.orNull) extends SHEException(message, cause)
+case class SHEFunctionBusyExecutingException(message: String = "", cause: Throwable = None.orNull) extends SHEException(message, cause)
+case class SHEFunctionExecutionFailureException(message: String = "", cause: Throwable = None.orNull) extends SHEException(message, cause)
