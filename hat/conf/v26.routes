@@ -53,6 +53,14 @@ GET           /applications/:application/setup                                  
 GET           /applications/:application/disable                                             org.hatdex.hat.api.controllers.Applications.applicationDisable(application)
 GET           /applications/:application/access-token                                        org.hatdex.hat.api.controllers.Applications.applicationToken(application)
 
+GET            /applications/:application/proxy/*path                                        org.hatdex.hat.api.controllers.ApplicationRequestProxy.proxyRequest(application, path, method: String = "GET")
+POST           /applications/:application/proxy/*path                                        org.hatdex.hat.api.controllers.ApplicationRequestProxy.proxyRequest(application, path, method: String = "POST")
+PUT            /applications/:application/proxy/*path                                        org.hatdex.hat.api.controllers.ApplicationRequestProxy.proxyRequest(application, path, method: String = "PUT")
+PATCH          /applications/:application/proxy/*path                                        org.hatdex.hat.api.controllers.ApplicationRequestProxy.proxyRequest(application, path, method: String = "PATCH")
+HEAD           /applications/:application/proxy/*path                                        org.hatdex.hat.api.controllers.ApplicationRequestProxy.proxyRequest(application, path, method: String = "HEAD")
+DELETE         /applications/:application/proxy/*path                                        org.hatdex.hat.api.controllers.ApplicationRequestProxy.proxyRequest(application, path, method: String = "DELETE")
+OPTIONS        /applications/:application/proxy/*path                                        org.hatdex.hat.api.controllers.ApplicationRequestProxy.proxyRequest(application, path, method: String = "OPTIONS")
+
 # Smart HAT Engine (SHE) routes
 
 GET           /she/function                                                                  org.hatdex.hat.she.controllers.FunctionManager.functionList()
