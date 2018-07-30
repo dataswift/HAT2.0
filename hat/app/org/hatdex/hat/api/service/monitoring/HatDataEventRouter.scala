@@ -52,6 +52,7 @@ class HatDataEventRouterImpl @Inject() (
     dataEventBus.subscribe(buffer(statsProcessor), classOf[HatDataEventBus.RichDataRetrievedEvent])
     // Data Debit Events are dispatched without buffering
     dataEventBus.subscribe(statsProcessor, classOf[HatDataEventBus.RichDataDebitEvent])
+    dataEventBus.subscribe(statsProcessor, classOf[HatDataEventBus.DataDebitEvent])
     Done
   }
 
