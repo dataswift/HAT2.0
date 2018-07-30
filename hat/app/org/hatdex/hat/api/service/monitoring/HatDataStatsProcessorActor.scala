@@ -25,12 +25,11 @@
 package org.hatdex.hat.api.service.monitoring
 
 import javax.inject.Inject
-
 import akka.Done
 import akka.actor.Actor
-import org.hatdex.hat.api.models.{ DataStats, InboundDataStats, OutboundDataStats, DataDebitEvent ⇒ DataDebitAction }
+import org.hatdex.hat.api.models.{ DataDebitOperation, DataStats, InboundDataStats, OutboundDataStats, DataDebitEvent ⇒ DataDebitAction }
 import org.hatdex.hat.api.service.StatsReporter
-import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{ DataCreatedEvent, RichDataDebitEvent, RichDataRetrievedEvent }
+import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{ DataCreatedEvent, DataDebitEvent, RichDataDebitEvent, RichDataRetrievedEvent }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerDiscoveryException, HatServerProvider }
 import play.api.Logger
 
@@ -47,6 +46,7 @@ class HatDataStatsProcessorActor @Inject() (
     case d: DataCreatedEvent       => processBatchedStats(Seq(d))
     case d: RichDataRetrievedEvent => processBatchedStats(Seq(d))
     case d: RichDataDebitEvent     => processBatchedStats(Seq(d))
+    case d: DataDebitEvent         => processBatchedStats(Seq(d))
     case d: Seq[_]                 => processBatchedStats(d)
     case m                         => log.warn(s"Received something else: $m")
   }
@@ -62,6 +62,7 @@ class HatDataStatsProcessorActor @Inject() (
             case s: DataCreatedEvent       => processor.computeInboundStats(s)
             case s: RichDataRetrievedEvent => processor.computeOutboundStats(s)
             case e: RichDataDebitEvent     => processor.reportDataDebitEvent(e)
+            case e: DataDebitEvent         => processor.reportDataDebitEvent(e)
           }
           hat -> aggregated
       }
@@ -97,6 +98,11 @@ class HatDataStatsProcessor @Inject() (
 
   def reportDataDebitEvent(event: RichDataDebitEvent): DataDebitAction = {
     DataDebitAction(event.dataDebit, event.operation.toString,
+      event.time.toLocalDateTime, event.user, event.logEntry)
+  }
+
+  def reportDataDebitEvent(event: DataDebitEvent): DataDebitOperation = {
+    DataDebitOperation(event.dataDebit, event.operation.toString,
       event.time.toLocalDateTime, event.user, event.logEntry)
   }
 
