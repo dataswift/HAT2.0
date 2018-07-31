@@ -196,8 +196,8 @@ class DataDebitService @Inject() (usersService: UsersService)(implicit val ec: R
 
     val permissionsEnabled = DbDataDebitPermissions
       .filter(_.bundleId in newestPermissions.map(_.bundleId))
-      .map(_.accepted)
-      .update(true)
+      .map(dd ⇒ (dd.accepted, dd.canceledAt))
+      .update((true, None))
 
     server.db.run(DBIO.seq(oldPermissionsDisabled, permissionsEnabled).transactionally)
       .map(_ => Done)

@@ -95,6 +95,7 @@ object JsonDataTransformer {
   def mappingTransformer(mapping: JsObject): Reads[JsObject] = {
     mapping.fields
       .map(f => nestedDataPicker(f._1, f._2))
-      .reduceLeft((reads, addedReads) => reads.and(addedReads).reduce)
+      .reduceLeftOption((reads, addedReads) => reads.and(addedReads).reduce)
+      .getOrElse(Reads.pure(JsObject.empty))
   }
 }
