@@ -78,7 +78,7 @@ class DataFeedDirectMapper extends FunctionExecutable with DataFeedItemJsonProto
         Drawable(None, "", None, None),
         Drawable(None, "", None, None),
         Seq(Drawable(None, "", None, None), Drawable(None, "https://github.com/Hub-of-all-Things/exchange-assets/blob/master/insights-activity-summary/screenshot2.jpg?raw=true", None, None))),
-      Some(s"$namespace/$endpoint")),
+      Some("/she/feed/she/activity-records")),
     ApplicationDeveloper("hatdex", "HATDeX", "https://hatdex.org", Some("United Kingdom"), None),
     FunctionTrigger.TriggerIndividual(),
     dataBundle = bundleFilterByDate(None, None),
