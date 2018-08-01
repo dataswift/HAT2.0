@@ -28,13 +28,13 @@ import com.google.inject.{ AbstractModule, Provides }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models.applications._
-import org.hatdex.hat.api.models.{ Drawable, EndpointDataBundle, FormattedText }
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
-import org.hatdex.hat.she.functions.DataFeedDirectMapper
 import org.hatdex.hat.she.models._
 import org.joda.time.DateTime
-import play.api.Application
+import play.api.{ Application }
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.{ JsBoolean, JsObject }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -110,14 +110,74 @@ trait FunctionServiceContext extends HATTestContext {
   //    dataBundle = EndpointDataBundle("test-unavailable-function-bundler", Map()),
   //    None, None, None)
 
-  val registeredFunction = new DataFeedDirectMapper() {
-    override val configuration = dummyFunctionConfiguration.copy(
+  val registeredFunction = new FunctionExecutable {
+    val configuration: FunctionConfiguration = dummyFunctionConfiguration.copy(
       id = "data-feed-direct-mapper",
       info = dummyFunctionConfiguration.info.copy(name = "data-feed-direct-mapper", headline = "Dummy Function"),
-      dataBundle = bundleFilterByDate(None, None),
+      dataBundle = EndpointDataBundle(
+        "data-feed-counter",
+        Map(
+          "facebook/feed" → PropertyQuery(
+            List(
+              EndpointQuery("facebook/feed", None, None, None)),
+            Some("created_time"), Some("descending"), None),
+          "facebook/events" → PropertyQuery(
+            List(
+              EndpointQuery("facebook/events", None, None, None)),
+            Some("start_time"), Some("descending"), None),
+          "twitter/tweets" → PropertyQuery(
+            List(
+              EndpointQuery("twitter/tweets", None, None, None)),
+            Some("lastUpdated"), Some("descending"), None),
+          "fitbit/sleep" → PropertyQuery(
+            List(
+              EndpointQuery("fitbit/sleep", None,
+                None, None)),
+            Some("endTime"), Some("descending"), None),
+          "fitbit/activity" → PropertyQuery(
+            List(
+              EndpointQuery("fitbit/activity", None,
+                None, None)),
+            Some("originalStartTime"), Some("descending"), None),
+          "fitbit/weight" → PropertyQuery(
+            List(
+              EndpointQuery("fitbit/weight", None,
+                None, None)),
+            Some("date"), Some("descending"), None),
+          "calendar/google/events" → PropertyQuery(
+            List(
+              EndpointQuery("calendar/google/events", None, None, None)),
+            Some("start.dateTime"), Some("descending"), None),
+          "notables/feed" → PropertyQuery(
+            List(
+              EndpointQuery("rumpel/notablesv1", None, None, None)),
+            Some("created_time"), Some("descending"), None),
+          "spotify/feed" → PropertyQuery(
+            List(
+              EndpointQuery("spotify/feed", None, None, None)),
+            Some("played_at"), Some("descending"), None),
+          "monzo/transactions" → PropertyQuery(
+            List(
+              EndpointQuery("monzo/transactions", None, None, None)),
+            Some("created"), Some("descending"), None))),
       status = dummyFunctionConfiguration.status.copy(available = true, enabled = false))
+
+    val namespace = "test"
+    val endpoint = "test-endpoint"
+
+    implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
+    def execute(configuration: FunctionConfiguration, request: Request): Future[Seq[Response]] = {
+      Future.successful(
+        request.data.values.flatten
+          .map(d ⇒ Response(namespace, endpoint, Seq(d.data.as[JsObject].+("mapped" → JsBoolean(true))), Seq())).toSeq)
+    }
+    override def bundleFilterByDate(fromDate: Option[DateTime], untilDate: Option[DateTime]): Future[EndpointDataBundle] = {
+      // Explicitly ignore the parameters - compiler complains about unused parameters
+      (fromDate, untilDate)
+      Future.successful(configuration.dataBundle)
+    }
   }
-  val dataFeedCounterFunction = new DataFeedCounter()
+
   val registeredDummyFunction: FunctionExecutable = new DummyFunctionExecutable(dummyFunctionConfiguration)
   val registeredDummyFunctionAvailable: FunctionExecutable = new DummyFunctionExecutable(dummyFunctionConfigurationAvailable)
 }
@@ -125,7 +185,12 @@ trait FunctionServiceContext extends HATTestContext {
 class DummyFunctionExecutable(conf: FunctionConfiguration) extends FunctionExecutable {
   val configuration = conf
 
-  override def execute(configuration: FunctionConfiguration, request: Request)(implicit ec: ExecutionContext): Future[Seq[Response]] = {
+  val namespace = "test"
+  val endpoint = "test-endpoint"
+
+  implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
+
+  override def execute(configuration: FunctionConfiguration, request: Request): Future[Seq[Response]] = {
     Future.failed(new RuntimeException("Dummy Function"))
   }
 }

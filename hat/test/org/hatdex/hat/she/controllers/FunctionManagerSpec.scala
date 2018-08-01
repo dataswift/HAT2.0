@@ -245,7 +245,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       val records = Seq(exampleTweetRetweet, exampleTweetMentions, exampleFacebookPhotoPost, exampleFacebookPost,
         facebookStory, facebookEvent, facebookEvenNoLocation, facebookEvenPartialLocation, fitbitSleepMeasurement,
-        fitbitWeightMeasurement, fitbitActivity, fitbitDaySummary, googleCalendarEvent, googleCalendarFullDayEvent)
+        fitbitWeightMeasurement, fitbitActivity, googleCalendarEvent, googleCalendarFullDayEvent)
 
       val setup = for {
         _ <- dataService.saveData(owner.userId, records)
@@ -264,7 +264,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         None, orderingDescending = false, 0, None)
         .map { data =>
           data.length must be greaterThanOrEqualTo records.length
-          data.forall(_.endpoint == "she/feed") must be equalTo true
+          data.forall(_.endpoint == s"${registeredFunction.namespace}/${registeredFunction.endpoint}") must be equalTo true
         } await (3, 60.seconds)
     }
   }
