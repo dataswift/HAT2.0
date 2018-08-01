@@ -38,6 +38,8 @@ class LambdaFunctionExecutable(
     id: String,
     version: Version,
     baseUrl: String,
+    val namespace: String,
+    val endpoint: String,
     val configuration: FunctionConfiguration)(
     wsClient: WSClient)(
     implicit
@@ -100,7 +102,7 @@ object LambdaFunctionExecutable {
   protected val logger = Logger(this.getClass)
   import FunctionConfigurationJsonProtocol.functionConfigurationFormat
 
-  def apply(wsClient: WSClient)(id: String, version: Version, baseUrl: String)(implicit ec: ExecutionContext): Future[LambdaFunctionExecutable] = {
+  def apply(wsClient: WSClient)(id: String, version: Version, baseUrl: String, namespace: String, endpoint: String)(implicit ec: ExecutionContext): Future[LambdaFunctionExecutable] = {
     wsClient.url(s"$baseUrl/$id/$version/configuration")
       .get()
       .map(response ⇒
@@ -113,7 +115,7 @@ object LambdaFunctionExecutable {
                 throw DataFormatException(message)
             }
             // Convert to OfferClaimsInfo - if validation has failed, it will have thrown an error already
-            new LambdaFunctionExecutable(id, version, baseUrl, jsResponse.get)(wsClient)
+            new LambdaFunctionExecutable(id, version, baseUrl, namespace, endpoint, jsResponse.get)(wsClient)
           case _ ⇒
             val message = s"Retrieving SHE function bundle failed: $response, ${response.body}"
             logger.error(message)

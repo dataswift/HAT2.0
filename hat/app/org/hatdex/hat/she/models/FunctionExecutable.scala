@@ -31,6 +31,8 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 trait FunctionExecutable {
   val configuration: FunctionConfiguration
+  val namespace: String
+  val endpoint: String
   implicit val ec: ExecutionContext
   def execute(configuration: FunctionConfiguration, request: Request): Future[Seq[Response]]
   def bundleFilterByDate(fromDate: Option[DateTime], untilDate: Option[DateTime]): Future[EndpointDataBundle] = {

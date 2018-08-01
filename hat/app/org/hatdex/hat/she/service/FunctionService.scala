@@ -201,9 +201,11 @@ class FunctionService @Inject() (
   //TODO: expensive operation!
   private def removeDuplicateData(response: Seq[Response]): Seq[Response] = {
     val md = MessageDigest.getInstance("SHA-256")
-    response.map({ r ⇒
-      val digest = md.digest(r.data.head.toString().getBytes)
-      (BigInt(digest), r)
+    response.flatMap({ r ⇒
+      r.data.headOption.map { data ⇒
+        val digest = md.digest(data.toString().getBytes)
+        (BigInt(digest), r)
+      }
     })
       .sortBy(_._1)
       .foldRight(Seq[(BigInt, Response)]())({
