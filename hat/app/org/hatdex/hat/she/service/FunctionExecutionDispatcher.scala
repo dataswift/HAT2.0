@@ -34,9 +34,9 @@ import org.hatdex.hat.api.service.monitoring.HatDataEventBus.DataCreatedEvent
 import org.hatdex.hat.resourceManagement.{ HatServerDiscoveryException, HatServerProvider }
 import org.hatdex.hat.she.models._
 import org.joda.time.DateTime
-import play.api.Logger
+import play.api.{ Configuration, Logger }
 
-import scala.concurrent.duration.{ FiniteDuration, _ }
+import scala.concurrent.duration.{ FiniteDuration }
 import scala.concurrent.{ ExecutionContext, Future }
 
 class FunctionTriggerLogger extends Actor {
@@ -48,6 +48,7 @@ class FunctionTriggerLogger extends Actor {
 }
 
 class FunctionExecutionTriggerHandler @Inject() (
+    configuration: Configuration,
     dataEventBus: HatDataEventBus,
     hatServerProvider: HatServerProvider,
     functionService: FunctionService,
@@ -80,12 +81,12 @@ class FunctionExecutionTriggerHandler @Inject() (
       }
   }
 
-  protected val maxHats: Int = 1000
-  protected val messageBatch: Int = 100
-  protected val messagePeriod: FiniteDuration = 120.seconds
-  protected val matchingFunctionParallelism: Int = 10
-  protected val functionExecutionParallelism: Int = 10
-  protected implicit val functionExecutionTimeout: FiniteDuration = 5.minutes
+  protected val maxHats: Int = configuration.get[Int]("she.executionDispatcher.maxHats")
+  protected val messageBatch: Int = configuration.get[Int]("she.executionDispatcher.messageBatch")
+  protected val messagePeriod: FiniteDuration = configuration.get[FiniteDuration]("she.executionDispatcher.messagePeriod")
+  protected val matchingFunctionParallelism: Int = configuration.get[Int]("she.executionDispatcher.matchingFunctionParallelism")
+  protected val functionExecutionParallelism: Int = configuration.get[Int]("she.executionDispatcher.functionExecutionParallelism")
+  protected implicit val functionExecutionTimeout: FiniteDuration = configuration.get[FiniteDuration]("she.executionDispatcher.functionExecutionTimeout")
 
   protected val functionTriggerLogger: ActorRef = actorSystem.actorOf(Props[FunctionTriggerLogger])
 
