@@ -201,7 +201,7 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       val records = Seq(exampleTweetRetweet, exampleTweetMentions, exampleFacebookPhotoPost, exampleFacebookPost,
         facebookStory, facebookEvent, facebookEvenNoLocation, facebookEvenPartialLocation, fitbitSleepMeasurement,
-        fitbitWeightMeasurement, fitbitActivity, fitbitDaySummary, googleCalendarEvent, googleCalendarFullDayEvent)
+        fitbitWeightMeasurement, fitbitActivity, googleCalendarEvent, googleCalendarFullDayEvent)
 
       val executed = for {
         _ <- dataService.saveData(owner.userId, records)
@@ -212,7 +212,7 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         functionUpdated <- service.get(registeredFunction.configuration.id)
       } yield {
         data.length must be greaterThanOrEqualTo records.length
-        data.forall(_.endpoint == "she/feed") must be equalTo true
+        data.forall(_.endpoint == s"${registeredFunction.namespace}/${registeredFunction.endpoint}") must be equalTo true
         functionUpdated must beSome
         functionUpdated.get.status.lastExecution must beSome
       }

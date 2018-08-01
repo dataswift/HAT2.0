@@ -49,11 +49,14 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   implicit val seqFunctionConfigLoader: ConfigLoader[Seq[FunctionConfig]] = new ConfigLoader[Seq[FunctionConfig]] {
     def load(config: Config, path: String): Seq[FunctionConfig] = {
       val configs = config.getConfigList(path).asScala
-      logger.warn(s"Got SHE function configs: $configs")
+      logger.info(s"Got SHE function configs: $configs")
       configs.map { config ⇒
-        val f = FunctionConfig(config.getString("id"), Version(config.getString("version")), config.getString("baseUrl"))
-        logger.warn(s"Got SHE function configuration: $config -> $f")
-        f
+        FunctionConfig(
+          config.getString("id"),
+          Version(config.getString("version")),
+          config.getString("baseUrl"),
+          config.getString("namespace"),
+          config.getString("endpoint"))
       }
     }
   }
@@ -64,12 +67,12 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     wsClient: WSClient)(implicit ec: ExecutionContext): FunctionExecutableRegistry = {
     val eventuallyFunctionsLoaded = Future.sequence(
       config.get[Seq[FunctionConfig]]("she.functions")
-        .map(c ⇒ LambdaFunctionExecutable(wsClient)(c.id, c.version, c.baseUrl)))
+        .map(c ⇒ LambdaFunctionExecutable(wsClient)(c.id, c.version, c.baseUrl, c.namespace, c.endpoint)))
 
     val functionsLoaded = Await.result(eventuallyFunctionsLoaded, 30.seconds)
 
     new FunctionExecutableRegistry(functionsLoaded)
   }
 
-  case class FunctionConfig(id: String, version: Version, baseUrl: String)
+  case class FunctionConfig(id: String, version: Version, baseUrl: String, namespace: String, endpoint: String)
 }
