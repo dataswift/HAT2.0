@@ -143,7 +143,8 @@ class FunctionService @Inject() (
         val untilDate = Some(DateTime.now().plusMonths(3))
         val executionResult = for {
           _ ← markExecuting(configuration)
-          data ← dataService.bundleData(function.bundleFilterByDate(fromDate, untilDate), createdAfter = configuration.status.lastExecution) // Get all bundle data from a specific date until now
+          bundle ← function.bundleFilterByDate(fromDate, untilDate)
+          data ← dataService.bundleData(bundle, createdAfter = configuration.status.lastExecution) // Get all bundle data from a specific date until now
           response ← function.execute(configuration, Request(data, linkRecords = true)) // Execute the function
             .map(removeDuplicateData) // Remove duplicate data in case some records mapped onto the same values when transformed
           // TODO handle cases when function runs for longer and connection to DB needs to be reestablished

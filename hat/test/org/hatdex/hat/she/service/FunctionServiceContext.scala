@@ -30,7 +30,7 @@ import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models.applications._
 import org.hatdex.hat.api.models.{ Drawable, EndpointDataBundle, FormattedText }
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
-import org.hatdex.hat.she.functions.{ DataFeedCounter, DataFeedDirectMapper }
+import org.hatdex.hat.she.functions.DataFeedDirectMapper
 import org.hatdex.hat.she.models._
 import org.joda.time.DateTime
 import play.api.Application

@@ -25,26 +25,51 @@
 package org.hatdex.hat.modules
 
 import com.google.inject.{ AbstractModule, Provides }
+import com.typesafe.config.Config
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.she.functions.{ DataFeedCounter, DataFeedDirectMapper }
+import org.hatdex.hat.api.models.applications.Version
+import org.hatdex.hat.she.models.LambdaFunctionExecutable
 import org.hatdex.hat.she.service.{ FunctionExecutableRegistry, FunctionExecutionTriggerHandler }
+import play.api.{ ConfigLoader, Configuration, Logger }
 import play.api.libs.concurrent.AkkaGuiceSupport
+import play.api.libs.ws.WSClient
+
+import scala.collection.JavaConverters._
+import scala.concurrent.{ Await, ExecutionContext, Future }
+import scala.concurrent.duration._
 
 class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
+  val logger = Logger(this.getClass)
 
   def configure() = {
-    //    bindActorFactory[FunctionExecutorActor, FunctionExecutorActor.Factory]
     bind[FunctionExecutionTriggerHandler].asEagerSingleton()
     ()
   }
 
-  @Provides
-  def provideFunctionExecutableRegistry(): FunctionExecutableRegistry = {
-    val functions = Seq(
-      new DataFeedCounter(),
-      new DataFeedDirectMapper())
-
-    new FunctionExecutableRegistry(functions)
+  implicit val seqFunctionConfigLoader: ConfigLoader[Seq[FunctionConfig]] = new ConfigLoader[Seq[FunctionConfig]] {
+    def load(config: Config, path: String): Seq[FunctionConfig] = {
+      val configs = config.getConfigList(path).asScala
+      logger.warn(s"Got SHE function configs: $configs")
+      configs.map { config ⇒
+        val f = FunctionConfig(config.getString("id"), Version(config.getString("version")), config.getString("baseUrl"))
+        logger.warn(s"Got SHE function configuration: $config -> $f")
+        f
+      }
+    }
   }
 
+  @Provides
+  def provideFunctionExecutableRegistry(
+    config: Configuration,
+    wsClient: WSClient)(implicit ec: ExecutionContext): FunctionExecutableRegistry = {
+    val eventuallyFunctionsLoaded = Future.sequence(
+      config.get[Seq[FunctionConfig]]("she.functions")
+        .map(c ⇒ LambdaFunctionExecutable(wsClient)(c.id, c.version, c.baseUrl)))
+
+    val functionsLoaded = Await.result(eventuallyFunctionsLoaded, 30.seconds)
+
+    new FunctionExecutableRegistry(functionsLoaded)
+  }
+
+  case class FunctionConfig(id: String, version: Version, baseUrl: String)
 }
