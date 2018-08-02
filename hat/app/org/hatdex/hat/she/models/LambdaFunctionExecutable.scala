@@ -52,7 +52,7 @@ class LambdaFunctionExecutable(
   logger.info(s"Initialised SHE lambda function $id v$version")
 
   def execute(configuration: FunctionConfiguration, request: Request): Future[Seq[Response]] = {
-    wsClient.url(s"$baseUrl/$version/$id")
+    wsClient.url(s"$baseUrl/$id/$version")
       .post(Json.toJson(Map(
         "functionConfiguration" → Json.toJson(configuration),
         "request" → Json.toJson(request))))
