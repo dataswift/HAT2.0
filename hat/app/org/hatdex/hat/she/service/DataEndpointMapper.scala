@@ -139,6 +139,39 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
   }
 }
 
+class InsightSentimentMapper extends DataEndpointMapper {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(
+        EndpointQuery("she/insights/emotions", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("timestamp", None, f))), None)),
+      Some("timestamp"), Some("descending"), None))
+  }
+
+  private val textMappings = Map(
+    "twitter/tweets" → "Twitter",
+    "facebook/feed" → "Facebook",
+    "notables/feed" → "Notables")
+
+  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+    for {
+      sentiment ← Try((content \ "sentiment").as[String])
+      text ← Try((content \ "text").as[String])
+      source ← Try((content \ "source").as[String])
+      timestamp ← Try((content \ "timestamp").as[DateTime])
+    } yield {
+      val title = DataFeedItemTitle(
+        s"$sentiment Message",
+        Some(s"on ${textMappings.getOrElse(source, source)}"),
+        Some("sentiment"))
+
+      val itemContent = DataFeedItemContent(text = Some(text), html = None, media = None, nestedStructure = None)
+
+      DataFeedItem("she", timestamp, Seq("insight", "sentiment", sentiment,
+        textMappings.getOrElse(source, source)), Some(title), Some(itemContent), None)
+    }
+  }
+}
+
 class InsightsMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
