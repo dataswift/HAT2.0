@@ -89,15 +89,7 @@ object Dependencies {
       val nbvcxz = "me.gosimple" % "nbvcxz" % "1.4.1"
       val elasticacheClusterClient = "com.amazonaws" % "elasticache-java-cluster-client" % "1.1.1"
       val playMemcached = "com.github.mumoshu" %% "play2-memcached-play26" % "0.9.1" exclude("net.spy", "spymemcached")
-    }
-
-    object Akka {
-      private val version = "2.5.14"
-      val slf4j = "com.typesafe.akka" %% "akka-slf4j" % version
-      val httpCore = "com.typesafe.akka" %% "akka-http-core" % "10.1.3"
-      val akkaStream = "com.typesafe.akka" %% "akka-stream" % version
-      val akkaActor = "com.typesafe.akka" %% "akka-actor" % version
-      val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % version
+      val alpakkaAwsLambda = "com.lightbend.akka" %% "akka-stream-alpakka-awslambda" % "0.20"
     }
 
     object HATDeX {
