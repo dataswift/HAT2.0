@@ -27,13 +27,12 @@ package org.hatdex.hat.she.models
 import org.hatdex.hat.api.models.EndpointDataBundle
 import org.joda.time.DateTime
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 trait FunctionExecutable {
   val configuration: FunctionConfiguration
   val namespace: String
   val endpoint: String
-  implicit val ec: ExecutionContext
   def execute(configuration: FunctionConfiguration, request: Request): Future[Seq[Response]]
   def bundleFilterByDate(fromDate: Option[DateTime], untilDate: Option[DateTime]): Future[EndpointDataBundle] = {
     // Explicitly ignore the parameters - compiler complains about unused parameters
