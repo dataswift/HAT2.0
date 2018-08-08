@@ -28,15 +28,15 @@ import com.google.inject.{ AbstractModule, Provides }
 import com.typesafe.config.Config
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.models.applications.Version
-import org.hatdex.hat.she.models.LambdaFunctionExecutable
+import org.hatdex.hat.she.models.LambdaFunctionLoader
 import org.hatdex.hat.she.service.{ FunctionExecutableRegistry, FunctionExecutionTriggerHandler }
-import play.api.{ ConfigLoader, Configuration, Logger }
+import org.hatdex.hat.utils.FutureTransformations
 import play.api.libs.concurrent.AkkaGuiceSupport
-import play.api.libs.ws.WSClient
+import play.api.{ ConfigLoader, Configuration, Logger }
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ Await, ExecutionContext, Future }
 import scala.concurrent.duration._
+import scala.concurrent.{ Await, ExecutionContext, Future }
 
 class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   val logger = Logger(this.getClass)
@@ -64,14 +64,15 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   @Provides
   def provideFunctionExecutableRegistry(
     config: Configuration,
-    wsClient: WSClient)(implicit ec: ExecutionContext): FunctionExecutableRegistry = {
+    loader: LambdaFunctionLoader)(implicit ec: ExecutionContext): FunctionExecutableRegistry = {
     val eventuallyFunctionsLoaded = Future.sequence(
       config.get[Seq[FunctionConfig]]("she.functions")
-        .map(c ⇒ LambdaFunctionExecutable(wsClient)(c.id, c.version, c.baseUrl, c.namespace, c.endpoint)))
+        .map(c ⇒ FutureTransformations.futureToFutureTry(loader.load(c.id, c.version, c.baseUrl, c.namespace, c.endpoint))))
 
     val functionsLoaded = Await.result(eventuallyFunctionsLoaded, 30.seconds)
 
-    new FunctionExecutableRegistry(functionsLoaded)
+    // ignore any functions that failed to load without stopping the whole application
+    new FunctionExecutableRegistry(functionsLoaded.filter(_.isSuccess).flatMap(_.toOption))
   }
 
   case class FunctionConfig(id: String, version: Version, baseUrl: String, namespace: String, endpoint: String)
