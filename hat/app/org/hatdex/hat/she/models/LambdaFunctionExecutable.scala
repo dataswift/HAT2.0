@@ -122,7 +122,9 @@ class AwsLambdaExecutor @Inject() (
       configuration.get[String]("she.aws.secretKey")))
 
   private val lambdaClient: AWSLambdaAsync =
-    AWSLambdaAsyncClientBuilder.standard().withCredentials(credentials)
+    AWSLambdaAsyncClientBuilder.standard()
+      .withRegion(configuration.get[String]("she.aws.region"))
+      .withCredentials(credentials)
       .withExecutorFactory(new StaticExecutorFactory(ec))
       .build()
 
