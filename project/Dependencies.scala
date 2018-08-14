@@ -75,7 +75,7 @@ object Dependencies {
     }
 
     object Specs2 {
-      private val version = "4.3.3"
+      private val version = "3.9.5"
       val core = "org.specs2" %% "specs2-core" % version
       val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
       val mock = "org.specs2" %% "specs2-mock" % version
@@ -96,7 +96,7 @@ object Dependencies {
       private val version = "2.6.2-SNAPSHOT"
       val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
       val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
-      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.11"
+      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
     }
 
     val scalaGuice = "net.codingwell" %% "scala-guice" % "4.2.1"

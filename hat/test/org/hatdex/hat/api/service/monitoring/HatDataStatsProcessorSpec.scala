@@ -82,7 +82,7 @@ trait HatDataStatsProcessorContext extends Scope {
   val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
 
   class ExtrasModule extends AbstractModule with ScalaModule {
-    def configure(): Unit = {
+    override def configure(): Unit = {
       bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(Seq()))
     }
   }
