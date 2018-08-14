@@ -41,7 +41,7 @@ import scala.concurrent.{ Await, ExecutionContext, Future }
 class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   val logger = Logger(this.getClass)
 
-  def configure() = {
+  override def configure() = {
     bind[FunctionExecutionTriggerHandler].asEagerSingleton()
     ()
   }
