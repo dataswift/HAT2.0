@@ -54,13 +54,13 @@ object Dependencies {
       val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
 
       val htmlCompressor = "com.mohiva" %% "play-html-compressor" % "0.6.3"
-      val playGuard = "com.digitaltangible" %% "play-guard" % "2.1.0"
+      val playGuard = "com.digitaltangible" %% "play-guard" % "2.2.0"
 
       object Jwt {
         private val bouncyCastleVersion = "1.60"
         val bouncyCastle = "org.bouncycastle" % "bcprov-jdk15on" % bouncyCastleVersion
         val bouncyCastlePkix = "org.bouncycastle" % "bcpkix-jdk15on" % bouncyCastleVersion
-        val atlassianJwtVersion = "2.0.1"
+        val atlassianJwtVersion = "2.0.2"
         val atlassianJwtCore = "com.atlassian.jwt" % "jwt-core" % atlassianJwtVersion
       }
 
@@ -75,7 +75,7 @@ object Dependencies {
     }
 
     object Specs2 {
-      private val version = "3.9.5"
+      private val version = "4.3.3"
       val core = "org.specs2" %% "specs2-core" % version
       val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
       val mock = "org.specs2" %% "specs2-mock" % version
@@ -83,12 +83,12 @@ object Dependencies {
 
     object Utils {
       val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
-      val awsJavaSdk = "com.amazonaws" % "aws-java-sdk" % "1.11.308"
-      val awsJavaS3Sdk = "com.amazonaws" % "aws-java-sdk-s3" % "1.11.308"
-      val prettyTime = "org.ocpsoft.prettytime" % "prettytime" % "4.0.1.Final"
-      val nbvcxz = "me.gosimple" % "nbvcxz" % "1.4.1"
+      val awsJavaSdk = "com.amazonaws" % "aws-java-sdk" % "1.11.386"
+      val awsJavaS3Sdk = "com.amazonaws" % "aws-java-sdk-s3" % "1.11.386"
+      val prettyTime = "org.ocpsoft.prettytime" % "prettytime" % "4.0.2.Final"
+      val nbvcxz = "me.gosimple" % "nbvcxz" % "1.4.2"
       val elasticacheClusterClient = "com.amazonaws" % "elasticache-java-cluster-client" % "1.1.1"
-      val playMemcached = "com.github.mumoshu" %% "play2-memcached-play26" % "0.9.1" exclude("net.spy", "spymemcached")
+      val playMemcached = "com.github.mumoshu" %% "play2-memcached-play26" % "0.9.2" exclude("net.spy", "spymemcached")
       val alpakkaAwsLambda = "com.lightbend.akka" %% "akka-stream-alpakka-awslambda" % "0.20"
     }
 
@@ -96,9 +96,9 @@ object Dependencies {
       private val version = "2.6.2-SNAPSHOT"
       val hatClient = "org.hatdex" %% "hat-client-scala-play" % version
       val dexClient = "org.hatdex" %% "dex-client-scala-play" % version
-      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
+      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.11"
     }
 
-    val scalaGuice = "net.codingwell" %% "scala-guice" % "4.1.1"
+    val scalaGuice = "net.codingwell" %% "scala-guice" % "4.2.1"
   }
 }
