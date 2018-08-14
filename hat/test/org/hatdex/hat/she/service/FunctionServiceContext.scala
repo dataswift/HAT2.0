@@ -44,8 +44,6 @@ trait FunctionServiceContext extends HATTestContext {
    * A fake Guice module.
    */
   class CustomisedFakeModule extends AbstractModule with ScalaModule {
-    def configure() = {
-    }
 
     @Provides
     def provideFunctionExecutableRegistry(): FunctionExecutableRegistry = {

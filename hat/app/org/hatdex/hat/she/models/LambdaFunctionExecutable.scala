@@ -61,7 +61,7 @@ class LambdaFunctionExecutable(
   protected val logger = Logger(this.getClass)
   private val lambdaLogs = config.get[String]("she.aws.logs")
 
-  logger.info(s"Initialised SHE lambda function $id v$version $baseUrl")
+  logger.debug(s"Initialised SHE lambda function $id v$version $baseUrl")
 
   def execute(configuration: FunctionConfiguration, requestData: Request): Future[Seq[Response]] = {
     val request = new InvokeRequest()
@@ -134,7 +134,7 @@ class AwsLambdaExecutor @Inject() (
       .runWith(Sink.head)
       .map {
         case r: InvokeResult if r.getStatusCode == 200 ⇒
-          logger.warn(
+          logger.debug(
             s"""Function responded with:
                | Status: ${r.getStatusCode}
                | Body: ${ByteString(r.getPayload).utf8String}
@@ -150,7 +150,6 @@ class AwsLambdaExecutor @Inject() (
         case r ⇒
           val message = s"Retrieving SHE function configuration failed: $r, ${ByteString(r.getPayload).utf8String}"
           logger.error(message)
-          logger.warn(s"Function invocation error: ${ByteString(java.util.Base64.getDecoder.decode(r.getLogResult)).utf8String}")
           throw new ApiException(message)
       }
   }

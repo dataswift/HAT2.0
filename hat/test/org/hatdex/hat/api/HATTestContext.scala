@@ -116,7 +116,7 @@ trait HATTestContext extends Scope with Mockito {
    * A fake Guice module.
    */
   class FakeModule extends AbstractModule with ScalaModule {
-    def configure(): Unit = {
+    override def configure(): Unit = {
       bind[Environment[HatApiAuthEnvironment]].toInstance(environment)
       bind[Silhouette[HatApiAuthEnvironment]].to[SilhouetteProvider[HatApiAuthEnvironment]]
       bind[HatServerProvider].toInstance(new FakeHatServerProvider(hatServer))
@@ -142,7 +142,7 @@ trait HATTestContext extends Scope with Mockito {
   }
 
   class ExtrasModule extends AbstractModule with ScalaModule {
-    def configure(): Unit = {
+    override def configure(): Unit = {
       bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(Seq()))
     }
   }
