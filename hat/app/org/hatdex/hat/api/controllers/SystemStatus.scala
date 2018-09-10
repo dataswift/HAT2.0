@@ -25,7 +25,6 @@
 package org.hatdex.hat.api.controllers
 
 import javax.inject.Inject
-
 import com.mohiva.play.silhouette.api.Silhouette
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models._
@@ -39,7 +38,9 @@ import play.api.cache.Cached
 import play.api.libs.json._
 import play.api.mvc._
 
-import scala.concurrent.ExecutionContext
+import scala.collection.JavaConverters._
+
+import scala.concurrent.{ ExecutionContext, Future }
 
 class SystemStatus @Inject() (
     components: ControllerComponents,
@@ -100,6 +101,12 @@ class SystemStatus @Inject() (
       eventualStatus map { stats =>
         Ok(Json.toJson(stats))
       }
+    }
+
+  def environment(): Action[AnyContent] =
+    SecuredAction(WithRole(Owner(), Platform()) || ContainsApplicationRole(Owner(), Platform())).async { implicit request =>
+      val systemEnv = mapAsScalaMap(System.getenv)
+      Future.successful(Ok(Json.toJson(systemEnv)))
     }
 }
 
