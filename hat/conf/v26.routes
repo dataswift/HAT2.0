@@ -1,6 +1,5 @@
 
 GET           /system/status                                                                 org.hatdex.hat.api.controllers.SystemStatus.status()
-GET           /system/env                                                                    org.hatdex.hat.api.controllers.SystemStatus.environment()
 GET           /phata/profile                                                                 org.hatdex.hat.phata.controllers.Phata.profile
 
 # FILE routes

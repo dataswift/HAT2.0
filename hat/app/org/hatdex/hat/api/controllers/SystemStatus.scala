@@ -102,11 +102,5 @@ class SystemStatus @Inject() (
         Ok(Json.toJson(stats))
       }
     }
-
-  def environment(): Action[AnyContent] =
-    SecuredAction(WithRole(Owner(), Platform()) || ContainsApplicationRole(Owner(), Platform())).async { implicit request =>
-      val systemEnv = mapAsScalaMap(System.getenv)
-      Future.successful(Ok(Json.toJson(systemEnv)))
-    }
 }
 
