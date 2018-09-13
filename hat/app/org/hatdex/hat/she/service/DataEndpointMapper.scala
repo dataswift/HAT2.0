@@ -187,7 +187,7 @@ class InsightsMapper extends DataEndpointMapper {
     "spotify/feed" → "Songs listened to",
     "calendar/google/events" → "Calendar events recorded",
     "monzo/transactions" → "Transactions performed",
-    "she/sentiments" -> "Sentiments tracked")
+    "she/insights/emotions" -> "Sentiments tracked")
 
   private val sourceMappings = Map(
     "twitter/tweets" → "twitter",
@@ -196,7 +196,7 @@ class InsightsMapper extends DataEndpointMapper {
     "spotify/feed" → "spotify",
     "calendar/google/events" → "google",
     "monzo/transactions" → "monzo",
-    "she/sentiments" -> "she")
+    "she/insights/emotions" -> "she")
 
   def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
     for {
