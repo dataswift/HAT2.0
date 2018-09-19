@@ -187,10 +187,10 @@ class InsightsMapper extends DataEndpointMapper {
     "spotify/feed" → "Songs listened to",
     "calendar/google/events" → "Calendar events recorded",
     "monzo/transactions" → "Transactions performed",
-    "she/insights/emotions" -> "Post analysed for Sentiments",
-    "she/insights/emotions/positive" -> "\tPositive sentiments",
-    "she/insights/emotions/negative" -> "\tNegative sentiments",
-    "she/insights/emotions/neutral" -> "\tNeutral sentiments")
+    "she/insights/emotions" -> "Posts analysed for Sentiments",
+    "she/insights/emotions/positive" -> "Positive",
+    "she/insights/emotions/negative" -> "Negative",
+    "she/insights/emotions/neutral" -> "Neutral")
 
   private val sourceMappings = Map(
     "twitter/tweets" → "twitter",
