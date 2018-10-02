@@ -53,6 +53,7 @@ class FeedGeneratorService @Inject() ()(
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   private val dataMappers: Seq[(String, DataEndpointMapper)] = Seq(
+    "facebook/profile" -> new FacebookProfileMapper(),
     "facebook/feed" → new FacebookFeedMapper(),
     "facebook/events" → new FacebookEventMapper(),
     "twitter/tweets" → new TwitterFeedMapper(),
