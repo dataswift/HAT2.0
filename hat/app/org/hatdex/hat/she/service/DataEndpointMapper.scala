@@ -55,7 +55,7 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
   }
 
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery]
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem]
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem]
 
   private implicit def dataFeedItemOrdering: Ordering[DataFeedItem] = Ordering.fromLessThan(_.date isAfter _.date)
 
@@ -78,7 +78,11 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
       }
 
       deduplicated
-        .map(item ⇒ mapDataRecord(item.recordId.get, item.data))
+        .sliding(2, 1)
+        .map {
+          case Seq(head, tail) ⇒ mapDataRecord(head.recordId.get, head.data, tail.recordId, Some(tail.data))
+          case Seq(item)       ⇒ mapDataRecord(item.recordId.get, item.data)
+        }
         .collect({
           case Success(x) ⇒ x
         })
@@ -152,7 +156,7 @@ class InsightSentimentMapper extends DataEndpointMapper {
     "facebook/feed" → "Facebook",
     "notables/feed" → "Notables")
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       sentiment ← Try((content \ "sentiment").as[String])
       text ← Try((content \ "text").as[String])
@@ -204,7 +208,7 @@ class InsightsMapper extends DataEndpointMapper {
     "she/insights/emotions/negative" -> "sentiment-negative",
     "she/insights/emotions/neutral" -> "sentiment-neutral")
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID], tailContent: Option[JsValue]): Try[DataFeedItem] = {
     for {
       startDate ← Try((content \ "since").asOpt[DateTime])
       endDate ← Try((content \ "timestamp").asOpt[DateTime])
@@ -274,7 +278,7 @@ class GoogleCalendarMapper extends DataEndpointMapper {
       .replaceAll("<a [^>]*>([^<]*)</a>", "$1")
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       startDate ← Try((content \ "start" \ "dateTime").asOpt[DateTime]
         .getOrElse((content \ "start" \ "date").as[DateTime])
@@ -308,7 +312,7 @@ class FitbitWeightMapper extends DataEndpointMapper {
       Some("date"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val title = DataFeedItemTitle("You added a new weight measurement", None, Some("weight"))
 
     val itemContent = DataFeedItemContent(
@@ -337,7 +341,7 @@ class FitbitActivityMapper extends DataEndpointMapper {
       Some("originalStartTime"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       date ← Try((content \ "originalStartTime").as[DateTime])
     } yield {
@@ -365,7 +369,7 @@ class FitbitActivityDaySummaryMapper extends DataEndpointMapper {
       Some("dateCreated"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val fitbitSummary = for {
       count ← Try((content \ "steps").as[Int]) if count > 0
       date ← Try((content \ "dateCreated").as[DateTime])
@@ -407,7 +411,7 @@ class FitbitSleepMapper extends DataEndpointMapper {
 
   override implicit val DefaultJodaDateTimeReads: Reads[DateTime] = jodaDateReads("", fitbitDateCorrector)
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val title = DataFeedItemTitle("You woke up!", None, Some("sleep"))
 
     val timeInBed = (content \ "timeInBed").asOpt[Int]
@@ -442,7 +446,7 @@ class TwitterFeedMapper extends DataEndpointMapper {
       Some("lastUpdated"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       title ← Try(if ((content \ "retweeted").as[Boolean]) {
         DataFeedItemTitle("You retweeted", None, Some("repeat"))
@@ -477,6 +481,53 @@ class TwitterFeedMapper extends DataEndpointMapper {
   }
 }
 
+class FacebookProfileMapper extends DataEndpointMapper {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(
+        EndpointQuery("facebook/profile", None, None, None)),
+      Some("updated_time"), None, None))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
+    for {
+      timeIntervalString ← Try(eventTimeIntervalString(
+        (content \ "start_time").as[DateTime],
+        Some((content \ "end_time").as[DateTime])))
+
+      itemContent ← Try(DataFeedItemContent(
+        Some((content \ "description").as[String]), None, None, None))
+      title ← Try(if ((content \ "rsvp_status").as[String] == "attending") {
+        DataFeedItemTitle("You are attending an event", Some(s"${timeIntervalString._1} ${timeIntervalString._2.getOrElse("")}"), Some("event"))
+      }
+      else {
+        DataFeedItemTitle("You have an event", Some(s"${timeIntervalString._1} ${timeIntervalString._2.getOrElse("")}"), Some("event"))
+      })
+    } yield {
+      val location = Try(DataFeedItemLocation(
+        geo = (content \ "place").asOpt[JsObject]
+          .map(location ⇒
+            LocationGeo(
+              (location \ "location" \ "longitude").as[String].toDouble,
+              (location \ "location" \ "latitude").as[String].toDouble)),
+        address = (content \ "place").asOpt[JsObject]
+          .map(location ⇒
+            LocationAddress(
+              (location \ "location" \ "country").asOpt[String],
+              (location \ "location" \ "city").asOpt[String],
+              (location \ "name").asOpt[String],
+              (location \ "location" \ "street").asOpt[String],
+              (location \ "location" \ "zip").asOpt[String])),
+        tags = None))
+        .toOption
+        .filter(l ⇒ l.address.isDefined || l.geo.isDefined || l.tags.isDefined)
+
+      DataFeedItem("facebook", (content \ "start_time").as[DateTime], Seq("event"),
+        Some(title), Some(itemContent), location)
+    }
+  }
+}
+
 class FacebookEventMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
@@ -485,7 +536,7 @@ class FacebookEventMapper extends DataEndpointMapper {
       Some("start_time"), None, None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       timeIntervalString ← Try(eventTimeIntervalString(
         (content \ "start_time").as[DateTime],
@@ -532,7 +583,7 @@ class FacebookFeedMapper extends DataEndpointMapper {
       Some("created_time"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       title ← Try(if ((content \ "type").as[String] == "photo") {
         DataFeedItemTitle("You posted a photo", None, Some("photo"))
@@ -585,7 +636,7 @@ class NotablesFeedMapper extends DataEndpointMapper {
         dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("created_time", None, f))), None)), Some("created_time"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       title ← Try(if ((content \ "currently_shared").as[Boolean]) {
         DataFeedItemTitle("You posted", None, Some("public"))
@@ -621,7 +672,7 @@ class SpotifyFeedMapper extends DataEndpointMapper {
         dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("played_at", None, f))), None)), Some("played_at"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       durationSeconds ← Try((content \ "track" \ "duration_ms").as[Int] / 1000)
       title ← Try(
@@ -654,7 +705,7 @@ class MonzoTransactionMapper extends DataEndpointMapper {
     "JPY" → "\u00A5",
     "THB" → "\u0E3F")
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       paymentAmount ← Try((content \ "local_amount").as[Int] / 100.0)
       paymentCurrency ← Try({
@@ -745,7 +796,7 @@ class InstagramMediaMapper extends DataEndpointMapper {
         unixDateFilter.map(f ⇒ Seq(EndpointQueryFilter("created_time", None, f))), None)), Some("created_time"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       createdTime <- Try(new DateTime((content \ "created_time").as[String].toLong * 1000))
       tags <- Try((content \ "tags").as[List[String]])
