@@ -161,8 +161,8 @@ trait FeedItemComparator {
   }
 
   def compareFloat(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String): (Boolean, String) = {
-    val previousValue = (tailContent \ dataKey).asOpt[Float].getOrElse(0.0)
-    val currentValue = (content \ dataKey).asOpt[Float].getOrElse(0.0)
+    val previousValue = (tailContent \ dataKey).asOpt[Float].getOrElse(0.0f)
+    val currentValue = (content \ dataKey).asOpt[Float].getOrElse(0.0f)
     val contentValue = previousValue == currentValue
     val contentText = s"Your $humanKey has changed from $previousValue to $currentValue."
     (contentValue, contentText)
