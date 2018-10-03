@@ -592,7 +592,6 @@ class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
       Seq(
         compareString(content, tailContent.get, "name", "Name"),
         compareString(content, tailContent.get, "gender", "Gender"),
-        compareString(content, tailContent.get, "age_range", "Age Range"),
         compareInt(content, tailContent.get, "friend_count", "Number of Friends"))
     }
   }
