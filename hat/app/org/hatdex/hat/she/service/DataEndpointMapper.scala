@@ -575,7 +575,6 @@ class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
         title <- Try(DataFeedItemTitle("Your Facebook Profile has changed.", None, None))
         itemContent ← {
           val contentText = comparison.map(item => s"${item._2}\n").mkString
-          println(contentText)
           Try(DataFeedItemContent(
             Some(contentText), None, None, None))
         }
