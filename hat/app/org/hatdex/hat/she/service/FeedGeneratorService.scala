@@ -51,8 +51,8 @@ class FeedGeneratorService @Inject() ()(
 
   private val logger = Logger(this.getClass)
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
-
-  private val dataMappers: Seq[(String, DataEndpointMapper)] = Seq(
+  /*
+  private val dataMappersX: Seq[(String, DataEndpointMapper)] = Seq(
     "facebook/profile" -> new FacebookProfileMapper(),
     "facebook/feed" → new FacebookFeedMapper(),
     "facebook/events" → new FacebookEventMapper(),
@@ -65,7 +65,11 @@ class FeedGeneratorService @Inject() ()(
     "notables/feed" → new NotablesFeedMapper(),
     "spotify/feed" → new SpotifyFeedMapper(),
     "monzo/transactions" → new MonzoTransactionMapper(),
-    "instagram/feed" → new InstagramMediaMapper())
+    "instagram/feed" → new InstagramMediaMapper())*/
+
+  private val dataMappers: Seq[(String, DataEndpointMapper)] = Seq(
+    "facebook/profile" -> new FacebookProfileMapper(),
+    "fitbit/profile" -> new FitbitProfileMapper())
 
   private val insightMappers: Seq[(String, DataEndpointMapper)] = Seq(
     "she/activity-records" → new InsightsMapper(),
