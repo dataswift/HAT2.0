@@ -143,6 +143,32 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
   }
 }
 
+trait FeedItemComparator {
+  def compareInt(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String): (Boolean, String) = {
+    val previousValue = (tailContent \ dataKey).as[Int]
+    val currentValue = (content \ dataKey).as[Int]
+    val contentValue = previousValue == currentValue
+    val contentText = s"Your $humanKey has changed from $previousValue to $currentValue."
+    (contentValue, contentText)
+  }
+
+  def compareString(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String): (Boolean, String) = {
+    val previousValue = (tailContent \ dataKey).as[String]
+    val currentValue = (content \ dataKey).as[String]
+    val contentValue = previousValue == currentValue
+    val contentText = s"Your $humanKey has changed from $previousValue to $currentValue."
+    (contentValue, contentText)
+  }
+
+  def compareFloat(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String): (Boolean, String) = {
+    val previousValue = (tailContent \ dataKey).as[Float]
+    val currentValue = (content \ dataKey).as[Float]
+    val contentValue = previousValue == currentValue
+    val contentText = s"Your $humanKey has changed from $previousValue to $currentValue."
+    (contentValue, contentText)
+  }
+}
+
 class InsightSentimentMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
@@ -438,6 +464,56 @@ class FitbitSleepMapper extends DataEndpointMapper {
 
 }
 
+class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(
+        EndpointQuery("fitbit/profile", None, None, None)),
+      Some("updated_time"), None, None))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
+    val comparison = compare(content, tailContent).filter(_._1 == false) // remove all fields that have the same values pre/current
+    if (comparison.length == 0) {
+      Failure(new RuntimeException("Comparision Failure. Data the same"))
+    }
+    else {
+      for {
+        title <- Try(DataFeedItemTitle("Your Fitbit Data has changed.", None, None))
+        itemContent ← {
+          val contentText = comparison.map(item => s"${item._2}\n").mkString
+          Try(DataFeedItemContent(
+            Some(contentText), None, None, None))
+        }
+      } yield {
+        DataFeedItem("fitbit", (content \ "dateCreated").as[DateTime], Seq("profile"),
+          Some(title), Some(itemContent), None)
+      }
+    }
+  }
+
+  /**
+   *
+   * @param content
+   * @param tailContent
+   * @return (true if data is the same and both content is the not None, )
+   */
+  def compare(content: JsValue, tailContent: Option[JsValue]): Seq[(Boolean, String)] = {
+    if (tailContent.isEmpty)
+      Seq()
+    else {
+      Seq(
+        compareString(content, tailContent.get, "fullName", "Name"),
+        compareString(content, tailContent.get, "displayName", "Display Name"),
+        compareString(content, tailContent.get, "gender", "Gender"),
+        compareInt(content, tailContent.get, "age", "Age"),
+        compareInt(content, tailContent.get, "height", "Height"),
+        compareFloat(content, tailContent.get, "weight", "Weight"),
+        compareString(content, tailContent.get, "country", "Country"))
+    }
+  }
+}
+
 class TwitterFeedMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
@@ -481,7 +557,7 @@ class TwitterFeedMapper extends DataEndpointMapper {
   }
 }
 
-class FacebookProfileMapper extends DataEndpointMapper {
+class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
@@ -490,40 +566,35 @@ class FacebookProfileMapper extends DataEndpointMapper {
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
-    for {
-      timeIntervalString ← Try(eventTimeIntervalString(
-        (content \ "start_time").as[DateTime],
-        Some((content \ "end_time").as[DateTime])))
-
-      itemContent ← Try(DataFeedItemContent(
-        Some((content \ "description").as[String]), None, None, None))
-      title ← Try(if ((content \ "rsvp_status").as[String] == "attending") {
-        DataFeedItemTitle("You are attending an event", Some(s"${timeIntervalString._1} ${timeIntervalString._2.getOrElse("")}"), Some("event"))
+    val comparison = compare(content, tailContent).filter(_._1 == false) // remove all fields that have the same values pre/current
+    if (comparison.length == 0) {
+      Failure(new RuntimeException("Comparision Failure. Data the same"))
+    }
+    else {
+      for {
+        title <- Try(DataFeedItemTitle("Your Facebook Profile has changed.", None, None))
+        itemContent ← {
+          val contentText = comparison.map(item => s"${item._2}\n").mkString
+          println(contentText)
+          Try(DataFeedItemContent(
+            Some(contentText), None, None, None))
+        }
+      } yield {
+        DataFeedItem("facebook", (content \ "updated_time").as[DateTime], Seq("profile"),
+          Some(title), Some(itemContent), None)
       }
-      else {
-        DataFeedItemTitle("You have an event", Some(s"${timeIntervalString._1} ${timeIntervalString._2.getOrElse("")}"), Some("event"))
-      })
-    } yield {
-      val location = Try(DataFeedItemLocation(
-        geo = (content \ "place").asOpt[JsObject]
-          .map(location ⇒
-            LocationGeo(
-              (location \ "location" \ "longitude").as[String].toDouble,
-              (location \ "location" \ "latitude").as[String].toDouble)),
-        address = (content \ "place").asOpt[JsObject]
-          .map(location ⇒
-            LocationAddress(
-              (location \ "location" \ "country").asOpt[String],
-              (location \ "location" \ "city").asOpt[String],
-              (location \ "name").asOpt[String],
-              (location \ "location" \ "street").asOpt[String],
-              (location \ "location" \ "zip").asOpt[String])),
-        tags = None))
-        .toOption
-        .filter(l ⇒ l.address.isDefined || l.geo.isDefined || l.tags.isDefined)
+    }
+  }
 
-      DataFeedItem("facebook", (content \ "start_time").as[DateTime], Seq("event"),
-        Some(title), Some(itemContent), location)
+  def compare(content: JsValue, tailContent: Option[JsValue]): Seq[(Boolean, String)] = {
+    if (tailContent.isEmpty)
+      Seq()
+    else {
+      Seq(
+        compareString(content, tailContent.get, "name", "Name"),
+        compareString(content, tailContent.get, "gender", "Gender"),
+        compareString(content, tailContent.get, "age_range", "Age Range"),
+        compareInt(content, tailContent.get, "friend_count", "Number of Friends"))
     }
   }
 }
