@@ -145,24 +145,24 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
 
 trait FeedItemComparator {
   def compareInt(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String): (Boolean, String) = {
-    val previousValue = (tailContent \ dataKey).as[Int]
-    val currentValue = (content \ dataKey).as[Int]
+    val previousValue = (tailContent \ dataKey).asOpt[Int].getOrElse(0)
+    val currentValue = (content \ dataKey).asOpt[Int].getOrElse(0)
     val contentValue = previousValue == currentValue
     val contentText = s"Your $humanKey has changed from $previousValue to $currentValue."
     (contentValue, contentText)
   }
 
   def compareString(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String): (Boolean, String) = {
-    val previousValue = (tailContent \ dataKey).as[String]
-    val currentValue = (content \ dataKey).as[String]
+    val previousValue = (tailContent \ dataKey).asOpt[String].getOrElse("")
+    val currentValue = (content \ dataKey).asOpt[String].getOrElse("")
     val contentValue = previousValue == currentValue
     val contentText = s"Your $humanKey has changed from $previousValue to $currentValue."
     (contentValue, contentText)
   }
 
   def compareFloat(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String): (Boolean, String) = {
-    val previousValue = (tailContent \ dataKey).as[Float]
-    val currentValue = (content \ dataKey).as[Float]
+    val previousValue = (tailContent \ dataKey).asOpt[Float].getOrElse(0.0f)
+    val currentValue = (content \ dataKey).asOpt[Float].getOrElse(0.0f)
     val contentValue = previousValue == currentValue
     val contentText = s"Your $humanKey has changed from $previousValue to $currentValue."
     (contentValue, contentText)
@@ -575,7 +575,6 @@ class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
         title <- Try(DataFeedItemTitle("Your Facebook Profile has changed.", None, None))
         itemContent ← {
           val contentText = comparison.map(item => s"${item._2}\n").mkString
-          println(contentText)
           Try(DataFeedItemContent(
             Some(contentText), None, None, None))
         }
