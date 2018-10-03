@@ -55,7 +55,7 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
   }
 
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery]
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem]
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem]
 
   private implicit def dataFeedItemOrdering: Ordering[DataFeedItem] = Ordering.fromLessThan(_.date isAfter _.date)
 
@@ -78,7 +78,11 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
       }
 
       deduplicated
-        .map(item ⇒ mapDataRecord(item.recordId.get, item.data))
+        .sliding(2, 1)
+        .map {
+          case Seq(head, tail) ⇒ mapDataRecord(head.recordId.get, head.data, tail.recordId, Some(tail.data))
+          case Seq(item)       ⇒ mapDataRecord(item.recordId.get, item.data)
+        }
         .collect({
           case Success(x) ⇒ x
         })
@@ -139,6 +143,65 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
   }
 }
 
+trait FeedItemComparator {
+  def compareInt(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String): (Boolean, String) = {
+    val previousValue = (tailContent \ dataKey).asOpt[Int].getOrElse(0)
+    val currentValue = (content \ dataKey).asOpt[Int].getOrElse(0)
+    val contentValue = previousValue == currentValue
+    val contentText = s"Your $humanKey has changed from $previousValue to $currentValue."
+    (contentValue, contentText)
+  }
+
+  def compareString(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String): (Boolean, String) = {
+    val previousValue = (tailContent \ dataKey).asOpt[String].getOrElse("")
+    val currentValue = (content \ dataKey).asOpt[String].getOrElse("")
+    val contentValue = previousValue == currentValue
+    val contentText = s"Your $humanKey has changed from $previousValue to $currentValue."
+    (contentValue, contentText)
+  }
+
+  def compareFloat(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String): (Boolean, String) = {
+    val previousValue = (tailContent \ dataKey).asOpt[Float].getOrElse(0.0f)
+    val currentValue = (content \ dataKey).asOpt[Float].getOrElse(0.0f)
+    val contentValue = previousValue == currentValue
+    val contentText = s"Your $humanKey has changed from $previousValue to $currentValue."
+    (contentValue, contentText)
+  }
+}
+
+class InsightSentimentMapper extends DataEndpointMapper {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(
+        EndpointQuery("she/insights/emotions", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("timestamp", None, f))), None)),
+      Some("timestamp"), Some("descending"), None))
+  }
+
+  private val textMappings = Map(
+    "twitter/tweets" → "Twitter",
+    "facebook/feed" → "Facebook",
+    "notables/feed" → "Notables")
+
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
+    for {
+      sentiment ← Try((content \ "sentiment").as[String])
+      text ← Try((content \ "text").as[String])
+      source ← Try((content \ "source").as[String])
+      timestamp ← Try((content \ "timestamp").as[DateTime])
+    } yield {
+      val title = DataFeedItemTitle(
+        s"$sentiment Message",
+        Some(s"on ${textMappings.getOrElse(source, source)}"),
+        Some("sentiment"))
+
+      val itemContent = DataFeedItemContent(text = Some(text), html = None, media = None, nestedStructure = None)
+
+      DataFeedItem("she", timestamp, Seq("insight", "sentiment", sentiment,
+        textMappings.getOrElse(source, source)), Some(title), Some(itemContent), None)
+    }
+  }
+}
+
 class InsightsMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
@@ -153,7 +216,11 @@ class InsightsMapper extends DataEndpointMapper {
     "notables/feed" → "Notes taken",
     "spotify/feed" → "Songs listened to",
     "calendar/google/events" → "Calendar events recorded",
-    "monzo/transactions" → "Transactions performed")
+    "monzo/transactions" → "Transactions performed",
+    "she/insights/emotions" -> "Posts analysed for Sentiments",
+    "she/insights/emotions/positive" -> "Positive",
+    "she/insights/emotions/negative" -> "Negative",
+    "she/insights/emotions/neutral" -> "Neutral")
 
   private val sourceMappings = Map(
     "twitter/tweets" → "twitter",
@@ -161,9 +228,13 @@ class InsightsMapper extends DataEndpointMapper {
     "notables/feed" → "notables",
     "spotify/feed" → "spotify",
     "calendar/google/events" → "google",
-    "monzo/transactions" → "monzo")
+    "monzo/transactions" → "monzo",
+    "she/insights/emotions" -> "sentiment",
+    "she/insights/emotions/positive" -> "sentiment-positive",
+    "she/insights/emotions/negative" -> "sentiment-negative",
+    "she/insights/emotions/neutral" -> "sentiment-neutral")
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID], tailContent: Option[JsValue]): Try[DataFeedItem] = {
     for {
       startDate ← Try((content \ "since").asOpt[DateTime])
       endDate ← Try((content \ "timestamp").asOpt[DateTime])
@@ -233,7 +304,7 @@ class GoogleCalendarMapper extends DataEndpointMapper {
       .replaceAll("<a [^>]*>([^<]*)</a>", "$1")
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       startDate ← Try((content \ "start" \ "dateTime").asOpt[DateTime]
         .getOrElse((content \ "start" \ "date").as[DateTime])
@@ -267,7 +338,7 @@ class FitbitWeightMapper extends DataEndpointMapper {
       Some("date"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val title = DataFeedItemTitle("You added a new weight measurement", None, Some("weight"))
 
     val itemContent = DataFeedItemContent(
@@ -296,7 +367,7 @@ class FitbitActivityMapper extends DataEndpointMapper {
       Some("originalStartTime"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       date ← Try((content \ "originalStartTime").as[DateTime])
     } yield {
@@ -324,7 +395,7 @@ class FitbitActivityDaySummaryMapper extends DataEndpointMapper {
       Some("dateCreated"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val fitbitSummary = for {
       count ← Try((content \ "steps").as[Int]) if count > 0
       date ← Try((content \ "dateCreated").as[DateTime])
@@ -366,7 +437,7 @@ class FitbitSleepMapper extends DataEndpointMapper {
 
   override implicit val DefaultJodaDateTimeReads: Reads[DateTime] = jodaDateReads("", fitbitDateCorrector)
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val title = DataFeedItemTitle("You woke up!", None, Some("sleep"))
 
     val timeInBed = (content \ "timeInBed").asOpt[Int]
@@ -393,6 +464,56 @@ class FitbitSleepMapper extends DataEndpointMapper {
 
 }
 
+class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(
+        EndpointQuery("fitbit/profile", None, None, None)),
+      Some("updated_time"), None, None))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
+    val comparison = compare(content, tailContent).filter(_._1 == false) // remove all fields that have the same values pre/current
+    if (comparison.length == 0) {
+      Failure(new RuntimeException("Comparision Failure. Data the same"))
+    }
+    else {
+      for {
+        title <- Try(DataFeedItemTitle("Your Fitbit Data has changed.", None, None))
+        itemContent ← {
+          val contentText = comparison.map(item => s"${item._2}\n").mkString
+          Try(DataFeedItemContent(
+            Some(contentText), None, None, None))
+        }
+      } yield {
+        DataFeedItem("fitbit", (content \ "dateCreated").as[DateTime], Seq("profile"),
+          Some(title), Some(itemContent), None)
+      }
+    }
+  }
+
+  /**
+   *
+   * @param content
+   * @param tailContent
+   * @return (true if data is the same and both content is the not None, )
+   */
+  def compare(content: JsValue, tailContent: Option[JsValue]): Seq[(Boolean, String)] = {
+    if (tailContent.isEmpty)
+      Seq()
+    else {
+      Seq(
+        compareString(content, tailContent.get, "fullName", "Name"),
+        compareString(content, tailContent.get, "displayName", "Display Name"),
+        compareString(content, tailContent.get, "gender", "Gender"),
+        compareInt(content, tailContent.get, "age", "Age"),
+        compareInt(content, tailContent.get, "height", "Height"),
+        compareFloat(content, tailContent.get, "weight", "Weight"),
+        compareString(content, tailContent.get, "country", "Country"))
+    }
+  }
+}
+
 class TwitterFeedMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
@@ -401,7 +522,7 @@ class TwitterFeedMapper extends DataEndpointMapper {
       Some("lastUpdated"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       title ← Try(if ((content \ "retweeted").as[Boolean]) {
         DataFeedItemTitle("You retweeted", None, Some("repeat"))
@@ -436,6 +557,47 @@ class TwitterFeedMapper extends DataEndpointMapper {
   }
 }
 
+class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(
+        EndpointQuery("facebook/profile", None, None, None)),
+      Some("updated_time"), None, None))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
+    val comparison = compare(content, tailContent).filter(_._1 == false) // remove all fields that have the same values pre/current
+    if (comparison.length == 0) {
+      Failure(new RuntimeException("Comparision Failure. Data the same"))
+    }
+    else {
+      for {
+        title <- Try(DataFeedItemTitle("Your Facebook Profile has changed.", None, None))
+        itemContent ← {
+          val contentText = comparison.map(item => s"${item._2}\n").mkString
+          Try(DataFeedItemContent(
+            Some(contentText), None, None, None))
+        }
+      } yield {
+        DataFeedItem("facebook", (content \ "updated_time").as[DateTime], Seq("profile"),
+          Some(title), Some(itemContent), None)
+      }
+    }
+  }
+
+  def compare(content: JsValue, tailContent: Option[JsValue]): Seq[(Boolean, String)] = {
+    if (tailContent.isEmpty)
+      Seq()
+    else {
+      Seq(
+        compareString(content, tailContent.get, "name", "Name"),
+        compareString(content, tailContent.get, "gender", "Gender"),
+        compareString(content, tailContent.get, "age_range", "Age Range"),
+        compareInt(content, tailContent.get, "friend_count", "Number of Friends"))
+    }
+  }
+}
+
 class FacebookEventMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
@@ -444,7 +606,7 @@ class FacebookEventMapper extends DataEndpointMapper {
       Some("start_time"), None, None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       timeIntervalString ← Try(eventTimeIntervalString(
         (content \ "start_time").as[DateTime],
@@ -491,7 +653,7 @@ class FacebookFeedMapper extends DataEndpointMapper {
       Some("created_time"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       title ← Try(if ((content \ "type").as[String] == "photo") {
         DataFeedItemTitle("You posted a photo", None, Some("photo"))
@@ -544,7 +706,7 @@ class NotablesFeedMapper extends DataEndpointMapper {
         dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("created_time", None, f))), None)), Some("created_time"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       title ← Try(if ((content \ "currently_shared").as[Boolean]) {
         DataFeedItemTitle("You posted", None, Some("public"))
@@ -580,7 +742,7 @@ class SpotifyFeedMapper extends DataEndpointMapper {
         dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("played_at", None, f))), None)), Some("played_at"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       durationSeconds ← Try((content \ "track" \ "duration_ms").as[Int] / 1000)
       title ← Try(
@@ -613,7 +775,7 @@ class MonzoTransactionMapper extends DataEndpointMapper {
     "JPY" → "\u00A5",
     "THB" → "\u0E3F")
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       paymentAmount ← Try((content \ "local_amount").as[Int] / 100.0)
       paymentCurrency ← Try({
@@ -704,7 +866,7 @@ class InstagramMediaMapper extends DataEndpointMapper {
         unixDateFilter.map(f ⇒ Seq(EndpointQueryFilter("created_time", None, f))), None)), Some("created_time"), Some("descending"), None))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Try[DataFeedItem] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       createdTime <- Try(new DateTime((content \ "created_time").as[String].toLong * 1000))
       tags <- Try((content \ "tags").as[List[String]])

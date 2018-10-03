@@ -25,26 +25,55 @@
 package org.hatdex.hat.modules
 
 import com.google.inject.{ AbstractModule, Provides }
+import com.typesafe.config.Config
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.she.functions.{ DataFeedCounter, DataFeedDirectMapper }
+import org.hatdex.hat.api.models.applications.Version
+import org.hatdex.hat.she.models.LambdaFunctionLoader
 import org.hatdex.hat.she.service.{ FunctionExecutableRegistry, FunctionExecutionTriggerHandler }
+import org.hatdex.hat.utils.FutureTransformations
 import play.api.libs.concurrent.AkkaGuiceSupport
+import play.api.{ ConfigLoader, Configuration, Logger }
+
+import scala.collection.JavaConverters._
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, ExecutionContext, Future }
 
 class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
+  val logger = Logger(this.getClass)
 
-  def configure() = {
-    //    bindActorFactory[FunctionExecutorActor, FunctionExecutorActor.Factory]
+  override def configure() = {
     bind[FunctionExecutionTriggerHandler].asEagerSingleton()
     ()
   }
 
-  @Provides
-  def provideFunctionExecutableRegistry(): FunctionExecutableRegistry = {
-    val functions = Seq(
-      new DataFeedCounter(),
-      new DataFeedDirectMapper())
-
-    new FunctionExecutableRegistry(functions)
+  implicit val seqFunctionConfigLoader: ConfigLoader[Seq[FunctionConfig]] = new ConfigLoader[Seq[FunctionConfig]] {
+    def load(config: Config, path: String): Seq[FunctionConfig] = {
+      val configs = config.getConfigList(path).asScala
+      logger.info(s"Got SHE function configs: $configs")
+      configs.map { config ⇒
+        FunctionConfig(
+          config.getString("id"),
+          Version(config.getString("version")),
+          config.getString("baseUrl"),
+          config.getString("namespace"),
+          config.getString("endpoint"))
+      }
+    }
   }
 
+  @Provides
+  def provideFunctionExecutableRegistry(
+    config: Configuration,
+    loader: LambdaFunctionLoader)(implicit ec: ExecutionContext): FunctionExecutableRegistry = {
+    val eventuallyFunctionsLoaded = Future.sequence(
+      config.get[Seq[FunctionConfig]]("she.functions")
+        .map(c ⇒ FutureTransformations.futureToFutureTry(loader.load(c.id, c.version, c.baseUrl, c.namespace, c.endpoint))))
+
+    val functionsLoaded = Await.result(eventuallyFunctionsLoaded, 30.seconds)
+
+    // ignore any functions that failed to load without stopping the whole application
+    new FunctionExecutableRegistry(functionsLoaded.filter(_.isSuccess).flatMap(_.toOption))
+  }
+
+  case class FunctionConfig(id: String, version: Version, baseUrl: String, namespace: String, endpoint: String)
 }

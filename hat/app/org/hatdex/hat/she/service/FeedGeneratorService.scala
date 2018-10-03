@@ -53,9 +53,11 @@ class FeedGeneratorService @Inject() ()(
   protected implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   private val dataMappers: Seq[(String, DataEndpointMapper)] = Seq(
+    "facebook/profile" -> new FacebookProfileMapper(),
     "facebook/feed" → new FacebookFeedMapper(),
     "facebook/events" → new FacebookEventMapper(),
     "twitter/tweets" → new TwitterFeedMapper(),
+    "fitbit/profile" -> new FitbitProfileMapper(),
     "fitbit/sleep" → new FitbitSleepMapper(),
     "fitbit/weight" → new FitbitWeightMapper(),
     "fitbit/activity" → new FitbitActivityMapper(),
@@ -66,8 +68,9 @@ class FeedGeneratorService @Inject() ()(
     "monzo/transactions" → new MonzoTransactionMapper(),
     "instagram/feed" → new InstagramMediaMapper())
 
-  private val insightMappers: Seq[(String, InsightsMapper)] = Seq(
-    "she/activity-records" → new InsightsMapper())
+  private val insightMappers: Seq[(String, DataEndpointMapper)] = Seq(
+    "she/activity-records" → new InsightsMapper(),
+    "she/sentiments" → new InsightSentimentMapper())
 
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] = {
     if (endpoint.startsWith("she")) {

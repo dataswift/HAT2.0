@@ -353,7 +353,7 @@ trait ApplicationsServiceContext extends HATTestContext {
   }
 
   class CustomisedFakeModule extends AbstractModule with ScalaModule {
-    def configure(): Unit = {
+    override def configure(): Unit = {
       bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(
         Seq(notablesApp, notablesAppDebitless, notablesAppIncompatibleUpdated,
           notablesAppExternal, notablesAppExternalFailing)))
