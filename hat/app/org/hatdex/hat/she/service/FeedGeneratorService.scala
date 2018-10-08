@@ -66,8 +66,9 @@ class FeedGeneratorService @Inject() ()(
     "monzo/transactions" → new MonzoTransactionMapper(),
     "instagram/feed" → new InstagramMediaMapper())
 
-  private val insightMappers: Seq[(String, InsightsMapper)] = Seq(
-    "she/activity-records" → new InsightsMapper())
+  private val insightMappers: Seq[(String, DataEndpointMapper)] = Seq(
+    "she/activity-records" → new InsightsMapper(),
+    "she/sentiments" → new InsightSentimentMapper())
 
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] = {
     if (endpoint.startsWith("she")) {

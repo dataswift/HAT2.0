@@ -25,8 +25,7 @@
 package org.hatdex.hat.authentication
 
 import javax.inject.Inject
-import akka.actor.ActorSystem
-import com.digitaltangible.playguard.{ RateLimitActionFilter, RateLimiter, clientIp }
+import com.digitaltangible.playguard.{ RateLimitActionFilter, RateLimiter }
 import com.mohiva.play.silhouette.api.actions._
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
 import org.hatdex.hat.api.json.HatJsonFormats
@@ -95,7 +94,6 @@ abstract class HatApiController(
  * A Limiter for user logic.
  */
 class UserLimiter @Inject() (implicit
-    actorSystem: ActorSystem,
     configuration: Configuration,
     ec: ExecutionContext) {
   import scala.language.higherKinds
@@ -134,4 +132,19 @@ class UserLimiter @Inject() (implicit
   def SecureRateLimit: RateLimitActionFilter[Secured] with ActionFunction[Secured, Secured] =
     createSecured[HatApiAuthEnvironment, Secured, String](rl)(response, clientIp)
 
+  def clientIp(request: RequestHeader)(implicit conf: Configuration): String = {
+    (for {
+      configuredHeader <- conf.get[Option[String]]("playguard.clientipheader")
+      ip <- request.headers.get(configuredHeader)
+    } yield ip) getOrElse {
+
+      // Consider X-Forwarded-For as most accurate if it exists
+      // Since it is easy to forge an X-Forwarded-For, only consider the last ip added by our proxy as the most accurate
+      // https://en.wikipedia.org/wiki/X-Forwarded-For
+      request.headers.get("X-Forwarded-For").map(_.split(",").last.trim).getOrElse {
+        request.remoteAddress
+      }
+
+    }
+  }
 }

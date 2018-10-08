@@ -44,7 +44,7 @@ class DevHatInitializationModule extends ScalaModule with AkkaGuiceSupport {
   /**
    * Configures the module.
    */
-  protected def configure(): Unit = {
+  override protected def configure(): Unit = {
     bind[DevHatInitializer].asEagerSingleton()
   }
 }
