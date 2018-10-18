@@ -468,8 +468,8 @@ class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/profile", None, None, None)),
-      Some("updated_time"), None, None))
+        EndpointQuery("fitbit/profile", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("updated_time", None, f))), None)),
+      Some("updated_time"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
@@ -561,8 +561,8 @@ class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("facebook/profile", None, None, None)),
-      Some("updated_time"), None, None))
+        EndpointQuery("facebook/profile", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("updated_time", None, f))), None)),
+      Some("updated_time"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
