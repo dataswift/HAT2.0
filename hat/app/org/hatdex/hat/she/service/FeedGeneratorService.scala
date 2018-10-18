@@ -56,6 +56,7 @@ class FeedGeneratorService @Inject() ()(
     "facebook/profile" -> new FacebookProfileMapper(),
     "facebook/feed" → new FacebookFeedMapper(),
     "facebook/events" → new FacebookEventMapper(),
+    "twitter/profile" → new TwitterProfileMapper(),
     "twitter/tweets" → new TwitterFeedMapper(),
     "fitbit/profile" -> new FitbitProfileMapper(),
     "fitbit/sleep" → new FitbitSleepMapper(),
