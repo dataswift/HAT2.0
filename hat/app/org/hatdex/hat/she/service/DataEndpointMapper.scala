@@ -144,25 +144,35 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
 }
 
 trait FeedItemComparator {
-  def compareInt(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String): (Boolean, String) = {
-    val previousValue = (tailContent \ dataKey).asOpt[Int].getOrElse(0)
-    val currentValue = (content \ dataKey).asOpt[Int].getOrElse(0)
+  def extractContent(content: JsValue, tailContent: JsValue, dataKey: String, dataKeyRoot: Option[String] = None): (JsLookupResult, JsLookupResult) = {
+    val tailContentResult = if (dataKeyRoot.isEmpty) (tailContent \ dataKey) else (tailContent \ dataKeyRoot.get \ dataKey)
+    val contentResult = if (dataKeyRoot.isEmpty) (content \ dataKey) else (content \ dataKeyRoot.get \ dataKey)
+
+    (contentResult, tailContentResult)
+  }
+
+  def compareInt(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String, dataKeyRoot: Option[String] = None): (Boolean, String) = {
+    val (contentResult, tailContentResult) = extractContent(content, tailContent, dataKey, dataKeyRoot)
+    val previousValue = tailContentResult.asOpt[Int].getOrElse(0)
+    val currentValue = contentResult.asOpt[Int].getOrElse(0)
     val contentValue = previousValue == currentValue
     val contentText = s"Your $humanKey has changed from $previousValue to $currentValue."
     (contentValue, contentText)
   }
 
-  def compareString(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String): (Boolean, String) = {
-    val previousValue = (tailContent \ dataKey).asOpt[String].getOrElse("")
-    val currentValue = (content \ dataKey).asOpt[String].getOrElse("")
+  def compareString(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String, dataKeyRoot: Option[String] = None): (Boolean, String) = {
+    val (contentResult, tailContentResult) = extractContent(content, tailContent, dataKey, dataKeyRoot)
+    val previousValue = tailContentResult.asOpt[String].getOrElse("")
+    val currentValue = contentResult.asOpt[String].getOrElse("")
     val contentValue = previousValue == currentValue
     val contentText = s"Your $humanKey has changed from $previousValue to $currentValue."
     (contentValue, contentText)
   }
 
-  def compareFloat(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String): (Boolean, String) = {
-    val previousValue = (tailContent \ dataKey).asOpt[Float].getOrElse(0.0f)
-    val currentValue = (content \ dataKey).asOpt[Float].getOrElse(0.0f)
+  def compareFloat(content: JsValue, tailContent: JsValue, dataKey: String, humanKey: String, dataKeyRoot: Option[String] = None): (Boolean, String) = {
+    val (contentResult, tailContentResult) = extractContent(content, tailContent, dataKey, dataKeyRoot)
+    val previousValue = contentResult.asOpt[Float].getOrElse(0.0f)
+    val currentValue = tailContentResult.asOpt[Float].getOrElse(0.0f)
     val contentValue = previousValue == currentValue
     val contentText = s"Your $humanKey has changed from $previousValue to $currentValue."
     (contentValue, contentText)
@@ -510,6 +520,51 @@ class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
         compareInt(content, tailContent.get, "height", "Height"),
         compareFloat(content, tailContent.get, "weight", "Weight"),
         compareString(content, tailContent.get, "country", "Country"))
+    }
+  }
+}
+
+class TwitterProfileMapper extends DataEndpointMapper with FeedItemComparator {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(
+        EndpointQuery("twitter/tweets", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("lastUpdated", None, f))), None)),
+      Some("lastUpdated"), Some("descending"), None))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
+    val comparison = compare(content, tailContent).filter(_._1 == false) // remove all fields that have the same values pre/current
+    if (comparison.length == 0) {
+      Failure(new RuntimeException("Comparision Failure. Data the same"))
+    }
+    else {
+      for {
+        title <- Try(DataFeedItemTitle("Your Twitter Profile has changed.", None, None))
+        itemContent ← {
+          val contentText = comparison.map(item => s"${item._2}\n").mkString
+          Try(DataFeedItemContent(
+            Some(contentText), None, None, None))
+        }
+      } yield {
+        DataFeedItem("twitter", (content \ "lastUpdated").as[DateTime], Seq("profile"),
+          Some(title), Some(itemContent), None)
+      }
+    }
+  }
+
+  def compare(content: JsValue, tailContent: Option[JsValue]): Seq[(Boolean, String)] = {
+    if (tailContent.isEmpty)
+      Seq()
+    else {
+      Seq(
+        compareString(content, tailContent.get, "name", "Name", Some("user")),
+        compareString(content, tailContent.get, "location", "Location", Some("user")),
+        compareString(content, tailContent.get, "description", "Description", Some("user")),
+        compareInt(content, tailContent.get, "friends_count", "Number of Friends", Some("user")),
+        compareInt(content, tailContent.get, "followers_count", "Number of Followers", Some("user")),
+        compareInt(content, tailContent.get, "favourites_count", "Number of Favorites", Some("user")),
+        compareInt(content, tailContent.get, "profile_image_url_https", "Profile Image", Some("user")),
+        compareInt(content, tailContent.get, "statuses_count", "Number of Tweets", Some("user")))
     }
   }
 }
