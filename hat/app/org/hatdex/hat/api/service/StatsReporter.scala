@@ -29,7 +29,7 @@ import akka.Done
 import akka.actor.{ ActorSystem, Scheduler }
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
-import org.hatdex.dex.api.services.DexClient
+import org.hatdex.dex.apiV2.services.DexClient
 import org.hatdex.hat.api.models.{ DataStats, Platform }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
@@ -81,6 +81,13 @@ class StatsReporter @Inject() (
         logger.error(s"Error while reporting stats: ${e.getMessage}")
       case _ ⇒ Done
     }
+  }
+
+  def registerOwnerConsent(applicationId: String)(implicit server: HatServer): Future[Done] = {
+    for {
+      token <- applicationToken()
+      _ <- dexClient.registerTosConsent(token, applicationId)
+    } yield Done
   }
 
   protected def reportPendingStatistics(batch: Seq[DataStatsLogRow])(implicit server: HatServer): Future[Done] = {
