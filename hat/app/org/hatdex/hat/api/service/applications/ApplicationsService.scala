@@ -30,7 +30,7 @@ import javax.inject.Inject
 import org.hatdex.hat.api.models.applications.{ Application, ApplicationStatus, HatApplication, Version }
 import org.hatdex.hat.api.models.{ AccessToken, DataDebit, EndpointQuery }
 import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataDuplicateDebitException, RichDataService }
-import org.hatdex.hat.api.service.{ DalExecutionContext, RemoteExecutionContext }
+import org.hatdex.hat.api.service.{ DalExecutionContext, RemoteExecutionContext, StatsReporter }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.Tables
@@ -74,6 +74,7 @@ class ApplicationsService @Inject() (
     statusCheckService: ApplicationStatusCheckService,
     trustedApplicationProvider: TrustedApplicationProvider,
     silhouette: Silhouette[HatApiAuthEnvironment],
+    statsReporter: StatsReporter,
     system: ActorSystem)(implicit val ec: DalExecutionContext) {
 
   private val logger = Logger(this.getClass)
@@ -146,6 +147,7 @@ class ApplicationsService @Inject() (
     val appSetup = for {
       _ ← maybeDataDebitSetup.getOrElse(Future.successful(())) // If data debit was there, must have been setup successfully
       _ ← applicationSetupStatusUpdate(application, enabled = true)(hat.db) // Update status
+      _ <- statsReporter.registerOwnerConsent(application.application.id)
       app ← applicationStatus(application.application.id, bustCache = true) // Refetch all information
         .map(_.getOrElse(throw new RuntimeException("Application information not found during setup")))
     } yield {

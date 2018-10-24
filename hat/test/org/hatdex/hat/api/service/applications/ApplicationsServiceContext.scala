@@ -24,13 +24,15 @@
 
 package org.hatdex.hat.api.service.applications
 
+import akka.Done
 import akka.util.ByteString
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models.applications.{ Application, ApplicationStatus, Version }
+import org.hatdex.hat.api.service.StatsReporter
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.resourceManagement.FakeHatConfiguration
+import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, HatServer }
 import org.joda.time.DateTime
 import org.mockito.Mockito.when
 import org.mockito.invocation.InvocationOnMock
@@ -42,7 +44,7 @@ import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.test.FakeRequest
 import play.core.server.Server
-import play.api.{ Application ⇒ PlayApplication }
+import play.api.{ Application => PlayApplication }
 
 import scala.concurrent.Future
 
@@ -352,6 +354,13 @@ trait ApplicationsServiceContext extends HATTestContext {
 
   }
 
+  lazy val mockStatsReporter = {
+    val mockStatsReporter = mock[StatsReporter]
+    mockStatsReporter.registerOwnerConsent(any[String])(any[HatServer]) returns Future.successful(Done)
+
+    mockStatsReporter
+  }
+
   class CustomisedFakeModule extends AbstractModule with ScalaModule {
     override def configure(): Unit = {
       bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(
@@ -359,6 +368,7 @@ trait ApplicationsServiceContext extends HATTestContext {
           notablesAppExternal, notablesAppExternalFailing)))
 
       bind[ApplicationStatusCheckService].toInstance(mockStatusChecker)
+      bind[StatsReporter].toInstance(mockStatsReporter)
     }
   }
 
