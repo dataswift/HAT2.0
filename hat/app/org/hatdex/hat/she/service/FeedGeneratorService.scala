@@ -83,7 +83,7 @@ class FeedGeneratorService @Inject() ()(
   }
 
   def fullFeed(since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
-    feedForMappers(dataMappers, since, until, mergeLocations, includeInsights = true)
+    feedForMappers(dataMappers, since, until, mergeLocations, includeInsights = false)
 
   def insights(since: Option[Long], until: Option[Long], endpoint: Option[String])(implicit hatServer: HatServer): Source[DataFeedItem, NotUsed] = {
     val now = DateTime.now()
