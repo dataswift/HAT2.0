@@ -478,8 +478,8 @@ class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/profile", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("updated_time", None, f))), None)),
-      Some("updated_time"), Some("descending"), None))
+        EndpointQuery("fitbit/profile", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("dateCreated", None, f))), None)),
+      Some("dateCreated"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
@@ -512,14 +512,15 @@ class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
     if (tailContent.isEmpty)
       Seq()
     else {
+      // Note: we are comparing in descending order. Reverse content <-> tailContent if ascending
       Seq(
-        compareString(content, tailContent.get, "fullName", "Name"),
-        compareString(content, tailContent.get, "displayName", "Display Name"),
-        compareString(content, tailContent.get, "gender", "Gender"),
-        compareInt(content, tailContent.get, "age", "Age"),
-        compareInt(content, tailContent.get, "height", "Height"),
-        compareFloat(content, tailContent.get, "weight", "Weight"),
-        compareString(content, tailContent.get, "country", "Country"))
+        compareString(tailContent.get, content, "fullName", "Name"),
+        compareString(tailContent.get, content, "displayName", "Display Name"),
+        compareString(tailContent.get, content, "gender", "Gender"),
+        compareInt(tailContent.get, content, "age", "Age"),
+        compareInt(tailContent.get, content, "height", "Height"),
+        compareFloat(tailContent.get, content, "weight", "Weight"),
+        compareString(tailContent.get, content, "country", "Country"))
     }
   }
 }
