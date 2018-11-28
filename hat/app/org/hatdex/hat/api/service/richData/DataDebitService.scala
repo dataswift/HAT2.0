@@ -51,7 +51,7 @@ class DataDebitService @Inject() (usersService: UsersService)(implicit val ec: R
   def createDataDebit(key: String, ddRequest: DataDebitSetupRequest, userId: UUID)(implicit server: HatServer): Future[DataDebit] = {
     val dataDebitInsert = (DbDataDebit returning DbDataDebit) += DataDebitRow(key, LocalDateTime.now(),
       ddRequest.requestClientName, ddRequest.requestClientUrl, ddRequest.requestClientLogoUrl,
-      ddRequest.requestApplicationId, ddRequest.requestDescription)
+      ddRequest.requestApplicationId, ddRequest.requestDescription, ddRequest.requestClientCallbackUrl)
     val dataDebitBundleInserts = DataBundles ++= Seq(
       Some(DataBundlesRow(ddRequest.bundle.name, Json.toJson(ddRequest.bundle.bundle))),
       ddRequest.conditions.map(b => DataBundlesRow(b.name, Json.toJson(b.bundle)))).flatten

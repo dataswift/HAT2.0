@@ -154,7 +154,7 @@ object ModelTranslation {
 
   def fromDbModel(dataDebit: DataDebitRow, dataDebitBundle: Seq[(DataDebitPermissionsRow, DataBundlesRow, Option[DataBundlesRow])]): ApiDataDebit = {
     ApiDataDebit(dataDebit.dataDebitKey, dataDebit.dateCreated, dataDebitBundle.map(d => ModelTranslation.fromDbModel(d._1, d._2, d._3)),
-      dataDebit.requestClientName, dataDebit.requestClientUrl, dataDebit.requestClientLogoUrl,
+      dataDebit.requestClientName, dataDebit.requestClientUrl, dataDebit.requestClientLogoUrl, dataDebit.requestClientCallbackUrl,
       dataDebit.requestApplicationId, dataDebit.requestDescription)
   }
 

@@ -25,7 +25,6 @@
 package org.hatdex.hat.api.controllers
 
 import javax.inject.Inject
-
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import org.hatdex.hat.api.json.RichDataJsonFormats
@@ -35,6 +34,7 @@ import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider }
+import org.joda.time.{ DateTime, Duration }
 import play.api.libs.json.Json
 import play.api.mvc._
 
@@ -52,6 +52,65 @@ class DataDebits @Inject() (
     implicit val applicationsService: ApplicationsService) extends HatApiController(components, silhouette) with RichDataJsonFormats {
 
   private val logger = loggingProvider.logger(this.getClass)
+
+  /*
+  Test only: Not in Use.
+   */
+  def mockDataDebit(): Action[AnyContent] = SecuredAction(WithRole(Owner(), DataDebitOwner(""), Platform())) { implicit request =>
+    val mappings = Json.parse(
+      """
+        |{
+        |                                        "id": "id",
+        |                                        "uri": "uri",
+        |                                        "href": "href",
+        |                                        "link": "link",
+        |                                        "name": "name",
+        |                                        "test": "test",
+        |                                        "type": "type",
+        |                                        "email": "email",
+        |                                        "gender": "gender",
+        |                                        "locale": "locale",
+        |                                        "quotes": "quotes",
+        |                                        "country": "country",
+        |                                        "product": "product",
+        |                                        "birthday": "birthday",
+        |                                        "timezone": "timezone",
+        |                                        "verified": "verified",
+        |                                        "age_range": "age_range",
+        |                                        "birthdate": "birthdate",
+        |                                        "last_name": "last_name",
+        |                                        "first_name": "first_name",
+        |                                        "dateCreated": "dateCreated",
+        |                                        "is_verified": "is_verified",
+        |                                        "lastUpdated": "lastUpdated",
+        |                                        "display_name": "display_name",
+        |                                        "friend_count": "friend_count",
+        |                                        "friends[].id": "friends[].id",
+        |                                        "images[].url": "images[].url",
+        |                                        "updated_time": "updated_time",
+        |                                        "followers.href": "followers.href",
+        |                                        "friends[].name": "friends[].name",
+        |                                        "images[].width": "images[].width",
+        |                                        "third_party_id": "third_party_id",
+        |                                        "followers.total": "followers.total",
+        |                                        "images[].height": "images[].height",
+        |                                        "relationship_status": "relationship_status",
+        |                                        "significant_other.id": "significant_other.id",
+        |                                        "external_urls.spotify": "external_urls.spotify",
+        |                                        "significant_other.name": "significant_other.name"
+        |                                    }
+      """.stripMargin)
+    val endpoints = List(EndpointQuery("facebook/profile", Some(mappings), None, None))
+    val properties = Map("facebook/profile" -> PropertyQuery(endpoints, None, None, None))
+    val bundle = EndpointDataBundle("req-f54d674c-3b52-4c75-bcc6-1d6f21a2241e", properties)
+    val ddRequest = DataDebitSetupRequest(
+      "f54d674c-3b52-4c75-bcc6-1d6f21a2241e", "Testing Purposes", DateTime.now(), Duration.standardDays(1), cancelAtPeriodEnd = true,
+      "DataBuyer", "https://databuyer.hubofallthings.com", "https://databuyer.hubofallthings.com/assets/images/databuyer-logo.png", Some("https://trinity.terrylee.info/mock"),
+      Some("databuyer"), Some(s"Data Debit created for DataBuyer offer f54d674c-3b52-4c75-bcc6-1d6f21a2241e"), "https://hatdex.org/hat-databuyer-business-terms",
+      None, bundle)
+
+    Ok(Json.toJson(ddRequest))
+  }
 
   def registerDataDebit(dataDebitId: String): Action[DataDebitSetupRequest] =
     SecuredAction(WithRole(Owner(), DataDebitOwner(""), Platform()) || ContainsApplicationRole(Owner(), DataDebitOwner(""), Platform())).async(parsers.json[DataDebitSetupRequest]) { implicit request ⇒
