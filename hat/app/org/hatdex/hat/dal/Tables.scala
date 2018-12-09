@@ -244,19 +244,20 @@ trait Tables {
    *  @param requestClientLogoUrl Database column request_client_logo_url SqlType(varchar)
    *  @param requestApplicationId Database column request_application_id SqlType(varchar), Default(None)
    *  @param requestDescription Database column request_description SqlType(varchar), Default(None)
+   *  @param requestClientCallbackUrl Database column request_client_callback_url SqlType(varchar), Default(None)
    */
-  case class DataDebitRow(dataDebitKey: String, dateCreated: org.joda.time.LocalDateTime, requestClientName: String, requestClientUrl: String, requestClientLogoUrl: String, requestApplicationId: Option[String] = None, requestDescription: Option[String] = None)
+  case class DataDebitRow(dataDebitKey: String, dateCreated: org.joda.time.LocalDateTime, requestClientName: String, requestClientUrl: String, requestClientLogoUrl: String, requestApplicationId: Option[String] = None, requestDescription: Option[String] = None, requestClientCallbackUrl: Option[String] = None)
   /** GetResult implicit for fetching DataDebitRow objects using plain SQL queries */
   implicit def GetResultDataDebitRow(implicit e0: GR[String], e1: GR[org.joda.time.LocalDateTime], e2: GR[Option[String]]): GR[DataDebitRow] = GR {
     prs =>
       import prs._
-      DataDebitRow.tupled((<<[String], <<[org.joda.time.LocalDateTime], <<[String], <<[String], <<[String], <<?[String], <<?[String]))
+      DataDebitRow.tupled((<<[String], <<[org.joda.time.LocalDateTime], <<[String], <<[String], <<[String], <<?[String], <<?[String], <<?[String]))
   }
   /** Table description of table data_debit. Objects of this class serve as prototypes for rows in queries. */
   class DataDebit(_tableTag: Tag) extends profile.api.Table[DataDebitRow](_tableTag, Some("hat"), "data_debit") {
-    def * = (dataDebitKey, dateCreated, requestClientName, requestClientUrl, requestClientLogoUrl, requestApplicationId, requestDescription) <> (DataDebitRow.tupled, DataDebitRow.unapply)
+    def * = (dataDebitKey, dateCreated, requestClientName, requestClientUrl, requestClientLogoUrl, requestApplicationId, requestDescription, requestClientCallbackUrl) <> (DataDebitRow.tupled, DataDebitRow.unapply)
     /** Maps whole row to an option. Useful for outer joins. */
-    def ? = (Rep.Some(dataDebitKey), Rep.Some(dateCreated), Rep.Some(requestClientName), Rep.Some(requestClientUrl), Rep.Some(requestClientLogoUrl), requestApplicationId, requestDescription).shaped.<>({ r => import r._; _1.map(_ => DataDebitRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
+    def ? = (Rep.Some(dataDebitKey), Rep.Some(dateCreated), Rep.Some(requestClientName), Rep.Some(requestClientUrl), Rep.Some(requestClientLogoUrl), requestApplicationId, requestDescription, requestClientCallbackUrl).shaped.<>({ r => import r._; _1.map(_ => DataDebitRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get, _6, _7, _8))) }, (_: Any) => throw new Exception("Inserting into ? projection not supported."))
 
     /** Database column data_debit_key SqlType(varchar), PrimaryKey */
     val dataDebitKey: Rep[String] = column[String]("data_debit_key", O.PrimaryKey)
@@ -272,6 +273,8 @@ trait Tables {
     val requestApplicationId: Rep[Option[String]] = column[Option[String]]("request_application_id", O.Default(None))
     /** Database column request_description SqlType(varchar), Default(None) */
     val requestDescription: Rep[Option[String]] = column[Option[String]]("request_description", O.Default(None))
+    /** Database column request_client_callback_url SqlType(varchar), Default(None) */
+    val requestClientCallbackUrl: Rep[Option[String]] = column[Option[String]]("request_client_callback_url", O.Default(None))
   }
   /** Collection-like TableQuery object for table DataDebit */
   lazy val DataDebit = new TableQuery(tag => new DataDebit(tag))

@@ -51,7 +51,7 @@ class DataDebitService @Inject() (usersService: UsersService)(implicit val ec: R
   def createDataDebit(key: String, ddRequest: DataDebitSetupRequest, userId: UUID)(implicit server: HatServer): Future[DataDebit] = {
     val dataDebitInsert = (DbDataDebit returning DbDataDebit) += DataDebitRow(key, LocalDateTime.now(),
       ddRequest.requestClientName, ddRequest.requestClientUrl, ddRequest.requestClientLogoUrl,
-      ddRequest.requestApplicationId, ddRequest.requestDescription)
+      ddRequest.requestApplicationId, ddRequest.requestDescription, ddRequest.requestClientCallbackUrl)
     val dataDebitBundleInserts = DataBundles ++= Seq(
       Some(DataBundlesRow(ddRequest.bundle.name, Json.toJson(ddRequest.bundle.bundle))),
       ddRequest.conditions.map(b => DataBundlesRow(b.name, Json.toJson(b.bundle)))).flatten
@@ -203,5 +203,22 @@ class DataDebitService @Inject() (usersService: UsersService)(implicit val ec: R
       .map(_ => Done)
   }
 
+  /* Sample query
+  select db.data_debit_key, db.request_client_callback_url, bun.bundle from hat.data_debit db join hat.data_debit_permissions dp on (db.data_debit_key=dp.data_debit_key) join hat.data_bundles bun on (dp.bundle_id=bun.bundle_id)
+WHERE dp.accepted is true AND dp.canceled_at is null AND dp.start < now()
+AND db.request_client_callback_url is not null AND bun.bundle::varchar like '%"endpoint": "facebook/profile"%'
+   */
+  def dataDebitCallback(endpoint: String)(implicit server: HatServer): Future[Seq[(String, String)]] = {
+    import org.hatdex.hat.dal.Tables.{ DataBundles => DbDataBundles }
+
+    val joinQuery = for {
+      ((data_debit, data_debit_permissions), data_bundles) <- (DbDataDebit join DbDataDebitPermissions on (_.dataDebitKey === _.dataDebitKey)) join DbDataBundles on (_._2.bundleId === _.bundleId) if data_debit.requestClientCallbackUrl.isDefined && data_debit_permissions.accepted && data_debit_permissions.canceledAt.isEmpty && data_debit_permissions.start <= LocalDateTime.now()
+    } yield (data_debit.dataDebitKey, data_debit.requestClientCallbackUrl, data_bundles.bundle)
+
+    server.db.run(joinQuery.result).map { results =>
+      results.filter(item => (item._3 \\ "endpoint").map(_.toString).contains("\"" + endpoint + "\""))
+        .map(item => (item._1, item._2.get))
+    }
+  }
 }
 

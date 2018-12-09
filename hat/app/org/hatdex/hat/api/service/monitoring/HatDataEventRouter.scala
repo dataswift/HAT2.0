@@ -40,6 +40,7 @@ trait HatDataEventRouter {
 class HatDataEventRouterImpl @Inject() (
     dataEventBus: HatDataEventBus,
     @Named("hatDataStatsProcessor") statsProcessor: ActorRef,
+    @Named("hatDataEventsProcessor") notifier: ActorRef,
     implicit val actorSystem: ActorSystem) extends HatDataEventRouter {
 
   private implicit val materializer = ActorMaterializer()
@@ -53,6 +54,8 @@ class HatDataEventRouterImpl @Inject() (
     // Data Debit Events are dispatched without buffering
     dataEventBus.subscribe(statsProcessor, classOf[HatDataEventBus.RichDataDebitEvent])
     dataEventBus.subscribe(statsProcessor, classOf[HatDataEventBus.DataDebitEvent])
+
+    dataEventBus.subscribe(buffer(notifier), classOf[HatDataEventBus.DataCreatedEvent])
     Done
   }
 
