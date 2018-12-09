@@ -45,7 +45,6 @@ GET           /data-debit/$dataDebitId<[0-9a-zA-Z-]+>/disable                   
 POST          /data-debit/$dataDebitId<[0-9a-zA-Z-]+>                                        org.hatdex.hat.api.controllers.DataDebits.registerDataDebit(dataDebitId)
 PUT           /data-debit/$dataDebitId<[0-9a-zA-Z-]+>                                        org.hatdex.hat.api.controllers.DataDebits.updateDataDebit(dataDebitId)
 
-#GET            /data-debit-mock org.hatdex.hat.api.controllers.DataDebits.mockDataDebit
 GET           /migrate                                                                       org.hatdex.hat.api.controllers.DataMigration.migrateData(fromSource: String, fromTableName: String, toNamespace: String, toEndpoint: String, includeTimestamp: Boolean = true)
 
 # APPLICATION routes
