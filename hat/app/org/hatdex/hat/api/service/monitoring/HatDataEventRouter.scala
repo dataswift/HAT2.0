@@ -40,7 +40,7 @@ trait HatDataEventRouter {
 class HatDataEventRouterImpl @Inject() (
     dataEventBus: HatDataEventBus,
     @Named("hatDataStatsProcessor") statsProcessor: ActorRef,
-    @Named("hatDataEventNotifier") notifier: ActorRef,
+    @Named("hatDataEventsProcessor") notifier: ActorRef,
     implicit val actorSystem: ActorSystem) extends HatDataEventRouter {
 
   private implicit val materializer = ActorMaterializer()
@@ -55,7 +55,7 @@ class HatDataEventRouterImpl @Inject() (
     dataEventBus.subscribe(statsProcessor, classOf[HatDataEventBus.RichDataDebitEvent])
     dataEventBus.subscribe(statsProcessor, classOf[HatDataEventBus.DataDebitEvent])
 
-    dataEventBus.subscribe(notifier, classOf[HatDataEventBus.DataCreatedEvent])
+    dataEventBus.subscribe(buffer(notifier), classOf[HatDataEventBus.DataCreatedEvent])
     Done
   }
 
