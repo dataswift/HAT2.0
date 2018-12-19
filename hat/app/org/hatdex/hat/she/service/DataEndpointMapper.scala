@@ -521,7 +521,9 @@ class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
         compareInt(tailContent.get, content, "height", "Height"),
         compareFloat(tailContent.get, content, "weight", "Weight"),
         compareString(tailContent.get, content, "country", "Country"),
-        compareString(tailContent.get, content, "timezone", "Time Zone"))
+        // TODO: Terry: I don't understand the discrepancy. Monitor
+        // compareString(tailContent.get, content, "timezone", "Time Zone"))
+        compareString(content, tailContent.get, "timezone", "Time Zone"))
     }
   }
 }
