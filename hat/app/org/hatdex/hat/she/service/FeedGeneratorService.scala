@@ -25,7 +25,6 @@
 package org.hatdex.hat.she.service
 
 import javax.inject.Inject
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream._
@@ -107,7 +106,7 @@ class FeedGeneratorService @Inject() ()(
     hatServer: HatServer): Future[Seq[DataFeedItem]] = {
     logger.debug(s"Fetching feed data for ${mappers.unzip._1}")
     val now = DateTime.now()
-    val sinceTime = since.map(t ⇒ new DateTime(t * 1000L)).getOrElse(now.minus(defaultTimeBack.toMillis))
+    val sinceTime = since.map(t ⇒ new DateTime(t * 1000L).minus(9.hour.toMillis)).getOrElse(now.minus(defaultTimeBack.toMillis))
     val untilTime = until.map(t ⇒ new DateTime(t * 1000L)).getOrElse(now.plus(defaultTimeForward.toMillis))
     val sources: Seq[Source[DataFeedItem, NotUsed]] = mappers
       .unzip._2
