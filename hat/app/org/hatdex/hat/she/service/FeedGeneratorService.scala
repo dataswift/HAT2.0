@@ -25,7 +25,6 @@
 package org.hatdex.hat.she.service
 
 import javax.inject.Inject
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream._
