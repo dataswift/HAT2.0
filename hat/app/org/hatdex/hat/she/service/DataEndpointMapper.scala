@@ -783,7 +783,7 @@ class FacebookPagesLikesMapper extends DataEndpointMapper {
 
       itemContent ← Try(DataFeedItemContent(
         Some(
-          s"""Page Name - ${name}
+          s"""Page Name - $name
              |
              |Location - ${(content \ "location" \ "city").asOpt[String].getOrElse("")}
              |Website - ${(content \ "website").asOpt[String].getOrElse("")}""".stripMargin.trim), None, None, None))
