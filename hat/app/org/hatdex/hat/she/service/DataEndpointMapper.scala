@@ -46,14 +46,10 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
   protected val dataDeduplicationField: Option[String] = None
 
   protected def dateFilter(fromDate: Option[DateTime], untilDate: Option[DateTime]): Option[FilterOperator.Operator] = {
-    if (fromDate.isDefined) {
-      println(fromDate.get.toString(dateTimeFormat))
-      println(untilDate.get.toString(dateTimeFormat))
+    if (fromDate.isDefined)
       Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(dateTimeFormat))), Json.toJson(untilDate.map(_.toString(dateTimeFormat)))))
-    }
-    else {
+    else
       None
-    }
   }
 
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery]
@@ -289,6 +285,20 @@ class InsightsMapper extends DataEndpointMapper {
 
       DataFeedItem("she", endDate.getOrElse(DateTime.now()), Seq("insight", "activity"), Some(title), Some(itemContent), None)
     }
+  }
+}
+
+class TwitterWordcloudMapper extends DataEndpointMapper {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(
+        EndpointQuery("she/insights/twitter/word-cloud", None, None, None)), None, None, None))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
+    val title = DataFeedItemTitle("Twitter Word Cloud", None, Some("twitter-word-cloud"))
+    val itemContent = DataFeedItemContent(text = Some(content.toString()), html = None, media = None, nestedStructure = None)
+    Try(DataFeedItem("she", DateTime.now, Seq("insight", "twitter-word-cloud"), Some(title), Some(itemContent), None))
   }
 }
 
