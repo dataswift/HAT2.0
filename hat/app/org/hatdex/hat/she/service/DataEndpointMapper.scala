@@ -292,13 +292,14 @@ class TwitterWordcloudMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("she/insights/twitter/word-cloud", None, None, None)), None, None, None))
+        EndpointQuery("she/insights/twitter/word-cloud", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("timestamp", None, f))), None)),
+      Some("timestamp"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val title = DataFeedItemTitle("Twitter Word Cloud", None, Some("twitter-word-cloud"))
     val itemContent = DataFeedItemContent(text = Some(content.toString()), html = None, media = None, nestedStructure = None)
-    Try(DataFeedItem("she", DateTime.now, Seq("insight", "twitter-word-cloud"), Some(title), Some(itemContent), None))
+    Try(DataFeedItem("she", DateTime.now, Seq("wordcloud", "twitter-word-cloud"), Some(title), Some(itemContent), None))
   }
 }
 
