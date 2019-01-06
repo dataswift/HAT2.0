@@ -70,7 +70,6 @@ class LambdaFunctionExecutable(
       .withPayload(Json.toJson(Map(
         "functionConfiguration" → Json.toJson(configuration),
         "request" → Json.toJson(requestData))).toString())
-
     lambdaExecutor.execute[Seq[Response]](request)
   }
 
@@ -81,7 +80,6 @@ class LambdaFunctionExecutable(
       .withPayload(Json.toJson(Map(
         "fromDate" → fromDate.map(_.toString),
         "untilDate" → untilDate.map(_.toString))).toString())
-
     lambdaExecutor.execute[EndpointDataBundle](request)
   }
 }
