@@ -289,9 +289,13 @@ class TwitterWordcloudMapper extends DataEndpointMapper {
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
-    val title = DataFeedItemTitle("Twitter Word Cloud", None, Some("twitter-word-cloud"))
-    val itemContent = DataFeedItemContent(text = Some(content.toString()), html = None, media = None, nestedStructure = None)
-    Try(DataFeedItem("she", DateTime.now, Seq("wordcloud", "twitter-word-cloud"), Some(title), Some(itemContent), None))
+    for {
+      counters ← Try((content \ "summary" \ "totalCount").as[Int]) if counters > 0
+    } yield {
+      val title = DataFeedItemTitle("Twitter Word Cloud", None, Some("twitter-word-cloud"))
+      val itemContent = DataFeedItemContent(text = Some(content.toString()), html = None, media = None, nestedStructure = None)
+      DataFeedItem("she", DateTime.now, Seq("wordcloud", "twitter-word-cloud"), Some(title), Some(itemContent), None)
+    }
   }
 }
 
