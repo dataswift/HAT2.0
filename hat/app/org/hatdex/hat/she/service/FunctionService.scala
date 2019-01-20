@@ -144,8 +144,8 @@ class FunctionService @Inject() (
         val executionResult = for {
           _ ← markExecuting(configuration)
           bundle ← function.bundleFilterByDate(fromDate, untilDate)
-          data ← dataService.bundleData(bundle, createdAfter = configuration.status.lastExecution) // Get all bundle data from a specific date until now
-          // data ← dataService.bundleData(bundle, createdAfter = None) // TODO: Terry's comment: Setting createdAfter to None will allow the use case of - Show me the word distribution of my last 100 tweets.
+          // data ← dataService.bundleData(bundle, createdAfter = configuration.status.lastExecution) // Get all bundle data from a specific date until now
+          data ← dataService.bundleData(bundle, createdAfter = None) // TODO: Terry's comment: Setting createdAfter to None will allow the use case of - Show me the word distribution of my last 100 tweets.
           response ← function.execute(configuration, Request(data, linkRecords = true)) // Execute the function
             .map(removeDuplicateData) // Remove duplicate data in case some records mapped onto the same values when transformed
           // TODO handle cases when function runs for longer and connection to DB needs to be reestablished
