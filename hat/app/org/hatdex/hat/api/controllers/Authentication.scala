@@ -25,8 +25,8 @@
 package org.hatdex.hat.api.controllers
 
 import java.net.URLDecoder
-import javax.inject.Inject
 
+import javax.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.{ Credentials, PasswordHasherRegistry }
 import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
@@ -36,7 +36,7 @@ import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.{ HatServicesService, MailTokenService, UsersService }
 import org.hatdex.hat.authentication._
-import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser }
+import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, MailTokenUser, Vendor }
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
 import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer }
 import play.api.Logger
@@ -223,4 +223,38 @@ class Authentication @Inject() (
         Future.successful(Unauthorized(Json.toJson(ErrorMessage("Invalid Token", "Token does not exist"))))
     }
   }
+
+  /*
+    BEGIN: hat-claim
+    Entire Section below is on HAT Claim.
+    TODO: Refactor to New File?
+   */
+  /**
+   * Sends an email to the owner with a link to claim the hat
+   */
+  def claim(): Action[Vendor] = SecuredAction(WithRole(Owner())).async(parsers.json[Vendor]) { implicit request =>
+    val email = request.dynamicEnvironment.ownerEmail
+    val vendor = request.body
+    val response = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions")))
+    usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
+      case Some(_) =>
+        val token = MailTokenUser(email, isSignUp = false)
+        tokenService.create(token).map { _ =>
+          val scheme = if (request.secure) {
+            "https://"
+          }
+          else {
+            "http://"
+          }
+          val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}"
+          mailer.claimHat(email, claimLink, vendor)
+          response
+        }
+
+      case None => Future.successful(response)
+    }
+  }
+  /*
+    END: hat-claim
+   */
 }
