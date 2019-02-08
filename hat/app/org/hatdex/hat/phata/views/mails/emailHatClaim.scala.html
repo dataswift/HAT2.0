@@ -1,4 +1,4 @@
-@(hatDomain: String, claimLink: String, vendor: org.hatdex.hat.phata.models.Vendor)
+@(hatDomain: String, claimLink: String, application: org.hatdex.hat.api.models.applications.HatApplication)
 
 @emailTemplateMC(s"Claim your HAT - ${hatDomain}", hatDomain, s"Claim your HAT - ${hatDomain}") {
     <p>Welcome!</p>
@@ -6,7 +6,7 @@
 
     <p>A HAT with the above URL has been created at the request of</p>
 
-    <img src="@vendor.logo" />
+    <img src="@application.application.info.graphics.logo.normal" />
 
     <p>
         Please <a href="@claimLink">click here</a> to finish up setting up your HAT. You have 7 days to claim your HAT

@@ -31,4 +31,4 @@ POST        /control/v2/auth/passwordreset/confirm/:token        org.hatdex.hat.
 ->          /api/v2.6                                            v26.Routes
 
 # HAT Claim routes
-POST         /control/v2/claim                                    org.hatdex.hat.api.controllers.Authentication.claim()
+GET         /control/v2/claim                                    org.hatdex.hat.api.controllers.Authentication.claim(applicationId: String)
