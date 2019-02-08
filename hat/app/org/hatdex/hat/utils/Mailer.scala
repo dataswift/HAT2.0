@@ -27,9 +27,9 @@ package org.hatdex.hat.utils
 import javax.inject.Inject
 import akka.Done
 import akka.actor.ActorSystem
+import org.hatdex.hat.api.models.applications.HatApplication
 import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.phata.models.Vendor
 import org.hatdex.hat.phata.views
 import org.hatdex.hat.resourceManagement.HatServer
 import play.api.i18n.Messages
@@ -65,7 +65,7 @@ trait HatMailer extends Mailer {
   def passwordReset(email: String, user: HatUser, resetLink: String)(implicit m: Messages, server: HatServer): Done
   def passwordChanged(email: String, user: HatUser)(implicit m: Messages, server: HatServer): Done
 
-  def claimHat(email: String, claimLink: String, vendor: Vendor)(implicit m: Messages, server: HatServer): Done
+  def claimHat(email: String, claimLink: String, application: HatApplication)(implicit m: Messages, server: HatServer): Done
 }
 
 class HatMailerImpl @Inject() (
@@ -111,12 +111,12 @@ class HatMailerImpl @Inject() (
     Done
   }
 
-  def claimHat(email: String, claimLink: String, vendor: Vendor)(implicit m: Messages, server: HatServer): Done = {
+  def claimHat(email: String, claimLink: String, application: HatApplication)(implicit m: Messages, server: HatServer): Done = {
     sendEmail(email)(
       from = emailFrom,
       subject = s"HAT ${server.domain} - Claim your HAT!",
-      bodyHtml = views.html.mails.emailHatClaim(server.domain, claimLink, vendor),
-      bodyText = views.txt.mails.emailHatClaim(server.domain, claimLink, vendor).toString())
+      bodyHtml = views.html.mails.emailHatClaim(server.domain, claimLink, application),
+      bodyText = views.txt.mails.emailHatClaim(server.domain, claimLink, application).toString())
     Done
   }
 }
