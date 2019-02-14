@@ -251,72 +251,15 @@ class Authentication @Inject() (
                 else {
                   "http://"
                 }
-                val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}"
+                val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}?email=$email"
                 mailer.claimHat(email, claimLink, app)
               }
               response
             case None => response
           }
-        //Future.successful(response)
-
-        /*usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
-            case Some(_) =>
-              println("here")
-              val token = MailTokenUser(email, isSignUp = false)
-              tokenService.create(token).map { _ =>
-                val scheme = if (request.secure) {
-                  "https://"
-                }
-                else {
-                  "http://"
-                }
-                val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}"
-                mailer.claimHat(email, claimLink, appOpt.get)
-                Future.successful(response)
-              }
-
-            case None => {
-              println("tere")
-              Future.successful(response)
-            }
-          }*/
         case None => Future.successful(NotFound(Json.toJson(ErrorMessage("Application Not Found", "The application id is invalid."))))
       }
     }
-    /*
-    for {
-      apps <- applicationsService.applicationStatus()
-    } yield {
-      val appOpt = apps.find(_.application.id.equals(applicationId))
-
-      if (appOpt.isDefined) {
-        usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
-          case Some(_) =>
-            println("here")
-            val token = MailTokenUser(email, isSignUp = false)
-            tokenService.create(token).map { _ =>
-              val scheme = if (request.secure) {
-                "https://"
-              }
-              else {
-                "http://"
-              }
-              val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}"
-              mailer.claimHat(email, claimLink, appOpt.get)
-              response
-            }
-
-          case None => {
-            println("tere")
-            response
-          }
-        }
-      } else {
-        println("notfount")
-        NotFound(Json.toJson(ErrorMessage("Application Not Found", "The application id is invalid.")))
-      }
-    }*/
-    //Future.successful(response)
   }
   /*
     END: hat-claim
