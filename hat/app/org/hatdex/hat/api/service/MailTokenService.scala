@@ -37,6 +37,7 @@ import scala.concurrent._
 trait MailTokenService[T <: MailToken] {
   def create(token: T)(implicit db: Database): Future[Option[T]]
   def retrieve(id: String)(implicit db: Database): Future[Option[T]]
+  def retrieve(email: String, isSignup: Boolean)(implicit db: Database): Future[Option[T]]
   def consume(id: String)(implicit db: Database): Future[Done]
 }
 
@@ -50,9 +51,18 @@ class MailTokenUserService @Inject() (implicit val ec: DalExecutionContext) exte
   def consume(id: String)(implicit db: Database): Future[Done] = {
     delete(id)
   }
+  def retrieve(email: String, isSignup: Boolean)(implicit db: Database): Future[Option[MailTokenUser]] = {
+    findByEmailAndIsSignup(email, isSignup)
+  }
 
   private def findById(id: String)(implicit db: Database): Future[Option[MailTokenUser]] = {
     db.run(UserMailTokens.filter(_.id === id).result).map { tokens =>
+      tokens.headOption.map(ModelTranslation.fromDbModel)
+    }
+  }
+
+  private def findByEmailAndIsSignup(email: String, isSignup: Boolean)(implicit db: Database): Future[Option[MailTokenUser]] = {
+    db.run(UserMailTokens.filter(_.email === email).filter(_.isSignup === isSignup).result).map { tokens =>
       tokens.headOption.map(ModelTranslation.fromDbModel)
     }
   }
