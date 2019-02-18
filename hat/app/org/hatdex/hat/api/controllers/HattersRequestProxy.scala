@@ -44,7 +44,6 @@ class HattersRequestProxy @Inject() (
     tokenService.retrieve(claimToken).flatMap {
       case Some(token) if token.isSignUp && !token.isExpired =>
         if (token.email == request.dynamicEnvironment.ownerEmail) {
-          // TODO : do change password here
           usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
             case Some(user) =>
               for {
@@ -64,7 +63,10 @@ class HattersRequestProxy @Inject() (
                 baseRequest.withBody(Json.toJson(hatClaimRequest))
                   .stream()
                   .map(r ⇒ new Status(r.status).sendEntity(HttpEntity.Strict(r.bodyAsBytes, Some("application/json"))))
-                Future.successful(Ok(Json.toJson(SuccessResponse("HAT claimed"))))
+
+                // remove the token
+                tokenService.consume(token.id)
+
                 result
               }
             case None => Future.successful(Unauthorized(Json.toJson(ErrorMessage("Password reset unauthorized", "No user matching token"))))
