@@ -4,7 +4,7 @@ Welcome!
 
 @hatDomain
 
-A HAT with the above URL has been created at the request of @applicationName.getOrElse("")
+A HAT with the above URL has been created at the request of @applicationName.getOrElse("Unknown")
 
 Please click here @claimLink to finish up setting up your HAT. You have 7 days to claim your HAT after which it will automatically expire and all its data will be deleted.
 
