@@ -243,15 +243,10 @@ class Authentication @Inject() (
       usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
         case Some(user) =>
           applicationsService.applicationStatus()(request.dynamicEnvironment, user, request).flatMap { applications =>
-            val application = applications.find(_.application.id.equals(claimHatRequest.applicationId))
-
-            val (applicationName, applicationLogoUrl) = if (application.isDefined) {
-              val appInfo = application.get.application.info
-              (Some(appInfo.name), Some(appInfo.graphics.logo.normal))
-            }
-            else {
-              (None, None)
-            }
+            val maybeApplication = applications.find(_.application.id.equals(claimHatRequest.applicationId))
+            val maybeEmailDetails = maybeApplication.map(app => {
+              (app.application.info.name, app.application.info.graphics.logo.normal)
+            })
 
             // check existing Token  where isSign = true
 
@@ -265,7 +260,7 @@ class Authentication @Inject() (
                   "http://"
                 }
                 val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}?email=$email"
-                mailer.claimHat(email, claimLink, applicationName, applicationLogoUrl)
+                mailer.claimHat(email, claimLink, maybeEmailDetails)
               }
               Future.successful(response)
             }
