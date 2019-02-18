@@ -43,3 +43,10 @@ object MailTokenUser {
   def apply(email: String, isSignUp: Boolean): MailTokenUser =
     MailTokenUser(UUID.randomUUID().toString, email, new DateTime().plusHours(mailTokenValidityHours), isSignUp)
 }
+
+object MailClaimTokenUser {
+  private val mailClaimTokenValidityDays = 7
+
+  def apply(email: String): MailTokenUser =
+    MailTokenUser(UUID.randomUUID().toString, email, new DateTime().plusDays(mailClaimTokenValidityDays), isSignUp = true)
+}
