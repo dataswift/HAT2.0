@@ -277,9 +277,6 @@ class Authentication @Inject() (
 
               case None => Future.successful(BadRequest(Json.toJson(ErrorMessage("Claim Error", "Invalid HAT or HAT may already have been claimed."))))
             }
-
-            //Future.successful(response)
-
           }
         case None => Future.successful(Unauthorized(Json.toJson(ErrorMessage("Hat Claim unauthorized", "No user matching token"))))
       }
