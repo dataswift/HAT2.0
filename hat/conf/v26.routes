@@ -72,4 +72,4 @@ GET           /she/feed                                                         
 GET           /she/feed/$endpoint<[0-9a-z-/]+>                                               org.hatdex.hat.she.controllers.FeedGenerator.getFeed(endpoint: String, since: Option[Long], until: Option[Long])
 
 # Hatters proxy
-POST           /hatters/proxy/*path                                                         org.hatdex.hat.api.controllers.HattersRequestProxy.proxyRequest(path, method: String = "POST")
+POST           /hatters/proxy/api/products/hat/claim/:claimToken                             org.hatdex.hat.api.controllers.HattersRequestProxy.proxyRequestHatClaim(claimToken: String)
