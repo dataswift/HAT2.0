@@ -94,13 +94,3 @@ object ApiPasswordResetRequest {
     (__ \ 'email).read[String](Reads.email).map { email => ApiPasswordResetRequest(email) }
   implicit val passwordResetApiWrites: Writes[ApiPasswordResetRequest] = Json.format[ApiPasswordResetRequest]
 }
-
-case class ApiClaimHatRequest(applicationId: String, email: String)
-
-object ApiClaimHatRequest {
-  implicit val claimHatRequestApiReads: Reads[ApiClaimHatRequest] = (
-    (JsPath \ "applicationId").read[String] and (JsPath \ "email").read[String](Reads.email))(ApiClaimHatRequest.apply _)
-
-  implicit val claimHatRequestApiWrites: Writes[ApiClaimHatRequest] = Json.format[ApiClaimHatRequest]
-
-}

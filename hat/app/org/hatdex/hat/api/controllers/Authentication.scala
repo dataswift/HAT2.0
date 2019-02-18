@@ -235,11 +235,12 @@ class Authentication @Inject() (
    * Sends an email to the owner with a link to claim the hat
    */
   def claim(): Action[ApiClaimHatRequest] = UserAwareAction.async(parsers.json[ApiClaimHatRequest]) { implicit request =>
+
     val claimHatRequest = request.body
     val email = request.dynamicEnvironment.ownerEmail
     val response = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions")))
 
-    if (claimHatRequest.email == request.dynamicEnvironment.ownerEmail) {
+    if (claimHatRequest.email == email) {
       usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
         case Some(user) =>
           applicationsService.applicationStatus()(request.dynamicEnvironment, user, request).flatMap { applications =>
@@ -249,30 +250,43 @@ class Authentication @Inject() (
             })
 
             // check existing Token  where isSign = true
-
-            if (claimHatRequest.email.equalsIgnoreCase(email)) {
-              val token = MailClaimTokenUser(email)
-              tokenService.create(token).map { _ =>
+            tokenService.retrieve(email, isSignup = true).flatMap {
+              case Some(existingTokenUser) =>
                 val scheme = if (request.secure) {
                   "https://"
                 }
                 else {
                   "http://"
                 }
-                val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}?email=$email"
-                mailer.claimHat(email, claimLink, maybeEmailDetails)
-              }
-              Future.successful(response)
+
+                if (existingTokenUser.isExpired) {
+                  tokenService.consume(existingTokenUser.id)
+
+                  val token = MailClaimTokenUser(email)
+                  tokenService.create(token).map { _ =>
+                    val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}?email=$email"
+                    mailer.claimHat(email, claimLink, maybeEmailDetails)
+                  }
+                }
+                else {
+                  val token = existingTokenUser
+                  val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}?email=$email"
+                  mailer.claimHat(email, claimLink, maybeEmailDetails)
+                }
+                Future.successful(response)
+
+              case None => Future.successful(BadRequest(Json.toJson(ErrorMessage("Claim Error", "Invalid HAT or HAT may already have been claimed."))))
             }
-            else {
-              Future.successful(BadRequest(Json.toJson(ErrorMessage("Email Mismatch", "The email is invalid or unrecognized."))))
-            }
+
+            //Future.successful(response)
+
           }
-        case None => Future.successful(Unauthorized(Json.toJson(ErrorMessage("Password reset unauthorized", "No user matching token"))))
+        case None => Future.successful(Unauthorized(Json.toJson(ErrorMessage("Hat Claim unauthorized", "No user matching token"))))
       }
     }
     else {
-      Future.successful(Unauthorized(Json.toJson(ErrorMessage("HAT Claim unauthorized", "Only HAT owner can claim their HAT"))))
+      Future.successful(BadRequest(Json.toJson(ErrorMessage("Email Mismatch", "The email is invalid or unrecognized."))))
+
     }
   }
   /*
