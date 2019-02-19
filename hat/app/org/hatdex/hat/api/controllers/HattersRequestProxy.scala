@@ -16,7 +16,7 @@ import play.api.http.HttpEntity
 import play.api.{ Configuration, Logger }
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
-import play.api.mvc.{ Action, ControllerComponents }
+import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 
 import scala.concurrent.Future
 
@@ -64,8 +64,8 @@ class HattersRequestProxy @Inject() (
                   .stream()
                   .map(r ⇒ new Status(r.status).sendEntity(HttpEntity.Strict(r.bodyAsBytes, Some("application/json"))))
 
-                // remove the token
-                tokenService.consume(token.id)
+                // expire the token
+                tokenService.expire(token.id)
 
                 result
               }
