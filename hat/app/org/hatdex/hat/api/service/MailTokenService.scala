@@ -25,12 +25,12 @@
 package org.hatdex.hat.api.service
 
 import javax.inject.Inject
-
 import akka.Done
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.phata.models.{ MailToken, MailTokenUser }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
+import org.joda.time.LocalDateTime
 
 import scala.concurrent._
 
@@ -39,6 +39,7 @@ trait MailTokenService[T <: MailToken] {
   def retrieve(id: String)(implicit db: Database): Future[Option[T]]
   def retrieve(email: String, isSignup: Boolean)(implicit db: Database): Future[Option[T]]
   def consume(id: String)(implicit db: Database): Future[Done]
+  def expire(id: String)(implicit db: Database): Future[Done]
 }
 
 class MailTokenUserService @Inject() (implicit val ec: DalExecutionContext) extends MailTokenService[MailTokenUser] {
@@ -53,6 +54,9 @@ class MailTokenUserService @Inject() (implicit val ec: DalExecutionContext) exte
   }
   def retrieve(email: String, isSignup: Boolean)(implicit db: Database): Future[Option[MailTokenUser]] = {
     findByEmailAndIsSignup(email, isSignup)
+  }
+  def expire(id: String)(implicit db: Database): Future[Done] = {
+    expireNow(id)
   }
 
   private def findById(id: String)(implicit db: Database): Future[Option[MailTokenUser]] = {
@@ -75,5 +79,14 @@ class MailTokenUserService @Inject() (implicit val ec: DalExecutionContext) exte
 
   private def delete(id: String)(implicit db: Database): Future[Done] = {
     db.run(UserMailTokens.filter(_.id === id).delete).map(_ ⇒ Done)
+  }
+
+  private def expireNow(id: String)(implicit db: Database): Future[Done] = {
+    db.run(UserMailTokens.filter(_.id === id).result).map { tokens =>
+      tokens.headOption.map(token => {
+        db.run(UserMailTokens.insertOrUpdate(token.copy(expirationTime = LocalDateTime.now())))
+      })
+      Done
+    }
   }
 }
