@@ -37,44 +37,15 @@ object ApiClaimHatRequest {
 
 }
 
-/**
- * hatters data object
- */
-case class HatClaimMembership(plan: String, membershipType: String)
-object HatClaimMembership {
-  implicit val hatClaimMembershipReads: Reads[HatClaimMembership] = (
-    (JsPath \ "plan").read[String] and
-    (JsPath \ "membershipType").read[String])(HatClaimMembership.apply _)
-
-  implicit val hatClaimMembershipWrites: Writes[HatClaimMembership] = Json.format[HatClaimMembership]
-}
-
-case class HatClaimRequest(
-    firstName: String,
-    lastName: String,
+case class HatClaimCompleteRequest(
     email: String,
     termsAgreed: Boolean,
     optins: Array[String],
     hatName: String,
     hatCluster: String,
-    hatCountry: String,
-    password: String,
-    membership: HatClaimMembership,
-    applicationId: String)
+    password: String)
 
-object HatClaimRequest {
-  implicit val hatClaimRequestReads: Reads[HatClaimRequest] = (
-    (JsPath \ "firstName").read[String] and
-    (JsPath \ "lastName").read[String] and
-    (JsPath \ "email").read[String](Reads.email) and
-    (JsPath \ "termsAgreed").read[Boolean] and
-    (JsPath \ "optins").read[Array[String]] and
-    (JsPath \ "hatName").read[String] and
-    (JsPath \ "hatCluster").read[String] and
-    (JsPath \ "hatCountry").read[String] and
-    (JsPath \ "password").read[String] and
-    (JsPath \ "membership").read[HatClaimMembership] and
-    (JsPath \ "applicationId").read[String])(HatClaimRequest.apply _)
-
-  implicit val HatClaimRequestWrites: Writes[HatClaimRequest] = Json.format[HatClaimRequest]
+object HatClaimCompleteRequest {
+  implicit val hatClaimRequestReads: Reads[HatClaimCompleteRequest] = Json.reads[HatClaimCompleteRequest]
+  implicit val HatClaimRequestWrites: Writes[HatClaimCompleteRequest] = Json.format[HatClaimCompleteRequest]
 }

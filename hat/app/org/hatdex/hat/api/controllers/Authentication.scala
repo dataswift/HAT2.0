@@ -277,7 +277,8 @@ class Authentication @Inject() (
           }
         case None => Future.successful(response)
       }
-    } else {
+    }
+    else {
       Future.successful(response)
     }
   }
