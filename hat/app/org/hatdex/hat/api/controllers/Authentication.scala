@@ -282,8 +282,7 @@ class Authentication @Inject() (
       }
     }
     else {
-      Future.successful(BadRequest(Json.toJson(ErrorMessage("Email Mismatch", "The email is invalid or unrecognized."))))
-
+      Future.successful(response)
     }
   }
   /*

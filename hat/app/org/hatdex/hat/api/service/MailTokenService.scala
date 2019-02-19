@@ -66,7 +66,7 @@ class MailTokenUserService @Inject() (implicit val ec: DalExecutionContext) exte
   }
 
   private def findByEmailAndIsSignup(email: String, isSignup: Boolean)(implicit db: Database): Future[Option[MailTokenUser]] = {
-    db.run(UserMailTokens.filter(_.email === email).filter(_.isSignup === isSignup).result).map { tokens =>
+    db.run(UserMailTokens.filter(t => t.email === email && t.isSignup === isSignup).result).map { tokens =>
       tokens.headOption.map(ModelTranslation.fromDbModel)
     }
   }
@@ -82,11 +82,9 @@ class MailTokenUserService @Inject() (implicit val ec: DalExecutionContext) exte
   }
 
   private def expireNow(id: String)(implicit db: Database): Future[Done] = {
-    db.run(UserMailTokens.filter(_.id === id).result).map { tokens =>
-      tokens.headOption.map(token => {
-        db.run(UserMailTokens.insertOrUpdate(token.copy(expirationTime = LocalDateTime.now())))
-      })
-      Done
-    }
+    db.run(UserMailTokens
+      .filter(_.id === id)
+      .map(_.expirationTime)
+      .update(LocalDateTime.now())).map(_ => Done)
   }
 }
