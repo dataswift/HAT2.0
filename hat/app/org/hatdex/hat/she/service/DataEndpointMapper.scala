@@ -137,8 +137,8 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
           Some(s"- ${t.withZone(s.getZone).toString("dd MMMM HH:mm z")}")
         }
       case (_, Some(t)) if t.hourOfDay.get == 0 ⇒ None
-      case (Some(s), Some(t))                       ⇒ Some(s"- ${t.withZone(s.getZone).toString("HH:mm z")}")
-      case (_, None)                                ⇒ None
+      case (Some(s), Some(t))                   ⇒ Some(s"- ${t.withZone(s.getZone).toString("HH:mm z")}")
+      case (_, None)                            ⇒ None
     }
 
     (startString, endString)

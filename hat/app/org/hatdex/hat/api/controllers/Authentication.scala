@@ -24,7 +24,7 @@
 
 package org.hatdex.hat.api.controllers
 
-import java.net.URLDecoder
+import java.net.{ URLDecoder, URLEncoder }
 
 import javax.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -249,36 +249,33 @@ class Authentication @Inject() (
               (app.application.info.name, app.application.info.graphics.logo.normal)
             })
 
-            // check existing Token  where isSign = true
+            val scheme = if (request.secure) {
+              "https://"
+            }
+            else {
+              "http://"
+            }
+
             tokenService.retrieve(email, isSignup = true).flatMap {
-              case Some(existingTokenUser) =>
-                val scheme = if (request.secure) {
-                  "https://"
-                }
-                else {
-                  "http://"
-                }
+              case Some(existingTokenUser) if !existingTokenUser.isExpired =>
+                val claimLink = s"$scheme${request.host}/#/hat/claim/${existingTokenUser.id}?email=${URLEncoder.encode(email, "UTF-8")}"
+                mailer.claimHat(email, claimLink, maybeEmailDetails)
 
-                if (existingTokenUser.isExpired) {
-                  tokenService.consume(existingTokenUser.id)
-
-                  val token = MailClaimTokenUser(email)
-                  tokenService.create(token).map { _ =>
-                    val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}?email=$email"
-                    mailer.claimHat(email, claimLink, maybeEmailDetails)
-                  }
-                }
-                else {
-                  val token = existingTokenUser
-                  val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}?email=$email"
-                  mailer.claimHat(email, claimLink, maybeEmailDetails)
-                }
                 Future.successful(response)
+              case Some(_) => Future.successful(Ok(Json.toJson(SuccessResponse("The HAT is already claimed"))))
 
-              case None => Future.successful(BadRequest(Json.toJson(ErrorMessage("Claim Error", "Invalid HAT or HAT may already have been claimed."))))
+              case None =>
+                val token = MailClaimTokenUser(email)
+
+                tokenService.create(token).map { _ =>
+                  val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}?email=${URLEncoder.encode(email, "UTF-8")}"
+                  mailer.claimHat(email, claimLink, maybeEmailDetails)
+
+                  response
+                }
             }
           }
-        case None => Future.successful(Unauthorized(Json.toJson(ErrorMessage("Hat Claim unauthorized", "No user matching token"))))
+        case None => Future.successful(response)
       }
     }
     else {
