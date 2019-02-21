@@ -40,7 +40,7 @@ class HattersRequestProxy @Inject() (
 
   def proxyRequestHatClaim(claimToken: String): Action[HatClaimCompleteRequest] = UserAwareAction.async(parsers.json[HatClaimCompleteRequest]) { implicit request =>
     implicit val hatClaimComplete: HatClaimCompleteRequest = request.body
-
+    
     logger.info(s"Proxy POST request to $hattersUrl/$path with parameters: ${request.queryString}")
 
     tokenService.retrieve(claimToken).flatMap {
