@@ -35,7 +35,7 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.applications.ApplicationsService
-import org.hatdex.hat.api.service.{ HatServicesService, MailTokenService, UsersService }
+import org.hatdex.hat.api.service.{ HatServicesService, LogService, MailTokenService, UsersService }
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models._
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
@@ -60,6 +60,7 @@ class Authentication @Inject() (
     authInfoRepository: AuthInfoRepository[HatServer],
     usersService: UsersService,
     applicationsService: ApplicationsService,
+    logService: LogService,
     mailer: HatMailer,
     tokenService: MailTokenService[MailTokenUser],
     limiter: UserLimiter) extends HatApiController(components, silhouette) with HatJsonFormats {
@@ -238,7 +239,7 @@ class Authentication @Inject() (
 
     val claimHatRequest = request.body
     val email = request.dynamicEnvironment.ownerEmail
-    val response = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions")))
+    val response = Ok(Json.toJson(SuccessResponse("If the email you have entered is correct, you will shortly receive an email with HAT claim instructions")))
 
     if (claimHatRequest.email == email) {
       usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
@@ -268,6 +269,8 @@ class Authentication @Inject() (
                 val token = MailClaimTokenUser(email)
 
                 tokenService.create(token).map { _ =>
+                  logService.logAction(request.dynamicEnvironment.domain, "unclaimed", None, None, Some(claimHatRequest.applicationId), None)
+
                   val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}?email=${URLEncoder.encode(email, "UTF-8")}"
                   mailer.claimHat(email, claimLink, maybeEmailDetails)
 

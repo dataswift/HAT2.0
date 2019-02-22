@@ -148,6 +148,10 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
+    <logger name="org.hatdex.hat.api.service.LogService" level="INFO" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+
     <!--<logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG">-->
         <!--<appender-ref ref="ASYNCCONSOLE"/>-->
     <!--</logger>-->

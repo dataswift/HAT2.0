@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import org.hatdex.hat.api.json.ApplicationJsonProtocol
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.service.{ MailTokenService, RemoteExecutionContext, UsersService }
+import org.hatdex.hat.api.service.{ LogService, MailTokenService, RemoteExecutionContext, UsersService }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.phata.models.{ HatClaimCompleteRequest, MailTokenUser }
 import org.hatdex.hat.api.json.HatJsonFormats._
@@ -31,6 +31,7 @@ class HattersRequestProxy @Inject() (
     authInfoRepository: AuthInfoRepository[HatServer],
     passwordHasherRegistry: PasswordHasherRegistry,
     usersService: UsersService,
+    logService: LogService,
     configuration: Configuration)
   extends HatApiController(components, silhouette) with ApplicationJsonProtocol {
 
@@ -40,7 +41,7 @@ class HattersRequestProxy @Inject() (
 
   def proxyRequestHatClaim(claimToken: String): Action[HatClaimCompleteRequest] = UserAwareAction.async(parsers.json[HatClaimCompleteRequest]) { implicit request =>
     implicit val hatClaimComplete: HatClaimCompleteRequest = request.body
-    
+
     logger.info(s"Proxy POST request to $hattersUrl/$path with parameters: ${request.queryString}")
 
     tokenService.retrieve(claimToken).flatMap {
@@ -56,6 +57,9 @@ class HattersRequestProxy @Inject() (
             } yield {
               //env.eventBus.publish(LoginEvent(user, request))
               //mailer.passwordChanged(token.email, user)
+
+              logService.logAction(request.dynamicEnvironment.domain, "claimed", None, None, None, None)
+
               result
             }
 
