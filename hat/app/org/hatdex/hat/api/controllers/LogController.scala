@@ -5,7 +5,7 @@ import javax.inject.Inject
 import org.hatdex.hat.api.json.ApplicationJsonProtocol
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.{ LogService, RemoteExecutionContext }
-import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
+import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.utils.HatBodyParsers
 import org.hatdex.hat.api.json.HatJsonFormats._
 import org.hatdex.hat.api.service.applications.ApplicationsService
@@ -24,14 +24,17 @@ class LogController @Inject() (
     applicationsService: ApplicationsService)
   extends HatApiController(components, silhouette) with ApplicationJsonProtocol {
 
-  def log(): Action[LogRequest] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationList()) || WithRole(Owner())).async(parsers.json[LogRequest]) { request =>
+  def log(): Action[LogRequest] = SecuredAction(ContainsApplicationRole(Validate())).async(parsers.json[LogRequest]) { request =>
     val logRequest = request.body
     val hatAddress = request.dynamicEnvironment.domain
-    val (applicationId, applicationVersion) = request.authenticator.customClaims.map { customClaims =>
-      ((customClaims \ "application").asOpt[String], (customClaims \ "applicationVersion").asOpt[String])
-    }.getOrElse((None, None))
+    val applicationData: Option[(String, String)] = request.authenticator.customClaims.flatMap { customClaims =>
+      (customClaims \ "application").asOpt[String] match {
+        case Some(applicationId) => Some((applicationId, (customClaims \ "applicationVersion").as[String]))
+        case None                => None
+      }
+    }
 
-    logService.logAction(hatAddress, logRequest.actionCode, logRequest.message, logRequest.logGroup, applicationId, applicationVersion)
+    logService.logAction(hatAddress, logRequest.actionCode, logRequest.message, logRequest.logGroup, applicationData)
 
     Future.successful(Ok(Json.toJson(SuccessResponse(s"${logRequest.actionCode} logged"))))
   }

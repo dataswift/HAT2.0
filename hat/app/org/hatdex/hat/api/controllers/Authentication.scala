@@ -249,6 +249,10 @@ class Authentication @Inject() (
             val maybeEmailDetails = maybeApplication.map(app => {
               (app.application.info.name, app.application.info.graphics.logo.normal)
             })
+            val applicationVersion = maybeApplication match {
+              case Some(app) => app.application.info.version.toString()
+              case None      => "_"
+            }
 
             val scheme = if (request.secure) {
               "https://"
@@ -269,7 +273,7 @@ class Authentication @Inject() (
                 val token = MailClaimTokenUser(email)
 
                 tokenService.create(token).map { _ =>
-                  logService.logAction(request.dynamicEnvironment.domain, "unclaimed", None, None, Some(claimHatRequest.applicationId), None)
+                  logService.logAction(request.dynamicEnvironment.domain, "unclaimed", None, None, Some((claimHatRequest.applicationId, applicationVersion)))
 
                   val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}?email=${URLEncoder.encode(email, "UTF-8")}"
                   mailer.claimHat(email, claimLink, maybeEmailDetails)
