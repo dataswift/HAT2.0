@@ -24,27 +24,28 @@
 
 package org.hatdex.hat.api.controllers
 
-import java.net.{ URLDecoder, URLEncoder }
+import java.net.{URLDecoder, URLEncoder}
 
 import akka.Done
 import javax.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.api.util.{ Credentials, PasswordHasherRegistry }
-import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
-import com.mohiva.play.silhouette.impl.exceptions.{ IdentityNotFoundException, InvalidPasswordException }
+import com.mohiva.play.silhouette.api.util.{Credentials, PasswordHasherRegistry}
+import com.mohiva.play.silhouette.api.{LoginEvent, Silhouette}
+import com.mohiva.play.silhouette.impl.exceptions.{IdentityNotFoundException, InvalidPasswordException}
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.applications.ApplicationsService
-import org.hatdex.hat.api.service.{ HatServicesService, LogService, MailTokenService, UsersService }
+import org.hatdex.hat.api.service.{HatServicesService, LogService, MailTokenService, UsersService}
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models._
-import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
-import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer }
-import play.api.Logger
-import play.api.cache.{ Cached, CachedBuilder }
+import org.hatdex.hat.resourceManagement.{HatServerProvider, _}
+import org.hatdex.hat.utils.{HatBodyParsers, HatMailer}
+import play.api.{Configuration, Logger}
+import play.api.cache.{Cached, CachedBuilder}
 import play.api.libs.json.Json
-import play.api.mvc.{ Action, _ }
+import play.api.libs.ws.WSClient
+import play.api.mvc.{Action, _}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -52,6 +53,7 @@ import scala.concurrent.Future
 class Authentication @Inject() (
     components: ControllerComponents,
     cached: Cached,
+    configuration: Configuration,
     parsers: HatBodyParsers,
     hatServerProvider: HatServerProvider,
     silhouette: Silhouette[HatApiAuthEnvironment],
@@ -64,6 +66,7 @@ class Authentication @Inject() (
     logService: LogService,
     mailer: HatMailer,
     tokenService: MailTokenService[MailTokenUser],
+    wsClient: WSClient,
     limiter: UserLimiter) extends HatApiController(components, silhouette) with HatJsonFormats {
 
   private val logger = Logger(this.getClass)
@@ -228,15 +231,10 @@ class Authentication @Inject() (
     }
   }
 
-  /*
-    BEGIN: hat-claim
-    Entire Section below is on HAT Claim.
-    TODO: Refactor to New File?
-   */
   /**
    * Sends an email to the owner with a link to claim the hat
    */
-  def claim(): Action[ApiClaimHatRequest] = UserAwareAction.async(parsers.json[ApiClaimHatRequest]) { implicit request =>
+  def handleClaimStart(): Action[ApiClaimHatRequest] = UserAwareAction.async(parsers.json[ApiClaimHatRequest]) { implicit request =>
 
     val claimHatRequest = request.body
     val email = request.dynamicEnvironment.ownerEmail
@@ -301,7 +299,67 @@ class Authentication @Inject() (
       Future.successful(response)
     }
   }
-  /*
-    END: hat-claim
-   */
+
+  def handleClaimComplete(claimToken: String): Action[HatClaimCompleteRequest] = UserAwareAction.async(parsers.json[HatClaimCompleteRequest]) { implicit request =>
+    implicit val hatClaimComplete: HatClaimCompleteRequest = request.body
+
+    tokenService.retrieve(claimToken).flatMap {
+      case Some(token) if token.isSignUp && !token.isExpired && token.email == request.dynamicEnvironment.ownerEmail =>
+        usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
+          case Some(user) =>
+            val eventualResult = for {
+              _ <- updateHatMembership(hatClaimComplete)
+              _ <- authInfoRepository.update(user.loginInfo, passwordHasherRegistry.current.hash(request.body.password))
+              _ <- tokenService.expire(token.id)
+              authenticator <- env.authenticatorService.create(user.loginInfo)
+              result <- env.authenticatorService.renew(authenticator, Ok(Json.toJson(SuccessResponse("HAT claimed"))))
+              _ <- logService.logAction(request.dynamicEnvironment.domain, LogRequest("claimed", None, None), None).recover {
+                case e =>
+                  logger.error(s"LogActionError::unclaimed. Reason: ${e.getMessage}")
+                  Done
+              }
+            } yield {
+              //env.eventBus.publish(LoginEvent(user, request))
+              //mailer.passwordChanged(token.email, user)
+
+              result
+            }
+
+            eventualResult.recover {
+              case e =>
+                logger.error(s"HAT claim process failed with error ${e.getMessage}")
+                BadRequest(Json.toJson(ErrorMessage("Bad Request", "HAT claim process failed")))
+            }
+
+          case None => Future.successful(Unauthorized(Json.toJson(ErrorMessage("HAT claim unauthorized", "No user matching token"))))
+        }
+
+      case Some(_) =>
+        Future.successful(Unauthorized(Json.toJson(ErrorMessage("Invalid Token", "Token expired or invalid"))))
+
+      case None =>
+        Future.successful(Unauthorized(Json.toJson(ErrorMessage("Invalid Token", "Token does not exist"))))
+    }
+  }
+
+  private def updateHatMembership(claim: HatClaimCompleteRequest): Future[Done] = {
+    val path = "api/products/hat/claim"
+    val hattersUrl = s"${configuration.underlying.getString("hatters.scheme")}${configuration.underlying.getString("hatters.address")}"
+
+    logger.info(s"Proxy POST request to $hattersUrl/$path with parameters: $claim")
+
+    val futureResponse = wsClient.url(s"$hattersUrl/$path")
+      //.withHttpHeaders("x-auth-token" → token.accessToken)
+      .post(Json.toJson(claim.copy(password = "")))
+
+    futureResponse.flatMap { response =>
+      response.status match {
+        case OK =>
+          Future.successful(Done)
+        case _ =>
+          logger.error(s"Failed to claim HAT with Hatters. Claim details:\n$claim\nHatters response: ${response.body}")
+          Future.failed(new UnknownError("HAT claim failed"))
+      }
+    }
+  }
 }
