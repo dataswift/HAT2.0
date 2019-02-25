@@ -58,7 +58,9 @@ class HattersRequestProxy @Inject() (
               //env.eventBus.publish(LoginEvent(user, request))
               //mailer.passwordChanged(token.email, user)
 
-              logService.logAction(request.dynamicEnvironment.domain, "claimed", None, None, None)
+              logService.logAction(request.dynamicEnvironment.domain, "claimed", None, None, None).recover {
+                case _ => logger.error("LogActionError::claimed")
+              }
 
               result
             }

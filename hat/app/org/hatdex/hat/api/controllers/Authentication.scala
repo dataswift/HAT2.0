@@ -270,11 +270,12 @@ class Authentication @Inject() (
               case Some(_) => Future.successful(Ok(Json.toJson(SuccessResponse("The HAT is already claimed"))))
 
               case None =>
+                logService.logAction(request.dynamicEnvironment.domain, "unclaimed", None, None, Some((claimHatRequest.applicationId, applicationVersion))) recover {
+                  case _ => logger.error("LogActionError::unclaimed")
+                }
+
                 val token = MailClaimTokenUser(email)
-
                 tokenService.create(token).map { _ =>
-                  logService.logAction(request.dynamicEnvironment.domain, "unclaimed", None, None, Some((claimHatRequest.applicationId, applicationVersion)))
-
                   val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}?email=${URLEncoder.encode(email, "UTF-8")}"
                   mailer.claimHat(email, claimLink, maybeEmailDetails)
 

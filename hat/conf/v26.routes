@@ -48,6 +48,7 @@ GET           /migrate                                                          
 # APPLICATION routes
 
 GET           /applications                                                                  org.hatdex.hat.api.controllers.Applications.applications()
+GET           /applications/hmi                                                              org.hatdex.hat.api.controllers.Applications.applications()
 GET           /applications/:application                                                     org.hatdex.hat.api.controllers.Applications.applicationStatus(application)
 GET           /applications/:application/setup                                               org.hatdex.hat.api.controllers.Applications.applicationSetup(application)
 GET           /applications/:application/disable                                             org.hatdex.hat.api.controllers.Applications.applicationDisable(application)
