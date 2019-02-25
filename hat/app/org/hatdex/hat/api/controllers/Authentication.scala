@@ -239,7 +239,7 @@ class Authentication @Inject() (
 
     val claimHatRequest = request.body
     val email = request.dynamicEnvironment.ownerEmail
-    val response = Ok(Json.toJson(SuccessResponse("If the email you have entered is correct, you will shortly receive an email with HAT claim instructions")))
+    val response = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions")))
 
     if (claimHatRequest.email == email) {
       usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
