@@ -48,21 +48,28 @@ class HattersRequestProxy @Inject() (
       case Some(token) if token.isSignUp && !token.isExpired && token.email == request.dynamicEnvironment.ownerEmail =>
         usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
           case Some(user) =>
-            for {
+            val eventualResult = for {
               _ <- updateHatMembership(hatClaimComplete)
               _ <- authInfoRepository.update(user.loginInfo, passwordHasherRegistry.current.hash(request.body.password))
               _ <- tokenService.expire(token.id)
               authenticator <- env.authenticatorService.create(user.loginInfo)
               result <- env.authenticatorService.renew(authenticator, Ok(Json.toJson(SuccessResponse("HAT claimed"))))
+              _ <- logService.logAction(request.dynamicEnvironment.domain, LogRequest("claimed", None, None), None).recover {
+                case e =>
+                  logger.error(s"LogActionError::unclaimed. Reason: ${e.getMessage}")
+                  Done
+              }
             } yield {
               //env.eventBus.publish(LoginEvent(user, request))
               //mailer.passwordChanged(token.email, user)
 
-              logService.logAction(request.dynamicEnvironment.domain, "claimed", None, None, None).recover {
-                case _ => logger.error("LogActionError::claimed")
-              }
-
               result
+            }
+
+            eventualResult.recover {
+              case e =>
+                logger.error(s"HAT claim process failed with error ${e.getMessage}")
+                BadRequest(Json.toJson(ErrorMessage("Bad Request", "HAT claim process failed")))
             }
 
           case None => Future.successful(Unauthorized(Json.toJson(ErrorMessage("HAT claim unauthorized", "No user matching token"))))

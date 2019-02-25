@@ -26,6 +26,7 @@ package org.hatdex.hat.api.controllers
 
 import java.net.{ URLDecoder, URLEncoder }
 
+import akka.Done
 import javax.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.{ Credentials, PasswordHasherRegistry }
@@ -246,9 +247,10 @@ class Authentication @Inject() (
         case Some(user) =>
           applicationsService.applicationStatus()(request.dynamicEnvironment, user, request).flatMap { applications =>
             val maybeApplication = applications.find(_.application.id.equals(claimHatRequest.applicationId))
-            val maybeEmailDetails = maybeApplication.map(app => {
-              (app.application.info.name, app.application.info.graphics.logo.normal)
-            })
+            val maybeAppDetails = maybeApplication.map { app =>
+              ((app.application.info.name, app.application.developer.logo.map(_.normal).getOrElse("#")),
+                (app.application.id, app.application.info.version.toString))
+            }
 
             val scheme = if (request.secure) {
               "https://"
@@ -260,22 +262,35 @@ class Authentication @Inject() (
             tokenService.retrieve(email, isSignup = true).flatMap {
               case Some(existingTokenUser) if !existingTokenUser.isExpired =>
                 val claimLink = s"$scheme${request.host}/#/hat/claim/${existingTokenUser.id}?email=${URLEncoder.encode(email, "UTF-8")}"
-                mailer.claimHat(email, claimLink, maybeEmailDetails)
+                mailer.claimHat(email, claimLink, maybeAppDetails.map(_._1))
 
                 Future.successful(response)
               case Some(_) => Future.successful(Ok(Json.toJson(SuccessResponse("The HAT is already claimed"))))
 
               case None =>
-                logService.logAction(request.dynamicEnvironment.domain, "unclaimed", None, None, Some((claimHatRequest.applicationId, applicationVersion))) recover {
-                  case _ => logger.error("LogActionError::unclaimed")
-                }
-
                 val token = MailClaimTokenUser(email)
-                tokenService.create(token).map { _ =>
+
+                val eventualResult = for {
+                  _ <- tokenService.create(token)
+                  _ <- logService
+                    .logAction(request.dynamicEnvironment.domain, LogRequest("unclaimed", None, None), maybeAppDetails.map(_._2))
+                    .recover {
+                      case e =>
+                        logger.error(s"LogActionError::unclaimed. Reason: ${e.getMessage}")
+                        Done
+                    }
+                } yield {
+
                   val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}?email=${URLEncoder.encode(email, "UTF-8")}"
-                  mailer.claimHat(email, claimLink, maybeEmailDetails)
+                  mailer.claimHat(email, claimLink, maybeAppDetails.map(_._1))
 
                   response
+                }
+
+                eventualResult.recover {
+                  case e =>
+                    logger.error(s"Could not create new HAT claim token. Reason: ${e.getMessage}")
+                    InternalServerError(Json.toJson(ErrorMessage("Internal Server Error", "Failed to initialize HAT claim process")))
                 }
             }
           }
