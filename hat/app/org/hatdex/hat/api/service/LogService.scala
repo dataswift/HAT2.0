@@ -34,10 +34,11 @@ import scala.concurrent.Future
 class LogService @Inject() (implicit val ec: DalExecutionContext) {
   val logger = Logger(this.getClass)
 
-  def logAction(hat: String, actionCode: String, message: Option[String], logGroup: Option[String], applicationId: Option[String], applicationVersion: Option[String]): Future[Unit] = {
+  def logAction(hat: String, actionCode: String, message: Option[String], logGroup: Option[String], applicationData: Option[(String, String)]): Future[Unit] = {
     Future {
       val logId = UUID.randomUUID()
-      logger.info(s"[${logGroup.getOrElse("STATS")}] [$hat] [$logId] [$actionCode] [${message.getOrElse("")}] [${applicationId.getOrElse("_")}]@[${applicationVersion.getOrElse("_")}]")
+      val appVersion = applicationData.map(app => s"${app._1}@${app._2}")
+      logger.info(s"[${logGroup.getOrElse("STATS")}] [$hat] [$logId] [$actionCode] [${message.getOrElse("")}] ${appVersion.getOrElse("_")}")
     }
   }
 }
