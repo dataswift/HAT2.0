@@ -631,7 +631,7 @@ class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
     Seq(PropertyQuery(
       List(
         EndpointQuery("facebook/profile", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("hat_updated_time", None, f))), None)),
-      Some("hat_pdated_time"), Some("descending"), None))
+      Some("hat_updated_time"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
