@@ -26,8 +26,8 @@ package org.hatdex.hat.she.service
 import javax.inject.Inject
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.resourceManagement.HatServer
+import org.hatdex.hat.she.models.StaticDataValues
 import play.api.Logger
-import play.api.libs.json.JsValue
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -39,9 +39,13 @@ class StaticDataGeneratorService @Inject() ()(
   private val logger = Logger(this.getClass)
 
   private val staticDataMappers: Seq[(String, StaticDataEndpointMapper)] = Seq(
-    "facebook/profile" -> new FacebookProfileStaticDataMapper())
+    "facebook/profile" -> new FacebookProfileStaticDataMapper(),
+    "twitter/profile" -> new TwitterProfileStaticDataMapper(),
+    "spotify/profile" -> new SpotifyProfileStaticDataMapper(),
+    "fitbit/profile" -> new FitbitProfileStaticDataMapper(),
+    "instagram/profile" -> new InstagramProfileStaticDataMapper())
 
-  def getStaticData(endpoint: String)(implicit hatServer: HatServer): Future[Option[Map[String, JsValue]]] = {
+  def getStaticData(endpoint: String)(implicit hatServer: HatServer): Future[Seq[StaticDataValues]] = {
 
     val mappers = staticDataMappers.find(_._1.startsWith(endpoint))
 
@@ -49,7 +53,9 @@ class StaticDataGeneratorService @Inject() ()(
 
     mappers match {
       case Some((_, mapper)) => mapper.staticDataRecords()
-      case None              => Future.successful(None)
+      case None =>
+        logger.info(s"No static data found for ${mappers.map(_._1)}")
+        Future.successful(Seq())
     }
   }
 }

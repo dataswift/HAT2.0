@@ -28,6 +28,7 @@ import java.util.UUID
 import org.hatdex.hat.api.models.{ EndpointData, EndpointQuery, PropertyQuery }
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.resourceManagement.HatServer
+import org.hatdex.hat.she.models.StaticDataValues
 import play.api.Logger
 import play.api.libs.json._
 
@@ -38,21 +39,17 @@ trait StaticDataEndpointMapper extends JodaWrites with JodaReads {
   protected lazy val logger: Logger = Logger(this.getClass)
 
   def dataQuery(): PropertyQuery
-  def mapDataRecord(recordId: UUID, content: JsValue): Option[Map[String, JsValue]]
+  def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues]
 
   final def staticDataRecords()(
     implicit
-    hatServer: HatServer, richDataService: RichDataService): Future[Option[Map[String, JsValue]]] = {
+    hatServer: HatServer, richDataService: RichDataService): Future[Seq[StaticDataValues]] = {
 
     val query = dataQuery()
     val eventualDataSource: Future[Seq[EndpointData]] = richDataService.propertyData(query.endpoints, query.orderBy,
       orderingDescending = query.ordering.contains("descending"), skip = 0, limit = query.limit, createdAfter = None)(hatServer.db)
 
-    eventualDataSource
-      .map { dataSource =>
-
-        dataSource.headOption.flatMap(item => mapDataRecord(item.recordId.get, item.data))
-      }
+    eventualDataSource.map { dataSource => dataSource.map(item => mapDataRecord(item.recordId.get, item.data, item.endpoint)).headOption.getOrElse(Seq()) }
   }
 }
 
@@ -63,14 +60,143 @@ class FacebookProfileStaticDataMapper extends StaticDataEndpointMapper {
         EndpointQuery("facebook/profile", None, None, None)), Some("hat_updated_time"), Some("descending"), Some(1))
   }
 
-  def mapDataRecord(recordId: UUID, content: JsValue): Option[Map[String, JsValue]] = {
+  def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues] = {
 
-    val test = content.validate[Map[String, JsValue]]
-    test match {
-      case JsSuccess(value, _) => Some(value.filterKeys(key => key != "friends"))
+    val eventualData = content.validate[Map[String, JsValue]]
+    eventualData match {
+      case JsSuccess(value, _) =>
+        val lastPartOfEndpointString = endpoint.split("/").last
+        Seq(StaticDataValues(lastPartOfEndpointString, value.filterKeys(key => key != "friends")))
       case e: JsError =>
-        logger.error(s" $e")
-        None
+        logger.error(s"Couldn't validate static data JSON for $endpoint. $e")
+        Seq()
+    }
+  }
+}
+
+class TwitterProfileStaticDataMapper extends StaticDataEndpointMapper {
+  def dataQuery(): PropertyQuery = {
+    PropertyQuery(
+      List(
+        EndpointQuery("twitter/tweets", None, None, None)), Some("lastUpdated"), Some("descending"), Some(1))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues] = {
+
+    val maybeUserData = (content \\ "user")
+
+    maybeUserData.headOption
+      .map({ item =>
+        item.validate[Map[String, JsValue]] match {
+          case JsSuccess(value, _) =>
+            val lastPartOfEndpointString = endpoint.split("/").last
+            Seq(StaticDataValues(lastPartOfEndpointString, value.filterKeys(key => key != "entities")))
+          case e: JsError =>
+            logger.error(s"Couldn't validate static data JSON for $endpoint. $e")
+            Seq()
+        }
+      })
+      .getOrElse(Seq())
+  }
+}
+
+class SpotifyProfileStaticDataMapper extends StaticDataEndpointMapper {
+  def dataQuery(): PropertyQuery = {
+    PropertyQuery(
+      List(
+        EndpointQuery("spotify/profile", None, None, None)), Some("dateCreated"), Some("descending"), Some(1))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues] = {
+
+    val eventualData = content.validate[Map[String, JsValue]]
+    eventualData match {
+      case JsSuccess(value, _) =>
+        val lastPartOfEndpointString = endpoint.split("/").last
+
+        value.filterKeys(key => key != "images" && key != "external_urls").map { item =>
+
+          transformData(item)
+        }
+        Seq(StaticDataValues(lastPartOfEndpointString, value))
+      case e: JsError =>
+        logger.error(s"Couldn't validate static data JSON for $endpoint. $e")
+        Seq()
+    }
+  }
+
+  private def transformData(rawData: (String, JsValue)): JsResult[JsValue] = {
+
+    val transformation = __.json.update(
+      __.read[JsObject].map(profile => {
+        val followers = (profile \ "followers" \ "total").asOpt[JsNumber].getOrElse(JsNumber(0))
+
+        profile ++ JsObject(Map(
+          "followers" -> followers))
+      }))
+
+    rawData._2.transform(transformation)
+  }
+}
+
+class InstagramProfileStaticDataMapper extends StaticDataEndpointMapper {
+  def dataQuery(): PropertyQuery = {
+    PropertyQuery(
+      List(
+        EndpointQuery("instagram/profile", None, None, None)), Some("hat_updated_time"), Some("descending"), Some(1))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues] = {
+
+    val eventualData = content.validate[Map[String, JsValue]]
+    eventualData match {
+      case JsSuccess(value, _) =>
+        val lastPartOfEndpointString = endpoint.split("/").last
+
+        value.map(item => transformData(item))
+        Seq(StaticDataValues(lastPartOfEndpointString, value))
+      case e: JsError =>
+        logger.error(s"Couldn't validate static data JSON for $endpoint. $e")
+        Seq()
+    }
+  }
+
+  private def transformData(rawData: (String, JsValue)): JsResult[JsValue] = {
+
+    val transformation = __.json.update(
+      __.read[JsObject].map(profile => {
+        val totalImagesUploaded = (profile \ "counts" \ "media").asOpt[JsNumber].getOrElse(JsNumber(0))
+        val totalFollowers = (profile \ "counts" \ "followed_by").asOpt[JsNumber].getOrElse(JsNumber(0))
+        val totalPeopleUsersFollows = (profile \ "counts" \ "JsNumber").asOpt[JsString].getOrElse(JsNumber(0))
+
+        profile ++ JsObject(Map(
+          "media" -> totalImagesUploaded,
+          "follows" -> totalPeopleUsersFollows,
+          "followers" -> totalFollowers)) - "counts"
+      }))
+
+    rawData._2.transform(transformation)
+  }
+}
+
+class FitbitProfileStaticDataMapper extends StaticDataEndpointMapper {
+  def dataQuery(): PropertyQuery = {
+    PropertyQuery(
+      List(
+        EndpointQuery("fitbit/profile", None, None, None)), Some("hat_updated_time"), Some("descending"), Some(1))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues] = {
+
+    val eventualData = content.validate[Map[String, JsValue]]
+    eventualData match {
+      case JsSuccess(value, _) =>
+        val lastPartOfEndpointString = endpoint.split("/").last
+
+        Seq(StaticDataValues(lastPartOfEndpointString, value.filterKeys(key => key != "features" && key != "topBadges")))
+      case e: JsError =>
+        logger.error(s"Couldn't validate static data JSON for $endpoint. $e")
+        Seq()
     }
   }
 }
