@@ -109,23 +109,28 @@ class SpotifyProfileStaticDataMapper extends StaticDataEndpointMapper {
 
   def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues] = {
 
-    val eventualData = content.validate[Map[String, JsValue]]
+    val eventualData = content.validate[JsObject]
     eventualData match {
       case JsSuccess(value, _) =>
+
         val lastPartOfEndpointString = endpoint.split("/").last
+        val maybeTransformedData = transformData(value).flatMap(item => item.validate[Map[String, JsValue]])
+        maybeTransformedData match {
+          case JsSuccess(data, _) =>
 
-        value.filterKeys(key => key != "images" && key != "external_urls").map { item =>
+            Seq(StaticDataValues(lastPartOfEndpointString, (data - "images" - "external_urls")))
+          case e: JsError =>
 
-          transformData(item)
+            logger.error(s"Couldn't validate static data JSON for $endpoint. $e")
+            Seq()
         }
-        Seq(StaticDataValues(lastPartOfEndpointString, value))
       case e: JsError =>
         logger.error(s"Couldn't validate static data JSON for $endpoint. $e")
         Seq()
     }
   }
 
-  private def transformData(rawData: (String, JsValue)): JsResult[JsValue] = {
+  private def transformData(rawData: JsObject): JsResult[JsValue] = {
 
     val transformation = __.json.update(
       __.read[JsObject].map(profile => {
@@ -135,7 +140,7 @@ class SpotifyProfileStaticDataMapper extends StaticDataEndpointMapper {
           "followers" -> followers))
       }))
 
-    rawData._2.transform(transformation)
+    rawData.transform(transformation)
   }
 }
 
@@ -148,34 +153,45 @@ class InstagramProfileStaticDataMapper extends StaticDataEndpointMapper {
 
   def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues] = {
 
-    val eventualData = content.validate[Map[String, JsValue]]
+    val eventualData = content.validate[JsObject]
+
     eventualData match {
       case JsSuccess(value, _) =>
+
         val lastPartOfEndpointString = endpoint.split("/").last
 
-        value.map(item => transformData(item))
-        Seq(StaticDataValues(lastPartOfEndpointString, value))
+        val maybeTransformedData = transformData(value).flatMap(item => item.validate[Map[String, JsValue]])
+        maybeTransformedData match {
+          case JsSuccess(data, _) =>
+
+            Seq(StaticDataValues(lastPartOfEndpointString, (data - "counts")))
+          case e: JsError =>
+
+            logger.error(s"Couldn't validate static data JSON for $endpoint. $e")
+            Seq()
+        }
       case e: JsError =>
         logger.error(s"Couldn't validate static data JSON for $endpoint. $e")
         Seq()
     }
   }
 
-  private def transformData(rawData: (String, JsValue)): JsResult[JsValue] = {
+  private def transformData(rawData: JsObject): JsResult[JsValue] = {
 
     val transformation = __.json.update(
       __.read[JsObject].map(profile => {
+        logger.info(s"Trying to map profile: $profile")
         val totalImagesUploaded = (profile \ "counts" \ "media").asOpt[JsNumber].getOrElse(JsNumber(0))
         val totalFollowers = (profile \ "counts" \ "followed_by").asOpt[JsNumber].getOrElse(JsNumber(0))
-        val totalPeopleUsersFollows = (profile \ "counts" \ "JsNumber").asOpt[JsString].getOrElse(JsNumber(0))
+        val totalPeopleUsersFollows = (profile \ "counts" \ "follows").asOpt[JsNumber].getOrElse(JsNumber(0))
 
         profile ++ JsObject(Map(
           "media" -> totalImagesUploaded,
           "follows" -> totalPeopleUsersFollows,
-          "followers" -> totalFollowers)) - "counts"
+          "followers" -> totalFollowers))
       }))
 
-    rawData._2.transform(transformation)
+    rawData.transform(transformation)
   }
 }
 
