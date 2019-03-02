@@ -292,21 +292,21 @@ class DataDebitServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification 
 trait DataDebitServiceSpecContext extends RichBundleServiceContext {
   val testDataDebitRequest: DataDebitSetupRequest = DataDebitSetupRequest(
     "testdd", "purpose of the data use", org.joda.time.DateTime.now(), org.joda.time.Duration.standardDays(5), false,
-    "clientName", "http://client.com", "http://client.com/logo.png", None, Some("Detailed description of the data debit"),
+    "clientName", "http://client.com", "http://client.com/logo.png", None, None, Some("Detailed description of the data debit"),
     "http://client.com/terms.html", Some(conditionsBundle), testBundle)
 
   val testDataDebitDetailsUpdate: DataDebitSetupRequest = DataDebitSetupRequest(
     "testdd", "updated purpose of the data use", org.joda.time.DateTime.now(), org.joda.time.Duration.standardDays(15), false,
-    "clientName", "http://client.com", "http://client.com/logo.png", None, Some("Detailed description of the data debit"),
+    "clientName", "http://client.com", "http://client.com/logo.png", None, None, Some("Detailed description of the data debit"),
     "http://client.com/terms.html", Some(conditionsBundle), testBundle)
 
   val testDataDebitRequestUpdate: DataDebitSetupRequest = DataDebitSetupRequest(
     "testdd", "updated purpose of the data use", org.joda.time.DateTime.now(), org.joda.time.Duration.standardDays(10), false,
-    "clientName", "http://client.com", "http://client.com/logo.png", None, Some("Detailed description of the data debit"),
+    "clientName", "http://client.com", "http://client.com/logo.png", None, None, Some("Detailed description of the data debit"),
     "http://client.com/terms.html", None, testBundle2)
 
   val testDataDebitRequestUpdateConditions: DataDebitSetupRequest = DataDebitSetupRequest(
     "testdd", "updated purpose of the data use", org.joda.time.DateTime.now(), org.joda.time.Duration.standardDays(10), false,
-    "clientName", "http://client.com", "http://client.com/logo.png", None, Some("Detailed description of the data debit"),
+    "clientName", "http://client.com", "http://client.com/logo.png", None, None, Some("Detailed description of the data debit"),
     "http://client.com/terms.html", Some(conditionsBundle2), testBundle2)
 }

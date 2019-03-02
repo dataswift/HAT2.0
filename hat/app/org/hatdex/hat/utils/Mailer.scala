@@ -25,7 +25,6 @@
 package org.hatdex.hat.utils
 
 import javax.inject.Inject
-
 import akka.Done
 import akka.actor.ActorSystem
 import org.hatdex.hat.api.service.RemoteExecutionContext
@@ -64,6 +63,8 @@ trait HatMailer extends Mailer {
   def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Done
   def passwordReset(email: String, user: HatUser, resetLink: String)(implicit m: Messages, server: HatServer): Done
   def passwordChanged(email: String, user: HatUser)(implicit m: Messages, server: HatServer): Done
+
+  def claimHat(email: String, claimLink: String, maybePartnerDetails: Option[(String, String)])(implicit m: Messages, server: HatServer): Done
 }
 
 class HatMailerImpl @Inject() (
@@ -106,6 +107,15 @@ class HatMailerImpl @Inject() (
       subject = s"HAT ${server.domain} - password changed",
       bodyHtml = views.html.mails.emailPasswordChanged(user, server.domain),
       bodyText = views.txt.mails.emailPasswordChanged(user, server.domain).toString())
+    Done
+  }
+
+  def claimHat(email: String, claimLink: String, maybePartnerDetails: Option[(String, String)])(implicit m: Messages, server: HatServer): Done = {
+    sendEmail(email)(
+      from = emailFrom,
+      subject = s"HAT ${server.domain} - Claim your HAT!",
+      bodyHtml = views.html.mails.emailHatClaim(server.domain, claimLink, maybePartnerDetails),
+      bodyText = views.txt.mails.emailHatClaim(server.domain, claimLink, maybePartnerDetails.map(_._1)).toString())
     Done
   }
 }

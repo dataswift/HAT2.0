@@ -47,6 +47,8 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
 
   protected def dateFilter(fromDate: Option[DateTime], untilDate: Option[DateTime]): Option[FilterOperator.Operator] = {
     if (fromDate.isDefined) {
+      println(fromDate.get.toString(dateTimeFormat))
+      println(untilDate.get.toString(dateTimeFormat))
       Some(FilterOperator.Between(Json.toJson(fromDate.map(_.toString(dateTimeFormat))), Json.toJson(untilDate.map(_.toString(dateTimeFormat)))))
     }
     else {
@@ -134,9 +136,9 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
         else {
           Some(s"- ${t.withZone(s.getZone).toString("dd MMMM HH:mm z")}")
         }
-      case (_, Some(t)) if t.hourOfDay().get() == 0 ⇒ None
-      case (Some(s), Some(t))                       ⇒ Some(s"- ${t.withZone(s.getZone).toString("HH:mm z")}")
-      case (_, None)                                ⇒ None
+      case (_, Some(t)) if t.hourOfDay.get == 0 ⇒ None
+      case (Some(s), Some(t))                   ⇒ Some(s"- ${t.withZone(s.getZone).toString("HH:mm z")}")
+      case (_, None)                            ⇒ None
     }
 
     (startString, endString)
@@ -145,8 +147,8 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
 
 trait FeedItemComparator {
   def extractContent(content: JsValue, tailContent: JsValue, dataKey: String, dataKeyRoot: Option[String] = None): (JsLookupResult, JsLookupResult) = {
-    val tailContentResult = if (dataKeyRoot.isEmpty) (tailContent \ dataKey) else (tailContent \ dataKeyRoot.get \ dataKey)
-    val contentResult = if (dataKeyRoot.isEmpty) (content \ dataKey) else (content \ dataKeyRoot.get \ dataKey)
+    val tailContentResult = if (dataKeyRoot.isEmpty) tailContent \ dataKey else tailContent \ dataKeyRoot.get \ dataKey
+    val contentResult = if (dataKeyRoot.isEmpty) content \ dataKey else content \ dataKeyRoot.get \ dataKey
 
     (contentResult, tailContentResult)
   }
@@ -484,7 +486,7 @@ class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val comparison = compare(content, tailContent).filter(_._1 == false) // remove all fields that have the same values pre/current
-    if (comparison.length == 0) {
+    if (comparison.isEmpty) {
       Failure(new RuntimeException("Comparision Failure. Data the same"))
     }
     else {
@@ -496,7 +498,7 @@ class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
             Some(contentText), None, None, None))
         }
       } yield {
-        DataFeedItem("fitbit", (content \ "dateCreated").as[DateTime], Seq("profile"),
+        DataFeedItem("fitbit", (tailContent.getOrElse(content) \ "dateCreated").as[DateTime], Seq("profile"),
           Some(title), Some(itemContent), None)
       }
     }
@@ -521,7 +523,9 @@ class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
         compareInt(tailContent.get, content, "height", "Height"),
         compareFloat(tailContent.get, content, "weight", "Weight"),
         compareString(tailContent.get, content, "country", "Country"),
-        compareString(tailContent.get, content, "timezone", "Time Zone"))
+        // TODO: Terry: I don't understand the discrepancy. Monitor
+        // compareString(tailContent.get, content, "timezone", "Time Zone"))
+        compareString(content, tailContent.get, "timezone", "Time Zone"))
     }
   }
 }
@@ -536,7 +540,7 @@ class TwitterProfileMapper extends DataEndpointMapper with FeedItemComparator {
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val comparison = compare(content, tailContent).filter(_._1 == false) // remove all fields that have the same values pre/current
-    if (comparison.length == 0) {
+    if (comparison.isEmpty) {
       Failure(new RuntimeException("Comparision Failure. Data the same"))
     }
     else {
@@ -548,7 +552,7 @@ class TwitterProfileMapper extends DataEndpointMapper with FeedItemComparator {
             Some(contentText), None, None, None))
         }
       } yield {
-        DataFeedItem("twitter", (content \ "lastUpdated").as[DateTime], Seq("profile"),
+        DataFeedItem("twitter", (tailContent.getOrElse(content) \ "lastUpdated").as[DateTime], Seq("profile"),
           Some(title), Some(itemContent), None)
       }
     }
@@ -624,7 +628,7 @@ class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val comparison = compare(content, tailContent).filter(_._1 == false) // remove all fields that have the same values pre/current
-    if (comparison.length == 0) {
+    if (comparison.isEmpty) {
       Failure(new RuntimeException("Comparision Failure. Data the same"))
     }
     else {
@@ -636,7 +640,7 @@ class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
             Some(contentText), None, None, None))
         }
       } yield {
-        DataFeedItem("facebook", (content \ "updated_time").as[DateTime], Seq("profile"),
+        DataFeedItem("facebook", (tailContent.getOrElse(content) \ "updated_time").as[DateTime], Seq("profile"),
           Some(title), Some(itemContent), None)
       }
     }
