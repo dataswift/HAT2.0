@@ -227,6 +227,10 @@ class InsightsMapper extends DataEndpointMapper {
     "facebook/feed" → "Posts composed",
     "notables/feed" → "Notes taken",
     "spotify/feed" → "Songs listened to",
+    "instagram/feed" → "Photos uploaded",
+    "fitbit/weight" -> "Fitbit weight records",
+    "fitbit/sleep" -> "Fitbit sleep records",
+    "fitbit/activity" -> "Fitbit activities logged",
     "calendar/google/events" → "Calendar events recorded",
     "monzo/transactions" → "Transactions performed",
     "she/insights/emotions" -> "Posts analysed for Sentiments",
@@ -239,6 +243,10 @@ class InsightsMapper extends DataEndpointMapper {
     "facebook/feed" → "facebook",
     "notables/feed" → "notables",
     "spotify/feed" → "spotify",
+    "instagram/feed" → "instagram",
+    "fitbit/weight" -> "fitbit-weight",
+    "fitbit/sleep" -> "fitbit-sleep",
+    "fitbit/activity" -> "fitbit-activity",
     "calendar/google/events" → "google",
     "monzo/transactions" → "monzo",
     "she/insights/emotions" -> "sentiment",
@@ -622,8 +630,8 @@ class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("facebook/profile", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("updated_time", None, f))), None)),
-      Some("updated_time"), Some("descending"), None))
+        EndpointQuery("facebook/profile", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("hat_updated_time", None, f))), None)),
+      Some("hat_updated_time"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
@@ -640,7 +648,7 @@ class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
             Some(contentText), None, None, None))
         }
       } yield {
-        DataFeedItem("facebook", (tailContent.getOrElse(content) \ "updated_time").as[DateTime], Seq("profile"),
+        DataFeedItem("facebook", (tailContent.getOrElse(content) \ "hat_updated_time").as[DateTime], Seq("profile"),
           Some(title), Some(itemContent), None)
       }
     }
