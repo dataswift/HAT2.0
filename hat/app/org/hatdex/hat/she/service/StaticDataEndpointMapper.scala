@@ -38,26 +38,30 @@ import scala.concurrent.Future
 trait StaticDataEndpointMapper extends JodaWrites with JodaReads {
   protected lazy val logger: Logger = Logger(this.getClass)
 
-  def dataQuery(): PropertyQuery
+  def dataQueries(): Seq[PropertyQuery]
   def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues]
 
   final def staticDataRecords()(
     implicit
     hatServer: HatServer, richDataService: RichDataService): Future[Seq[StaticDataValues]] = {
 
-    val query = dataQuery()
-    val eventualDataSource: Future[Seq[EndpointData]] = richDataService.propertyData(query.endpoints, query.orderBy,
-      orderingDescending = query.ordering.contains("descending"), skip = 0, limit = query.limit, createdAfter = None)(hatServer.db)
+    val staticData = Future.sequence(dataQueries.map { query =>
 
-    eventualDataSource.map { dataSource => dataSource.map(item => mapDataRecord(item.recordId.get, item.data, item.endpoint)).headOption.getOrElse(Seq()) }
+      val eventualDataSource: Future[Seq[EndpointData]] = richDataService.propertyData(query.endpoints, query.orderBy,
+        orderingDescending = query.ordering.contains("descending"), skip = 0, limit = query.limit, createdAfter = None)(hatServer.db)
+
+      eventualDataSource.map { dataSource => dataSource.map(item => mapDataRecord(item.recordId.get, item.data, item.endpoint)).headOption.getOrElse(Seq()) }
+    })
+
+    staticData.map(_.flatten)
   }
 }
 
 class FacebookProfileStaticDataMapper extends StaticDataEndpointMapper {
-  def dataQuery(): PropertyQuery = {
-    PropertyQuery(
-      List(
-        EndpointQuery("facebook/profile", None, None, None)), Some("hat_updated_time"), Some("descending"), Some(1))
+  def dataQueries(): Seq[PropertyQuery] = {
+    Seq(
+      PropertyQuery(List(EndpointQuery("facebook/profile", None, None, None)), Some("hat_updated_time"), Some("descending"), Some(1)),
+      PropertyQuery(List(EndpointQuery("facebook/likes/pages", None, None, None)), Some("created_time"), Some("descending"), Some(1)))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues] = {
@@ -66,7 +70,22 @@ class FacebookProfileStaticDataMapper extends StaticDataEndpointMapper {
     eventualData match {
       case JsSuccess(value, _) =>
         val lastPartOfEndpointString = endpoint.split("/").last
-        Seq(StaticDataValues(lastPartOfEndpointString, value.filterKeys(key => key != "friends")))
+        if (endpoint.contains("likes")) {
+
+          val numberOfPagesLiked = value.filterKeys(key => key == "number_of_pages_liked")
+          if (numberOfPagesLiked.isEmpty) {
+
+            Seq()
+          }
+          else {
+
+            Seq(StaticDataValues(lastPartOfEndpointString, numberOfPagesLiked))
+          }
+        }
+        else {
+
+          Seq(StaticDataValues(lastPartOfEndpointString, value.filterKeys(key => key != "friends")))
+        }
       case e: JsError =>
         logger.error(s"Couldn't validate static data JSON for $endpoint. $e")
         Seq()
@@ -75,10 +94,10 @@ class FacebookProfileStaticDataMapper extends StaticDataEndpointMapper {
 }
 
 class TwitterProfileStaticDataMapper extends StaticDataEndpointMapper {
-  def dataQuery(): PropertyQuery = {
-    PropertyQuery(
+  def dataQueries(): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
       List(
-        EndpointQuery("twitter/tweets", None, None, None)), Some("lastUpdated"), Some("descending"), Some(1))
+        EndpointQuery("twitter/tweets", None, None, None)), Some("lastUpdated"), Some("descending"), Some(1)))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues] = {
@@ -101,10 +120,10 @@ class TwitterProfileStaticDataMapper extends StaticDataEndpointMapper {
 }
 
 class SpotifyProfileStaticDataMapper extends StaticDataEndpointMapper {
-  def dataQuery(): PropertyQuery = {
-    PropertyQuery(
+  def dataQueries(): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
       List(
-        EndpointQuery("spotify/profile", None, None, None)), Some("dateCreated"), Some("descending"), Some(1))
+        EndpointQuery("spotify/profile", None, None, None)), Some("dateCreated"), Some("descending"), Some(1)))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues] = {
@@ -145,10 +164,10 @@ class SpotifyProfileStaticDataMapper extends StaticDataEndpointMapper {
 }
 
 class InstagramProfileStaticDataMapper extends StaticDataEndpointMapper {
-  def dataQuery(): PropertyQuery = {
-    PropertyQuery(
+  def dataQueries(): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
       List(
-        EndpointQuery("instagram/profile", None, None, None)), Some("hat_updated_time"), Some("descending"), Some(1))
+        EndpointQuery("instagram/profile", None, None, None)), Some("hat_updated_time"), Some("descending"), Some(1)))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues] = {
@@ -196,10 +215,10 @@ class InstagramProfileStaticDataMapper extends StaticDataEndpointMapper {
 }
 
 class FitbitProfileStaticDataMapper extends StaticDataEndpointMapper {
-  def dataQuery(): PropertyQuery = {
-    PropertyQuery(
+  def dataQueries(): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/profile", None, None, None)), Some("hat_updated_time"), Some("descending"), Some(1))
+        EndpointQuery("fitbit/profile", None, None, None)), Some("hat_updated_time"), Some("descending"), Some(1)))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues] = {
