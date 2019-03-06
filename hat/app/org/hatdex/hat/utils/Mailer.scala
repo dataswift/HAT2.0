@@ -64,7 +64,7 @@ trait HatMailer extends Mailer {
   def passwordReset(email: String, user: HatUser, resetLink: String)(implicit m: Messages, server: HatServer): Done
   def passwordChanged(email: String, user: HatUser)(implicit m: Messages, server: HatServer): Done
 
-  def claimHat(email: String, claimLink: String, maybeEmailDetails: Option[(String, String)])(implicit m: Messages, server: HatServer): Done
+  def claimHat(email: String, claimLink: String, maybePartnerDetails: Option[(String, String)])(implicit m: Messages, server: HatServer): Done
 }
 
 class HatMailerImpl @Inject() (
@@ -110,12 +110,12 @@ class HatMailerImpl @Inject() (
     Done
   }
 
-  def claimHat(email: String, claimLink: String, maybeEmailDetails: Option[(String, String)])(implicit m: Messages, server: HatServer): Done = {
+  def claimHat(email: String, claimLink: String, maybePartnerDetails: Option[(String, String)])(implicit m: Messages, server: HatServer): Done = {
     sendEmail(email)(
       from = emailFrom,
       subject = s"HAT ${server.domain} - Claim your HAT!",
-      bodyHtml = views.html.mails.emailHatClaim(server.domain, claimLink, maybeEmailDetails.map(_._2)),
-      bodyText = views.txt.mails.emailHatClaim(server.domain, claimLink, maybeEmailDetails.map(_._1)).toString())
+      bodyHtml = views.html.mails.emailHatClaim(server.domain, claimLink, maybePartnerDetails),
+      bodyText = views.txt.mails.emailHatClaim(server.domain, claimLink, maybePartnerDetails.map(_._1)).toString())
     Done
   }
 }

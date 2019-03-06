@@ -246,7 +246,7 @@ class Authentication @Inject() (
           applicationsService.applicationStatus()(request.dynamicEnvironment, user, request).flatMap { applications =>
             val maybeApplication = applications.find(_.application.id.equals(claimHatRequest.applicationId))
             val maybeAppDetails = maybeApplication.map { app =>
-              ((app.application.info.name, app.application.developer.logo.map(_.normal).getOrElse("#")),
+              ((app.application.developer.name, app.application.developer.logo.map(_.normal).getOrElse("#")),
                 (app.application.id, app.application.info.version.toString))
             }
 
