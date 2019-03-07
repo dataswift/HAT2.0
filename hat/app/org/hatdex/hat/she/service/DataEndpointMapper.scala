@@ -768,6 +768,54 @@ class FacebookFeedMapper extends DataEndpointMapper {
   }
 }
 
+class FacebookPagesLikesMapper extends DataEndpointMapper {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(
+        EndpointQuery("facebook/likes/pages", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("created_time", None, f))), None)),
+      Some("created_time"), Some("descending"), None))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
+    for {
+      name <- Try((content \ "name").as[String])
+      title <- Try(DataFeedItemTitle(s"You liked $name", None, None))
+
+      itemContent ← Try(DataFeedItemContent(
+        Some(
+          s"""Page Name - ${name}
+             |
+             |Location - ${(content \ "location" \ "city").asOpt[String].getOrElse("")}
+             |Website - ${(content \ "website").asOpt[String].getOrElse("")}""".stripMargin.trim), None, None, None))
+      date ← Try((content \ "created_time").as[DateTime])
+      tags ← Try(Seq("page", name))
+    } yield {
+
+      val locationGeo = Try(LocationGeo(
+        (content \ "location" \ "longitude").as[Double],
+        (content \ "location" \ "latitude").as[Double])).toOption
+
+      val locationAddress = Try(LocationAddress(
+        (content \ "location" \ "country").asOpt[String],
+        (content \ "location" \ "city").asOpt[String],
+        (content \ "name").asOpt[String],
+        (content \ "location" \ "street").asOpt[String],
+        (content \ "location" \ "zip").asOpt[String])).toOption
+
+      val maybeLocation = if (locationAddress.contains(LocationAddress(None, None, None, None, None))) {
+        None
+      }
+      else {
+        locationAddress
+      }
+
+      val location = locationGeo.orElse(maybeLocation).map(_ ⇒ DataFeedItemLocation(locationGeo, maybeLocation, None))
+
+      DataFeedItem("facebook", date, tags, Some(title), Some(itemContent), location)
+    }
+  }
+}
+
 class NotablesFeedMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
