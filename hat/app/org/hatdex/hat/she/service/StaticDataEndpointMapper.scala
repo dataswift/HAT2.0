@@ -84,7 +84,7 @@ class FacebookProfileStaticDataMapper extends StaticDataEndpointMapper {
         }
         else {
 
-          Seq(StaticDataValues(lastPartOfEndpointString, value.filterKeys(key => key != "friends")))
+          Seq(StaticDataValues(lastPartOfEndpointString, value.filterKeys(key => key != "friends" && key != "languages")))
         }
       case e: JsError =>
         logger.error(s"Couldn't validate static data JSON for $endpoint. $e")
