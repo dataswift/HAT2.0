@@ -5,54 +5,46 @@ import javax.inject.Inject
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.RemoteExecutionContext
-import org.hatdex.hat.authentication.{HatApiAuthEnvironment, HatApiController}
-import org.hatdex.hat.resourceManagement.HatServer
-import play.api.{Configuration, Logger}
+import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
+import play.api.{ Configuration, Logger }
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 
 import scala.concurrent.Future
+import scala.util.{ Failure, Success }
 
 class SystemController @Inject() (
-                                   components: ControllerComponents,
-                                   cache: AsyncCacheApi,
-                                   configuration: Configuration,
-                                   silhouette: Silhouette[HatApiAuthEnvironment])(implicit val ec: RemoteExecutionContext)
+    components: ControllerComponents,
+    cache: AsyncCacheApi,
+    configuration: Configuration,
+    silhouette: Silhouette[HatApiAuthEnvironment])(implicit val ec: RemoteExecutionContext)
   extends HatApiController(components, silhouette) with HatJsonFormats {
 
   val hatSharedSecret: String = configuration.get[String]("resourceManagement.hatSharedSecret")
 
   private val logger = Logger(this.getClass)
 
-  def beforeDestroy()(implicit hat: HatServer): Action[AnyContent] = Action.async { implicit request =>
+  def destroyCache: Action[AnyContent] = UserAwareAction.async { implicit request =>
     request.headers.get("X-Auth-Token") match {
       case Some(authToken) if authToken == hatSharedSecret =>
-        val clearApps = cache.remove(s"apps:${hat.domain}")
-        val clearConfiguration = cache.remove(s"configuration:${hat.domain}")
-        val clearServer = cache.remove(s"server:${hat.domain}")
+        val response = Ok(Json.toJson(SuccessResponse("beforeDestroy DONE")))
 
-        Future.sequence(Seq(clearApps, clearConfiguration, clearServer)).recover {
-          case e =>
-            logger.error(s"BEFORE DESTROY: Could not clear cache of ${hat.domain}. Reason: ${e.getMessage}")
+        val hatAddress = request.dynamicEnvironment.domain
+        val clearApps = cache.remove(s"apps:$hatAddress")
+        val clearConfiguration = cache.remove(s"configuration:$hatAddress")
+        val clearServer = cache.remove(s"server:$hatAddress")
+
+        // We don't care if the cache is successfully cleared. We just go ahead and return successful.
+        Future.sequence(Seq(clearApps, clearConfiguration, clearServer)).onComplete {
+          case Success(_)         => logger.info(s"BEFORE DESTROY: $hatAddress DONE")
+          case Failure(exception) => logger.error(s"BEFORE DESTROY: Could not clear cache of $hatAddress. Reason: ${exception.getMessage}")
         }
+        Future.successful(response)
 
-        // We don't care if the cacche is successfully cleared. We just go ahead and return successful.
-        Future.successful(Ok(Json.toJson(SuccessResponse("beforeDestroy DONE"))))
       case Some(_) => Future.successful(Forbidden(Json.toJson(ErrorMessage("Invalid token", s"Not a valid token provided"))))
+
       case None    => Future.successful(Forbidden(Json.toJson(ErrorMessage("Credentials missing", s"Credentials required"))))
     }
-  }
-
-  /**
-    * Not necessary to clear User from cache
-    * Just need to clear app and configuration
-    */
-  private def clearCache(hat: HatServer): Unit = {
-    val clearApps = cache.remove(s"apps:${hat.domain}")
-    val clearConfiguration = cache.remove(s"configuration:${hat.domain}")
-    val clearServer = cache.remove(s"server:${hat.domain}")
-
-    Future.sequence(Seq(clearApps, clearConfiguration, clearServer))
   }
 }
