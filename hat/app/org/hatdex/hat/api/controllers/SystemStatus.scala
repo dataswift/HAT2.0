@@ -54,7 +54,9 @@ class SystemStatus @Inject() (
     val ec: ExecutionContext,
     val applicationsService: ApplicationsService) extends HatApiController(components, silhouette) with HatJsonFormats {
 
-  val hatSharedSecret: String = configuration.get[String]("resourceManagement.hatSharedSecret")
+  private val dbStorageAllowance: Long = configuration.get[Long]("resourceManagement.hatDBStorageAllowance")
+  private val fileStorageAllowance: Long = configuration.get[Long]("resourceManagement.hatFileStorageAllowance")
+  private val hatSharedSecret: String = configuration.get[String]("resourceManagement.hatSharedSecret")
 
   private val logger = Logger(this.getClass)
 
@@ -73,9 +75,6 @@ class SystemStatus @Inject() (
 
   def status(): Action[AnyContent] =
     SecuredAction(WithRole(Owner(), Platform()) || ContainsApplicationRole(Owner(), Platform())).async { implicit request =>
-      val dbStorageAllowance = Math.pow(1000, 3).toLong
-      val fileStorageAllowance = Math.pow(1000, 3).toLong
-
       val eventualStatus = for {
         dbsize <- systemStatusService.tableSizeTotal
         fileSize <- systemStatusService.fileStorageTotal
