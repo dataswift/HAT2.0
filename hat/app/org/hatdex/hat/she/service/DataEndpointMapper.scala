@@ -227,6 +227,10 @@ class InsightsMapper extends DataEndpointMapper {
     "facebook/feed" → "Posts composed",
     "notables/feed" → "Notes taken",
     "spotify/feed" → "Songs listened to",
+    "instagram/feed" → "Photos uploaded",
+    "fitbit/weight" -> "Fitbit weight records",
+    "fitbit/sleep" -> "Fitbit sleep records",
+    "fitbit/activity" -> "Fitbit activities logged",
     "calendar/google/events" → "Calendar events recorded",
     "monzo/transactions" → "Transactions performed",
     "she/insights/emotions" -> "Posts analysed for Sentiments",
@@ -239,6 +243,10 @@ class InsightsMapper extends DataEndpointMapper {
     "facebook/feed" → "facebook",
     "notables/feed" → "notables",
     "spotify/feed" → "spotify",
+    "instagram/feed" → "instagram",
+    "fitbit/weight" -> "fitbit-weight",
+    "fitbit/sleep" -> "fitbit-sleep",
+    "fitbit/activity" -> "fitbit-activity",
     "calendar/google/events" → "google",
     "monzo/transactions" → "monzo",
     "she/insights/emotions" -> "sentiment",
@@ -622,8 +630,8 @@ class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("facebook/profile", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("updated_time", None, f))), None)),
-      Some("updated_time"), Some("descending"), None))
+        EndpointQuery("facebook/profile", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("hat_updated_time", None, f))), None)),
+      Some("hat_updated_time"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
@@ -640,7 +648,7 @@ class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
             Some(contentText), None, None, None))
         }
       } yield {
-        DataFeedItem("facebook", (tailContent.getOrElse(content) \ "updated_time").as[DateTime], Seq("profile"),
+        DataFeedItem("facebook", (tailContent.getOrElse(content) \ "hat_updated_time").as[DateTime], Seq("profile"),
           Some(title), Some(itemContent), None)
       }
     }
@@ -745,6 +753,54 @@ class FacebookFeedMapper extends DataEndpointMapper {
         (content \ "place" \ "name").asOpt[String],
         (content \ "place" \ "location" \ "street").asOpt[String],
         (content \ "place" \ "location" \ "zip").asOpt[String])).toOption
+
+      val maybeLocation = if (locationAddress.contains(LocationAddress(None, None, None, None, None))) {
+        None
+      }
+      else {
+        locationAddress
+      }
+
+      val location = locationGeo.orElse(maybeLocation).map(_ ⇒ DataFeedItemLocation(locationGeo, maybeLocation, None))
+
+      DataFeedItem("facebook", date, tags, Some(title), Some(itemContent), location)
+    }
+  }
+}
+
+class FacebookPagesLikesMapper extends DataEndpointMapper {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(
+        EndpointQuery("facebook/likes/pages", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("created_time", None, f))), None)),
+      Some("created_time"), Some("descending"), None))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
+    for {
+      name <- Try((content \ "name").as[String])
+      title <- Try(DataFeedItemTitle(s"You liked $name", None, None))
+
+      itemContent ← Try(DataFeedItemContent(
+        Some(
+          s"""Page Name - ${name}
+             |
+             |Location - ${(content \ "location" \ "city").asOpt[String].getOrElse("")}
+             |Website - ${(content \ "website").asOpt[String].getOrElse("")}""".stripMargin.trim), None, None, None))
+      date ← Try((content \ "created_time").as[DateTime])
+      tags ← Try(Seq("page", name))
+    } yield {
+
+      val locationGeo = Try(LocationGeo(
+        (content \ "location" \ "longitude").as[Double],
+        (content \ "location" \ "latitude").as[Double])).toOption
+
+      val locationAddress = Try(LocationAddress(
+        (content \ "location" \ "country").asOpt[String],
+        (content \ "location" \ "city").asOpt[String],
+        (content \ "name").asOpt[String],
+        (content \ "location" \ "street").asOpt[String],
+        (content \ "location" \ "zip").asOpt[String])).toOption
 
       val maybeLocation = if (locationAddress.contains(LocationAddress(None, None, None, None, None))) {
         None
