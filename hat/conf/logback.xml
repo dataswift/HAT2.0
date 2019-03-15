@@ -105,6 +105,14 @@
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
 
+    <logger name="org.hatdex.hat.she.service.InstagramMediaMapper" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE" />
+    </logger>
+
+    <logger name="org.hatdex.hat.she.service.DataEndpointMapper" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNCCONSOLE" />
+    </logger>
+
     <logger name="org.hatdex.hat.she.controllers.FeedGenerator" level="DEBUG" additivity="false">
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
