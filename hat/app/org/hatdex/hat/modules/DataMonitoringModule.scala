@@ -26,7 +26,7 @@ package org.hatdex.hat.modules
 
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.service.monitoring.{ HatDataEventRouter, HatDataEventRouterImpl, HatDataEventsProcessorActor, HatDataStatsProcessorActor }
+import org.hatdex.hat.api.service.monitoring.{ HatDataEventRouter, HatDataEventRouterImpl, HatDataStatsProcessorActor }
 import play.api.libs.concurrent.AkkaGuiceSupport
 
 class DataMonitoringModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
@@ -34,7 +34,6 @@ class DataMonitoringModule extends AbstractModule with ScalaModule with AkkaGuic
   override protected def configure(): Unit = {
     bindActor[HatDataStatsProcessorActor]("hatDataStatsProcessor")
     bind[HatDataEventRouter].to[HatDataEventRouterImpl].asEagerSingleton()
-    bindActor[HatDataEventsProcessorActor]("hatDataEventsProcessor")
     ()
   }
 

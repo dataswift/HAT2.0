@@ -72,7 +72,7 @@ class FeedGeneratorService @Inject() ()(
   private val insightMappers: Seq[(String, DataEndpointMapper)] = Seq(
     "she/activity-records" → new InsightsMapper(),
     "she/sentiments" → new InsightSentimentMapper(),
-    "she/twitter/word-cloud" -> new TwitterWordcloudMapper())
+    "drops/twitter/word-cloud" -> new TwitterWordcloudMapper())
 
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long], mergeLocations: Boolean = false)(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] = {
     if (endpoint.startsWith("she")) {

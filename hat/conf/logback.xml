@@ -81,15 +81,6 @@
     <logger name="org.hatdex.hat.api.service.monitoring" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
-    <logger name="org.hatdex.hat.she.service.monitoring.HatDataEventsProcessor" level="DEBUG" additivity="false">
-        <appender-ref ref="ASYNCCONSOLE" />
-    </logger>
-    <logger name="org.hatdex.hat.she.service.monitoring.HatDataEventsProcessorActor" level="DEBUG" additivity="false">
-        <appender-ref ref="ASYNCCONSOLE" />
-    </logger>
-    <logger name="org.hatdex.hat.she.service.monitoring.HatDataEventsNotifier" level="DEBUG" additivity="false">
-        <appender-ref ref="ASYNCCONSOLE" />
-    </logger>
     <logger name="org.hatdex.hat.modules" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
