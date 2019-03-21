@@ -68,11 +68,10 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
     val feeds = dataQueries(fromDate, untilDate).map({ query ⇒
       val dataSource: Source[EndpointData, NotUsed] = richDataService.propertyDataStreaming(query.endpoints, query.orderBy,
         orderingDescending = query.ordering.contains("descending"), skip = 0, limit = None, createdAfter = None)(hatServer.db)
-
       val deduplicated = dataDeduplicationField.map { field ⇒
         dataSource.sliding(2, 1)
           .collect({
-            case Seq(a, b) if a.data \ field != b.data \ field ⇒ b
+            case Seq(a, b) if a.data \ field != b.data \ field ⇒ a
             case Seq(a)                                        ⇒ a // only a single element, e.g. last element in sliding window
           })
       } getOrElse {
