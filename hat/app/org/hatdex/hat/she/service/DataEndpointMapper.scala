@@ -984,7 +984,6 @@ class InstagramMediaMapper extends DataEndpointMapper {
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
-      fuck <- Try(logger.debug(s"Content is: $content"))
       createdTime <- Try(new DateTime((content \ "created_time").as[String].toLong * 1000))
       tags <- Try((content \ "tags").as[List[String]])
       kind <- Try((content \ "type").as[String])
@@ -994,12 +993,10 @@ class InstagramMediaMapper extends DataEndpointMapper {
         None,
         kind match {
           case "image" =>
-            logger.debug(s"Found image: $kind")
             Some(Seq(DataFeedItemMedia(
               (content \ "images" \ "thumbnail" \ "url").asOpt[String],
               (content \ "images" \ "standard_resolution" \ "url").asOpt[String])))
           case "carousel" =>
-            logger.debug(s"Found carousel: $kind")
             Some((content \ "carousel_media").as[Seq[JsObject]].map { imageInfo =>
               DataFeedItemMedia(
                 (imageInfo \ "images" \ "thumbnail" \ "url").asOpt[String],
@@ -1018,7 +1015,6 @@ class InstagramMediaMapper extends DataEndpointMapper {
         address = (content \ "location" \ "street_address").asOpt[String]
           .map(fullAddress => LocationAddress(None, None, Some(fullAddress), None, None)),
         tags = None)).toOption
-      logger.debug(s"Location is: $location")
 
       DataFeedItem("instagram", createdTime, tags, title, feedItemContent, location)
     }
