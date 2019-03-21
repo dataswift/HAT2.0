@@ -85,27 +85,27 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="org.hatdex.hat.she.*" level="DEBUG" additivity="false">
+    <logger name="org.hatdex.hat.she.*" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
 
-    <logger name="org.hatdex.hat.she.service.*" level="DEBUG" additivity="false">
+    <logger name="org.hatdex.hat.she.service.*" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
 
-    <logger name="org.hatdex.hat.she.service.FunctionService" level="DEBUG" additivity="false">
+    <logger name="org.hatdex.hat.she.service.FunctionService" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
 
-    <logger name="org.hatdex.hat.she.service.FunctionExecutionTriggerHandler" level="DEBUG" additivity="false">
+    <logger name="org.hatdex.hat.she.service.FunctionExecutionTriggerHandler" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
 
-    <logger name="org.hatdex.hat.she.service.FeedGeneratorService" level="DEBUG" additivity="false">
+    <logger name="org.hatdex.hat.she.service.FeedGeneratorService" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
 
-    <logger name="org.hatdex.hat.she.controllers.FeedGenerator" level="DEBUG" additivity="false">
+    <logger name="org.hatdex.hat.she.controllers.FeedGenerator" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
 
@@ -123,7 +123,6 @@
     <logger name="play.filters.hosts.AllowedHostsFilter" level="ERROR" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
-
     
     <logger name="org.asynchttpclient" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>
@@ -137,14 +136,14 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="com.github.tminglei.slickpg*" level="DEBUG">
+    <logger name="com.github.tminglei.slickpg*" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="org.hatdex.libs.dal.SlickCodeGeneratorPlugin" level="DEBUG">
+    <logger name="org.hatdex.libs.dal.SlickCodeGeneratorPlugin" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
-    <logger name="org.hatdex.libs.dal.*" level="DEBUG">
+    <logger name="org.hatdex.libs.dal.*" level="INFO">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
@@ -152,18 +151,18 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <!--<logger name="slick.jdbc.JdbcBackend.statement" level="DEBUG">-->
+    <!--<logger name="slick.jdbc.JdbcBackend.statement" level="INFO">-->
         <!--<appender-ref ref="ASYNCCONSOLE"/>-->
     <!--</logger>-->
 
-    <!--<logger name="slick.jdbc.JdbcBackend.parameter" level="DEBUG">-->
+    <!--<logger name="slick.jdbc.JdbcBackend.parameter" level="INFO">-->
         <!--<appender-ref ref="ASYNCCONSOLE"/>-->
     <!--</logger>-->
 
-    <!--<logger name="com.zaxxer.hikari.HikariDataSource" level="DEBUG" additivity="false">-->
+    <!--<logger name="com.zaxxer.hikari.HikariDataSource" level="INFO" additivity="false">-->
         <!--<appender-ref ref="ASYNCCONSOLE"/>-->
     <!--</logger>-->
-    <!--<logger name="com.zaxxer.hikari.pool.HikariPool" level="DEBUG" additivity="false">-->
+    <!--<logger name="com.zaxxer.hikari.pool.HikariPool" level="INFO" additivity="false">-->
         <!--<appender-ref ref="ASYNCCONSOLE"/>-->
     <!--</logger>-->
 
