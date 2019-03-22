@@ -56,7 +56,8 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
           Version(config.getString("version")),
           config.getString("baseUrl"),
           config.getString("namespace"),
-          config.getString("endpoint"))
+          config.getString("endpoint"),
+          config.getBoolean("experimental"))
       }
     }
   }
@@ -65,8 +66,12 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   def provideFunctionExecutableRegistry(
     config: Configuration,
     loader: LambdaFunctionLoader)(implicit ec: ExecutionContext): FunctionExecutableRegistry = {
+
+    val includeExperimental: Boolean = config.getOptional[Boolean]("she.beta").getOrElse(false)
+
     val eventuallyFunctionsLoaded = Future.sequence(
       config.get[Seq[FunctionConfig]]("she.functions")
+        .filter(c => !c.experimental || (includeExperimental && c.experimental))
         .map(c ⇒ FutureTransformations.futureToFutureTry(loader.load(c.id, c.version, c.baseUrl, c.namespace, c.endpoint))))
 
     val functionsLoaded = Await.result(eventuallyFunctionsLoaded, 30.seconds)
@@ -75,5 +80,5 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     new FunctionExecutableRegistry(functionsLoaded.filter(_.isSuccess).flatMap(_.toOption))
   }
 
-  case class FunctionConfig(id: String, version: Version, baseUrl: String, namespace: String, endpoint: String)
+  case class FunctionConfig(id: String, version: Version, baseUrl: String, namespace: String, endpoint: String, experimental: Boolean)
 }
