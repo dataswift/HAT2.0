@@ -291,6 +291,44 @@ class InsightsMapper extends DataEndpointMapper {
   }
 }
 
+class DropsTwitterWordcloudMapper extends DataEndpointMapper {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(
+        EndpointQuery("drops/insights/twitter/word-cloud", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("timestamp", None, f))), None)),
+      Some("timestamp"), Some("descending"), None))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
+    for {
+      counters ← Try((content \ "summary" \ "totalCount").as[Int]) if counters > 0
+    } yield {
+      val title = DataFeedItemTitle("Twitter Word Cloud", None, Some("twitter-word-cloud"))
+      val itemContent = DataFeedItemContent(text = Some(content.toString()), html = None, media = None, nestedStructure = None)
+      DataFeedItem("drops", DateTime.now, Seq("wordcloud", "twitter-word-cloud"), Some(title), Some(itemContent), None)
+    }
+  }
+}
+
+class DropsSentimentHistoryMapper extends DataEndpointMapper {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(
+        EndpointQuery("drops/insights/sentiment-history", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("timestamp", None, f))), None)),
+      Some("timestamp"), Some("descending"), None))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
+    for {
+      counters ← Try((content \ "summary" \ "totalCount").as[Int]) if counters > 0
+    } yield {
+      val title = DataFeedItemTitle("Sentiment History", None, Some("sentiment-history"))
+      val itemContent = DataFeedItemContent(text = Some(content.toString()), html = None, media = None, nestedStructure = None)
+      DataFeedItem("drops", DateTime.now, Seq("sentiment-history", "sentiment-history"), Some(title), Some(itemContent), None)
+    }
+  }
+}
+
 class GoogleCalendarMapper extends DataEndpointMapper {
   override protected val dataDeduplicationField: Option[String] = Some("id")
 
@@ -782,7 +820,7 @@ class FacebookPagesLikesMapper extends DataEndpointMapper {
 
       itemContent ← Try(DataFeedItemContent(
         Some(
-          s"""Page Name - ${name}
+          s"""Page Name - $name
              |
              |Location - ${(content \ "location" \ "city").asOpt[String].getOrElse("")}
              |Website - ${(content \ "website").asOpt[String].getOrElse("")}""".stripMargin.trim), None, None, None))
