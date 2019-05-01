@@ -31,7 +31,6 @@ import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.phata.models.MailTokenUser
 
 import scala.annotation.tailrec
-import scala.concurrent.duration.{ _ }
 import org.joda.time.Duration
 
 object ModelTranslation {
@@ -163,7 +162,7 @@ object ModelTranslation {
   }
 
   @tailrec
-  def groupRecords[T, U](list: Seq[(T, Option[U])], groups: Seq[(T, Seq[U])] = Seq())(implicit equalIdentity: ((T, T) => Boolean)): Seq[(T, Seq[U])] = {
+  def groupRecords[T, U](list: Seq[(T, Option[U])], groups: Seq[(T, Seq[U])] = Seq())(implicit equalIdentity: (T, T) => Boolean): Seq[(T, Seq[U])] = {
     if (list.isEmpty) {
       groups
     }

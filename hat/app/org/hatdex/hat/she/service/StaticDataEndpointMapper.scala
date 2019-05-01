@@ -97,25 +97,17 @@ class TwitterProfileStaticDataMapper extends StaticDataEndpointMapper {
   def dataQueries(): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("twitter/tweets", None, None, None)), Some("lastUpdated"), Some("descending"), Some(1)))
+        EndpointQuery("twitter/tweets", None, None, None)), Some("id"), Some("descending"), Some(1)))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues] = {
 
-    val maybeUserData = (content \\ "user")
-
-    maybeUserData.headOption
-      .map({ item =>
-        item.validate[Map[String, JsValue]] match {
-          case JsSuccess(value, _) =>
-            val lastPartOfEndpointString = endpoint.split("/").last
-            Seq(StaticDataValues(lastPartOfEndpointString, value.filterKeys(key => key != "entities")))
-          case e: JsError =>
-            logger.error(s"Couldn't validate static data JSON for $endpoint. $e")
-            Seq()
-        }
-      })
-      .getOrElse(Seq())
+    val maybeUserData = (content \ "user").asOpt[Map[String, JsValue]]
+    val lastPartOfEndpointString = endpoint.split("/").last
+    maybeUserData match {
+      case Some(user) => Seq(StaticDataValues(lastPartOfEndpointString, user.filterKeys(key => key != "entities")))
+      case _          => Seq()
+    }
   }
 }
 

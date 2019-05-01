@@ -25,7 +25,6 @@
 package org.hatdex.hat.api.controllers
 
 import javax.inject.Inject
-
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import org.hatdex.hat.api.json.RichDataJsonFormats

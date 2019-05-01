@@ -299,17 +299,17 @@ trait ApplicationsServiceContext extends HATTestContext {
         name = "notables-incompatible-bundle"))))
   val notablesAppIncompatibleUpdated: Application = notablesAppIncompatible.copy(
     info = notablesApp.info.copy(version = Version("1.1.0")),
-    status = ApplicationStatus.Internal(Version("1.1.0"), None, None, DateTime.now()))
+    status = ApplicationStatus.Internal(Version("1.1.0"), None, None, None, DateTime.now()))
 
   val notablesAppExternal: Application = notablesApp.copy(
     id = "notables-external",
-    status = ApplicationStatus.External(Version("1.0.0"), "/status", 200, None, None, DateTime.now()),
+    status = ApplicationStatus.External(Version("1.0.0"), "/status", 200, None, None, None, DateTime.now()),
     permissions = notablesApp.permissions.copy(
       dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
         name = "notables-external"))))
   val notablesAppExternalFailing: Application = notablesApp.copy(
     id = "notables-external-failing",
-    status = ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None, None, DateTime.now()),
+    status = ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None, None, None, DateTime.now()),
     permissions = notablesApp.permissions.copy(
       dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
         name = "notables-external-failing"))))
@@ -338,8 +338,8 @@ trait ApplicationsServiceContext extends HATTestContext {
       override def answer(invocation: InvocationOnMock) = {
         val s = invocation.getArguments()(0).asInstanceOf[ApplicationStatus.Status]
         s match {
-          case ApplicationStatus.Internal(_, _, _, _) ⇒ Future.successful(true)
-          case ApplicationStatus.External(_, "/status", _, _, _, _) ⇒ Future.successful(true)
+          case ApplicationStatus.Internal(_, _, _, _, _) ⇒ Future.successful(true)
+          case ApplicationStatus.External(_, "/status", _, _, _, _, _) ⇒ Future.successful(true)
           case _ ⇒ Future.successful(false)
         }
       }
