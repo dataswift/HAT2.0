@@ -329,6 +329,25 @@ class DropsSentimentHistoryMapper extends DataEndpointMapper {
   }
 }
 
+class InsightCommonLocationsMapper extends DataEndpointMapper {
+  def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
+    Seq(PropertyQuery(
+      List(
+        EndpointQuery("she/insights/common-locations", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("dateCreated", None, f))), None)),
+      Some("timestamp"), Some("descending"), None))
+  }
+
+  def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
+    for {
+      counters ← Try((content \ "summary" \ "totalCount").as[Int]) if counters > 0
+    } yield {
+      val title = DataFeedItemTitle("Common Locations", None, Some("common-locations"))
+      val itemContent = DataFeedItemContent(text = Some(content.toString()), html = None, media = None, nestedStructure = None)
+      DataFeedItem("she", DateTime.now, Seq("common-locations", "common-locations"), Some(title), Some(itemContent), None)
+    }
+  }
+}
+
 class GoogleCalendarMapper extends DataEndpointMapper {
   override protected val dataDeduplicationField: Option[String] = Some("id")
 
