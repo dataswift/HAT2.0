@@ -45,7 +45,7 @@ class UberRidesMapper extends DataEndpointMapper {
         None))
       latitude <- Try((content \ "start_city" \ "latitude").asOpt[Double].getOrElse(0.doubleValue()))
       longitude <- Try((content \ "start_city" \ "longitude").asOpt[Double].getOrElse(0.doubleValue()))
-      location <- Try(DataFeedItemLocation(Some(LocationGeo(latitude, longitude)), None, None))
+      location <- Try(DataFeedItemLocation(Some(LocationGeo(longitude, latitude)), None, None))
     } yield DataFeedItem("uber", startDate, Seq(), Some(title), Some(itemContent), Some(location))
   }
 }
