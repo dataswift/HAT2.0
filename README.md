@@ -15,8 +15,6 @@ Hub-of-All-Things is a HAT Microserver for individuals to own, control and share
 
 A Personal Microserver (“the HAT”) is a personal single tenant (“the individual self”) technology system that is fully individual self-service, to enable an individual to define a full set of “meta-data” defining as a specific set of personal data, personal preferences, personal behaviour events. The HAT enables individuals to share the right information (quality and quantity), with the right people, in the right situations for the right purposes and gain the benefits.
 
-[![PhD Comics explains the HAT](http://img.youtube.com/vi/y1txYjoSQQc/0.jpg)](http://www.youtube.com/watch?v=y1txYjoSQQc)
-
 ## Technology stack
 
 This HAT Microserver implementation is written in Scala (2.11.8) uses the following technology stack:
