@@ -11,15 +11,15 @@ The current project version is 2.5.1: [HAT 2.5.1](https://github.com/Hub-of-all-
 
 ## About the project
 
-Hub-of-All-Things is a platform for a Multi-Sided Market powered by the Internet of Things.
+Hub-of-All-Things is a HAT Microserver for individuals to own, control and share fheir data
 
-A Personal Data Management System (“the HAT”) is a personal single tenant (“the individual self”) technology system that is fully individual self-service, to enable an individual to define a full set of “meta-data” defining as a specific set of personal data, personal preferences, personal behaviour events. The HAT allows individuals to share the right information (quality and quantity), with the right people, in the right situations for the right purposes and gain the benefits.
+A Personal Microserver (“the HAT”) is a personal single tenant (“the individual self”) technology system that is fully individual self-service, to enable an individual to define a full set of “meta-data” defining as a specific set of personal data, personal preferences, personal behaviour events. The HAT enables individuals to share the right information (quality and quantity), with the right people, in the right situations for the right purposes and gain the benefits.
 
 [![PhD Comics explains the HAT](http://img.youtube.com/vi/y1txYjoSQQc/0.jpg)](http://www.youtube.com/watch?v=y1txYjoSQQc)
 
 ## Technology stack
 
-This HAT PDS implementation is written in Scala (2.11.8) uses the following technology stack:
+This HAT Microserver implementation is written in Scala (2.11.8) uses the following technology stack:
 
 - PostgreSQL relational database (version 9.5)
 - Play Framework (version 2.6.6)
