@@ -65,7 +65,8 @@ class StatsReporter @Inject() (
   private val dexClient = new DexClient(
     wsClient,
     configuration.underlying.getString("exchange.address"),
-    configuration.underlying.getString("exchange.scheme"))
+    configuration.underlying.getString("exchange.scheme"),
+    "v1.1")
   //  val defaultSsslConfig = AkkaSSLConfig()
 
   def reportStatistics(stats: Seq[DataStats])(implicit server: HatServer): Future[Done] = {

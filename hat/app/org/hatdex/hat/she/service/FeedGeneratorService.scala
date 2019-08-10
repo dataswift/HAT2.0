@@ -33,6 +33,7 @@ import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.models.applications.{ DataFeedItem, DataFeedItemLocation, LocationGeo }
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.resourceManagement.HatServer
+import org.hatdex.hat.she.mappers._
 import org.hatdex.hat.utils.{ SourceAugmenter, SourceMergeSorter }
 import org.joda.time.DateTime
 import play.api.Logger
@@ -67,7 +68,8 @@ class FeedGeneratorService @Inject() ()(
     "notables/feed" → new NotablesFeedMapper(),
     "spotify/feed" → new SpotifyFeedMapper(),
     "monzo/transactions" → new MonzoTransactionMapper(),
-    "instagram/feed" → new InstagramMediaMapper())
+    "instagram/feed" → new InstagramMediaMapper(),
+    "uber/rides" -> new UberRidesMapper())
 
   private val insightMappers: Seq[(String, DataEndpointMapper)] = Seq(
     "she/activity-records" → new InsightsMapper(),

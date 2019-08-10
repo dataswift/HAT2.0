@@ -25,7 +25,7 @@
 package org.hatdex.hat.she.functions
 
 import org.hatdex.hat.api.models.FilterOperator.Between
-import org.hatdex.hat.she.service._
+import org.hatdex.hat.she.mappers._
 import org.joda.time.{ DateTime, DateTimeUtils }
 import org.specs2.mock.Mockito
 import org.specs2.specification.BeforeAfterAll

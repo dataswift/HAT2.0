@@ -51,7 +51,8 @@ class TrustedApplicationProviderDex @Inject() (
   private val dexClient = new DexClient(
     wsClient,
     configuration.underlying.getString("exchange.address"),
-    configuration.underlying.getString("exchange.scheme"))
+    configuration.underlying.getString("exchange.scheme"),
+    "v1.1")
 
   private val includeUnpublished: Boolean = configuration.getOptional[Boolean]("exchange.beta").getOrElse(false)
 
