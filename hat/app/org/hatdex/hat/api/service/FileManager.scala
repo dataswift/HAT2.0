@@ -37,7 +37,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 trait FileManager {
-  def getUploadUrl(filename: String)(implicit hatServer: HatServer): Future[String]
+  def getUploadUrl(filename: String, maybeContentType: Option[String])(implicit hatServer: HatServer): Future[String]
   def getContentUrl(filename: String)(implicit hatServer: HatServer): Future[String]
   def getFileSize(fileName: String)(implicit hatServer: HatServer): Future[Long]
   def deleteContents(filename: String)(implicit hatServer: HatServer): Future[Unit]
@@ -71,7 +71,7 @@ class FileManagerS3 @Inject() (
   private val logger = Logger(this.getClass)
   private val bucketName = awsS3Configuration.bucketName
 
-  def getUploadUrl(fileName: String)(implicit hatServer: HatServer): Future[String] = {
+  def getUploadUrl(fileName: String, maybeContentType: Option[String])(implicit hatServer: HatServer): Future[String] = {
     val expiration = org.joda.time.DateTime.now().plus(awsS3Configuration.signedUrlExpiry.toMillis)
 
     val generatePresignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, s"${hatServer.domain}/$fileName")
@@ -79,7 +79,12 @@ class FileManagerS3 @Inject() (
       .withExpiration(expiration.toDate)
       .withSSEAlgorithm(SSEAlgorithm.AES256)
 
-    val url = Future(s3client.generatePresignedUrl(generatePresignedUrlRequest))
+    // TODO: to be replaced with mandatory validated content MIME type in API v2.7
+    val generatePresignedUrlRequestWithContent = maybeContentType.map { contentType =>
+      generatePresignedUrlRequest.withContentType(contentType)
+    }.getOrElse(generatePresignedUrlRequest)
+
+    val url = Future(s3client.generatePresignedUrl(generatePresignedUrlRequestWithContent))
     url.map(_.toString)
   }
 

@@ -364,8 +364,8 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
 }
 
 trait FilesContext extends HATTestContext {
-  val hatFileSimple = ApiHatFile(Some("testFile"), "testFile", "test", None, None, None, None, None, None, Some(HatFileStatus.New()))
-  val hatFileSimpleComplete = ApiHatFile(Some("testFile"), "testFile", "test", None, None, None, None, None, None, Some(HatFileStatus.Completed(123456L)))
-  val hatFileSimpleCompletePublic = ApiHatFile(Some("testFile"), "testFile", "test", None, None, None, None, None, None, Some(HatFileStatus.Completed(123456L)), None, Some(true))
-  val hatFileSimplePng = ApiHatFile(Some("testtestFile.png"), "testFile.png", "test", None, None, None, None, None, None, Some(HatFileStatus.New()))
+  val hatFileSimple = ApiHatFile(Some("testFile"), "testFile", "test", None, None, None, None, None, None, Some(HatFileStatus.New()), None, None)
+  val hatFileSimpleComplete = ApiHatFile(Some("testFile"), "testFile", "test", None, None, None, None, None, None, Some(HatFileStatus.Completed(123456L)), None, None)
+  val hatFileSimpleCompletePublic = ApiHatFile(Some("testFile"), "testFile", "test", None, None, None, None, None, None, Some(HatFileStatus.Completed(123456L)), None, None, Some(true))
+  val hatFileSimplePng = ApiHatFile(Some("testtestFile.png"), "testFile.png", "test", None, None, None, None, None, None, Some(HatFileStatus.New()), None, None)
 }

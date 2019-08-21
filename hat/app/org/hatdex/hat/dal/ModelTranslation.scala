@@ -107,7 +107,7 @@ object ModelTranslation {
     ApiHatFile(Some(hatFileRow.id), hatFileRow.name, hatFileRow.source,
       Some(hatFileRow.dateCreated.toDateTime), Some(hatFileRow.lastUpdated.toDateTime),
       hatFileRow.tags, hatFileRow.title, hatFileRow.description, hatFileRow.sourceUrl,
-      Some(hatFileRow.status.as[HatFileStatus.Status]), None, Some(hatFileRow.contentPublic), None)
+      Some(hatFileRow.status.as[HatFileStatus.Status]), None, None, Some(hatFileRow.contentPublic), None)
   }
 
   def fromDbModel(hatFileAccessRow: HatFileAccessRow): ApiHatFilePermissions = {
