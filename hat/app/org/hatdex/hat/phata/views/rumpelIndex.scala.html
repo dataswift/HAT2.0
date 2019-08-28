@@ -38,6 +38,10 @@
         <link rel="stylesheet" type="text/css" href="@assets.path("stylesheets/styles.bundle.css")">
         <link rel="icon" type="image/x-icon" href="@assets.path("favicon.ico")">
         <style>
+            body {
+              background-color: #f6f6f6;
+            }
+
             .loading {
               position: absolute;
               top: 50%;
@@ -45,55 +49,13 @@
               height: 200px;
               width: 200px;
               margin: -100px 0 0 -100px;
+              text-align: center;
             }
 
-            .loading-spinner,
-            .loading-spinner::before,
-            .loading-spinner::after {
-              border: 2px solid rgba(74, 85, 107, 0.6);
-              -webkit-border-radius: 999px;
-              -moz-border-radius: 999px;
-              border-radius: 999px;
-            }
-
-            .loading-spinner {
-                margin: 20px auto;
-                height: 75px;
-                width: 75px;
-                border-radius: 75px;
-                border-width: 2px;
-                border-style: solid;
-                background-image: linear-gradient(#eee, #eee), linear-gradient(rgba(74, 85, 107, 1), rgba(74, 85, 107, 0));
-                background-origin: border-box;
-                background-clip: content-box, border-box;
-                -webkit-animation: animation-rotate 1250ms linear infinite;
-                -moz-animation: animation-rotate 1250ms linear infinite;
-                -o-animation: animation-rotate 1250ms linear infinite;
-                animation: animation-rotate 1250ms linear infinite;
-            }
-
-            @@-webkit-keyframes animation-rotate {
-            100% {
-                -webkit-transform: rotate(360deg);
-            }
-            }
-
-            @@-moz-keyframes animation-rotate {
-            100% {
-                -moz-transform: rotate(360deg);
-            }
-            }
-
-            @@-o-keyframes animation-rotate {
-            100% {
-                -o-transform: rotate(360deg);
-            }
-            }
-
-            @@keyframes animation-rotate {
-            100% {
-                transform: rotate(360deg);
-            }
+            .drp-spinner {
+              margin: 20px auto;
+              height: 75px;
+              width: 75px;
             }
 
             .loading-text {
@@ -106,10 +68,10 @@
     </head>
     <body>
         <rum-app>
-        <div class="loading">
-            <div class="loading-spinner"></div>
-            <div class="loading-text">Loading... Please refresh if you see this screen for more than a few seconds.</div>
-        </div>
+          <div class="loading">
+              <img class="drp-spinner" src="@assets.path("icons/drp-navy-spinner.gif")" alt="HAT - Data Rights Protected" />
+              <div class="loading-text">Loading your dashboard... Please refresh if you see this screen for more than a few seconds.</div>
+          </div>
         </rum-app>
     </body>
 
