@@ -80,12 +80,12 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
           case Seq(head, tail) ⇒
 
             val record = mapDataRecord(head.recordId.get, head.data, tail.recordId, Some(tail.data))
-            logger.warn(s"record is $record")
+            logger.debug(s"record is $record")
             record
           case Seq(item) ⇒
 
             val record = mapDataRecord(item.recordId.get, item.data)
-            logger.warn(s"record is $record")
+            logger.debug(s"record is $record")
             record
         }
         .collect({

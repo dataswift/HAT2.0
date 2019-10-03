@@ -24,7 +24,7 @@ class UberRidesMapper extends DataEndpointMapper {
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
-    logger.warn(s"uber content: $content")
+    logger.debug(s"uber content: $content")
     for {
       distance <- Try((content \ "distance").asOpt[Double].getOrElse(0.doubleValue()).toString)
       startDate <- Try(new DateTime((content \ "start_time").as[Long] * 1000.longValue()))
