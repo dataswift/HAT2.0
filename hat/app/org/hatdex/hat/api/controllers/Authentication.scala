@@ -343,14 +343,15 @@ class Authentication @Inject() (
   }
 
   private def updateHatMembership(claim: HatClaimCompleteRequest): Future[Done] = {
-    val path = "api/products/hat/claim"
+    val path = "api/services/daas/claim"
     val hattersUrl = s"${configuration.underlying.getString("hatters.scheme")}${configuration.underlying.getString("hatters.address")}"
+    val hattersClaimPayload = HattersClaimPayload(claim)
 
     logger.info(s"Proxy POST request to $hattersUrl/$path with parameters: $claim")
 
     val futureResponse = wsClient.url(s"$hattersUrl/$path")
       //.withHttpHeaders("x-auth-token" → token.accessToken)
-      .post(Json.toJson(claim.copy(password = "")))
+      .post(Json.toJson(hattersClaimPayload))
 
     futureResponse.flatMap { response =>
       response.status match {
