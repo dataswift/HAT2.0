@@ -42,7 +42,7 @@ class FileManagerS3Spec(implicit ee: ExecutionEnv) extends PlaySpecification wit
   "The `getUploadUrl` method" should {
     "return a signed url for a provided key" in {
       val fileManager = application.injector.instanceOf[FileManager]
-      val result: Future[String] = fileManager.getUploadUrl("testFile")
+      val result: Future[String] = fileManager.getUploadUrl("testFile", None)
 
       result must startWith("https://hat-storage-test.s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile").await
     }

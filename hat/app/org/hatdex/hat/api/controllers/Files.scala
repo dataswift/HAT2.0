@@ -62,7 +62,7 @@ class Files @Inject() (
       val eventualUploadUrl = for {
         fileWithId <- fileMetadataService.getUniqueFileId(cleanFile)
         savedFile <- fileMetadataService.save(fileWithId)
-        uploadUrl <- fileManager.getUploadUrl(fileWithId.fileId.get)
+        uploadUrl <- fileManager.getUploadUrl(fileWithId.fileId.get, fileWithId.contentType)
         _ <- fileMetadataService.grantAccess(savedFile, request.identity, content = true)
         file <- fileMetadataService.getById(savedFile.fileId.get).map(_.get)
       } yield (file, uploadUrl)

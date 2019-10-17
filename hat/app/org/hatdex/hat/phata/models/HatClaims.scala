@@ -45,7 +45,21 @@ case class HatClaimCompleteRequest(
     hatCluster: String,
     password: String)
 
+case class HattersClaimPayload(
+    email: String,
+    termsAgreed: Boolean,
+    sandbox: Boolean,
+    platform: String,
+    newsletterOptin: Option[Boolean],
+    hatName: String,
+    hatCluster: String)
+
 object HatClaimCompleteRequest {
   implicit val hatClaimRequestReads: Reads[HatClaimCompleteRequest] = Json.reads[HatClaimCompleteRequest]
-  implicit val HatClaimRequestWrites: Writes[HatClaimCompleteRequest] = Json.format[HatClaimCompleteRequest]
+}
+
+object HattersClaimPayload {
+  def apply(claim: HatClaimCompleteRequest): HattersClaimPayload = new HattersClaimPayload(
+    claim.email, claim.termsAgreed, claim.hatCluster == "hubat.net", "web", Some(claim.optins.nonEmpty), claim.hatName, claim.hatCluster)
+  implicit val HatClaimRequestWrites: Writes[HattersClaimPayload] = Json.format[HattersClaimPayload]
 }
