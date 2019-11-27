@@ -6,6 +6,7 @@ email.question=Masz pytanie?
 email.dataswift.copyright=Copyright © 2019 Dataswift Ltd,
 email.dataswift.allRightsReserved=Wszelkie prawa zastrzeżone.
 
+email.hatclaim.subject=Hello from {0}
 email.hatClaim.title={0} wita Cię na Twoim koncie danych osobowych HAT
 email.hatClaim.hatPdaCreated=Konto danych osobowych HAT z ww. adresem URL utworzono na żądanie
 email.hatClaim.safePlace.title=Bezpieczne miejsce Twoich danych

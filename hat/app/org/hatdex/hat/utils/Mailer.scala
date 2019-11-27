@@ -112,8 +112,8 @@ class HatMailerImpl @Inject() (
 
   def claimHat(email: String, claimLink: String, maybePartnerDetails: Option[(String, String)])(implicit m: MessagesApi, l: Lang, server: HatServer): Done = {
     sendEmail(email)(
-      from = emailFrom,
-      subject = m("mail.hatclaim.subject"),
+      from = "pda@hubofallthings.net",
+      subject = m("email.hatclaim.subject", maybePartnerDetails.map(_._1).getOrElse("")),
       bodyHtml = views.html.mails.emailHatClaim(server.domain, claimLink, maybePartnerDetails),
       bodyText = views.txt.mails.emailHatClaim(server.domain, claimLink, maybePartnerDetails.map(_._1)).toString())
     Done
