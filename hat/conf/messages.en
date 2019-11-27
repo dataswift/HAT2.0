@@ -1,0 +1,29 @@
+#
+# Copyright (C) HAT Data Exchange Ltd - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+# Written by Augustinas Markevicius <augustinas.markevicius@dataswift.io>, 11 2019
+#
+
+email.welcome.title=Welcome to HAT
+email.welcome.getStarted.title=Get started
+email.welcome.dataRights.title=Your data rights are protected
+email.welcome.dataRights.description=This icon appears every time you access your HAT Personal Data Account and whenever you do data transactions with your HAT. HAT data rights protection ensures your HAT PDA is always secure and that the rights to your data are preserved.
+email.welcome.community.title=Join the community
+email.welcome.community.description=Help us grow a community of HAT owners claiming, controlling and sharing our data. Spread the word, and encourage new apps and new services to be built for your HAT. Do share your experiences with us!
+email.welcome.issuedBy=Your HAT PDA was issued by
+
+email.hatClaim.title={0} welcomes you to your HAT Personal Data Account
+email.hatClaim.hatPdaCreated=A HAT personal data account with the above URL has been created at the request of
+email.hatClaim.safePlace.title=A safe place for your data
+email.hatClaim.safePlace.description=Your HAT personal data account is where you can safely store and legally own all the data within.
+email.hatClaim.haveFun.title=Have fun with your HAT
+email.hatClaim.activateWithinDays=Activate your account within 7 days* to view your digital memories, see where you have travelled and claim more of your data from the Internet.
+email.hatClaim.getStartedNow=Get started now
+email.hatClaim.offerExpire=* If you don’t activate your HAT within 7 days, the offer will expire.
+
+email.dataswift.companyName=Dataswift Ltd
+email.dataswift.address=8 Comberton Road, Cambridge, CB23 7BA
+email.question=Have a question?
+email.dataswift.copyright=Copyright © 2019 Dataswift Ltd,
+email.dataswift.allRightsReserved=All rights reserved.

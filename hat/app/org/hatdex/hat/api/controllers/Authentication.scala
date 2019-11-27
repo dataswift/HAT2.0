@@ -43,6 +43,7 @@ import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
 import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer }
 import play.api.{ Configuration, Logger }
 import play.api.cache.{ Cached, CachedBuilder }
+import play.api.i18n.Lang
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.{ Action, _ }
@@ -234,7 +235,8 @@ class Authentication @Inject() (
   /**
    * Sends an email to the owner with a link to claim the hat
    */
-  def handleClaimStart(): Action[ApiClaimHatRequest] = UserAwareAction.async(parsers.json[ApiClaimHatRequest]) { implicit request =>
+  def handleClaimStart(lang: Option[String]): Action[ApiClaimHatRequest] = UserAwareAction.async(parsers.json[ApiClaimHatRequest]) { implicit request =>
+    implicit val language: Lang = Lang.get(lang.getOrElse("en")).getOrElse(Lang.defaultLang)
 
     val claimHatRequest = request.body
     val email = request.dynamicEnvironment.ownerEmail
@@ -246,7 +248,7 @@ class Authentication @Inject() (
           applicationsService.applicationStatus()(request.dynamicEnvironment, user, request).flatMap { applications =>
             val maybeApplication = applications.find(_.application.id.equals(claimHatRequest.applicationId))
             val maybeAppDetails = maybeApplication.map { app =>
-              ((app.application.developer.name, app.application.developer.logo.map(_.normal).getOrElse("#")),
+              ((app.application.info.name, app.application.info.graphics.logo.normal),
                 (app.application.id, app.application.info.version.toString))
             }
 

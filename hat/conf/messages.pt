@@ -1,0 +1,16 @@
+email.dataswift.companyName=Dataswift Ltd
+email.welcome.issuedBy=Your HAT PDA was issued by
+
+email.dataswift.address=8 Comberton Road, Cambridge, CB23 7BA
+email.question=Tem alguma questão?
+email.dataswift.copyright=Direitos de autor © 2019 Dataswift Ltd,
+email.dataswift.allRightsReserved=Todos os direitos reservados.
+
+email.hatClaim.title={0} dá-lhe as boas-vindas à sua Conta de Dados Pessoais HAT
+email.hatClaim.hatPdaCreated=Foi criada uma conta de dados pessoas HAT, com o URL acima, a pedido de
+email.hatClaim.safePlace.title=Um lugar seguro para os seus dados
+email.hatClaim.safePlace.description=A sua conta de dados pessoais HAT é o local onde pode, de forma segura, armazenar os seus dados, mantendo propriedade legal sobre todos eles.
+email.hatClaim.haveFun.title=Divirta-se com o seu HAT
+email.hatClaim.activateWithinDays=Ative a sua conta dentro de 7 dias* para ver as suas memórias digitais, ver por onde viajou e resgatar mais dados seus a partir da Internet.
+email.hatClaim.getStartedNow=Começar agora
+email.hatClaim.offerExpire=* Se não ativar o seu HAT no espaço de 7 dias, esta oferta irá expirar.
