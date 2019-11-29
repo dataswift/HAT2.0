@@ -261,7 +261,7 @@ class Authentication @Inject() (
 
             tokenService.retrieve(email, isSignup = true).flatMap {
               case Some(existingTokenUser) if !existingTokenUser.isExpired =>
-                val claimLink = s"$scheme${request.host}/#/hat/claim/${existingTokenUser.id}?email=${URLEncoder.encode(email, "UTF-8")}"
+                val claimLink = s"$scheme${request.host}/hat/claim/${existingTokenUser.id}?email=${URLEncoder.encode(email, "UTF-8")}"
                 mailer.claimHat(email, claimLink, maybeAppDetails.map(_._1))
 
                 Future.successful(response)
@@ -281,7 +281,7 @@ class Authentication @Inject() (
                     }
                 } yield {
 
-                  val claimLink = s"$scheme${request.host}/#/hat/claim/${token.id}?email=${URLEncoder.encode(email, "UTF-8")}"
+                  val claimLink = s"$scheme${request.host}/hat/claim/${token.id}?email=${URLEncoder.encode(email, "UTF-8")}"
                   mailer.claimHat(email, claimLink, maybeAppDetails.map(_._1))
 
                   response
