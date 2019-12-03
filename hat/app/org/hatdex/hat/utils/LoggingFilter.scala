@@ -52,7 +52,7 @@ class LoggingFilter @Inject() (
     implicit
     ec: ExecutionContext,
     val mat: Materializer) extends Filter {
-  val logger = Logger("http")
+  private val logger = Logger("api")
 
   def apply(nextFilter: RequestHeader => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
 
@@ -65,8 +65,8 @@ class LoggingFilter @Inject() (
       .map { result =>
         val active = hatCounter.get()
         val requestTime = System.currentTimeMillis - startTime
-        logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}${requestHeader.uri}] " +
-          s"[${result.header.status}] TIME [$requestTime]ms HATs [$active] ${tokenInfo(requestHeader)}")
+        logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}:${requestHeader.uri}] " +
+          s"[${result.header.status}] [$requestTime:ms] [hats:$active] ${tokenInfo(requestHeader)}")
 
         result.withHeaders("Request-Time" -> requestTime.toString)
       }
@@ -80,9 +80,9 @@ class LoggingFilter @Inject() (
       .flatMap(t ⇒ Try(JWSObject.parse(t)).toOption)
       .map(o ⇒ JWTClaimsSet.parse(o.getPayload.toJSONObject))
       .map { claimSet =>
-        s"[${Option(claimSet.getStringClaim("application")).getOrElse("api")}]@" +
-          s"[${Option(claimSet.getStringClaim("applicationVersion")).getOrElse("_")}]"
+        s"[${Option(claimSet.getStringClaim("application")).getOrElse("api")}@" +
+          s"${Option(claimSet.getStringClaim("applicationVersion")).getOrElse("_")}]"
       }
-      .getOrElse("[unauthenticated]@[_]")
+      .getOrElse("[unauthenticated@_]")
   }
 }
