@@ -41,7 +41,7 @@
         <appender-ref ref="ASYNCCONSOLE" />
     </root>
 
-    <logger name="http" level="INFO" additivity="false" >
+    <logger name="api" level="INFO" additivity="false" >
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
     <logger name="akka" level="WARN" >
