@@ -24,13 +24,13 @@
 package org.hatdex.hat.phata.controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import controllers.{ AssetsFinder, AssetsFinderProvider }
+import controllers.{ Assets, AssetsFinder, AssetsFinderProvider }
 import javax.inject.Inject
 import org.hatdex.hat.api.json.{ HatJsonFormats, RichDataJsonFormats }
 import org.hatdex.hat.api.models.EndpointDataBundle
 import org.hatdex.hat.api.service.richData.{ RichBundleService, RichDataService }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
-import org.hatdex.hat.phata.{ views ⇒ phataViews }
+import org.hatdex.hat.phata.{ views => phataViews }
 import play.api.cache.{ Cached, CachedBuilder }
 import play.api.libs.json.Json
 import play.api.mvc._
@@ -41,6 +41,7 @@ import scala.concurrent.Future
 
 class Phata @Inject() (
     components: ControllerComponents,
+    assets: Assets,
     assetsFinder: AssetsFinderProvider,
     cached: Cached,
     configuration: Configuration,
@@ -48,7 +49,7 @@ class Phata @Inject() (
     bundleService: RichBundleService,
     dataService: RichDataService) extends HatApiController(components, silhouette) with HatJsonFormats with RichDataJsonFormats {
 
-  implicit val assets: AssetsFinder = assetsFinder.get
+  implicit val af: AssetsFinder = assetsFinder.get
 
   private val logger = Logger(this.getClass)
 
@@ -69,8 +70,13 @@ class Phata @Inject() (
     UserAwareAction.async { implicit request =>
       val rumpelConfigScript = s"""var httpProtocol = "${if (request.secure) { "https" } else { "http" }}:";"""
 
-      Future.successful(Ok(phataViews.html.rumpelIndex(rumpelConfigScript, assets)))
+      Future.successful(Ok(phataViews.html.rumpelIndex(rumpelConfigScript, af)))
     }
+  }
+
+  def altRumpelIndex(claimToken: String): EssentialAction = {
+    logger.debug(s"Current claim token $claimToken")
+    assets.at("index.html")
   }
 
   def profile: Action[AnyContent] = UserAwareAction.async { implicit request =>

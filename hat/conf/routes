@@ -2,6 +2,7 @@
 GET         /                                                    org.hatdex.hat.phata.controllers.Phata.rumpelIndex
 GET         /assets/*file                                        controllers.Assets.at(file)
 GET         /hatlogin                                            org.hatdex.hat.phata.controllers.Phata.hatLogin(name: String, redirect: String)
+GET         /hat/claim/:claimToken                               org.hatdex.hat.phata.controllers.Phata.altRumpelIndex(claimToken: String)
 GET         /.well-known/apple-app-site-association              org.hatdex.hat.phata.controllers.WellKnown.appleAppSiteAssociation
 
 # USER Routes
@@ -25,7 +26,7 @@ GET         /control/v2/auth/hatlogin                            org.hatdex.hat.
 POST        /control/v2/auth/password                            org.hatdex.hat.api.controllers.Authentication.passwordChangeProcess
 POST        /control/v2/auth/passwordReset                       org.hatdex.hat.api.controllers.Authentication.handleForgotPassword
 POST        /control/v2/auth/passwordreset/confirm/:token        org.hatdex.hat.api.controllers.Authentication.handleResetPassword(token: String)
-POST        /control/v2/auth/claim                               org.hatdex.hat.api.controllers.Authentication.handleClaimStart
+POST        /control/v2/auth/claim                               org.hatdex.hat.api.controllers.Authentication.handleClaimStart(lang: Option[String])
 POST        /control/v2/auth/claim/complete/:claimToken          org.hatdex.hat.api.controllers.Authentication.handleClaimComplete(claimToken: String)
 
 ->          /api/v2                                              v20.Routes

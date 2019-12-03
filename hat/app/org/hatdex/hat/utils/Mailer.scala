@@ -31,7 +31,7 @@ import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.phata.views
 import org.hatdex.hat.resourceManagement.HatServer
-import play.api.i18n.Messages
+import play.api.i18n.{ Lang, Messages, MessagesApi }
 import play.api.libs.mailer.{ Email, MailerClient }
 import play.api.mvc.RequestHeader
 import play.api.{ Configuration, UsefulException }
@@ -64,7 +64,7 @@ trait HatMailer extends Mailer {
   def passwordReset(email: String, user: HatUser, resetLink: String)(implicit m: Messages, server: HatServer): Done
   def passwordChanged(email: String, user: HatUser)(implicit m: Messages, server: HatServer): Done
 
-  def claimHat(email: String, claimLink: String, maybePartnerDetails: Option[(String, String)])(implicit m: Messages, server: HatServer): Done
+  def claimHat(email: String, claimLink: String, maybePartnerDetails: Option[(String, String)])(implicit m: MessagesApi, l: Lang, server: HatServer): Done
 }
 
 class HatMailerImpl @Inject() (
@@ -110,10 +110,10 @@ class HatMailerImpl @Inject() (
     Done
   }
 
-  def claimHat(email: String, claimLink: String, maybePartnerDetails: Option[(String, String)])(implicit m: Messages, server: HatServer): Done = {
+  def claimHat(email: String, claimLink: String, maybePartnerDetails: Option[(String, String)])(implicit m: MessagesApi, l: Lang, server: HatServer): Done = {
     sendEmail(email)(
-      from = emailFrom,
-      subject = s"HAT ${server.domain} - Claim your HAT!",
+      from = "pda@hubofallthings.net",
+      subject = m("email.hatclaim.subject", maybePartnerDetails.map(_._1).getOrElse("")),
       bodyHtml = views.html.mails.emailHatClaim(server.domain, claimLink, maybePartnerDetails),
       bodyText = views.txt.mails.emailHatClaim(server.domain, claimLink, maybePartnerDetails.map(_._1)).toString())
     Done
