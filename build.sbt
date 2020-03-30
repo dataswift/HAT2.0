@@ -53,6 +53,7 @@ lazy val hat = project
       case BuildEnv.Stage | BuildEnv.Production =>
         libraryDependencies.value.map(excludeSpecs2)
     }),
+    libraryDependencies += "org.codehaus.janino" % "janino" % "3.1.2",
     pipelineStages in Assets := Seq(digest),
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     aggregate in update := false,
