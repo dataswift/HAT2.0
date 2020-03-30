@@ -27,7 +27,7 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val crossScala = Seq("2.12.6")
+    val crossScala = Seq("2.12.11")
     val scalaVersion = crossScala.head
   }
 
@@ -36,7 +36,7 @@ object Dependencies {
     "Atlassian Releases" at "https://maven.atlassian.com/public/",
     Resolver.bintrayRepo("scalaz", "releases"),
     Resolver.sonatypeRepo("snapshots"),
-    "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com",
+    //"HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com",
     "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com")
 
   object Library {
