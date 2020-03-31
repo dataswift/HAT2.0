@@ -68,7 +68,7 @@ To launch the HAT, follow these steps:
     ```bash
     > sbt "project hat" "run -Dconfig.resource=dev.conf"
     ```
-5. Go to http://yourname.hat.org:9000
+5. Go to [http://yourname.hat.org:9000](http://yourname.hat.org:9000)
 
 **You're all set!**
 
@@ -81,7 +81,7 @@ or it will just show you the message that the HAT could not be found.
 
 Among other things, the configuration includes:
 
-- host names alongside port numbers of the test HATs (bobtheplumber.hat.org:9000)
+- host names alongside port numbers of the test HATs ([http://yourname.hat.org:9000](http://yourname.hat.org:9000))
 - access credentials used to log in as the owner or restricted platform user into the HAT (the default password is a very unsafe *testing*)
 - database connection details (important if you want to change your database setup above)
 - private and public keys used for token signing and verification  
