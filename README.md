@@ -135,9 +135,9 @@ Uploading the container to a Docker repository is left out
 
 ## Additional information
 
-- API documentation can be found at the [developers' portal](https://developers.hubofallthings.com))
+- API documentation can be found at the [developers' portal](https://developers.hubofallthings.com)
 - [HAT Database Schema](https://github.com/Hub-of-all-Things/hat-database-schema) has been split up into a separate project for easier reuse across different environments.
 
 ## License
 
-[HAT including HAT Schema and API] is licensed under [AGPL - GNU AFFERO GENERAL PUBLIC LICENSE](https://github.com/Hub-of-all-Things/HAT/blob/master/LICENSE/AGPL)
+HAT including HAT Schema and API is licensed under [AGPL - GNU AFFERO GENERAL PUBLIC LICENSE](https://github.com/Hub-of-all-Things/HAT/blob/master/LICENSE/AGPL)
