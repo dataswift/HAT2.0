@@ -81,12 +81,13 @@ class Files @Inject() (
         fileMetadataService.getById(fileId) flatMap {
           case Some(file) if fileContentAccessAllowed(file, maybeAsApplication) =>
             logger.debug(s"Marking $file complete ")
-            val completed = for {
+            val eventuallyCompleted = for {
               fileSize <- fileManager.getFileSize(file.fileId.get)
               completed <- fileMetadataService.save(file.copy(status = Some(HatFileStatus.Completed(fileSize)))) if fileSize > 0
+              _ = completed // Workaround scala/bug#11175 -Ywarn-unused:params false positive
             } yield completed
 
-            completed map { completed =>
+            eventuallyCompleted map { completed =>
               Ok(Json.toJson(completed))
             } recover {
               case e =>

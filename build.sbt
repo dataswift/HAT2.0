@@ -58,6 +58,7 @@ lazy val hat = project
     pipelineStages in Assets := Seq(digest),
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     aggregate in update := false,
+    cancelable in Global := false, // Workaround sbt/bug#4822 Unable to Ctrl-C out of 'run' in a Play app
     testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "exclude", "REMOTE"),
     TwirlKeys.templateImports := Seq(),
     play.sbt.routes.RoutesKeys.routesImport := Seq.empty,

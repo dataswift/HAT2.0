@@ -58,7 +58,7 @@ object Utils {
   }
 
   def mergeMap[A, B](ms: Iterable[HashMap[A, B]])(f: (B, B) => B): HashMap[A, B] =
-    (HashMap[A, B]() /: (for (m <- ms; kv <- m) yield kv)) { (a, kv) =>
+    (for (m <- ms; kv <- m) yield kv).foldLeft(HashMap[A, B]()) { (a, kv) =>
       a + (if (a.contains(kv._1)) kv._1 -> f(a(kv._1), kv._2) else kv)
     }
 
