@@ -27,14 +27,32 @@ This HAT Microserver implementation is written in Scala (2.11.8) uses the follow
 - [Akka](https://akka.io) (version 2.5.4)
 - [Slick](https://scala-slick.org/) as the database access layer (version 3.2.1)
 
-## Running the project
+## Running the project - Either via docker-compose (recommended) or building locally
 
-### Get the Source and the submodules
+### 1. Get the Source and the submodules for both of the methods
 
     > git clone https://github.com/Hub-of-all-Things/HAT2.0.git
     > cd HAT2.0
     > git submodule init 
     > git submodule update
+
+### 2. Configure your /etc/hosts
+
+    ```
+    127.0.0.1   bobtheplumber.hat.org
+    127.0.0.1   bobtheplumber.example.com
+    ```
+
+### 3a. Using docker-compose
+    ```
+    > cd <DIRECTORY_YOU_CHECKED_OUT_INTO>/deployment/docker
+    > docker-compose up
+   ```
+
+When the build finishes, open `https://bobtheplumber.example.com` in a browser.
+
+### 3b. Building locally
+
 
 ### HAT Setup
 
@@ -50,7 +68,7 @@ To run it from source in a development environment two sets of tools are require
 
 To launch the HAT, follow these steps:
 
-1. Create the database:
+1. Create the database, which we assume is available as `localhost`:
     ```bash
     > createdb testhatdb1
     > createuser testhatdb1
@@ -109,6 +127,21 @@ but are initialised with the right schema at start time
 - `hat` section lists all corresponding HAT configurations to serve, here
 you could change the HAT domain name, owner's email address or public/private
 keypair used by the HAT for its token operations
+
+## Using docker-compose
+
+We have put together a [docker-compose](https://docs.docker.com/compose/) file that will allow you to run a PostgreSQL node and a HAT node easily.
+
+
+2. Get the Source and the submodules
+
+    > git clone https://github.com/Hub-of-all-Things/HAT2.0.git
+    > cd HAT2.0
+    > git submodule init 
+    > git submodule update
+ 
+
+
 
 ## Deployment
 

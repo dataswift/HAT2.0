@@ -12,7 +12,7 @@ services:
 
     hat_server:
         image: hubofallthings/hat:v2.6.6
-        ports: ["9000:8080", "8888:8888"]
+        ports: ["9000:9000", "9001:9001"]
         networks: ["sandbox"]
         volumes:
             - .:/code
