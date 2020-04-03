@@ -49,7 +49,7 @@ This HAT Microserver implementation is written in Scala (2.11.8) uses the follow
     > docker-compose up
    ```
 
-When the build finishes, open `https://bobtheplumber.example.com` in a browser.
+When the build finishes, open [`https://bobtheplumber.example.com:9001`](https://bobtheplumber.example.com:9001) in a browser.
 
 ### 3b. Building locally
 
@@ -80,17 +80,17 @@ To launch the HAT, follow these steps:
     ```
 3. Add custom local domain mapping to your `/etc/hosts` file. This will make sure when you go to the defined address from your machine you will be pointed back to your own machine. E.g.:
     ```
-    127.0.0.1   yourname.hat.org
+    127.0.0.1   bobtheplumber.hat.org
     ```
 4. Run the project:
     ```bash
     > sbt "project hat" "run -Dconfig.resource=dev.conf"
     ```
-5. Go to [http://yourname.hat.org:9000](http://yourname.hat.org:9000)
+5. Go to [http://bobtheplumber.hat.org:9000](http://bobtheplumber.hat.org:9000)
 
 **You're all set!**
 
-### Customising development environment
+### Customising your development environment
 
 Your best source of information on how the development environment could
 be customised is the `hat/conf/dev.conf` configuration file. Make sure you
@@ -141,30 +141,6 @@ We have put together a [docker-compose](https://docs.docker.com/compose/) file t
     > git submodule update
  
 
-
-
-## Deployment
-
-HAT is intended to be run inside Docker containers. To build a new container, execute:
-
-```bash
-export REPOSITORY_NAME="hubofallthings"
-./deployment/ecs/docker-aws-deploy.sh
-```
-
-The script is a thin wrapper around a few basic Docker commands. It allows for changing
-the name of the repository you  want to deploy the container to and tags it with the git
-commit fingerprint for the current code version. Otherwise, it could be simplified to:
-
-```bash
-# Scala Build Tool to compile the code and prepare Dockerfile
-sbt "project hat" docker:stage
-
-# Build the Docker container
-docker build -t hubofallthings/hat hat/target/docker/stage
-```
-
-Uploading the container to a Docker repository is left out
 
 ## Additional information
 
