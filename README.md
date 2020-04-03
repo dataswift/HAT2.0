@@ -38,16 +38,15 @@ This HAT Microserver implementation is written in Scala (2.11.8) uses the follow
 
 ### 2. Configure your /etc/hosts
 
-    ```
     127.0.0.1   bobtheplumber.hat.org
     127.0.0.1   bobtheplumber.example.com
-    ```
+    
 
 ### 3a. Using docker-compose
-    ```
+    
     > cd <DIRECTORY_YOU_CHECKED_OUT_INTO>/deployment/docker
     > docker-compose up
-   ```
+   
 
 When the build finishes, open [`https://bobtheplumber.example.com:9001`](https://bobtheplumber.example.com:9001) in a browser.
 
