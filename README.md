@@ -7,7 +7,7 @@ This repository contains an implementation of the [Hub-of-All-Things](http://hub
 
 ## Releases
 
-The current project version is 2.5.1: [HAT 2.5.1](https://github.com/Hub-of-all-Things/HAT2.0/releases/tag/v2.5.1).
+The current project version is 2.6.9: [HAT 2.6.9](https://github.com/Hub-of-all-Things/HAT2.0/releases/tag/v2.6.9).
 
 ## About the project
 
@@ -20,12 +20,12 @@ The HAT enables individuals to share the correct information (quality and quanti
 
 ## Technology stack
 
-This HAT Microserver implementation is written in Scala (2.11.8) uses the following technology stack:
+This HAT Microserver implementation is written in Scala (2.12.11) uses the following technology stack:
 
 - [PostgreSQL](https://www.postgresql.org) relational database (version 9.5)
-- [Play Framework](https://www.playframework.com) (version 2.6.6)
-- [Akka](https://akka.io) (version 2.5.4)
-- [Slick](https://scala-slick.org/) as the database access layer (version 3.2.1)
+- [Play Framework](https://www.playframework.com) (version 2.6)
+- [Akka](https://akka.io) (version 2.5)
+- [Slick](https://scala-slick.org/) as the database access layer (version 3.2)
 
 ## Running the project - Either via docker-compose (recommended) or building locally
 
@@ -49,6 +49,7 @@ This HAT Microserver implementation is written in Scala (2.11.8) uses the follow
    
 
 When the build finishes, open [`https://bobtheplumber.example.com:9001`](https://bobtheplumber.example.com:9001) in a browser.
+Standard account login password is `testing`.
 
 ### 3b. Building locally
 
