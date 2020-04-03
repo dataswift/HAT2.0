@@ -17,3 +17,6 @@ target/
 deployment/docker/docker-deploy
 /deployment/docker/docker-deploy/
 .ensime*
+.bloop
+.metals
+project/metals.sbt

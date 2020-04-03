@@ -53,9 +53,12 @@ lazy val hat = project
       case BuildEnv.Stage | BuildEnv.Production =>
         libraryDependencies.value.map(excludeSpecs2)
     }),
+    libraryDependencies += "org.codehaus.janino" % "janino" % "3.1.2",
+    libraryDependencies += "org.mockito" % "mockito-core" % "3.3.3" % Test,
     pipelineStages in Assets := Seq(digest),
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     aggregate in update := false,
+    cancelable in Global := false, // Workaround sbt/bug#4822 Unable to Ctrl-C out of 'run' in a Play app
     testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "exclude", "REMOTE"),
     TwirlKeys.templateImports := Seq(),
     play.sbt.routes.RoutesKeys.routesImport := Seq.empty,
@@ -71,13 +74,14 @@ lazy val hat = project
   .settings(
     // Use the alternative "Ash" script for running compiled project form inside Alpine-derived container
     // as Bash is incompatible with Alpine
-    javaOptions in Universal ++= Seq("-Dhttp.port=8080"),
+    javaOptions in Universal ++= Seq("-Dapplication.mode=DEV", "-Denv=stage", "-Dhttp.port=9000", "-Dhttps.port=9001", "-Dpidfile.path=/dev/null", "-Dplay.server.pidfile.path=/dev/null", "-Dconfig.resource=docker.conf"),
     packageName in Docker := "hat",
     maintainer in Docker := "andrius.aucinas@hatdex.org",
     version in Docker := version.value,
     dockerExposedPorts := Seq(8080),
     dockerBaseImage := "openjdk:8-jre-alpine",
-    dockerEntrypoint := Seq("bin/hat")
+    dockerEntrypoint := Seq("bin/hat"),
+    dockerChmodType := DockerChmodType.UserGroupWriteExecute
   )
   .enablePlugins(SlickCodeGeneratorPlugin)
   .settings(
@@ -89,3 +93,4 @@ lazy val hat = project
     codegenConfig in gentables := "dev.conf",
     codegenEvolutions in gentables := "devhatMigrations"
   )
+

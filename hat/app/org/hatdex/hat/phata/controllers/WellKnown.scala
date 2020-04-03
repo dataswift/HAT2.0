@@ -31,8 +31,8 @@ import scala.concurrent.Future
 class WellKnown @Inject() (components: ControllerComponents) extends AbstractController(components) {
 
   def appleAppSiteAssociation(): EssentialAction =
-    Action.async { implicit request =>
-      val webcredentials =
+    Action.async { _ =>
+      val webCredentials =
         """
           |{
           |  "applinks": {
@@ -51,6 +51,6 @@ class WellKnown @Inject() (components: ControllerComponents) extends AbstractCon
           |}
         """.stripMargin
 
-      Future.successful(Ok(webcredentials))
+      Future.successful(Ok(webCredentials))
     }
 }

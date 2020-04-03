@@ -83,7 +83,7 @@ class Authentication @Inject() (
     }
   }
 
-  def validateToken(): Action[AnyContent] = SecuredAction.async { implicit request =>
+  def validateToken(): Action[AnyContent] = SecuredAction.async { _ =>
     Future.successful(Ok(Json.toJson(SuccessResponse("Authenticated"))))
   }
 
@@ -91,7 +91,7 @@ class Authentication @Inject() (
     for {
       service <- hatServicesService.findOrCreateHatService(name, redirectUrl)
       linkedService <- hatServicesService.hatServiceLink(request.identity, service, Some(redirectUrl))
-      - <- usersService.logLogin(request.identity, "hatLogin", linkedService.category, Some(name), Some(redirectUrl))
+      _ <- usersService.logLogin(request.identity, "hatLogin", linkedService.category, Some(name), Some(redirectUrl))
     } yield {
       Ok(Json.toJson(SuccessResponse(linkedService.url)))
     }

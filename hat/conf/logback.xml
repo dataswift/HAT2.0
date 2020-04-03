@@ -26,9 +26,13 @@
 <configuration>
     <!--<statusListener class="ch.qos.logback.core.status.NopStatusListener" />-->
 
+    <evaluator name="InvalidLoginExceptionSuppressor">
+      <expression>throwable != null &amp;&amp; throwable instanceof com.amazonaws.services.lambda.model.AWSLambdaException</expression>
+    </evaluator>
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] [%logger{1}] %msg%n</pattern>
+            <pattern>[%-5level] [%date{MM/dd/YYYY HH:mm:ss}] [%logger{1}] %msg %ex{full,InvalidLoginExceptionSuppressor}%n</pattern>
         </encoder>
     </appender>
 
@@ -41,6 +45,7 @@
         <appender-ref ref="ASYNCCONSOLE" />
     </root>
 
+    
     <logger name="api" level="INFO" additivity="false" >
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
@@ -101,6 +106,10 @@
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
 
+    <logger name="org.hatdex.hat.phata.controllers.Phata" level="DEBUG" additivity="false" >
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+    
     <logger name="org.hatdex.hat.she.service.FeedGeneratorService" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
@@ -120,6 +129,7 @@
     <logger name="play.api.libs.ws" level="ERROR" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
+
     <logger name="play.filters.hosts.AllowedHostsFilter" level="ERROR" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
@@ -150,6 +160,19 @@
     <logger name="org.hatdex.hat.api.service.LogService" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
+
+    <logger name="org.hatdex.hat.api.modules.SHEModule" level="OFF" />
+    
+    <!-- <logger name="akka.dispatch.Dispatcher" level="OFF" /> -->
+    
+    <!--
+    <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+      <evaluator>
+        <expression>com.amazonaws.services.lambda.model.AWSLambdaException</expression>
+      </evaluator>
+      <onMatch>DENY</onMatch>
+    </filter>
+    -->
 
     <!--<logger name="slick.jdbc.JdbcBackend.statement" level="INFO">-->
         <!--<appender-ref ref="ASYNCCONSOLE"/>-->
