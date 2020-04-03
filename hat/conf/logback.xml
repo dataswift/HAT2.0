@@ -45,6 +45,7 @@
         <appender-ref ref="ASYNCCONSOLE" />
     </root>
 
+    
     <logger name="api" level="INFO" additivity="false" >
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
@@ -105,6 +106,10 @@
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>
 
+    <logger name="org.hatdex.hat.phata.controllers.Phata" level="DEBUG" additivity="false" >
+        <appender-ref ref="ASYNCCONSOLE"/>
+    </logger>
+    
     <logger name="org.hatdex.hat.she.service.FeedGeneratorService" level="INFO" additivity="false">
         <appender-ref ref="ASYNCCONSOLE" />
     </logger>

@@ -74,13 +74,14 @@ lazy val hat = project
   .settings(
     // Use the alternative "Ash" script for running compiled project form inside Alpine-derived container
     // as Bash is incompatible with Alpine
-    javaOptions in Universal ++= Seq("-Dhttp.port=8080"),
+    javaOptions in Universal ++= Seq("-Dapplication.mode=DEV", "-Denv=stage", "-Dhttp.port=8888", "-Dhttps.port=8080", "-Dpidfile.path=/dev/null", "-Dplay.server.pidfile.path=/dev/null", "-Dconfig.resource=docker.conf"),
     packageName in Docker := "hat",
     maintainer in Docker := "andrius.aucinas@hatdex.org",
     version in Docker := version.value,
     dockerExposedPorts := Seq(8080),
     dockerBaseImage := "openjdk:8-jre-alpine",
-    dockerEntrypoint := Seq("bin/hat")
+    dockerEntrypoint := Seq("bin/hat"),
+    dockerChmodType := DockerChmodType.UserGroupWriteExecute
   )
   .enablePlugins(SlickCodeGeneratorPlugin)
   .settings(
@@ -92,3 +93,4 @@ lazy val hat = project
     codegenConfig in gentables := "dev.conf",
     codegenEvolutions in gentables := "devhatMigrations"
   )
+
