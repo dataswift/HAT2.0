@@ -76,7 +76,7 @@ To launch the HAT, follow these steps:
     ```
 2. Compile the project:
     ```bash
-    > sbt compile
+    > make dev
     ```
 3. Add custom local domain mapping to your `/etc/hosts` file. This will make sure when you go to the defined address from your machine you will be pointed back to your own machine. E.g.:
     ```
@@ -84,9 +84,9 @@ To launch the HAT, follow these steps:
     ```
 4. Run the project:
     ```bash
-    > sbt "project hat" "run -Dconfig.resource=dev.conf"
+    > make run-dev
     ```
-5. Go to [http://bobtheplumber.hat.org:9000](http://bobtheplumber.hat.org:9000)
+5. Go to [http://bobtheplumber.exmaple.com:9000](http://bobtheplumber.example.com:9000)
 
 **You're all set!**
 
@@ -132,15 +132,17 @@ keypair used by the HAT for its token operations
 
 We have put together a [docker-compose](https://docs.docker.com/compose/) file that will allow you to run a PostgreSQL node and a HAT node easily.
 
-
-2. Get the Source and the submodules
+###  Get the Source and the submodules
 
     > git clone https://github.com/Hub-of-all-Things/HAT2.0.git
     > cd HAT2.0
     > git submodule init 
     > git submodule update
- 
+    > cd deployment/docker
+    > docker-compose up
+    > open [https://bobtheplumber.example:9001](https://bobtheplumber.example:9001)
 
+ 
 
 ## Additional information
 
