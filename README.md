@@ -81,12 +81,13 @@ To launch the HAT, follow these steps:
 3. Add custom local domain mapping to your `/etc/hosts` file. This will make sure when you go to the defined address from your machine you will be pointed back to your own machine. E.g.:
     ```
     127.0.0.1   bobtheplumber.hat.org
+    127.0.0.1   bobtheplumber.example.com
     ```
 4. Run the project:
     ```bash
     > make run-dev
     ```
-5. Go to [http://bobtheplumber.exmaple.com:9000](http://bobtheplumber.example.com:9000)
+5. Go to [http://bobtheplumber.example.com:9000](http://bobtheplumber.example.com:9000)
 
 **You're all set!**
 
