@@ -133,12 +133,15 @@ keypair used by the HAT for its token operations
 We have put together a [docker-compose](https://docs.docker.com/compose/) file that will allow you to run a PostgreSQL node and a HAT node easily.
 
 
-2. Get the Source and the submodules
+###  Get the Source and the submodules
 
     > git clone https://github.com/Hub-of-all-Things/HAT2.0.git
     > cd HAT2.0
     > git submodule init 
     > git submodule update
+    > cd deployment/docker
+    > docker-compose up
+    > open https://bobtheplumber.example.com:9001
  
 
 
