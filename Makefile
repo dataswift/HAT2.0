@@ -4,7 +4,11 @@ PROD_DOCKER_SBT_JAVA_OPT="-Denv=prod -Dhttp.port=9000 -Dhttps.port=9001 -Dpidfil
 
 DEV_SBT_JAVA_OPT="-Dapplication.mode=DEV -Denv=stage -Dhttp.port=9000 -Dhttps.port=9001 -Dconfig.resource=dev.conf"
 TEST_SBT_JAVA_OPT="-Dhttp.port=9000 -Dhttps.port=9001 -Dplay.server.pidfile.path=/dev/null -Dconfig.resource=application.test.conf"
-PROD_SBT_JAVA_OPT="-Dhttp.port=9000 -Dhttps.port=9001 -Dplay.server.pidfile.path=/dev/null -Dconfig.resource=application.conf"
+PROD_SBT_JAVA_OPT="-Denv=prod -Dhttp.port=9000 -Dhttps.port=9001 -Dplay.server.pidfile.path=/dev/null -Dconfig.resource=application.conf"
+
+prod:
+	$(info > Running sbt clean.)
+	sbt ${PROD_SBT_JAVA_OPT} compile
 
 
 clean:

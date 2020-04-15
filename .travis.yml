@@ -90,7 +90,7 @@ before_script:
 
 script:
   - make clean # sbt clean
-  - make # sbt ++$TRAVIS_SCALA_VERSION compile
+  - make prod # sbt ++$TRAVIS_SCALA_VERSION compile
   - |
     if [[ "$REPOSITORY_NAME" = "hubat" ]]; then
       # TODO: Update test next
