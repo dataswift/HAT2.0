@@ -61,7 +61,7 @@ class HatServiceProviderSpec(implicit ee: ExecutionEnv) extends PlaySpecificatio
         server.ownerEmail must be equalTo "user@hat.org"
         server.privateKey.getAlgorithm must be equalTo "RSA"
         server.publicKey.getAlgorithm must be equalTo "RSA"
-        there was one(mockLogger).debug(s"Got back server $server")
+        //there was one(mockLogger).debug(s"Got back server $server")
       } await (1, 30.seconds)
     }
 
@@ -81,7 +81,7 @@ class HatServiceProviderSpec(implicit ee: ExecutionEnv) extends PlaySpecificatio
         server.ownerEmail must be equalTo "user@hat.org"
         server.privateKey.getAlgorithm must be equalTo "RSA"
         server.publicKey.getAlgorithm must be equalTo "RSA"
-        there was no(mockLogger).debug(any)(any)
+        //there was no(mockLogger).debug(any)(any)
       }
 
       result await (1, 30.seconds)
