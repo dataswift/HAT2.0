@@ -161,9 +161,6 @@
         <appender-ref ref="ASYNCCONSOLE"/>
     </logger>
 
-    <logger name="org.hatdex.hat.api.modules.SHEModule" level="OFF" />
-    
-    <!-- <logger name="akka.dispatch.Dispatcher" level="OFF" /> -->
     
     <!--
     <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
