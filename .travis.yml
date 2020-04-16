@@ -67,6 +67,8 @@ install:
   - pip install --user awscli
   - export PATH=$PATH:$HOME/.local/bin
 
+# Set up test database and user
+# Copy the frontend assets from S3 to the right location
 before_script:
   - psql -c "CREATE DATABASE testhatdb1;" -U postgres
   - psql -c "CREATE USER testhatdb1 WITH PASSWORD 'testing';" -U postgres
@@ -87,14 +89,16 @@ before_script:
     fi
 
 script:
-  - sbt clean
+  - make clean # sbt clean
+  #- make prod # sbt ++$TRAVIS_SCALA_VERSION compile
   - sbt ++$TRAVIS_SCALA_VERSION compile
   - |
     if [[ "$REPOSITORY_NAME" = "hubat" ]]; then
+      # TODO: Update test next
       sbt ++$TRAVIS_SCALA_VERSION test:compile
       sbt ++$TRAVIS_SCALA_VERSION "project hat" coverage test -Dconfig.file=hat/conf/application.test.conf
     fi
-  - sbt -Denv=prod docker:stage
+  - make docker-prod # sbt -Denv=prod docker:stage
   - docker build -t ${REPOSITORY_NAME}/hat:$(git rev-parse --short HEAD) hat/target/docker/stage
 
 after_success:

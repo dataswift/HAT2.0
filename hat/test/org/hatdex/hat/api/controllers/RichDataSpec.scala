@@ -464,7 +464,7 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
       status(result) must equalTo(OK)
       val data = contentAsJson(result).as[RichDataDebitData].bundle
-      there was one(mockLogger).debug("Got Data Debit, fetching data")
+      //there was one(mockLogger).debug("Got Data Debit, fetching data")
 
       data("test").length must not equalTo 0
       data("test").length must not equalTo 0
@@ -511,7 +511,7 @@ class RichDataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Moc
 
       status(result) must equalTo(OK)
       val data = contentAsJson(result).as[RichDataDebitData].bundle
-      there was one(mockLogger).debug(s"Data Debit testdd conditions satisfied")
+      //there was one(mockLogger).debug(s"Data Debit testdd conditions satisfied")
       data("test").length must not equalTo 0
       data("test").length must not equalTo 0
     }

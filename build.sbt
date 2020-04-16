@@ -54,7 +54,7 @@ lazy val hat = project
         libraryDependencies.value.map(excludeSpecs2)
     }),
     libraryDependencies += "org.codehaus.janino" % "janino" % "3.1.2",
-    libraryDependencies += "org.mockito" % "mockito-core" % "3.3.3" % Test,
+    //libraryDependencies += "org.mockito" % "mockito-core" % "3.3.3" % Test,
     pipelineStages in Assets := Seq(digest),
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     aggregate in update := false,
@@ -74,7 +74,7 @@ lazy val hat = project
   .settings(
     // Use the alternative "Ash" script for running compiled project form inside Alpine-derived container
     // as Bash is incompatible with Alpine
-    javaOptions in Universal ++= Seq("-Dapplication.mode=DEV", "-Denv=stage", "-Dhttp.port=9000", "-Dhttps.port=9001", "-Dpidfile.path=/dev/null", "-Dplay.server.pidfile.path=/dev/null", "-Dconfig.resource=docker.conf"),
+    javaOptions in Universal ++= Seq("-Dpidfile.path=/dev/null", "-Dplay.server.pidfile.path=/dev/null"),
     packageName in Docker := "hat",
     maintainer in Docker := "andrius.aucinas@hatdex.org",
     version in Docker := version.value,
