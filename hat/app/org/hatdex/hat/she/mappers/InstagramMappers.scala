@@ -2,11 +2,11 @@ package org.hatdex.hat.she.mappers
 
 import java.util.UUID
 
-import org.hatdex.hat.api.models.{ EndpointQuery, EndpointQueryFilter, FilterOperator, PropertyQuery }
+import org.hatdex.hat.api.models.{ EndpointQuery, EndpointQueryFilter, PropertyQuery }
 import org.hatdex.hat.api.models.applications.{ DataFeedItem, DataFeedItemContent, DataFeedItemMedia, DataFeedItemTitle }
 import org.hatdex.hat.she.models.StaticDataValues
 import org.joda.time.DateTime
-import play.api.libs.json.{ JsError, JsNumber, JsObject, JsResult, JsSuccess, JsValue, Json, __ }
+import play.api.libs.json.{ JsError, JsNumber, JsObject, JsResult, JsSuccess, JsValue, __ }
 
 import scala.util.Try
 
