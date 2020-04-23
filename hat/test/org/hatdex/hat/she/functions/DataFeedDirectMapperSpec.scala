@@ -143,18 +143,7 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
       transformed.title.get.action.get must be equalTo "image"
       transformed.content.get.text.get must contain("Saturday breakfast magic")
       transformed.content.get.media.get.length must be equalTo 1
-      transformed.content.get.media.get.head.url.get must be startingWith "https://scontent.cdninstagram.com/vp"
-    }
-
-    "translate multiple image carousel posts" in {
-      val mapper = new InstagramMediaMapper()
-      val transformed = mapper.mapDataRecord(exampleMultipleInstagramImages.recordId.get, exampleMultipleInstagramImages.data).get
-      transformed.source must be equalTo "instagram"
-      transformed.title.get.text must contain("You posted")
-      transformed.title.get.action.get must be equalTo "carousel"
-      transformed.content.get.text.get must contain("The beauty of Richmond park...")
-      transformed.content.get.media.get.length must be equalTo 3
-      transformed.content.get.media.get.head.url.get must be startingWith "https://scontent.cdninstagram.com/vp"
+      transformed.content.get.media.get.head.url.get must be startingWith "https://scontent.xx.fbcdn.net/v/"
     }
 
     "create data queries using correct unix timestamp format" in {
@@ -163,10 +152,10 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
       val untilDate = fromDate.plusDays(1)
 
       val propertyQuery = mapper.dataQueries(Some(fromDate), Some(untilDate))
-      propertyQuery.head.orderBy.get must be equalTo "created_time"
+      propertyQuery.head.orderBy.get must be equalTo "timestamp"
       propertyQuery.head.endpoints.head.endpoint must be equalTo "instagram/feed"
-      propertyQuery.head.endpoints.head.filters.get.head.operator.asInstanceOf[Between].lower.as[String] must be equalTo "1525165200"
-      propertyQuery.head.endpoints.head.filters.get.head.operator.asInstanceOf[Between].upper.as[String] must be equalTo "1525251600"
+      propertyQuery.head.endpoints.head.filters.get.head.operator.asInstanceOf[Between].lower.as[String] must be equalTo "2018-05-01T09:00:00Z"
+      propertyQuery.head.endpoints.head.filters.get.head.operator.asInstanceOf[Between].upper.as[String] must be equalTo "2018-05-02T09:00:00Z"
     }
   }
 
@@ -295,4 +284,3 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
   }
 
 }
-
