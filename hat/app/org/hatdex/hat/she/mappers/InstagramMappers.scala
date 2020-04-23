@@ -2,16 +2,18 @@ package org.hatdex.hat.she.mappers
 
 import java.util.UUID
 
-import org.hatdex.hat.api.models.{ EndpointQuery, EndpointQueryFilter, FilterOperator, PropertyQuery }
+import org.hatdex.hat.api.models.{ EndpointQuery, EndpointQueryFilter, PropertyQuery }
 import org.hatdex.hat.api.models.applications.{ DataFeedItem, DataFeedItemContent, DataFeedItemMedia, DataFeedItemTitle }
 import org.hatdex.hat.she.models.StaticDataValues
-import org.joda.time.DateTime
-import play.api.libs.json.{ JsError, JsNumber, JsObject, JsResult, JsSuccess, JsValue, Json, __ }
+import org.joda.time.{ DateTime, DateTimeZone }
+import org.joda.time.format.{ DateTimeFormatter, ISODateTimeFormat }
+import play.api.libs.json.{ JsError, JsNumber, JsObject, JsResult, JsSuccess, JsValue, __ }
 
 import scala.util.Try
 
 class InstagramMediaMapper extends DataEndpointMapper {
   override protected val dataDeduplicationField: Option[String] = Some("id")
+  override val dateTimeFormat: DateTimeFormatter = ISODateTimeFormat.dateTimeNoMillis().withZone(DateTimeZone.forID("GMT"))
 
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
