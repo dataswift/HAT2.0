@@ -6,7 +6,7 @@ import org.hatdex.hat.api.models.{ EndpointQuery, EndpointQueryFilter, PropertyQ
 import org.hatdex.hat.api.models.applications.{ DataFeedItem, DataFeedItemContent, DataFeedItemLocation, DataFeedItemMedia, DataFeedItemTitle, LocationAddress, LocationGeo }
 import org.hatdex.hat.she.models.StaticDataValues
 import org.joda.time.DateTime
-import play.api.libs.json.{ JsError, JsObject, JsSuccess, JsValue }
+import play.api.libs.json.{ JsError, JsObject, JsString, JsSuccess, JsValue }
 
 import scala.util.{ Failure, Try }
 
@@ -226,8 +226,11 @@ class FacebookProfileStaticDataMapper extends StaticDataEndpointMapper {
           }
         }
         else {
-
-          Seq(StaticDataValues(lastPartOfEndpointString, value.filterKeys(key => key != "friends" && key != "languages")))
+          val updatedValue = value.get("location")
+            .flatMap(v => (v \ "name").asOpt[String])
+            .map(locationName => value ++ Map("location" -> JsString(locationName)))
+            .getOrElse(value)
+          Seq(StaticDataValues(lastPartOfEndpointString, updatedValue.filterKeys(key => key != "friends" && key != "languages")))
         }
       case e: JsError =>
         logger.error(s"Couldn't validate static data JSON for $endpoint. $e")
