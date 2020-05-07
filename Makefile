@@ -1,6 +1,6 @@
 # JAVA_OPTS
 DEV_DOCKER_SBT_JAVA_OPT="-Dapplication.mode=DEV -Denv=stage -Dhttp.port=9000 -Dhttps.port=9001 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null -Dconfig.resource=docker.conf"
-PROD_DOCKER_SBT_JAVA_OPT="-Denv=prod -Dhttp.port=9000 -Dhttps.port=9001 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null -Dconfig.resource=docker.conf"
+PROD_DOCKER_SBT_JAVA_OPT="-Denv=prod -Dhttp.port=9000 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null -Dconfig.resource=application.conf"
 
 DEV_SBT_JAVA_OPT="-Dapplication.mode=DEV -Denv=stage -Dhttp.port=9000 -Dhttps.port=9001 -Dconfig.resource=dev.conf"
 TEST_SBT_JAVA_OPT="-Dhttp.port=9000 -Dhttps.port=9001 -Dplay.server.pidfile.path=/dev/null -Dconfig.resource=application.test.conf"
