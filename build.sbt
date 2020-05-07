@@ -72,6 +72,7 @@ lazy val hat = project
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(AshScriptPlugin)
   .settings(
+    
     // Use the alternative "Ash" script for running compiled project form inside Alpine-derived container
     // as Bash is incompatible with Alpine
     javaOptions in Universal ++= Seq("-Dpidfile.path=/dev/null", "-Dplay.server.pidfile.path=/dev/null"),
