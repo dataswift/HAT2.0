@@ -135,9 +135,32 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
   }
 
   "The `InstagramMediaMapper` class" should {
-    "translate single image posts" in {
+
+    "translate single image posts using v1 API" in {
       val mapper = new InstagramMediaMapper()
-      val transformed = mapper.mapDataRecord(exampleInstagramImage.recordId.get, exampleInstagramImage.data).get
+      val transformed = mapper.mapDataRecord(exampleInstagramImagev1.recordId.get, exampleInstagramImagev1.data).get
+      transformed.source must be equalTo "instagram"
+      transformed.title.get.text must contain("You posted")
+      transformed.title.get.action.get must be equalTo "image"
+      transformed.content.get.text.get must contain("Saturday breakfast magic")
+      transformed.content.get.media.get.length must be equalTo 1
+      transformed.content.get.media.get.head.url.get must be startingWith "https://scontent.cdninstagram.com/vp"
+    }
+
+    "translate multiple image carousel posts using v1 API" in {
+      val mapper = new InstagramMediaMapper()
+      val transformed = mapper.mapDataRecord(exampleMultipleInstagramImages.recordId.get, exampleMultipleInstagramImages.data).get
+      transformed.source must be equalTo "instagram"
+      transformed.title.get.text must contain("You posted")
+      transformed.title.get.action.get must be equalTo "carousel"
+      transformed.content.get.text.get must contain("The beauty of Richmond park...")
+      transformed.content.get.media.get.length must be equalTo 3
+      transformed.content.get.media.get.head.url.get must be startingWith "https://scontent.cdninstagram.com/vp"
+    }
+
+    "translate single image posts using v2 API" in {
+      val mapper = new InstagramMediaMapper()
+      val transformed = mapper.mapDataRecord(exampleInstagramImagev2.recordId.get, exampleInstagramImagev2.data).get
       transformed.source must be equalTo "instagram"
       transformed.title.get.text must contain("You posted")
       transformed.title.get.action.get must be equalTo "image"
@@ -152,10 +175,10 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
       val untilDate = fromDate.plusDays(1)
 
       val propertyQuery = mapper.dataQueries(Some(fromDate), Some(untilDate))
-      propertyQuery.head.orderBy.get must be equalTo "timestamp"
+      propertyQuery.head.orderBy.get must be equalTo "ds_created_time"
       propertyQuery.head.endpoints.head.endpoint must be equalTo "instagram/feed"
-      propertyQuery.head.endpoints.head.filters.get.head.operator.asInstanceOf[Between].lower.as[String] must be equalTo "2018-05-01T09:00:00Z"
-      propertyQuery.head.endpoints.head.filters.get.head.operator.asInstanceOf[Between].upper.as[String] must be equalTo "2018-05-02T09:00:00Z"
+      propertyQuery.head.endpoints.head.filters.get.head.operator.asInstanceOf[Between].lower.as[String] must be equalTo "1525165200"
+      propertyQuery.head.endpoints.head.filters.get.head.operator.asInstanceOf[Between].upper.as[String] must be equalTo "1525251600"
     }
   }
 
