@@ -79,7 +79,7 @@ lazy val hat = project
     packageName in Docker := "hat",
     maintainer in Docker := "andrius.aucinas@hatdex.org",
     version in Docker := version.value,
-    dockerExposedPorts := Seq(8080),
+    dockerExposedPorts := Seq(9000),
     dockerBaseImage := "openjdk:8-jre-alpine",
     dockerEntrypoint := Seq("bin/hat")
   )
