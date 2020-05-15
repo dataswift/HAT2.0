@@ -75,14 +75,13 @@ lazy val hat = project
     
     // Use the alternative "Ash" script for running compiled project form inside Alpine-derived container
     // as Bash is incompatible with Alpine
-    javaOptions in Universal ++= Seq("-Dpidfile.path=/dev/null", "-Dplay.server.pidfile.path=/dev/null"),
+    javaOptions in Universal ++= Seq(),
     packageName in Docker := "hat",
     maintainer in Docker := "andrius.aucinas@hatdex.org",
     version in Docker := version.value,
-    dockerExposedPorts := Seq(8080),
+    dockerExposedPorts := Seq(9000),
     dockerBaseImage := "openjdk:8-jre-alpine",
-    dockerEntrypoint := Seq("bin/hat"),
-    dockerChmodType := DockerChmodType.UserGroupWriteExecute
+    dockerEntrypoint := Seq("bin/hat")
   )
   .enablePlugins(SlickCodeGeneratorPlugin)
   .settings(

@@ -2,7 +2,7 @@ language: scala
 dist: trusty
 sudo: false
 scala:
-  - 2.12.4
+  - 2.12.11
 jdk:
   - openjdk8
 
@@ -27,6 +27,7 @@ notifications:
 
 branches:
   only:
+    - fix-staging-build
     - master
     - testing
     - dev
@@ -37,15 +38,21 @@ git:
 
 env:
   global:
-    - RUMPEL_BUCKET=frontend-build-artifacts
+    - RUMPEL_BUCKET=dswift-hat-sandbox-frontend-build-artifacts
     - AWS_DEFAULT_REGION=eu-west-1
-    - secure: XlVGwMwoqwE8xuIZN6Q/kIDtkW2yAtiBD0guErvOhLM9sgZUpZ740uX8ZgcJKOkEYntTPcItROubVSU5Ho3575AIv1ddLSDqZR6oVeBsFI/dLzqkppISSRAv3xBKjBx5kprqdAAJkMbXEww651pfNbScH9ffy1FKHend2hzVYEh1sLF7E+/Qr+oI8Oned20Tqn+pSpln/bVzR8tIzlRs4YgVuttzwgScgSwnGKmlO20Rnc8NJDCTby/C5J7k+jLnmHKDmccy3H+VkgVLep3bjc+yqSBGREhZWlhr3kNmA5WVRADlXnaz4xr+uu6RdqN88m/LJvCNbjpkd+8K8J98I9ldAbQ26sgWbsdQAGiN1SKsw1DXbgtYewlvWp0sroLF2Llbz0f/YBM4f2WnRq44XU6/Apfa6+eK3fHSuRIhpzodO806rNzFbV6rwl/UYXaEAtFWUJl+qkpp3/Nz4xQRB51yZEOTYNOg7xVQc/69/3v5oO9lDkaAIKoCnf+aD/ZwxW4kFa/DG79eHZmmQd+Q2MRFVv2NSg1orCMO+zBACiToZfDxh/nH0//P333xyiDZ3TB35ls7i6gxi5fJmYcPne1IxQarbvJOu+Qs2bpK/6CwyGF4yc5jpaZw2mWe4JHPzmJ0YboUK+mp++5fBnvoUC7hawlWrtMkxCxM/IVHiKQ=
-    - secure: szpRbKNtbqthtOMMe1ti+HBHPkhxKkqhylp3pz89ICi15f/7d4XN7ckWRmO5GW/LNlukIrSDZqnXU84U9FVK9HryVUlTy/CkKAxVtWWhosc7E/Q9IEOtEBeM4rCCXNzwc1yJos+qZYq3lZQQaVbG3Qwrw3zp16JFnr9pc+AhpEEgLvA1tAd/rTWzJSnHE1irtZQE3WZoJiKwCyrCjrUaMdXCs9lz5peCQChfjiutN2C6Q9rQW1i7nBdnmrRrs6InK3btUVsaEerH0fTncEphydiLuRZ468t1ikO1zqR/ZRo/os3o9BnuNVJLIEARlc0UjAxh53/77K+gW2m7DcJvO6wPnf4ogB8MMrNdCH7gZzMKOzP2ljthj5KEZFpQxtqVpIsAaA8rln/uyHCXojM8GDbUeJBpbQoVY041HseG5qMawbRvmoyIjW/PFdu61tlxz5BZLp9XjAD6tRiwOD6IFZXhxhikFs/hL6xTEaJPDjiU2wzuVp5l1mi3kg3lOyAg5MOpoy+2Ri8jx0cFkjyKD1WOAonQ8yei33ELPcCNufvvoy5qlaE2P0Fttcd8kxq1JfdTSdWEmp8FFaL7u0w5KXNJC85HQkNQhTlsHlGEmkPiIYzQ9Hq0EhTmsfRCKTlBaZX6yMmpNitX0AjlVzV/esYrVJprYUvGDSR25cE1KrQ=
+    - secure: "MgysnY3V5IGKN2iU482TY8tTdkVZZHjcDSW991RvfUDs5MkWQh89FK77FSPxkA0Q8fbc6XLuv2zp8ULELZ6ff7RwEUUo8Kp6YQVazwMsNbmpBjLMuELZr9uwX4NxcS2S3gWrLnwvOdJ+1tzg+QNomDN7eB+8l599+obEVv9lteR7A0LE+lfhhGvahUr30SRfvlNFDXNJuyCLLPWRgaBL6YnTQ0marvIV75XoNRa6cC6SIFP8hwy4Q4aK9deNSlvhCmVDf/QQRhRgckMTTtGYfCneu7dq1cUtGiCBPEMhUO+gr4PCef72CtI2nGtb7NPweS91dxbxW85JIZrqvz6pk4R2N5kYARTxcRanh6b1bUTGO+D74GHQc/vXTRGzDfKbNjEyu1okJ1VFOhpoXrk1RdO5lQHOn+YFZMuzy/wYG7c7GwVO6Ht9sLu7mwDh2CdhKN1ksxz++LOfNXQu68ML6U8x8AJOzwBNDvhQ3kTdWhusF6EKoraUN3quqZS1pAEtsku7H7ZrxecEEura2s4EVUPh82ce5OayfHxiX0YO1W3K7whnUnJOZPiL0i0KzFIZc3BolEeSMb3z7hO3+xUcNxtp4bicp8ZCm41+11YNLwRrkT7CCE+LQDdwPv2HP+J8FfPnX/0No9hzAwwZrMdBgkEGxYErS0xSvxHq9leTGY4="
+    - secure: "HhNX2ucfbCy3iJHuEjxPalxCIu1DEERLh9PZiD3SZ9A1B4JmDq5sSWMb8SQyXY8CtdgrLZlZbv389SCPm1HYV3Df8bJtzOwReYAoTM9wIUvMpViYGCvKj88dYKLC0cDzqAkFIA1oAjEe2R8Rck033hC6VUJs7GgOwfCdowD6tlCu6FzdOdT2nSjdrgcT+fXSMD0J06XuW8EFRW2tY+Ae9um/7s0lYvYUgfDRKOyfU12mcN34RJV+O1IPjoUFw7j3fxrFh1qyCC8bhCoi5ugccXIU+TRnQsZib4xaAZ0NItpb8A8nxskyMgYDN5jypE5mFeJdEeHj1bypqO3p5yAGBIEPPuPcCdsgfPnmQ+7eTjTdsGiFyPL8vX3E6Kfsi+UlX1VnNhd58qTE7Ootu55bc29W5vJEFH1xlYwrpdmn7ncDW9wgl6tjWxa603AM5LToNP2+vKsL0qXFf3TEoX10RbUn4tzbMkdR+d4RVLSuyXLO4aKWAi302nZvnrxBC+BH2iukNwmxpr2Z7TuyHVBzrilh4/yNpz7RhCdpl5kfMS1Q1pZne6ZtQ3XMuKyWj6/S7sESIhY/gk6OlZg5M5SoXTX0+SiSK4/RXP0CD1g+PqBPmJ5NCCRn4j/tpaoYqsOIQiF8Rb30VW10x5iS1XpM7W7Yp1BznoPuXwBJtQi6Nuk="
     - secure: USVpIy0emFH9ZvrkckuOxF3a9SsWOnH5a8XqZ/5WcA8xT+Jk3MDk8f1upx4DBpa4V4DRxI7Cvr326cP/Xi2gsBmgaKneo1tjACExIy42R9YZ8XPdr1Bbng7LDO4xfNSrKwMBUOeA1vF9/yZU4ki0Fv/J5wLYCthpnfEQ7+mubZ9h4dzFv0hd1wAinFR0vTVAn3+dQ4jaZSU9Tl/0L5T7y2Z2v/m9c4PHkII38WwdIvkrdY2jmSm0eSD7iEIwv3UwYk9BTIknmdHYfQ7xx256tRkadgMThmhdJhdm6JaLr819fXe30u/OIH15hLyM4ND+FjW6DvKNs3+2AVT7uOSK/wRntA2Fwvpczq7cwMxi2mU4HXXzH7a82Iswnm8Nn6Od+9vxsRV3nyl8XLmkn8Gn03k6+Pr2jj/ljdvGYeFmMYcvSlskE6VbWBGxyu6vAjccnUtGK9r3lkoxjX8CgiCev+/fwX5jlWvTSVeS8bvGy7dlRQQ2XRscQ8av5fKcACZOJVpQ4YgKnQ8j4MDUfT6sJ/8kONwXu4d6f9AREazZEml5taKvkZuDpHWPr77SqG+9Fccybm8IWjr0uq1eR+URsKJAXWj7ah0a7qA4M8WikH0FePR79YyyF2APm8KtDe7ZsbkbMdjVngrRhpACCUtsGLPhX4Y62szoBY8SzYJV/LI=
     - secure: garvO7sZMrDyhJ/LroK5SlidZCCBRa868Ebmuwwv75vlqeablbQk0LKEFqk6WjO428TIsu+JT0fkrg8eVoJPYO1n6/GhjtI9R4TgRNWcsoaFZe1RdCJkZoJemaeXkDomq34ZKRwnl7QsWeKInqtwDl3EJwoALaQjPPXEsrO20uodLKD8zFhCf89uQ4HIW6kAXJHTQSXByjkuRenhnyQ4nM/ixLnHZ+auJ/NG2RFUPADxRjpTNWcKoqvVh7QGzvYCiahDSaY669bZnLmTzOMH1EtVf8UPDFyHM56Pgq3a/OdOU4sxhSIdf3C+pbD8XV4lmU3gE/OLbybkk87YsU4J5iZLr552Dkm+g0ak2AnF4lxQwzm0sN/Q76eZRGpcBacncCLRlLK1kmWlfoJ6RrQTPRMBmNIzveCZ9gSY49AWEMUSn7ZG9F+MxCYnVAWlWDAEhKfQLYpHACa/GbGgvBaek6wG8vaeTMeBEVunpb3lsgQJ7fNBVtQ4vcn++0be1kW3+bAmPlviDJ+myey2O2uk1f5/T3k0s7UhbFcTzfN7HJ+2eIpg1Hp0FbmVEJvZVmE6TE8tiF0UwAJzbKDeU2HwGg8dXBbpKn/GWm70R1yytOCls4Mmndfxq75tnh9/ZRK7ihpa+TDg/xAjWqREGo1nHhObmY5L3rWxptyWKPgdVeA=
 
 matrix:
   include:
+    - env:
+      - REPOSITORY_NAME=dataswift-platform-stage
+      - RUMPEL=sandbox
+      - ALT_RUMPEL=sandbox-react
+      - secure: "sn2XclW6URQJao12I3FJlGK+V91WsOItrQTokhwRJuOJfksrd99EVfBsqBH860pxanv2+jtfX732n5j/cZvTv5jRrXugPc97VjV2CkdIICy3lrSFo5HdZM1bExKHx6zu5O48pxsn3UcKZf3eY0I/A7K5N7wrGi1hNxIEqXuouSS1fiO5SPifDE/JbwNaapmiFOwOEzidN7qTYVVPnOGT5erF76GUecW+imMWpzklFVmeaY9rPKQxa3Scvn0ZeV0CCt1G8DG/DVxA137LNbV85lC4of9Ua0yR4yBsIqs/jrZpzznQMduMbeejOof4Ibwpu7zCKdweegFt6gy14xXCu1mEnpPssM3TGD2rHbWdS91ygoPedFVI0acA38kYyOSR1drn3eLwm3IE88JOdkobXi7lwIBO4JpMKqtLc9j/gTW5e9AlZdCBtz4nNplyKSTAF62VnSC3hR2ZcWNhJMBtw+JUoKwm995T2ImDRg11R+yDBxyvyqJPKzWWy7FiTthkdIb0pxIotjPkAeWa6QmWrKd9/g14+OqDqIevPQfDln7WnUCKcMcQrj3KdjuAeZbFFUjAErXL1dUQvMq929YgS2JIT1YdocFCX4vdsIwAtTTtZutBW54gsflB1Ur6M7qK6hV3q9MibFwvvKM+Fd+L/OX/oKipxobMLZKFYiWDSUI="
+      - secure: "mt+3rmL9MkQDQlIQoKUhD+0/lq4SBK3ZlKnNCJzRXSKrficeZdWfhzCRN3iOvuPpzuYkUelJV8M9DwntkKjP5oiT160mCBTCu27kj4AYryiwd96PIBDcM3lIjd/JO4DMGHeCRLZM9ALISfvzTHwuQuX0bAufkW0typhgby2LfKJHBBcc4b2sNzCVoJFn1YlF5bf35ZziF2KXBfz+GDU539AY4hVzKE5pCmIUMGsc5gholvhQkRWRYQcllexlHzwThBf2C+az5YIgLspLSD81y6FA5THI7ar7R4ahBhtJuNkTl0x+Wtjz7XVnXGD71rKgrvp9kBcQNLHWrucQJwsllekrUkShoFd3NJ/aGpUkDBaLs0rR72Yk9G2tP4TOg1zQBH0SOx+3/Tza9DqTKP7yfFlvuWiWzxOGqLA0WIyG+9mbWa4A7FDq9PO1UDPeg7/FRUzVxB8bMEmsCKdxLM6gu9W127pRggoxMRun8Yc/EF+9BScGxDB/OP8r8Z9zyFc7XsvZwGhxnnqROUw0Cah/yZknc8f+GwXxxvMMqNxsPlx7DMvvyOHafdVnJzGNB5q47MbvB7oOh2/pyhp+fZgWD54eXFuENB2zNAwV/r7uImrhfN4V9pyWQg2e32Q3GWYMNd/72kFtNStZhdY31rIAd5i0G7wcCPT9j8NB3k7wJ9U="
     - env:
       - REPOSITORY_NAME=hubat
       - RUMPEL=sandbox
@@ -89,8 +96,7 @@ before_script:
     fi
 
 script:
-  - make clean # sbt clean
-  #- make prod # sbt ++$TRAVIS_SCALA_VERSION compile
+  - sbt clean
   - sbt ++$TRAVIS_SCALA_VERSION compile
   - |
     if [[ "$REPOSITORY_NAME" = "hubat" ]]; then
@@ -98,7 +104,7 @@ script:
       sbt ++$TRAVIS_SCALA_VERSION test:compile
       sbt ++$TRAVIS_SCALA_VERSION "project hat" coverage test -Dconfig.file=hat/conf/application.test.conf
     fi
-  - make docker-prod # sbt -Denv=prod docker:stage
+  - sbt -Denv=prod -Dhttp.port=8080 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null docker:stage
   - docker build -t ${REPOSITORY_NAME}/hat:$(git rev-parse --short HEAD) hat/target/docker/stage
 
 after_success:
@@ -119,6 +125,13 @@ before_deploy:
   - docker tag ${REPOSITORY_NAME}/hat:$(git rev-parse --short HEAD) ${ECR_REPOSITORY}:$(git rev-parse --short HEAD)
 
 deploy:
+  - provider: script
+    script:
+      - docker push ${ECR_REPOSITORY}:$(git rev-parse --short HEAD)
+    skip_cleanup: true
+    on:
+      repo: Hub-of-all-Things/HAT2.0
+      branch: fix-staging-build
   - provider: script
     script:
       - docker push ${ECR_REPOSITORY}:$(git rev-parse --short HEAD)
