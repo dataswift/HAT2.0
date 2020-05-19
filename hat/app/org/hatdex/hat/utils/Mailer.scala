@@ -58,13 +58,15 @@ trait Mailer {
   }
 }
 
+case class ApplicationMailDetails(name: String, logo: String, email: Option[String])
+
 trait HatMailer extends Mailer {
   def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Done
   def serverExceptionNotify(request: RequestHeader, exception: Throwable)(implicit m: Messages): Done
   def passwordReset(email: String, user: HatUser, resetLink: String)(implicit m: Messages, server: HatServer): Done
   def passwordChanged(email: String, user: HatUser)(implicit m: Messages, server: HatServer): Done
 
-  def claimHat(email: String, claimLink: String, maybePartnerDetails: Option[(String, String)])(implicit m: MessagesApi, l: Lang, server: HatServer): Done
+  def claimHat(email: String, claimLink: String, applicationDetails: Option[ApplicationMailDetails])(implicit m: MessagesApi, l: Lang, server: HatServer): Done
 }
 
 class HatMailerImpl @Inject() (
@@ -110,12 +112,12 @@ class HatMailerImpl @Inject() (
     Done
   }
 
-  def claimHat(email: String, claimLink: String, maybePartnerDetails: Option[(String, String)])(implicit m: MessagesApi, l: Lang, server: HatServer): Done = {
+  def claimHat(email: String, claimLink: String, applicationDetails: Option[ApplicationMailDetails])(implicit m: MessagesApi, l: Lang, server: HatServer): Done = {
     sendEmail(email)(
       from = "pda@hubofallthings.net",
-      subject = m("email.hatclaim.subject", maybePartnerDetails.map(_._1).getOrElse("")),
-      bodyHtml = views.html.mails.emailHatClaim(server.domain, claimLink, maybePartnerDetails),
-      bodyText = views.txt.mails.emailHatClaim(server.domain, claimLink, maybePartnerDetails.map(_._1)).toString())
+      subject = m("email.hatclaim.subject", applicationDetails.map(_.name).getOrElse("")),
+      bodyHtml = views.html.mails.emailHatClaim(server.domain, claimLink, applicationDetails.map(_.name), applicationDetails.map(_.logo), applicationDetails.flatMap(_.email)),
+      bodyText = views.txt.mails.emailHatClaim(server.domain, claimLink, applicationDetails.map(_.name)).toString())
     Done
   }
 }
