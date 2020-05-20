@@ -2,7 +2,7 @@ language: scala
 dist: trusty
 sudo: false
 scala:
-  - 2.12.4
+  - 2.12.11
 jdk:
   - openjdk8
 
@@ -27,6 +27,7 @@ notifications:
 
 branches:
   only:
+    - fix-staging-build
     - master
     - testing
     - dev
@@ -46,6 +47,12 @@ env:
 
 matrix:
   include:
+    - env:
+      - REPOSITORY_NAME=dataswift-platform-stage
+      - RUMPEL=sandbox
+      - ALT_RUMPEL=sandbox-react
+      - secure: "sn2XclW6URQJao12I3FJlGK+V91WsOItrQTokhwRJuOJfksrd99EVfBsqBH860pxanv2+jtfX732n5j/cZvTv5jRrXugPc97VjV2CkdIICy3lrSFo5HdZM1bExKHx6zu5O48pxsn3UcKZf3eY0I/A7K5N7wrGi1hNxIEqXuouSS1fiO5SPifDE/JbwNaapmiFOwOEzidN7qTYVVPnOGT5erF76GUecW+imMWpzklFVmeaY9rPKQxa3Scvn0ZeV0CCt1G8DG/DVxA137LNbV85lC4of9Ua0yR4yBsIqs/jrZpzznQMduMbeejOof4Ibwpu7zCKdweegFt6gy14xXCu1mEnpPssM3TGD2rHbWdS91ygoPedFVI0acA38kYyOSR1drn3eLwm3IE88JOdkobXi7lwIBO4JpMKqtLc9j/gTW5e9AlZdCBtz4nNplyKSTAF62VnSC3hR2ZcWNhJMBtw+JUoKwm995T2ImDRg11R+yDBxyvyqJPKzWWy7FiTthkdIb0pxIotjPkAeWa6QmWrKd9/g14+OqDqIevPQfDln7WnUCKcMcQrj3KdjuAeZbFFUjAErXL1dUQvMq929YgS2JIT1YdocFCX4vdsIwAtTTtZutBW54gsflB1Ur6M7qK6hV3q9MibFwvvKM+Fd+L/OX/oKipxobMLZKFYiWDSUI="
+      - secure: "mt+3rmL9MkQDQlIQoKUhD+0/lq4SBK3ZlKnNCJzRXSKrficeZdWfhzCRN3iOvuPpzuYkUelJV8M9DwntkKjP5oiT160mCBTCu27kj4AYryiwd96PIBDcM3lIjd/JO4DMGHeCRLZM9ALISfvzTHwuQuX0bAufkW0typhgby2LfKJHBBcc4b2sNzCVoJFn1YlF5bf35ZziF2KXBfz+GDU539AY4hVzKE5pCmIUMGsc5gholvhQkRWRYQcllexlHzwThBf2C+az5YIgLspLSD81y6FA5THI7ar7R4ahBhtJuNkTl0x+Wtjz7XVnXGD71rKgrvp9kBcQNLHWrucQJwsllekrUkShoFd3NJ/aGpUkDBaLs0rR72Yk9G2tP4TOg1zQBH0SOx+3/Tza9DqTKP7yfFlvuWiWzxOGqLA0WIyG+9mbWa4A7FDq9PO1UDPeg7/FRUzVxB8bMEmsCKdxLM6gu9W127pRggoxMRun8Yc/EF+9BScGxDB/OP8r8Z9zyFc7XsvZwGhxnnqROUw0Cah/yZknc8f+GwXxxvMMqNxsPlx7DMvvyOHafdVnJzGNB5q47MbvB7oOh2/pyhp+fZgWD54eXFuENB2zNAwV/r7uImrhfN4V9pyWQg2e32Q3GWYMNd/72kFtNStZhdY31rIAd5i0G7wcCPT9j8NB3k7wJ9U="
     - env:
       - REPOSITORY_NAME=hubat
       - RUMPEL=sandbox
@@ -67,6 +74,8 @@ install:
   - pip install --user awscli
   - export PATH=$PATH:$HOME/.local/bin
 
+# Set up test database and user
+# Copy the frontend assets from S3 to the right location
 before_script:
   - psql -c "CREATE DATABASE testhatdb1;" -U postgres
   - psql -c "CREATE USER testhatdb1 WITH PASSWORD 'testing';" -U postgres
@@ -91,10 +100,11 @@ script:
   - sbt ++$TRAVIS_SCALA_VERSION compile
   - |
     if [[ "$REPOSITORY_NAME" = "hubat" ]]; then
+      # TODO: Update test next
       sbt ++$TRAVIS_SCALA_VERSION test:compile
       sbt ++$TRAVIS_SCALA_VERSION "project hat" coverage test -Dconfig.file=hat/conf/application.test.conf
     fi
-  - sbt -Denv=prod docker:stage
+  - sbt -Denv=prod -Dhttp.port=8080 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null docker:stage
   - docker build -t ${REPOSITORY_NAME}/hat:$(git rev-parse --short HEAD) hat/target/docker/stage
 
 after_success:
@@ -115,6 +125,13 @@ before_deploy:
   - docker tag ${REPOSITORY_NAME}/hat:$(git rev-parse --short HEAD) ${ECR_REPOSITORY}:$(git rev-parse --short HEAD)
 
 deploy:
+  - provider: script
+    script:
+      - docker push ${ECR_REPOSITORY}:$(git rev-parse --short HEAD)
+    skip_cleanup: true
+    on:
+      repo: Hub-of-all-Things/HAT2.0
+      branch: fix-staging-build
   - provider: script
     script:
       - docker push ${ECR_REPOSITORY}:$(git rev-parse --short HEAD)
