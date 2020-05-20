@@ -79,8 +79,8 @@ lazy val hat = project
     packageName in Docker := "hat",
     maintainer in Docker := "andrius.aucinas@hatdex.org",
     version in Docker := version.value,
+    dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine",
     dockerExposedPorts := Seq(9000),
-    dockerBaseImage := "openjdk:8-jre-alpine",
     dockerEntrypoint := Seq("bin/hat")
   )
   .enablePlugins(SlickCodeGeneratorPlugin)
