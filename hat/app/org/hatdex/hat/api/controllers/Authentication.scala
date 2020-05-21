@@ -249,7 +249,7 @@ class Authentication @Inject() (
             val maybeApplication = applications.find(_.application.id.equals(claimHatRequest.applicationId))
 
             val appMailDetails: Option[ApplicationMailDetails] = maybeApplication.map { app =>
-              ApplicationMailDetails(app.application.info.name, app.application.info.graphics.logo.normal, app.application.info.email)
+              ApplicationMailDetails(app.application.info.name, app.application.info.graphics.logo.normal, app.application.info.url)
             }
 
             val appLogDetails: Option[(String, String)] = maybeApplication.map { app =>

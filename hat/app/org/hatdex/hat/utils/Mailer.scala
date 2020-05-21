@@ -58,7 +58,7 @@ trait Mailer {
   }
 }
 
-case class ApplicationMailDetails(name: String, logo: String, email: Option[String])
+case class ApplicationMailDetails(name: String, logo: String, url: Option[String])
 
 trait HatMailer extends Mailer {
   def serverErrorNotify(request: RequestHeader, exception: UsefulException)(implicit m: Messages): Done
@@ -116,7 +116,7 @@ class HatMailerImpl @Inject() (
     sendEmail(email)(
       from = "pda@hubofallthings.net",
       subject = m("email.hatclaim.subject", applicationDetails.map(_.name).getOrElse("")),
-      bodyHtml = views.html.mails.emailHatClaim(server.domain, claimLink, applicationDetails.map(_.name), applicationDetails.map(_.logo), applicationDetails.flatMap(_.email)),
+      bodyHtml = views.html.mails.emailHatClaim(server.domain, claimLink, applicationDetails.map(_.name), applicationDetails.map(_.logo), applicationDetails.flatMap(_.url)),
       bodyText = views.txt.mails.emailHatClaim(server.domain, claimLink, applicationDetails.map(_.name)).toString())
     Done
   }
