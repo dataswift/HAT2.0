@@ -14,17 +14,20 @@ email.welcome.community.description=Help us grow a community of HAT owners claim
 email.welcome.issuedBy=Your HAT PDA was issued by
 
 email.hatclaim.subject=Hello from {0}
-email.hatClaim.title={0} welcomes you to your HAT Personal Data Account
-email.hatClaim.hatPdaCreated=A HAT personal data account with the above URL has been created at the request of
-email.hatClaim.safePlace.title=A safe place for your data
-email.hatClaim.safePlace.description=Your HAT personal data account is where you can safely store and legally own all the data within.
 email.hatClaim.haveFun.title=Have fun with your HAT
-email.hatClaim.activateWithinDays=Activate your account within 7 days* to view your digital memories, see where you have travelled and claim more of your data from the Internet.
-email.hatClaim.getStartedNow=Get started now
-email.hatClaim.offerExpire=* If you don’t activate your HAT within 7 days, the offer will expire.
-
-email.dataswift.companyName=Dataswift Ltd
 email.dataswift.address=8 Comberton Road, Cambridge, CB23 7BA
 email.question=Have a question?
-email.dataswift.copyright=Copyright © 2019 Dataswift Ltd,
-email.dataswift.allRightsReserved=All rights reserved.
+email.dataswift.copyright=Copyright © 2020 Dataswift Ltd,
+
+email.hatClaim.title={0} welcomes you to your Personal Data Account
+email.hatClaim.hatPdaCreated=A Personal Data Account with the above URL has been created at the request of
+email.hatClaim.goToAppName=Go to {0}
+email.hatClaim.safePlace.title=A safe place for your data
+email.hatClaim.safePlace.description=Your Personal Data Account is where you can safely store and legally own all the data within.
+email.hatClaim.activateYourAccount=Activate your account to continue using {0} and to discover other apps you can use with your PDA.
+email.hatClaim.clickHereToStart=Click here to start
+email.dataswift.pdaProvidedBy=PDA infrastructure provided by:
+email.dataswift.fullAddress=Dataswift Ltd 8 Comberton Road, Cambridge, CB23 7BA
+email.dataswift.companyNumber=Company number: 09821157
+email.dataswift.haveQuestion=Have a question?
+email.dataswift.copyrightAllRightsReserved=Copyright © 2020 Dataswift Ltd, All rights reserved.
