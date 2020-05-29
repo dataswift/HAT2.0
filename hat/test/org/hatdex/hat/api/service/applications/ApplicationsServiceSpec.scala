@@ -85,7 +85,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
     "Include setup applications" in {
       val service = application.injector.instanceOf[ApplicationsService]
       val result = for {
-        _ ← service.setup(HatApplication(notablesApp, setup = false, enabled = false, active = false, None, None))
+        _ ← service.setup(HatApplication(notablesApp, setup = false, enabled = false, active = false, None, None, None))
         apps ← service.applicationStatus()
       } yield {
         apps.length must be equalTo 5
@@ -192,7 +192,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
     "Return `active=false` status for apps where current version is not compatible with one setup" in {
       val service = application.injector.instanceOf[ApplicationsService]
       val result = for {
-        _ <- service.setup(HatApplication(notablesAppIncompatible, setup = false, enabled = false, active = false, None, None))
+        _ <- service.setup(HatApplication(notablesAppIncompatible, setup = false, enabled = false, active = false, None, None, None))
         app <- service.applicationStatus(notablesAppIncompatibleUpdated.id)
       } yield {
         app must beSome
@@ -258,7 +258,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
     "Return failure for a made-up Application Information" in {
       val service = application.injector.instanceOf[ApplicationsService]
       val result = for {
-        setup ← service.setup(HatApplication(notablesAppMissing, true, true, true, None, None))
+        setup ← service.setup(HatApplication(notablesAppMissing, true, true, true, None, None, None))
       } yield setup
 
       result must throwA[RuntimeException].await(1, 20.seconds)
@@ -299,7 +299,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
     "Return failure for a made-up Application Information" in {
       val service = application.injector.instanceOf[ApplicationsService]
       val result = for {
-        setup ← service.disable(HatApplication(notablesAppMissing, true, true, true, None, None))
+        setup ← service.disable(HatApplication(notablesAppMissing, true, true, true, None, None, None))
       } yield setup
 
       result must throwA[RuntimeException].await(1, 20.seconds)

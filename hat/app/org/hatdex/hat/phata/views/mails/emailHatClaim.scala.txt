@@ -1,16 +1,29 @@
-@(hatDomain: String, claimLink: String, maybePartnerName: Option[String])
+@import play.api.i18n.{ Lang, MessagesApi }
 
-Welcome!
+@(hatDomain: String, claimLink: String, name: Option[String], url: Option[String])(implicit messagesApi: MessagesApi, language: Lang)
+
+@messagesApi("email.hatClaim.title", name.getOrElse(""))
 
 @hatDomain
 
-A HAT with the above URL has been created at the request of @maybePartnerName.getOrElse("Unknown")
+@messagesApi("email.hatClaim.hatPdaCreated") @name.getOrElse("")
 
-Please go to @claimLink to finish setting up your HAT. You have 7 days to claim your HAT after which it will automatically expire and all its data will be deleted.
+@messagesApi("email.hatClaim.goToAppName", url.getOrElse(""))
 
-If you claim your HAT within 7 days, you will get:
-* A free HAT Microserver account with your own URL.
-* 100 Mb storage to begin with.
-* Your own HAT Microserver with private 'AI' and legal ownership rights to control and share personal data in real time and on demand.
+====================
 
-Not you? If you believe that you are receiving this email by mistake, let us know immediately at contact@@dataswift.io
+@messagesApi("email.hatClaim.safePlace.title")
+
+@messagesApi("email.hatClaim.safePlace.description")
+
+====================
+
+@messagesApi("email.hatClaim.activateYourAccount", name.getOrElse(""))
+
+Click here to start => @claimLink
+
+====================
+
+@messagesApi("email.welcome.issuedBy") @messagesApi("email.dataswift.companyName")
+
+@messagesApi("email.dataswift.copyrightAllRightsReserved")

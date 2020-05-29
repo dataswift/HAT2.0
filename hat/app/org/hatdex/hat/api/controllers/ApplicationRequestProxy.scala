@@ -57,7 +57,7 @@ class ApplicationRequestProxy @Inject() (
     logger.info(s"Proxy $method request for $id to $path with parameters: ${request.queryString}")
     applicationsService.applicationStatus(id).flatMap { maybeStatus ⇒
       maybeStatus map {
-        case HatApplication(app, _, true, _, _, _) ⇒
+        case HatApplication(app, _, true, _, _, _, _) ⇒
 
           applicationsService.applicationToken(request.identity, app)
             .flatMap { token ⇒
