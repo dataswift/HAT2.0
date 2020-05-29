@@ -1,6 +1,6 @@
 @import play.api.i18n.{ Lang, MessagesApi }
 
-@(hatDomain: String, claimLink: String, name: Option[String], logo: Option[String], url: Option[String])(implicit messagesApi: MessagesApi, language: Lang)
+@(hatDomain: String, claimLink: String, name: Option[String], url: Option[String])(implicit messagesApi: MessagesApi, language: Lang)
 
 @messagesApi("email.hatClaim.title", name.getOrElse(""))
 
@@ -8,7 +8,7 @@
 
 @messagesApi("email.hatClaim.hatPdaCreated") @name.getOrElse("")
 
-@messagesApi("email.hatClaim.goToAppName", @url.getOrElse(""))
+@messagesApi("email.hatClaim.goToAppName", url.getOrElse(""))
 
 ====================
 
