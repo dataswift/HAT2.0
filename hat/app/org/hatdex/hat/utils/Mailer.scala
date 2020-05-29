@@ -117,7 +117,7 @@ class HatMailerImpl @Inject() (
       from = "pda@hubofallthings.net",
       subject = m("email.hatclaim.subject", applicationDetails.map(_.name).getOrElse("")),
       bodyHtml = views.html.mails.emailHatClaim(server.domain, claimLink, applicationDetails.map(_.name), applicationDetails.map(_.logo), applicationDetails.flatMap(_.url)),
-      bodyText = views.txt.mails.emailHatClaim(server.domain, claimLink, applicationDetails.map(_.name)).toString())
+      bodyText = views.txt.mails.emailHatClaim(server.domain, claimLink, applicationDetails.map(_.name), applicationDetails.flatMap(_.url)).toString())
     Done
   }
 }
