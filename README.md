@@ -3,30 +3,55 @@
 
 # [Hub of All Things](https://hubofallthings.com)
 
-This repository contains an implementation of the [Hub-of-All-Things](http://hubofallthings.com) project Personal Data Store.
+This repository contains an implementation of the [Hub-of-All-Things](http://hubofallthings.com) HAT Microserver project.
 
 ## Releases
 
-The current project version is 2.5.1: [HAT 2.5.1](https://github.com/Hub-of-all-Things/HAT2.0/releases/tag/v2.5.1).
+The current project version is 2.6.9: [HAT 2.6.9](https://github.com/Hub-of-all-Things/HAT2.0/releases/tag/v2.6.9).
 
 ## About the project
 
-Hub-of-All-Things is a platform for a Multi-Sided Market powered by the Internet of Things.
+The Hub-of-All-Things is a HAT Microserver for individuals to own, control and share their data.
 
-A Personal Data Management System (“the HAT”) is a personal single tenant (“the individual self”) technology system that is fully individual self-service, to enable an individual to define a full set of “meta-data” defining as a specific set of personal data, personal preferences, personal behaviour events. The HAT allows individuals to share the right information (quality and quantity), with the right people, in the right situations for the right purposes and gain the benefits.
+A Personal Microserver (“the HAT”) is a personal single tenant (“the individual self”) technology system that is fully individual self-service, to enable an individual to define a full set of “meta-data” defined as a specific set of personal data, personal preferences and personal behaviour events. 
 
-[![PhD Comics explains the HAT](http://img.youtube.com/vi/y1txYjoSQQc/0.jpg)](http://www.youtube.com/watch?v=y1txYjoSQQc)
+The HAT enables individuals to share the correct information (quality and quantity), with the correct people, in the correct situations for the correct purposes and to gain the benefits.
+
 
 ## Technology stack
 
-This HAT PDS implementation is written in Scala (2.11.8) uses the following technology stack:
+This HAT Microserver implementation is written in Scala (2.12.11) uses the following technology stack:
 
-- PostgreSQL relational database (version 9.5)
-- Play Framework (version 2.6.6)
-- Akka (version 2.5.4)
-- Slick as the database access layer (version 3.2.1)
+- [PostgreSQL](https://www.postgresql.org) relational database (version 9.5)
+- [Play Framework](https://www.playframework.com) (version 2.6)
+- [Akka](https://akka.io) (version 2.5)
+- [Slick](https://scala-slick.org/) as the database access layer (version 3.2)
 
-## Running the project
+## Running the project - Either via docker-compose (recommended) or building locally
+
+### 1. Get the Source and the submodules for both of the methods
+
+    > git clone https://github.com/Hub-of-all-Things/HAT2.0.git
+    > cd HAT2.0
+    > git submodule init 
+    > git submodule update
+
+### 2. Configure your /etc/hosts
+
+    127.0.0.1   bobtheplumber.hat.org
+    127.0.0.1   bobtheplumber.example.com
+    
+
+### 3a. Using docker-compose
+    
+    > cd <DIRECTORY_YOU_CHECKED_OUT_INTO>/deployment/docker
+    > docker-compose up
+   
+
+When the build finishes, open [`https://bobtheplumber.example.com:9001`](https://bobtheplumber.example.com:9001) in a browser.
+Standard account login password is `testing`.
+
+### 3b. Building locally
 
 
 ### HAT Setup
@@ -39,33 +64,34 @@ work with the schema using HTTP APIs.
 To run it from source in a development environment two sets of tools are required:
 
 - PostgreSQL database and utilities
-- Scala Build Tool (SBT)
+- [Scala Build Tool](https://www.scala-sbt.org) (SBT)
 
 To launch the HAT, follow these steps:
 
-1. Create the database:
+1. Create the database, which we assume is available as `localhost`:
     ```bash
-    createdb testhatdb1
-    createuser testhatdb1
-    psql postgres -c "GRANT CREATE ON DATABASE testhatdb1 TO testhatdb1"
+    > createdb testhatdb1
+    > createuser testhatdb1
+    > psql postgres -c "GRANT CREATE ON DATABASE testhatdb1 TO testhatdb1"
     ```
 2. Compile the project:
     ```bash
-    sbt compile
+    > make dev
     ```
 3. Add custom local domain mapping to your `/etc/hosts` file. This will make sure when you go to the defined address from your machine you will be pointed back to your own machine. E.g.:
     ```
     127.0.0.1   bobtheplumber.hat.org
+    127.0.0.1   bobtheplumber.example.com
     ```
 4. Run the project:
     ```bash
-    sbt "project hat" "run -Dconfig.resource=dev.conf"
+    > make run-dev
     ```
-5. Go to http://bobtheplumber.hat.org:9000
+5. Go to [http://bobtheplumber.example.com:9000](http://bobtheplumber.example.com:9000)
 
 **You're all set!**
 
-### Customising development environment
+### Customising your development environment
 
 Your best source of information on how the development environment could
 be customised is the `hat/conf/dev.conf` configuration file. Make sure you
@@ -74,7 +100,7 @@ or it will just show you the message that the HAT could not be found.
 
 Among other things, the configuration includes:
 
-- host names alongside port numbers of the test HATs (bobtheplumber.hat.org:9000)
+- host names alongside port numbers of the test HATs ([http://yourname.hat.org:9000](http://yourname.hat.org:9000))
 - access credentials used to log in as the owner or restricted platform user into the HAT (the default password is a very unsafe *testing*)
 - database connection details (important if you want to change your database setup above)
 - private and public keys used for token signing and verification  
@@ -103,34 +129,27 @@ but are initialised with the right schema at start time
 you could change the HAT domain name, owner's email address or public/private
 keypair used by the HAT for its token operations
 
-## Deployment
+## Using docker-compose
 
-HAT is intended to be run inside Docker containers. To build a new container, execute:
+We have put together a [docker-compose](https://docs.docker.com/compose/) file that will allow you to run a PostgreSQL node and a HAT node easily.
 
-```bash
-export REPOSITORY_NAME="hubofallthings"
-./deployment/ecs/docker-aws-deploy.sh
-```
+###  Get the Source and the submodules
 
-The script is a thin wrapper around a few basic Docker commands. It allows for changing
-the name of the repository you  want to deploy the container to and tags it with the git
-commit fingerprint for the current code version. Otherwise, it could be simplified to:
+    > git clone https://github.com/Hub-of-all-Things/HAT2.0.git
+    > cd HAT2.0
+    > git submodule init 
+    > git submodule update
+    > cd deployment/docker
+    > docker-compose up
+    > open [https://bobtheplumber.example:9001](https://bobtheplumber.example:9001)
 
-```bash
-# Scala Build Tool to compile the code and prepare Dockerfile
-sbt "project hat" docker:stage
-
-# Build the Docker container
-docker build -t hubofallthings/hat hat/target/docker/stage
-```
-
-Uploading the container to a Docker repository is left out
+ 
 
 ## Additional information
 
-- API documentation can be found at the [developers' portal](https://developers.hubofallthings.com))
+- API documentation can be found at the [developers' portal](https://developers.hubofallthings.com)
 - [HAT Database Schema](https://github.com/Hub-of-all-Things/hat-database-schema) has been split up into a separate project for easier reuse across different environments.
 
 ## License
 
-[HAT including HAT Schema and API] is licensed under [AGPL - GNU AFFERO GENERAL PUBLIC LICENSE](https://github.com/Hub-of-all-Things/HAT/blob/master/LICENSE/AGPL)
+HAT including HAT Schema and API is licensed under [AGPL - GNU AFFERO GENERAL PUBLIC LICENSE](https://github.com/Hub-of-all-Things/HAT/blob/master/LICENSE/AGPL)

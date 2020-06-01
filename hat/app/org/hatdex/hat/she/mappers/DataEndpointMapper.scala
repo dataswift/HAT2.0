@@ -309,6 +309,7 @@ class DropsTwitterWordcloudMapper extends DataEndpointMapper {
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       counters ← Try((content \ "summary" \ "totalCount").as[Int]) if counters > 0
+      _ = counters // Workaround scala/bug#11175 -Ywarn-unused:params false positive
     } yield {
       val title = DataFeedItemTitle("Twitter Word Cloud", None, Some("twitter-word-cloud"))
       val itemContent = DataFeedItemContent(text = Some(content.toString()), html = None, media = None, nestedStructure = None)
@@ -328,6 +329,7 @@ class DropsSentimentHistoryMapper extends DataEndpointMapper {
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       counters ← Try((content \ "summary" \ "totalCount").as[Int]) if counters > 0
+      _ = counters // Workaround scala/bug#11175 -Ywarn-unused:params false positive
     } yield {
       val title = DataFeedItemTitle("Sentiment History", None, Some("sentiment-history"))
       val itemContent = DataFeedItemContent(text = Some(content.toString()), html = None, media = None, nestedStructure = None)
@@ -347,6 +349,7 @@ class InsightCommonLocationsMapper extends DataEndpointMapper {
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
       counters ← Try((content \ "summary" \ "totalCount").as[Int]) if counters > 0
+      _ = counters // Workaround scala/bug#11175 -Ywarn-unused:params false positive
     } yield {
       val title = DataFeedItemTitle("Common Locations", None, Some("common-locations"))
       val itemContent = DataFeedItemContent(text = Some(content.toString()), html = None, media = None, nestedStructure = None)
