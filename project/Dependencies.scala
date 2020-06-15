@@ -29,6 +29,7 @@ object Dependencies {
   object Versions {
     val crossScala = Seq("2.12.11")
     val scalaVersion = crossScala.head
+    val adjudicator = "0.1.0-SNAPSHOT"
   }
 
   val resolvers = Seq(
@@ -37,7 +38,8 @@ object Dependencies {
     Resolver.bintrayRepo("scalaz", "releases"),
     Resolver.sonatypeRepo("snapshots"),
     "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com",
-    "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com")
+    "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com"
+  )
 
   object Library {
 
@@ -89,16 +91,21 @@ object Dependencies {
       val prettyTime = "org.ocpsoft.prettytime" % "prettytime" % "4.0.4.Final"
       val nbvcxz = "me.gosimple" % "nbvcxz" % "1.4.3"
       val elasticacheClusterClient = "com.amazonaws" % "elasticache-java-cluster-client" % "1.1.1"
-      val playMemcached = "com.github.mumoshu" %% "play2-memcached-play26" % "0.9.3" exclude("net.spy", "spymemcached")
+      val playMemcached = "com.github.mumoshu" %% "play2-memcached-play26" % "0.9.3" exclude ("net.spy", "spymemcached")
       val alpakkaAwsLambda = "com.lightbend.akka" %% "akka-stream-alpakka-awslambda" % "0.20"
     }
 
     object HATDeX {
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.6.7-SNAPSHOT"
-      val dexClient = "org.hatdex" %% "dex-client-scala" % "2.6.5-SNAPSHOT"
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.6.10"
+      val dexClient = "org.hatdex" %% "dex-client-scala" % "2.6.8"
       val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
     }
 
     val scalaGuice = "net.codingwell" %% "scala-guice" % "4.2.6"
+
+    object ContractLibrary {
+      val adjudicator = "io.dataswift" %% "adjudicatorlib" % Versions.adjudicator
+    }
+
   }
 }
