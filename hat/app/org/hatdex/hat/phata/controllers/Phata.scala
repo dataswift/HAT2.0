@@ -74,8 +74,13 @@ class Phata @Inject() (
     }
   }
 
-  def altRumpelIndex(claimToken: String): EssentialAction = {
-    logger.debug(s"Current claim token $claimToken")
+  def altRumpelIndex: EssentialAction = {
+    logger.debug(s"Serving Rumpel v4")
+    assets.at("index.html")
+  }
+
+  def altRumpelIndexClaim(claimToken: String): EssentialAction = {
+    logger.debug(s"Serving Rumpel claim v4. Token: $claimToken")
     assets.at("index.html")
   }
 
@@ -89,14 +94,14 @@ class Phata @Inject() (
     }
   }
 
-  def hatLogin(name: String, redirectUrl: String) = indefiniteSuccessCaching {
-    Action { implicit request =>
-      val scheme = if (request.secure) { "https://" } else { "http://" }
-      val newRedirectUrl = s"$scheme${request.domain}/#/hatlogin?name=$name&redirect=${redirectUrl}"
-      logger.debug(s"Redirect url from ${request.uri}: $newRedirectUrl")
-      Redirect(newRedirectUrl)
-    }
-  }
+  //  def hatLogin(name: String, redirectUrl: String) = indefiniteSuccessCaching {
+  //    Action { implicit request =>
+  //      val scheme = if (request.secure) { "https://" } else { "http://" }
+  //      val newRedirectUrl = s"$scheme${request.domain}/#/hatlogin?name=$name&redirect=${redirectUrl}"
+  //      logger.debug(s"Redirect url from ${request.uri}: $newRedirectUrl")
+  //      Redirect(newRedirectUrl)
+  //    }
+  //  }
 
   //  def remoteAsset(file: String): String = {
   //    val versionedUrl = assets.path(file)
