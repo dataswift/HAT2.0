@@ -29,6 +29,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import org.hatdex.hat.api.models.applications.{
   Application,
+  ApplicationKind,
   ApplicationStatus,
   HatApplication,
   Version
@@ -95,7 +96,7 @@ class ApplicationsService @Inject() (
     trustedApplicationProvider: TrustedApplicationProvider,
     silhouette: Silhouette[HatApiAuthEnvironment],
     statsReporter: StatsReporter,
-    system: ActorSystem)(implicit val ec: DalExecutionContext) {
+    system: ActorSystem)(wsClient: WSClient)(implicit val ec: DalExecutionContext) {
 
   private val logger = Logger(this.getClass)
   private val applicationsCacheDuration: FiniteDuration = 30.minutes
@@ -111,21 +112,21 @@ class ApplicationsService @Inject() (
     }
     else { Future.successful(Done) }
     for {
-      _ ← eventuallyCleanedCache
-      application ← cache
+      _ <- eventuallyCleanedCache
+      application <- cache
         .get[HatApplication](appCacheKey(id))
         .flatMap {
-          case Some(application) ⇒ Future.successful(Some(application))
-          case None ⇒
+          case Some(application) => Future.successful(Some(application))
+          case None =>
             cache.remove(s"apps:${hat.domain}") // if any item has expired, the aggregated statuses must be refreshed
             for {
               maybeApp <- trustedApplicationProvider.application(id)
               setup <- applicationSetupStatus(id)(hat.db)
               status <- FutureTransformations.transform(
                 maybeApp.map(refetchApplicationsStatus(_, Seq(setup).flatten)))
-              _ ← status
+              _ <- status
                 .map(
-                  s ⇒
+                  s =>
                     cache.set(appCacheKey(id), s._1, applicationsCacheDuration))
                 .getOrElse(Future.successful(Done))
             } yield status.map(_._1)
@@ -179,34 +180,45 @@ class ApplicationsService @Inject() (
     requestHeader: RequestHeader): Future[HatApplication] = {
     // Create and enable the data debit
     val maybeDataDebitSetup: Option[Future[DataDebit]] = for {
-      ddId ← application.application.dataDebitId
-      ddsRequest ← application.application.dataDebitSetupRequest
+      ddId <- application.application.dataDebitId
+      ddsRequest <- application.application.dataDebitSetupRequest
     } yield {
       logger.debug(s"Enable data debit $ddId for ${application.application.id}")
       for {
-        dds ← dataDebitService
+        dds <- dataDebitService
           .createDataDebit(ddId, ddsRequest, user.userId)(hat)
           .recoverWith({
-            case _: RichDataDuplicateDebitException ⇒
+            case _: RichDataDuplicateDebitException =>
               dataDebitService
                 .updateDataDebitInfo(ddId, ddsRequest)(hat)
                 .flatMap(
-                  _ ⇒
+                  _ =>
                     dataDebitService.updateDataDebitPermissions(
                       ddId,
                       ddsRequest,
                       user.userId)(hat))
           })
-        _ ← dataDebitService.dataDebitEnableNewestPermissions(ddId)(hat)
+        _ <- dataDebitService.dataDebitEnableNewestPermissions(ddId)(hat)
       } yield dds
     }
 
     // Set up the app
     val appSetup = for {
-      _ ← maybeDataDebitSetup.getOrElse(Future.successful(())) // If data debit was there, must have been setup successfully
-      _ ← applicationSetupStatusUpdate(application, enabled = true)(hat.db) // Update status
+      _ <- application.application.kind match {
+        case ApplicationKind.Contract(x) =>
+          org.hatdex.hat.utils.NetworkRequest
+            .joinContract(
+              hat.hatName,
+              io.dataswift.adjudicator.Types
+                .ContractId(
+                  java.util.UUID.fromString(application.application.id)),
+              wsClient)
+        case _ => Future.successful(Unit)
+      }
+      _ <- maybeDataDebitSetup.getOrElse(Future.successful(())) // If data debit was there, must have been setup successfully
+      _ <- applicationSetupStatusUpdate(application, enabled = true)(hat.db) // Update status
       _ <- statsReporter.registerOwnerConsent(application.application.id)
-      app ← applicationStatus(application.application.id, bustCache = true) // Refetch all information
+      app <- applicationStatus(application.application.id, bustCache = true) // Refetch all information
         .map(
           _.getOrElse(
             throw new RuntimeException(
@@ -224,7 +236,7 @@ class ApplicationsService @Inject() (
           .map(
             dataDebitService.dataDebitDisable(_, cancelAtPeriodEnd = false)(hat))
           .getOrElse(Future.successful(()))
-          .map(_ ⇒ throw e)
+          .map(_ => throw e)
     }
   }
 

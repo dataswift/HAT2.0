@@ -61,15 +61,15 @@ class Applications @Inject() (
     SecuredAction(
       ContainsApplicationRole(Owner(), ApplicationList()) || WithRole(Owner())).async { implicit request =>
         for {
-          apps ← applicationsService.applicationStatus()
-          filterApps ← ContainsApplicationRole(ApplicationList()).isAuthorized(
+          apps <- applicationsService.applicationStatus()
+          filterApps <- ContainsApplicationRole(ApplicationList()).isAuthorized(
             request.identity,
             request.authenticator,
             request.dynamicEnvironment)
-          maybeApp ← request.authenticator.customClaims
+          maybeApp <- request.authenticator.customClaims
             .flatMap(customClaims ⇒ (customClaims \ "application").asOpt[String])
             .map(
-              app ⇒
+              app =>
                 applicationsService.applicationStatus(app)(
                   request.dynamicEnvironment,
                   request.identity,
@@ -102,7 +102,7 @@ class Applications @Inject() (
         val bustCache = request.headers.get("Cache-Control").contains("no-cache")
         logger.info(s"Getting app $id status (bust cache: $bustCache)")
         applicationsService.applicationStatus(id, bustCache).map { maybeStatus ⇒
-          maybeStatus map { status ⇒
+          maybeStatus map { status =>
             Ok(Json.toJson(status))
           } getOrElse {
             NotFound(
@@ -118,11 +118,11 @@ class Applications @Inject() (
     SecuredAction(
       ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(
         Owner())).async { implicit request =>
-        applicationsService.applicationStatus(id).flatMap { maybeStatus ⇒
-          maybeStatus map { status ⇒
+        applicationsService.applicationStatus(id).flatMap { maybeStatus =>
+          maybeStatus map { status =>
             applicationsService
               .setup(status)
-              .map(s ⇒ Ok(Json.toJson(s)))
+              .map(s => Ok(Json.toJson(s)))
               .recover {
                 case e: RichDataDuplicateBundleException ⇒
                   logger.error(

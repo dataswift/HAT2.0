@@ -39,7 +39,8 @@ lazy val hat = project
       Library.Utils.playMemcached,
       Library.Utils.elasticacheClusterClient,
       Library.Utils.alpakkaAwsLambda,
-      Library.scalaGuice
+      Library.scalaGuice,
+      Library.ContractLibrary.adjudicator
     ),
     libraryDependencies := (buildEnv.value match {
       case BuildEnv.Developement | BuildEnv.Test =>
