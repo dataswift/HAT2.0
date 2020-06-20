@@ -20,7 +20,8 @@ object NetworkRequest {
     ws: WSClient)(implicit ec: ExecutionContext): Future[WSResponse] = {
     // TODO: update this endpoint
     //ContractIdVar(contractId) / "hat" / HatVar(hatName) / KeyIdVar(keyId) => {
-    val url = s"http://localhost:9002/v1/${contractId}/hat/${hatName}/${keyId}"
+    val url =
+      s"http://localhost:9002/v1/contracts/${contractId}/hat/${hatName}/${keyId}"
     println(url)
     val req = makeRequest(url, ws)
     req.get()
