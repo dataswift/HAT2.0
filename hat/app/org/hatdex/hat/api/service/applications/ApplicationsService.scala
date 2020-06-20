@@ -28,7 +28,7 @@ import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import org.hatdex.hat.api.models.applications.{ Application, ApplicationStatus, HatApplication, Version }
-import org.hatdex.hat.api.models.{ AccessToken, DataDebit, EndpointQuery }
+import org.hatdex.hat.api.models.{ AccessToken, EndpointQuery }
 import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataDuplicateDebitException, RichDataService }
 import org.hatdex.hat.api.service.{ DalExecutionContext, RemoteExecutionContext, StatsReporter }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
@@ -125,35 +125,42 @@ class ApplicationsService @Inject() (
       }
   }
 
-  def setup(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
-    // Create and enable the data debit
-    val maybeDataDebitSetup: Option[Future[DataDebit]] = for {
-      ddId ← application.application.dataDebitId
-      ddsRequest ← application.application.dataDebitSetupRequest
+  private def enableAssociatedDataDebit(application: HatApplication)(implicit hat: HatServer, user: HatUser): Future[Done] = {
+    val maybeDataDebitSetup: Option[Future[Done]] = for {
+      ddId <- application.application.dataDebitId
+      ddsRequest <- application.application.dataDebitSetupRequest
     } yield {
       logger.debug(s"Enable data debit $ddId for ${application.application.id}")
       for {
-        dds ← dataDebitService.createDataDebit(ddId, ddsRequest, user.userId)(hat)
+        _ <- dataDebitService.createDataDebit(ddId, ddsRequest, user.userId)(hat)
           .recoverWith({
             case _: RichDataDuplicateDebitException ⇒
               dataDebitService.updateDataDebitInfo(ddId, ddsRequest)(hat)
                 .flatMap(_ ⇒ dataDebitService.updateDataDebitPermissions(ddId, ddsRequest, user.userId)(hat))
           })
-        _ ← dataDebitService.dataDebitEnableNewestPermissions(ddId)(hat)
-      } yield dds
+        _ <- dataDebitService.dataDebitEnableNewestPermissions(ddId)(hat)
+      } yield Done
     }
 
-    // Set up the app
-    val appSetup = for {
-      _ ← maybeDataDebitSetup.getOrElse(Future.successful(())) // If data debit was there, must have been setup successfully
-      _ ← applicationSetupStatusUpdate(application, enabled = true)(hat.db) // Update status
+    maybeDataDebitSetup.getOrElse(Future.successful(Done)) // If data debit was there, must have been setup successfully
+  }
+
+  private def setupApplication(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
+    for {
+      _ <- applicationSetupStatusUpdate(application, enabled = true)(hat.db) // Update status
       _ <- statsReporter.registerOwnerConsent(application.application.id)
-      app ← applicationStatus(application.application.id, bustCache = true) // Refetch all information
+      app <- applicationStatus(application.application.id, bustCache = true) // Refetch all information
         .map(_.getOrElse(throw new RuntimeException("Application information not found during setup")))
     } yield {
       logger.debug(s"Application status for ${app.application.id}: active = ${app.active}, setup = ${app.setup}, needs updating = ${app.needsUpdating}")
       app
     }
+  }
+
+  def setup(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
+    // Create and enable the data debit
+    val eventualDataDebitSetup: Future[Done] = enableAssociatedDataDebit(application)
+    val appSetup = eventualDataDebitSetup.flatMap(_ => setupApplication(application))
 
     appSetup.recoverWith {
       case e: RuntimeException ⇒

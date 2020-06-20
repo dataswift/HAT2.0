@@ -188,6 +188,7 @@ trait ApplicationsServiceContext extends HATTestContext {
       info = appInfo,
       developer = developer,
       permissions = permissions,
+      dependencies = None,
       setup = setup,
       status = status)
 
