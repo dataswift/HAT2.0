@@ -351,7 +351,6 @@ class ApplicationsService @Inject() (
           ((status, _), canCacheStatus) <- eventualStatus
           (mostRecentData, canCacheData) <- eventualMostRecentData
         } yield {
-<<<<<<< HEAD
           logger.debug(
             s"Check compatibility between $version and new ${app.status}: ${
               Version(version)
@@ -363,7 +362,8 @@ class ApplicationsService @Inject() (
               setup = true,
               enabled = true,
               active = status,
-              Some(app.status.compatibility.greaterThan(Version(version))), // Needs updating if setup version beyond compatible
+              needsUpdating = Some(
+                app.status.compatibility.greaterThan(Version(version))), // Needs updating if setup version beyond compatible
               dependenciesEnabled = None,
               mostRecentData),
               canCacheStatus && canCacheData)
@@ -393,23 +393,7 @@ class ApplicationsService @Inject() (
               dependenciesEnabled = None,
               mostRecentData = None),
             true))
-=======
-          logger.debug(s"Check compatibility between $version and new ${app.status}: ${Version(version).greaterThan(app.status.compatibility)}")
-          (HatApplication(
-            app,
-            setup = true,
-            enabled = true,
-            active = status,
-            needsUpdating = Some(app.status.compatibility.greaterThan(Version(version))), // Needs updating if setup version beyond compatible
-            dependenciesEnabled = None,
-            mostRecentData), canCacheStatus && canCacheData)
-        }
-      case Some(ApplicationStatusRow(_, _, false)) =>
-        // If application has been disabled, reflect in status
-        Future.successful((HatApplication(app, setup = true, enabled = false, active = false, needsUpdating = None, dependenciesEnabled = None, mostRecentData = None), true))
-      case None =>
-        Future.successful((HatApplication(app, setup = false, enabled = false, active = false, needsUpdating = None, dependenciesEnabled = None, mostRecentData = None), true))
->>>>>>> staging
+
     }
   }
 

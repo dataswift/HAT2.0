@@ -39,13 +39,9 @@ lazy val hat = project
       Library.Utils.playMemcached,
       Library.Utils.elasticacheClusterClient,
       Library.Utils.alpakkaAwsLambda,
-<<<<<<< HEAD
       Library.scalaGuice,
-      Library.ContractLibrary.adjudicator
-=======
-      Library.Utils.apacheCommonLang,
-      Library.scalaGuice
->>>>>>> staging
+      Library.ContractLibrary.adjudicator,
+      Library.Utils.apacheCommonLang
     ),
     libraryDependencies := (buildEnv.value match {
       case BuildEnv.Developement | BuildEnv.Test =>
@@ -60,10 +56,7 @@ lazy val hat = project
         libraryDependencies.value.map(excludeSpecs2)
     }),
     libraryDependencies += "org.codehaus.janino" % "janino" % "3.1.2",
-<<<<<<< HEAD
-=======
     libraryDependencies += "org.mockito" % "mockito-core" % "3.3.3" % Test,
->>>>>>> staging
     pipelineStages in Assets := Seq(digest),
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     aggregate in update := false,
