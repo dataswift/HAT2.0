@@ -53,9 +53,9 @@ import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.{ FutureTransformations, Utils }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
-import play.api.Logger
+import play.api.{ Configuration, Logger }
 import play.api.cache.AsyncCacheApi
-import play.api.libs.json.{ JsObject, JsString }
+import play.api.libs.json.{ JsObject, JsString, Json }
 import play.api.libs.ws.WSClient
 import play.api.mvc.RequestHeader
 
@@ -96,10 +96,17 @@ class ApplicationsService @Inject() (
     trustedApplicationProvider: TrustedApplicationProvider,
     silhouette: Silhouette[HatApiAuthEnvironment],
     statsReporter: StatsReporter,
-    system: ActorSystem)(wsClient: WSClient)(implicit val ec: DalExecutionContext) {
+    system: ActorSystem,
+    configuration: Configuration)(wsClient: WSClient)(implicit val ec: DalExecutionContext) {
 
   private val logger = Logger(this.getClass)
   private val applicationsCacheDuration: FiniteDuration = 30.minutes
+
+  val adjudicatorAddress =
+    configuration.underlying.getString("adjudicator.address")
+  val adjudicatorScheme =
+    configuration.underlying.getString("adjudicator.scheme")
+  val adjudicatorEndpoint = s"${adjudicatorScheme}${adjudicatorAddress}"
 
   def applicationStatus(id: String, bustCache: Boolean = false)(
     implicit
@@ -208,6 +215,7 @@ class ApplicationsService @Inject() (
         case ApplicationKind.Contract(x) =>
           org.hatdex.hat.utils.NetworkRequest
             .joinContract(
+              adjudicatorEndpoint,
               hat.hatName,
               io.dataswift.adjudicator.Types
                 .ContractId(
