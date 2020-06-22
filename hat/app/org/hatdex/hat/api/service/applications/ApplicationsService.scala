@@ -29,6 +29,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
 import org.hatdex.hat.api.models.applications.{ Application, ApplicationStatus, HatApplication, Version }
 import org.hatdex.hat.api.models.{ AccessToken, EndpointQuery }
+import org.hatdex.hat.api.service.applications.ApplicationExceptions.{ HatApplicationDependencyException, HatApplicationSetupException }
 import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataDuplicateDebitException, RichDataService }
 import org.hatdex.hat.api.service.{ DalExecutionContext, RemoteExecutionContext, StatsReporter }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
@@ -36,6 +37,7 @@ import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.Tables
 import org.hatdex.hat.dal.Tables.ApplicationStatusRow
 import org.hatdex.hat.resourceManagement.HatServer
+import org.hatdex.hat.she.service.FunctionService
 import org.hatdex.hat.utils.{ FutureTransformations, Utils }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
@@ -73,6 +75,7 @@ class ApplicationsService @Inject() (
     dataDebitService: DataDebitService,
     statusCheckService: ApplicationStatusCheckService,
     trustedApplicationProvider: TrustedApplicationProvider,
+    functionService: FunctionService,
     silhouette: Silhouette[HatApiAuthEnvironment],
     statsReporter: StatsReporter,
     system: ActorSystem)(implicit val ec: DalExecutionContext) {
@@ -150,24 +153,62 @@ class ApplicationsService @Inject() (
       _ <- applicationSetupStatusUpdate(application, enabled = true)(hat.db) // Update status
       _ <- statsReporter.registerOwnerConsent(application.application.id)
       app <- applicationStatus(application.application.id, bustCache = true) // Refetch all information
-        .map(_.getOrElse(throw new RuntimeException("Application information not found during setup")))
+        .map(_.getOrElse(throw HatApplicationSetupException(application.application.id, "Application information not found during setup")))
     } yield {
       logger.debug(s"Application status for ${app.application.id}: active = ${app.active}, setup = ${app.setup}, needs updating = ${app.needsUpdating}")
       app
     }
   }
 
+  private def setupDependencies(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Option[Boolean]] = {
+    val maybeDependenciesSetup: Option[Future[Boolean]] = application.application.dependencies.map { deps =>
+      implicit val hatDb = hat.db
+
+      val appDeps = deps.plugs.toSet ++ deps.plugs.toSet
+      val toolDeps = deps.tools.toSet
+
+      val dependenciesEnabled = for {
+        appStatuses <- Future.sequence(appDeps.map(applicationStatus(_)))
+        updatedAppStatuses <- Future.sequence(appStatuses.flatten.filterNot(app => app.setup && app.enabled).map(setupApplication(_)))
+        toolStatuses <- Future.sequence(toolDeps.map(fId => functionService.get(fId)))
+        updatedToolStatuses <- Future.sequence(toolStatuses.flatten.filterNot(_.status.enabled).map(f => functionService.save(f.copy(status = f.status.copy(enabled = true)))))
+      } yield updatedAppStatuses.forall(app => app.setup && app.enabled) && updatedToolStatuses.forall(_.status.enabled)
+
+      dependenciesEnabled.recoverWith {
+        case e: HatApplicationSetupException =>
+          logger.warn(s"Application dependency ${e.appId} setup failed: ${e.getMessage}")
+          throw HatApplicationDependencyException(e.appId, e.getMessage)
+      }
+    }
+
+    maybeDependenciesSetup match {
+      case Some(value) => value.map(Some(_))
+      case None        => Future.successful(None)
+    }
+  }
+
   def setup(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
-    // Create and enable the data debit
-    val eventualDataDebitSetup: Future[Done] = enableAssociatedDataDebit(application)
-    val appSetup = eventualDataDebitSetup.flatMap(_ => setupApplication(application))
+    val appSetup = for {
+      // Create and enable the data debit
+      _ <- enableAssociatedDataDebit(application)
+      setup <- setupApplication(application)
+      dependenciesSetup <- setupDependencies(application)
+    } yield setup.copy(dependenciesEnabled = dependenciesSetup)
 
     appSetup.recoverWith {
-      case e: RuntimeException ⇒
+      case e: HatApplicationSetupException =>
         logger.warn(s"Application setup failed: ${e.getMessage}")
         application.application.dataDebitId.map(dataDebitService.dataDebitDisable(_, cancelAtPeriodEnd = false)(hat))
           .getOrElse(Future.successful(()))
-          .map(_ ⇒ throw e)
+          .map(_ => throw e)
+
+      case _: HatApplicationDependencyException =>
+        applicationStatus(application.application.id, bustCache = true).map { maybeApplication =>
+          maybeApplication match {
+            case Some(application) => application
+            case None              => throw new NoSuchElementException("Application not found")
+          }
+        }
     }
   }
 
