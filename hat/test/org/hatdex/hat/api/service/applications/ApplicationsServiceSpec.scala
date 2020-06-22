@@ -35,11 +35,11 @@ import org.hatdex.hat.api.models.applications.{
   HatApplication,
   Version
 }
-import org.hatdex.hat.api.service.richData.{DataDebitService, RichDataService}
+import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataService }
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
-import org.specs2.specification.{BeforeAll, BeforeEach}
+import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
@@ -49,11 +49,11 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 
 class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
-    extends PlaySpecification
-    with Mockito
-    with ApplicationsServiceContext
-    with BeforeEach
-    with BeforeAll {
+  extends PlaySpecification
+  with Mockito
+  with ApplicationsServiceContext
+  with BeforeEach
+  with BeforeAll {
 
   val logger = Logger(this.getClass)
 
@@ -71,8 +71,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
       Tables.DataDebitPermissions.delete,
       Tables.DataBundles.filter(_.bundleId like "notables%").delete,
       Tables.DataDebit.delete,
-      Tables.ApplicationStatus.delete
-    )
+      Tables.ApplicationStatus.delete)
 
     val cache = application.injector.instanceOf[AsyncCacheApi]
     cache.removeAll()
@@ -98,8 +97,8 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
     "Include setup applications" in {
       val service = application.injector.instanceOf[ApplicationsService]
       val result = for {
-<<<<<<< HEAD
-        _ ← service.setup(
+
+        _ <- service.setup(
           HatApplication(
             notablesApp,
             setup = false,
@@ -107,12 +106,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
             active = false,
             None,
             None,
-            None
-          )
-        )
-=======
-        _ ← service.setup(HatApplication(notablesApp, setup = false, enabled = false, active = false, None, None, None))
->>>>>>> staging
+            None))
         apps ← service.applicationStatus()
       } yield {
         apps.length must be equalTo 5
@@ -179,11 +173,8 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
               None,
               None,
               JsObject(Map("test" -> JsString("test"))),
-              None
-            )
-          ),
-          skipErrors = true
-        )
+              None)),
+          skipErrors = true)
         app <- service.applicationStatus(notablesApp.id, bustCache = true)
       } yield {
         app must beSome
@@ -226,32 +217,18 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
       result await (1, 20.seconds)
     }
 
-<<<<<<< HEAD
-    //    "Return `active=false` status for apps where current version is not compatible with one setup" in {
-    //      val service = application.injector.instanceOf[ApplicationsService]
-    //      val result = for {
-    //        _ <- service.setup(
-    //          HatApplication(
-    //            notablesAppIncompatible,
-    //            setup = false,
-    //            enabled = false,
-    //            active = false,
-    //            None,
-    //            None))
-    //        app <- service.applicationStatus(notablesAppIncompatibleUpdated.id)
-    //      } yield {
-    //        app must beSome
-    //        app.get.setup must beTrue
-    //        app.get.needsUpdating must beSome(true)
-    //      }
-    //
-    //      result await (1, 20.seconds)
-    //    }
-=======
     "Return `active=false` status for apps where current version is not compatible with one setup" in {
       val service = application.injector.instanceOf[ApplicationsService]
       val result = for {
-        _ <- service.setup(HatApplication(notablesAppIncompatible, setup = false, enabled = false, active = false, None, None, None))
+        _ <- service.setup(
+          HatApplication(
+            notablesAppIncompatible,
+            setup = false,
+            enabled = false,
+            active = false,
+            None,
+            None,
+            None))
         app <- service.applicationStatus(notablesAppIncompatibleUpdated.id)
       } yield {
         app must beSome
@@ -261,7 +238,6 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
 
       result await (1, 20.seconds)
     }
->>>>>>> staging
 
     "Return `active=false` status for apps where data debit has been disabled" in {
       val service = application.injector.instanceOf[ApplicationsService]
@@ -272,8 +248,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
         _ ← service.setup(app.get)(hatServer, owner, fakeRequest)
         _ ← dataDebitService.dataDebitDisable(
           app.get.application.dataDebitId.get,
-          cancelAtPeriodEnd = false
-        )
+          cancelAtPeriodEnd = false)
         _ ← cache.remove(service.appCacheKey(app.get.application.id)) //cache.remove(s"apps:${hatServer.domain}:${app.get.application.id}")
         what ← cache.get(service.appCacheKey(app.get.application.id))
         setup <- service.applicationStatus(app.get.application.id)
@@ -321,13 +296,9 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
     "Return failure for a made-up Application Information" in {
       val service = application.injector.instanceOf[ApplicationsService]
       val result = for {
-<<<<<<< HEAD
-        setup ← service.setup(
-          HatApplication(notablesAppMissing, true, true, true, None, None, None)
-        )
-=======
-        setup ← service.setup(HatApplication(notablesAppMissing, true, true, true, None, None, None))
->>>>>>> staging
+
+        setup <- service.setup(
+          HatApplication(notablesAppMissing, true, true, true, None, None, None))
       } yield setup
 
       result must throwA[RuntimeException].await(1, 20.seconds)
@@ -368,13 +339,9 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
     "Return failure for a made-up Application Information" in {
       val service = application.injector.instanceOf[ApplicationsService]
       val result = for {
-<<<<<<< HEAD
-        setup ← service.disable(
-          HatApplication(notablesAppMissing, true, true, true, None, None, None)
-        )
-=======
-        setup ← service.disable(HatApplication(notablesAppMissing, true, true, true, None, None, None))
->>>>>>> staging
+
+        setup <- service.disable(
+          HatApplication(notablesAppMissing, true, true, true, None, None, None))
       } yield setup
 
       result must throwA[RuntimeException].await(1, 20.seconds)
@@ -395,21 +362,17 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
           None,
           "hat.org",
           Some(3.days),
-          3.days
-        )
+          3.days)
         val unserialized = JWTRS256Authenticator.unserialize(
           token.accessToken,
           encoder,
-          settings
-        )
+          settings)
 
         unserialized must beSuccessfulTry
         (unserialized.get.customClaims.get \ "application").get must be equalTo JsString(
-          notablesApp.id
-        )
+          notablesApp.id)
         (unserialized.get.customClaims.get \ "applicationVersion").get must be equalTo JsString(
-          notablesApp.info.version.toString
-        )
+          notablesApp.info.version.toString)
       }
 
       result await (1, 20.seconds)
@@ -425,8 +388,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
           .status(
             ApplicationStatus
               .Internal(Version("1.0.0"), None, None, None, DateTime.now()),
-            "token"
-          )
+            "token")
           .map { result ⇒
             result must beTrue
           }
@@ -446,10 +408,8 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
               None,
               None,
               None,
-              DateTime.now()
-            ),
-            "token"
-          )
+              DateTime.now()),
+            "token")
           .map { result ⇒
             result must beTrue
           }
@@ -469,10 +429,8 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
               None,
               None,
               None,
-              DateTime.now()
-            ),
-            "token"
-          )
+              DateTime.now()),
+            "token")
           .map { result ⇒
             result must beFalse
           }
