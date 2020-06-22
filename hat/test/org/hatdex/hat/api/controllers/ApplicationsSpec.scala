@@ -25,15 +25,18 @@
 package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.test._
+import org.hatdex.hat.api.service.applications.ApplicationsServiceContext
+
 import org.hatdex.hat.api.json.ApplicationJsonProtocol
 import org.hatdex.hat.api.models.applications.HatApplication
+
 import org.hatdex.hat.api.models.{ AccessToken, ErrorMessage }
-import org.hatdex.hat.api.service.applications.ApplicationsServiceContext
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
+import play.api.libs.json.{ JsObject, JsString }
+
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
-import play.api.libs.json.{ JsObject, JsString }
 import play.api.test.{ FakeRequest, PlaySpecification }
 
 import scala.concurrent.Await
@@ -71,11 +74,13 @@ class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsS
       val result = controller.applications().apply(request)
 
       status(result) must equalTo(OK)
+      contentAsJson(result).validate[Seq[HatApplication]].isSuccess must beTrue
       val apps = contentAsJson(result).as[Seq[HatApplication]]
       apps.length must be equalTo 5
       apps.find(_.application.id == notablesApp.id) must beSome
       apps.find(_.application.id == notablesAppDebitless.id) must beSome
       apps.find(_.application.id == notablesAppIncompatible.id) must beSome
+
     }
   }
 
@@ -202,5 +207,4 @@ class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsS
       token.accessToken must not beEmpty
     }
   }
-
 }

@@ -1,8 +1,11 @@
 # PHATA routes
 GET         /                                                    org.hatdex.hat.phata.controllers.Phata.rumpelIndex
 GET         /assets/*file                                        controllers.Assets.at(file)
-GET         /hatlogin                                            org.hatdex.hat.phata.controllers.Phata.hatLogin(name: String, redirect: String)
-GET         /hat/claim/:claimToken                               org.hatdex.hat.phata.controllers.Phata.altRumpelIndex(claimToken: String)
+GET         /hatlogin                                            org.hatdex.hat.phata.controllers.Phata.altRumpelIndex
+GET         /hat-setup-login                                     org.hatdex.hat.phata.controllers.Phata.altRumpelIndex
+GET         /hat/claim/:claimToken                               org.hatdex.hat.phata.controllers.Phata.altRumpelIndexClaim(claimToken: String)
+GET         /user/login                                          org.hatdex.hat.phata.controllers.Phata.altRumpelIndex
+GET         /user/password/recover                               org.hatdex.hat.phata.controllers.Phata.altRumpelIndex
 GET         /.well-known/apple-app-site-association              org.hatdex.hat.phata.controllers.WellKnown.appleAppSiteAssociation
 
 # USER Routes

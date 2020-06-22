@@ -40,7 +40,7 @@ import org.hatdex.hat.api.service.{ HatServicesService, LogService, MailTokenSer
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models._
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
-import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer }
+import org.hatdex.hat.utils.{ ApplicationMailDetails, HatBodyParsers, HatMailer }
 import play.api.{ Configuration, Logger }
 import play.api.cache.{ Cached, CachedBuilder }
 import play.api.i18n.Lang
@@ -247,9 +247,13 @@ class Authentication @Inject() (
         case Some(user) =>
           applicationsService.applicationStatus()(request.dynamicEnvironment, user, request).flatMap { applications =>
             val maybeApplication = applications.find(_.application.id.equals(claimHatRequest.applicationId))
-            val maybeAppDetails = maybeApplication.map { app =>
-              ((app.application.info.name, app.application.info.graphics.logo.normal),
-                (app.application.id, app.application.info.version.toString))
+
+            val appMailDetails: Option[ApplicationMailDetails] = maybeApplication.map { app =>
+              ApplicationMailDetails(app.application.info.name, app.application.info.graphics.logo.normal, app.application.info.url)
+            }
+
+            val appLogDetails: Option[(String, String)] = maybeApplication.map { app =>
+              (app.application.id, app.application.info.version.toString)
             }
 
             val scheme = if (request.secure) {
@@ -262,7 +266,7 @@ class Authentication @Inject() (
             tokenService.retrieve(email, isSignup = true).flatMap {
               case Some(existingTokenUser) if !existingTokenUser.isExpired =>
                 val claimLink = s"$scheme${request.host}/hat/claim/${existingTokenUser.id}?email=${URLEncoder.encode(email, "UTF-8")}"
-                mailer.claimHat(email, claimLink, maybeAppDetails.map(_._1))
+                mailer.claimHat(email, claimLink, appMailDetails)
 
                 Future.successful(response)
               case Some(_) => Future.successful(Ok(Json.toJson(SuccessResponse("The HAT is already claimed"))))
@@ -273,7 +277,7 @@ class Authentication @Inject() (
                 val eventualResult = for {
                   _ <- tokenService.create(token)
                   _ <- logService
-                    .logAction(request.dynamicEnvironment.domain, LogRequest("unclaimed", None, None), maybeAppDetails.map(_._2))
+                    .logAction(request.dynamicEnvironment.domain, LogRequest("unclaimed", None, None), appLogDetails)
                     .recover {
                       case e =>
                         logger.error(s"LogActionError::unclaimed. Reason: ${e.getMessage}")
@@ -282,7 +286,7 @@ class Authentication @Inject() (
                 } yield {
 
                   val claimLink = s"$scheme${request.host}/hat/claim/${token.id}?email=${URLEncoder.encode(email, "UTF-8")}"
-                  mailer.claimHat(email, claimLink, maybeAppDetails.map(_._1))
+                  mailer.claimHat(email, claimLink, appMailDetails)
 
                   response
                 }

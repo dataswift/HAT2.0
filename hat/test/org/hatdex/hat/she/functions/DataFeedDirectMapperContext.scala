@@ -1002,7 +1002,7 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
 
   val googleCalendarFullDayEvent: EndpointData = Json.parse(googleCalendarFullDayEventText).as[EndpointData]
 
-  private val instagramImagePost =
+  private val instagramImagePostv1 =
     """
       |{
       |        "endpoint": "instagram/feed",
@@ -1066,7 +1066,7 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
       |    }
     """.stripMargin
 
-  val exampleInstagramImage: EndpointData = Json.parse(instagramImagePost).as[EndpointData]
+  val exampleInstagramImagev1: EndpointData = Json.parse(instagramImagePostv1).as[EndpointData]
 
   private val instagramMultipleImagePost =
     """
@@ -1203,4 +1203,25 @@ trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
     """.stripMargin
 
   val exampleMultipleInstagramImages: EndpointData = Json.parse(instagramMultipleImagePost).as[EndpointData]
+
+  private val instagramImagePostv2 =
+    """
+      |{
+      |        "endpoint": "instagram/feed",
+      |        "recordId": "2ab1ba13-1f52-4340-b5d6-6cb99bc2b8f1",
+      |        "data": {
+      |            "id": "17843502451208638",
+      |            "caption": "Saturday breakfast magic",
+      |            "username": "marios4th",
+      |            "media_url": "https://scontent.xx.fbcdn.net/v/t51.2885-15/21827559_1735810643096299_7305270523276034048_n.jpg?_nc_cat=101&_nc_sid=8ae9d6&_nc_ohc=LEbATLws-CIAX9dGQKn&_nc_ht=scontent.xx&oh=e88cb14f8ffa2237a84b6f4eb3293527&oe=5E8BD928",
+      |            "permalink": "https://www.instagram.com/p/BZ_Z-HFH4i-/",
+      |            "timestamp": "2020-04-20T14:40:11+0000",
+      |            "media_type": "IMAGE",
+      |            "ds_api_version": "v2",
+      |            "ds_created_time": "1588636800"
+      |        }
+      |    }
+    """.stripMargin
+
+  val exampleInstagramImagev2: EndpointData = Json.parse(instagramImagePostv2).as[EndpointData]
 }

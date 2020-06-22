@@ -39,8 +39,13 @@ lazy val hat = project
       Library.Utils.playMemcached,
       Library.Utils.elasticacheClusterClient,
       Library.Utils.alpakkaAwsLambda,
+<<<<<<< HEAD
       Library.scalaGuice,
       Library.ContractLibrary.adjudicator
+=======
+      Library.Utils.apacheCommonLang,
+      Library.scalaGuice
+>>>>>>> staging
     ),
     libraryDependencies := (buildEnv.value match {
       case BuildEnv.Developement | BuildEnv.Test =>
@@ -55,6 +60,10 @@ lazy val hat = project
         libraryDependencies.value.map(excludeSpecs2)
     }),
     libraryDependencies += "org.codehaus.janino" % "janino" % "3.1.2",
+<<<<<<< HEAD
+=======
+    libraryDependencies += "org.mockito" % "mockito-core" % "3.3.3" % Test,
+>>>>>>> staging
     pipelineStages in Assets := Seq(digest),
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     aggregate in update := false,
@@ -72,16 +81,16 @@ lazy val hat = project
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(AshScriptPlugin)
   .settings(
+    
     // Use the alternative "Ash" script for running compiled project form inside Alpine-derived container
     // as Bash is incompatible with Alpine
-    javaOptions in Universal ++= Seq("-Dpidfile.path=/dev/null", "-Dplay.server.pidfile.path=/dev/null"),
+    javaOptions in Universal ++= Seq(),
     packageName in Docker := "hat",
     maintainer in Docker := "andrius.aucinas@hatdex.org",
     version in Docker := version.value,
-    dockerExposedPorts := Seq(8080),
-    dockerBaseImage := "openjdk:8-jre-alpine",
-    dockerEntrypoint := Seq("bin/hat"),
-    dockerChmodType := DockerChmodType.UserGroupWriteExecute
+    dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine",
+    dockerExposedPorts := Seq(9000),
+    dockerEntrypoint := Seq("bin/hat")
   )
   .enablePlugins(SlickCodeGeneratorPlugin)
   .settings(

@@ -98,6 +98,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
     "Include setup applications" in {
       val service = application.injector.instanceOf[ApplicationsService]
       val result = for {
+<<<<<<< HEAD
         _ ← service.setup(
           HatApplication(
             notablesApp,
@@ -109,6 +110,9 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
             None
           )
         )
+=======
+        _ ← service.setup(HatApplication(notablesApp, setup = false, enabled = false, active = false, None, None, None))
+>>>>>>> staging
         apps ← service.applicationStatus()
       } yield {
         apps.length must be equalTo 5
@@ -222,6 +226,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
       result await (1, 20.seconds)
     }
 
+<<<<<<< HEAD
     //    "Return `active=false` status for apps where current version is not compatible with one setup" in {
     //      val service = application.injector.instanceOf[ApplicationsService]
     //      val result = for {
@@ -242,6 +247,21 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
     //
     //      result await (1, 20.seconds)
     //    }
+=======
+    "Return `active=false` status for apps where current version is not compatible with one setup" in {
+      val service = application.injector.instanceOf[ApplicationsService]
+      val result = for {
+        _ <- service.setup(HatApplication(notablesAppIncompatible, setup = false, enabled = false, active = false, None, None, None))
+        app <- service.applicationStatus(notablesAppIncompatibleUpdated.id)
+      } yield {
+        app must beSome
+        app.get.setup must beTrue
+        app.get.needsUpdating must beSome(true)
+      }
+
+      result await (1, 20.seconds)
+    }
+>>>>>>> staging
 
     "Return `active=false` status for apps where data debit has been disabled" in {
       val service = application.injector.instanceOf[ApplicationsService]
@@ -301,9 +321,13 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
     "Return failure for a made-up Application Information" in {
       val service = application.injector.instanceOf[ApplicationsService]
       val result = for {
+<<<<<<< HEAD
         setup ← service.setup(
           HatApplication(notablesAppMissing, true, true, true, None, None, None)
         )
+=======
+        setup ← service.setup(HatApplication(notablesAppMissing, true, true, true, None, None, None))
+>>>>>>> staging
       } yield setup
 
       result must throwA[RuntimeException].await(1, 20.seconds)
@@ -344,9 +368,13 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
     "Return failure for a made-up Application Information" in {
       val service = application.injector.instanceOf[ApplicationsService]
       val result = for {
+<<<<<<< HEAD
         setup ← service.disable(
           HatApplication(notablesAppMissing, true, true, true, None, None, None)
         )
+=======
+        setup ← service.disable(HatApplication(notablesAppMissing, true, true, true, None, None, None))
+>>>>>>> staging
       } yield setup
 
       result must throwA[RuntimeException].await(1, 20.seconds)

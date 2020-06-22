@@ -93,11 +93,17 @@ object Dependencies {
       val elasticacheClusterClient = "com.amazonaws" % "elasticache-java-cluster-client" % "1.1.1"
       val playMemcached = "com.github.mumoshu" %% "play2-memcached-play26" % "0.9.3" exclude ("net.spy", "spymemcached")
       val alpakkaAwsLambda = "com.lightbend.akka" %% "akka-stream-alpakka-awslambda" % "0.20"
+      val apacheCommonLang = "org.apache.commons" % "commons-lang3" % "3.10"
     }
 
     object HATDeX {
+<<<<<<< HEAD
       val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.6.10"
       val dexClient = "org.hatdex" %% "dex-client-scala" % "2.6.8"
+=======
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.6.12"
+      val dexClient = "org.hatdex" %% "dex-client-scala" % "2.6.10"
+>>>>>>> staging
       val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
     }
 
