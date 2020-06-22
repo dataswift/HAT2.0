@@ -1,9 +1,9 @@
 package org.hatdex.hat.utils
 
-import io.dataswift.adjudicator.Types.{ Contract, ContractId }
-import play.api.libs.ws.{ WSClient, WSRequest, WSResponse }
+import io.dataswift.adjudicator.Types.{Contract, ContractId}
+import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future
 
 // TODO: rename to adjudicator
@@ -16,7 +16,8 @@ object NetworkRequest {
     contractId: ContractId,
     hatName: String,
     keyId: String,
-    ws: WSClient)(implicit ec: ExecutionContext): Future[WSResponse] = {
+    ws: WSClient
+  )(implicit ec: ExecutionContext): Future[WSResponse] = {
     // TODO: update this endpoint
     val url =
       s"${adjudicatorEndpoint}/v1/contracts/${contractId}/hat/${hatName}/${keyId}"
@@ -28,19 +29,21 @@ object NetworkRequest {
     adjudicatorEndpoint: String,
     hatName: String,
     contractId: ContractId,
-    ws: WSClient)(implicit ec: ExecutionContext): Future[WSResponse] = {
+    ws: WSClient
+  )(implicit ec: ExecutionContext): Future[WSResponse] = {
     val url =
       s"${adjudicatorEndpoint}/v1/contracts/${contractId}/hat/${hatName}"
     val req =
       makeRequest(url, ws).withHttpHeaders("Content-Type" -> "application/json")
-    req.put("d")
+    req.put("")
   }
 
   def leaveContract(
     adjudicatorEndpoint: String,
     hatName: String,
     contractId: ContractId,
-    ws: WSClient)(implicit ec: ExecutionContext): Future[WSResponse] = {
+    ws: WSClient
+  )(implicit ec: ExecutionContext): Future[WSResponse] = {
     val url =
       s"${adjudicatorEndpoint}/v1/contracts/${contractId}/hat/${hatName}"
     val req = makeRequest(url, ws)
@@ -49,7 +52,8 @@ object NetworkRequest {
 
   private def makeRequest(url: String, ws: WSClient)(
     implicit
-    ec: ExecutionContext): WSRequest = {
+    ec: ExecutionContext
+  ): WSRequest = {
     ws.url(url)
     // TODO: Auth to ADJ goes here.
     //.withHttpHeaders("Accept" -> "application/json"
