@@ -74,7 +74,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       val result = for {
         apps <- service.applicationStatus()
       } yield {
-        apps.length must be equalTo 7
+        apps.length must be equalTo 8
         apps.find(_.application.id == notablesApp.id) must beSome
         apps.find(_.application.id == notablesAppDebitless.id) must beSome
         apps.find(_.application.id == notablesAppIncompatible.id) must beSome
@@ -89,7 +89,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
         _ ← service.setup(HatApplication(notablesApp, setup = false, enabled = false, active = false, None, None, None))
         apps ← service.applicationStatus()
       } yield {
-        apps.length must be equalTo 7
+        apps.length must be equalTo 8
         apps.find(_.application.id == notablesAppDebitless.id) must beSome
         apps.find(_.application.id == notablesAppIncompatible.id) must beSome
         val setupApp = apps.find(_.application.id == notablesApp.id)
@@ -283,14 +283,18 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecificati
       result await (1, 20.seconds)
     }
 
-    "Return failure for invalid dependencies" in {
+    "Return partial success for application with invalid dependencies" in {
       val service = application.injector.instanceOf[ApplicationsService]
       val result = for {
         app <- service.applicationStatus(notablesAppDebitlessWithInvalidDependency.id)
         setup <- service.setup(app.get)
-      } yield setup
+      } yield {
+        setup.active must beTrue
+        setup.enabled must beTrue
+        setup.dependenciesEnabled must beSome(false)
+      }
 
-      result must throwA[NoSuchElementException].await(1, 20.seconds) // FIXME: it should not be NoSuchElementException
+      result await (1, 20.seconds)
     }
   }
 

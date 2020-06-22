@@ -287,7 +287,8 @@ trait ApplicationsServiceContext extends HATTestContext {
     override def configure(): Unit = {
       bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(
         Seq(notablesApp, notablesAppDebitless, notablesAppIncompatibleUpdated,
-          notablesAppExternal, notablesAppExternalFailing, notablesAppDebitlessWithPlugDependency,
+          notablesAppExternal, notablesAppExternalFailing,
+          notablesAppDebitlessWithPlugDependency, notablesAppDebitlessWithInvalidDependency,
           plugApp)))
 
       bind[ApplicationStatusCheckService].toInstance(mockStatusChecker)

@@ -164,26 +164,30 @@ class ApplicationsService @Inject() (
     val maybeDependenciesSetup: Option[Future[Boolean]] = application.application.dependencies.map { deps =>
       implicit val hatDb = hat.db
 
-      val appDeps = deps.plugs.toSet ++ deps.plugs.toSet
+      val appDeps = deps.plugs.toSet ++ deps.contracts.toSet
       val toolDeps = deps.tools.toSet
 
       val dependenciesEnabled = for {
         appStatuses <- Future.sequence(appDeps.map(applicationStatus(_)))
-        updatedAppStatuses <- Future.sequence(appStatuses.flatten.filterNot(app => app.setup && app.enabled).map(setupApplication(_)))
+        updatedAppStatuses <- Future.sequence(appStatuses.map(_.get).filterNot(app => app.setup && app.enabled).map(setupApplication(_)))
         toolStatuses <- Future.sequence(toolDeps.map(fId => functionService.get(fId)))
-        updatedToolStatuses <- Future.sequence(toolStatuses.flatten.filterNot(_.status.enabled).map(f => functionService.save(f.copy(status = f.status.copy(enabled = true)))))
+        updatedToolStatuses <- Future.sequence(toolStatuses.map(_.get).filterNot(_.status.enabled).map(f => functionService.save(f.copy(status = f.status.copy(enabled = true)))))
       } yield updatedAppStatuses.forall(app => app.setup && app.enabled) && updatedToolStatuses.forall(_.status.enabled)
 
       dependenciesEnabled.recoverWith {
         case e: HatApplicationSetupException =>
-          logger.warn(s"Application dependency ${e.appId} setup failed: ${e.getMessage}")
-          throw HatApplicationDependencyException(e.appId, e.getMessage)
+          logger.warn(s"Dependency ${e.appId} setup for application ${application.application.id} failed: ${e.getMessage}")
+          throw HatApplicationDependencyException(application.application.id, e.getMessage)
+
+        case _: NoSuchElementException =>
+          logger.warn(s"Dependency not found. Mis-configured application ${application.application.id}")
+          throw HatApplicationDependencyException(application.application.id, "Dependency not found")
       }
     }
 
     maybeDependenciesSetup match {
-      case Some(value) => value.map(Some(_))
-      case None        => Future.successful(None)
+      case Some(eventualDependenciesResult) => eventualDependenciesResult.map(Some(_))
+      case None                             => Future.successful(None)
     }
   }
 
@@ -205,7 +209,7 @@ class ApplicationsService @Inject() (
       case _: HatApplicationDependencyException =>
         applicationStatus(application.application.id, bustCache = true).map { maybeApplication =>
           maybeApplication match {
-            case Some(application) => application
+            case Some(application) => application.copy(dependenciesEnabled = Some(false))
             case None              => throw new NoSuchElementException("Application not found")
           }
         }
