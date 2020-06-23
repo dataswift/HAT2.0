@@ -77,7 +77,7 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
       transformed.source must be equalTo "google"
       transformed.types must contain("event")
       transformed.title.get.text must contain("MadHATTERs Tea Party: The Boston Party")
-      transformed.title.get.subtitle.get must contain("12 December 18:30 - 22:30 EST")
+      transformed.title.get.subtitle.get must contain("12 December 18:30 - 22:30 America/New_York")
       transformed.content.get.text.get must contain("personal data, user accounts, security and value")
     }
 
@@ -87,7 +87,7 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
       transformed.source must be equalTo "google"
       transformed.types must contain("event")
       transformed.title.get.text must contain("MadHATTERs Tea Party: The Boston Party")
-      transformed.title.get.subtitle.get must contain("12 December 18:30 - 22:30 EST")
+      transformed.title.get.subtitle.get must contain("12 December 18:30 - 22:30 America/New_York")
       transformed.content.get.text.get must contain("BD call")
       transformed.content.get.text.get must not contain ("<br>")
       transformed.content.get.text.get must not contain ("&nbsp;")
