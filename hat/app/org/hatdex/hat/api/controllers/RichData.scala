@@ -24,7 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import java.nio.charset.Charset
 import java.util.UUID
 
 import javax.inject.Inject
@@ -53,16 +52,15 @@ import org.hatdex.hat.authentication.{
 }
 import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider }
 import play.api.libs.json.{ JsArray, JsValue, Json }
-import play.api.libs.ws.{ WSClient, WSResponse }
+import play.api.libs.ws.WSClient
 import play.api.mvc._
 import org.hatdex.hat.utils.NetworkRequest
 import org.hatdex.libs.dal.HATPostgresProfile
 import eu.timepit.refined._
 import play.api.Configuration
-//import eu.timepit.refined.api._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.collection.NonEmpty
-import eu.timepit.refined.numeric._
+import pdi.jwt.JwtClaim
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
@@ -79,73 +77,69 @@ class RichData @Inject() (
     loggingProvider: LoggingProvider,
     configuration: Configuration,
     implicit val ec: ExecutionContext,
-    implicit val applicationsService: ApplicationsService)(ws: WSClient)
-  extends HatApiController(components, silhouette)
-  with RichDataJsonFormats {
+    implicit val applicationsService: ApplicationsService
+)(wsClient: WSClient)
+    extends HatApiController(components, silhouette)
+    with RichDataJsonFormats {
 
-  private val logger = loggingProvider.logger(this.getClass)
+  private val logger             = loggingProvider.logger(this.getClass)
   private val defaultRecordLimit = 1000
 
+  //** Adjudicator
   val adjudicatorAddress =
     configuration.underlying.getString("adjudicator.address")
   val adjudicatorScheme =
     configuration.underlying.getString("adjudicator.scheme")
   val adjudicatorEndpoint = s"${adjudicatorScheme}${adjudicatorAddress}"
+  val adjudicatorClient   = new NetworkRequest(adjudicatorEndpoint, wsClient)
 
   /**
-   * Returns Data Records for a given endpoint
-   *
-   * @param namespace Namespace of the endpoint, typically restricted to a specific application
-   * @param endpoint Endpoint name within the namespace, any valid URL path
-   * @param orderBy Data Field within a data record by which data should be ordered
-   * @param ordering The ordering to use for data sorting - default is "ascending", set to "descending" for reverse order
-   * @param skip How many records to skip (used for paging)
-   * @param take How many data records to take - limits the number of results, could be used for paging responses
-   * @return HTTP Response with JSON-serialized data records or an error message
-   */
+    * Returns Data Records for a given endpoint
+    *
+    * @param namespace Namespace of the endpoint, typically restricted to a specific application
+    * @param endpoint Endpoint name within the namespace, any valid URL path
+    * @param orderBy Data Field within a data record by which data should be ordered
+    * @param ordering The ordering to use for data sorting - default is "ascending", set to "descending" for reverse order
+    * @param skip How many records to skip (used for paging)
+    * @param take How many data records to take - limits the number of results, could be used for paging responses
+    * @return HTTP Response with JSON-serialized data records or an error message
+    */
   def getEndpointData(
-    namespace: String,
-    endpoint: String,
-    orderBy: Option[String],
-    ordering: Option[String],
-    skip: Option[Int],
-    take: Option[Int]): Action[AnyContent] =
+      namespace: String,
+      endpoint: String,
+      orderBy: Option[String],
+      ordering: Option[String],
+      skip: Option[Int],
+      take: Option[Int]
+  ): Action[AnyContent] =
     SecuredAction(
-      WithRole(Owner(), NamespaceRead(namespace)) || ContainsApplicationRole(
-        Owner(),
-        NamespaceRead(namespace))).async { implicit request =>
-        val dataEndpoint = s"$namespace/$endpoint"
-        val query = Seq(EndpointQuery(dataEndpoint, None, None, None))
-        val data = dataService.propertyData(
-          query,
-          orderBy,
-          ordering.contains("descending"),
-          skip.getOrElse(0),
-          take.orElse(Some(defaultRecordLimit)))
-        data.map(d => Ok(Json.toJson(d)))
-      }
+      WithRole(Owner(), NamespaceRead(namespace)) || ContainsApplicationRole(Owner(), NamespaceRead(namespace))
+    ).async { implicit request =>
+      val dataEndpoint = s"$namespace/$endpoint"
+      val query        = Seq(EndpointQuery(dataEndpoint, None, None, None))
+      val data = dataService.propertyData(query,
+                                          orderBy,
+                                          ordering.contains("descending"),
+                                          skip.getOrElse(0),
+                                          take.orElse(Some(defaultRecordLimit))
+      )
+      data.map(d => Ok(Json.toJson(d)))
+    }
 
-  def saveEndpointData(
-    namespace: String,
-    endpoint: String,
-    skipErrors: Option[Boolean]): Action[JsValue] =
-    SecuredAction(
-      WithRole(NamespaceWrite(namespace)) || ContainsApplicationRole(
-        NamespaceWrite(namespace))).async(parsers.json[JsValue]) { implicit request =>
+  def saveEndpointData(namespace: String, endpoint: String, skipErrors: Option[Boolean]): Action[JsValue] =
+    SecuredAction(WithRole(NamespaceWrite(namespace)) || ContainsApplicationRole(NamespaceWrite(namespace)))
+      .async(parsers.json[JsValue]) { implicit request =>
         val dataEndpoint = s"$namespace/$endpoint"
         val response = request.body match {
           case array: JsArray =>
             // TODO: extract unique ID and timestamp
-            val values = array.value.map(
-              EndpointData(dataEndpoint, None, None, None, _, None))
+            val values = array.value.map(EndpointData(dataEndpoint, None, None, None, _, None))
             dataService
-              .saveData(
-                request.identity.userId,
-                values,
-                skipErrors.getOrElse(false))
+              .saveData(request.identity.userId, values, skipErrors.getOrElse(false))
               .andThen(
                 dataEventDispatcher
-                  .dispatchEventDataCreated(s"saved batch for $dataEndpoint"))
+                  .dispatchEventDataCreated(s"saved batch for $dataEndpoint")
+              )
               .map(saved => Created(Json.toJson(saved)))
 
           case value: JsValue =>
@@ -156,7 +150,8 @@ class RichData @Inject() (
               .saveData(request.identity.userId, values)
               .andThen(
                 dataEventDispatcher
-                  .dispatchEventDataCreated(s"saved data for $dataEndpoint"))
+                  .dispatchEventDataCreated(s"saved data for $dataEndpoint")
+              )
               .map(saved => Created(Json.toJson(saved.head)))
         }
 
@@ -168,38 +163,29 @@ class RichData @Inject() (
         }
       }
 
-  def deleteEndpointData(
-    namespace: String,
-    endpoint: String): Action[AnyContent] =
-    SecuredAction(
-      WithRole(NamespaceWrite(namespace)) || ContainsApplicationRole(
-        NamespaceWrite(namespace))).async { implicit request =>
+  def deleteEndpointData(namespace: String, endpoint: String): Action[AnyContent] =
+    SecuredAction(WithRole(NamespaceWrite(namespace)) || ContainsApplicationRole(NamespaceWrite(namespace))).async {
+      implicit request =>
         val dataEndpoint = s"$namespace/$endpoint"
         dataService.deleteEndpoint(dataEndpoint) map { _ =>
           Ok(Json.toJson(SuccessResponse(s"All records deleted")))
         }
-      }
+    }
 
   def saveBatchData: Action[Seq[EndpointData]] =
-    SecuredAction(
-      WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(
-        NamespaceWrite("*"),
-        Owner())).async(parsers.json[Seq[EndpointData]]) { implicit request =>
-        val response = request2ApplicationStatus(request).flatMap {
-          maybeAppStatus ⇒
-            if (authorizeEndpointDataWrite(request.body, maybeAppStatus)) {
-              dataService
-                .saveData(request.identity.userId, request.body)
-                .andThen(
-                  dataEventDispatcher
-                    .dispatchEventDataCreated(s"saved batch data"))
-                .map(d => Created(Json.toJson(d)))
-            }
-            else {
-              Future.failed(
-                RichDataPermissionsException(
-                  "No rights to insert some or all of the data in the batch"))
-            }
+    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(NamespaceWrite("*"), Owner()))
+      .async(parsers.json[Seq[EndpointData]]) { implicit request =>
+        val response = request2ApplicationStatus(request).flatMap { maybeAppStatus =>
+          if (authorizeEndpointDataWrite(request.body, maybeAppStatus))
+            dataService
+              .saveData(request.identity.userId, request.body)
+              .andThen(
+                dataEventDispatcher
+                  .dispatchEventDataCreated(s"saved batch data")
+              )
+              .map(d => Created(Json.toJson(d)))
+          else
+            Future.failed(RichDataPermissionsException("No rights to insert some or all of the data in the batch"))
         }
 
         response recover {
@@ -212,150 +198,134 @@ class RichData @Inject() (
         }
       }
 
-  private def endpointDataNamespaces(data: EndpointData): Set[String] = {
+  private def endpointDataNamespaces(data: EndpointData): Set[String] =
     data.endpoint.split('/').headOption map { namespace =>
       val namespaces = data.links map { linkedData =>
-        linkedData
-          .map(endpointDataNamespaces)
-          .reduce((set, namespaces) => set ++ namespaces)
-      } getOrElse Set()
+          linkedData
+            .map(endpointDataNamespaces)
+            .reduce((set, namespaces) => set ++ namespaces)
+        } getOrElse Set()
       namespaces + namespace
     } getOrElse Set()
-  }
 
-  private def authorizeEndpointDataWrite(
-    data: Seq[EndpointData],
-    appStatus: Option[HatApplication])(implicit user: HatUser, authenticator: HatApiAuthEnvironment#A): Boolean = {
+  private def authorizeEndpointDataWrite(data: Seq[EndpointData], appStatus: Option[HatApplication])(implicit
+      user: HatUser,
+      authenticator: HatApiAuthEnvironment#A
+  ): Boolean =
     data
       .map(endpointDataNamespaces)
       .reduce((set, namespaces) => set ++ namespaces)
       .map(namespace => NamespaceWrite(namespace))
-      .forall(
-        role =>
-          WithRole.isAuthorized(user, authenticator, role) || appStatus.exists(
-            ContainsApplicationRole.isAuthorized(user, _, authenticator, role)))
-  }
+      .forall(role =>
+        WithRole.isAuthorized(user, authenticator, role) || appStatus.exists(
+            ContainsApplicationRole.isAuthorized(user, _, authenticator, role)
+          )
+      )
 
   def registerCombinator(combinator: String): Action[Seq[EndpointQuery]] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner()))
       .async(parsers.json[Seq[EndpointQuery]]) { implicit request =>
         bundleService.saveCombinator(combinator, request.body) map { _ =>
-          Created(
-            Json.toJson(SuccessResponse(s"Combinator $combinator registered")))
+          Created(Json.toJson(SuccessResponse(s"Combinator $combinator registered")))
         }
       }
 
   def getCombinatorData(
-    combinator: String,
-    orderBy: Option[String],
-    ordering: Option[String],
-    skip: Option[Int],
-    take: Option[Int]): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async {
-      implicit request =>
-        val result = for {
-          query <- bundleService.combinator(combinator).map(_.get)
-          data <- dataService.propertyData(
-            query,
-            orderBy,
-            ordering.contains("descending"),
-            skip.getOrElse(0),
-            take.orElse(Some(defaultRecordLimit)))
-        } yield data
+      combinator: String,
+      orderBy: Option[String],
+      ordering: Option[String],
+      skip: Option[Int],
+      take: Option[Int]
+  ): Action[AnyContent] =
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+      val result = for {
+        query <- bundleService.combinator(combinator).map(_.get)
+        data <- dataService.propertyData(query,
+                                         orderBy,
+                                         ordering.contains("descending"),
+                                         skip.getOrElse(0),
+                                         take.orElse(Some(defaultRecordLimit))
+                )
+      } yield data
 
-        result map { d =>
-          Ok(Json.toJson(d))
-        } recover {
-          case NonFatal(_) =>
-            NotFound(Json.toJson(Errors.dataCombinatorNotFound(combinator)))
-        }
+      result map { d =>
+        Ok(Json.toJson(d))
+      } recover {
+        case NonFatal(_) =>
+          NotFound(Json.toJson(Errors.dataCombinatorNotFound(combinator)))
+      }
     }
 
   def linkDataRecords(records: Seq[UUID]): Action[AnyContent] =
-    SecuredAction(
-      WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(
-        NamespaceWrite("*"),
-        Owner())).async { implicit request =>
+    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(NamespaceWrite("*"), Owner())).async {
+      implicit request =>
         dataService.saveRecordGroup(request.identity.userId, records) map { _ =>
           Created(Json.toJson(SuccessResponse(s"Grouping registered")))
         } recover {
           case RichDataMissingException(message, _) =>
             BadRequest(Json.toJson(Errors.dataLinkMissing(message)))
         }
-      }
+    }
 
   def deleteDataRecords(records: Seq[UUID]): Action[AnyContent] =
-    SecuredAction(
-      WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(
-        NamespaceWrite("*"),
-        Owner())).async { implicit request =>
+    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(NamespaceWrite("*"), Owner())).async {
+      implicit request =>
         val eventualPermissionContext = for {
-          maybeAppStatus ← request2ApplicationStatus(request)
-          recordNamespaces ← dataService.uniqueRecordNamespaces(records)
+          maybeAppStatus <- request2ApplicationStatus(request)
+          recordNamespaces <- dataService.uniqueRecordNamespaces(records)
         } yield (maybeAppStatus, recordNamespaces)
 
         eventualPermissionContext flatMap {
-          case (Some(appStatus), requiredNamespaces) if requiredNamespaces.forall(
-            n ⇒
-              ContainsApplicationRole.isAuthorized(
-                request.identity,
-                appStatus,
-                request.authenticator,
-                NamespaceWrite(n))) ⇒
+          case (Some(appStatus), requiredNamespaces)
+              if requiredNamespaces.forall(n =>
+                ContainsApplicationRole
+                  .isAuthorized(request.identity, appStatus, request.authenticator, NamespaceWrite(n))
+              ) =>
             dataService.deleteRecords(request.identity.userId, records) map { _ =>
               Ok(Json.toJson(SuccessResponse(s"All records deleted")))
             } recover {
-              case RichDataMissingException(message, _) =>
-                BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
-            }
-          case (Some(_), _) ⇒
+                case RichDataMissingException(message, _) =>
+                  BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
+              }
+          case (Some(_), _) =>
             Future.successful(
               Forbidden(
-                Json.toJson(
-                  Errors.forbidden(
-                    "Permissions to modify records in some of the namespaces missing"))))
+                Json.toJson(Errors.forbidden("Permissions to modify records in some of the namespaces missing"))
+              )
+            )
           // TODO: remove after non-application tokens are phased out
-          case (None, _) ⇒
+          case (None, _) =>
             dataService.deleteRecords(request.identity.userId, records) map { _ =>
               Ok(Json.toJson(SuccessResponse(s"All records deleted")))
             } recover {
-              case RichDataMissingException(message, _) =>
-                BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
-            }
+                case RichDataMissingException(message, _) =>
+                  BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
+              }
         }
-      }
+    }
 
   def listEndpoints: Action[AnyContent] =
     SecuredAction(
-      WithRole(Owner(), Platform(), DataCredit("")) || ContainsApplicationRole(
-        Owner(),
-        Platform(),
-        NamespaceWrite("*"))).async { implicit request =>
-        dataService.listEndpoints() map { endpoints =>
-          Ok(Json.toJson(endpoints))
-        }
+      WithRole(Owner(), Platform(), DataCredit("")) || ContainsApplicationRole(Owner(), Platform(), NamespaceWrite("*"))
+    ).async { implicit request =>
+      dataService.listEndpoints() map { endpoints =>
+        Ok(Json.toJson(endpoints))
       }
+    }
 
   def updateRecords(): Action[Seq[EndpointData]] =
-    SecuredAction(
-      WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(
-        NamespaceWrite("*"),
-        Owner())).async(parsers.json[Seq[EndpointData]]) { implicit request =>
-        request2ApplicationStatus(request).flatMap { maybeAppStatus ⇒
-          if (authorizeEndpointDataWrite(request.body, maybeAppStatus)) {
-            dataService.updateRecords(request.identity.userId, request.body) map {
-              saved =>
-                Created(Json.toJson(saved))
+    SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(NamespaceWrite("*"), Owner()))
+      .async(parsers.json[Seq[EndpointData]]) { implicit request =>
+        request2ApplicationStatus(request).flatMap { maybeAppStatus =>
+          if (authorizeEndpointDataWrite(request.body, maybeAppStatus))
+            dataService.updateRecords(request.identity.userId, request.body) map { saved =>
+              Created(Json.toJson(saved))
             } recover {
               case RichDataMissingException(message, _) =>
                 BadRequest(Json.toJson(Errors.dataUpdateMissing(message)))
             }
-          }
-          else {
-            Future.failed(
-              RichDataPermissionsException(
-                "No rights to update some or all of the data requested"))
-          }
+          else
+            Future.failed(RichDataPermissionsException("No rights to update some or all of the data requested"))
         }
       }
 
@@ -365,181 +335,163 @@ class RichData @Inject() (
         bundleService
           .saveBundle(EndpointDataBundle(bundleId, request.body))
           .map { _ =>
-            Created(
-              Json.toJson(SuccessResponse(s"Bundle $bundleId registered")))
+            Created(Json.toJson(SuccessResponse(s"Bundle $bundleId registered")))
           }
       }
 
   def fetchBundle(bundleId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async {
-      implicit request =>
-        val result = for {
-          bundle <- bundleService.bundle(bundleId).map(_.get)
-          data <- dataService.bundleData(bundle)
-        } yield data
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+      val result = for {
+        bundle <- bundleService.bundle(bundleId).map(_.get)
+        data <- dataService.bundleData(bundle)
+      } yield data
 
-        result map { d =>
-          Ok(Json.toJson(d))
-        } recover {
-          case NonFatal(_) =>
-            NotFound(Json.toJson(Errors.bundleNotFound(bundleId)))
-        }
+      result map { d =>
+        Ok(Json.toJson(d))
+      } recover {
+        case NonFatal(_) =>
+          NotFound(Json.toJson(Errors.bundleNotFound(bundleId)))
+      }
     }
 
   def bundleStructure(bundleId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async {
-      implicit request =>
-        val result = for {
-          bundle <- bundleService.bundle(bundleId).map(_.get)
-        } yield bundle
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+      val result = for {
+        bundle <- bundleService.bundle(bundleId).map(_.get)
+      } yield bundle
 
-        result map { d =>
-          Ok(Json.toJson(d))
-        } recover {
-          case NonFatal(_) =>
-            NotFound(Json.toJson(Errors.bundleNotFound(bundleId)))
-        }
+      result map { d =>
+        Ok(Json.toJson(d))
+      } recover {
+        case NonFatal(_) =>
+          NotFound(Json.toJson(Errors.bundleNotFound(bundleId)))
+      }
     }
 
   def registerDataDebit(dataDebitId: String): Action[DataDebitRequest] =
     SecuredAction(
-      WithRole(Owner(), DataDebitOwner(""), Platform()) || ContainsApplicationRole(
-        Owner(),
-        DataDebitOwner(""),
-        Platform())).async(parsers.json[DataDebitRequest]) { implicit request =>
-        dataDebitService
-          .createDataDebit(dataDebitId, request.body, request.identity.userId)
-          .andThen(
-            dataEventDispatcher
-              .dispatchEventDataDebit(DataDebitOperations.Create()))
-          .map(debit => Created(Json.toJson(debit)))
-          .recover {
-            case err: RichDataDuplicateBundleException =>
-              BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
-            case err: RichDataDuplicateDebitException =>
-              BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
-          }
-      }
-
-  def updateDataDebit(dataDebitId: String): Action[DataDebitRequest] =
-    SecuredAction(
-      WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(
-        Owner(),
-        DataDebitOwner(dataDebitId))).async(parsers.json[DataDebitRequest]) { implicit request =>
-        dataDebitService
-          .updateDataDebitBundle(
-            dataDebitId,
-            request.body,
-            request.identity.userId)
-          .andThen(
-            dataEventDispatcher
-              .dispatchEventDataDebit(DataDebitOperations.Change()))
-          .map(debit => Ok(Json.toJson(debit)))
-          .recover {
-            case err: RichDataServiceException =>
-              BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
-          }
-      }
-
-  def getDataDebit(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(
-      WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(
-        Owner(),
-        DataDebitOwner(dataDebitId))).async { implicit request =>
-        dataDebitService
-          .dataDebit(dataDebitId)
-          .map {
-            case Some(debit) => Ok(Json.toJson(debit))
-            case None =>
-              NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId)))
-          }
-      }
-
-  def getDataDebitValues(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(
-      WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(
-        Owner(),
-        DataDebitOwner(dataDebitId))).async { implicit request =>
-        dataDebitService
-          .dataDebit(dataDebitId)
-          .flatMap {
-            case Some(debit) if debit.activeBundle.isDefined =>
-              logger.debug("Got Data Debit, fetching data")
-              val eventualData = debit.activeBundle.get.conditions map {
-                bundleConditions =>
-                  logger.debug("Getting data for conditions")
-                  dataService.bundleData(bundleConditions).flatMap {
-                    conditionValues =>
-                      val conditionFulfillment: Map[String, Boolean] = conditionValues map {
-                        case (condition, values) =>
-                          (condition, values.nonEmpty)
-                      }
-
-                      if (conditionFulfillment.forall(_._2)) {
-                        logger
-                          .debug(s"Data Debit $dataDebitId conditions satisfied")
-                        dataService
-                          .bundleData(debit.activeBundle.get.bundle)
-                          .map(RichDataDebitData(Some(conditionFulfillment), _))
-                      }
-                      else {
-                        logger.debug(
-                          s"Data Debit $dataDebitId conditions not satisfied: $conditionFulfillment")
-                        Future.successful(
-                          RichDataDebitData(Some(conditionFulfillment), Map()))
-                      }
-                  }
-
-              } getOrElse {
-                logger.debug(s"Data Debit $dataDebitId without conditions")
-                dataService
-                  .bundleData(debit.activeBundle.get.bundle)
-                  .map(RichDataDebitData(None, _))
-              }
-
-              eventualData
-                .andThen(dataEventDispatcher.dispatchEventDataDebitValues(debit))
-                .map(d => Ok(Json.toJson(d)))
-
-            case Some(_) =>
-              Future.successful(
-                BadRequest(Json.toJson(Errors.dataDebitNotEnabled(dataDebitId))))
-            case None =>
-              Future.successful(
-                NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId))))
-          }
-          .recover {
-            case err: RichDataBundleFormatException =>
-              BadRequest(
-                Json.toJson(Errors.dataDebitBundleMalformed(dataDebitId, err)))
-          }
-      }
-
-  def listDataDebits(): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async {
-      implicit request =>
-        dataDebitService.all map { debits =>
-          Ok(Json.toJson(debits))
+      WithRole(Owner(), DataDebitOwner(""), Platform()) || ContainsApplicationRole(Owner(),
+                                                                                   DataDebitOwner(""),
+                                                                                   Platform()
+        )
+    ).async(parsers.json[DataDebitRequest]) { implicit request =>
+      dataDebitService
+        .createDataDebit(dataDebitId, request.body, request.identity.userId)
+        .andThen(
+          dataEventDispatcher
+            .dispatchEventDataDebit(DataDebitOperations.Create())
+        )
+        .map(debit => Created(Json.toJson(debit)))
+        .recover {
+          case err: RichDataDuplicateBundleException =>
+            BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
+          case err: RichDataDuplicateDebitException =>
+            BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
         }
     }
 
-  def enableDataDebitBundle(
-    dataDebitId: String,
-    bundleId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async {
-      implicit request =>
-        enableDataDebit(dataDebitId, Some(bundleId))
+  def updateDataDebit(dataDebitId: String): Action[DataDebitRequest] =
+    SecuredAction(
+      WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(Owner(), DataDebitOwner(dataDebitId))
+    ).async(parsers.json[DataDebitRequest]) { implicit request =>
+      dataDebitService
+        .updateDataDebitBundle(dataDebitId, request.body, request.identity.userId)
+        .andThen(
+          dataEventDispatcher
+            .dispatchEventDataDebit(DataDebitOperations.Change())
+        )
+        .map(debit => Ok(Json.toJson(debit)))
+        .recover {
+          case err: RichDataServiceException =>
+            BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
+        }
+    }
+
+  def getDataDebit(dataDebitId: String): Action[AnyContent] =
+    SecuredAction(
+      WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(Owner(), DataDebitOwner(dataDebitId))
+    ).async { implicit request =>
+      dataDebitService
+        .dataDebit(dataDebitId)
+        .map {
+          case Some(debit) => Ok(Json.toJson(debit))
+          case None =>
+            NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId)))
+        }
+    }
+
+  def getDataDebitValues(dataDebitId: String): Action[AnyContent] =
+    SecuredAction(
+      WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(Owner(), DataDebitOwner(dataDebitId))
+    ).async { implicit request =>
+      dataDebitService
+        .dataDebit(dataDebitId)
+        .flatMap {
+          case Some(debit) if debit.activeBundle.isDefined =>
+            logger.debug("Got Data Debit, fetching data")
+            val eventualData = debit.activeBundle.get.conditions map { bundleConditions =>
+              logger.debug("Getting data for conditions")
+              dataService.bundleData(bundleConditions).flatMap { conditionValues =>
+                val conditionFulfillment: Map[String, Boolean] =
+                  conditionValues map {
+                      case (condition, values) =>
+                        (condition, values.nonEmpty)
+                    }
+
+                if (conditionFulfillment.forall(_._2)) {
+                  logger
+                    .debug(s"Data Debit $dataDebitId conditions satisfied")
+                  dataService
+                    .bundleData(debit.activeBundle.get.bundle)
+                    .map(RichDataDebitData(Some(conditionFulfillment), _))
+                } else {
+                  logger.debug(s"Data Debit $dataDebitId conditions not satisfied: $conditionFulfillment")
+                  Future.successful(RichDataDebitData(Some(conditionFulfillment), Map()))
+                }
+              }
+
+            } getOrElse {
+              logger.debug(s"Data Debit $dataDebitId without conditions")
+              dataService
+                .bundleData(debit.activeBundle.get.bundle)
+                .map(RichDataDebitData(None, _))
+            }
+
+            eventualData
+              .andThen(dataEventDispatcher.dispatchEventDataDebitValues(debit))
+              .map(d => Ok(Json.toJson(d)))
+
+          case Some(_) =>
+            Future.successful(BadRequest(Json.toJson(Errors.dataDebitNotEnabled(dataDebitId))))
+          case None =>
+            Future.successful(NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId))))
+        }
+        .recover {
+          case err: RichDataBundleFormatException =>
+            BadRequest(Json.toJson(Errors.dataDebitBundleMalformed(dataDebitId, err)))
+        }
+    }
+
+  def listDataDebits(): Action[AnyContent] =
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+      dataDebitService.all map { debits =>
+        Ok(Json.toJson(debits))
+      }
+    }
+
+  def enableDataDebitBundle(dataDebitId: String, bundleId: String): Action[AnyContent] =
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+      enableDataDebit(dataDebitId, Some(bundleId))
     }
 
   def enableDataDebitNewest(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async {
-      implicit request =>
-        enableDataDebit(dataDebitId, None)
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+      enableDataDebit(dataDebitId, None)
     }
 
-  protected def enableDataDebit(dataDebitId: String, bundleId: Option[String])(
-    implicit
-    request: SecuredRequest[HatApiAuthEnvironment, AnyContent]): Future[Result] = {
+  protected def enableDataDebit(dataDebitId: String, bundleId: Option[String])(implicit
+      request: SecuredRequest[HatApiAuthEnvironment, AnyContent]
+  ): Future[Result] = {
     val enabled = for {
       _ <- dataDebitService.dataDebitEnableBundle(dataDebitId, bundleId)
       debit <- dataDebitService.dataDebit(dataDebitId)
@@ -548,7 +500,8 @@ class RichData @Inject() (
     enabled
       .andThen(
         dataEventDispatcher
-          .dispatchEventMaybeDataDebit(DataDebitOperations.Enable()))
+          .dispatchEventMaybeDataDebit(DataDebitOperations.Enable())
+      )
       .map {
         case Some(debit) => Ok(Json.toJson(debit))
         case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
@@ -556,127 +509,149 @@ class RichData @Inject() (
   }
 
   def disableDataDebit(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async {
-      implicit request =>
-        val disabled = for {
-          _ <- dataDebitService.dataDebitDisable(dataDebitId)
-          debit <- dataDebitService.dataDebit(dataDebitId)
-        } yield debit
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+      val disabled = for {
+        _ <- dataDebitService.dataDebitDisable(dataDebitId)
+        debit <- dataDebitService.dataDebit(dataDebitId)
+      } yield debit
 
-        disabled
-          .andThen(
-            dataEventDispatcher
-              .dispatchEventMaybeDataDebit(DataDebitOperations.Disable()))
-          .map {
-            case Some(debit) => Ok(Json.toJson(debit))
-            case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
-          }
+      disabled
+        .andThen(
+          dataEventDispatcher
+            .dispatchEventMaybeDataDebit(DataDebitOperations.Disable())
+        )
+        .map {
+          case Some(debit) => Ok(Json.toJson(debit))
+          case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
+        }
     }
 
   private def makeData(
-    namespace: String,
-    endpoint: String,
-    orderBy: Option[String],
-    ordering: Option[String],
-    skip: Option[Int],
-    take: Option[Int])(implicit db: HATPostgresProfile.api.Database): Future[Result] = {
+      namespace: String,
+      endpoint: String,
+      orderBy: Option[String],
+      ordering: Option[String],
+      skip: Option[Int],
+      take: Option[Int]
+  )(implicit db: HATPostgresProfile.api.Database): Future[Result] = {
     val dataEndpoint = s"$namespace/$endpoint"
     val query =
       Seq(EndpointQuery(dataEndpoint, None, None, None))
-    val data = dataService.propertyData(
-      query,
-      orderBy,
-      ordering.contains("descending"),
-      skip.getOrElse(0),
-      take.orElse(Some(defaultRecordLimit)))
+    val data = dataService.propertyData(query,
+                                        orderBy,
+                                        ordering.contains("descending"),
+                                        skip.getOrElse(0),
+                                        take.orElse(Some(defaultRecordLimit))
+    )
     data.map(d => Ok(Json.toJson(d)))
   }
 
+  //** Verification Sum Type
+  //** this should be in a better place
+  sealed abstract class ContractVerificationFailure
+  object ContractVerificationFailure {
+    final case class ServiceRespondedWithFailure(failureDescription: String) extends ContractVerificationFailure
+    final case class InvalidTokenFailure(failureDescription: String) extends ContractVerificationFailure
+    final case class InvalidContractDataRequestFailure(failureDescription: String) extends ContractVerificationFailure
+  }
+  sealed abstract class ContractVerificationSuccess
+  object ContractVerificationSuccess {
+    final case class JwtClaimVerified(jwtClaim: JwtClaim) extends ContractVerificationSuccess
+  }
+
   def getContractData(
-    namespace: String,
-    endpoint: String,
-    orderBy: Option[String],
-    ordering: Option[String],
-    skip: Option[Int],
-    take: Option[Int]): Action[AnyContent] =
-    UserAwareAction.async { implicit request => //    SecuredAction(
-      {
+      namespace: String,
+      endpoint: String,
+      orderBy: Option[String],
+      ordering: Option[String],
+      skip: Option[Int],
+      take: Option[Int]
+  ): Action[AnyContent] =
+    UserAwareAction.async { implicit request =>
+      //        import ContractVerificationFailure._
+      //        import ContractVerificationSuccess._
 
-        val ret = for {
-          isOk <- isValidContractRequest(request.body.asJson)
-          ret <- if (isOk)
-            makeData(namespace, endpoint, orderBy, ordering, skip, take)
-          else Future.successful(BadRequest)
-        } yield ret
+      //        val maybeResult: Future[Result] = for {
+      //          isOk <- isValidContractRequest(request.body.asJson)
+      //          result <- makeData(namespace, endpoint, orderBy, ordering, skip, take)
+      //          if (isOk)
+      //        } yield result
 
-        ret
+      val dataRequest = isValidContractRequest(request.body.asJson).flatMap { _ =>
+        makeData(namespace, endpoint, orderBy, ordering, skip, take)
+      }
+
+      println(dataRequest)
+
+      dataRequest recover {
+        case _ =>
+          BadRequest("Contract Data request failure.")
       }
     }
 
-  private def bodyOptToContractDataRequest(
-    bodyOpt: Option[JsValue]): Option[ContractDataRequest] = {
+  // TODO: JSON decomp here
+  private def bodyOptToContractDataRequest(maybeBody: Option[JsValue]): Option[ContractDataRequest] =
     for {
-      bodyAsJson <- bodyOpt
+      bodyAsJson <- maybeBody
       token <- refineV[NonEmpty]((bodyAsJson \ "token").as[String]).toOption
       hatName <- refineV[NonEmpty]((bodyAsJson \ "hatName").as[String]).toOption
       contractId <- refineV[NonEmpty]((bodyAsJson \ "contractId").as[String]).toOption
-      cdr = ContractDataRequest(
-        ShortLivedToken(token),
-        HatName(hatName),
-        ContractId(java.util.UUID.fromString(contractId)))
+      cdr =
+        ContractDataRequest(ShortLivedToken(token), HatName(hatName), ContractId(java.util.UUID.fromString(contractId)))
     } yield cdr
-  }
 
   // TODO: Use KeyId
-  private def requestKeyId(
-    contractDataRequest: ContractDataRequest): Option[String] = {
+  private def requestKeyId(contractDataRequest: ContractDataRequest): Option[String] =
     for {
       keyId <- ShortLivedTokenOps
-        .getKeyId(contractDataRequest.token.value)
-        .toOption
+                 .getKeyId(contractDataRequest.token.value)
+                 .toOption
     } yield keyId
-  }
 
-  def isValidContractRequest(bodyOpt: Option[JsValue]): Future[Boolean] = {
-    val ret = for {
-      cdr <- bodyOptToContractDataRequest(bodyOpt)
-      keyId <- requestKeyId(cdr)
-    } yield (cdr, keyId)
+  // TODO: Boolean to ADT
+  def isValidContractRequest(
+      bodyOpt: Option[JsValue]
+  ): Future[Either[ContractVerificationFailure, ContractVerificationSuccess]] = {
+    import ContractVerificationFailure._
+    import ContractVerificationSuccess._
 
-    ret match {
-      case Some((cdr, keyId)) => {
-        verifyTokenWithAdjudicator(cdr, keyId)
-      }
-      case _ => Future.successful(false)
+    val maybeContractDataRequestKeyId = for {
+      contractDataRequest <- bodyOptToContractDataRequest(bodyOpt)
+      keyId <- requestKeyId(contractDataRequest)
+    } yield (contractDataRequest, keyId)
+
+    maybeContractDataRequestKeyId match {
+      case Some((contractDataRequest, keyId)) =>
+        verifyTokenWithAdjudicator(contractDataRequest, keyId)
+      case _ => Future.successful(Left(InvalidContractDataRequestFailure("Contract Data Request or KeyId missing")))
     }
   }
 
   // TODO: String to KeyId
+  // TODO: remove toString on HatName
   def verifyTokenWithAdjudicator(
-    cdr: ContractDataRequest,
-    keyId: String): Future[Boolean] = {
-    NetworkRequest
-      .getPublicKey(
-        adjudicatorEndpoint,
-        cdr.contractId,
-        cdr.hatName.toString(),
-        keyId,
-        ws)
+      contractDataRequest: ContractDataRequest,
+      keyId: String
+  ): Future[Either[ContractVerificationFailure, ContractVerificationSuccess]] = {
+    import ContractVerificationFailure._
+    import ContractVerificationSuccess._
+    adjudicatorClient
+      .getPublicKey(contractDataRequest.contractId, contractDataRequest.hatName.toString(), keyId)
       .map { response =>
         response.status match {
-          case OK => {
-            val a = ShortLivedTokenOps.verifyToken(
-              Some(cdr.token.toString),
-              Json.parse(response.body).asOpt[Array[Byte]])
-            a match {
-              case Success(_) => true
-              case Failure(_) => false
+          case OK =>
+            val tryJwtClaim = ShortLivedTokenOps.verifyToken(
+              // TODO: remove .toString by aligning types
+              Some(contractDataRequest.token.toString),
+              Json.parse(response.body).asOpt[Array[Byte]]
+            )
+            tryJwtClaim match {
+              case Success(jwtClaim) => Right(JwtClaimVerified(jwtClaim))
+              case Failure(_) =>
+                Left(InvalidTokenFailure(s"Token: ${contractDataRequest.token.toString} was not verified."))
             }
-          }
-          case _ => {
-            false
-          }
-
+          case _ =>
+            Left(ServiceRespondedWithFailure(s"The Adjudicator Service responsed with an error: ${response.status}"))
         }
       }
   }
@@ -689,13 +664,9 @@ class RichData @Inject() (
     def dataDebitNotEnabled(id: String) =
       ErrorMessage("Bad Request", s"Data Debit $id not enabled")
     def dataDebitMalformed(err: Throwable) =
-      ErrorMessage(
-        "Bad Request",
-        s"Data Debit request malformed: ${err.getMessage}")
+      ErrorMessage("Bad Request", s"Data Debit request malformed: ${err.getMessage}")
     def dataDebitBundleMalformed(id: String, err: Throwable) =
-      ErrorMessage(
-        "Data Debit Bundle malformed",
-        s"Data Debit $id active bundle malformed: ${err.getMessage}")
+      ErrorMessage("Data Debit Bundle malformed", s"Data Debit $id active bundle malformed: ${err.getMessage}")
 
     def bundleNotFound(bundleId: String) =
       ErrorMessage("Bundle Not Found", s"Bundle $bundleId not found")
@@ -713,9 +684,7 @@ class RichData @Inject() (
     def richDataDuplicate(error: Throwable) =
       ErrorMessage("Bad Request", s"Duplicate data - ${error.getMessage}")
     def richDataError(error: Throwable) =
-      ErrorMessage(
-        "Bad Request",
-        s"Could not insert data - ${error.getMessage}")
+      ErrorMessage("Bad Request", s"Could not insert data - ${error.getMessage}")
     def forbidden(error: Throwable) =
       ErrorMessage("Forbidden", s"Access Denied - ${error.getMessage}")
     def forbidden(message: String) =

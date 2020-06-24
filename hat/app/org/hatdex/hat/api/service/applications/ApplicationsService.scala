@@ -27,30 +27,16 @@ import akka.Done
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-import org.hatdex.hat.api.models.applications.{
-  Application,
-  ApplicationKind,
-  ApplicationStatus,
-  HatApplication,
-  Version
-}
+import org.hatdex.hat.api.models.applications.{ Application, ApplicationKind, ApplicationStatus, HatApplication, Version }
 import org.hatdex.hat.api.models.{ AccessToken, DataDebit, EndpointQuery }
-import org.hatdex.hat.api.service.richData.{
-  DataDebitService,
-  RichDataDuplicateDebitException,
-  RichDataService
-}
-import org.hatdex.hat.api.service.{
-  DalExecutionContext,
-  RemoteExecutionContext,
-  StatsReporter
-}
+import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataDuplicateDebitException, RichDataService }
+import org.hatdex.hat.api.service.{ DalExecutionContext, RemoteExecutionContext, StatsReporter }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.Tables
 import org.hatdex.hat.dal.Tables.ApplicationStatusRow
 import org.hatdex.hat.resourceManagement.HatServer
-import org.hatdex.hat.utils.{ FutureTransformations, Utils }
+import org.hatdex.hat.utils.{ FutureTransformations, NetworkRequest, Utils }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.{ Configuration, Logger }
@@ -102,11 +88,13 @@ class ApplicationsService @Inject() (
   private val logger = Logger(this.getClass)
   private val applicationsCacheDuration: FiniteDuration = 30.minutes
 
+  //** Adjudicator
   val adjudicatorAddress =
     configuration.underlying.getString("adjudicator.address")
   val adjudicatorScheme =
     configuration.underlying.getString("adjudicator.scheme")
   val adjudicatorEndpoint = s"${adjudicatorScheme}${adjudicatorAddress}"
+  val adjudicatorClient = new NetworkRequest(adjudicatorEndpoint, wsClient)
 
   def applicationStatus(id: String, bustCache: Boolean = false)(
     implicit
@@ -186,6 +174,7 @@ class ApplicationsService @Inject() (
     user: HatUser,
     requestHeader: RequestHeader): Future[HatApplication] = {
     // Create and enable the data debit
+    import java.util.UUID
     val maybeDataDebitSetup: Option[Future[DataDebit]] = for {
       ddId <- application.application.dataDebitId
       ddsRequest <- application.application.dataDebitSetupRequest
@@ -213,14 +202,12 @@ class ApplicationsService @Inject() (
     val appSetup = for {
       _ <- application.application.kind match {
         case ApplicationKind.Contract(x) =>
-          org.hatdex.hat.utils.NetworkRequest
-            .joinContract(
-              adjudicatorEndpoint,
-              hat.hatName,
-              io.dataswift.adjudicator.Types
-                .ContractId(
-                  java.util.UUID.fromString(application.application.id)),
-              wsClient)
+          adjudicatorClient.joinContract(
+            hat.hatName,
+            io.dataswift.adjudicator.Types
+              .ContractId(
+                UUID.fromString(application.application.id)))
+
         case _ => Future.successful(Unit)
       }
       _ <- maybeDataDebitSetup.getOrElse(Future.successful(())) // If data debit was there, must have been setup successfully

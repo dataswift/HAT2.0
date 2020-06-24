@@ -6,17 +6,16 @@ import play.api.libs.ws.{ WSClient, WSRequest, WSResponse }
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.concurrent.Future
 
+// TODO: object -> class
 // TODO: rename to adjudicator
 // TODO: details from config
-object NetworkRequest {
+class NetworkRequest(adjudicatorEndpoint: String, ws: WSClient) {
 
   //get the URL from config
   def getPublicKey(
-    adjudicatorEndpoint: String,
     contractId: ContractId,
     hatName: String,
-    keyId: String,
-    ws: WSClient)(implicit ec: ExecutionContext): Future[WSResponse] = {
+    keyId: String)(implicit ec: ExecutionContext): Future[WSResponse] = {
     // TODO: update this endpoint
     val url =
       s"${adjudicatorEndpoint}/v1/contracts/${contractId}/hat/${hatName}/${keyId}"
@@ -25,10 +24,8 @@ object NetworkRequest {
   }
 
   def joinContract(
-    adjudicatorEndpoint: String,
     hatName: String,
-    contractId: ContractId,
-    ws: WSClient)(implicit ec: ExecutionContext): Future[WSResponse] = {
+    contractId: ContractId)(implicit ec: ExecutionContext): Future[WSResponse] = {
     val url =
       s"${adjudicatorEndpoint}/v1/contracts/${contractId}/hat/${hatName}"
     val req =
@@ -37,10 +34,8 @@ object NetworkRequest {
   }
 
   def leaveContract(
-    adjudicatorEndpoint: String,
     hatName: String,
-    contractId: ContractId,
-    ws: WSClient)(implicit ec: ExecutionContext): Future[WSResponse] = {
+    contractId: ContractId)(implicit ec: ExecutionContext): Future[WSResponse] = {
     val url =
       s"${adjudicatorEndpoint}/v1/contracts/${contractId}/hat/${hatName}"
     val req = makeRequest(url, ws)
