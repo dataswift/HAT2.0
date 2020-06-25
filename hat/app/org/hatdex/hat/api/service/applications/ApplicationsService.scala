@@ -41,7 +41,7 @@ import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.{ Configuration, Logger }
 import play.api.cache.AsyncCacheApi
-import play.api.libs.json.{ JsObject, JsString, Json }
+import play.api.libs.json.{ JsObject, JsString }
 import play.api.libs.ws.WSClient
 import play.api.mvc.RequestHeader
 
@@ -201,7 +201,7 @@ class ApplicationsService @Inject() (
     // Set up the app
     val appSetup = for {
       _ <- application.application.kind match {
-        case ApplicationKind.Contract(x) =>
+        case ApplicationKind.Contract(_) =>
           adjudicatorClient.joinContract(
             hat.hatName,
             io.dataswift.adjudicator.Types
