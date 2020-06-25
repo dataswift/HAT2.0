@@ -61,6 +61,7 @@ import eu.timepit.refined._
 import play.api.Configuration
 import eu.timepit.refined.auto._
 import eu.timepit.refined.collection.NonEmpty
+import eu.timepit.refined._
 import pdi.jwt.JwtClaim
 import play.api.libs.json.Reads._
 import org.hatdex.hat.resourceManagement.HatServer
@@ -531,9 +532,10 @@ class RichData @Inject() (
 
   // ** TODO this should be in a better place.
   //final case class ContractDataRequest(token: ShortLivedToken, hatName: HatName, contractId: ContractId)
+  case class ContractRequestBodyRefined(token: ShortLivedToken, hatName: HatName, contractId: ContractId, body: Option[JsValue])
+  //  implicit val contractRequestBodyRefinedReads = Json.reads[ContractRequestBodyRefined]
   case class ContractRequestBody(token: String, hatName: String, contractId: String, body: Option[JsValue])
   implicit val contractRequestBodyReads = Json.reads[ContractRequestBody]
-
 
   def saveContractData(
     namespace: String,
@@ -543,7 +545,7 @@ class RichData @Inject() (
       val maybeContractRequestBody = request.body.asOpt[ContractRequestBody]
       val dataEndpoint = s"$namespace/$endpoint"
 
-      val dataRequest = isValidContractRequest(contractRequestBody).flatMap { _ =>
+      val dataRequest = isValidContractRequest(maybeContractRequestBody).flatMap { _ =>
         maybeContractRequestBody match {
           case Some(contractRequestBody) =>
             contractRequestBody.body match {
@@ -622,20 +624,20 @@ class RichData @Inject() (
       }
     }
 
-  private def slReadBodyToContractDataRequest(slReadBody: Option[ContractRequestBody]): Option[ContractDataRequest] =
+  private def requestBodyToContractDataRequest(requestBody: Option[ContractRequestBody]): Option[ContractRequestBodyRefined] =
     for {
-      crb <- slReadBody
-      token <- refineV[NonEmpty]((crb.token)).toOption
-      hatName <- refineV[NonEmpty]((crb.hatName)).toOption
-      contractId <- refineV[NonEmpty]((crb.contractId)).toOption
-      cdr = ContractDataRequest(ShortLivedToken(token), HatName(hatName), ContractId(UUID.fromString(contractId)))
-    } yield cdr
+      contractRequestBody <- requestBody
+      token <- refineV[NonEmpty]((contractRequestBody.token)).toOption
+      hatName <- refineV[NonEmpty]((contractRequestBody.hatName)).toOption
+      contractId <- refineV[NonEmpty]((contractRequestBody.contractId)).toOption
+      contractRequestBodyRefined = ContractRequestBodyRefined(ShortLivedToken(token), HatName(hatName), ContractId(UUID.fromString(contractId)), None)
+    } yield contractRequestBodyRefined
 
   // TODO: Use KeyId
-  private def requestKeyId(contractDataRequest: ContractDataRequest): Option[String] =
+  private def requestKeyId(contractRequestBodyRefined: ContractRequestBodyRefined): Option[String] =
     for {
       keyId <- ShortLivedTokenOps
-        .getKeyId(contractDataRequest.token.value)
+        .getKeyId(contractRequestBodyRefined.token.value)
         .toOption
     } yield keyId
 
@@ -644,7 +646,7 @@ class RichData @Inject() (
     import ContractVerificationFailure._
 
     val maybeContractDataRequestKeyId = for {
-      contractDataRequest <- slReadBodyToContractDataRequest(contractRequestBody)
+      contractDataRequest <- requestBodyToContractDataRequest(contractRequestBody)
       keyId <- requestKeyId(contractDataRequest)
     } yield (contractDataRequest, keyId)
 
@@ -658,23 +660,23 @@ class RichData @Inject() (
   // TODO: String to KeyId
   // TODO: remove toString on HatName
   def verifyTokenWithAdjudicator(
-    contractDataRequest: ContractDataRequest,
+    contractRequestBodyRefined: ContractRequestBodyRefined,
     keyId: String): Future[Either[ContractVerificationFailure, ContractVerificationSuccess]] = {
     import ContractVerificationFailure._
     import ContractVerificationSuccess._
     adjudicatorClient
-      .getPublicKey(contractDataRequest.contractId, contractDataRequest.hatName.toString(), keyId)
+      .getPublicKey(contractRequestBodyRefined.contractId, contractRequestBodyRefined.hatName.value, keyId)
       .map { response =>
         response.status match {
           case OK =>
             val tryJwtClaim = ShortLivedTokenOps.verifyToken(
               // TODO: remove .toString by aligning types
-              Some(contractDataRequest.token.toString),
+              Some(contractRequestBodyRefined.token.toString),
               Json.parse(response.body).asOpt[Array[Byte]])
             tryJwtClaim match {
               case Success(jwtClaim) => Right(JwtClaimVerified(jwtClaim))
               case Failure(_) =>
-                Left(InvalidTokenFailure(s"Token: ${contractDataRequest.token.toString} was not verified."))
+                Left(InvalidTokenFailure(s"Token: ${contractRequestBodyRefined.token.toString} was not verified."))
             }
           case _ =>
             Left(ServiceRespondedWithFailure(s"The Adjudicator Service responsed with an error: ${response.status}"))
