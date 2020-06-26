@@ -205,7 +205,7 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       val executed = for {
         _ <- dataService.saveData(owner.userId, records)
-        _ <- service.run(registeredFunction.configuration, None)
+        _ <- service.run(registeredFunction.configuration, None, useAll = false)
         data <- dataService.propertyData(
           Seq(EndpointQuery(s"${registeredFunction.namespace}/${registeredFunction.endpoint}", None, None, None)),
           None, orderingDescending = false, 0, None)
@@ -222,7 +222,7 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "Throw an error if no function matching the name is available" in {
       val service = application.injector.instanceOf[FunctionService]
-      service.run(dummyFunctionConfiguration, None) must throwA[RuntimeException].await(1, 30.seconds)
+      service.run(dummyFunctionConfiguration, None, useAll = false) must throwA[RuntimeException].await(1, 30.seconds)
     }
   }
 
