@@ -91,12 +91,12 @@ class FunctionManager @Inject() (
   }
 
   // TODO: ApplicationManage permission being used to authorise function trigger. Consider updating to tool-specific permissions
-  def functionTrigger(function: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(function)) || WithRole(Owner(), Platform())).async { implicit request ⇒
+  def functionTrigger(function: String, useAll: Boolean): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(function)) || WithRole(Owner(), Platform())).async { implicit request ⇒
     logger.debug(s"Trigger function $function")
     functionService.get(function).flatMap { maybeFunction ⇒
       maybeFunction.map {
         case c: FunctionConfiguration if c.status.available && c.status.enabled ⇒
-          functionExecutionDispatcher.trigger(request.dynamicEnvironment.domain, c)(ec)
+          functionExecutionDispatcher.trigger(request.dynamicEnvironment.domain, c, useAll)(ec)
             .map(_ ⇒ Ok(Json.toJson(SuccessResponse("Function Executed"))))
             .recover {
               case e ⇒
