@@ -134,18 +134,24 @@ class FunctionService @Inject() (
       .map(_.get)
   }
 
-  def run(configuration: FunctionConfiguration, startTime: Option[DateTime])(implicit hatServer: HatServer): Future[Done] = {
+  def run(configuration: FunctionConfiguration, startTime: Option[DateTime], useAll: Boolean)(implicit hatServer: HatServer): Future[Done] = {
     val executionTime = DateTime.now()
     logger.info(s"[${hatServer.domain}] SHE function [${configuration.id}] run @$executionTime (previously $startTime)")
     functionRegistry.get[FunctionExecutable](configuration.id)
       .map { function: FunctionExecutable =>
         val fromDate = startTime.orElse(Some(DateTime.now().minusMonths(6)))
         val untilDate = Some(DateTime.now().plusMonths(3))
+        val dataBundleTimeFilter = if (useAll) {
+          None
+        }
+        else {
+          configuration.status.lastExecution
+        }
+
         val executionResult = for {
           _ ← markExecuting(configuration)
           bundle ← function.bundleFilterByDate(fromDate, untilDate)
-          data ← dataService.bundleData(bundle, createdAfter = configuration.status.lastExecution) // Get all bundle data from a specific date until now
-          // data ← dataService.bundleData(bundle, createdAfter = None) // TODO: Terry's comment: Setting createdAfter to None will allow the use case of - Show me the word distribution of my last 100 tweets.
+          data ← dataService.bundleData(bundle, createdAfter = dataBundleTimeFilter) // Get all bundle data from a specific date until now
           response ← function.execute(configuration, Request(data, linkRecords = true)) // Execute the function
             .map(removeDuplicateData) // Remove duplicate data in case some records mapped onto the same values when transformed
           // TODO handle cases when function runs for longer and connection to DB needs to be reestablished

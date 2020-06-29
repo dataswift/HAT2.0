@@ -35,6 +35,7 @@ import org.hatdex.hat.api.models.applications.{
   HatApplication,
   Version
 }
+import org.hatdex.hat.api.service.applications.ApplicationExceptions.{ HatApplicationDependencyException, HatApplicationSetupException }
 import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataService }
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
@@ -85,7 +86,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
       val result = for {
         apps <- service.applicationStatus()
       } yield {
-        apps.length must be equalTo 5
+        apps.length must be equalTo 8
         apps.find(_.application.id == notablesApp.id) must beSome
         apps.find(_.application.id == notablesAppDebitless.id) must beSome
         apps.find(_.application.id == notablesAppIncompatible.id) must beSome
@@ -109,7 +110,7 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
             None))
         apps ← service.applicationStatus()
       } yield {
-        apps.length must be equalTo 5
+        apps.length must be equalTo 8
         apps.find(_.application.id == notablesAppDebitless.id) must beSome
         apps.find(_.application.id == notablesAppIncompatible.id) must beSome
         val setupApp = apps.find(_.application.id == notablesApp.id)
@@ -301,7 +302,39 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
           HatApplication(notablesAppMissing, true, true, true, None, None, None))
       } yield setup
 
-      result must throwA[RuntimeException].await(1, 20.seconds)
+      result must throwA[HatApplicationSetupException].await(1, 20.seconds)
+    }
+  }
+
+  "Application `setup` method for applications with dependencies" should {
+    "Enable plug dependencies" in {
+      val service = application.injector.instanceOf[ApplicationsService]
+      val result = for {
+        app <- service.applicationStatus(notablesAppDebitlessWithPlugDependency.id)
+        setup <- service.setup(app.get)
+        dependency <- service.applicationStatus(plugApp.id)
+      } yield {
+        setup.active must beTrue
+        setup.enabled must beTrue
+        setup.dependenciesEnabled must beSome(true)
+        dependency.get.enabled must beTrue
+      }
+
+      result await (1, 20.seconds)
+    }
+
+    "Return partial success for application with invalid dependencies" in {
+      val service = application.injector.instanceOf[ApplicationsService]
+      val result = for {
+        app <- service.applicationStatus(notablesAppDebitlessWithInvalidDependency.id)
+        setup <- service.setup(app.get)
+      } yield {
+        setup.active must beTrue
+        setup.enabled must beTrue
+        setup.dependenciesEnabled must beSome(false)
+      }
+
+      result await (1, 20.seconds)
     }
   }
 

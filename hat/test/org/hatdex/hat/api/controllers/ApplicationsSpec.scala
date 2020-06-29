@@ -76,7 +76,7 @@ class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsS
       status(result) must equalTo(OK)
       contentAsJson(result).validate[Seq[HatApplication]].isSuccess must beTrue
       val apps = contentAsJson(result).as[Seq[HatApplication]]
-      apps.length must be equalTo 5
+      apps.length must be equalTo 8
       apps.find(_.application.id == notablesApp.id) must beSome
       apps.find(_.application.id == notablesAppDebitless.id) must beSome
       apps.find(_.application.id == notablesAppIncompatible.id) must beSome

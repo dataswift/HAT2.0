@@ -201,7 +201,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = Helpers.call(controller.functionTrigger("random-function"), request)
+      val result: Future[Result] = Helpers.call(controller.functionTrigger("random-function", useAll = false), request)
 
       status(result) must equalTo(NOT_FOUND)
       val message = contentAsJson(result).as[ErrorMessage]
@@ -213,7 +213,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = Helpers.call(controller.functionTrigger(registeredDummyFunctionAvailable.configuration.id), request)
+      val result: Future[Result] = Helpers.call(controller.functionTrigger(registeredDummyFunctionAvailable.configuration.id, useAll = false), request)
 
       status(result) must equalTo(BAD_REQUEST)
       val message = contentAsJson(result).as[ErrorMessage]
@@ -228,7 +228,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val controller = application.injector.instanceOf[FunctionManager]
       val result: Future[Result] = for {
         _ <- service.save(dummyFunctionConfiguration)
-        result <- Helpers.call(controller.functionTrigger("test-dummy-function"), request)
+        result <- Helpers.call(controller.functionTrigger("test-dummy-function", useAll = false), request)
       } yield result
 
       status(result) must equalTo(BAD_REQUEST)
@@ -254,7 +254,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       await(setup)(60.seconds)
 
-      val result = Helpers.call(controller.functionTrigger("data-feed-direct-mapper"), request)
+      val result = Helpers.call(controller.functionTrigger("data-feed-direct-mapper", useAll = false), request)
       status(result) must equalTo(OK)
       val message = contentAsJson(result).as[SuccessResponse]
       message.message must be equalTo "Function Executed"

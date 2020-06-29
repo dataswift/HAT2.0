@@ -110,10 +110,10 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
           s"- ${t.minusMinutes(1).toString("dd MMMM")}"
         }
         else {
-          s"- ${t.withZone(start.getZone).toString("dd MMMM HH:mm z")}"
+          s"- ${t.withZone(start.getZone).toString("dd MMMM HH:mm ZZZ")}"
         }
       case t if t.hourOfDay().get() == 0 ⇒ ""
-      case t                             ⇒ s"- ${t.withZone(start.getZone).toString("HH:mm z")}"
+      case t                             ⇒ s"- ${t.withZone(start.getZone).toString("HH:mm ZZZ")}"
     }
 
     (startString, endString)
