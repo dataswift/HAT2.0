@@ -75,3 +75,8 @@ GET           /she/feed                                                         
 GET           /she/feed/$endpoint<[0-9a-z-/]+>                                               org.hatdex.hat.she.controllers.FeedGenerator.getFeed(endpoint: String, since: Option[Long], until: Option[Long])
 
 GET           /she/static/$endpoint<[0-9a-z-/]+>                                             org.hatdex.hat.she.controllers.StaticDataGenerator.getStaticData(endpoint: String)
+
+
+# Contract Data
+POST          /contract-data/read/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>              org.hatdex.hat.api.controllers.RichData.getContractData(namespace, endpoint, orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
+POST          /contract-data/create/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>            org.hatdex.hat.api.controllers.RichData.saveContractData(namespace, endpoint, skipErrors: Option[Boolean])
