@@ -30,13 +30,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import io.dataswift.adjudicator.ShortLivedTokenOps
-import io.dataswift.adjudicator.Types.{
-  ContractDataRequest,
-  ContractId,
-  HatName,
-  KeyId,
-  ShortLivedToken
-}
+import io.dataswift.adjudicator.Types.{ ContractDataRequest, ContractId, HatName, KeyId, ShortLivedToken }
 import org.hatdex.hat.api.json.RichDataJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.models.applications.HatApplication
@@ -45,17 +39,11 @@ import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.models._
-import org.hatdex.hat.authentication.{
-  ContainsApplicationRole,
-  HatApiAuthEnvironment,
-  HatApiController,
-  WithRole
-}
-import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider }
+import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
+import org.hatdex.hat.utils.{ AdjudicatorRequest, HatBodyParsers, LoggingProvider, PublicKeyRequestFailure, PublicKeyRequestSuccess }
 import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.libs.ws.WSClient
 import play.api.mvc._
-import org.hatdex.hat.utils.NetworkRequest
 import org.hatdex.libs.dal.HATPostgresProfile
 import eu.timepit.refined._
 import play.api.Configuration
@@ -95,7 +83,7 @@ class RichData @Inject() (
   val adjudicatorScheme =
     configuration.underlying.getString("adjudicator.scheme")
   val adjudicatorEndpoint = s"${adjudicatorScheme}${adjudicatorAddress}"
-  val adjudicatorClient = new NetworkRequest(adjudicatorEndpoint, wsClient)
+  val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, wsClient)
 
   /**
    * Returns Data Records for a given endpoint
@@ -554,6 +542,8 @@ class RichData @Inject() (
                   case array: JsArray => handleJsArray(contractRequestBody.hatName, array, dataEndpoint, skipErrors)
                   case value: JsValue => handleJsValue(contractRequestBody.hatName, value, dataEndpoint)
                 }
+              case None =>
+                Future.failed()
             }
         }
       }
@@ -664,24 +654,31 @@ class RichData @Inject() (
     keyId: String): Future[Either[ContractVerificationFailure, ContractVerificationSuccess]] = {
     import ContractVerificationFailure._
     import ContractVerificationSuccess._
-    adjudicatorClient
-      .getPublicKey(contractRequestBodyRefined.contractId, contractRequestBodyRefined.hatName.value, keyId)
-      .map { response =>
-        response.status match {
-          case OK =>
+    import PublicKeyRequestFailure._
+    import PublicKeyRequestSuccess._
+
+    adjudicatorClient.getPublicKey(contractRequestBodyRefined.hatName.value, contractRequestBodyRefined.contractId, keyId).map { publicKeyReqsponse =>
+      {
+        publicKeyReqsponse match {
+          case Left(PublicKeyRequestFailure.ServiceRespondedWithFailure(failureDescription)) => {
+            Left(ContractVerificationFailure.ServiceRespondedWithFailure(s"The Adjudicator Service responded with an error: ${failureDescription}"))
+          }
+          case Left(PublicKeyRequestFailure.InvalidPublicKeyFailure(failureDescription)) => {
+            Left(ContractVerificationFailure.ServiceRespondedWithFailure(s"The Adjudicator Service responded with an error: ${failureDescription}"))
+          }
+          case Right(PublicKeyReceived(publicKey)) => {
             val tryJwtClaim = ShortLivedTokenOps.verifyToken(
-              // TODO: remove .toString by aligning types
               Some(contractRequestBodyRefined.token.toString),
-              Json.parse(response.body).asOpt[Array[Byte]])
+              publicKey)
             tryJwtClaim match {
               case Success(jwtClaim) => Right(JwtClaimVerified(jwtClaim))
               case Failure(_) =>
                 Left(InvalidTokenFailure(s"Token: ${contractRequestBodyRefined.token.toString} was not verified."))
             }
-          case _ =>
-            Left(ServiceRespondedWithFailure(s"The Adjudicator Service responsed with an error: ${response.status}"))
+          }
         }
       }
+    }
   }
 
   private object Errors {

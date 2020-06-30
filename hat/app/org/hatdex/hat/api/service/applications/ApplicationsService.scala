@@ -36,7 +36,7 @@ import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.Tables
 import org.hatdex.hat.dal.Tables.ApplicationStatusRow
 import org.hatdex.hat.resourceManagement.HatServer
-import org.hatdex.hat.utils.{ FutureTransformations, NetworkRequest, Utils }
+import org.hatdex.hat.utils.{ FutureTransformations, AdjudicatorRequest, Utils }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.{ Configuration, Logger }
@@ -94,7 +94,7 @@ class ApplicationsService @Inject() (
   val adjudicatorScheme =
     configuration.underlying.getString("adjudicator.scheme")
   val adjudicatorEndpoint = s"${adjudicatorScheme}${adjudicatorAddress}"
-  val adjudicatorClient = new NetworkRequest(adjudicatorEndpoint, wsClient)
+  val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, wsClient)
 
   def applicationStatus(id: String, bustCache: Boolean = false)(
     implicit
