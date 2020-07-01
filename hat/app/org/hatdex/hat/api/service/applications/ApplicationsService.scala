@@ -23,9 +23,12 @@
  */
 package org.hatdex.hat.api.service.applications
 
+import java.util.UUID
+
 import akka.Done
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
+import io.dataswift.adjudicator.Types.ContractId
 import javax.inject.Inject
 import org.hatdex.hat.api.models.applications.{ Application, ApplicationKind, ApplicationStatus, HatApplication, Version }
 import org.hatdex.hat.api.models.{ AccessToken, EndpointQuery }
@@ -158,17 +161,18 @@ class ApplicationsService @Inject() (
     maybeDataDebitSetup.getOrElse(Future.successful(Done)) // If data debit was there, must have been setup successfully
   }
 
-  private def joinContract(application: Application, hatName: String): Future[Any] =
+  def joinContract(application: Application, hatName: String): Future[Any] = {
     application.kind match {
-      case ApplicationKind.Contract(_) =>
+      case _: ApplicationKind.Contract =>
         adjudicatorClient
           .joinContract(
             hatName,
-            io.dataswift.adjudicator.Types
-              .ContractId(
-                java.util.UUID.fromString(application.id)))
-      case _ => Future.successful(Unit)
+            ContractId(UUID.fromString(application.id)))
+      case _ => {
+        Future.successful(Unit)
+      }
     }
+  }
 
   private def setupApplication(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
     for {

@@ -29,7 +29,7 @@ import akka.util.ByteString
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models.applications.ApplicationKind.App
+import org.hatdex.hat.api.models.applications.ApplicationKind.{ App, Contract }
 import org.hatdex.hat.api.models.applications._
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.StatsReporter
@@ -67,6 +67,8 @@ trait ApplicationsServiceContext extends HATTestContext {
     url = "https://itunes.apple.com/gb/app/notables/id1338778866?mt=8",
     iosUrl = Some("https://itunes.apple.com/gb/app/notables/id1338778866?mt=8"),
     androidUrl = None)
+
+  val contractKind: ApplicationKind.Kind = Contract("https://dataswift.io")
 
   val description = FormattedText(
     text =
@@ -225,6 +227,17 @@ trait ApplicationsServiceContext extends HATTestContext {
     Application(
       id = "notables",
       kind = kind,
+      info = appInfo,
+      developer = developer,
+      permissions = permissions,
+      dependencies = None,
+      setup = setup,
+      status = status)
+
+  val fakeContract: Application =
+    Application(
+      id = "21a3eed7-5d32-46ba-a884-1fdaf7259731",
+      kind = contractKind,
       info = appInfo,
       developer = developer,
       permissions = permissions,
