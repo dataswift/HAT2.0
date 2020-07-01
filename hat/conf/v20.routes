@@ -60,6 +60,6 @@ GET           /she/function                                                     
 GET           /she/function/:function                                                        org.hatdex.hat.she.controllers.FunctionManager.functionGet(function: String)
 GET           /she/function/:function/enable                                                 org.hatdex.hat.she.controllers.FunctionManager.functionEnable(function: String)
 GET           /she/function/:function/disable                                                org.hatdex.hat.she.controllers.FunctionManager.functionDisable(function: String)
-GET           /she/function/:function/trigger                                                org.hatdex.hat.she.controllers.FunctionManager.functionTrigger(function: String)
+GET           /she/function/:function/trigger                                                org.hatdex.hat.she.controllers.FunctionManager.functionTrigger(function: String, useAll: Boolean ?= false)
 GET           /she/feed                                                                      org.hatdex.hat.she.controllers.FeedGenerator.fullFeed(since: Option[Long], until: Option[Long])
 GET           /she/feed/$endpoint<[0-9a-z-/]+>                                               org.hatdex.hat.she.controllers.FeedGenerator.getFeed(endpoint: String, since: Option[Long], until: Option[Long])

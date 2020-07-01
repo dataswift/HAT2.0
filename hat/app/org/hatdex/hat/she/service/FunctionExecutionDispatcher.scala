@@ -129,12 +129,12 @@ class FunctionExecutionTriggerHandler @Inject() (
   logger.info("Function Executor Trigger Handler starting")
   dataEventBus.subscribe(triggerStream, classOf[HatDataEventBus.DataCreatedEvent])
 
-  def trigger(hat: String, conf: FunctionConfiguration)(implicit ec: ExecutionContext): Future[Done] = {
+  def trigger(hat: String, conf: FunctionConfiguration, useAll: Boolean = false)(implicit ec: ExecutionContext): Future[Done] = {
     logger.info(s"[$hat] Triggered function ${conf.id}")
     hatServerProvider.retrieve(hat)
       .flatMap {
         _.map { hatServer =>
-          functionService.run(conf, conf.status.lastExecution)(hatServer)
+          functionService.run(conf, conf.status.lastExecution, useAll)(hatServer)
             .recover {
               case e => throw SHEFunctionExecutionFailureException(s"$hat function ${conf.id} failed", e)
             }

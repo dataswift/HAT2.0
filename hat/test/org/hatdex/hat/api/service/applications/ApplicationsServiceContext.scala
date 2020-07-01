@@ -278,9 +278,17 @@ trait ApplicationsServiceContext extends HATTestContext {
       None,
       DateTime.now()),
     permissions = notablesApp.permissions.copy(
-      dataRetrieved = Some(
-        notablesApp.permissions.dataRetrieved.get
-          .copy(name = "notables-external-failing"))))
+      dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
+        name = "notables-external-failing"))))
+  val notablesAppDebitlessWithPlugDependency = notablesAppDebitless.copy(
+    id = "notables-plug-dependency",
+    dependencies = Some(ApplicationDependencies(List("plug-app").toArray, List().toArray, List().toArray)))
+  val notablesAppDebitlessWithInvalidDependency = notablesAppDebitless.copy(
+    id = "notables-invalid-dependency",
+    dependencies = Some(ApplicationDependencies(List("invalid-id").toArray, List().toArray, List().toArray)))
+  val plugApp = notablesAppDebitless.copy(
+    id = "plug-app",
+    kind = ApplicationKind.DataPlug("http://dataplug.hat.org"))
 
   def withMockWsClient[T](block: WSClient => T): T = {
     Server.withRouterFromComponents() { components =>
@@ -341,14 +349,11 @@ trait ApplicationsServiceContext extends HATTestContext {
 
   class CustomisedFakeModule extends AbstractModule with ScalaModule {
     override def configure(): Unit = {
-      bind[TrustedApplicationProvider].toInstance(
-        new TestApplicationProvider(
-          Seq(
-            notablesApp,
-            notablesAppDebitless,
-            notablesAppIncompatibleUpdated,
-            notablesAppExternal,
-            notablesAppExternalFailing)))
+      bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(
+        Seq(notablesApp, notablesAppDebitless, notablesAppIncompatibleUpdated,
+          notablesAppExternal, notablesAppExternalFailing,
+          notablesAppDebitlessWithPlugDependency, notablesAppDebitlessWithInvalidDependency,
+          plugApp)))
 
       bind[ApplicationStatusCheckService].toInstance(mockStatusChecker)
       bind[StatsReporter].toInstance(mockStatsReporter)

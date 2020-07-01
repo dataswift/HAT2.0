@@ -1,6 +1,6 @@
 package org.hatdex.hat.utils
 
-import io.dataswift.adjudicator.Types.{ Contract, ContractId }
+import io.dataswift.adjudicator.Types.{ ContractId }
 import play.api.libs.ws.{ WSClient, WSRequest }
 import play.api.http.Status._
 import play.api.libs.json.Json

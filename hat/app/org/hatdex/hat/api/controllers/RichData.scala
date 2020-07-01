@@ -30,14 +30,14 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import io.dataswift.adjudicator.ShortLivedTokenOps
-import io.dataswift.adjudicator.Types.{ ContractDataRequest, ContractId, HatName, KeyId, ShortLivedToken }
+import io.dataswift.adjudicator.Types.{ ContractId, HatName, ShortLivedToken }
 import org.hatdex.hat.api.json.RichDataJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.models.applications.HatApplication
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
-import org.hatdex.hat.api.service.richData._
+import org.hatdex.hat.api.service.richData.{ RichDataServiceException, _ }
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.utils.{ AdjudicatorRequest, HatBodyParsers, LoggingProvider, PublicKeyRequestFailure, PublicKeyRequestSuccess }
@@ -543,7 +543,7 @@ class RichData @Inject() (
                   case value: JsValue => handleJsValue(contractRequestBody.hatName, value, dataEndpoint)
                 }
               case None =>
-                Future.failed()
+                Future.failed(new RichDataServiceException("No Request Body found."))
             }
         }
       }
@@ -654,7 +654,6 @@ class RichData @Inject() (
     keyId: String): Future[Either[ContractVerificationFailure, ContractVerificationSuccess]] = {
     import ContractVerificationFailure._
     import ContractVerificationSuccess._
-    import PublicKeyRequestFailure._
     import PublicKeyRequestSuccess._
 
     adjudicatorClient.getPublicKey(contractRequestBodyRefined.hatName.value, contractRequestBodyRefined.contractId, keyId).map { publicKeyReqsponse =>
