@@ -25,18 +25,12 @@
 package org.hatdex.hat.api.service.applications
 
 import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
-import com.mohiva.play.silhouette.impl.authenticators.{
-  JWTRS256Authenticator,
-  JWTRS256AuthenticatorSettings
-}
+import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, JWTRS256AuthenticatorSettings }
 import org.hatdex.hat.api.models.EndpointData
-import org.hatdex.hat.api.models.applications.{
-  ApplicationStatus,
-  HatApplication,
-  Version
-}
+import org.hatdex.hat.api.models.applications.{ ApplicationStatus, HatApplication, Version }
 import org.hatdex.hat.api.service.applications.ApplicationExceptions.{ HatApplicationDependencyException, HatApplicationSetupException }
 import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataService }
+import org.hatdex.hat.utils.AdjudicatorRequestTypes.JoinContractRequestFailure.ServiceRespondedWithFailure
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -45,6 +39,7 @@ import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
 import play.api.test.PlaySpecification
+import akka.Done
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -470,6 +465,47 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
           .await(1, 10.seconds)
       }
     }
+
+    "JoinContract should not run unless the application template is a Contract" in {
+      val service = application.injector.instanceOf[ApplicationsService]
+
+      val result = for {
+        contractApp <- service.joinContract(fakeContract, "hatName")
+        notablesApp <- service.joinContract(notablesApp, "hatName")
+      } yield {
+        println(contractApp)
+        println(notablesApp)
+        notablesApp shouldEqual (Done)
+        //contractApp must beLeft(ServiceRespondedWithFailure("The Adjudicator Service responded with an error: Internal Server Error"))
+      }
+
+      result await (1, 20.seconds)
+    }
+
+    // Commented until I figure out how to Mock it.
+    //    "Adding a Contract should succeed" in {
+    //      val service = application.injector.instanceOf[ApplicationsService]
+    //
+    //      val result = for {
+    //        _ <- service.setup(
+    //          HatApplication(
+    //            fakeContract,
+    //            setup = false,
+    //            enabled = false,
+    //            active = false,
+    //            None,
+    //            None,
+    //            None))
+    //        apps <- service.applicationStatus()
+    //      } yield {
+    //        apps.length must be equalTo 8
+    //        val setupApp = apps.find(_.application.id == notablesApp.id)
+    //        setupApp must beSome
+    //        setupApp.get.setup must beTrue
+    //      }
+    //
+    //      result await (1, 20.seconds)
+    //    }
   }
 
 }

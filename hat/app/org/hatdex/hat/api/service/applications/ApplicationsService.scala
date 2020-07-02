@@ -23,9 +23,12 @@
  */
 package org.hatdex.hat.api.service.applications
 
+import java.util.UUID
+
 import akka.Done
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
+import io.dataswift.adjudicator.Types.ContractId
 import javax.inject.Inject
 import org.hatdex.hat.api.models.applications.{ Application, ApplicationKind, ApplicationStatus, HatApplication, Version }
 import org.hatdex.hat.api.models.{ AccessToken, EndpointQuery }
@@ -46,7 +49,7 @@ import play.api.cache.AsyncCacheApi
 import play.api.libs.json.{ JsObject, JsString }
 import play.api.libs.ws.WSClient
 import play.api.mvc.RequestHeader
-import org.hatdex.hat.utils.NetworkRequest
+import org.hatdex.hat.utils.AdjudicatorRequest
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -91,7 +94,7 @@ class ApplicationsService @Inject() (
   val adjudicatorScheme =
     configuration.underlying.getString("adjudicator.scheme")
   val adjudicatorEndpoint = s"${adjudicatorScheme}${adjudicatorAddress}"
-  val adjudicatorClient = new NetworkRequest(adjudicatorEndpoint, wsClient)
+  val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, wsClient)
 
   def applicationStatus(id: String, bustCache: Boolean = false)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Option[HatApplication]] = {
     val eventuallyCleanedCache = if (bustCache) {
@@ -158,17 +161,18 @@ class ApplicationsService @Inject() (
     maybeDataDebitSetup.getOrElse(Future.successful(Done)) // If data debit was there, must have been setup successfully
   }
 
-  private def joinContract(application: Application, hatName: String): Future[Any] =
+  def joinContract(application: Application, hatName: String): Future[Any] = {
     application.kind match {
-      case ApplicationKind.Contract(x) =>
+      case _: ApplicationKind.Contract =>
         adjudicatorClient
           .joinContract(
             hatName,
-            io.dataswift.adjudicator.Types
-              .ContractId(
-                java.util.UUID.fromString(application.id)))
-      case _ => Future.successful(Unit)
+            ContractId(UUID.fromString(application.id)))
+      case _ => {
+        Future.successful(Done)
+      }
     }
+  }
 
   private def setupApplication(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
     for {
