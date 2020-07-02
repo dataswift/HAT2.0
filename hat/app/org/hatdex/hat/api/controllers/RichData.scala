@@ -40,12 +40,13 @@ import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData.{ RichDataServiceException, _ }
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.utils.{ AdjudicatorRequest, HatBodyParsers, LoggingProvider, PublicKeyRequestFailure, PublicKeyRequestSuccess }
+import org.hatdex.hat.utils.{ AdjudicatorRequest, HatBodyParsers, LoggingProvider }
+import org.hatdex.hat.utils.AdjudicatorRequestTypes._
 import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import org.hatdex.libs.dal.HATPostgresProfile
-import eu.timepit.refined._
+//import eu.timepit.refined._
 import play.api.Configuration
 import eu.timepit.refined.auto._
 import eu.timepit.refined.collection.NonEmpty
@@ -647,14 +648,23 @@ class RichData @Inject() (
     }
   }
 
-  // TODO: String to KeyId
-  // TODO: remove toString on HatName
+  def verifyJwyClaim(contractRequestBodyRefined: ContractRequestBodyRefined, publicKeyAsByteArray: Array[Byte]): Either[ContractVerificationFailure, ContractVerificationSuccess] = {
+    import ContractVerificationFailure._
+    import ContractVerificationSuccess._
+
+    val tryJwtClaim = ShortLivedTokenOps.verifyToken(
+      Some(contractRequestBodyRefined.token.toString),
+      publicKeyAsByteArray)
+    tryJwtClaim match {
+      case Success(jwtClaim) => Right(JwtClaimVerified(jwtClaim))
+      case Failure(_) =>
+        Left(InvalidTokenFailure(s"Token: ${contractRequestBodyRefined.token.toString} was not verified."))
+    }
+  }
+
   def verifyTokenWithAdjudicator(
     contractRequestBodyRefined: ContractRequestBodyRefined,
     keyId: String): Future[Either[ContractVerificationFailure, ContractVerificationSuccess]] = {
-    import ContractVerificationFailure._
-    import ContractVerificationSuccess._
-    import PublicKeyRequestSuccess._
 
     adjudicatorClient.getPublicKey(contractRequestBodyRefined.hatName.value, contractRequestBodyRefined.contractId, keyId).map { publicKeyReqsponse =>
       {
@@ -665,16 +675,7 @@ class RichData @Inject() (
           case Left(PublicKeyRequestFailure.InvalidPublicKeyFailure(failureDescription)) => {
             Left(ContractVerificationFailure.ServiceRespondedWithFailure(s"The Adjudicator Service responded with an error: ${failureDescription}"))
           }
-          case Right(PublicKeyReceived(publicKey)) => {
-            val tryJwtClaim = ShortLivedTokenOps.verifyToken(
-              Some(contractRequestBodyRefined.token.toString),
-              publicKey)
-            tryJwtClaim match {
-              case Success(jwtClaim) => Right(JwtClaimVerified(jwtClaim))
-              case Failure(_) =>
-                Left(InvalidTokenFailure(s"Token: ${contractRequestBodyRefined.token.toString} was not verified."))
-            }
-          }
+          case Right(PublicKeyReceived(publicKey)) => verifyJwyClaim(contractRequestBodyRefined, publicKey)
         }
       }
     }

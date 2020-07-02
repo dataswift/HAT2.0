@@ -7,58 +7,53 @@ import play.api.libs.json.Json
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-// TODO: move these some place more appropriate
-// Error ADTs
+object AdjudicatorRequestTypes {
 
-// Public Key Request
-sealed trait PublicKeyRequestFailure
-object PublicKeyRequestFailure {
-  final case class ServiceRespondedWithFailure(failureDescription: String)
-    extends PublicKeyRequestFailure
-  final case class InvalidPublicKeyFailure(failureDescription: String)
-    extends PublicKeyRequestFailure
-}
+  // Public Key Request
+  sealed trait PublicKeyRequestFailure
+  object PublicKeyRequestFailure {
 
-sealed trait PublicKeyRequestSuccess
-object PublicKeyRequestSuccess {
-  final case class PublicKeyReceived(publicKeyAsByteArray: Array[Byte])
-    extends PublicKeyRequestSuccess
-}
+    final case class ServiceRespondedWithFailure(failureDescription: String)
+      extends PublicKeyRequestFailure
 
-// Join Contract Request
-sealed trait JoinContractRequestFailure
-object JoinContractRequestFailure {
-  final case class ServiceRespondedWithFailure(failureDescription: String)
-    extends JoinContractRequestFailure
-  final case class JoinContractFailure(failureDescription: String)
-    extends JoinContractRequestFailure
-}
+    final case class InvalidPublicKeyFailure(failureDescription: String)
+      extends PublicKeyRequestFailure
 
-sealed trait JoinContractRequestSuccess
-object JoinContractRequestSuccess {
-  final case object ContractJoined
-    extends JoinContractRequestSuccess
-}
+  }
+  final case class PublicKeyReceived(publicKeyAsByteArray: Array[Byte]) extends AnyVal
 
-// Leave Contract Request
-sealed trait LeaveContractRequestFailure
-object LeaveContractRequestFailure {
-  final case class ServiceRespondedWithFailure(failureDescription: String)
-    extends LeaveContractRequestFailure
-  final case class LeaveContractFailure(failureDescription: String)
-    extends LeaveContractRequestFailure
-}
+  // Join Contract Request
+  sealed trait JoinContractRequestFailure
+  object JoinContractRequestFailure {
 
-sealed trait LeaveContractRequestSuccess
-object LeaveContractRequestSuccess {
-  final case object ContractLeft extends LeaveContractRequestSuccess
+    final case class ServiceRespondedWithFailure(failureDescription: String)
+      extends JoinContractRequestFailure
+
+    final case class JoinContractFailure(failureDescription: String)
+      extends JoinContractRequestFailure
+
+  }
+  // TODO: if we attempt to extend AnyVal here, the compiler complains
+  final case class ContractJoined(contractId: ContractId)
+
+  // Leave Contract Request
+  sealed trait LeaveContractRequestFailure
+  object LeaveContractRequestFailure {
+
+    final case class ServiceRespondedWithFailure(failureDescription: String)
+      extends LeaveContractRequestFailure
+
+    final case class LeaveContractFailure(failureDescription: String)
+      extends LeaveContractRequestFailure
+
+  }
+  final case class ContractLeft(contractId: ContractId)
 }
 
 class AdjudicatorRequest(adjudicatorEndpoint: String, ws: WSClient) {
+  import AdjudicatorRequestTypes._
 
-  def getPublicKey(hatName: String, contractId: ContractId, keyId: String)(implicit ec: ExecutionContext): Future[Either[PublicKeyRequestFailure, PublicKeyRequestSuccess]] = {
-
-    import PublicKeyRequestSuccess._
+  def getPublicKey(hatName: String, contractId: ContractId, keyId: String)(implicit ec: ExecutionContext): Future[Either[PublicKeyRequestFailure, PublicKeyReceived]] = {
 
     val url =
       s"${adjudicatorEndpoint}/v1/contracts/${contractId}/hat/${hatName}/${keyId}"
@@ -90,9 +85,7 @@ class AdjudicatorRequest(adjudicatorEndpoint: String, ws: WSClient) {
 
   def joinContract(hatName: String, contractId: ContractId)(
     implicit
-    ec: ExecutionContext): Future[Either[JoinContractRequestFailure.ServiceRespondedWithFailure, JoinContractRequestSuccess]] = {
-
-    import JoinContractRequestSuccess._
+    ec: ExecutionContext): Future[Either[JoinContractRequestFailure.ServiceRespondedWithFailure, ContractJoined]] = {
 
     val url =
       s"${adjudicatorEndpoint}/v1/contracts/${contractId}/hat/${hatName}"
@@ -102,7 +95,7 @@ class AdjudicatorRequest(adjudicatorEndpoint: String, ws: WSClient) {
     eventuallyResponse.map { response =>
       response.status match {
         case OK => {
-          Right(ContractJoined)
+          Right(ContractJoined(contractId))
         }
         case _ => {
           Left(JoinContractRequestFailure.ServiceRespondedWithFailure(
@@ -119,9 +112,7 @@ class AdjudicatorRequest(adjudicatorEndpoint: String, ws: WSClient) {
 
   def leaveContract(hatName: String, contractId: ContractId)(
     implicit
-    ec: ExecutionContext): Future[Either[LeaveContractRequestFailure, LeaveContractRequestSuccess]] = {
-
-    import LeaveContractRequestSuccess._
+    ec: ExecutionContext): Future[Either[LeaveContractRequestFailure, ContractLeft]] = {
 
     val url =
       s"${adjudicatorEndpoint}/v1/contracts/${contractId}/hat/${hatName}"
@@ -130,7 +121,7 @@ class AdjudicatorRequest(adjudicatorEndpoint: String, ws: WSClient) {
     eventuallyResponse.map { response =>
       response.status match {
         case OK => {
-          Right(ContractLeft)
+          Right(ContractLeft(contractId))
         }
         case _ => {
           Left(LeaveContractRequestFailure.ServiceRespondedWithFailure(

@@ -30,8 +30,7 @@ import org.hatdex.hat.api.models.EndpointData
 import org.hatdex.hat.api.models.applications.{ ApplicationStatus, HatApplication, Version }
 import org.hatdex.hat.api.service.applications.ApplicationExceptions.{ HatApplicationDependencyException, HatApplicationSetupException }
 import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataService }
-import org.hatdex.hat.utils.JoinContractRequestFailure.ServiceRespondedWithFailure
-import org.hatdex.hat.utils.JoinContractRequestSuccess
+import org.hatdex.hat.utils.AdjudicatorRequestTypes.JoinContractRequestFailure.ServiceRespondedWithFailure
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -40,6 +39,7 @@ import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
 import play.api.test.PlaySpecification
+import akka.Done
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -475,14 +475,14 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
       } yield {
         println(contractApp)
         println(notablesApp)
-        notablesApp shouldEqual (Unit)
+        notablesApp shouldEqual (Done)
         //contractApp must beLeft(ServiceRespondedWithFailure("The Adjudicator Service responded with an error: Internal Server Error"))
       }
 
       result await (1, 20.seconds)
     }
 
-    // Commented until the infrastructure can handle it.
+    // Commented until I figure out how to Mock it.
     //    "Adding a Contract should succeed" in {
     //      val service = application.injector.instanceOf[ApplicationsService]
     //

@@ -169,7 +169,7 @@ class ApplicationsService @Inject() (
             hatName,
             ContractId(UUID.fromString(application.id)))
       case _ => {
-        Future.successful(Unit)
+        Future.successful(Done)
       }
     }
   }
