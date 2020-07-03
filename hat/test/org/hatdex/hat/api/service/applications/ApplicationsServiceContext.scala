@@ -29,7 +29,7 @@ import akka.util.ByteString
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models.applications.ApplicationKind.App
+import org.hatdex.hat.api.models.applications.ApplicationKind.{ App, Contract }
 import org.hatdex.hat.api.models.applications._
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.StatsReporter
@@ -68,40 +68,72 @@ trait ApplicationsServiceContext extends HATTestContext {
     iosUrl = Some("https://itunes.apple.com/gb/app/notables/id1338778866?mt=8"),
     androidUrl = None)
 
+  val contractKind: ApplicationKind.Kind = Contract("https://dataswift.io")
+
   val description = FormattedText(
-    text = "\n Anything you write online is your data – searches, social media posts, comments and notes.\n\n Start your notes here on Notables, where they will be stored completely privately in your HAT.\n\n Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.\n\n Add images or pin locations as reminders of where you were or what you saw.\n          ",
-    markdown = Some("\n Anything you write online is your data – searches, social media posts, comments and notes.\n\n Start your notes here on Notables, where they will be stored completely privately in your HAT.\n\n Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.\n\n Add images or pin locations as reminders of where you were or what you saw.\n          "),
-    html = Some("\n <p>Anything you write online is your data – searches, social media posts, comments and notes.</p>\n\n <p>Start your notes here on Notables, where they will be stored completely privately in your HAT.</p>\n\n <p>Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.</p>\n\n <p>Add images or pin locations as reminders of where you were or what you saw.</p>\n          "))
+    text =
+      "\n Anything you write online is your data – searches, social media posts, comments and notes.\n\n Start your notes here on Notables, where they will be stored completely privately in your HAT.\n\n Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.\n\n Add images or pin locations as reminders of where you were or what you saw.\n          ",
+    markdown = Some(
+      "\n Anything you write online is your data – searches, social media posts, comments and notes.\n\n Start your notes here on Notables, where they will be stored completely privately in your HAT.\n\n Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.\n\n Add images or pin locations as reminders of where you were or what you saw.\n          "),
+    html = Some(
+      "\n <p>Anything you write online is your data – searches, social media posts, comments and notes.</p>\n\n <p>Start your notes here on Notables, where they will be stored completely privately in your HAT.</p>\n\n <p>Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.</p>\n\n <p>Add images or pin locations as reminders of where you were or what you saw.</p>\n          "))
 
   val dataPreview: Seq[DataFeedItem] = List(
     DataFeedItem(
       source = "notables",
       date = DateTime.parse("2018-02-15T03:52:37.000Z"),
       types = List("note"),
-      title = Some(DataFeedItemTitle(text = "leila.hubat.net", subtitle = None, action = Some("private"))),
-      content = Some(DataFeedItemContent(text = Some("Notes are live!"), None, None, None)),
+      title = Some(
+        DataFeedItemTitle(
+          text = "leila.hubat.net",
+          subtitle = None,
+          action = Some("private"))),
+      content = Some(
+        DataFeedItemContent(text = Some("Notes are live!"), None, None, None)),
       location = None),
     DataFeedItem(
       source = "notables",
       date = DateTime.parse("2018-02-15T03:52:37.317Z"),
       types = List("note"),
-      title = Some(DataFeedItemTitle(text = "leila.hubat.net", subtitle = None, action = Some("private"))),
-      content = Some(DataFeedItemContent(text = Some("And I love 'em!"), None, None, None)),
+      title = Some(
+        DataFeedItemTitle(
+          text = "leila.hubat.net",
+          subtitle = None,
+          action = Some("private"))),
+      content = Some(
+        DataFeedItemContent(text = Some("And I love 'em!"), None, None, None)),
       location = None))
 
   val graphics = ApplicationGraphics(
     banner = Drawable(normal = "", small = None, large = None, xlarge = None),
-    logo = Drawable(normal = "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss.png", small = None, large = None, xlarge = None),
+    logo = Drawable(
+      normal =
+        "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss.png",
+      small = None,
+      large = None,
+      xlarge = None),
     screenshots = List(
       Drawable(
-        normal = "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss.jpg",
-        large = Some("https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-5.jpg"), small = None, xlarge = None),
+        normal =
+          "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss.jpg",
+        large = Some(
+          "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-5.jpg"),
+        small = None,
+        xlarge = None),
       Drawable(
-        normal = "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-2.jpg",
-        large = Some("https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-6.jpg"), small = None, xlarge = None),
+        normal =
+          "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-2.jpg",
+        large = Some(
+          "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-6.jpg"),
+        small = None,
+        xlarge = None),
       Drawable(
-        normal = "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-3.jpg",
-        large = Some("https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-7.jpg"), small = None, xlarge = None)))
+        normal =
+          "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-3.jpg",
+        large = Some(
+          "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-7.jpg"),
+        small = None,
+        xlarge = None)))
 
   val appInfo: ApplicationInfo = ApplicationInfo(
     version = Version(1, 0, 0),
@@ -113,7 +145,8 @@ trait ApplicationsServiceContext extends HATTestContext {
     hmiDescription = None,
     termsUrl = "https://example.com/terms",
     privacyPolicyUrl = None,
-    dataUsePurpose = "Data Will be processed by Notables for the following purpose...",
+    dataUsePurpose =
+      "Data Will be processed by Notables for the following purpose...",
     supportContact = "contact@hatdex.org",
     rating = None,
     dataPreview = dataPreview,
@@ -126,27 +159,36 @@ trait ApplicationsServiceContext extends HATTestContext {
     name = "HATDeX",
     url = "https://hatdex.org",
     country = Some("United Kingdom"),
-    logo = Some(Drawable(normal = "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss.png", small = None, large = None, xlarge = None)))
+    logo = Some(
+      Drawable(
+        normal =
+          "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss.png",
+        small = None,
+        large = None,
+        xlarge = None)))
 
   val dataRetrieved = EndpointDataBundle(
     name = "notablesapp",
-    bundle = Map("profile" -> PropertyQuery(
-      endpoints = List(EndpointQuery(
-        endpoint = "rumpel/notablesv1",
-        mapping = Some(Json.parse(
-          """{
+    bundle = Map(
+      "profile" -> PropertyQuery(
+        endpoints = List(
+          EndpointQuery(
+            endpoint = "rumpel/notablesv1",
+            mapping = Some(Json.parse("""{
             |                                        "name": "personal.preferredName",
             |                                        "nick": "personal.nickName",
             |                                        "photo_url": "photo.avatar"
             |                                    }""".stripMargin)),
-        filters = Some(List(EndpointQueryFilter(
-          field = "shared",
-          transformation = None,
-          operator = FilterOperator.Contains(Json.parse("true"))))),
-        links = None)),
-      orderBy = Some("updated_time"),
-      ordering = Some("descending"),
-      limit = Some(1))))
+            filters = Some(
+              List(
+                EndpointQueryFilter(
+                  field = "shared",
+                  transformation = None,
+                  operator = FilterOperator.Contains(Json.parse("true"))))),
+            links = None)),
+        orderBy = Some("updated_time"),
+        ordering = Some("descending"),
+        limit = Some(1))))
 
   val dataRequired = DataDebitRequest(
     bundle = dataRetrieved,
@@ -192,32 +234,62 @@ trait ApplicationsServiceContext extends HATTestContext {
       setup = setup,
       status = status)
 
+  val fakeContract: Application =
+    Application(
+      id = "21a3eed7-5d32-46ba-a884-1fdaf7259731",
+      kind = contractKind,
+      info = appInfo,
+      developer = developer,
+      permissions = permissions,
+      dependencies = None,
+      setup = setup,
+      status = status)
+
   val notablesAppDebitless: Application = notablesApp.copy(
     id = "notables-debitless",
     permissions = notablesApp.permissions.copy(dataRetrieved = None))
   val notablesAppMissing: Application = notablesAppDebitless.copy(
     id = "notables-missing",
     permissions = notablesApp.permissions.copy(
-      dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
-        name = "notables-missing-bundle"))))
+      dataRetrieved = Some(
+        notablesApp.permissions.dataRetrieved.get
+          .copy(name = "notables-missing-bundle"))))
   val notablesAppIncompatible: Application = notablesApp.copy(
     id = "notables-incompatible",
     permissions = notablesApp.permissions.copy(
-      dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
-        name = "notables-incompatible-bundle"))))
-  val notablesAppIncompatibleUpdated: Application = notablesAppIncompatible.copy(
-    info = notablesApp.info.copy(version = Version("1.1.0")),
-    status = ApplicationStatus.Internal(Version("1.1.0"), None, None, None, DateTime.now()))
+      dataRetrieved = Some(
+        notablesApp.permissions.dataRetrieved.get
+          .copy(name = "notables-incompatible-bundle"))))
+  val notablesAppIncompatibleUpdated: Application =
+    notablesAppIncompatible.copy(
+      info = notablesApp.info.copy(version = Version("1.1.0")),
+      status = ApplicationStatus
+        .Internal(Version("1.1.0"), None, None, None, DateTime.now()))
 
   val notablesAppExternal: Application = notablesApp.copy(
     id = "notables-external",
-    status = ApplicationStatus.External(Version("1.0.0"), "/status", 200, None, None, None, DateTime.now()),
+    status = ApplicationStatus.External(
+      Version("1.0.0"),
+      "/status",
+      200,
+      None,
+      None,
+      None,
+      DateTime.now()),
     permissions = notablesApp.permissions.copy(
-      dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
-        name = "notables-external"))))
+      dataRetrieved = Some(
+        notablesApp.permissions.dataRetrieved.get
+          .copy(name = "notables-external"))))
   val notablesAppExternalFailing: Application = notablesApp.copy(
     id = "notables-external-failing",
-    status = ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None, None, None, DateTime.now()),
+    status = ApplicationStatus.External(
+      Version("1.0.0"),
+      "/failing",
+      200,
+      None,
+      None,
+      None,
+      DateTime.now()),
     permissions = notablesApp.permissions.copy(
       dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
         name = "notables-external-failing"))))
@@ -232,25 +304,25 @@ trait ApplicationsServiceContext extends HATTestContext {
     kind = ApplicationKind.DataPlug("http://dataplug.hat.org"))
 
   def withMockWsClient[T](block: WSClient => T): T = {
-    Server.withRouterFromComponents() {
-      components =>
-
-        import components.{ defaultActionBuilder => Action }
-        {
-          case GET(p"/status") => Action {
-            Results.Ok.sendEntity(HttpEntity.Strict(ByteString("OK"), Some("text/plain")))
+    Server.withRouterFromComponents() { components =>
+      import components.{ defaultActionBuilder => Action }
+      {
+        case GET(p"/status") =>
+          Action {
+            Results.Ok.sendEntity(
+              HttpEntity.Strict(ByteString("OK"), Some("text/plain")))
           }
-          case GET(p"/failing") => Action {
-            Results.Forbidden.sendEntity(HttpEntity.Strict(ByteString("FORBIDDEN"), Some("text/plain")))
+        case GET(p"/failing") =>
+          Action {
+            Results.Forbidden.sendEntity(
+              HttpEntity.Strict(ByteString("FORBIDDEN"), Some("text/plain")))
           }
-        }
-    } {
-      implicit port =>
-        logger.info(s"Creating test client at port $port")
-        play.api.test.WsTestClient.withClient {
-          client =>
-            block(client)
-        }
+      }
+    } { implicit port =>
+      logger.info(s"Creating test client at port $port")
+      play.api.test.WsTestClient.withClient { client =>
+        block(client)
+      }
     }
   }
 
@@ -258,17 +330,21 @@ trait ApplicationsServiceContext extends HATTestContext {
 
     case class StatusCheck() extends Answer[Future[Boolean]] {
       override def answer(invocation: InvocationOnMock) = {
-        val s = invocation.getArguments()(0).asInstanceOf[ApplicationStatus.Status]
+        val s =
+          invocation.getArguments()(0).asInstanceOf[ApplicationStatus.Status]
         s match {
-          case ApplicationStatus.Internal(_, _, _, _, _) ⇒ Future.successful(true)
-          case ApplicationStatus.External(_, "/status", _, _, _, _, _) ⇒ Future.successful(true)
+          case ApplicationStatus.Internal(_, _, _, _, _) ⇒
+            Future.successful(true)
+          case ApplicationStatus.External(_, "/status", _, _, _, _, _) ⇒
+            Future.successful(true)
           case _ ⇒ Future.successful(false)
         }
       }
     }
 
     val mockStatusChecker = mock[ApplicationStatusCheckService]
-    mockStatusChecker.status(any[ApplicationStatus.Internal], any[String]) returns Future.successful(true)
+    mockStatusChecker.status(any[ApplicationStatus.Internal], any[String]) returns Future
+      .successful(true)
     when(mockStatusChecker.status(any[ApplicationStatus.Status], any[String]))
       .thenAnswer(StatusCheck())
 
@@ -278,7 +354,8 @@ trait ApplicationsServiceContext extends HATTestContext {
 
   lazy val mockStatsReporter = {
     val mockStatsReporter = mock[StatsReporter]
-    mockStatsReporter.registerOwnerConsent(any[String])(any[HatServer]) returns Future.successful(Done)
+    mockStatsReporter.registerOwnerConsent(any[String])(any[HatServer]) returns Future
+      .successful(Done)
 
     mockStatsReporter
   }
@@ -296,6 +373,7 @@ trait ApplicationsServiceContext extends HATTestContext {
     }
   }
 
-  implicit val fakeRequest: RequestHeader = FakeRequest("GET", "http://hat.hubofallthings.net")
+  implicit val fakeRequest: RequestHeader =
+    FakeRequest("GET", "http://hat.hubofallthings.net")
   implicit val ownerImplicit: HatUser = owner
 }

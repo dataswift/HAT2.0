@@ -23,11 +23,14 @@
  */
 package org.hatdex.hat.api.service.applications
 
+import java.util.UUID
+
 import akka.Done
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
+import io.dataswift.adjudicator.Types.ContractId
 import javax.inject.Inject
-import org.hatdex.hat.api.models.applications.{ Application, ApplicationStatus, HatApplication, Version }
+import org.hatdex.hat.api.models.applications.{ Application, ApplicationKind, ApplicationStatus, HatApplication, Version }
 import org.hatdex.hat.api.models.{ AccessToken, EndpointQuery }
 import org.hatdex.hat.api.service.applications.ApplicationExceptions.{ HatApplicationDependencyException, HatApplicationSetupException }
 import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataDuplicateDebitException, RichDataService }
@@ -41,11 +44,12 @@ import org.hatdex.hat.she.service.FunctionService
 import org.hatdex.hat.utils.{ FutureTransformations, Utils }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
-import play.api.Logger
+import play.api.{ Configuration, Logger }
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json.{ JsObject, JsString }
 import play.api.libs.ws.WSClient
 import play.api.mvc.RequestHeader
+import org.hatdex.hat.utils.AdjudicatorRequest
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -78,10 +82,19 @@ class ApplicationsService @Inject() (
     functionService: FunctionService,
     silhouette: Silhouette[HatApiAuthEnvironment],
     statsReporter: StatsReporter,
-    system: ActorSystem)(implicit val ec: DalExecutionContext) {
+    configuration: Configuration,
+    system: ActorSystem)(wsClient: WSClient)(implicit val ec: DalExecutionContext) {
 
   private val logger = Logger(this.getClass)
   private val applicationsCacheDuration: FiniteDuration = 30.minutes
+
+  //** Adjudicator
+  val adjudicatorAddress =
+    configuration.underlying.getString("adjudicator.address")
+  val adjudicatorScheme =
+    configuration.underlying.getString("adjudicator.scheme")
+  val adjudicatorEndpoint = s"${adjudicatorScheme}${adjudicatorAddress}"
+  val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, wsClient)
 
   def applicationStatus(id: String, bustCache: Boolean = false)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Option[HatApplication]] = {
     val eventuallyCleanedCache = if (bustCache) {
@@ -148,8 +161,22 @@ class ApplicationsService @Inject() (
     maybeDataDebitSetup.getOrElse(Future.successful(Done)) // If data debit was there, must have been setup successfully
   }
 
+  def joinContract(application: Application, hatName: String): Future[Any] = {
+    application.kind match {
+      case _: ApplicationKind.Contract =>
+        adjudicatorClient
+          .joinContract(
+            hatName,
+            ContractId(UUID.fromString(application.id)))
+      case _ => {
+        Future.successful(Done)
+      }
+    }
+  }
+
   private def setupApplication(application: HatApplication)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[HatApplication] = {
     for {
+      _ <- joinContract(application.application, hat.hatName)
       _ <- applicationSetupStatusUpdate(application, enabled = true)(hat.db) // Update status
       _ <- statsReporter.registerOwnerConsent(application.application.id)
       app <- applicationStatus(application.application.id, bustCache = true) // Refetch all information
