@@ -666,7 +666,7 @@ class RichData @Inject() (
     contractRequestBodyRefined: ContractRequestBodyRefined,
     keyId: String): Future[Either[ContractVerificationFailure, ContractVerificationSuccess]] = {
 
-    adjudicatorClient.getPublicKey(contractRequestBodyRefined.hatName.value, contractRequestBodyRefined.contractId, keyId).map { publicKeyReqsponse =>
+    adjudicatorClient.getPublicKey(contractRequestBodyRefined.hatName, contractRequestBodyRefined.contractId, keyId).map { publicKeyReqsponse =>
       {
         publicKeyReqsponse match {
           case Left(PublicKeyRequestFailure.ServiceRespondedWithFailure(failureDescription)) => {

@@ -29,7 +29,7 @@ object Dependencies {
   object Versions {
     val crossScala = Seq("2.12.11")
     val scalaVersion = crossScala.head
-    val adjudicator = "0.1.0-SNAPSHOT"
+    val adjudicator = "0.2.0-SNAPSHOT"
   }
 
   val resolvers = Seq(
