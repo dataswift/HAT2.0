@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 HAT Data Exchange Ltd
+ * Copyright (C) 2020 HAT Data Exchange Ltd
  * SPDX-License-Identifier: AGPL-3.0
  *
  * This file is part of the Hub of All Things project (HAT).
@@ -18,8 +18,6 @@
  * Public License along with this program. If not, see
  * <http://www.gnu.org/licenses/>.
  *
- * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 5 / 2017
  */
 
 package org.hatdex.hat.utils
@@ -55,17 +53,16 @@ class AdjudicatorRequestSpec extends PlaySpecification
 
   val logger = Logger(this.getClass)
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
-  //implicit val wsClient: WSClient =
 
   sequential
 
   "The `AdjudicatorRequest should`" should {
     //** Adjudicator
-    val adjudicatorAddress = "contracts.dataswift.dev"
-    val adjudicatorScheme = "https://"
+    val adjudicatorAddress = "localhost:9002"
+    val adjudicatorScheme = "http://"
     val adjudicatorEndpoint = s"${adjudicatorScheme}${adjudicatorAddress}"
 
-    val hatName: HatName = HatName("thisisahat")
+    val hatName: HatName = HatName("hatName")
     val contractId: ContractId = ContractId(UUID.fromString("21a3eed7-5d32-46ba-a884-1fdaf7259739"))
 
     "Add a Hat to a Contract" in {
@@ -87,12 +84,46 @@ class AdjudicatorRequestSpec extends PlaySpecification
       }
     }
 
-    "Remove a Hat to a Contract" in {
-      false
+    "Request a PublicKey" in {
+      WsTestClient.withClient { client =>
+        val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, client)
+        val getPublicKey = adjudicatorClient.getPublicKey(
+          hatName,
+          contractId,
+          "21a3eed7-5d32-46ba-a884-1fdaf7259739")
+        val eventuallyPublicKey = getPublicKey.map { response =>
+          response match {
+            case Left(l)  => false
+            case Right(r) => true
+          }
+        } recover {
+          case _e =>
+            Future.successful(false)
+        }
+
+        val result = Await.result(eventuallyPublicKey, 10.seconds)
+        result shouldEqual (true)
+      }
     }
 
-    "Request a PublicKey" in {
-      false
+    "Remove a Hat to a Contract" in {
+      WsTestClient.withClient { client =>
+        val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, client)
+        val leaveContract = adjudicatorClient.leaveContract("hatName", contractId)
+        val eventuallyLeaveContract = leaveContract.map { response =>
+          response match {
+            case Left(l)  => false
+            case Right(r) => true
+          }
+        } recover {
+          case e =>
+            Future.successful(false)
+        }
+
+        val result = Await.result(eventuallyLeaveContract, 10.seconds)
+        result shouldEqual (true)
+      }
     }
+
   }
 }

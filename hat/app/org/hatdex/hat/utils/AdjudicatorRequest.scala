@@ -1,8 +1,9 @@
 package org.hatdex.hat.utils
 
-import io.dataswift.adjudicator.HatClaim
+import dev.profunktor.auth.jwt.JwtSecretKey
+import io.dataswift.adjudicator.{ HatClaim, JwtBuilder, JwtClaimBuilder }
 import io.dataswift.adjudicator.Types.{ ContractId, HatName }
-import pdi.jwt.JwtClaim
+import pdi.jwt.{ Jwt, JwtAlgorithm, JwtClaim, JwtHeader }
 import play.api.libs.ws.{ WSClient, WSRequest }
 import play.api.http.Status._
 import play.api.libs.json.Json
@@ -55,23 +56,25 @@ object AdjudicatorRequestTypes {
   final case class ContractLeft(contractId: ContractId)
 }
 
-class AdjudicatorRequest(adjudicatorEndpoint: String, ws: WSClient) {
+class AdjudicatorRequest(adjudicatorEndpoint: String, sharedSecret: String, ws: WSClient) {
   import AdjudicatorRequestTypes._
 
+  //
+  private val secret = JwtSecretKey(sharedSecret)
+  val hatClaimBuiler: JwtClaimBuilder[HatClaim] = HatClaim.builder
+
   // Create HatClaim
-  private def createHatClaim(hatNameAsStr: String, contractId: ContractId): Option[JwtClaim] = {
+  private def createHatClaim(hatNameAsStr: String, contractId: ContractId): Option[HatClaim] = {
     for {
       hatName <- refineV[NonEmpty](hatNameAsStr).toOption
-      claim = HatClaim(HatName(hatName), contractId)
-      hatClaim = HatClaim.builder.build(claim)
+      hatClaim = HatClaim(HatName(hatName), contractId)
     } yield hatClaim
   }
 
-  private def createHatClaim(maybeHatName: Option[HatName], contractId: ContractId): Option[JwtClaim] = {
+  private def createHatClaim(maybeHatName: Option[HatName], contractId: ContractId): Option[HatClaim] = {
     for {
       hatName <- maybeHatName
-      claim = HatClaim(hatName, contractId)
-      hatClaim = HatClaim.builder.build(claim)
+      hatClaim = HatClaim(hatName, contractId)
     } yield hatClaim
   }
 
@@ -79,10 +82,12 @@ class AdjudicatorRequest(adjudicatorEndpoint: String, ws: WSClient) {
   def getPublicKey(hatName: HatName, contractId: ContractId, keyId: String)(implicit ec: ExecutionContext): Future[Either[PublicKeyRequestFailure, PublicKeyReceived]] = {
     val claim = createHatClaim(Some(hatName), contractId)
 
-    val url = s"${adjudicatorEndpoint}/v1/contracts/hat/key/${keyId}"
+    val url = s"${adjudicatorEndpoint}/v1/contracts/hat/kid/${keyId}"
 
     makeRequest(url, claim, ws) match {
-      case Some(req) => runPublicKeyRequest(req)
+      case Some(req) => {
+        runPublicKeyRequest(req)
+      }
       case None => Future.successful(Left(PublicKeyRequestFailure.ServiceRespondedWithFailure(
         s"The Adjudicator Service responded with an error.")))
     }
@@ -91,11 +96,12 @@ class AdjudicatorRequest(adjudicatorEndpoint: String, ws: WSClient) {
   def joinContract(hatName: String, contractId: ContractId)(implicit ec: ExecutionContext): Future[Either[JoinContractRequestFailure.ServiceRespondedWithFailure, ContractJoined]] = {
     val claim = createHatClaim(hatName, contractId)
 
-    //val url = s"${adjudicatorEndpoint}/v1/contracts/${contractId}/hat/${hatName}"
-    val url = s"${adjudicatorEndpoint}/v1/hat"
+    val url = s"${adjudicatorEndpoint}/v1/contracts/hat"
 
     makeRequest(url, claim, ws) match {
-      case Some(req) => runJoinContractRequest(req, contractId)
+      case Some(req) => {
+        runJoinContractRequest(req, contractId)
+      }
       case None => Future.successful(Left(JoinContractRequestFailure.ServiceRespondedWithFailure(
         s"The Adjudicator Service responded with an error.")))
     }
@@ -107,8 +113,10 @@ class AdjudicatorRequest(adjudicatorEndpoint: String, ws: WSClient) {
     val url = s"${adjudicatorEndpoint}/v1/contracts/hat"
 
     makeRequest(url, claim, ws) match {
-      case Some(req) => runLeaveContractRequest(req, contractId)
-      case None      => Future.successful(Left(LeaveContractRequestFailure.ServiceRespondedWithFailure(s"The Adjudicator Service responded with an error.")))
+      case Some(req) => {
+        runLeaveContractRequest(req, contractId)
+      }
+      case None => Future.successful(Left(LeaveContractRequestFailure.ServiceRespondedWithFailure(s"The Adjudicator Service responded with an error.")))
     }
   }
 
@@ -176,10 +184,12 @@ class AdjudicatorRequest(adjudicatorEndpoint: String, ws: WSClient) {
   }
 
   // Base Request
-  private def makeRequest(url: String, maybeToken: Option[JwtClaim], ws: WSClient)(implicit ec: ExecutionContext): Option[WSRequest] = {
+  private def makeRequest(url: String, maybeHatClaim: Option[HatClaim], ws: WSClient)(implicit ec: ExecutionContext): Option[WSRequest] = {
     for {
-      token <- maybeToken
-      request = ws.url(url).withHttpHeaders("Authorization" -> s"Bearer ${token}")
+      hatClaim <- maybeHatClaim
+      token: JwtClaim = hatClaimBuiler.build(hatClaim)
+      encoded = Jwt.encode(JwtHeader(JwtAlgorithm.HS256), token, secret.value)
+      request = ws.url(url).withHttpHeaders("Authorization" -> s"Bearer ${encoded}")
     } yield request
   }
 }

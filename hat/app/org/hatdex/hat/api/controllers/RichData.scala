@@ -83,8 +83,11 @@ class RichData @Inject() (
     configuration.underlying.getString("adjudicator.address")
   val adjudicatorScheme =
     configuration.underlying.getString("adjudicator.scheme")
-  val adjudicatorEndpoint = s"${adjudicatorScheme}${adjudicatorAddress}"
-  val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, wsClient)
+  val adjudicatorEndpoint =
+    s"${adjudicatorScheme}${adjudicatorAddress}"
+  val adjudicatorSharedSecret =
+    configuration.underlying.getString("adjudicator.sharedSecret")
+  val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, adjudicatorSharedSecret, wsClient)
 
   /**
    * Returns Data Records for a given endpoint
