@@ -56,31 +56,24 @@ object AdjudicatorRequestTypes {
   final case class ContractLeft(contractId: ContractId)
 }
 
-class AdjudicatorRequest(adjudicatorEndpoint: String, sharedSecret: String, ws: WSClient) {
+class AdjudicatorRequest(adjudicatorEndpoint: String, secret: JwtSecretKey, ws: WSClient) {
   import AdjudicatorRequestTypes._
 
-  //
-  private val secret = JwtSecretKey(sharedSecret)
-  val hatClaimBuiler: JwtClaimBuilder[HatClaim] = HatClaim.builder
+  private val hatClaimBuiler: JwtClaimBuilder[HatClaim] = HatClaim.builder
 
-  // Create HatClaim
-  private def createHatClaim(hatNameAsStr: String, contractId: ContractId): Option[HatClaim] = {
+  private def createHatClaimFromString(hatNameAsStr: String, contractId: ContractId): Option[HatClaim] = {
     for {
       hatName <- refineV[NonEmpty](hatNameAsStr).toOption
       hatClaim = HatClaim(HatName(hatName), contractId)
     } yield hatClaim
   }
 
-  private def createHatClaim(maybeHatName: Option[HatName], contractId: ContractId): Option[HatClaim] = {
-    for {
-      hatName <- maybeHatName
-      hatClaim = HatClaim(hatName, contractId)
-    } yield hatClaim
-  }
+  private def createHatClaimFromHatName(maybeHatName: Option[HatName], contractId: ContractId): Option[HatClaim] =
+    maybeHatName.map(HatClaim(_, contractId))
 
   // Internal calls
   def getPublicKey(hatName: HatName, contractId: ContractId, keyId: String)(implicit ec: ExecutionContext): Future[Either[PublicKeyRequestFailure, PublicKeyReceived]] = {
-    val claim = createHatClaim(Some(hatName), contractId)
+    val claim = createHatClaimFromHatName(Some(hatName), contractId)
 
     val url = s"${adjudicatorEndpoint}/v1/contracts/hat/kid/${keyId}"
 
@@ -94,7 +87,7 @@ class AdjudicatorRequest(adjudicatorEndpoint: String, sharedSecret: String, ws: 
   }
 
   def joinContract(hatName: String, contractId: ContractId)(implicit ec: ExecutionContext): Future[Either[JoinContractRequestFailure.ServiceRespondedWithFailure, ContractJoined]] = {
-    val claim = createHatClaim(hatName, contractId)
+    val claim = createHatClaimFromString(hatName, contractId)
 
     val url = s"${adjudicatorEndpoint}/v1/contracts/hat"
 
@@ -108,7 +101,7 @@ class AdjudicatorRequest(adjudicatorEndpoint: String, sharedSecret: String, ws: 
   }
 
   def leaveContract(hatName: String, contractId: ContractId)(implicit ec: ExecutionContext): Future[Either[LeaveContractRequestFailure, ContractLeft]] = {
-    val claim = createHatClaim(hatName, contractId)
+    val claim = createHatClaimFromString(hatName, contractId)
 
     val url = s"${adjudicatorEndpoint}/v1/contracts/hat"
 
