@@ -28,6 +28,7 @@ import java.util.UUID
 import akka.Done
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
+import dev.profunktor.auth.jwt.JwtSecretKey
 import io.dataswift.adjudicator.Types.ContractId
 import javax.inject.Inject
 import org.hatdex.hat.api.models.applications.{ Application, ApplicationKind, ApplicationStatus, HatApplication, Version }
@@ -89,12 +90,15 @@ class ApplicationsService @Inject() (
   private val applicationsCacheDuration: FiniteDuration = 30.minutes
 
   //** Adjudicator
-  val adjudicatorAddress =
+  private val adjudicatorAddress =
     configuration.underlying.getString("adjudicator.address")
-  val adjudicatorScheme =
+  private val adjudicatorScheme =
     configuration.underlying.getString("adjudicator.scheme")
-  val adjudicatorEndpoint = s"${adjudicatorScheme}${adjudicatorAddress}"
-  val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, wsClient)
+  private val adjudicatorEndpoint =
+    s"${adjudicatorScheme}${adjudicatorAddress}"
+  private val adjudicatorSharedSecret =
+    configuration.underlying.getString("adjudicator.sharedSecret")
+  private val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, JwtSecretKey(adjudicatorSharedSecret), wsClient)
 
   def applicationStatus(id: String, bustCache: Boolean = false)(implicit hat: HatServer, user: HatUser, requestHeader: RequestHeader): Future[Option[HatApplication]] = {
     val eventuallyCleanedCache = if (bustCache) {

@@ -29,6 +29,7 @@ import java.util.UUID
 import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
+import dev.profunktor.auth.jwt.JwtSecretKey
 import io.dataswift.adjudicator.ShortLivedTokenOps
 import io.dataswift.adjudicator.Types.{ ContractId, HatName, ShortLivedToken }
 import org.hatdex.hat.api.json.RichDataJsonFormats
@@ -79,12 +80,15 @@ class RichData @Inject() (
   private val defaultRecordLimit = 1000
 
   //** Adjudicator
-  val adjudicatorAddress =
+  private val adjudicatorAddress =
     configuration.underlying.getString("adjudicator.address")
-  val adjudicatorScheme =
+  private val adjudicatorScheme =
     configuration.underlying.getString("adjudicator.scheme")
-  val adjudicatorEndpoint = s"${adjudicatorScheme}${adjudicatorAddress}"
-  val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, wsClient)
+  private val adjudicatorEndpoint =
+    s"${adjudicatorScheme}${adjudicatorAddress}"
+  private val adjudicatorSharedSecret =
+    configuration.underlying.getString("adjudicator.sharedSecret")
+  private val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, JwtSecretKey(adjudicatorSharedSecret), wsClient)
 
   /**
    * Returns Data Records for a given endpoint
@@ -666,7 +670,7 @@ class RichData @Inject() (
     contractRequestBodyRefined: ContractRequestBodyRefined,
     keyId: String): Future[Either[ContractVerificationFailure, ContractVerificationSuccess]] = {
 
-    adjudicatorClient.getPublicKey(contractRequestBodyRefined.hatName.value, contractRequestBodyRefined.contractId, keyId).map { publicKeyReqsponse =>
+    adjudicatorClient.getPublicKey(contractRequestBodyRefined.hatName, contractRequestBodyRefined.contractId, keyId).map { publicKeyReqsponse =>
       {
         publicKeyReqsponse match {
           case Left(PublicKeyRequestFailure.ServiceRespondedWithFailure(failureDescription)) => {
