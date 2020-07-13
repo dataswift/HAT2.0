@@ -34,8 +34,8 @@ import io.dataswift.adjudicator.ShortLivedTokenOps
 import io.dataswift.adjudicator.Types.{ ContractId, HatName, ShortLivedToken }
 import org.hatdex.hat.api.json.RichDataJsonFormats
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.models.applications.HatApplication
-import org.hatdex.hat.api.service.applications.ApplicationsService
+import org.hatdex.hat.api.models.applications.{ Application, HatApplication }
+import org.hatdex.hat.api.service.applications.{ ApplicationsService, TrustedApplicationProvider }
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData.{ RichDataServiceException, _ }
@@ -47,7 +47,6 @@ import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import org.hatdex.libs.dal.HATPostgresProfile
-//import eu.timepit.refined._
 import play.api.Configuration
 import eu.timepit.refined.auto._
 import eu.timepit.refined.collection.NonEmpty
@@ -60,6 +59,18 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
 import scala.util.control.NonFatal
 
+sealed trait RequestValidationFailure
+object RequestValidationFailure {
+  final case class InaccessibleNamespace(namespace: String)
+    extends RequestValidationFailure
+
+  final case class InvalidShortLivedToken(contractId: String)
+    extends RequestValidationFailure
+
+}
+final case class RequestVerified(namespace: String) extends AnyVal
+
+
 class RichData @Inject() (
     components: ControllerComponents,
     parsers: HatBodyParsers,
@@ -71,6 +82,7 @@ class RichData @Inject() (
     loggingProvider: LoggingProvider,
     configuration: Configuration,
     usersService: UsersService,
+    trustedApplicationProvider: TrustedApplicationProvider,
     implicit val ec: ExecutionContext,
     implicit val applicationsService: ApplicationsService)(wsClient: WSClient)
   extends HatApiController(components, silhouette)
@@ -524,36 +536,33 @@ class RichData @Inject() (
   }
 
   // ** TODO this should be in a better place.
-  //final case class ContractDataRequest(token: ShortLivedToken, hatName: HatName, contractId: ContractId)
+  // final case class ContractDataRequest(token: ShortLivedToken, hatName: HatName, contractId: ContractId)
   case class ContractRequestBodyRefined(token: ShortLivedToken, hatName: HatName, contractId: ContractId, body: Option[JsValue])
   //  implicit val contractRequestBodyRefinedReads = Json.reads[ContractRequestBodyRefined]
   case class ContractRequestBody(token: String, hatName: String, contractId: String, body: Option[JsValue])
   implicit val contractRequestBodyReads = Json.reads[ContractRequestBody]
 
+
   def saveContractData(
     namespace: String,
     endpoint: String,
-    skipErrors: Option[Boolean]): Action[JsValue] =
-    UserAwareAction.async(parsers.json[JsValue]) { implicit request =>
-      val maybeContractRequestBody = request.body.asOpt[ContractRequestBody]
+    skipErrors: Option[Boolean]): Action[ContractRequestBody] =
+    UserAwareAction.async(parsers.json[ContractRequestBody]) { implicit request =>
+      val contractRequestBody = request.body
       val dataEndpoint = s"$namespace/$endpoint"
+      val requestIsAllowed = assessRequest(contractRequestBody, namespace)
 
-      val dataRequest = isValidContractRequest(maybeContractRequestBody).flatMap { _ =>
-        maybeContractRequestBody match {
-          case Some(contractRequestBody) =>
+      requestIsAllowed.flatMap { testResult =>
+        testResult match {
+          case Right(RequestVerified(ns)) => {
             contractRequestBody.body match {
-              case Some(body) =>
-                body match {
-                  case array: JsArray => handleJsArray(contractRequestBody.hatName, array, dataEndpoint, skipErrors)
-                  case value: JsValue => handleJsValue(contractRequestBody.hatName, value, dataEndpoint)
-                }
-              case None =>
-                Future.failed(new RichDataServiceException("No Request Body found."))
+              case array: JsArray => handleJsArray(contractRequestBody.hatName, array, dataEndpoint, skipErrors)
+              case value: JsValue => handleJsValue(contractRequestBody.hatName, value, dataEndpoint)
             }
+          }
+          case _ => Future.successful(NotFound)
         }
-      }
-
-      dataRequest recover {
+      } recover {
         case e: RichDataDuplicateException =>
           BadRequest(Json.toJson(Errors.richDataDuplicate(e)))
         case e: RichDataServiceException =>
@@ -563,6 +572,7 @@ class RichData @Inject() (
           BadRequest("Contract Data request creation failure.")
       }
     }
+
 
   def handleJsArray(hatName: String, array: JsArray, dataEndpoint: String, skipErrors: Option[Boolean])(implicit hatServer: HatServer) = {
     val values = array.value.map(EndpointData(dataEndpoint, None, None, None, _, None))
@@ -596,53 +606,43 @@ class RichData @Inject() (
     }
   }
 
-  def getContractData(
+  def verifyNamespace(
+    app: Application,
     namespace: String,
-    endpoint: String,
-    orderBy: Option[String],
-    ordering: Option[String],
-    skip: Option[Int],
-    take: Option[Int]): Action[AnyContent] =
-    UserAwareAction.async { implicit request =>
-      val contractRequestBody = for {
-        jsonBody <- request.body.asJson
-        contractRequestBody = jsonBody.as[ContractRequestBody]
-      } yield contractRequestBody
+  ): Option[String] = {
+    val roles = app.permissions.rolesGranted.map(r => UserRole.userRoleDeserialize(r.name, r.extra))
+    if (roles.exists(_.name == namespace))
+      Some(namespace)
+    else
+      None
+  }
 
-      val dataRequest = isValidContractRequest(contractRequestBody).flatMap { _ =>
-        makeData(namespace, endpoint, orderBy, ordering, skip, take)
-      }
 
-      dataRequest recover {
-        case _ =>
-          BadRequest("Contract Data request failure.")
-      }
-    }
-
-  private def requestBodyToContractDataRequest(requestBody: Option[ContractRequestBody]): Option[ContractRequestBodyRefined] =
+  // Convert the basic JSON representation of the ContactRequestBody to the Refined Version
+  private def requestBodyToContractDataRequest(contractRequestBody: ContractRequestBody): Option[ContractRequestBodyRefined] =
     for {
-      contractRequestBody <- requestBody
       token <- refineV[NonEmpty]((contractRequestBody.token)).toOption
       hatName <- refineV[NonEmpty]((contractRequestBody.hatName)).toOption
       contractId <- refineV[NonEmpty]((contractRequestBody.contractId)).toOption
       contractRequestBodyRefined = ContractRequestBodyRefined(ShortLivedToken(token), HatName(hatName), ContractId(UUID.fromString(contractId)), None)
     } yield contractRequestBodyRefined
 
+
+
   // TODO: Use KeyId
-  private def requestKeyId(contractRequestBodyRefined: ContractRequestBodyRefined): Option[String] =
+  private def requestKeyId(contractRequestBody: ContractRequestBody): Option[String] =
     for {
       keyId <- ShortLivedTokenOps
-        .getKeyId(contractRequestBodyRefined.token.value)
+        .getKeyId(contractRequestBody.token)
         .toOption
     } yield keyId
 
-  def isValidContractRequest(
-    contractRequestBody: Option[ContractRequestBody]): Future[Either[ContractVerificationFailure, ContractVerificationSuccess]] = {
+  def verifyContract(contractRequestBody: ContractRequestBody): Future[Either[ContractVerificationFailure, ContractVerificationSuccess]] = {
     import ContractVerificationFailure._
 
     val maybeContractDataRequestKeyId = for {
       contractDataRequest <- requestBodyToContractDataRequest(contractRequestBody)
-      keyId <- requestKeyId(contractDataRequest)
+      keyId <- requestKeyId(contractRequestBody)
     } yield (contractDataRequest, keyId)
 
     maybeContractDataRequestKeyId match {
@@ -652,7 +652,7 @@ class RichData @Inject() (
     }
   }
 
-  def verifyJwyClaim(contractRequestBodyRefined: ContractRequestBodyRefined, publicKeyAsByteArray: Array[Byte]): Either[ContractVerificationFailure, ContractVerificationSuccess] = {
+  def verifyJwtClaim(contractRequestBodyRefined: ContractRequestBodyRefined, publicKeyAsByteArray: Array[Byte]): Either[ContractVerificationFailure, ContractVerificationSuccess] = {
     import ContractVerificationFailure._
     import ContractVerificationSuccess._
 
@@ -679,11 +679,70 @@ class RichData @Inject() (
           case Left(PublicKeyRequestFailure.InvalidPublicKeyFailure(failureDescription)) => {
             Left(ContractVerificationFailure.ServiceRespondedWithFailure(s"The Adjudicator Service responded with an error: ${failureDescription}"))
           }
-          case Right(PublicKeyReceived(publicKey)) => verifyJwyClaim(contractRequestBodyRefined, publicKey)
+          case Right(PublicKeyReceived(publicKey)) => verifyJwtClaim(contractRequestBodyRefined, publicKey)
         }
       }
     }
   }
+
+
+
+  /* *** Contract Data *** */
+
+  def getContractData(
+    namespace: String,
+    endpoint: String,
+    orderBy: Option[String],
+    ordering: Option[String],
+    skip: Option[Int],
+    take: Option[Int]): Action[ContractRequestBody] =
+    UserAwareAction.async(parsers.json[ContractRequestBody]) { implicit request =>
+      val contractRequestBody = request.body
+      val requestIsAllowed = assessRequest(contractRequestBody, namespace)
+
+      requestIsAllowed.flatMap { testResult =>
+        testResult match {
+          case Right(RequestVerified(ns)) => makeData(namespace, endpoint, orderBy, ordering, skip, take)
+          case _ => Future.successful(NotFound)
+        }
+      } recover {
+        case _ => NotFound
+      }
+    }
+
+
+  def assessRequest(
+    contractRequestBody: ContractRequestBody,
+    namespace: String): Future[Either[RequestValidationFailure, RequestVerified]] = {
+      val eventuallyMaybeDecision = verifyContract(contractRequestBody)
+      val eventuallyMaybeApp = trustedApplicationProvider.application(contractRequestBody.contractId)
+
+      eventuallyMaybeDecision.flatMap { maybeDecision =>
+        eventuallyMaybeApp.flatMap { maybeApp =>
+          decide(maybeDecision, maybeApp, namespace) match {
+            case Some(_ns) => Future.successful(Right(RequestVerified("ggg")))
+            case None => Future.successful(Left(RequestValidationFailure.InvalidShortLivedToken("fff")))
+          }
+        }
+      } recover {
+        case _e => Left(RequestValidationFailure.InvalidShortLivedToken("fff"))
+      }
+    }
+
+
+  def decide(eitherDecision: Either[ContractVerificationFailure, ContractVerificationSuccess], maybeApp: Option[Application], namespace: String): Option[String] = {
+    import ContractVerificationSuccess._
+
+    (eitherDecision, maybeApp) match {
+      case (Right(JwtClaimVerified(_jwtClaim)) , Some(app)) => {
+        verifyNamespace(app, namespace)
+      }
+      case (_, _) => {
+        None
+      }
+    }
+  }
+
 
   private object Errors {
     def dataDebitDoesNotExist =
