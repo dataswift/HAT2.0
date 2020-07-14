@@ -720,12 +720,12 @@ class RichData @Inject() (
       eventuallyMaybeDecision.flatMap { maybeDecision =>
         eventuallyMaybeApp.flatMap { maybeApp =>
           decide(maybeDecision, maybeApp, namespace) match {
-            case Some(_ns) => Future.successful(Right(RequestVerified("ggg")))
-            case None => Future.successful(Left(RequestValidationFailure.InvalidShortLivedToken("fff")))
+            case Some(_ns) => Future.successful(Right(RequestVerified(s"Token: ${contractRequestBody.contractId}")))
+            case None => Future.successful(Left(RequestValidationFailure.InvalidShortLivedToken(s"Token: ${contractRequestBody.contractId}")))
           }
         }
       } recover {
-        case _e => Left(RequestValidationFailure.InvalidShortLivedToken("fff"))
+        case _e => Left(RequestValidationFailure.InvalidShortLivedToken(s"Token: ${contractRequestBody.contractId}"))
       }
     }
 
