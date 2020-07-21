@@ -1,21 +1,27 @@
+email.welcome.title=Welcome to HAT
+email.welcome.getStarted.title=Get started
+email.welcome.dataRights.title=Your data rights are protected
+email.welcome.dataRights.description=This icon appears every time you access your HAT Personal Data Account and whenever you do data transactions with your HAT. HAT data rights protection ensures your HAT PDA is always secure and that the rights to your data are preserved.
+email.welcome.community.title=Join the community
+email.welcome.community.description=Help us grow a community of HAT owners claiming, controlling and sharing our data. Spread the word, and encourage new apps and new services to be built for your HAT. Do share your experiences with us!
 email.welcome.issuedBy=Your HAT PDA was issued by
 
+email.hatclaim.subject=Olá de {0}
+email.hatClaim.title={0} recebe você em sua Personal Data Account
+email.hatClaim.hatPdaCreated=Uma Personal Data Account com o URL acima foi criada a partir da solicitação de
+email.hatClaim.goToAppName=Ir para {0}
+email.hatClaim.safePlace.title=Um local seguro para seus dados
+email.hatClaim.safePlace.description=Sua Personal Data Account é onde você pode armazenar com segurança e possuir legalmente todos os dados.
+email.hatClaim.activateYourAccount=Ative sua conta para continuar usando o {0} e descobrir outros aplicativos que você pode usar com seu PDA.
+email.hatClaim.clickHereToStart=Clique aqui para começar
+email.question=Você tem alguma pergunta?
+email.hatClaim.haveFun.title=Divirta-se com o seu
+
+email.dataswift.companyName=Dataswift Ltd
 email.dataswift.address=8 Comberton Road, Cambridge, CB23 7BA
-email.question=Tem alguma questão?
-email.dataswift.copyright=Direitos de autor © 2019 Dataswift Ltd,
-
-email.hatclaim.subject=Hello from {0}
-email.hatClaim.haveFun.title=Divirta-se com o seu HAT
-
-email.hatClaim.title={0} welcomes you to your Personal Data Account
-email.hatClaim.hatPdaCreated=A Personal Data Account with the above URL has been created at the request of
-email.hatClaim.goToAppName=Go to {0}
-email.hatClaim.safePlace.title=A safe place for your data
-email.hatClaim.safePlace.description=Your Personal Data Account is where you can safely store and legally own all the data within.
-email.hatClaim.activateYourAccount=Activate your account to continue using {0} and to discover other apps you can use with your PDA.
-email.hatClaim.clickHereToStart=Click here to start
-email.dataswift.pdaProvidedBy=PDA infrastructure provided by:
+email.dataswift.pdaProvidedBy=Infraestrutura do PDA fornecido por:
 email.dataswift.fullAddress=Dataswift Ltd 8 Comberton Road, Cambridge, CB23 7BA
-email.dataswift.companyNumber=Company number: 09821157
-email.dataswift.haveQuestion=Have a question?
-email.dataswift.copyrightAllRightsReserved=Copyright © 2020 Dataswift Ltd, All rights reserved.
+email.dataswift.companyNumber=Número da Companhia: 09821157
+email.dataswift.haveQuestion=Você tem alguma pergunta?
+email.dataswift.copyright=Copyright © 2019 - 2020 Dataswift Ltd,
+email.dataswift.copyrightAllRightsReserved=Copyright © 2019 - 2020 Dataswift Ltd, All rights reserved.
