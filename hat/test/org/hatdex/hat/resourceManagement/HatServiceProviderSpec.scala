@@ -30,7 +30,7 @@ import org.hatdex.hat.FakeCache
 import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.resourceManagement.actors.{ HatServerActor, HatServerProviderActor }
 import org.hatdex.hat.utils.{ LoggingProvider, MockLoggingProvider }
-import org.mockito.{ Mockito ⇒ MockitoMockito }
+import org.mockito.{ Mockito => MockitoMockito }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope

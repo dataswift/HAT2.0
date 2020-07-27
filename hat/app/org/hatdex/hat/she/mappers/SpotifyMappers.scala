@@ -14,24 +14,24 @@ class SpotifyFeedMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(EndpointQuery("spotify/feed", None,
-        dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("played_at", None, f))), None)), Some("played_at"), Some("descending"), None))
+        dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("played_at", None, f))), None)), Some("played_at"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
-      durationSeconds ← Try((content \ "track" \ "duration_ms").as[Int] / 1000)
-      title ← Try(
+      durationSeconds <- Try((content \ "track" \ "duration_ms").as[Int] / 1000)
+      title <- Try(
         DataFeedItemTitle("You listened", None, Some(s"${"%02d".format(durationSeconds / 60)}:${"%02d".format(durationSeconds % 60)}")))
-      itemContent ← Try(DataFeedItemContent(
+      itemContent <- Try(DataFeedItemContent(
         Some(
           s"""${(content \ "track" \ "name").as[String]},
-             |${(content \ "track" \ "artists").as[Seq[JsObject]].map(a ⇒ (a \ "name").as[String]).mkString(", ")},
+             |${(content \ "track" \ "artists").as[Seq[JsObject]].map(a => (a \ "name").as[String]).mkString(", ")},
              |${(content \ "track" \ "album" \ "name").as[String]}""".stripMargin),
         None,
         Some(
           Seq(DataFeedItemMedia((content \ "track" \ "album" \ "images" \ 0 \ "url").asOpt[String], (content \ "track" \ "album" \ "images" \ 0 \ "url").asOpt[String]))),
         None))
-      date ← Try((content \ "played_at").as[DateTime])
+      date <- Try((content \ "played_at").as[DateTime])
     } yield DataFeedItem("spotify", date, Seq(), Some(title), Some(itemContent), None)
   }
 }

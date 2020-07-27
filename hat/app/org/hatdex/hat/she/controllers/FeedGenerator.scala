@@ -52,28 +52,28 @@ class FeedGenerator @Inject() (
   with DataFeedItemJsonProtocol {
 
   def getFeed(endpoint: String, since: Option[Long], until: Option[Long]): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request ⇒
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
       feedGeneratorService.getFeed(endpoint, since, until, appHandlesLocations)
-        .map(items ⇒ Ok(Json.toJson(items)))
+        .map(items => Ok(Json.toJson(items)))
     }
 
   def fullFeed(since: Option[Long], until: Option[Long]): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request ⇒
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
       feedGeneratorService.fullFeed(since, until, appHandlesLocations)
-        .map(items ⇒ Ok(Json.toJson(items)))
+        .map(items => Ok(Json.toJson(items)))
     }
 
   private val locationCompatibleVersion = Version("1.2.2")
   private val agentAppVersion = "^([\\w\\s]+)/([\\d\\.]+).*".r
   private def appHandlesLocations()(implicit requestHeader: RequestHeader): Boolean =
-    requestingAppVersion().forall(app ⇒ app._1 != "HAT" || app._2 >= locationCompatibleVersion)
+    requestingAppVersion().forall(app => app._1 != "HAT" || app._2 >= locationCompatibleVersion)
 
   private def requestingAppVersion()(implicit requestHeader: RequestHeader): Option[(String, Version)] = {
     requestHeader.headers.get("User-Agent").flatMap {
       _ match {
-        case agentAppVersion(app, version) if app.startsWith("HAT Testing") ⇒ Try(("HAT", Version(version))).toOption
-        case agentAppVersion(app, version) ⇒ Try((app, Version(version))).toOption
-        case _ ⇒ None
+        case agentAppVersion(app, version) if app.startsWith("HAT Testing") => Try(("HAT", Version(version))).toOption
+        case agentAppVersion(app, version) => Try((app, Version(version))).toOption
+        case _ => None
       }
     }
   }

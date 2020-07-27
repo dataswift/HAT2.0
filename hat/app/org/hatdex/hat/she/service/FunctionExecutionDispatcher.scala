@@ -61,22 +61,22 @@ class FunctionExecutionTriggerHandler @Inject() (
     logger.debug(s"[$hat] Finding matching functions for $endpoints")
     hatServerProvider.retrieve(hat)
       .flatMap {
-        case Some(hatServer) ⇒
+        case Some(hatServer) =>
           functionService.all(active = true)(hatServer.db)
             .map(
               _.filter({
-                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerPeriodic(period), _, FunctionStatus(true, true, Some(lastExecution), None)) if lastExecution.isBefore(DateTime.now().minus(period)) ⇒ true
-                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerPeriodic(period), _, FunctionStatus(true, true, Some(lastExecution), Some(started))) if lastExecution.isBefore(DateTime.now().minus(period)) && started.isBefore(DateTime.now().minus(functionExecutionTimeout.toMillis)) ⇒ true
-                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerPeriodic(_), _, FunctionStatus(true, true, None, None)) ⇒ true // no execution recoded yet
-                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerPeriodic(_), _, FunctionStatus(true, true, None, Some(started))) if started.isBefore(DateTime.now().minus(functionExecutionTimeout.toMillis)) ⇒ true // no successful execution, current one timed out
-                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerIndividual(), _, FunctionStatus(true, true, _, _)) ⇒ true
-                case _ ⇒ false // in all other cases, do not trigger
+                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerPeriodic(period), _, FunctionStatus(true, true, Some(lastExecution), None)) if lastExecution.isBefore(DateTime.now().minus(period)) => true
+                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerPeriodic(period), _, FunctionStatus(true, true, Some(lastExecution), Some(started))) if lastExecution.isBefore(DateTime.now().minus(period)) && started.isBefore(DateTime.now().minus(functionExecutionTimeout.toMillis)) => true
+                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerPeriodic(_), _, FunctionStatus(true, true, None, None)) => true // no execution recoded yet
+                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerPeriodic(_), _, FunctionStatus(true, true, None, Some(started))) if started.isBefore(DateTime.now().minus(functionExecutionTimeout.toMillis)) => true // no successful execution, current one timed out
+                case FunctionConfiguration(_, _, _, FunctionTrigger.TriggerIndividual(), _, FunctionStatus(true, true, _, _)) => true
+                case _ => false // in all other cases, do not trigger
               })
                 .filter(_.dataBundle.flatEndpointQueries.map(_.endpoint).toSet
                   .intersect(endpoints)
                   .nonEmpty))
 
-        case None ⇒
+        case None =>
           Future.failed(new HatServerDiscoveryException(s"[$hat] HAT discovery failed during function execution"))
       }
   }
@@ -102,7 +102,7 @@ class FunctionExecutionTriggerHandler @Inject() (
       trigger(d._1, d._2)
         .map((d._1, d._2, _))
         .recover({
-          case e ⇒
+          case e =>
             logger.error(s"[${d._1}] Error when triggering SHE function ${d._2.id} (last execution ${d._2.status.lastExecution}): ${e.getMessage}", e)
             (d._1, d._2, Done)
         })
@@ -113,7 +113,7 @@ class FunctionExecutionTriggerHandler @Inject() (
   // will go through the subflow
   protected val dataEventShaperFlow: Flow[(String, Set[String]), (String, FunctionConfiguration, Done), _] = Flow[(String, Set[String])]
     .zipWithIndex
-    .splitAfter(i ⇒ i._2 % maxHats == 0)
+    .splitAfter(i => i._2 % maxHats == 0)
     .map(_._1)
     .via(functionTriggerFlow)
     .mergeSubstreams

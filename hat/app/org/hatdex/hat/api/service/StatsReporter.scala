@@ -82,9 +82,9 @@ class StatsReporter @Inject() (
     } yield result
 
     logged.andThen {
-      case Failure(e) ⇒
+      case Failure(e) =>
         logger.error(s"Error while reporting stats: ${e.getMessage}")
-      case _ ⇒ Done
+      case _ => Done
     }
   }
 
@@ -119,7 +119,7 @@ class StatsReporter @Inject() (
     server.db
       .run(
         DataStatsLog.filter(_.statsId inSet stats.map(_.statsId).toSet).delete)
-      .map(_ ⇒ Done)
+      .map(_ => Done)
   }
 
   private def persistStats(
@@ -151,9 +151,9 @@ class StatsReporter @Inject() (
     } yield Done
 
     uploaded.andThen {
-      case Failure(e) ⇒
+      case Failure(e) =>
         logger.error(s"Failed to upload stats: ${e.getMessage}")
-      case _ ⇒ Done
+      case _ => Done
     }
   }
 

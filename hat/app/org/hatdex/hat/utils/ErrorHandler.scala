@@ -152,15 +152,15 @@ class ErrorHandler @Inject() (
     implicit val _request = request
     Future.successful {
       render {
-        case Accepts.Json() ⇒
+        case Accepts.Json() =>
           val jsonMessage = Try(Json.parse(message))
-          jsonMessage.map(parsed ⇒ BadRequest(Json.obj("error" -> "Bad Request", "message" -> parsed)))
+          jsonMessage.map(parsed => BadRequest(Json.obj("error" -> "Bad Request", "message" -> parsed)))
             .recover({
-              case _ ⇒
+              case _ =>
                 BadRequest(Json.obj("error" -> "Bad Request", "message" -> message))
             })
             .get
-        case _ ⇒ BadRequest(views.html.defaultpages.badRequest(request.method, request.uri, message))
+        case _ => BadRequest(views.html.defaultpages.badRequest(request.method, request.uri, message))
       }
     }
   }

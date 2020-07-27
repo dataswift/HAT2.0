@@ -54,26 +54,26 @@ class FeedGeneratorService @Inject() ()(
 
   private val dataMappers: Seq[(String, DataEndpointMapper)] = Seq(
     "facebook/profile" -> new FacebookProfileMapper(),
-    "facebook/feed" → new FacebookFeedMapper(),
-    "facebook/likes/pages" → new FacebookPagesLikesMapper(),
-    "facebook/events" → new FacebookEventMapper(),
-    "twitter/profile" → new TwitterProfileMapper(),
-    "twitter/tweets" → new TwitterFeedMapper(),
+    "facebook/feed" -> new FacebookFeedMapper(),
+    "facebook/likes/pages" -> new FacebookPagesLikesMapper(),
+    "facebook/events" -> new FacebookEventMapper(),
+    "twitter/profile" -> new TwitterProfileMapper(),
+    "twitter/tweets" -> new TwitterFeedMapper(),
     "fitbit/profile" -> new FitbitProfileMapper(),
-    "fitbit/sleep" → new FitbitSleepMapper(),
-    "fitbit/weight" → new FitbitWeightMapper(),
-    "fitbit/activity" → new FitbitActivityMapper(),
-    "fitbit/activity/day/summary" → new FitbitActivityDaySummaryMapper(),
-    "calendar/google/events" → new GoogleCalendarMapper(),
-    "notables/feed" → new NotablesFeedMapper(),
-    "spotify/feed" → new SpotifyFeedMapper(),
-    "monzo/transactions" → new MonzoTransactionMapper(),
-    "instagram/feed" → new InstagramMediaMapper(),
+    "fitbit/sleep" -> new FitbitSleepMapper(),
+    "fitbit/weight" -> new FitbitWeightMapper(),
+    "fitbit/activity" -> new FitbitActivityMapper(),
+    "fitbit/activity/day/summary" -> new FitbitActivityDaySummaryMapper(),
+    "calendar/google/events" -> new GoogleCalendarMapper(),
+    "notables/feed" -> new NotablesFeedMapper(),
+    "spotify/feed" -> new SpotifyFeedMapper(),
+    "monzo/transactions" -> new MonzoTransactionMapper(),
+    "instagram/feed" -> new InstagramMediaMapper(),
     "uber/rides" -> new UberRidesMapper())
 
   private val insightMappers: Seq[(String, DataEndpointMapper)] = Seq(
-    "she/activity-records" → new InsightsMapper(),
-    "she/sentiments" → new InsightSentimentMapper(),
+    "she/activity-records" -> new InsightsMapper(),
+    "she/sentiments" -> new InsightSentimentMapper(),
     "drops/twitter/word-cloud" -> new DropsTwitterWordcloudMapper(),
     "drops/sentiment-history" -> new DropsSentimentHistoryMapper(),
     "she/common-locations" -> new InsightCommonLocationsMapper())
@@ -92,11 +92,11 @@ class FeedGeneratorService @Inject() ()(
 
   def insights(since: Option[Long], until: Option[Long], endpoint: Option[String])(implicit hatServer: HatServer): Source[DataFeedItem, NotUsed] = {
     val now = DateTime.now()
-    val sinceTime = since.map(t ⇒ new DateTime(t * 1000L)).getOrElse(now.minus(defaultTimeBack.toMillis))
-    val untilTime = until.map(t ⇒ new DateTime(t * 1000L)).getOrElse(now.plus(defaultTimeForward.toMillis))
+    val sinceTime = since.map(t => new DateTime(t * 1000L)).getOrElse(now.minus(defaultTimeBack.toMillis))
+    val untilTime = until.map(t => new DateTime(t * 1000L)).getOrElse(now.plus(defaultTimeForward.toMillis))
 
     val sources: Seq[Source[DataFeedItem, NotUsed]] =
-      endpoint.fold(insightMappers)(e ⇒ insightMappers.filter(_._1.startsWith(e)))
+      endpoint.fold(insightMappers)(e => insightMappers.filter(_._1.startsWith(e)))
         .unzip._2
         .map(_.feed(Some(sinceTime), Some(untilTime)))
 
@@ -112,8 +112,8 @@ class FeedGeneratorService @Inject() ()(
     hatServer: HatServer): Future[Seq[DataFeedItem]] = {
     logger.debug(s"Fetching feed data for ${mappers.unzip._1}")
     val now = DateTime.now()
-    val sinceTime = since.map(t ⇒ new DateTime(t * 1000L)).getOrElse(now.minus(defaultTimeBack.toMillis))
-    val untilTime = until.map(t ⇒ new DateTime(t * 1000L)).getOrElse(now.plus(defaultTimeForward.toMillis))
+    val sinceTime = since.map(t => new DateTime(t * 1000L)).getOrElse(now.minus(defaultTimeBack.toMillis))
+    val untilTime = until.map(t => new DateTime(t * 1000L)).getOrElse(now.plus(defaultTimeForward.toMillis))
     val sources: Seq[Source[DataFeedItem, NotUsed]] = mappers
       .unzip._2
       .map(_.feed(Some(sinceTime), Some(untilTime)))
@@ -149,9 +149,9 @@ class FeedGeneratorService @Inject() ()(
     val eventualFeed: Source[EndpointData, NotUsed] = richDataService.propertyDataStreaming(query.endpoints, query.orderBy,
       orderingDescending = query.ordering.contains("descending"), skip = 0, limit = None, createdAfter = None)(hatServer.db)
 
-    eventualFeed.map(d ⇒ Try(new DateTime((d.data \ "dateCreated").as[Long] * 1000L) → LocationGeo((d.data \ "longitude").as[Double], (d.data \ "latitude").as[Double])))
+    eventualFeed.map(d => Try(new DateTime((d.data \ "dateCreated").as[Long] * 1000L) -> LocationGeo((d.data \ "longitude").as[Double], (d.data \ "latitude").as[Double])))
       .collect({
-        case Success(x) ⇒ x
+        case Success(x) => x
       })
   }
 
@@ -169,11 +169,11 @@ class FeedGeneratorService @Inject() ()(
       val endLocationInstance = locations.last._1.getMillis
       if (feedItemInstance < startLocationInstance && feedItemInstance > endLocationInstance) {
         val closest = interpolateLocation(feedItemInstance, (startLocationInstance, locations.head._2), (endLocationInstance, locations.last._2))
-        Left(feedItem.copy(location = closest.map(l ⇒ DataFeedItemLocation(Some(l), None, None))))
+        Left(feedItem.copy(location = closest.map(l => DataFeedItemLocation(Some(l), None, None))))
       }
       else if (feedItemInstance > startLocationInstance) {
         val closest = interpolateLocation(feedItemInstance, (startLocationInstance, locations.head._2), (endLocationInstance, locations.last._2))
-        Left(feedItem.copy(location = closest.map(l ⇒ DataFeedItemLocation(Some(l), None, None))))
+        Left(feedItem.copy(location = closest.map(l => DataFeedItemLocation(Some(l), None, None))))
       }
       else {
         //        logger.debug(s"Item older than location, find new location")

@@ -67,9 +67,9 @@ class DevHatInitializer @Inject() (
     val hatServer: Future[HatServer] = serverProvider.retrieve(hat.domain).map(_.get)
 
     val eventuallyMigrated = for {
-      server ← hatServer
-      _ ← new HatDbSchemaMigration(configuration, server.db, ec).run(devHatMigrations)
-      _ ← setupCredentials(hat)(server)
+      server <- hatServer
+      _ <- new HatDbSchemaMigration(configuration, server.db, ec).run(devHatMigrations)
+      _ <- setupCredentials(hat)(server)
     } yield ()
 
     eventuallyMigrated map { _ =>

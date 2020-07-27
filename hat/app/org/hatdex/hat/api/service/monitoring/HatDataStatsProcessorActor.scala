@@ -27,7 +27,7 @@ package org.hatdex.hat.api.service.monitoring
 import javax.inject.Inject
 import akka.Done
 import akka.actor.Actor
-import org.hatdex.hat.api.models.{ DataDebitOperation, DataStats, InboundDataStats, OutboundDataStats, DataDebitEvent ⇒ DataDebitAction }
+import org.hatdex.hat.api.models.{ DataDebitOperation, DataStats, InboundDataStats, OutboundDataStats, DataDebitEvent => DataDebitAction }
 import org.hatdex.hat.api.service.StatsReporter
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{ DataCreatedEvent, DataDebitEvent, RichDataDebitEvent, RichDataRetrievedEvent }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerDiscoveryException, HatServerProvider }

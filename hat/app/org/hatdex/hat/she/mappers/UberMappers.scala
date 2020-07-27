@@ -20,7 +20,7 @@ class UberRidesMapper extends DataEndpointMapper {
 
     Seq(PropertyQuery(
       List(EndpointQuery("uber/rides", None,
-        unixDateFilter.map(f ⇒ Seq(EndpointQueryFilter("start_time", None, f))), None)), Some("start_time"), Some("descending"), None))
+        unixDateFilter.map(f => Seq(EndpointQueryFilter("start_time", None, f))), None)), Some("start_time"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
@@ -28,14 +28,14 @@ class UberRidesMapper extends DataEndpointMapper {
     for {
       distance <- Try((content \ "distance").asOpt[Double].getOrElse(0.doubleValue()).toString)
       startDate <- Try(new DateTime((content \ "start_time").as[Long] * 1000.longValue()))
-      durationSeconds ← Try((content \ "end_time").asOpt[Int].getOrElse(0) - (content \ "start_time").asOpt[Int].getOrElse(0))
+      durationSeconds <- Try((content \ "end_time").asOpt[Int].getOrElse(0) - (content \ "start_time").asOpt[Int].getOrElse(0))
       duration <- Try {
         val m = (durationSeconds / 60) % 60
         val h = (durationSeconds / 60 / 60) % 24
         "%02d h %02d min".format(h, m)
       }
-      title ← Try(DataFeedItemTitle(s"Your trip on ${startDate.toString("dd/MM/YYYY")}", None, None))
-      itemContent ← Try(DataFeedItemContent(
+      title <- Try(DataFeedItemTitle(s"Your trip on ${startDate.toString("dd/MM/YYYY")}", None, None))
+      itemContent <- Try(DataFeedItemContent(
         Some(
           s"""${(content \ "start_city" \ "display_name").asOpt[String].getOrElse("Unknown City")},
              |${BigDecimal.decimal(distance.toFloat).setScale(1, BigDecimal.RoundingMode.HALF_UP).toDouble} miles,

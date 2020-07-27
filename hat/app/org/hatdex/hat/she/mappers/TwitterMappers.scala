@@ -14,7 +14,7 @@ class TwitterProfileMapper extends DataEndpointMapper with FeedItemComparator {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("twitter/tweets", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("lastUpdated", None, f))), None)),
+        EndpointQuery("twitter/tweets", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("lastUpdated", None, f))), None)),
       Some("lastUpdated"), Some("descending"), None))
   }
 
@@ -26,7 +26,7 @@ class TwitterProfileMapper extends DataEndpointMapper with FeedItemComparator {
     else {
       for {
         title <- Try(DataFeedItemTitle("Your Twitter Profile has changed.", None, None))
-        itemContent ← {
+        itemContent <- {
           val contentText = comparison.map(item => s"${item._2}\n").mkString
           Try(DataFeedItemContent(
             Some(contentText), None, None, None))
@@ -59,13 +59,13 @@ class TwitterFeedMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("twitter/tweets", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("lastUpdated", None, f))), None)),
+        EndpointQuery("twitter/tweets", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("lastUpdated", None, f))), None)),
       Some("lastUpdated"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
-      title ← Try(if ((content \ "retweeted").as[Boolean]) {
+      title <- Try(if ((content \ "retweeted").as[Boolean]) {
         DataFeedItemTitle("You retweeted", None, Some("repeat"))
       }
       else if ((content \ "in_reply_to_user_id").isDefined && !((content \ "in_reply_to_user_id").get == JsNull)) {
@@ -74,24 +74,24 @@ class TwitterFeedMapper extends DataEndpointMapper {
       else {
         DataFeedItemTitle("You tweeted", None, None)
       })
-      itemContent ← Try(DataFeedItemContent((content \ "text").asOpt[String], None, None, None))
-      date ← Try((content \ "lastUpdated").as[DateTime])
+      itemContent <- Try(DataFeedItemContent((content \ "text").asOpt[String], None, None, None))
+      date <- Try((content \ "lastUpdated").as[DateTime])
     } yield {
       val location = Try(DataFeedItemLocation(
         geo = (content \ "coordinates").asOpt[JsObject]
-          .map(coordinates ⇒
+          .map(coordinates =>
             LocationGeo(
               (coordinates \ "coordinates" \ 0).as[Double],
               (coordinates \ "coordinates" \ 1).as[Double])),
         address = (content \ "place").asOpt[JsObject]
-          .map(address ⇒
+          .map(address =>
             LocationAddress(
               (address \ "country").asOpt[String],
               (address \ "name").asOpt[String],
               None, None, None)),
         tags = None))
         .toOption
-        .filter(l ⇒ l.address.isDefined || l.geo.isDefined || l.tags.isDefined)
+        .filter(l => l.address.isDefined || l.geo.isDefined || l.tags.isDefined)
 
       DataFeedItem("twitter", date, Seq("post"), Some(title), Some(itemContent), location)
     }

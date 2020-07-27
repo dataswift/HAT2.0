@@ -53,16 +53,16 @@ class FunctionManager @Inject() (
 
   private val logger = Logger(this.getClass)
 
-  def functionList(): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner(), Platform())).async { implicit request ⇒
-    functionService.all(active = false).map { functions ⇒
+  def functionList(): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner(), Platform())).async { implicit request =>
+    functionService.all(active = false).map { functions =>
       Ok(Json.toJson(functions))
     }
   }
 
-  def functionGet(function: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner(), Platform())).async { implicit request ⇒
+  def functionGet(function: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner(), Platform())).async { implicit request =>
     logger.debug(s"Get function $function")
-    functionService.get(id = function).map { maybeFunction ⇒
-      maybeFunction.map { function ⇒
+    functionService.get(id = function).map { maybeFunction =>
+      maybeFunction.map { function =>
         Ok(Json.toJson(function))
       } getOrElse {
         NotFound(Json.toJson(ErrorMessage("Function Not Found", s"Function $function not found")))
@@ -70,20 +70,20 @@ class FunctionManager @Inject() (
     }
   }
 
-  def functionEnable(function: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner())).async { implicit request ⇒
+  def functionEnable(function: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner())).async { implicit request =>
     functionSetEnabled(function, enabled = true)
   }
 
-  def functionDisable(function: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner())).async { implicit request ⇒
+  def functionDisable(function: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner())).async { implicit request =>
     functionSetEnabled(function, enabled = false)
   }
 
   protected def functionSetEnabled(function: String, enabled: Boolean)(implicit request: SecuredRequest[HatApiAuthEnvironment, AnyContent]): Future[Result] = {
     logger.debug(s"Enable function $function = $enabled")
-    functionService.get(function).flatMap { maybeFunction ⇒
-      maybeFunction.map { function ⇒
+    functionService.get(function).flatMap { maybeFunction =>
+      maybeFunction.map { function =>
         functionService.save(function.copy(status = function.status.copy(enabled = enabled)))
-          .map(f ⇒ Ok(Json.toJson(f)))
+          .map(f => Ok(Json.toJson(f)))
       } getOrElse {
         Future.successful(NotFound(Json.toJson(ErrorMessage("Function Not Found", s"Function $function not found"))))
       }
@@ -91,21 +91,21 @@ class FunctionManager @Inject() (
   }
 
   // TODO: ApplicationManage permission being used to authorise function trigger. Consider updating to tool-specific permissions
-  def functionTrigger(function: String, useAll: Boolean): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(function)) || WithRole(Owner(), Platform())).async { implicit request ⇒
+  def functionTrigger(function: String, useAll: Boolean): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(function)) || WithRole(Owner(), Platform())).async { implicit request =>
     logger.debug(s"Trigger function $function")
-    functionService.get(function).flatMap { maybeFunction ⇒
+    functionService.get(function).flatMap { maybeFunction =>
       maybeFunction.map {
-        case c: FunctionConfiguration if c.status.available && c.status.enabled ⇒
+        case c: FunctionConfiguration if c.status.available && c.status.enabled =>
           functionExecutionDispatcher.trigger(request.dynamicEnvironment.domain, c, useAll)(ec)
-            .map(_ ⇒ Ok(Json.toJson(SuccessResponse("Function Executed"))))
+            .map(_ => Ok(Json.toJson(SuccessResponse("Function Executed"))))
             .recover {
-              case e ⇒
+              case e =>
                 logger.error(s"Function $function execution errored with ${e.getMessage}", e)
                 InternalServerError(Json.toJson(ErrorMessage("Function Execution Failed", s"Function $function execution errored with ${e.getMessage}")))
             }
-        case FunctionConfiguration(_, _, _, _, _, FunctionStatus(false, _, _, _)) ⇒
+        case FunctionConfiguration(_, _, _, _, _, FunctionStatus(false, _, _, _)) =>
           Future.successful(BadRequest(Json.toJson(ErrorMessage("Function Not Available", s"Function $function not available for execution"))))
-        case FunctionConfiguration(_, _, _, _, _, FunctionStatus(true, false, _, _)) ⇒
+        case FunctionConfiguration(_, _, _, _, _, FunctionStatus(true, false, _, _)) =>
           Future.successful(BadRequest(Json.toJson(ErrorMessage("Function Not Enabled", s"Function $function not enabled for execution"))))
       } getOrElse {
         Future.successful(NotFound(Json.toJson(ErrorMessage("Function Not Found", s"Function $function not found"))))

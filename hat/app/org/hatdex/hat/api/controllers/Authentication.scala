@@ -356,7 +356,7 @@ class Authentication @Inject() (
     logger.info(s"Proxy POST request to $hattersUrl/$path with parameters: $claim")
 
     val futureResponse = wsClient.url(s"$hattersUrl/$path")
-      //.withHttpHeaders("x-auth-token" → token.accessToken)
+      //.withHttpHeaders("x-auth-token" -> token.accessToken)
       .post(Json.toJson(hattersClaimPayload))
 
     futureResponse.flatMap { response =>

@@ -77,7 +77,7 @@ class Files @Inject() (
 
   def completeUpload(fileId: String): Action[AnyContent] =
     SecuredAction(WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(ManageFiles("*"), Owner())).async { implicit request =>
-      request2ApplicationStatus(request) flatMap { maybeAsApplication ⇒
+      request2ApplicationStatus(request) flatMap { maybeAsApplication =>
         fileMetadataService.getById(fileId) flatMap {
           case Some(file) if fileContentAccessAllowed(file, maybeAsApplication) =>
             logger.debug(s"Marking $file complete ")
@@ -111,8 +111,8 @@ class Files @Inject() (
 
   def getDetail(fileId: String): Action[AnyContent] = SecuredAction.async { implicit request =>
     val fileWithApp = for {
-      metadata ← fileMetadataService.getById(fileId)
-      app ← request2ApplicationStatus(request)
+      metadata <- fileMetadataService.getById(fileId)
+      app <- request2ApplicationStatus(request)
     } yield (metadata, app)
     fileWithApp flatMap {
       case (Some(file), app) if fileContentAccessAllowed(file, app) =>
@@ -131,8 +131,8 @@ class Files @Inject() (
 
   def getContent(fileId: String): Action[AnyContent] = UserAwareAction.async { implicit request =>
     val fileWithApp = for {
-      metadata ← fileMetadataService.getById(fileId)
-      app ← request2ApplicationStatus(request)
+      metadata <- fileMetadataService.getById(fileId)
+      app <- request2ApplicationStatus(request)
     } yield (metadata, request.identity, request.authenticator, app)
 
     fileWithApp flatMap {
@@ -147,7 +147,7 @@ class Files @Inject() (
   }
 
   def listFiles(): Action[ApiHatFile] = SecuredAction.async(parsers.json[ApiHatFile]) { implicit request =>
-    request2ApplicationStatus(request) flatMap { maybeAsApplication ⇒
+    request2ApplicationStatus(request) flatMap { maybeAsApplication =>
       fileMetadataService.search(request.body)
         .map(_.filter(fileAccessAllowed(_, maybeAsApplication)))
         .flatMap { foundFiles =>
@@ -183,7 +183,7 @@ class Files @Inject() (
   }
 
   def updateFile(fileId: String): Action[ApiHatFile] = SecuredAction.async(parsers.json[ApiHatFile]) { implicit request =>
-    request2ApplicationStatus(request) flatMap { maybeAsApplication ⇒
+    request2ApplicationStatus(request) flatMap { maybeAsApplication =>
       fileMetadataService.getById(fileId) flatMap {
         case Some(file) if fileContentAccessAllowed(file, maybeAsApplication) =>
           val updatedFile = file.copy(
@@ -216,7 +216,7 @@ class Files @Inject() (
 
   def allowAccess(fileId: String, userId: UUID, content: Boolean): Action[AnyContent] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))).async { implicit request =>
-      request2ApplicationStatus(request) flatMap { maybeAsApplication ⇒
+      request2ApplicationStatus(request) flatMap { maybeAsApplication =>
         fileMetadataService.getById(fileId) flatMap {
           case Some(file) if fileAccessAllowed(file, maybeAsApplication) =>
             val eventuallyGranted = for {
@@ -232,7 +232,7 @@ class Files @Inject() (
 
   def restrictAccess(fileId: String, userId: UUID): Action[AnyContent] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))).async { implicit request =>
-      request2ApplicationStatus(request) flatMap { maybeAsApplication ⇒
+      request2ApplicationStatus(request) flatMap { maybeAsApplication =>
         fileMetadataService.getById(fileId) flatMap {
           case Some(file) if fileAccessAllowed(file, maybeAsApplication) =>
             val eventuallyGranted = for {
@@ -248,7 +248,7 @@ class Files @Inject() (
 
   def changePublicAccess(fileId: String, public: Boolean): Action[AnyContent] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))).async { implicit request =>
-      request2ApplicationStatus(request) flatMap { maybeAsApplication ⇒
+      request2ApplicationStatus(request) flatMap { maybeAsApplication =>
         fileMetadataService.getById(fileId) flatMap {
           case Some(file) if fileAccessAllowed(file, maybeAsApplication) =>
             val eventuallyGranted = for {

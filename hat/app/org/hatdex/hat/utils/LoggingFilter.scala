@@ -60,7 +60,7 @@ class LoggingFilter @Inject() (
 
     nextFilter(requestHeader)
       .recoverWith({
-        case e ⇒ errorHandler.onServerError(requestHeader, e)
+        case e => errorHandler.onServerError(requestHeader, e)
       })
       .map { result =>
         val active = hatCounter.get()
@@ -76,9 +76,9 @@ class LoggingFilter @Inject() (
   private def tokenInfo(requestHeader: RequestHeader): String = {
     requestHeader.queryString.get(authTokenFieldName).flatMap(_.headOption)
       .orElse(requestHeader.headers.get(authTokenFieldName))
-      .flatMap(t ⇒ if (t.isEmpty) { None } else { Some(t) })
-      .flatMap(t ⇒ Try(JWSObject.parse(t)).toOption)
-      .map(o ⇒ JWTClaimsSet.parse(o.getPayload.toJSONObject))
+      .flatMap(t => if (t.isEmpty) { None } else { Some(t) })
+      .flatMap(t => Try(JWSObject.parse(t)).toOption)
+      .map(o => JWTClaimsSet.parse(o.getPayload.toJSONObject))
       .map { claimSet =>
         s"[${Option(claimSet.getStringClaim("application")).getOrElse("api")}@" +
           s"${Option(claimSet.getStringClaim("applicationVersion")).getOrElse("_")}]"

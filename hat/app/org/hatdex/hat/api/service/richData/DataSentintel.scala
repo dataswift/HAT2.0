@@ -56,27 +56,27 @@ class DataSentintel @Inject() (implicit ec: DalExecutionContext, actorSystem: Ac
     val clashingRecords = DataJson
       .filter(_.source === source) // only records for this source
       .filterNot(_.data.#>>(dbJsonPath) === "") // and only those that do have the key defined
-      .map(r ⇒ (r.recordId, rowNumber().over.partitionBy(r.source, r.data #>> dbJsonPath).sortBy(r.date.desc))) // number the rows starting from most recent
+      .map(r => (r.recordId, rowNumber().over.partitionBy(r.source, r.data #>> dbJsonPath).sortBy(r.date.desc))) // number the rows starting from most recent
       .subquery // subquery used to force generating the query before (incorrectly) Slick tries to use the partition windowing function within where clause
-      .filter { case (_, rank) ⇒ rank > 1L } // skip the newest row
+      .filter { case (_, rank) => rank > 1L } // skip the newest row
       .map(_._1) // get record ID for each remaining row
 
     val deleteQuery = DataJson.filter(_.recordId in clashingRecords).delete
 
     val updatingStream = Source.fromPublisher(db.stream(DataJson.filter(_.source === source).result.transactionally.withStatementParameters(fetchSize = updateBatchSize)))
       .via(Flow[DataJsonRow].grouped(updateBatchSize))
-      .mapAsync(1)({ batch ⇒
+      .mapAsync(1)({ batch =>
         db.run(DBIO.sequence(
           batch
-            .map(r ⇒ r.copy(sourceUniqueId = config.getKey(r.data))) // take the value at key as either string or number
+            .map(r => r.copy(sourceUniqueId = config.getKey(r.data))) // take the value at key as either string or number
             .map(DataJson.insertOrUpdate)).transactionally) // update the row with sourceUniqueId inserted
       })
 
     db.run(deleteQuery)
-      .flatMap(_ ⇒ {
+      .flatMap(_ => {
         updatingStream.runWith(Sink.ignore) // the result is not important as long as it succeeds
       })
-      .map(_ ⇒ Done)
+      .map(_ => Done)
   }
 
   def updateSourceTimestamp(source: String, key: String, format: String = "")(implicit db: Database): Future[Done] = {
@@ -84,16 +84,16 @@ class DataSentintel @Inject() (implicit ec: DalExecutionContext, actorSystem: Ac
 
     val updatingStream = Source.fromPublisher(db.stream(DataJson.filter(_.source === source).result.transactionally.withStatementParameters(fetchSize = updateBatchSize)))
       .via(Flow[DataJsonRow].grouped(updateBatchSize))
-      .mapAsync(parallelism = 1)({ batch ⇒
+      .mapAsync(parallelism = 1)({ batch =>
         db.run(DBIO.sequence(
           batch
-            .map(r ⇒ r.copy(sourceTimestamp = config.getTimestamp(r.data))) // take the value at key as DateTime
+            .map(r => r.copy(sourceTimestamp = config.getTimestamp(r.data))) // take the value at key as DateTime
             .map(DataJson.insertOrUpdate)).transactionally) // update the row with sourceUniqueId inserted
       })
 
     updatingStream
       .runWith(Sink.ignore) // the result is not important as long as it succeeds
-      .map(_ ⇒ Done)
+      .map(_ => Done)
   }
 }
 
@@ -106,18 +106,18 @@ case class EndpointConfiguration(
   lazy val timestampPath: Option[JsPath] = timestampField.map(JsonDataTransformer.parseJsPath)
   private implicit val timestampJsonFormat = jodaDateReads(timestampFormat.getOrElse(""))
 
-  def getKey(d: JsValue): Option[String] = keyPath.flatMap(k ⇒ k.asSingleJson(d).asOpt[String]
+  def getKey(d: JsValue): Option[String] = keyPath.flatMap(k => k.asSingleJson(d).asOpt[String]
     .orElse(k.asSingleJson(d).asOpt[Long].map(_.toString)))
 
   def getTimestamp(d: JsValue): Option[DateTime] = timestampPath.flatMap(_.asSingleJson(d).asOpt[DateTime])
 
   protected def jodaDateReads(pattern: String): Reads[DateTime] = new Reads[DateTime] {
 
-    private val (df, corrector, numberCorrector): (DateTimeFormatter, String ⇒ String, Long ⇒ Long) =
+    private val (df, corrector, numberCorrector): (DateTimeFormatter, String => String, Long => Long) =
       pattern match {
-        case ""        ⇒ (ISODateTimeFormat.dateOptionalTimeParser, identity[String], identity[Long])
-        case "'epoch'" ⇒ (ISODateTimeFormat.dateOptionalTimeParser, identity[String], { x: Long ⇒ x * 1000L })
-        case _         ⇒ (DateTimeFormat.forPattern(pattern), identity[String], identity[Long])
+        case ""        => (ISODateTimeFormat.dateOptionalTimeParser, identity[String], identity[Long])
+        case "'epoch'" => (ISODateTimeFormat.dateOptionalTimeParser, identity[String], { x: Long => x * 1000L })
+        case _         => (DateTimeFormat.forPattern(pattern), identity[String], identity[Long])
       }
 
     def reads(json: JsValue): JsResult[DateTime] = json match {

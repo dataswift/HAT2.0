@@ -19,11 +19,11 @@ class InstagramMediaMapper extends DataEndpointMapper {
 
     val propertyQueryv1 = PropertyQuery(
       List(EndpointQuery("instagram/feed", None,
-        unixDateFilter.map(f ⇒ Seq(EndpointQueryFilter("created_time", None, f))), None)), Some("created_time"), Some("descending"), None)
+        unixDateFilter.map(f => Seq(EndpointQueryFilter("created_time", None, f))), None)), Some("created_time"), Some("descending"), None)
 
     val propertyQueryv2 = PropertyQuery(
       List(EndpointQuery("instagram/feed", None,
-        unixDateFilter.map(f ⇒ Seq(EndpointQueryFilter("ds_created_time", None, f))), None)), Some("ds_created_time"), Some("descending"), None)
+        unixDateFilter.map(f => Seq(EndpointQueryFilter("ds_created_time", None, f))), None)), Some("ds_created_time"), Some("descending"), None)
 
     Seq(propertyQueryv2, propertyQueryv1) //ordering is on purpose
   }

@@ -178,7 +178,7 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
       .distinct
 
     db.run(uniqueEndpointQuery.result)
-      .map(endpoints ⇒ endpoints.flatMap(_.split("/").headOption).toSet)
+      .map(endpoints => endpoints.flatMap(_.split("/").headOption).toSet)
   }
 
   def deleteRecords(userId: UUID, recordIds: Seq[UUID])(implicit db: Database): Future[Unit] = {
@@ -472,18 +472,18 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
     Source.fromPublisher(db.stream(query.result.transactionally.withStatementParameters(fetchSize = 500)))
       .prepend(Source.single(zerothItem))
       .sliding(2, 1)
-      .splitWhen(SubstreamCancelStrategy.drain)(w ⇒ w.head._1._1.recordId != w.last._1._1.recordId) // items arrive ordered by record id, all items with same record ID on the left form part of the same group
-      .map(w ⇒ (w.last._1, w.last._2.map(Seq(_)).getOrElse(Seq()))) // remap linked items from optionals to lists
-      .reduce((acc, next) ⇒ (acc._1, acc._2 ++ next._2)) // reduce the whole substream to one item
+      .splitWhen(SubstreamCancelStrategy.drain)(w => w.head._1._1.recordId != w.last._1._1.recordId) // items arrive ordered by record id, all items with same record ID on the left form part of the same group
+      .map(w => (w.last._1, w.last._2.map(Seq(_)).getOrElse(Seq()))) // remap linked items from optionals to lists
+      .reduce((acc, next) => (acc._1, acc._2 ++ next._2)) // reduce the whole substream to one item
       .concatSubstreams // concatenate substreams allowing to run only one substream at a time - substreams happen sequentially anyway
       .collect({
-        case ((record, queryId), linkedResults) ⇒
-          val linked = linkedResults.map(l ⇒ endpointDataWithMappers(l._1, l._2, mappers))
+        case ((record, queryId), linkedResults) =>
+          val linked = linkedResults.map(l => endpointDataWithMappers(l._1, l._2, mappers))
           endpointDataWithMappers(record, queryId.toString, mappers)
             .copy(links = Utils.seqOption(linked))
       })
       .recover {
-        case e: PSQLException if e.getMessage.contains("cannot cast type") ⇒
+        case e: PSQLException if e.getMessage.contains("cannot cast type") =>
           throw RichDataBundleFormatException("Invalid bundle format - cannot cast between types to satisfy query", e)
       }
   }
