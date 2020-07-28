@@ -62,26 +62,34 @@ class HatServerProviderImpl @Inject() (
     configuration: Configuration,
     @NamedCache("hatserver-cache") cache: AsyncCacheApi,
     loggingProvider: LoggingProvider,
-    @Named("hatServerProviderActor") serverProviderActor: ActorRef)(
-    implicit
-    val ec: RemoteExecutionContext) extends HatServerProvider {
+    @Named("hatServerProviderActor") serverProviderActor: ActorRef
+  )(implicit
+    val ec: RemoteExecutionContext)
+    extends HatServerProvider {
 
   private val logger = loggingProvider.logger(this.getClass)
 
   def retrieve[B](request: Request[B]): Future[Option[HatServer]] = {
-    val hatAddress = request.host //.split(':').headOption.getOrElse(request.host)
+    val hatAddress =
+      request.host //.split(':').headOption.getOrElse(request.host)
     retrieve(hatAddress)
   }
 
-  implicit val timeout: Timeout = configuration.get[FiniteDuration]("resourceManagement.serverProvisioningTimeout")
-  implicit val serverInfoTimeout: Duration = configuration.get[FiniteDuration]("resourceManagement.serverIdleTimeout")
+  implicit val timeout: Timeout = configuration.get[FiniteDuration](
+    "resourceManagement.serverProvisioningTimeout"
+  )
+  implicit val serverInfoTimeout: Duration =
+    configuration.get[FiniteDuration]("resourceManagement.serverIdleTimeout")
 
   def retrieve(hatAddress: String): Future[Option[HatServer]] = {
-    cache.get[HatServer](s"server:$hatAddress")
+    cache
+      .get[HatServer](s"server:$hatAddress")
       .flatMap {
         case Some(server) => Future.successful(Some(server))
         case _ =>
-          (serverProviderActor ? HatServerProviderActor.HatServerRetrieve(hatAddress)) map {
+          (serverProviderActor ? HatServerProviderActor.HatServerRetrieve(
+            hatAddress
+          )) map {
             case server: HatServer =>
               logger.debug(s"Got back server $server")
               cache.set(s"server:$hatAddress", server, serverInfoTimeout)
@@ -90,17 +98,23 @@ class HatServerProviderImpl @Inject() (
               logger.warn(s"Got back error $error")
               throw error
             case message =>
-              logger.warn(s"Unknown message $message from HAT Server provider actor")
+              logger.warn(
+                s"Unknown message $message from HAT Server provider actor"
+              )
               val error = new HatServerDiscoveryException("Unknown message")
               throw error
           } recoverWith {
             case e =>
-              logger.warn(s"Error while retrieving HAT $hatAddress info: ${e.getMessage}")
-              val error = new HatServerDiscoveryException("HAT Server info retrieval failed", e)
+              logger.warn(
+                s"Error while retrieving HAT $hatAddress info: ${e.getMessage}"
+              )
+              val error = new HatServerDiscoveryException(
+                "HAT Server info retrieval failed",
+                e
+              )
               throw error
           }
       }
   }
 
 }
-

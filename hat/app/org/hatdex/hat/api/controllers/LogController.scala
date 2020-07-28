@@ -17,24 +17,45 @@ class LogController @Inject() (
     components: ControllerComponents,
     parsers: HatBodyParsers,
     logService: LogService,
-    silhouette: Silhouette[HatApiAuthEnvironment])(implicit val ec: RemoteExecutionContext)
-  extends HatApiController(components, silhouette) with HatJsonFormats {
+    silhouette: Silhouette[HatApiAuthEnvironment]
+  )(implicit val ec: RemoteExecutionContext)
+    extends HatApiController(components, silhouette)
+    with HatJsonFormats {
 
   private val logger = Logger(this.getClass)
 
-  def logFrontendAction(): Action[LogRequest] = SecuredAction.async(parsers.json[LogRequest]) { request =>
-    val logRequest = request.body
-    val hatAddress = request.dynamicEnvironment.domain
-    val appDetails = request.authenticator.customClaims.flatMap { customClaims =>
-      Try(((customClaims \ "application").as[String], (customClaims \ "applicationVersion").as[String])).toOption
-    }
+  def logFrontendAction(): Action[LogRequest] =
+    SecuredAction.async(parsers.json[LogRequest]) { request =>
+      val logRequest = request.body
+      val hatAddress = request.dynamicEnvironment.domain
+      val appDetails = request.authenticator.customClaims.flatMap {
+        customClaims =>
+          Try(
+            (
+              (customClaims \ "application").as[String],
+              (customClaims \ "applicationVersion").as[String]
+            )
+          ).toOption
+      }
 
-    logService.logAction(hatAddress, logRequest, appDetails).map { _ =>
-      Ok(Json.toJson(SuccessResponse(s"${logRequest.actionCode} logged")))
-    }.recover {
-      case e =>
-        logger.error(s"Failed to log action ${logRequest.actionCode}. Reason:\n${e.getMessage}")
-        InternalServerError(Json.toJson(ErrorMessage("Internal server error", s"Could not log ${logRequest.actionCode} action")))
+      logService
+        .logAction(hatAddress, logRequest, appDetails)
+        .map { _ =>
+          Ok(Json.toJson(SuccessResponse(s"${logRequest.actionCode} logged")))
+        }
+        .recover {
+          case e =>
+            logger.error(
+              s"Failed to log action ${logRequest.actionCode}. Reason:\n${e.getMessage}"
+            )
+            InternalServerError(
+              Json.toJson(
+                ErrorMessage(
+                  "Internal server error",
+                  s"Could not log ${logRequest.actionCode} action"
+                )
+              )
+            )
+        }
     }
-  }
 }

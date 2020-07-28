@@ -33,15 +33,33 @@ trait FunctionExecutable {
   val configuration: FunctionConfiguration
   val namespace: String
   val endpoint: String
-  def execute(configuration: FunctionConfiguration, request: Request): Future[Seq[Response]]
-  def bundleFilterByDate(fromDate: Option[DateTime], untilDate: Option[DateTime]): Future[EndpointDataBundle] = {
+  def execute(
+      configuration: FunctionConfiguration,
+      request: Request
+    ): Future[Seq[Response]]
+  def bundleFilterByDate(
+      fromDate: Option[DateTime],
+      untilDate: Option[DateTime]
+    ): Future[EndpointDataBundle] = {
     // Explicitly ignore the parameters - compiler complains about unused parameters
     (fromDate, untilDate)
     Future.successful(configuration.dataBundle)
   }
 }
 
-class SHEException(message: String = "", cause: Throwable = None.orNull) extends RuntimeException(message, cause)
-case class SHEFunctionNotAvailableException(message: String = "", cause: Throwable = None.orNull) extends SHEException(message, cause)
-case class SHEFunctionBusyExecutingException(message: String = "", cause: Throwable = None.orNull) extends SHEException(message, cause)
-case class SHEFunctionExecutionFailureException(message: String = "", cause: Throwable = None.orNull) extends SHEException(message, cause)
+class SHEException(
+    message: String = "",
+    cause: Throwable = None.orNull)
+    extends RuntimeException(message, cause)
+case class SHEFunctionNotAvailableException(
+    message: String = "",
+    cause: Throwable = None.orNull)
+    extends SHEException(message, cause)
+case class SHEFunctionBusyExecutingException(
+    message: String = "",
+    cause: Throwable = None.orNull)
+    extends SHEException(message, cause)
+case class SHEFunctionExecutionFailureException(
+    message: String = "",
+    cause: Throwable = None.orNull)
+    extends SHEException(message, cause)

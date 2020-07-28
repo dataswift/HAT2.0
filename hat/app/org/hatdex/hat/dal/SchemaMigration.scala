@@ -34,7 +34,8 @@ import scala.concurrent.ExecutionContext
 class HatDbSchemaMigration(
     config: Configuration,
     val db: JdbcProfile#Backend#Database,
-    implicit val ec: ExecutionContext) extends BaseSchemaMigrationImpl {
+    implicit val ec: ExecutionContext)
+    extends BaseSchemaMigrationImpl {
   protected val configuration: Config = config.underlying
   protected val logger: org.slf4j.Logger = Logger(this.getClass).logger
 }

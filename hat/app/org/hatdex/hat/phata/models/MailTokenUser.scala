@@ -35,18 +35,36 @@ trait MailToken {
   def isExpired: Boolean = expirationTime.isBeforeNow
 }
 
-case class MailTokenUser(id: String, email: String, expirationTime: DateTime, isSignUp: Boolean) extends MailToken
+case class MailTokenUser(
+    id: String,
+    email: String,
+    expirationTime: DateTime,
+    isSignUp: Boolean)
+    extends MailToken
 
 object MailTokenUser {
   private val mailTokenValidityHours = 24
 
-  def apply(email: String, isSignUp: Boolean): MailTokenUser =
-    MailTokenUser(UUID.randomUUID().toString, email, new DateTime().plusHours(mailTokenValidityHours), isSignUp)
+  def apply(
+      email: String,
+      isSignUp: Boolean
+    ): MailTokenUser =
+    MailTokenUser(
+      UUID.randomUUID().toString,
+      email,
+      new DateTime().plusHours(mailTokenValidityHours),
+      isSignUp
+    )
 }
 
 object MailClaimTokenUser {
   private val mailClaimTokenValidityDays = 7
 
   def apply(email: String): MailTokenUser =
-    MailTokenUser(UUID.randomUUID().toString, email, new DateTime().plusDays(mailClaimTokenValidityDays), isSignUp = true)
+    MailTokenUser(
+      UUID.randomUUID().toString,
+      email,
+      new DateTime().plusDays(mailClaimTokenValidityDays),
+      isSignUp = true
+    )
 }

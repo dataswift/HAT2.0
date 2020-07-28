@@ -29,9 +29,17 @@ import java.util.UUID
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 
-case class DatabaseInstance(id: UUID, name: String, password: String)
+case class DatabaseInstance(
+    id: UUID,
+    name: String,
+    password: String)
 
-case class DatabaseServer(id: Int, host: String, port: Int, dateCreated: DateTime, databases: Seq[DatabaseInstance])
+case class DatabaseServer(
+    id: Int,
+    host: String,
+    port: Int,
+    dateCreated: DateTime,
+    databases: Seq[DatabaseInstance])
 
 case class HatKeys(
     privateKey: String,

@@ -24,11 +24,35 @@
 
 package org.hatdex.hat.api.service.richData
 
-class RichDataServiceException(message: String = "", cause: Throwable = None.orNull) extends RuntimeException(message, cause)
-case class RichDataPermissionsException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
-case class RichDataDuplicateException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
-case class RichDataMissingException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
-case class RichDataDuplicateBundleException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
-case class RichDataDuplicateDebitException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
-case class RichDataDebitException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
-case class RichDataBundleFormatException(message: String = "", cause: Throwable = None.orNull) extends RichDataServiceException(message, cause)
+class RichDataServiceException(
+    message: String = "",
+    cause: Throwable = None.orNull)
+    extends RuntimeException(message, cause)
+case class RichDataPermissionsException(
+    message: String = "",
+    cause: Throwable = None.orNull)
+    extends RichDataServiceException(message, cause)
+case class RichDataDuplicateException(
+    message: String = "",
+    cause: Throwable = None.orNull)
+    extends RichDataServiceException(message, cause)
+case class RichDataMissingException(
+    message: String = "",
+    cause: Throwable = None.orNull)
+    extends RichDataServiceException(message, cause)
+case class RichDataDuplicateBundleException(
+    message: String = "",
+    cause: Throwable = None.orNull)
+    extends RichDataServiceException(message, cause)
+case class RichDataDuplicateDebitException(
+    message: String = "",
+    cause: Throwable = None.orNull)
+    extends RichDataServiceException(message, cause)
+case class RichDataDebitException(
+    message: String = "",
+    cause: Throwable = None.orNull)
+    extends RichDataServiceException(message, cause)
+case class RichDataBundleFormatException(
+    message: String = "",
+    cause: Throwable = None.orNull)
+    extends RichDataServiceException(message, cause)

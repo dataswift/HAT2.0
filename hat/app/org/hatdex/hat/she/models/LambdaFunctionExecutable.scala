@@ -34,9 +34,15 @@ import akka.util.ByteString
 import com.amazonaws.auth.{ AWSStaticCredentialsProvider, BasicAWSCredentials }
 import com.amazonaws.client.builder.ExecutorFactory
 import com.amazonaws.services.lambda.model.{ InvokeRequest, InvokeResult }
-import com.amazonaws.services.lambda.{ AWSLambdaAsync, AWSLambdaAsyncClientBuilder }
+import com.amazonaws.services.lambda.{
+  AWSLambdaAsync,
+  AWSLambdaAsyncClientBuilder
+}
 import javax.inject.Inject
-import org.hatdex.dex.apiV2.services.Errors.{ ApiException, DataFormatException }
+import org.hatdex.dex.apiV2.services.Errors.{
+  ApiException,
+  DataFormatException
+}
 import org.hatdex.hat.api.models.EndpointDataBundle
 import org.hatdex.hat.api.models.applications.Version
 import org.hatdex.hat.api.service.RemoteExecutionContext
@@ -53,9 +59,10 @@ class LambdaFunctionExecutable(
     baseUrl: String,
     val namespace: String,
     val endpoint: String,
-    val configuration: FunctionConfiguration)(
-    config: Configuration,
-    lambdaExecutor: AwsLambdaExecutor) extends FunctionExecutable {
+    val configuration: FunctionConfiguration
+  )(config: Configuration,
+    lambdaExecutor: AwsLambdaExecutor)
+    extends FunctionExecutable {
   import FunctionConfigurationJsonProtocol._
 
   protected val logger = Logger(this.getClass)
@@ -63,24 +70,44 @@ class LambdaFunctionExecutable(
 
   logger.debug(s"Initialised SHE lambda function $id v$version $baseUrl")
 
-  def execute(configuration: FunctionConfiguration, requestData: Request): Future[Seq[Response]] = {
+  def execute(
+      configuration: FunctionConfiguration,
+      requestData: Request
+    ): Future[Seq[Response]] = {
     val request = new InvokeRequest()
       .withFunctionName(s"$baseUrl-$id")
       .withLogType(lambdaLogs)
-      .withPayload(Json.toJson(Map(
-        "functionConfiguration" -> Json.toJson(configuration),
-        "request" -> Json.toJson(requestData))).toString())
+      .withPayload(
+        Json
+          .toJson(
+            Map(
+              "functionConfiguration" -> Json.toJson(configuration),
+              "request" -> Json.toJson(requestData)
+            )
+          )
+          .toString()
+      )
 
     lambdaExecutor.execute[Seq[Response]](request)
   }
 
-  override def bundleFilterByDate(fromDate: Option[DateTime], untilDate: Option[DateTime]): Future[EndpointDataBundle] = {
+  override def bundleFilterByDate(
+      fromDate: Option[DateTime],
+      untilDate: Option[DateTime]
+    ): Future[EndpointDataBundle] = {
     val request = new InvokeRequest()
       .withFunctionName(s"$baseUrl-$id-bundle")
       .withLogType(lambdaLogs)
-      .withPayload(Json.toJson(Map(
-        "fromDate" -> fromDate.map(_.toString),
-        "untilDate" -> untilDate.map(_.toString))).toString())
+      .withPayload(
+        Json
+          .toJson(
+            Map(
+              "fromDate" -> fromDate.map(_.toString),
+              "untilDate" -> untilDate.map(_.toString)
+            )
+          )
+          .toString()
+      )
 
     lambdaExecutor.execute[EndpointDataBundle](request)
   }
@@ -95,20 +122,40 @@ class LambdaFunctionLoader @Inject() (
   protected val logger = Logger(this.getClass)
   private val lambdaLogs = config.get[String]("she.aws.logs")
 
-  def load(id: String, version: Version, baseUrl: String, namespace: String, endpoint: String)(implicit ec: ExecutionContext): Future[LambdaFunctionExecutable] = {
+  def load(
+      id: String,
+      version: Version,
+      baseUrl: String,
+      namespace: String,
+      endpoint: String
+    )(implicit ec: ExecutionContext
+    ): Future[LambdaFunctionExecutable] = {
     val request = new InvokeRequest()
       .withFunctionName(s"$baseUrl-$id-configuration")
       .withLogType(lambdaLogs)
       .withPayload("\"\"")
 
-    lambdaExecutor.execute[FunctionConfiguration](request)
-      .map(c => new LambdaFunctionExecutable(id, version, baseUrl, namespace, endpoint, c)(config, lambdaExecutor))
+    lambdaExecutor
+      .execute[FunctionConfiguration](request)
+      .map(c =>
+        new LambdaFunctionExecutable(
+          id,
+          version,
+          baseUrl,
+          namespace,
+          endpoint,
+          c
+        )(
+          config,
+          lambdaExecutor
+        )
+      )
   }
 }
 
 class AwsLambdaExecutor @Inject() (
-    configuration: Configuration)(
-    implicit
+    configuration: Configuration
+  )(implicit
     val actorSystem: ActorSystem,
     ec: RemoteExecutionContext) {
 
@@ -119,36 +166,46 @@ class AwsLambdaExecutor @Inject() (
   private val credentials = new AWSStaticCredentialsProvider(
     new BasicAWSCredentials(
       configuration.get[String]("she.aws.accessKey"),
-      configuration.get[String]("she.aws.secretKey")))
+      configuration.get[String]("she.aws.secretKey")
+    )
+  )
 
   private val lambdaClient: AWSLambdaAsync =
-    AWSLambdaAsyncClientBuilder.standard()
+    AWSLambdaAsyncClientBuilder
+      .standard()
       .withRegion(configuration.get[String]("she.aws.region"))
       .withCredentials(credentials)
       .withExecutorFactory(new StaticExecutorFactory(ec))
       .build()
 
-  def execute[T](request: InvokeRequest)(implicit jsonFormatter: Format[T]): Future[T] = {
-    Source.single(request)
+  def execute[T](
+      request: InvokeRequest
+    )(implicit jsonFormatter: Format[T]
+    ): Future[T] = {
+    Source
+      .single(request)
       .via(AwsLambdaFlow(1)(lambdaClient))
       .runWith(Sink.head)
       .map {
         case r: InvokeResult if r.getStatusCode == 200 =>
-          logger.debug(
-            s"""Function responded with:
+          logger.debug(s"""Function responded with:
                | Status: ${r.getStatusCode}
                | Body: ${ByteString(r.getPayload).utf8String}
-               | Logs: ${Option(r.getLogResult).map(l => ByteString(java.util.Base64.getDecoder.decode(l)).utf8String)}
+               | Logs: ${Option(r.getLogResult).map(l =>
+            ByteString(java.util.Base64.getDecoder.decode(l)).utf8String
+          )}
             """.stripMargin)
-          val jsResponse = Json.parse(r.getPayload.array()).validate[T] recover {
-            case e =>
-              val message = s"Error parsing lambda response: $e"
-              logger.error(message)
-              throw DataFormatException(message)
-          }
+          val jsResponse =
+            Json.parse(r.getPayload.array()).validate[T] recover {
+              case e =>
+                val message = s"Error parsing lambda response: $e"
+                logger.error(message)
+                throw DataFormatException(message)
+            }
           jsResponse.get
         case r =>
-          val message = s"Retrieving SHE function configuration failed: $r, ${ByteString(r.getPayload).utf8String}"
+          val message =
+            s"Retrieving SHE function configuration failed: $r, ${ByteString(r.getPayload).utf8String}"
           logger.error(message)
           throw new ApiException(message)
       }

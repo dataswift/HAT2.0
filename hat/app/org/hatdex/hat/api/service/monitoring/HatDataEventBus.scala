@@ -42,9 +42,9 @@ import play.api.Logger
 import scala.util.{ Success, Try }
 
 /**
- * Publishes the payload of the MsgEnvelope when the topic of the
- * MsgEnvelope equals the String specified when subscribing.
- */
+  * Publishes the payload of the MsgEnvelope when the topic of the
+  * MsgEnvelope equals the String specified when subscribing.
+  */
 @Singleton
 class HatDataEventBus extends EventBus with SubchannelClassification {
   import HatDataEventBus._
@@ -53,92 +53,157 @@ class HatDataEventBus extends EventBus with SubchannelClassification {
   type Classifier = Class[_ <: HatDataEvent]
   type Subscriber = ActorRef
 
-  protected def compareSubscribers(a: Subscriber, b: Subscriber) = a compareTo b
+  protected def compareSubscribers(
+      a: Subscriber,
+      b: Subscriber
+    ) = a compareTo b
 
   /**
-   * The logic to form sub-class hierarchy
-   */
-  override protected implicit val subclassification = new Subclassification[Classifier] {
-    def isEqual(x: Classifier, y: Classifier): Boolean = x == y
-    def isSubclass(x: Classifier, y: Classifier): Boolean = y.isAssignableFrom(x)
-  }
+    * The logic to form sub-class hierarchy
+    */
+  override protected implicit val subclassification =
+    new Subclassification[Classifier] {
+      def isEqual(
+          x: Classifier,
+          y: Classifier
+        ): Boolean = x == y
+      def isSubclass(
+          x: Classifier,
+          y: Classifier
+        ): Boolean = y.isAssignableFrom(x)
+    }
 
   /**
-   * Publishes the given Event to the given Subscriber.
-   *
-   * @param event The Event to publish.
-   * @param subscriber The Subscriber to which the Event should be published.
-   */
-  override protected def publish(event: Event, subscriber: Subscriber): Unit = subscriber ! event
+    * Publishes the given Event to the given Subscriber.
+    *
+    * @param event The Event to publish.
+    * @param subscriber The Subscriber to which the Event should be published.
+    */
+  override protected def publish(
+      event: Event,
+      subscriber: Subscriber
+    ): Unit = subscriber ! event
 
   /**
-   * Returns the Classifier associated with the given Event.
-   *
-   * @param event The event for which the Classifier should be returned.
-   * @return The Classifier for the given Event.
-   */
+    * Returns the Classifier associated with the given Event.
+    *
+    * @param event The event for which the Classifier should be returned.
+    * @return The Classifier for the given Event.
+    */
   override protected def classify(event: Event): Classifier = event.getClass
 }
 
 class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
   import scala.language.implicitConversions
-  implicit def userModelTranslation(user: HatUser): User = ModelTranslation.fromInternalModel(user)
+  implicit def userModelTranslation(user: HatUser): User =
+    ModelTranslation.fromInternalModel(user)
   protected val logger: Logger = Logger(this.getClass)
 
-  def dispatchEventDataCreated(message: String)(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[Seq[EndpointData]], Unit] = {
+  def dispatchEventDataCreated(
+      message: String
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]
+    ): PartialFunction[Try[Seq[EndpointData]], Unit] = {
     case Success(saved) if saved.nonEmpty =>
       logger.debug(s"Dispatch data created event: $message")
-      dataEventBus.publish(HatDataEventBus.DataCreatedEvent(
-        request.dynamicEnvironment.domain,
-        request.identity.clean,
-        DateTime.now(),
-        message, saved))
+      dataEventBus.publish(
+        HatDataEventBus.DataCreatedEvent(
+          request.dynamicEnvironment.domain,
+          request.identity.clean,
+          DateTime.now(),
+          message,
+          saved
+        )
+      )
   }
 
-  def dispatchEventDataDebit(operation: DataDebitOperations.DataDebitOperation)(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[_], Unit] = {
+  def dispatchEventDataDebit(
+      operation: DataDebitOperations.DataDebitOperation
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]
+    ): PartialFunction[Try[_], Unit] = {
     case Success(saved: RichDataDebit) =>
-      dataEventBus.publish(HatDataEventBus.RichDataDebitEvent(
-        request.dynamicEnvironment.domain,
-        request.identity.clean,
-        DateTime.now(),
-        operation.toString, saved, operation))
+      dataEventBus.publish(
+        HatDataEventBus.RichDataDebitEvent(
+          request.dynamicEnvironment.domain,
+          request.identity.clean,
+          DateTime.now(),
+          operation.toString,
+          saved,
+          operation
+        )
+      )
     case Success(saved: DataDebit) =>
-      dataEventBus.publish(HatDataEventBus.DataDebitEvent(
-        request.dynamicEnvironment.domain,
-        request.identity.clean,
-        DateTime.now(),
-        operation.toString, saved, operation))
+      dataEventBus.publish(
+        HatDataEventBus.DataDebitEvent(
+          request.dynamicEnvironment.domain,
+          request.identity.clean,
+          DateTime.now(),
+          operation.toString,
+          saved,
+          operation
+        )
+      )
   }
 
-  def dispatchEventMaybeDataDebit(operation: DataDebitOperations.DataDebitOperation)(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[Option[_]], Unit] = {
+  def dispatchEventMaybeDataDebit(
+      operation: DataDebitOperations.DataDebitOperation
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]
+    ): PartialFunction[Try[Option[_]], Unit] = {
     case Success(Some(saved: RichDataDebit)) =>
-      dataEventBus.publish(HatDataEventBus.RichDataDebitEvent(
-        request.dynamicEnvironment.domain,
-        request.identity.clean,
-        DateTime.now(),
-        operation.toString, saved, operation))
+      dataEventBus.publish(
+        HatDataEventBus.RichDataDebitEvent(
+          request.dynamicEnvironment.domain,
+          request.identity.clean,
+          DateTime.now(),
+          operation.toString,
+          saved,
+          operation
+        )
+      )
     case Success(Some(saved: DataDebit)) =>
-      dataEventBus.publish(HatDataEventBus.DataDebitEvent(
-        request.dynamicEnvironment.domain,
-        request.identity.clean,
-        DateTime.now(),
-        operation.toString, saved, operation))
+      dataEventBus.publish(
+        HatDataEventBus.DataDebitEvent(
+          request.dynamicEnvironment.domain,
+          request.identity.clean,
+          DateTime.now(),
+          operation.toString,
+          saved,
+          operation
+        )
+      )
   }
 
-  def dispatchEventDataDebitValues(debit: RichDataDebit)(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[RichDataDebitData], Unit] = {
-    case Success(data) => dataEventBus.publish(HatDataEventBus.RichDataRetrievedEvent(
-      request.dynamicEnvironment.domain,
-      request.identity.clean,
-      DateTime.now(),
-      DataDebitOperations.GetValues().toString, debit, data.bundle.values.flatten.toSeq))
+  def dispatchEventDataDebitValues(
+      debit: RichDataDebit
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]
+    ): PartialFunction[Try[RichDataDebitData], Unit] = {
+    case Success(data) =>
+      dataEventBus.publish(
+        HatDataEventBus.RichDataRetrievedEvent(
+          request.dynamicEnvironment.domain,
+          request.identity.clean,
+          DateTime.now(),
+          DataDebitOperations.GetValues().toString,
+          debit,
+          data.bundle.values.flatten.toSeq
+        )
+      )
   }
 
-  def dispatchEventDataDebitValues(debit: DataDebit)(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[DataDebitData], Unit] = {
-    case Success(data) => dataEventBus.publish(HatDataEventBus.DataRetrievedEvent(
-      request.dynamicEnvironment.domain,
-      request.identity.clean,
-      DateTime.now(),
-      DataDebitOperations.GetValues().toString, debit, data.bundle.values.flatten.toSeq))
+  def dispatchEventDataDebitValues(
+      debit: DataDebit
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]
+    ): PartialFunction[Try[DataDebitData], Unit] = {
+    case Success(data) =>
+      dataEventBus.publish(
+        HatDataEventBus.DataRetrievedEvent(
+          request.dynamicEnvironment.domain,
+          request.identity.clean,
+          DateTime.now(),
+          DataDebitOperations.GetValues().toString,
+          debit,
+          data.bundle.values.flatten.toSeq
+        )
+      )
   }
 }
 
@@ -155,7 +220,8 @@ object HatDataEventBus {
       user: User,
       time: DateTime,
       logEntry: String,
-      data: Seq[EndpointData]) extends HatDataEvent
+      data: Seq[EndpointData])
+      extends HatDataEvent
 
   case class RichDataDebitEvent(
       hat: String,
@@ -163,7 +229,8 @@ object HatDataEventBus {
       time: DateTime,
       logEntry: String,
       dataDebit: RichDataDebit,
-      operation: DataDebitOperations.DataDebitOperation) extends HatDataEvent
+      operation: DataDebitOperations.DataDebitOperation)
+      extends HatDataEvent
 
   case class RichDataRetrievedEvent(
       hat: String,
@@ -171,7 +238,8 @@ object HatDataEventBus {
       time: DateTime,
       logEntry: String,
       dataDebit: RichDataDebit,
-      data: Seq[EndpointData]) extends HatDataEvent
+      data: Seq[EndpointData])
+      extends HatDataEvent
 
   case class DataDebitEvent(
       hat: String,
@@ -179,7 +247,8 @@ object HatDataEventBus {
       time: DateTime,
       logEntry: String,
       dataDebit: DataDebit,
-      operation: DataDebitOperations.DataDebitOperation) extends HatDataEvent
+      operation: DataDebitOperations.DataDebitOperation)
+      extends HatDataEvent
 
   case class DataRetrievedEvent(
       hat: String,
@@ -187,7 +256,8 @@ object HatDataEventBus {
       time: DateTime,
       logEntry: String,
       dataDebit: DataDebit,
-      data: Seq[EndpointData]) extends HatDataEvent
+      data: Seq[EndpointData])
+      extends HatDataEvent
 
   case class HatDataSubscriber(hat: HatServer)
 }

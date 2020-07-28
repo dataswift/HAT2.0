@@ -28,7 +28,10 @@ import controllers.{ Assets, AssetsFinder, AssetsFinderProvider }
 import javax.inject.Inject
 import org.hatdex.hat.api.json.{ HatJsonFormats, RichDataJsonFormats }
 import org.hatdex.hat.api.models.EndpointDataBundle
-import org.hatdex.hat.api.service.richData.{ RichBundleService, RichDataService }
+import org.hatdex.hat.api.service.richData.{
+  RichBundleService,
+  RichDataService
+}
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.phata.{ views => phataViews }
 import play.api.cache.{ Cached, CachedBuilder }
@@ -47,7 +50,10 @@ class Phata @Inject() (
     configuration: Configuration,
     silhouette: Silhouette[HatApiAuthEnvironment],
     bundleService: RichBundleService,
-    dataService: RichDataService) extends HatApiController(components, silhouette) with HatJsonFormats with RichDataJsonFormats {
+    dataService: RichDataService)
+    extends HatApiController(components, silhouette)
+    with HatJsonFormats
+    with RichDataJsonFormats {
 
   implicit val af: AssetsFinder = assetsFinder.get
 
@@ -57,7 +63,8 @@ class Phata @Inject() (
     .status(req => s"${req.host}${req.path}", 200)
     .includeStatus(404, 600)
 
-  val csp: Map[String, String] = configuration.get[String]("play.filters.headers.contentSecurityPolicy")
+  val csp: Map[String, String] = configuration
+    .get[String]("play.filters.headers.contentSecurityPolicy")
     .split(';')
     .map(_.trim)
     .map({ p =>
@@ -66,13 +73,18 @@ class Phata @Inject() (
     })
     .toMap
 
-  def rumpelIndex(): EssentialAction = indefiniteSuccessCaching {
-    UserAwareAction.async { implicit request =>
-      val rumpelConfigScript = s"""var httpProtocol = "${if (request.secure) { "https" } else { "http" }}:";"""
+  def rumpelIndex(): EssentialAction =
+    indefiniteSuccessCaching {
+      UserAwareAction.async { implicit request =>
+        val rumpelConfigScript = s"""var httpProtocol = "${if (request.secure) {
+          "https"
+        } else { "http" }}:";"""
 
-      Future.successful(Ok(phataViews.html.rumpelIndex(rumpelConfigScript, af)))
+        Future.successful(
+          Ok(phataViews.html.rumpelIndex(rumpelConfigScript, af))
+        )
+      }
     }
-  }
 
   def altRumpelIndex: EssentialAction = {
     logger.debug(s"Serving Rumpel v4")
@@ -84,15 +96,21 @@ class Phata @Inject() (
     assets.at("index.html")
   }
 
-  def profile: Action[AnyContent] = UserAwareAction.async { implicit request =>
-    val defaultBundleDefinition = Json.parse(configuration.get[String]("phata.defaultBundle")).as[EndpointDataBundle]
-    for {
-      bundle <- bundleService.bundle(defaultBundleDefinition.name).map(_.getOrElse(defaultBundleDefinition))
-      data <- dataService.bundleData(bundle, None, None, None)
-    } yield {
-      Ok(Json.toJson(data))
+  def profile: Action[AnyContent] =
+    UserAwareAction.async { implicit request =>
+      val defaultBundleDefinition = Json
+        .parse(configuration.get[String]("phata.defaultBundle"))
+        .as[EndpointDataBundle]
+      for {
+        bundle <-
+          bundleService
+            .bundle(defaultBundleDefinition.name)
+            .map(_.getOrElse(defaultBundleDefinition))
+        data <- dataService.bundleData(bundle, None, None, None)
+      } yield {
+        Ok(Json.toJson(data))
+      }
     }
-  }
 
   //  def hatLogin(name: String, redirectUrl: String) = indefiniteSuccessCaching {
   //    Action { implicit request =>

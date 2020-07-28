@@ -32,10 +32,16 @@ import akka.stream.{ FanInShape2, SourceShape }
 import scala.annotation.tailrec
 
 class SourceMergeSorter {
-  def mergeWithSorter[A](originSources: Seq[Source[A, NotUsed]])(implicit ordering: Ordering[A]): Source[A, NotUsed] =
+  def mergeWithSorter[A](
+      originSources: Seq[Source[A, NotUsed]]
+    )(implicit ordering: Ordering[A]
+    ): Source[A, NotUsed] =
     merge(originSources, sorter[A])
 
-  private def merge[A](originSources: Seq[Source[A, NotUsed]], f: (Source[A, NotUsed], Source[A, NotUsed]) => Source[A, NotUsed]): Source[A, NotUsed] =
+  private def merge[A](
+      originSources: Seq[Source[A, NotUsed]],
+      f: (Source[A, NotUsed], Source[A, NotUsed]) => Source[A, NotUsed]
+    ): Source[A, NotUsed] =
     originSources match {
       case Nil =>
         Source.empty[A]
@@ -48,28 +54,39 @@ class SourceMergeSorter {
               s
 
             case _ =>
-              reducePairs(sources.grouped(2).map {
-                case Seq(a)    => a
-                case Seq(a, b) => f(a, b)
-              }.toSeq)
+              reducePairs(
+                sources
+                  .grouped(2)
+                  .map {
+                    case Seq(a)    => a
+                    case Seq(a, b) => f(a, b)
+                  }
+                  .toSeq
+              )
           }
 
         reducePairs(sources)
     }
 
-  private def sorter[A](s1: Source[A, NotUsed], s2: Source[A, NotUsed])(implicit ord: Ordering[A]): Source[A, NotUsed] =
+  private def sorter[A](
+      s1: Source[A, NotUsed],
+      s2: Source[A, NotUsed]
+    )(implicit ord: Ordering[A]
+    ): Source[A, NotUsed] =
     combineSources(new MergeSorted[A], s1, s2) { (_, _) => NotUsed }
 
   private def combineSources[A, MatIn0, MatIn1, Mat](
-    combinator: GraphStage[FanInShape2[A, A, A]],
-    s0: Source[A, MatIn0],
-    s1: Source[A, MatIn1])(combineMat: (MatIn0, MatIn1) => Mat): Source[A, Mat] =
-
-    Source.fromGraph(GraphDSL.create(s0, s1)(combineMat) { implicit builder => (s0, s1) =>
-      import GraphDSL.Implicits._
-      val merge = builder.add(combinator)
-      s0 ~> merge.in0
-      s1 ~> merge.in1
-      SourceShape(merge.out)
+      combinator: GraphStage[FanInShape2[A, A, A]],
+      s0: Source[A, MatIn0],
+      s1: Source[A, MatIn1]
+    )(combineMat: (MatIn0, MatIn1) => Mat
+    ): Source[A, Mat] =
+    Source.fromGraph(GraphDSL.create(s0, s1)(combineMat) {
+      implicit builder => (s0, s1) =>
+        import GraphDSL.Implicits._
+        val merge = builder.add(combinator)
+        s0 ~> merge.in0
+        s1 ~> merge.in1
+        SourceShape(merge.out)
     })
 }

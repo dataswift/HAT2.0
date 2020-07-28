@@ -10,8 +10,6 @@ addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.25")
 // Code Quality
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")
 addSbtPlugin("org.scoverage" % "sbt-coveralls" % "1.2.6")
-addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.2")
-
 
 // web plugins
 addSbtPlugin("com.typesafe.sbt" % "sbt-web" % "1.4.3")
@@ -27,3 +25,6 @@ addSbtPlugin("org.hatdex" % "sbt-slick-postgres-generator" % "0.0.11")
 
 // run "sbt dependencyUpdates" to check maven for updates or "sbt ";dependencyUpdates; reload plugins; dependencyUpdates" for sbt plugins
 addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")
+
+// ScalaFMT
+addSbtPlugin("org.scalameta" %% "sbt-scalafmt" % "2.4.0")

@@ -28,7 +28,10 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
 object FutureTransformations {
-  def transform[A](o: Option[Future[A]])(implicit ec: ExecutionContext): Future[Option[A]] =
+  def transform[A](
+      o: Option[Future[A]]
+    )(implicit ec: ExecutionContext
+    ): Future[Option[A]] =
     o.map(f => f.map(Option(_))).getOrElse(Future.successful(None))
 
   def transform[A](o: Option[Future[Option[A]]]): Future[Option[A]] =
@@ -43,7 +46,10 @@ object FutureTransformations {
     }
   }
 
-  def futureToFutureTry[T](f: Future[T])(implicit ec: ExecutionContext): Future[Try[T]] =
+  def futureToFutureTry[T](
+      f: Future[T]
+    )(implicit ec: ExecutionContext
+    ): Future[Try[T]] =
     f.map(x => Success(x))
       .recover({
         case x => Failure(x)

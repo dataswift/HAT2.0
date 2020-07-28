@@ -27,16 +27,32 @@ package org.hatdex.hat.api.service.monitoring
 import javax.inject.Inject
 import akka.Done
 import akka.actor.Actor
-import org.hatdex.hat.api.models.{ DataDebitOperation, DataStats, InboundDataStats, OutboundDataStats, DataDebitEvent => DataDebitAction }
+import org.hatdex.hat.api.models.{
+  DataDebitOperation,
+  DataStats,
+  InboundDataStats,
+  OutboundDataStats,
+  DataDebitEvent => DataDebitAction
+}
 import org.hatdex.hat.api.service.StatsReporter
-import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{ DataCreatedEvent, DataDebitEvent, RichDataDebitEvent, RichDataRetrievedEvent }
-import org.hatdex.hat.resourceManagement.{ HatServer, HatServerDiscoveryException, HatServerProvider }
+import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{
+  DataCreatedEvent,
+  DataDebitEvent,
+  RichDataDebitEvent,
+  RichDataRetrievedEvent
+}
+import org.hatdex.hat.resourceManagement.{
+  HatServer,
+  HatServerDiscoveryException,
+  HatServerProvider
+}
 import play.api.Logger
 
 import scala.concurrent.{ ExecutionContext, Future }
 
 class HatDataStatsProcessorActor @Inject() (
-    processor: HatDataStatsProcessor) extends Actor {
+    processor: HatDataStatsProcessor)
+    extends Actor {
 
   private val log = Logger(this.getClass)
 
@@ -78,35 +94,57 @@ class HatDataStatsProcessorActor @Inject() (
 
 class HatDataStatsProcessor @Inject() (
     statsReporter: StatsReporter,
-    hatServerProvider: HatServerProvider)(
-    implicit
+    hatServerProvider: HatServerProvider
+  )(implicit
     val ec: ExecutionContext) {
 
   protected val logger = Logger(this.getClass)
 
   def computeInboundStats(event: DataCreatedEvent): InboundDataStats = {
     val endpointStats = JsonStatsService.endpointDataCounts(event.data)
-    InboundDataStats(event.time.toLocalDateTime, event.user,
-      endpointStats.toSeq, event.logEntry)
+    InboundDataStats(
+      event.time.toLocalDateTime,
+      event.user,
+      endpointStats.toSeq,
+      event.logEntry
+    )
   }
 
   def computeOutboundStats(event: RichDataRetrievedEvent): OutboundDataStats = {
     val endpointStats = JsonStatsService.endpointDataCounts(event.data)
-    OutboundDataStats(event.time.toLocalDateTime, event.user,
-      event.dataDebit.dataDebitKey, endpointStats.toSeq, event.logEntry)
+    OutboundDataStats(
+      event.time.toLocalDateTime,
+      event.user,
+      event.dataDebit.dataDebitKey,
+      endpointStats.toSeq,
+      event.logEntry
+    )
   }
 
   def reportDataDebitEvent(event: RichDataDebitEvent): DataDebitAction = {
-    DataDebitAction(event.dataDebit, event.operation.toString,
-      event.time.toLocalDateTime, event.user, event.logEntry)
+    DataDebitAction(
+      event.dataDebit,
+      event.operation.toString,
+      event.time.toLocalDateTime,
+      event.user,
+      event.logEntry
+    )
   }
 
   def reportDataDebitEvent(event: DataDebitEvent): DataDebitOperation = {
-    DataDebitOperation(event.dataDebit, event.operation.toString,
-      event.time.toLocalDateTime, event.user, event.logEntry)
+    DataDebitOperation(
+      event.dataDebit,
+      event.operation.toString,
+      event.time.toLocalDateTime,
+      event.user,
+      event.logEntry
+    )
   }
 
-  def publishStats(hat: String, stats: Iterable[DataStats]): Future[Done] = {
+  def publishStats(
+      hat: String,
+      stats: Iterable[DataStats]
+    ): Future[Done] = {
     logger.debug(s"Publish stats for $hat: $stats")
 
     hatServerProvider.retrieve(hat) flatMap {
@@ -114,7 +152,11 @@ class HatDataStatsProcessor @Inject() (
         statsReporter.reportStatistics(stats.toSeq)
       } getOrElse {
         logger.error(s"No HAT $hat found to report statistics for")
-        Future.failed(new HatServerDiscoveryException(s"HAT $hat discovery failed for stats reporting"))
+        Future.failed(
+          new HatServerDiscoveryException(
+            s"HAT $hat discovery failed for stats reporting"
+          )
+        )
       }
     }
   }

@@ -41,18 +41,46 @@ import play.api.libs.json._
 
 import scala.concurrent.Future
 
-class DataDebitContractService @Inject() (implicit val ec: RemoteExecutionContext) extends RichDataJsonFormats {
+class DataDebitContractService @Inject() (
+    implicit val ec: RemoteExecutionContext)
+    extends RichDataJsonFormats {
 
   val logger = Logger(this.getClass)
 
-  def createDataDebit(key: String, ddRequest: DataDebitRequest, userId: UUID)(implicit db: Database): Future[RichDataDebit] = {
-    val dataDebitContractInsert = (DataDebitContract returning DataDebitContract) += DataDebitContractRow(key, LocalDateTime.now(), userId)
+  def createDataDebit(
+      key: String,
+      ddRequest: DataDebitRequest,
+      userId: UUID
+    )(implicit db: Database
+    ): Future[RichDataDebit] = {
+    val dataDebitContractInsert =
+      (DataDebitContract returning DataDebitContract) += DataDebitContractRow(
+        key,
+        LocalDateTime.now(),
+        userId
+      )
     val dataDebitBundleInserts = DataBundles ++= Seq(
-      Some(DataBundlesRow(ddRequest.bundle.name, Json.toJson(ddRequest.bundle.bundle))),
-      ddRequest.conditions.map(b => DataBundlesRow(b.name, Json.toJson(b.bundle)))).flatten
+      Some(
+        DataBundlesRow(
+          ddRequest.bundle.name,
+          Json.toJson(ddRequest.bundle.bundle)
+        )
+      ),
+      ddRequest.conditions.map(b =>
+        DataBundlesRow(b.name, Json.toJson(b.bundle))
+      )
+    ).flatten
 
-    val dataDebitBundleLinkInserts = DataDebitBundle += DataDebitBundleRow(key, ddRequest.bundle.name,
-      LocalDateTime.now(), ddRequest.startDate, ddRequest.endDate, ddRequest.rolling, enabled = false, ddRequest.conditions.map(_.name))
+    val dataDebitBundleLinkInserts = DataDebitBundle += DataDebitBundleRow(
+      key,
+      ddRequest.bundle.name,
+      LocalDateTime.now(),
+      ddRequest.startDate,
+      ddRequest.endDate,
+      ddRequest.rolling,
+      enabled = false,
+      ddRequest.conditions.map(_.name)
+    )
 
     val query = for {
       _ <- dataDebitContractInsert
@@ -64,34 +92,79 @@ class DataDebitContractService @Inject() (implicit val ec: RemoteExecutionContex
       .flatMap(_ => dataDebit(key)) // Retrieve the data debit
       .map(_.get) // Data Debit must be Some as it has been inserted
       .recover {
-        case e: SQLException if e.getMessage.contains("duplicate key value violates unique constraint \"data_bundles_pkey\"") =>
-          throw RichDataDuplicateBundleException("Data bundle with such ID already exists")
-        case e: SQLException if e.getMessage.contains("duplicate key value violates unique constraint \"data_debit_contract_pkey\"") =>
-          throw RichDataDuplicateDebitException("Data Debit with such ID already exists")
+        case e: SQLException
+            if e.getMessage.contains(
+              "duplicate key value violates unique constraint \"data_bundles_pkey\""
+            ) =>
+          throw RichDataDuplicateBundleException(
+            "Data bundle with such ID already exists"
+          )
+        case e: SQLException
+            if e.getMessage.contains(
+              "duplicate key value violates unique constraint \"data_debit_contract_pkey\""
+            ) =>
+          throw RichDataDuplicateDebitException(
+            "Data Debit with such ID already exists"
+          )
       }
   }
 
-  def updateDataDebitBundle(key: String, ddRequest: DataDebitRequest, userId: UUID)(implicit db: Database): Future[RichDataDebit] = {
+  def updateDataDebitBundle(
+      key: String,
+      ddRequest: DataDebitRequest,
+      userId: UUID
+    )(implicit db: Database
+    ): Future[RichDataDebit] = {
     val query = for {
-      dd <- DataDebitContract.filter(dd => dd.dataDebitKey === key && dd.clientId === userId).result.map(_.head)
-      bundle <- (DataBundles returning DataBundles) += DataBundlesRow(ddRequest.bundle.name, Json.toJson(ddRequest.bundle.bundle))
-      ddb <- (DataDebitBundle returning DataDebitBundle) += DataDebitBundleRow(dd.dataDebitKey, bundle.bundleId, LocalDateTime.now(), LocalDateTime.now(), ddRequest.endDate, ddRequest.rolling, enabled = false)
+      dd <-
+        DataDebitContract
+          .filter(dd => dd.dataDebitKey === key && dd.clientId === userId)
+          .result
+          .map(_.head)
+      bundle <- (DataBundles returning DataBundles) += DataBundlesRow(
+        ddRequest.bundle.name,
+        Json.toJson(ddRequest.bundle.bundle)
+      )
+      ddb <- (DataDebitBundle returning DataDebitBundle) += DataDebitBundleRow(
+        dd.dataDebitKey,
+        bundle.bundleId,
+        LocalDateTime.now(),
+        LocalDateTime.now(),
+        ddRequest.endDate,
+        ddRequest.rolling,
+        enabled = false
+      )
     } yield ddb
 
     db.run(query.transactionally)
       .flatMap(_ => dataDebit(key)) // Retrieve the data debit
       .map(_.get) // Data Debit must be Some as it has been inserted
       .recover {
-        case e: PSQLException if e.getMessage.contains("duplicate key value violates unique constraint \"data_bundles_pkey\"") =>
-          throw RichDataDuplicateBundleException("Data bundle with such ID already exists")
-        case e: UnsupportedOperationException if e.getMessage.contains("empty.head") =>
-          throw RichDataDebitException("Data Debit being updated does not exist")
+        case e: PSQLException
+            if e.getMessage.contains(
+              "duplicate key value violates unique constraint \"data_bundles_pkey\""
+            ) =>
+          throw RichDataDuplicateBundleException(
+            "Data bundle with such ID already exists"
+          )
+        case e: UnsupportedOperationException
+            if e.getMessage.contains("empty.head") =>
+          throw RichDataDebitException(
+            "Data Debit being updated does not exist"
+          )
       }
   }
 
-  def dataDebit(dataDebitKey: String)(implicit db: Database): Future[Option[RichDataDebit]] = {
+  def dataDebit(
+      dataDebitKey: String
+    )(implicit db: Database
+    ): Future[Option[RichDataDebit]] = {
     val query = for {
-      (ddb, conditions) <- DataDebitBundle.filter(_.dataDebitKey === dataDebitKey).joinLeft(DataBundles).on(_.conditions === _.bundleId)
+      (ddb, conditions) <-
+        DataDebitBundle
+          .filter(_.dataDebitKey === dataDebitKey)
+          .joinLeft(DataBundles)
+          .on(_.conditions === _.bundleId)
       dd <- ddb.dataDebitContractFk
       bundleDefinition <- ddb.dataBundlesFk1
       client <- dd.userUserFk
@@ -100,15 +173,17 @@ class DataDebitContractService @Inject() (implicit val ec: RemoteExecutionContex
     db.run(query.result).map(_.unzip3) map {
       case (dd, client, ddBundle) =>
         (dd.headOption, client.headOption) match {
-          case (Some(dateDebit), Some(ddClient)) => Some(ModelTranslation.fromDbModel(dateDebit, ddClient, ddBundle))
-          case _                                 => None
+          case (Some(dateDebit), Some(ddClient)) =>
+            Some(ModelTranslation.fromDbModel(dateDebit, ddClient, ddBundle))
+          case _ => None
         }
     }
   }
 
   def all()(implicit db: Database): Future[Seq[RichDataDebit]] = {
     val query = for {
-      (ddb, conditions) <- DataDebitBundle.joinLeft(DataBundles).on(_.conditions === _.bundleId)
+      (ddb, conditions) <-
+        DataDebitBundle.joinLeft(DataBundles).on(_.conditions === _.bundleId)
       dd <- ddb.dataDebitContractFk
       bundle <- ddb.dataBundlesFk1
       client <- dd.userUserFk
@@ -116,29 +191,43 @@ class DataDebitContractService @Inject() (implicit val ec: RemoteExecutionContex
 
     db.run(query.result)
       .map { result =>
-        result.groupBy(_._1.dataDebitKey)
-          .values.toSeq
+        result
+          .groupBy(_._1.dataDebitKey)
+          .values
+          .toSeq
           .flatMap {
             _.unzip3 match {
               case (dd, client, ddBundle) =>
                 (dd.headOption, client.headOption) match {
-                  case (Some(dateDebit), Some(ddClient)) => Some(ModelTranslation.fromDbModel(dateDebit, ddClient, ddBundle))
-                  case _                                 => None
+                  case (Some(dateDebit), Some(ddClient)) =>
+                    Some(
+                      ModelTranslation
+                        .fromDbModel(dateDebit, ddClient, ddBundle)
+                    )
+                  case _ => None
                 }
             }
           }
       }
   }
 
-  def dataDebitDisable(dataDebitKey: String)(implicit db: Database): Future[Unit] = {
-    val dataBundlesDisabled = DataDebitBundle.filter(_.dataDebitKey === dataDebitKey)
+  def dataDebitDisable(
+      dataDebitKey: String
+    )(implicit db: Database
+    ): Future[Unit] = {
+    val dataBundlesDisabled = DataDebitBundle
+      .filter(_.dataDebitKey === dataDebitKey)
       .map(_.enabled)
       .update(false)
     db.run(dataBundlesDisabled)
       .map(_ => ())
   }
 
-  def dataDebitEnableBundle(dataDebitKey: String, specificBundle: Option[String])(implicit db: Database): Future[Unit] = {
+  def dataDebitEnableBundle(
+      dataDebitKey: String,
+      specificBundle: Option[String]
+    )(implicit db: Database
+    ): Future[Unit] = {
     val dataBundlesDisabled = DataDebitBundle
       .filter(_.dataDebitKey === dataDebitKey)
       .map(_.enabled)
@@ -157,11 +246,11 @@ class DataDebitContractService @Inject() (implicit val ec: RemoteExecutionContex
 
     val dataDebitBundleEnable = DataDebitBundle
       .filter(_.bundleId in dataDebitBundleFilter.map(_.bundleId))
-      .map(_.enabled).update(true)
+      .map(_.enabled)
+      .update(true)
 
     db.run(DBIO.seq(dataBundlesDisabled, dataDebitBundleEnable).transactionally)
       .map(_ => ())
   }
 
 }
-

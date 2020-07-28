@@ -48,13 +48,17 @@ class ActiveHatCounter() {
 class LoggingFilter @Inject() (
     errorHandler: HttpErrorHandler,
     configuration: Configuration,
-    hatCounter: ActiveHatCounter)(
-    implicit
+    hatCounter: ActiveHatCounter
+  )(implicit
     ec: ExecutionContext,
-    val mat: Materializer) extends Filter {
+    val mat: Materializer)
+    extends Filter {
   private val logger = Logger("api")
 
-  def apply(nextFilter: RequestHeader => Future[Result])(requestHeader: RequestHeader): Future[Result] = {
+  def apply(
+      nextFilter: RequestHeader => Future[Result]
+    )(requestHeader: RequestHeader
+    ): Future[Result] = {
 
     val startTime = System.currentTimeMillis
 
@@ -65,18 +69,26 @@ class LoggingFilter @Inject() (
       .map { result =>
         val active = hatCounter.get()
         val requestTime = System.currentTimeMillis - startTime
-        logger.info(s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}:${requestHeader.uri}] " +
-          s"[${result.header.status}] [$requestTime:ms] [hats:$active] ${tokenInfo(requestHeader)}")
+        logger.info(
+          s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}:${requestHeader.uri}] " +
+            s"[${result.header.status}] [$requestTime:ms] [hats:$active] ${tokenInfo(requestHeader)}"
+        )
 
         result.withHeaders("Request-Time" -> requestTime.toString)
       }
   }
 
-  private val authTokenFieldName: String = configuration.get[String]("silhouette.authenticator.fieldName")
+  private val authTokenFieldName: String =
+    configuration.get[String]("silhouette.authenticator.fieldName")
   private def tokenInfo(requestHeader: RequestHeader): String = {
-    requestHeader.queryString.get(authTokenFieldName).flatMap(_.headOption)
+    requestHeader.queryString
+      .get(authTokenFieldName)
+      .flatMap(_.headOption)
       .orElse(requestHeader.headers.get(authTokenFieldName))
-      .flatMap(t => if (t.isEmpty) { None } else { Some(t) })
+      .flatMap(t =>
+        if (t.isEmpty) { None }
+        else { Some(t) }
+      )
       .flatMap(t => Try(JWSObject.parse(t)).toOption)
       .map(o => JWTClaimsSet.parse(o.getPayload.toJSONObject))
       .map { claimSet =>
