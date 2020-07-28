@@ -560,7 +560,10 @@ class RichData @Inject() (
               case value: JsValue => handleJsValue(contractRequestBody.hatName, value, dataEndpoint)
             }
           }
-          case _ => Future.successful(NotFound)
+          case Left(x) => {
+            logger.error(s"Contract Save Error: ${x} - ${namespace} - ${endpoint} - ${contractRequestBody}")
+            Future.successful(NotFound)
+          }
         }
       } recover {
         case e: RichDataDuplicateException =>
@@ -703,10 +706,16 @@ class RichData @Inject() (
       requestIsAllowed.flatMap { testResult =>
         testResult match {
           case Right(RequestVerified(ns)) => makeData(namespace, endpoint, orderBy, ordering, skip, take)
-          case _ => Future.successful(NotFound)
+          case Left(contractError) => {
+            logger.error(s"Contract Get Error: ${contractError} - ${namespace} - ${endpoint} - ${contractRequestBody}")
+            Future.successful(NotFound)
+          }
         }
       } recover {
-        case _ => NotFound
+        case _ => {
+          logger.error(s"Contract Get Error: Request Not Allowed - ${namespace} - ${endpoint} - ${contractRequestBody}")
+          NotFound
+        }
       }
     }
 
