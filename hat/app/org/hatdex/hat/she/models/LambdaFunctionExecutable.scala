@@ -68,8 +68,8 @@ class LambdaFunctionExecutable(
       .withFunctionName(s"$baseUrl-$id")
       .withLogType(lambdaLogs)
       .withPayload(Json.toJson(Map(
-        "functionConfiguration" → Json.toJson(configuration),
-        "request" → Json.toJson(requestData))).toString())
+        "functionConfiguration" -> Json.toJson(configuration),
+        "request" -> Json.toJson(requestData))).toString())
 
     lambdaExecutor.execute[Seq[Response]](request)
   }
@@ -79,8 +79,8 @@ class LambdaFunctionExecutable(
       .withFunctionName(s"$baseUrl-$id-bundle")
       .withLogType(lambdaLogs)
       .withPayload(Json.toJson(Map(
-        "fromDate" → fromDate.map(_.toString),
-        "untilDate" → untilDate.map(_.toString))).toString())
+        "fromDate" -> fromDate.map(_.toString),
+        "untilDate" -> untilDate.map(_.toString))).toString())
 
     lambdaExecutor.execute[EndpointDataBundle](request)
   }
@@ -102,7 +102,7 @@ class LambdaFunctionLoader @Inject() (
       .withPayload("\"\"")
 
     lambdaExecutor.execute[FunctionConfiguration](request)
-      .map(c ⇒ new LambdaFunctionExecutable(id, version, baseUrl, namespace, endpoint, c)(config, lambdaExecutor))
+      .map(c => new LambdaFunctionExecutable(id, version, baseUrl, namespace, endpoint, c)(config, lambdaExecutor))
   }
 }
 
@@ -133,12 +133,12 @@ class AwsLambdaExecutor @Inject() (
       .via(AwsLambdaFlow(1)(lambdaClient))
       .runWith(Sink.head)
       .map {
-        case r: InvokeResult if r.getStatusCode == 200 ⇒
+        case r: InvokeResult if r.getStatusCode == 200 =>
           logger.debug(
             s"""Function responded with:
                | Status: ${r.getStatusCode}
                | Body: ${ByteString(r.getPayload).utf8String}
-               | Logs: ${Option(r.getLogResult).map(l ⇒ ByteString(java.util.Base64.getDecoder.decode(l)).utf8String)}
+               | Logs: ${Option(r.getLogResult).map(l => ByteString(java.util.Base64.getDecoder.decode(l)).utf8String)}
             """.stripMargin)
           val jsResponse = Json.parse(r.getPayload.array()).validate[T] recover {
             case e =>
@@ -147,7 +147,7 @@ class AwsLambdaExecutor @Inject() (
               throw DataFormatException(message)
           }
           jsResponse.get
-        case r ⇒
+        case r =>
           val message = s"Retrieving SHE function configuration failed: $r, ${ByteString(r.getPayload).utf8String}"
           logger.error(message)
           throw new ApiException(message)

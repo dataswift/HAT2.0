@@ -95,16 +95,16 @@ case class ContainsApplicationRole(anyOf: UserRole*)(implicit val applicationsSe
 
   def isAuthorized[B](user: HatUser, authenticator: JWTRS256Authenticator, hat: HatServer)(implicit r: Request[B]): Future[Boolean] = {
     val containsApplicationClaim = authenticator.customClaims.exists(_.keys.contains("application")) // MUST contain application claim
-    val status = authenticator.customClaims.flatMap { customClaims ⇒
+    val status = authenticator.customClaims.flatMap { customClaims =>
       (customClaims \ "application").asOpt[String]
-    } map { app ⇒
+    } map { app =>
       applicationsService.applicationStatus(app)(hat, user, r)
     } getOrElse {
       Future.successful(None)
     }
 
-    status map { maybeAppStatus ⇒
-      val appStatusOk = maybeAppStatus exists { appStatus ⇒
+    status map { maybeAppStatus =>
+      val appStatusOk = maybeAppStatus exists { appStatus =>
         ContainsApplicationRole.isAuthorized(user, appStatus, authenticator, anyOf: _*)
       } // Unauthorized if app status not found
       containsApplicationClaim && appStatusOk
@@ -118,9 +118,9 @@ object ContainsApplicationRole {
   def isAuthorized[B](user: HatUser, appStatus: HatApplication, authenticator: JWTRS256Authenticator, anyOf: UserRole*): Boolean = {
     val containsApplicationClaim = authenticator.customClaims.forall(_.keys.contains("application")) // must NOT contain application claim
     val appStatusOk =
-      (appStatus.enabled && appStatus.application.permissions.rolesGranted.exists(role ⇒ anyOf.exists(req ⇒ roleSatisfiesRequirement(role, req)))) || // App has been granted a specific role
+      (appStatus.enabled && appStatus.application.permissions.rolesGranted.exists(role => anyOf.exists(req => roleSatisfiesRequirement(role, req)))) || // App has been granted a specific role
         (appStatus.application.permissions.rolesGranted.contains(Owner()) && // Or is an owner app
-          anyOf.exists(r ⇒ !rolesRequiringExplicitApproval.contains(r.title))) // is there a required role that does not require explicit approval even for owner scope
+          anyOf.exists(r => !rolesRequiringExplicitApproval.contains(r.title))) // is there a required role that does not require explicit approval even for owner scope
 
     val userRoleAuthorized = anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner())
     containsApplicationClaim && appStatusOk && userRoleAuthorized

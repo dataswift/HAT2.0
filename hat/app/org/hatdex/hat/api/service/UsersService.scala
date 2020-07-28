@@ -30,7 +30,7 @@ import javax.inject.Inject
 import org.hatdex.hat.api.models.{ UserRole, _ }
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.Tables.{ UserRole ⇒ UserRoleDb, _ }
+import org.hatdex.hat.dal.Tables.{ UserRole => UserRoleDb, _ }
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
@@ -52,12 +52,12 @@ class UsersService @Inject() (cache: AsyncCacheApi)(implicit ec: DalExecutionCon
   def getUser(userId: UUID)(implicit server: HatServer): Future[Option[HatUser]] = {
     cache.get[HatUser](s"${server.domain}:user:$userId")
       .flatMap {
-        case Some(cached) ⇒ Future.successful(Some(cached))
-        case None ⇒
+        case Some(cached) => Future.successful(Some(cached))
+        case None =>
           queryUser(UserUser.filter(_.userId === userId))
             .map(_.headOption)
             .andThen({
-              case Success(Some(u)) ⇒
+              case Success(Some(u)) =>
                 cache.set(s"${server.domain}:user:${u.userId}", u)
                 cache.set(s"${server.domain}:user:${u.email}", u)
             })
@@ -67,12 +67,12 @@ class UsersService @Inject() (cache: AsyncCacheApi)(implicit ec: DalExecutionCon
   def getUser(username: String)(implicit server: HatServer): Future[Option[HatUser]] = {
     cache.get[HatUser](s"${server.domain}:user:$username")
       .flatMap {
-        case Some(cached) ⇒ Future.successful(Some(cached))
-        case None ⇒
+        case Some(cached) => Future.successful(Some(cached))
+        case None =>
           queryUser(UserUser.filter(_.email === username))
             .map(_.headOption)
             .andThen({
-              case Success(Some(u)) ⇒
+              case Success(Some(u)) =>
                 cache.set(s"${server.domain}:user:${u.userId}", u)
                 cache.set(s"${server.domain}:user:${u.email}", u)
             })
@@ -135,7 +135,7 @@ class UsersService @Inject() (cache: AsyncCacheApi)(implicit ec: DalExecutionCon
 
     upsertedUser.map(_ => user)
       .andThen({
-        case Success(saved) ⇒
+        case Success(saved) =>
           cache.set(s"${server.domain}:user:${saved.userId}", saved)
           cache.set(s"${server.domain}:user:${saved.email}", saved)
       })
@@ -151,7 +151,7 @@ class UsersService @Inject() (cache: AsyncCacheApi)(implicit ec: DalExecutionCon
         val deleteUsers = UserUser.filter(_.userId === user.userId).delete
         server.db.run(DBIO.seq(deleteRoles, deleteUsers).transactionally).map(_ => ())
           .andThen {
-            case Success(_) ⇒
+            case Success(_) =>
               cache.remove(s"${server.domain}:user:${user.userId}")
               cache.remove(s"${server.domain}:user:${user.email}")
           }
@@ -160,8 +160,8 @@ class UsersService @Inject() (cache: AsyncCacheApi)(implicit ec: DalExecutionCon
 
   def changeUserState(userId: UUID, enabled: Boolean)(implicit server: HatServer): Future[Unit] = {
     getUser(userId).flatMap {
-      case Some(user) ⇒ saveUser(user.copy(enabled = enabled)).map(_ ⇒ ())
-      case None       ⇒ Future.successful(())
+      case Some(user) => saveUser(user.copy(enabled = enabled)).map(_ => ())
+      case None       => Future.successful(())
     }
   }
 
@@ -181,7 +181,7 @@ class UsersService @Inject() (cache: AsyncCacheApi)(implicit ec: DalExecutionCon
     } yield (access, user)
     server.db.run(query.result)
       .andThen {
-        case Success(h) ⇒ logger.error(s"Got previous logins $h @${server.domain}")
+        case Success(h) => logger.error(s"Got previous logins $h @${server.domain}")
       }
       .map(_.headOption)
       .map(_.map(au => ModelTranslation.fromDbModel(au._1, ModelTranslation.fromDbModel(au._2))))

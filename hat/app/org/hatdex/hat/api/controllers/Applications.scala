@@ -51,18 +51,18 @@ class Applications @Inject() (
 
   def applications(): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationList()) || WithRole(Owner())).async { implicit request =>
     for {
-      apps ← applicationsService.applicationStatus()
-      filterApps ← ContainsApplicationRole(ApplicationList()).isAuthorized(request.identity, request.authenticator, request.dynamicEnvironment)
-      maybeApp ← request.authenticator.customClaims.flatMap(customClaims ⇒ (customClaims \ "application").asOpt[String])
-        .map(app ⇒ applicationsService.applicationStatus(app)(request.dynamicEnvironment, request.identity, request))
+      apps <- applicationsService.applicationStatus()
+      filterApps <- ContainsApplicationRole(ApplicationList()).isAuthorized(request.identity, request.authenticator, request.dynamicEnvironment)
+      maybeApp <- request.authenticator.customClaims.flatMap(customClaims => (customClaims \ "application").asOpt[String])
+        .map(app => applicationsService.applicationStatus(app)(request.dynamicEnvironment, request.identity, request))
         .getOrElse(Future.successful(None))
     } yield {
       if (filterApps) {
         val permitted = maybeApp.map(_.application.permissions.rolesGranted.collect({
-          case ApplicationManage(applicationId) ⇒ applicationId
+          case ApplicationManage(applicationId) => applicationId
         }).toSet).getOrElse(Set())
 
-        val filtered = apps.filter(a ⇒ permitted.contains(a.application.id))
+        val filtered = apps.filter(a => permitted.contains(a.application.id))
         Ok(Json.toJson(filtered))
       }
       else {
@@ -74,8 +74,8 @@ class Applications @Inject() (
   def applicationStatus(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(Owner())).async { implicit request =>
     val bustCache = request.headers.get("Cache-Control").contains("no-cache")
     logger.info(s"Getting app $id status (bust cache: $bustCache)")
-    applicationsService.applicationStatus(id, bustCache).map { maybeStatus ⇒
-      maybeStatus map { status ⇒
+    applicationsService.applicationStatus(id, bustCache).map { maybeStatus =>
+      maybeStatus map { status =>
         Ok(Json.toJson(status))
       } getOrElse {
         NotFound(Json.toJson(ErrorMessage(
@@ -87,12 +87,12 @@ class Applications @Inject() (
   }
 
   def applicationSetup(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(Owner())).async { implicit request =>
-    applicationsService.applicationStatus(id).flatMap { maybeStatus ⇒
-      maybeStatus map { status ⇒
+    applicationsService.applicationStatus(id).flatMap { maybeStatus =>
+      maybeStatus map { status =>
         applicationsService.setup(status)
-          .map(s ⇒ Ok(Json.toJson(s)))
+          .map(s => Ok(Json.toJson(s)))
           .recover {
-            case e: RichDataDuplicateBundleException ⇒
+            case e: RichDataDuplicateBundleException =>
               logger.error(s"[${request.dynamicEnvironment.domain}] Error setting up application - duplicate bundle: ${e.getMessage}")
               InternalServerError(Json.toJson(ErrorMessage(
                 "Application malformed",
@@ -109,9 +109,9 @@ class Applications @Inject() (
 
   def applicationDisable(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(Owner())).async { implicit request =>
     applicationsService.applicationStatus(id).flatMap { maybeStatus =>
-      maybeStatus map { status ⇒
+      maybeStatus map { status =>
         applicationsService.disable(status)
-          .map(s ⇒ Ok(Json.toJson(s)))
+          .map(s => Ok(Json.toJson(s)))
       } getOrElse {
         Future.successful(
           BadRequest(Json.toJson(ErrorMessage(
@@ -124,8 +124,8 @@ class Applications @Inject() (
   def applicationToken(id: String): Action[AnyContent] = SecuredAction(ContainsApplicationRole(RetrieveApplicationToken(id)) || WithRole(Owner())).async { implicit request =>
     applicationsService.applicationStatus(id)
       .flatMap { maybeStatus =>
-        maybeStatus map { status ⇒
-          applicationsService.applicationToken(request.identity, status.application) map { token ⇒
+        maybeStatus map { status =>
+          applicationsService.applicationToken(request.identity, status.application) map { token =>
             Ok(Json.toJson(token))
           }
         } getOrElse {

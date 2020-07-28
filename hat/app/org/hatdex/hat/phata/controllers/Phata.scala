@@ -60,9 +60,9 @@ class Phata @Inject() (
   val csp: Map[String, String] = configuration.get[String]("play.filters.headers.contentSecurityPolicy")
     .split(';')
     .map(_.trim)
-    .map({ p ⇒
+    .map({ p =>
       val splits = p.split(' ')
-      splits.head → splits.tail.mkString(" ")
+      splits.head -> splits.tail.mkString(" ")
     })
     .toMap
 

@@ -60,15 +60,15 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
     implicit
     hatServer: HatServer, richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
 
-    val feeds = dataQueries(fromDate, untilDate).map({ query ⇒
+    val feeds = dataQueries(fromDate, untilDate).map({ query =>
       logger.debug(s"query is: $query")
       val dataSource: Source[EndpointData, NotUsed] = richDataService.propertyDataStreaming(query.endpoints, query.orderBy,
         orderingDescending = query.ordering.contains("descending"), skip = 0, limit = None, createdAfter = None)(hatServer.db)
-      val deduplicated = dataDeduplicationField.map { field ⇒
+      val deduplicated = dataDeduplicationField.map { field =>
         dataSource.sliding(2, 1)
           .collect({
-            case Seq(a, b) if a.data \ field != b.data \ field ⇒ a
-            case Seq(a)                                        ⇒ a // only a single element, e.g. last element in sliding window
+            case Seq(a, b) if a.data \ field != b.data \ field => a
+            case Seq(a)                                        => a // only a single element, e.g. last element in sliding window
           })
       } getOrElse {
         dataSource
@@ -77,19 +77,19 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
       deduplicated
         .sliding(2, 1)
         .map {
-          case Seq(head, tail) ⇒
+          case Seq(head, tail) =>
 
             val record = mapDataRecord(head.recordId.get, head.data, tail.recordId, Some(tail.data))
             logger.debug(s"record is $record")
             record
-          case Seq(item) ⇒
+          case Seq(item) =>
 
             val record = mapDataRecord(item.recordId.get, item.data)
             logger.debug(s"record is $record")
             record
         }
         .collect({
-          case Success(x) ⇒ x
+          case Success(x) => x
         })
     })
 
@@ -105,15 +105,15 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
     }
 
     val endString = end.map {
-      case t if t.isAfter(start.withTimeAtStartOfDay().plusDays(1)) ⇒
+      case t if t.isAfter(start.withTimeAtStartOfDay().plusDays(1)) =>
         if (t.hourOfDay().get() == 0) {
           s"- ${t.minusMinutes(1).toString("dd MMMM")}"
         }
         else {
           s"- ${t.withZone(start.getZone).toString("dd MMMM HH:mm ZZZ")}"
         }
-      case t if t.hourOfDay().get() == 0 ⇒ ""
-      case t                             ⇒ s"- ${t.withZone(start.getZone).toString("HH:mm ZZZ")}"
+      case t if t.hourOfDay().get() == 0 => ""
+      case t                             => s"- ${t.withZone(start.getZone).toString("HH:mm ZZZ")}"
     }
 
     (startString, endString)
@@ -121,28 +121,28 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
 
   protected def eventTimeIntervalString(start: Option[DateTime], end: Option[DateTime]): (Option[String], Option[String]) = {
     val startString = start.map {
-      case t if t.getMillisOfDay == 0 ⇒ s"${t.toString("dd MMMM")}"
-      case t                          ⇒ s"${t.withZone(t.getZone).toString("dd MMMM HH:mm")}"
+      case t if t.getMillisOfDay == 0 => s"${t.toString("dd MMMM")}"
+      case t                          => s"${t.withZone(t.getZone).toString("dd MMMM HH:mm")}"
     }
 
     val endString = (start, end) match {
-      case (None, Some(t)) ⇒
+      case (None, Some(t)) =>
         if (t.hourOfDay().get() == 0) {
           Some(s"before ${t.minusMinutes(1).toString("dd MMMM")}")
         }
         else {
           Some(s"before ${t.toString("dd MMMM HH:mm z")}")
         }
-      case (Some(s), Some(t)) if t.isAfter(s.withTimeAtStartOfDay().plusDays(1)) ⇒
+      case (Some(s), Some(t)) if t.isAfter(s.withTimeAtStartOfDay().plusDays(1)) =>
         if (t.hourOfDay().get() == 0) {
           Some(s"- ${t.minusMinutes(1).toString("dd MMMM")}")
         }
         else {
           Some(s"- ${t.withZone(s.getZone).toString("dd MMMM HH:mm z")}")
         }
-      case (_, Some(t)) if t.hourOfDay.get == 0 ⇒ None
-      case (Some(s), Some(t))                   ⇒ Some(s"- ${t.withZone(s.getZone).toString("HH:mm z")}")
-      case (_, None)                            ⇒ None
+      case (_, Some(t)) if t.hourOfDay.get == 0 => None
+      case (Some(s), Some(t))                   => Some(s"- ${t.withZone(s.getZone).toString("HH:mm z")}")
+      case (_, None)                            => None
     }
 
     (startString, endString)
@@ -189,21 +189,21 @@ class InsightSentimentMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("she/insights/emotions", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("timestamp", None, f))), None)),
+        EndpointQuery("she/insights/emotions", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("timestamp", None, f))), None)),
       Some("timestamp"), Some("descending"), None))
   }
 
   private val textMappings = Map(
-    "twitter/tweets" → "Twitter",
-    "facebook/feed" → "Facebook",
-    "notables/feed" → "Notables")
+    "twitter/tweets" -> "Twitter",
+    "facebook/feed" -> "Facebook",
+    "notables/feed" -> "Notables")
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
-      sentiment ← Try((content \ "sentiment").as[String])
-      text ← Try((content \ "text").as[String])
-      source ← Try((content \ "source").as[String])
-      timestamp ← Try((content \ "timestamp").as[DateTime])
+      sentiment <- Try((content \ "sentiment").as[String])
+      text <- Try((content \ "text").as[String])
+      source <- Try((content \ "source").as[String])
+      timestamp <- Try((content \ "timestamp").as[DateTime])
     } yield {
       val title = DataFeedItemTitle(
         s"$sentiment Message",
@@ -222,39 +222,39 @@ class InsightsMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("she/insights/activity-records", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("timestamp", None, f))), None)),
+        EndpointQuery("she/insights/activity-records", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("timestamp", None, f))), None)),
       Some("timestamp"), Some("descending"), None))
   }
 
   private val textMappings = Map(
-    "twitter/tweets" → "Tweets sent",
-    "facebook/feed" → "Posts composed",
-    "notables/feed" → "Notes taken",
-    "spotify/feed" → "Songs listened to",
-    "instagram/feed" → "Photos uploaded",
+    "twitter/tweets" -> "Tweets sent",
+    "facebook/feed" -> "Posts composed",
+    "notables/feed" -> "Notes taken",
+    "spotify/feed" -> "Songs listened to",
+    "instagram/feed" -> "Photos uploaded",
     "fitbit/weight" -> "Fitbit weight records",
     "fitbit/sleep" -> "Fitbit sleep records",
     "fitbit/activity" -> "Fitbit activities logged",
     "uber/rides" -> "Trips taken",
-    "calendar/google/events" → "Calendar events recorded",
-    "monzo/transactions" → "Transactions performed",
+    "calendar/google/events" -> "Calendar events recorded",
+    "monzo/transactions" -> "Transactions performed",
     "she/insights/emotions" -> "Posts analysed for Sentiments",
     "she/insights/emotions/positive" -> "Positive",
     "she/insights/emotions/negative" -> "Negative",
     "she/insights/emotions/neutral" -> "Neutral")
 
   private val sourceMappings = Map(
-    "twitter/tweets" → "twitter",
-    "facebook/feed" → "facebook",
-    "notables/feed" → "notables",
-    "spotify/feed" → "spotify",
-    "instagram/feed" → "instagram",
+    "twitter/tweets" -> "twitter",
+    "facebook/feed" -> "facebook",
+    "notables/feed" -> "notables",
+    "spotify/feed" -> "spotify",
+    "instagram/feed" -> "instagram",
     "fitbit/weight" -> "fitbit-weight",
     "fitbit/sleep" -> "fitbit-sleep",
     "fitbit/activity" -> "fitbit-activity",
     "uber/rides" -> "uber",
-    "calendar/google/events" → "google",
-    "monzo/transactions" → "monzo",
+    "calendar/google/events" -> "google",
+    "monzo/transactions" -> "monzo",
     "she/insights/emotions" -> "sentiment",
     "she/insights/emotions/positive" -> "sentiment-positive",
     "she/insights/emotions/negative" -> "sentiment-negative",
@@ -262,10 +262,10 @@ class InsightsMapper extends DataEndpointMapper {
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID], tailContent: Option[JsValue]): Try[DataFeedItem] = {
     for {
-      startDate ← Try((content \ "since").asOpt[DateTime])
-      endDate ← Try((content \ "timestamp").asOpt[DateTime])
-      timeIntervalString ← Try(eventTimeIntervalString(startDate, endDate))
-      counters ← Try((content \ "counters").as[Map[String, Int]]) if counters.exists(_._2 != 0)
+      startDate <- Try((content \ "since").asOpt[DateTime])
+      endDate <- Try((content \ "timestamp").asOpt[DateTime])
+      timeIntervalString <- Try(eventTimeIntervalString(startDate, endDate))
+      counters <- Try((content \ "counters").as[Map[String, Int]]) if counters.exists(_._2 != 0)
     } yield {
       val title = DataFeedItemTitle(
         "Your recent activity summary",
@@ -273,21 +273,21 @@ class InsightsMapper extends DataEndpointMapper {
         Some("insight"))
 
       val nested: Map[String, Seq[DataFeedNestedStructureItem]] = counters.foldLeft(Seq[(String, DataFeedNestedStructureItem)]())({
-        (structured, newitem) ⇒
+        (structured, newitem) =>
           val item = DataFeedNestedStructureItem(textMappings.getOrElse(newitem._1, "unrecognised"), Some(newitem._2.toString), None)
           val source = sourceMappings.getOrElse(newitem._1, "unrecognised")
-          structured :+ (source → item)
+          structured :+ (source -> item)
       })
         .filterNot(_._2.content == "unrecognised")
         .filterNot(_._2.badge.contains("0"))
         .groupBy(_._1).map({
-          case (k, v) ⇒ k → v.unzip._2
+          case (k, v) => k -> v.unzip._2
         })
 
       val simplified: String = nested.map({
-        case (source, info) ⇒
+        case (source, info) =>
           s"""${source.capitalize}:
-           |  ${info.map(i ⇒ s"${i.content}: ${i.badge.getOrElse("")}").mkString("\n  ")}
+           |  ${info.map(i => s"${i.content}: ${i.badge.getOrElse("")}").mkString("\n  ")}
            |""".stripMargin
       }).mkString("\n")
 
@@ -302,13 +302,13 @@ class DropsTwitterWordcloudMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("drops/insights/twitter/word-cloud", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("timestamp", None, f))), None)),
+        EndpointQuery("drops/insights/twitter/word-cloud", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("timestamp", None, f))), None)),
       Some("timestamp"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
-      counters ← Try((content \ "summary" \ "totalCount").as[Int]) if counters > 0
+      counters <- Try((content \ "summary" \ "totalCount").as[Int]) if counters > 0
       _ = counters // Workaround scala/bug#11175 -Ywarn-unused:params false positive
     } yield {
       val title = DataFeedItemTitle("Twitter Word Cloud", None, Some("twitter-word-cloud"))
@@ -322,13 +322,13 @@ class DropsSentimentHistoryMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("drops/insights/sentiment-history", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("timestamp", None, f))), None)),
+        EndpointQuery("drops/insights/sentiment-history", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("timestamp", None, f))), None)),
       Some("timestamp"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
-      counters ← Try((content \ "summary" \ "totalCount").as[Int]) if counters > 0
+      counters <- Try((content \ "summary" \ "totalCount").as[Int]) if counters > 0
       _ = counters // Workaround scala/bug#11175 -Ywarn-unused:params false positive
     } yield {
       val title = DataFeedItemTitle("Sentiment History", None, Some("sentiment-history"))
@@ -342,13 +342,13 @@ class InsightCommonLocationsMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("she/insights/common-locations", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("dateCreated", None, f))), None)),
+        EndpointQuery("she/insights/common-locations", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("dateCreated", None, f))), None)),
       Some("timestamp"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
-      counters ← Try((content \ "summary" \ "totalCount").as[Int]) if counters > 0
+      counters <- Try((content \ "summary" \ "totalCount").as[Int]) if counters > 0
       _ = counters // Workaround scala/bug#11175 -Ywarn-unused:params false positive
     } yield {
       val title = DataFeedItemTitle("Common Locations", None, Some("common-locations"))

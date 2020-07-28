@@ -58,8 +58,8 @@ class HatServerProviderActor @Inject() (
         log.debug(s"Got HAT server provider actor, forwarding retrieval message with sender $sender $retrievingSender")
         hatServerActor tell (HatServerActor.HatRetrieve(), retrievingSender)
       } onComplete {
-        case Success(_) ⇒ ()
-        case Failure(e) ⇒ log.warn(s"Error while getting HAT server provider actor: ${e.getMessage}")
+        case Success(_) => ()
+        case Failure(e) => log.warn(s"Error while getting HAT server provider actor: ${e.getMessage}")
       }
 
     case HatServerStarted(_) =>

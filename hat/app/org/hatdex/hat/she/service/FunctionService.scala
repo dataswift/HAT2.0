@@ -78,14 +78,14 @@ class FunctionService @Inject() (
 
   def get(id: String)(implicit db: Database): Future[Option[FunctionConfiguration]] = {
     val query = for {
-      (function, status) ← SheFunction.filter(_.id === id).joinLeft(SheFunctionStatus).on(_.id === _.id)
-      bundle ← function.dataBundlesFk
+      (function, status) <- SheFunction.filter(_.id === id).joinLeft(SheFunctionStatus).on(_.id === _.id)
+      bundle <- function.dataBundlesFk
     } yield (function, status, bundle)
 
     for {
       r <- Future.successful(functionRegistry.getSeq[FunctionExecutable].map(_.configuration).filter(_.id == id))
       f <- db.run(query.take(1).result)
-        .map(_.map(f => FunctionConfiguration(f._1, f._2, f._3, available = r.exists(rf ⇒ rf.id == f._1.id && rf.status.available))))
+        .map(_.map(f => FunctionConfiguration(f._1, f._2, f._3, available = r.exists(rf => rf.id == f._1.id && rf.status.available))))
     } yield {
       mergeRegisteredSaved(r, f)
         .headOption
@@ -101,7 +101,7 @@ class FunctionService @Inject() (
     for {
       r <- Future.successful(functionRegistry.getSeq[FunctionExecutable].map(_.configuration))
       f <- db.run(query.result)
-        .map(_.map(f => FunctionConfiguration(f._1, f._2, f._3, available = r.exists(rf ⇒ rf.id == f._1.id && rf.status.available))))
+        .map(_.map(f => FunctionConfiguration(f._1, f._2, f._3, available = r.exists(rf => rf.id == f._1.id && rf.status.available))))
     } yield f
   }
 
@@ -115,7 +115,7 @@ class FunctionService @Inject() (
 
     val functionRow = SheFunctionRow(configuration.id, Json.toJson(configuration.info.description), Json.toJson(configuration.trigger),
       configuration.dataBundle.name, configuration.info.headline,
-      configuration.info.dataPreview.map(dp ⇒ Json.toJson(dp)), configuration.info.dataPreviewEndpoint,
+      configuration.info.dataPreview.map(dp => Json.toJson(dp)), configuration.info.dataPreviewEndpoint,
       Json.toJson(configuration.info.graphics), configuration.info.name,
       configuration.info.version.toString(), configuration.info.termsUrl,
       configuration.developer.id, configuration.developer.name,
@@ -149,10 +149,10 @@ class FunctionService @Inject() (
         }
 
         val executionResult = for {
-          _ ← markExecuting(configuration)
-          bundle ← function.bundleFilterByDate(fromDate, untilDate)
-          data ← dataService.bundleData(bundle, createdAfter = dataBundleTimeFilter) // Get all bundle data from a specific date until now
-          response ← function.execute(configuration, Request(data, linkRecords = true)) // Execute the function
+          _ <- markExecuting(configuration)
+          bundle <- function.bundleFilterByDate(fromDate, untilDate)
+          data <- dataService.bundleData(bundle, createdAfter = dataBundleTimeFilter) // Get all bundle data from a specific date until now
+          response <- function.execute(configuration, Request(data, linkRecords = true)) // Execute the function
             .map(removeDuplicateData) // Remove duplicate data in case some records mapped onto the same values when transformed
           // TODO handle cases when function runs for longer and connection to DB needs to be reestablished
           owner <- usersService.getUserByRole(Owner()).map(_.head) // Fetch the owner user - functions run on their behalf
@@ -163,8 +163,8 @@ class FunctionService @Inject() (
 
         executionResult
           .andThen({
-            case Success((totalRecords, _)) ⇒ logger.info(s"[${hatServer.domain}] SHE function [${configuration.id}] finished, generated $totalRecords records")
-            case Failure(e)                 ⇒ logger.error(s"[${hatServer.domain}] SHE function [${configuration.id}] error: ${e.getMessage}")
+            case Success((totalRecords, _)) => logger.info(s"[${hatServer.domain}] SHE function [${configuration.id}] finished, generated $totalRecords records")
+            case Failure(e)                 => logger.error(s"[${hatServer.domain}] SHE function [${configuration.id}] error: ${e.getMessage}")
           })
           .map(_._2)
 
@@ -175,9 +175,9 @@ class FunctionService @Inject() (
 
   private def markExecuting(function: FunctionConfiguration)(implicit hatServer: HatServer): Future[Done] = {
     val notExecuting = SheFunctionStatus.filter(_.id === function.id)
-      .filter(s ⇒ s.lastExecution > DateTime.now().minus(functionExecutionTimeout.toMillis))
+      .filter(s => s.lastExecution > DateTime.now().minus(functionExecutionTimeout.toMillis))
       .result
-      .flatMap(r ⇒
+      .flatMap(r =>
         if (r.isEmpty) {
           DBIO.successful("No current execution")
         }
@@ -186,11 +186,11 @@ class FunctionService @Inject() (
         })
 
     val mark = SheFunctionStatus.filter(_.id === function.id)
-      .map(s ⇒ s.executionStarted)
+      .map(s => s.executionStarted)
       .update(Some(DateTime.now()))
 
     hatServer.db.run(DBIO.seq(notExecuting, mark).transactionally)
-      .map(_ ⇒ Done)
+      .map(_ => Done)
   }
 
   private def markCompleted(function: FunctionConfiguration)(implicit hatServer: HatServer): Future[Done] = {
@@ -198,26 +198,26 @@ class FunctionService @Inject() (
     logger.info(s"[${hatServer.domain}] Successfully executed function ${function.id} at $now")
 
     val update = SheFunctionStatus.filter(_.id === function.id)
-      .map(s ⇒ (s.executionStarted, s.lastExecution))
+      .map(s => (s.executionStarted, s.lastExecution))
       .update((None, Some(now)))
 
     hatServer.db.run(update)
-      .map(_ ⇒ Done)
+      .map(_ => Done)
   }
 
   //TODO: expensive operation!
   private def removeDuplicateData(response: Seq[Response]): Seq[Response] = {
     val md = MessageDigest.getInstance("SHA-256")
-    response.flatMap({ r ⇒
-      r.data.headOption.map { data ⇒
+    response.flatMap({ r =>
+      r.data.headOption.map { data =>
         val digest = md.digest(data.toString().getBytes)
         (BigInt(digest), r)
       }
     })
       .sortBy(_._1)
       .foldRight(Seq[(BigInt, Response)]())({
-        case (e, ls) if ls.isEmpty || ls.head._1 != e._1 ⇒ e +: ls
-        case (_, ls)                                     ⇒ ls
+        case (e, ls) if ls.isEmpty || ls.head._1 != e._1 => e +: ls
+        case (_, ls)                                     => ls
       })
       .unzip._2 // Drop the digest
   }

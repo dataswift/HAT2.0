@@ -25,7 +25,7 @@
 package org.hatdex.hat.dal
 
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ DataDebit ⇒ ApiDataDebit, DataDebitPermissions ⇒ ApiDataDebitPermissions, UserRole ⇒ ApiUserRole, _ }
+import org.hatdex.hat.api.models.{ DataDebit => ApiDataDebit, DataDebitPermissions => ApiDataDebitPermissions, UserRole => ApiUserRole, _ }
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.phata.models.MailTokenUser

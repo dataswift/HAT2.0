@@ -30,7 +30,7 @@ import akka.stream.stage.GraphStage
 import akka.stream.{ FanInShape2, SourceShape }
 
 class SourceAugmenter {
-  def augment[T, U](source: Source[T, NotUsed], extrasSource: Source[U, NotUsed], augmentFunction: (T, U) ⇒ Either[T, U]): Source[T, NotUsed] = {
+  def augment[T, U](source: Source[T, NotUsed], extrasSource: Source[U, NotUsed], augmentFunction: (T, U) => Either[T, U]): Source[T, NotUsed] = {
     augmentSource(new AugmentWith(augmentFunction), source, extrasSource) { (_, _) => NotUsed }
   }
 

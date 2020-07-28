@@ -44,8 +44,8 @@ object FutureTransformations {
   }
 
   def futureToFutureTry[T](f: Future[T])(implicit ec: ExecutionContext): Future[Try[T]] =
-    f.map(x ⇒ Success(x))
+    f.map(x => Success(x))
       .recover({
-        case x ⇒ Failure(x)
+        case x => Failure(x)
       })
 }

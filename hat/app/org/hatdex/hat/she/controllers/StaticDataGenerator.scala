@@ -48,9 +48,9 @@ class StaticDataGenerator @Inject() (
   with FunctionConfigurationJsonProtocol {
 
   def getStaticData(endpoint: String): Action[AnyContent] = {
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request ⇒
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
       feedGeneratorService.getStaticData(endpoint)
-        .map(items ⇒ Ok(Json.toJson(items)))
+        .map(items => Ok(Json.toJson(items)))
     }
   }
 }

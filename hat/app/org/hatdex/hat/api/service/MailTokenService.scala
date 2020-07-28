@@ -78,7 +78,7 @@ class MailTokenUserService @Inject() (implicit val ec: DalExecutionContext) exte
   }
 
   private def delete(id: String)(implicit db: Database): Future[Done] = {
-    db.run(UserMailTokens.filter(_.id === id).delete).map(_ ⇒ Done)
+    db.run(UserMailTokens.filter(_.id === id).delete).map(_ => Done)
   }
 
   private def expireNow(id: String)(implicit db: Database): Future[Done] = {

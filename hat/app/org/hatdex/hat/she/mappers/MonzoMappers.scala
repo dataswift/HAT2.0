@@ -13,24 +13,24 @@ class MonzoTransactionMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(EndpointQuery("monzo/transactions", None,
-        dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("created", None, f))), None)), Some("created"), Some("descending"), None))
+        dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("created", None, f))), None)), Some("created"), Some("descending"), None))
   }
 
   private val currencyMap = Map(
-    "EUR" → "\u20AC",
-    "GBP" → "\u00A3",
-    "USD" → "\u0024",
-    "JPY" → "\u00A5",
-    "THB" → "\u0E3F")
+    "EUR" -> "\u20AC",
+    "GBP" -> "\u00A3",
+    "USD" -> "\u0024",
+    "JPY" -> "\u00A5",
+    "THB" -> "\u0E3F")
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
-      paymentAmount ← Try((content \ "local_amount").as[Int] / 100.0)
-      paymentCurrency ← Try({
+      paymentAmount <- Try((content \ "local_amount").as[Int] / 100.0)
+      paymentCurrency <- Try({
         val currencyCode = (content \ "local_currency").as[String]
         currencyMap.getOrElse(currencyCode, currencyCode)
       })
-      title ← Try(if ((content \ "is_load").as[Boolean] && (content \ "metadata" \ "p2p_transfer_id").asOpt[String].isEmpty) {
+      title <- Try(if ((content \ "is_load").as[Boolean] && (content \ "metadata" \ "p2p_transfer_id").asOpt[String].isEmpty) {
         DataFeedItemTitle("You topped up", Some(s"$paymentCurrency$paymentAmount"), Some("money"))
       }
       else if ((content \ "metadata" \ "p2p_transfer_id").asOpt[String].nonEmpty) {
@@ -52,7 +52,7 @@ class MonzoTransactionMapper extends DataEndpointMapper {
           DataFeedItemTitle("You spent", Some(s"$paymentCurrency${-paymentAmount}"), Some("money"))
         }
       })
-      itemContent ← Try(DataFeedItemContent(
+      itemContent <- Try(DataFeedItemContent(
         Option(
           s"""|${(content \ "counterparty" \ "name").asOpt[String].orElse((content \ "merchant" \ "name").asOpt[String]).getOrElse("")}
               |
@@ -66,8 +66,8 @@ class MonzoTransactionMapper extends DataEndpointMapper {
         None,
         None,
         None))
-      date ← Try((content \ "created").as[DateTime])
-      tags ← Try(Seq("transaction", (content \ "category").as[String]))
+      date <- Try((content \ "created").as[DateTime])
+      tags <- Try(Seq("transaction", (content \ "category").as[String]))
     } yield {
 
       val locationGeo = Try(LocationGeo(
@@ -88,7 +88,7 @@ class MonzoTransactionMapper extends DataEndpointMapper {
         locationAddress
       }
 
-      val location = locationGeo.orElse(maybeLocation).map(_ ⇒ DataFeedItemLocation(locationGeo, maybeLocation, None))
+      val location = locationGeo.orElse(maybeLocation).map(_ => DataFeedItemLocation(locationGeo, maybeLocation, None))
       val feedItemContent = if (itemContent == DataFeedItemContent(None, None, None, None)) {
         None
       }

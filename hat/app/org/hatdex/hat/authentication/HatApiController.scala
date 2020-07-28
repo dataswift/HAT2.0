@@ -61,9 +61,9 @@ abstract class HatController[T <: HatAuthEnvironment](
   implicit def identity2ApiUser(implicit identity: T#I): User = ModelTranslation.fromInternalModel(identity)
 
   def request2ApplicationStatus(request: SecuredRequest[HatApiAuthEnvironment, _])(implicit applicationsService: ApplicationsService): Future[Option[HatApplication]] = {
-    request.authenticator.customClaims.flatMap { customClaims ⇒
+    request.authenticator.customClaims.flatMap { customClaims =>
       (customClaims \ "application").asOpt[String]
-    } map { app ⇒
+    } map { app =>
       applicationsService.applicationStatus(app)(request.dynamicEnvironment, request.identity, request)
     } getOrElse {
       Future.successful(None)
@@ -72,15 +72,15 @@ abstract class HatController[T <: HatAuthEnvironment](
 
   def request2ApplicationStatus(request: UserAwareRequest[HatApiAuthEnvironment, _])(implicit applicationsService: ApplicationsService): Future[Option[HatApplication]] = {
     (request.authenticator, request.identity) match {
-      case (Some(authenticator), Some(identity)) ⇒
-        authenticator.customClaims.flatMap { customClaims ⇒
+      case (Some(authenticator), Some(identity)) =>
+        authenticator.customClaims.flatMap { customClaims =>
           (customClaims \ "application").asOpt[String]
-        } map { app ⇒
+        } map { app =>
           applicationsService.applicationStatus(app)(request.dynamicEnvironment, identity, request)
         } getOrElse {
           Future.successful(None)
         }
-      case _ ⇒ Future.successful(None) // if no authenticator, certainly no application
+      case _ => Future.successful(None) // if no authenticator, certainly no application
     }
   }
 }

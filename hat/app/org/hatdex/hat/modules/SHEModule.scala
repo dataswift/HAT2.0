@@ -50,7 +50,7 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     def load(config: Config, path: String): Seq[FunctionConfig] = {
       val configs = config.getConfigList(path).asScala
       logger.info(s"Got SHE function configs: $configs")
-      configs.map { config ⇒
+      configs.map { config =>
         FunctionConfig(
           config.getString("id"),
           Version(config.getString("version")),
@@ -72,7 +72,7 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     val eventuallyFunctionsLoaded = Future.sequence(
       config.get[Seq[FunctionConfig]]("she.functions")
         .filter(c => !c.experimental || (includeExperimental && c.experimental))
-        .map(c ⇒ FutureTransformations.futureToFutureTry(loader.load(c.id, c.version, c.baseUrl, c.namespace, c.endpoint))))
+        .map(c => FutureTransformations.futureToFutureTry(loader.load(c.id, c.version, c.baseUrl, c.namespace, c.endpoint))))
 
     val functionsLoaded = Await.result(eventuallyFunctionsLoaded, 30.seconds)
 

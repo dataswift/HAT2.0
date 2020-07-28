@@ -17,7 +17,7 @@ class FitbitWeightMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/weight", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("date", None, f))), None)),
+        EndpointQuery("fitbit/weight", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("date", None, f))), None)),
       Some("date"), Some("descending"), None))
   }
 
@@ -26,15 +26,15 @@ class FitbitWeightMapper extends DataEndpointMapper {
 
     val itemContent = DataFeedItemContent(
       Some(Seq(
-        (content \ "weight").asOpt[Double].map(w ⇒ s"- Weight: $w"),
-        (content \ "fat").asOpt[Double].map(w ⇒ s"- Body Fat: $w"),
-        (content \ "bmi").asOpt[Double].map(w ⇒ s"- BMI: $w")).flatten.mkString("\n")),
+        (content \ "weight").asOpt[Double].map(w => s"- Weight: $w"),
+        (content \ "fat").asOpt[Double].map(w => s"- Body Fat: $w"),
+        (content \ "bmi").asOpt[Double].map(w => s"- BMI: $w")).flatten.mkString("\n")),
       None,
       None,
       None)
 
     for {
-      date ← Try(JsString(s"${(content \ "date").as[String]}T${(content \ "time").as[String]}").as[DateTime])
+      date <- Try(JsString(s"${(content \ "date").as[String]}T${(content \ "time").as[String]}").as[DateTime])
     } yield DataFeedItem("fitbit", date, Seq("fitness", "weight"), Some(title), Some(itemContent), None)
   }
 }
@@ -43,21 +43,21 @@ class FitbitActivityMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/activity", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("originalStartTime", None, f))), None)),
+        EndpointQuery("fitbit/activity", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("originalStartTime", None, f))), None)),
       Some("originalStartTime"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     for {
-      date ← Try((content \ "originalStartTime").as[DateTime])
+      date <- Try((content \ "originalStartTime").as[DateTime])
     } yield {
       val title = DataFeedItemTitle("You logged Fitbit activity", None, Some("fitness"))
 
       val message = Seq(
-        (content \ "activityName").asOpt[String].map(c ⇒ s"- Activity: $c"),
-        (content \ "duration").asOpt[Long].map(c ⇒ s"- Duration: ${c / 1000 / 60} minutes"),
-        (content \ "averageHeartRate").asOpt[Long].map(c ⇒ s"- Average heart rate: $c"),
-        (content \ "calories").asOpt[Long].map(c ⇒ s"- Calories burned: $c")).flatten.mkString("\n")
+        (content \ "activityName").asOpt[String].map(c => s"- Activity: $c"),
+        (content \ "duration").asOpt[Long].map(c => s"- Duration: ${c / 1000 / 60} minutes"),
+        (content \ "averageHeartRate").asOpt[Long].map(c => s"- Average heart rate: $c"),
+        (content \ "calories").asOpt[Long].map(c => s"- Calories burned: $c")).flatten.mkString("\n")
 
       DataFeedItem(
         "fitbit", date, Seq("fitness", "activity"),
@@ -71,14 +71,14 @@ class FitbitActivityDaySummaryMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/activity/day/summary", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("dateCreated", None, f))), None)),
+        EndpointQuery("fitbit/activity/day/summary", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("dateCreated", None, f))), None)),
       Some("dateCreated"), Some("descending"), None))
   }
 
   def mapDataRecord(recordId: UUID, content: JsValue, tailRecordId: Option[UUID] = None, tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val fitbitSummary = for {
-      count ← Try((content \ "steps").as[Int]) if count > 0
-      date ← Try((content \ "dateCreated").as[DateTime])
+      count <- Try((content \ "steps").as[Int]) if count > 0
+      date <- Try((content \ "dateCreated").as[DateTime])
     } yield {
       val adjustedDate = if (date.getSecondOfDay == 0) {
         date.secondOfDay().withMaximumValue()
@@ -92,7 +92,7 @@ class FitbitActivityDaySummaryMapper extends DataEndpointMapper {
     }
 
     fitbitSummary recoverWith {
-      case _: NoSuchElementException ⇒ Failure(new RuntimeException("Fitbit empty day summary"))
+      case _: NoSuchElementException => Failure(new RuntimeException("Fitbit empty day summary"))
     }
   }
 }
@@ -101,7 +101,7 @@ class FitbitSleepMapper extends DataEndpointMapper {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/sleep", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("endTime", None, f))), None)),
+        EndpointQuery("fitbit/sleep", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("endTime", None, f))), None)),
       Some("endTime"), Some("descending"), None))
   }
 
@@ -121,13 +121,13 @@ class FitbitSleepMapper extends DataEndpointMapper {
     val title = DataFeedItemTitle("You woke up!", None, Some("sleep"))
 
     val timeInBed = (content \ "timeInBed").asOpt[Int]
-      .map(t ⇒ s"You spent ${t / 60} hours and ${t % 60} minutes in bed.")
+      .map(t => s"You spent ${t / 60} hours and ${t % 60} minutes in bed.")
     val minutesAsleep = (content \ "minutesAsleep").asOpt[Int]
-      .map(asleep ⇒ s"You slept for ${asleep / 60} hours and ${asleep % 60} minutes" +
-        (content \ "minutesAwake").asOpt[Int].map(t ⇒ s" and were awake for $t minutes").getOrElse("") +
+      .map(asleep => s"You slept for ${asleep / 60} hours and ${asleep % 60} minutes" +
+        (content \ "minutesAwake").asOpt[Int].map(t => s" and were awake for $t minutes").getOrElse("") +
         ".")
     val efficiency = (content \ "efficiency").asOpt[Int]
-      .map(e ⇒ s"Your sleep efficiency score tonight was $e.")
+      .map(e => s"Your sleep efficiency score tonight was $e.")
 
     val itemContent = DataFeedItemContent(
       Some(Seq(timeInBed, minutesAsleep, efficiency).flatten.mkString(" ")),
@@ -136,7 +136,7 @@ class FitbitSleepMapper extends DataEndpointMapper {
       None)
 
     for {
-      date ← Try((content \ "endTime").as[DateTime])
+      date <- Try((content \ "endTime").as[DateTime])
     } yield {
       DataFeedItem("fitbit", date, Seq("fitness", "sleep"), Some(title), Some(itemContent), None)
     }
@@ -147,7 +147,7 @@ class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
   def dataQueries(fromDate: Option[DateTime], untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     Seq(PropertyQuery(
       List(
-        EndpointQuery("fitbit/profile", None, dateFilter(fromDate, untilDate).map(f ⇒ Seq(EndpointQueryFilter("dateCreated", None, f))), None)),
+        EndpointQuery("fitbit/profile", None, dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("dateCreated", None, f))), None)),
       Some("dateCreated"), Some("descending"), None))
   }
 
@@ -159,7 +159,7 @@ class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
     else {
       for {
         title <- Try(DataFeedItemTitle("Your Fitbit Data has changed.", None, None))
-        itemContent ← {
+        itemContent <- {
           val contentText = comparison.map(item => s"${item._2}\n").mkString
           Try(DataFeedItemContent(
             Some(contentText), None, None, None))
