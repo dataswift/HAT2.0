@@ -169,7 +169,7 @@ class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsS
   "The `applicationToken` method" should {
     "Return 401 Forbidden for application token with no explicit permission" in {
       val authenticator: HatApiAuthEnvironment#A = FakeAuthenticator[HatApiAuthEnvironment](owner.loginInfo)
-        .copy(customClaims = Some(JsObject(Map("application" → JsString("notables"), "applicationVersion" → JsString("1.0.0")))))
+        .copy(customClaims = Some(JsObject(Map("application" -> JsString("notables"), "applicationVersion" -> JsString("1.0.0")))))
 
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator[HatApiAuthEnvironment](authenticator)(environment)

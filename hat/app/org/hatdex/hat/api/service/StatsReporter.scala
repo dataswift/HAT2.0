@@ -53,7 +53,10 @@ class StatsReporter @Inject() (
     configuration: Configuration,
     system: ActorSystem,
     usersService: UsersService,
-    authenticatorService: AuthenticatorService[JWTRS256Authenticator, HatServer]) {
+    authenticatorService: AuthenticatorService[
+      JWTRS256Authenticator,
+      HatServer
+    ]) {
 
   val logger = Logger(this.getClass)
 
@@ -62,18 +65,22 @@ class StatsReporter @Inject() (
     configuration.underlying.getInt("exchange.retryLimit")
   private val retryTime = FiniteDuration(
     configuration.underlying.getDuration("exchange.retryTime").toMillis,
-    "millis")
+    "millis"
+  )
   private val statsBatchSize = 100
 
   private val dexClient = new DexClient(
     wsClient,
     configuration.underlying.getString("exchange.address"),
     configuration.underlying.getString("exchange.scheme"),
-    "v1.1")
+    "v1.1"
+  )
   //  val defaultSsslConfig = AkkaSSLConfig()
 
   def reportStatistics(
-    stats: Seq[DataStats])(implicit server: HatServer): Future[Done] = {
+      stats: Seq[DataStats]
+    )(implicit server: HatServer
+    ): Future[Done] = {
     logger.debug(s"Reporting statistics: $stats")
     val logged = for {
       _ <- persistStats(stats)
@@ -82,14 +89,16 @@ class StatsReporter @Inject() (
     } yield result
 
     logged.andThen {
-      case Failure(e) ⇒
+      case Failure(e) =>
         logger.error(s"Error while reporting stats: ${e.getMessage}")
-      case _ ⇒ Done
+      case _ => Done
     }
   }
 
   def registerOwnerConsent(
-    applicationId: String)(implicit server: HatServer): Future[Done] = {
+      applicationId: String
+    )(implicit server: HatServer
+    ): Future[Done] = {
     for {
       token <- validateToken()
       _ <- dexClient.registerTosConsent(token, applicationId)
@@ -97,16 +106,18 @@ class StatsReporter @Inject() (
   }
 
   protected def reportPendingStatistics(
-    batch: Seq[DataStatsLogRow])(implicit server: HatServer): Future[Done] = {
+      batch: Seq[DataStatsLogRow]
+    )(implicit server: HatServer
+    ): Future[Done] = {
     if (batch.isEmpty) {
       Future.successful(Done)
-    }
-    else {
+    } else {
       val statsBatch = batch.map(ModelTranslation.fromDbModel)
       for {
         _ <- FutureRetries.retry(
           uploadStats(statsBatch),
-          FutureRetries.withDefault(List(), retryLimit, retryTime))
+          FutureRetries.withDefault(List(), retryLimit, retryTime)
+        )
         _ <- clearUploadedStats(batch)
         nextBatch <- retrieveOutstandingStats()
         result <- reportPendingStatistics(nextBatch)
@@ -115,15 +126,20 @@ class StatsReporter @Inject() (
   }
 
   private def clearUploadedStats(
-    stats: Seq[DataStatsLogRow])(implicit server: HatServer): Future[Done] = {
+      stats: Seq[DataStatsLogRow]
+    )(implicit server: HatServer
+    ): Future[Done] = {
     server.db
       .run(
-        DataStatsLog.filter(_.statsId inSet stats.map(_.statsId).toSet).delete)
-      .map(_ ⇒ Done)
+        DataStatsLog.filter(_.statsId inSet stats.map(_.statsId).toSet).delete
+      )
+      .map(_ => Done)
   }
 
   private def persistStats(
-    stats: Seq[DataStats])(implicit server: HatServer): Future[Seq[Long]] = {
+      stats: Seq[DataStats]
+    )(implicit server: HatServer
+    ): Future[Seq[Long]] = {
     import org.hatdex.hat.api.json.DataStatsFormat.dataStatsFormat
     logger.debug(s"Persisting stats $stats")
     val dataStatsLogs = stats map { item =>
@@ -134,16 +150,19 @@ class StatsReporter @Inject() (
     }
   }
 
-  private def retrieveOutstandingStats()(
-    implicit
-    server: HatServer): Future[Seq[DataStatsLogRow]] = {
+  private def retrieveOutstandingStats(
+    )(implicit
+      server: HatServer
+    ): Future[Seq[DataStatsLogRow]] = {
     server.db.run {
       DataStatsLog.take(statsBatchSize).result
     }
   }
 
   private def uploadStats(
-    stats: Seq[DataStats])(implicit server: HatServer): Future[Done] = {
+      stats: Seq[DataStats]
+    )(implicit server: HatServer
+    ): Future[Done] = {
     logger.debug(s"Uploading stats $stats")
     val uploaded = for {
       token <- validateToken()
@@ -151,9 +170,9 @@ class StatsReporter @Inject() (
     } yield Done
 
     uploaded.andThen {
-      case Failure(e) ⇒
+      case Failure(e) =>
         logger.error(s"Failed to upload stats: ${e.getMessage}")
-      case _ ⇒ Done
+      case _ => Done
     }
   }
 
@@ -163,18 +182,22 @@ class StatsReporter @Inject() (
 
   private def validateToken()(implicit server: HatServer): Future[String] = {
     //private def applicationToken()(implicit server: HatServer): Future[String] = {
-    val resource = configuration.underlying.getString("exchange.scheme") + configuration.underlying
+    val resource = configuration.underlying.getString(
+      "exchange.scheme"
+    ) + configuration.underlying
       .getString("exchange.address")
     val customClaims = Map(
       "resource" -> Json.toJson(resource),
-      "accessScope" -> Json.toJson("validate"))
+      "accessScope" -> Json.toJson("validate")
+    )
     // Authentication service requires request header passed implicitly but does not use it for generating token
     implicit val fakeRequest = FakeRequest()
     for {
       user <- platformUser()
       authenticator <- authenticatorService.create(user.loginInfo)
       token <- authenticatorService.init(
-        authenticator.copy(customClaims = Some(JsObject(customClaims))))
+        authenticator.copy(customClaims = Some(JsObject(customClaims)))
+      )
     } yield token
   }
 }

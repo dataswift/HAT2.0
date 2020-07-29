@@ -40,10 +40,15 @@ import play.api.mvc.RequestHeader
 
 import scala.concurrent.Future
 
-class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment])(implicit val ec: DalExecutionContext) {
+class HatServicesService @Inject() (
+    silhouette: Silhouette[HatApiAuthEnvironment]
+  )(implicit val ec: DalExecutionContext) {
   private val logger = Logger(this.getClass)
 
-  def hatServices(categories: Set[String])(implicit hatServer: HatServer): Future[Seq[HatService]] = {
+  def hatServices(
+      categories: Set[String]
+    )(implicit hatServer: HatServer
+    ): Future[Seq[HatService]] = {
     val applicationsQuery = for {
       application <- Applications.filter(_.category inSet categories)
     } yield application
@@ -54,68 +59,136 @@ class HatServicesService @Inject() (silhouette: Silhouette[HatApiAuthEnvironment
     }
   }
 
-  def save(service: HatService)(implicit hatServer: HatServer): Future[HatService] = {
-    val app = ApplicationsRow(LocalDateTime.now(), None, service.title, service.description, service.logoUrl,
-      service.url, service.authUrl, service.browser, service.category, service.setup, service.loginAvailable,
-      service.namespace)
+  def save(
+      service: HatService
+    )(implicit hatServer: HatServer
+    ): Future[HatService] = {
+    val app = ApplicationsRow(
+      LocalDateTime.now(),
+      None,
+      service.title,
+      service.description,
+      service.logoUrl,
+      service.url,
+      service.authUrl,
+      service.browser,
+      service.category,
+      service.setup,
+      service.loginAvailable,
+      service.namespace
+    )
 
     hatServer.db.run(Applications.insertOrUpdate(app)).map(_ => service)
   }
 
   private def applicationFromDbModel(app: ApplicationsRow): HatService = {
-    HatService(app.title, app.namespace, app.description, app.logoUrl, app.url, app.authUrl, app.browser, app.category, app.setup, app.loginAvailable)
+    HatService(
+      app.title,
+      app.namespace,
+      app.description,
+      app.logoUrl,
+      app.url,
+      app.authUrl,
+      app.browser,
+      app.category,
+      app.setup,
+      app.loginAvailable
+    )
   }
 
-  def findOrCreateHatService(name: String, redirectUrl: String)(implicit hatServer: HatServer): Future[HatService] = {
+  def findOrCreateHatService(
+      name: String,
+      redirectUrl: String
+    )(implicit hatServer: HatServer
+    ): Future[HatService] = {
     val redirectUri = Uri(redirectUrl)
 
     hatServices(Set("app", "dataplug", "testapp")) map { approvedHatServices =>
-      approvedHatServices.find(s => s.title == name && redirectUrl.startsWith(s.url))
-        .map(_.copy(url = s"${redirectUri.scheme}://${redirectUri.authority.toString}", authUrl = redirectUri.path.toString()))
+      approvedHatServices
+        .find(s => s.title == name && redirectUrl.startsWith(s.url))
+        .map(
+          _.copy(
+            url = s"${redirectUri.scheme}://${redirectUri.authority.toString}",
+            authUrl = redirectUri.path.toString()
+          )
+        )
         .getOrElse(
-          HatService(name, name.toLowerCase, redirectUrl, "/assets/images/haticon.png",
-            redirectUrl, redirectUri.path.toString(),
-            browser = false, category = "app", setup = true,
-            loginAvailable = true))
+          HatService(
+            name,
+            name.toLowerCase,
+            redirectUrl,
+            "/assets/images/haticon.png",
+            redirectUrl,
+            redirectUri.path.toString(),
+            browser = false,
+            category = "app",
+            setup = true,
+            loginAvailable = true
+          )
+        )
     }
   }
 
-  def generateUserTokenClaims(user: HatUser, service: HatService)(implicit hatServer: HatServer): JsObject = {
-    val accessScope = if (service.browser) { user.primaryRole.title } else { "validate" }
-    val resource = if (service.browser) { hatServer.domain } else { service.url }
+  def generateUserTokenClaims(
+      user: HatUser,
+      service: HatService
+    )(implicit hatServer: HatServer
+    ): JsObject = {
+    val accessScope = if (service.browser) { user.primaryRole.title }
+    else { "validate" }
+    val resource = if (service.browser) { hatServer.domain }
+    else { service.url }
 
-    JsObject(Map(
-      "resource" -> Json.toJson(resource),
-      "accessScope" -> Json.toJson(accessScope)))
+    JsObject(
+      Map(
+        "resource" -> Json.toJson(resource),
+        "accessScope" -> Json.toJson(accessScope)
+      )
+    )
   }
 
-  def hatServiceToken(user: HatUser, service: HatService)(implicit hatServer: HatServer, requestHeader: RequestHeader): Future[AccessToken] = {
+  def hatServiceToken(
+      user: HatUser,
+      service: HatService
+    )(implicit hatServer: HatServer,
+      requestHeader: RequestHeader
+    ): Future[AccessToken] = {
     val customClaims = generateUserTokenClaims(user, service)
 
-    silhouette.env.authenticatorService.create(user.loginInfo)
+    silhouette.env.authenticatorService
+      .create(user.loginInfo)
       .map(_.copy(customClaims = Some(customClaims)))
       .flatMap(silhouette.env.authenticatorService.init)
       .map(AccessToken(_, user.userId))
   }
 
-  def hatServiceLink(user: HatUser, service: HatService, maybeRedirect: Option[String] = None)(implicit hatServer: HatServer, requestHeader: RequestHeader): Future[HatService] = {
-    logger.debug(s"Generating link for service $service, redirect $maybeRedirect")
+  def hatServiceLink(
+      user: HatUser,
+      service: HatService,
+      maybeRedirect: Option[String] = None
+    )(implicit hatServer: HatServer,
+      requestHeader: RequestHeader
+    ): Future[HatService] = {
+    logger.debug(
+      s"Generating link for service $service, redirect $maybeRedirect"
+    )
     val eventualUri = if (service.loginAvailable) {
       hatServiceToken(user, service) map { token =>
         val query = maybeRedirect map { redirect =>
-          val originalQuery: Map[String, String] = Uri(redirect).query().toMap + ("token" -> token.accessToken)
+          val originalQuery: Map[String, String] =
+            Uri(redirect).query().toMap + ("token" -> token.accessToken)
           logger.debug(s"Got redirect url: ${Uri(redirect)} ${originalQuery}")
           Uri.Query(originalQuery)
         } getOrElse {
           Uri.Query("token" -> token.accessToken)
         }
 
-        maybeRedirect.map(Uri(_))
+        maybeRedirect
+          .map(Uri(_))
           .getOrElse(Uri(service.url).withPath(Uri.Path(service.authUrl)))
           .withQuery(query)
       }
-    }
-    else {
+    } else {
       Future.successful(Uri(service.url).withPath(Uri.Path(service.authUrl)))
     }
 

@@ -37,54 +37,90 @@ import scala.concurrent._
 trait MailTokenService[T <: MailToken] {
   def create(token: T)(implicit db: Database): Future[Option[T]]
   def retrieve(id: String)(implicit db: Database): Future[Option[T]]
-  def retrieve(email: String, isSignup: Boolean)(implicit db: Database): Future[Option[T]]
+  def retrieve(
+      email: String,
+      isSignup: Boolean
+    )(implicit db: Database
+    ): Future[Option[T]]
   def consume(id: String)(implicit db: Database): Future[Done]
   def expire(id: String)(implicit db: Database): Future[Done]
 }
 
-class MailTokenUserService @Inject() (implicit val ec: DalExecutionContext) extends MailTokenService[MailTokenUser] {
-  def create(token: MailTokenUser)(implicit db: Database): Future[Option[MailTokenUser]] = {
+class MailTokenUserService @Inject() (implicit val ec: DalExecutionContext)
+    extends MailTokenService[MailTokenUser] {
+  def create(
+      token: MailTokenUser
+    )(implicit db: Database
+    ): Future[Option[MailTokenUser]] = {
     save(token).map(Some(_))
   }
-  def retrieve(id: String)(implicit db: Database): Future[Option[MailTokenUser]] = {
+  def retrieve(
+      id: String
+    )(implicit db: Database
+    ): Future[Option[MailTokenUser]] = {
     findById(id)
   }
   def consume(id: String)(implicit db: Database): Future[Done] = {
     delete(id)
   }
-  def retrieve(email: String, isSignup: Boolean)(implicit db: Database): Future[Option[MailTokenUser]] = {
+  def retrieve(
+      email: String,
+      isSignup: Boolean
+    )(implicit db: Database
+    ): Future[Option[MailTokenUser]] = {
     findByEmailAndIsSignup(email, isSignup)
   }
   def expire(id: String)(implicit db: Database): Future[Done] = {
     expireNow(id)
   }
 
-  private def findById(id: String)(implicit db: Database): Future[Option[MailTokenUser]] = {
+  private def findById(
+      id: String
+    )(implicit db: Database
+    ): Future[Option[MailTokenUser]] = {
     db.run(UserMailTokens.filter(_.id === id).result).map { tokens =>
       tokens.headOption.map(ModelTranslation.fromDbModel)
     }
   }
 
-  private def findByEmailAndIsSignup(email: String, isSignup: Boolean)(implicit db: Database): Future[Option[MailTokenUser]] = {
-    db.run(UserMailTokens.filter(t => t.email === email && t.isSignup === isSignup).result).map { tokens =>
+  private def findByEmailAndIsSignup(
+      email: String,
+      isSignup: Boolean
+    )(implicit db: Database
+    ): Future[Option[MailTokenUser]] = {
+    db.run(
+      UserMailTokens
+        .filter(t => t.email === email && t.isSignup === isSignup)
+        .result
+    ).map { tokens =>
       tokens.headOption.map(ModelTranslation.fromDbModel)
     }
   }
 
-  private def save(token: MailTokenUser)(implicit db: Database): Future[MailTokenUser] = {
-    val query = (UserMailTokens returning UserMailTokens) += UserMailTokensRow(token.id, token.email, token.expirationTime.toLocalDateTime, token.isSignUp)
+  private def save(
+      token: MailTokenUser
+    )(implicit db: Database
+    ): Future[MailTokenUser] = {
+    val query = (UserMailTokens returning UserMailTokens) += UserMailTokensRow(
+      token.id,
+      token.email,
+      token.expirationTime.toLocalDateTime,
+      token.isSignUp
+    )
     db.run(query)
       .map(ModelTranslation.fromDbModel)
   }
 
   private def delete(id: String)(implicit db: Database): Future[Done] = {
-    db.run(UserMailTokens.filter(_.id === id).delete).map(_ ⇒ Done)
+    db.run(UserMailTokens.filter(_.id === id).delete).map(_ => Done)
   }
 
   private def expireNow(id: String)(implicit db: Database): Future[Done] = {
-    db.run(UserMailTokens
-      .filter(_.id === id)
-      .map(_.expirationTime)
-      .update(LocalDateTime.now())).map(_ => Done)
+    db.run(
+      UserMailTokens
+        .filter(_.id === id)
+        .map(_.expirationTime)
+        .update(LocalDateTime.now())
+    ).map(_ => Done)
   }
 }

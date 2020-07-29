@@ -42,7 +42,8 @@ object HatServerActor {
   sealed trait HatServerActorMessage
   case class HatConnect() extends HatServerActorMessage
   case class HatConnected(hatServer: HatServer) extends HatServerActorMessage
-  case class HatFailed(error: HatServerDiscoveryException) extends HatServerActorMessage
+  case class HatFailed(error: HatServerDiscoveryException)
+      extends HatServerActorMessage
   case class HatRetrieve() extends HatServerActorMessage
   case class HatState(hatServer: HatServer) extends HatServerActorMessage
 
@@ -56,10 +57,14 @@ class HatServerActor @Inject() (
     configuration: Configuration,
     hatDatabaseProvider: HatDatabaseProvider,
     hatKeyProvider: HatKeyProvider,
-    cacheApi: AsyncCacheApi)(implicit ec: RemoteExecutionContext) extends Actor with Stash {
+    cacheApi: AsyncCacheApi
+  )(implicit ec: RemoteExecutionContext)
+    extends Actor
+    with Stash {
   import HatServerActor._
   private val log = Logger(this.getClass)
-  val idleTimeout: FiniteDuration = configuration.get[FiniteDuration]("resourceManagement.serverIdleTimeout")
+  val idleTimeout: FiniteDuration =
+    configuration.get[FiniteDuration]("resourceManagement.serverIdleTimeout")
 
   def receive: Receive = {
     case _: HatRetrieve =>
@@ -116,7 +121,8 @@ class HatServerActor @Inject() (
   }
 
   private def connect(): Future[HatServerActorMessage] = {
-    server(hat).map(hatConnected => HatConnected(hatConnected))
+    server(hat)
+      .map(hatConnected => HatConnected(hatConnected))
       .recover {
         case e: HatServerDiscoveryException => HatFailed(e)
       }
@@ -129,14 +135,24 @@ class HatServerActor @Inject() (
       db <- hatDatabaseProvider.database(hat)
       ownerEmail <- hatKeyProvider.ownerEmail(hat)
     } yield {
-      val hatServer = HatServer(hat, hat.split('.').headOption.getOrElse(hat), ownerEmail, privateKey, publicKey, db)
+      val hatServer = HatServer(
+        hat,
+        hat.split('.').headOption.getOrElse(hat),
+        ownerEmail,
+        privateKey,
+        publicKey,
+        db
+      )
       log.debug(s"HAT connection info $hatServer")
       hatServer
     }
 
     server onComplete {
       case Success(_) => log.debug(s"Server $hat information retrieved")
-      case Failure(e) => log.warn(s"Error while trying to fetch HAT $hat Server configuration: ${e.getMessage}")
+      case Failure(e) =>
+        log.warn(
+          s"Error while trying to fetch HAT $hat Server configuration: ${e.getMessage}"
+        )
     }
 
     server

@@ -46,20 +46,27 @@ trait TrustedApplicationProvider {
 class TrustedApplicationProviderDex @Inject() (
     wsClient: WSClient,
     configuration: Configuration,
-    cache: AsyncCacheApi)(implicit val rec: RemoteExecutionContext) extends TrustedApplicationProvider {
+    cache: AsyncCacheApi
+  )(implicit val rec: RemoteExecutionContext)
+    extends TrustedApplicationProvider {
 
   private val dexClient = new DexClient(
     wsClient,
     configuration.underlying.getString("exchange.address"),
     configuration.underlying.getString("exchange.scheme"),
-    "v1.1")
+    "v1.1"
+  )
 
-  private val includeUnpublished: Boolean = configuration.getOptional[Boolean]("exchange.beta").getOrElse(false)
+  private val includeUnpublished: Boolean =
+    configuration.getOptional[Boolean]("exchange.beta").getOrElse(false)
 
   private val dexApplicationsCacheDuration: FiniteDuration = 30.minutes
 
   def applications: Future[Seq[Application]] = {
-    cache.getOrElseUpdate("apps:dexApplications", dexApplicationsCacheDuration) {
+    cache.getOrElseUpdate(
+      "apps:dexApplications",
+      dexApplicationsCacheDuration
+    ) {
       dexClient.applications(includeUnpublished = includeUnpublished)
     }
   }

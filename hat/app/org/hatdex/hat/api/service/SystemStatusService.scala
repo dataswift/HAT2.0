@@ -41,7 +41,8 @@ class SystemStatusService @Inject() (implicit val ec: DalExecutionContext) {
   }
 
   def fileStorageTotal(implicit db: Database): Future[Long] = {
-    val sizeQuery = HatFile.filter(_.status.+>>("status") === "Completed")
+    val sizeQuery = HatFile
+      .filter(_.status.+>>("status") === "Completed")
       .map(_.status.+>>("size").asColumnOf[Long])
       .sum
     db.run(sizeQuery.result).map(_.getOrElse(0L))
@@ -49,23 +50,24 @@ class SystemStatusService @Inject() (implicit val ec: DalExecutionContext) {
 }
 
 object SystemStatusService {
-  def humanReadableByteCount(bytes: Long, si: Boolean = true): (BigDecimal, String) = {
-    val unit = if (si) { 1000 } else { 1024 }
+  def humanReadableByteCount(
+      bytes: Long,
+      si: Boolean = true
+    ): (BigDecimal, String) = {
+    val unit = if (si) { 1000 }
+    else { 1024 }
     if (bytes < unit) {
       (bytes, "B")
-    }
-    else {
+    } else {
       val exp = (Math.log(bytes.toDouble) / Math.log(unit.toDouble)).toInt
       val preLetter = if (si) {
         "kMGTPE"
-      }
-      else {
+      } else {
         "KMGTPE"
       }
       val preSi = if (si) {
         ""
-      }
-      else {
+      } else {
         "i"
       }
       val pre = preLetter.substring(exp - 1, exp) + preSi

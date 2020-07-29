@@ -32,8 +32,10 @@ import play.api.mvc.{ BodyParser, PlayBodyParsers }
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-class HatBodyParsers @Inject() (errorHandler: HttpErrorHandler, playBodyParsers: PlayBodyParsers)(
-    implicit
+class HatBodyParsers @Inject() (
+    errorHandler: HttpErrorHandler,
+    playBodyParsers: PlayBodyParsers
+  )(implicit
     val ec: ExecutionContext) {
   def json[A](implicit reader: Reads[A]): BodyParser[A] =
     BodyParser("json reader") { request =>
@@ -45,7 +47,11 @@ class HatBodyParsers @Inject() (errorHandler: HttpErrorHandler, playBodyParsers:
             Future.successful(Right(a))
           } recoverTotal { jsError =>
             val msg = JsError.toJson(jsError).toString()
-            errorHandler.onClientError(request, Status.BAD_REQUEST, msg) map Left.apply
+            errorHandler.onClientError(
+              request,
+              Status.BAD_REQUEST,
+              msg
+            ) map Left.apply
           }
       }
     }

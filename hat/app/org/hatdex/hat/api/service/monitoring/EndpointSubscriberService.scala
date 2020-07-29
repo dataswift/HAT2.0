@@ -31,13 +31,18 @@ import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json.{ JsArray, JsValue, Json, _ }
 
-case class EndpointQueryException(message: String = "", cause: Throwable = None.orNull)
-  extends Exception(message, cause)
+case class EndpointQueryException(
+    message: String = "",
+    cause: Throwable = None.orNull)
+    extends Exception(message, cause)
 
 object EndpointSubscriberService {
   private val logger = Logger(this.getClass)
 
-  def matchesBundle(data: EndpointData, bundle: EndpointDataBundle): Boolean = {
+  def matchesBundle(
+      data: EndpointData,
+      bundle: EndpointDataBundle
+    ): Boolean = {
     val endpointQueries = bundle.flatEndpointQueries
       .filter(_.endpoint == data.endpoint)
 
@@ -49,41 +54,69 @@ object EndpointSubscriberService {
     }
   }
 
-  private implicit val dateReads: Reads[DateTime] = JodaReads.jodaDateReads("yyyy-MM-dd'T'HH:mm:ssZ")
+  private implicit val dateReads: Reads[DateTime] =
+    JodaReads.jodaDateReads("yyyy-MM-dd'T'HH:mm:ssZ")
 
-  private def dataMatchesFilters(data: EndpointData, filters: Seq[EndpointQueryFilter]): Boolean = {
+  private def dataMatchesFilters(
+      data: EndpointData,
+      filters: Seq[EndpointQueryFilter]
+    ): Boolean = {
     logger.debug("Checking if data matches provided filters")
     filters.exists { f =>
-      data.data.transform(JsonDataTransformer.parseJsPath(f.field).json.pick).fold(
-        invalid = {
-          _ => false
-        },
-        valid = {
-          fieldData =>
+      data.data
+        .transform(JsonDataTransformer.parseJsPath(f.field).json.pick)
+        .fold(
+          invalid = { _ =>
+            false
+          },
+          valid = { fieldData =>
             val data = f.transformation map {
               case _: FieldTransformation.Identity =>
                 fieldData
               case trans: FieldTransformation.DateTimeExtract =>
-                Json.toJson(dateTimeExtractPart(fieldData.as[DateTime](dateReads), trans.part))
+                Json.toJson(
+                  dateTimeExtractPart(
+                    fieldData.as[DateTime](dateReads),
+                    trans.part
+                  )
+                )
               case trans: FieldTransformation.TimestampExtract =>
-                Json.toJson(dateTimeExtractPart(new DateTime(fieldData.as[Long] * 1000L), trans.part))
+                Json.toJson(
+                  dateTimeExtractPart(
+                    new DateTime(fieldData.as[Long] * 1000L),
+                    trans.part
+                  )
+                )
               case trans =>
-                throw EndpointQueryException(s"Invalid field transformation `${trans.getClass.getName}` for ongoing tracking")
+                throw EndpointQueryException(
+                  s"Invalid field transformation `${trans.getClass.getName}` for ongoing tracking"
+                )
             } getOrElse {
               fieldData
             }
             f.operator match {
               case op: FilterOperator.In       => jsContains(op.value, data)
               case op: FilterOperator.Contains => jsContains(data, op.value)
-              case op: FilterOperator.Between  => jsLessThanOrEqual(op.lower, data) && jsLessThanOrEqual(data, op.upper)
-              case op                          => throw EndpointQueryException(s"Invalid match operator `${op.getClass.getName}` for ongoing tracking")
+              case op: FilterOperator.Between =>
+                jsLessThanOrEqual(op.lower, data) && jsLessThanOrEqual(
+                  data,
+                  op.upper
+                )
+              case op =>
+                throw EndpointQueryException(
+                  s"Invalid match operator `${op.getClass.getName}` for ongoing tracking"
+                )
             }
 
-        })
+          }
+        )
     }
   }
 
-  private def dateTimeExtractPart(d: DateTime, part: String): Int = {
+  private def dateTimeExtractPart(
+      d: DateTime,
+      part: String
+    ): Int = {
     part match {
       case "milliseconds" => d.getMillisOfSecond
       case "second"       => d.getSecondOfMinute
@@ -101,7 +134,10 @@ object EndpointSubscriberService {
     }
   }
 
-  private def jsContains(contains: JsValue, contained: JsValue): Boolean = {
+  private def jsContains(
+      contains: JsValue,
+      contained: JsValue
+    ): Boolean = {
     (contains, contained) match {
       case (a: JsObject, b: JsObject) => b.fieldSet.subsetOf(a.fieldSet)
       case (a: JsArray, b: JsArray)   => a.value.containsSlice(b.value)
@@ -111,7 +147,10 @@ object EndpointSubscriberService {
     }
   }
 
-  private def jsLessThanOrEqual(a: JsValue, b: JsValue): Boolean = {
+  private def jsLessThanOrEqual(
+      a: JsValue,
+      b: JsValue
+    ): Boolean = {
     (a, b) match {
       case (aa: JsNumber, bb: JsNumber) => aa.value <= bb.value
       case (aa: JsString, bb: JsString) => aa.value <= bb.value

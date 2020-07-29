@@ -115,46 +115,46 @@ trait FunctionServiceContext extends HATTestContext {
       dataBundle = EndpointDataBundle(
         "data-feed-counter",
         Map(
-          "facebook/feed" → PropertyQuery(
+          "facebook/feed" -> PropertyQuery(
             List(
               EndpointQuery("facebook/feed", None, None, None)),
             Some("created_time"), Some("descending"), None),
-          "facebook/events" → PropertyQuery(
+          "facebook/events" -> PropertyQuery(
             List(
               EndpointQuery("facebook/events", None, None, None)),
             Some("start_time"), Some("descending"), None),
-          "twitter/tweets" → PropertyQuery(
+          "twitter/tweets" -> PropertyQuery(
             List(
               EndpointQuery("twitter/tweets", None, None, None)),
             Some("lastUpdated"), Some("descending"), None),
-          "fitbit/sleep" → PropertyQuery(
+          "fitbit/sleep" -> PropertyQuery(
             List(
               EndpointQuery("fitbit/sleep", None,
                 None, None)),
             Some("endTime"), Some("descending"), None),
-          "fitbit/activity" → PropertyQuery(
+          "fitbit/activity" -> PropertyQuery(
             List(
               EndpointQuery("fitbit/activity", None,
                 None, None)),
             Some("originalStartTime"), Some("descending"), None),
-          "fitbit/weight" → PropertyQuery(
+          "fitbit/weight" -> PropertyQuery(
             List(
               EndpointQuery("fitbit/weight", None,
                 None, None)),
             Some("date"), Some("descending"), None),
-          "calendar/google/events" → PropertyQuery(
+          "calendar/google/events" -> PropertyQuery(
             List(
               EndpointQuery("calendar/google/events", None, None, None)),
             Some("start.dateTime"), Some("descending"), None),
-          "notables/feed" → PropertyQuery(
+          "notables/feed" -> PropertyQuery(
             List(
               EndpointQuery("rumpel/notablesv1", None, None, None)),
             Some("created_time"), Some("descending"), None),
-          "spotify/feed" → PropertyQuery(
+          "spotify/feed" -> PropertyQuery(
             List(
               EndpointQuery("spotify/feed", None, None, None)),
             Some("played_at"), Some("descending"), None),
-          "monzo/transactions" → PropertyQuery(
+          "monzo/transactions" -> PropertyQuery(
             List(
               EndpointQuery("monzo/transactions", None, None, None)),
             Some("created"), Some("descending"), None))),
@@ -167,7 +167,7 @@ trait FunctionServiceContext extends HATTestContext {
     def execute(configuration: FunctionConfiguration, request: Request): Future[Seq[Response]] = {
       Future.successful(
         request.data.values.flatten
-          .map(d ⇒ Response(namespace, endpoint, Seq(d.data.as[JsObject].+("mapped" → JsBoolean(true))), Seq())).toSeq)
+          .map(d => Response(namespace, endpoint, Seq(d.data.as[JsObject].+("mapped" -> JsBoolean(true))), Seq())).toSeq)
     }
     override def bundleFilterByDate(fromDate: Option[DateTime], untilDate: Option[DateTime]): Future[EndpointDataBundle] = {
       // Explicitly ignore the parameters - compiler complains about unused parameters

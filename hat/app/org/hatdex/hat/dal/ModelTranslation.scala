@@ -25,7 +25,12 @@
 package org.hatdex.hat.dal
 
 import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ DataDebit ⇒ ApiDataDebit, DataDebitPermissions ⇒ ApiDataDebitPermissions, UserRole ⇒ ApiUserRole, _ }
+import org.hatdex.hat.api.models.{
+  DataDebit => ApiDataDebit,
+  DataDebitPermissions => ApiDataDebitPermissions,
+  UserRole => ApiUserRole,
+  _
+}
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.phata.models.MailTokenUser
@@ -35,36 +40,63 @@ import org.joda.time.Duration
 
 object ModelTranslation {
   def fromDbModel(user: UserUserRow): HatUser = {
-    HatUser(user.userId, user.email, user.pass, user.name,
-      Seq(), user.enabled)
+    HatUser(user.userId, user.email, user.pass, user.name, Seq(), user.enabled)
   }
 
   def fromDbModel(userInfo: (UserUserRow, Seq[UserRoleRow])): HatUser = {
-    val roles = userInfo._2.map(r => ApiUserRole.userRoleDeserialize(r.role, r.extra))
+    val roles =
+      userInfo._2.map(r => ApiUserRole.userRoleDeserialize(r.role, r.extra))
     val user = userInfo._1
     HatUser(user.userId, user.email, user.pass, user.name, roles, user.enabled)
   }
 
   def fromInternalModel(user: HatUser): User = {
-    User(user.userId, user.email, user.pass, user.name, user.primaryRole.title.toLowerCase(), user.roles)
+    User(
+      user.userId,
+      user.email,
+      user.pass,
+      user.name,
+      user.primaryRole.title.toLowerCase(),
+      user.roles
+    )
   }
-  def fromExternalModel(user: User, enabled: Boolean): HatUser = {
-    HatUser(user.userId, user.email, user.pass, user.name, user.roles, enabled).withRoles(ApiUserRole.userRoleDeserialize(user.role, None))
+  def fromExternalModel(
+      user: User,
+      enabled: Boolean
+    ): HatUser = {
+    HatUser(user.userId, user.email, user.pass, user.name, user.roles, enabled)
+      .withRoles(ApiUserRole.userRoleDeserialize(user.role, None))
   }
 
   def fromDbModel(field: DataFieldRow): ApiDataField = {
     ApiDataField(
-      Some(field.id), Some(field.dateCreated), Some(field.lastUpdated),
-      Some(field.tableIdFk), field.name, None)
+      Some(field.id),
+      Some(field.dateCreated),
+      Some(field.lastUpdated),
+      Some(field.tableIdFk),
+      field.name,
+      None
+    )
   }
 
-  def fromDbModel(record: DataRecordRow, tables: Option[Seq[ApiDataTable]]): ApiDataRecord = {
+  def fromDbModel(
+      record: DataRecordRow,
+      tables: Option[Seq[ApiDataTable]]
+    ): ApiDataRecord = {
     new ApiDataRecord(
-      Some(record.id), Some(record.dateCreated), Some(record.lastUpdated),
-      record.name, tables)
+      Some(record.id),
+      Some(record.dateCreated),
+      Some(record.lastUpdated),
+      record.name,
+      tables
+    )
   }
 
-  def fromDbModel(table: DataTableRow, fields: Option[Seq[ApiDataField]], subTables: Option[Seq[ApiDataTable]]): ApiDataTable = {
+  def fromDbModel(
+      table: DataTableRow,
+      fields: Option[Seq[ApiDataField]],
+      subTables: Option[Seq[ApiDataTable]]
+    ): ApiDataTable = {
     new ApiDataTable(
       Some(table.id),
       Some(table.dateCreated),
@@ -72,10 +104,15 @@ object ModelTranslation {
       table.name,
       table.sourceName,
       fields,
-      subTables)
+      subTables
+    )
   }
 
-  def fromDbModel(table: DataTableTreeRow, fields: Option[Seq[ApiDataField]], subTables: Option[Seq[ApiDataTable]]): ApiDataTable = {
+  def fromDbModel(
+      table: DataTableTreeRow,
+      fields: Option[Seq[ApiDataField]],
+      subTables: Option[Seq[ApiDataTable]]
+    ): ApiDataTable = {
     new ApiDataTable(
       table.id,
       table.dateCreated,
@@ -83,13 +120,19 @@ object ModelTranslation {
       table.name.getOrElse(""),
       table.sourceName.getOrElse(""),
       fields,
-      subTables)
+      subTables
+    )
   }
 
   def fromDbModel(value: DataValueRow): ApiDataValue = {
     ApiDataValue(
-      Some(value.id), Some(value.dateCreated), Some(value.lastUpdated),
-      value.value, None, None)
+      Some(value.id),
+      Some(value.dateCreated),
+      Some(value.lastUpdated),
+      value.value,
+      None,
+      None
+    )
   }
 
   def fromDbModel(value: DataStatsLogRow): DataStats = {
@@ -98,63 +141,153 @@ object ModelTranslation {
   }
 
   def fromDbModel(
-    userMailTokensRow: UserMailTokensRow): MailTokenUser = {
-    MailTokenUser(userMailTokensRow.id, userMailTokensRow.email, userMailTokensRow.expirationTime.toDateTime, userMailTokensRow.isSignup)
+      userMailTokensRow: UserMailTokensRow
+    ): MailTokenUser = {
+    MailTokenUser(
+      userMailTokensRow.id,
+      userMailTokensRow.email,
+      userMailTokensRow.expirationTime.toDateTime,
+      userMailTokensRow.isSignup
+    )
   }
 
   def fromDbModel(hatFileRow: HatFileRow): ApiHatFile = {
     import HatJsonFormats.apiHatFileStatusFormat
-    ApiHatFile(Some(hatFileRow.id), hatFileRow.name, hatFileRow.source,
-      Some(hatFileRow.dateCreated.toDateTime), Some(hatFileRow.lastUpdated.toDateTime),
-      hatFileRow.tags, hatFileRow.title, hatFileRow.description, hatFileRow.sourceUrl,
-      Some(hatFileRow.status.as[HatFileStatus.Status]), None, None, Some(hatFileRow.contentPublic), None)
+    ApiHatFile(
+      Some(hatFileRow.id),
+      hatFileRow.name,
+      hatFileRow.source,
+      Some(hatFileRow.dateCreated.toDateTime),
+      Some(hatFileRow.lastUpdated.toDateTime),
+      hatFileRow.tags,
+      hatFileRow.title,
+      hatFileRow.description,
+      hatFileRow.sourceUrl,
+      Some(hatFileRow.status.as[HatFileStatus.Status]),
+      None,
+      None,
+      Some(hatFileRow.contentPublic),
+      None
+    )
   }
 
   def fromDbModel(hatFileAccessRow: HatFileAccessRow): ApiHatFilePermissions = {
     ApiHatFilePermissions(hatFileAccessRow.userId, hatFileAccessRow.content)
   }
 
-  def fromDbModel(userAccessLogRow: UserAccessLogRow, user: HatUser): HatAccessLog = {
-    HatAccessLog(userAccessLogRow.date.toDateTime, user, userAccessLogRow.`type`,
-      userAccessLogRow.scope, userAccessLogRow.applicationName, userAccessLogRow.applicationResource)
+  def fromDbModel(
+      userAccessLogRow: UserAccessLogRow,
+      user: HatUser
+    ): HatAccessLog = {
+    HatAccessLog(
+      userAccessLogRow.date.toDateTime,
+      user,
+      userAccessLogRow.`type`,
+      userAccessLogRow.scope,
+      userAccessLogRow.applicationName,
+      userAccessLogRow.applicationResource
+    )
   }
 
   def fromDbModel(dataJsonRow: DataJsonRow): EndpointData = {
-    EndpointData(dataJsonRow.source, Some(dataJsonRow.recordId), dataJsonRow.sourceTimestamp,
-      dataJsonRow.sourceUniqueId, dataJsonRow.data, None)
+    EndpointData(
+      dataJsonRow.source,
+      Some(dataJsonRow.recordId),
+      dataJsonRow.sourceTimestamp,
+      dataJsonRow.sourceUniqueId,
+      dataJsonRow.data,
+      None
+    )
   }
 
-  def fromDbModel(dataJsonRow: DataJsonRow, linkedDataJsonRows: Seq[DataJsonRow]): EndpointData = {
-    EndpointData(dataJsonRow.source, Some(dataJsonRow.recordId), dataJsonRow.sourceTimestamp,
-      dataJsonRow.sourceUniqueId, dataJsonRow.data, Some(linkedDataJsonRows.map(fromDbModel)))
+  def fromDbModel(
+      dataJsonRow: DataJsonRow,
+      linkedDataJsonRows: Seq[DataJsonRow]
+    ): EndpointData = {
+    EndpointData(
+      dataJsonRow.source,
+      Some(dataJsonRow.recordId),
+      dataJsonRow.sourceTimestamp,
+      dataJsonRow.sourceUniqueId,
+      dataJsonRow.data,
+      Some(linkedDataJsonRows.map(fromDbModel))
+    )
   }
 
   def fromDbModel(dataBundleRow: DataBundlesRow): EndpointDataBundle = {
     import org.hatdex.hat.api.json.RichDataJsonFormats.propertyQueryFormat
-    EndpointDataBundle(dataBundleRow.bundleId, dataBundleRow.bundle.as[Map[String, PropertyQuery]])
+    EndpointDataBundle(
+      dataBundleRow.bundleId,
+      dataBundleRow.bundle.as[Map[String, PropertyQuery]]
+    )
   }
 
-  def fromDbModel(dataDebitBundle: DataDebitBundleRow, bundle: DataBundlesRow, conditions: Option[DataBundlesRow]): DebitBundle = {
-    DebitBundle(dataDebitBundle.dateCreated, dataDebitBundle.startDate, dataDebitBundle.endDate,
-      dataDebitBundle.rolling, dataDebitBundle.enabled,
-      conditions.map(ModelTranslation.fromDbModel), ModelTranslation.fromDbModel(bundle))
+  def fromDbModel(
+      dataDebitBundle: DataDebitBundleRow,
+      bundle: DataBundlesRow,
+      conditions: Option[DataBundlesRow]
+    ): DebitBundle = {
+    DebitBundle(
+      dataDebitBundle.dateCreated,
+      dataDebitBundle.startDate,
+      dataDebitBundle.endDate,
+      dataDebitBundle.rolling,
+      dataDebitBundle.enabled,
+      conditions.map(ModelTranslation.fromDbModel),
+      ModelTranslation.fromDbModel(bundle)
+    )
   }
 
-  def fromDbModel(dataDebit: DataDebitContractRow, client: UserUserRow, dataDebitBundle: Seq[(DataDebitBundleRow, DataBundlesRow, Option[DataBundlesRow])]): RichDataDebit = {
-    RichDataDebit(dataDebit.dataDebitKey, dataDebit.dateCreated,
-      userFromDbModel(client), dataDebitBundle.map(d => ModelTranslation.fromDbModel(d._1, d._2, d._3)))
+  def fromDbModel(
+      dataDebit: DataDebitContractRow,
+      client: UserUserRow,
+      dataDebitBundle: Seq[
+        (DataDebitBundleRow, DataBundlesRow, Option[DataBundlesRow])
+      ]
+    ): RichDataDebit = {
+    RichDataDebit(
+      dataDebit.dataDebitKey,
+      dataDebit.dateCreated,
+      userFromDbModel(client),
+      dataDebitBundle.map(d => ModelTranslation.fromDbModel(d._1, d._2, d._3))
+    )
   }
 
-  def fromDbModel(ddp: DataDebitPermissionsRow, bundle: DataBundlesRow, conditions: Option[DataBundlesRow]): ApiDataDebitPermissions = {
-    ApiDataDebitPermissions(ddp.dateCreated, ddp.purpose, ddp.start.toDateTime, Duration.standardSeconds(ddp.period),
-      ddp.cancelAtPeriodEnd, ddp.canceledAt.map(_.toDateTime),
-      ddp.termsUrl, conditions.map(fromDbModel), fromDbModel(bundle), ddp.accepted)
+  def fromDbModel(
+      ddp: DataDebitPermissionsRow,
+      bundle: DataBundlesRow,
+      conditions: Option[DataBundlesRow]
+    ): ApiDataDebitPermissions = {
+    ApiDataDebitPermissions(
+      ddp.dateCreated,
+      ddp.purpose,
+      ddp.start.toDateTime,
+      Duration.standardSeconds(ddp.period),
+      ddp.cancelAtPeriodEnd,
+      ddp.canceledAt.map(_.toDateTime),
+      ddp.termsUrl,
+      conditions.map(fromDbModel),
+      fromDbModel(bundle),
+      ddp.accepted
+    )
   }
 
-  def fromDbModel(dataDebit: DataDebitRow, dataDebitBundle: Seq[(DataDebitPermissionsRow, DataBundlesRow, Option[DataBundlesRow])]): ApiDataDebit = {
-    ApiDataDebit(dataDebit.dataDebitKey, dataDebit.dateCreated, dataDebitBundle.map(d => ModelTranslation.fromDbModel(d._1, d._2, d._3)),
-      dataDebit.requestClientName, dataDebit.requestClientUrl, dataDebit.requestClientLogoUrl,
-      dataDebit.requestApplicationId, dataDebit.requestDescription)
+  def fromDbModel(
+      dataDebit: DataDebitRow,
+      dataDebitBundle: Seq[
+        (DataDebitPermissionsRow, DataBundlesRow, Option[DataBundlesRow])
+      ]
+    ): ApiDataDebit = {
+    ApiDataDebit(
+      dataDebit.dataDebitKey,
+      dataDebit.dateCreated,
+      dataDebitBundle.map(d => ModelTranslation.fromDbModel(d._1, d._2, d._3)),
+      dataDebit.requestClientName,
+      dataDebit.requestClientUrl,
+      dataDebit.requestClientLogoUrl,
+      dataDebit.requestApplicationId,
+      dataDebit.requestDescription
+    )
   }
 
   def userFromDbModel(user: UserUserRow): User = {
@@ -162,14 +295,27 @@ object ModelTranslation {
   }
 
   @tailrec
-  def groupRecords[T, U](list: Seq[(T, Option[U])], groups: Seq[(T, Seq[U])] = Seq())(implicit equalIdentity: (T, T) => Boolean): Seq[(T, Seq[U])] = {
+  def groupRecords[T, U](
+      list: Seq[(T, Option[U])],
+      groups: Seq[(T, Seq[U])] = Seq()
+    )(implicit equalIdentity: (T, T) => Boolean
+    ): Seq[(T, Seq[U])] = {
     if (list.isEmpty) {
       groups
-    }
-    else {
+    } else {
       groupRecords(
         list.dropWhile(v => equalIdentity(v._1, list.head._1)),
-        groups :+ ((list.head._1, list.takeWhile(v => equalIdentity(v._1, list.head._1)).unzip._2.flatten)))
+        groups :+ (
+          (
+            list.head._1,
+            list
+              .takeWhile(v => equalIdentity(v._1, list.head._1))
+              .unzip
+              ._2
+              .flatten
+          )
+        )
+      )
     }
   }
 }

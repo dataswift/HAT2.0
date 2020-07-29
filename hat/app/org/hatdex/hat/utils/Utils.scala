@@ -57,12 +57,19 @@ object Utils {
     }
   }
 
-  def mergeMap[A, B](ms: Iterable[HashMap[A, B]])(f: (B, B) => B): HashMap[A, B] =
+  def mergeMap[A, B](
+      ms: Iterable[HashMap[A, B]]
+    )(f: (B, B) => B
+    ): HashMap[A, B] =
     (for (m <- ms; kv <- m) yield kv).foldLeft(HashMap[A, B]()) { (a, kv) =>
       a + (if (a.contains(kv._1)) kv._1 -> f(a(kv._1), kv._2) else kv)
     }
 
-  def time[R](name: String, logger: Logger)(block: => R): R = {
+  def time[R](
+      name: String,
+      logger: Logger
+    )(block: => R
+    ): R = {
     val t0 = System.nanoTime()
     val result = block // call-by-name
     val t1 = System.nanoTime()
@@ -70,7 +77,12 @@ object Utils {
     result
   }
 
-  def timeFuture[R](name: String, logger: Logger)(block: => Future[R])(implicit ec: ExecutionContext): Future[R] = {
+  def timeFuture[R](
+      name: String,
+      logger: Logger
+    )(block: => Future[R]
+    )(implicit ec: ExecutionContext
+    ): Future[R] = {
     val t0 = System.nanoTime()
     block // call-by-name
       .andThen {
@@ -81,4 +93,3 @@ object Utils {
   }
 
 }
-

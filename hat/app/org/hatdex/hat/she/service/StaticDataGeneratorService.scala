@@ -26,14 +26,22 @@ package org.hatdex.hat.she.service
 import javax.inject.Inject
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.resourceManagement.HatServer
-import org.hatdex.hat.she.mappers.{ FacebookProfileStaticDataMapper, FitbitProfileStaticDataMapper, InstagramProfileStaticDataMapper, SpotifyProfileStaticDataMapper, StaticDataEndpointMapper, TwitterProfileStaticDataMapper, UberProfileStaticDataMapper }
+import org.hatdex.hat.she.mappers.{
+  FacebookProfileStaticDataMapper,
+  FitbitProfileStaticDataMapper,
+  InstagramProfileStaticDataMapper,
+  SpotifyProfileStaticDataMapper,
+  StaticDataEndpointMapper,
+  TwitterProfileStaticDataMapper,
+  UberProfileStaticDataMapper
+}
 import org.hatdex.hat.she.models.StaticDataValues
 import play.api.Logger
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-class StaticDataGeneratorService @Inject() ()(
-    implicit
+class StaticDataGeneratorService @Inject() (
+  )(implicit
     richDataService: RichDataService,
     val ec: ExecutionContext) {
 
@@ -45,9 +53,13 @@ class StaticDataGeneratorService @Inject() ()(
     "spotify/profile" -> new SpotifyProfileStaticDataMapper(),
     "fitbit/profile" -> new FitbitProfileStaticDataMapper(),
     "instagram/profile" -> new InstagramProfileStaticDataMapper(),
-    "uber/profile" -> new UberProfileStaticDataMapper())
+    "uber/profile" -> new UberProfileStaticDataMapper()
+  )
 
-  def getStaticData(endpoint: String)(implicit hatServer: HatServer): Future[Seq[StaticDataValues]] = {
+  def getStaticData(
+      endpoint: String
+    )(implicit hatServer: HatServer
+    ): Future[Seq[StaticDataValues]] = {
     val mappers = staticDataMappers.find(_._1.startsWith(endpoint))
 
     logger.debug(s"Fetching feed data for ${mappers.map(_._1)}")

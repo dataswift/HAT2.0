@@ -36,16 +36,25 @@ import play.api.Logger
 
 import scala.concurrent.Future
 
-class PasswordInfoService @Inject() (userService: AuthUserServiceImpl)(implicit ec: DalExecutionContext)
-  extends DelegableAuthInfoDAO[PasswordInfo, HatServer] {
+class PasswordInfoService @Inject() (
+    userService: AuthUserServiceImpl
+  )(implicit ec: DalExecutionContext)
+    extends DelegableAuthInfoDAO[PasswordInfo, HatServer] {
 
   val logger = Logger(this.getClass)
 
-  def add(loginInfo: LoginInfo, authInfo: PasswordInfo)(implicit hat: HatServer): Future[PasswordInfo] = {
+  def add(
+      loginInfo: LoginInfo,
+      authInfo: PasswordInfo
+    )(implicit hat: HatServer
+    ): Future[PasswordInfo] = {
     update(loginInfo, authInfo)
   }
 
-  def find(loginInfo: LoginInfo)(implicit hat: HatServer): Future[Option[PasswordInfo]] = {
+  def find(
+      loginInfo: LoginInfo
+    )(implicit hat: HatServer
+    ): Future[Option[PasswordInfo]] = {
     userService.retrieve(loginInfo).map {
       case Some(user) if user.pass.isDefined =>
         Some(PasswordInfo(BCryptPasswordHasher.ID, user.pass.get, salt = None))
@@ -58,18 +67,29 @@ class PasswordInfoService @Inject() (userService: AuthUserServiceImpl)(implicit 
   def remove(loginInfo: LoginInfo)(implicit hat: HatServer): Future[Unit] =
     userService.remove(loginInfo)
 
-  def save(loginInfo: LoginInfo, authInfo: PasswordInfo)(implicit hat: HatServer): Future[PasswordInfo] =
+  def save(
+      loginInfo: LoginInfo,
+      authInfo: PasswordInfo
+    )(implicit hat: HatServer
+    ): Future[PasswordInfo] =
     find(loginInfo).flatMap {
       case Some(_) => update(loginInfo, authInfo)
       case None    => add(loginInfo, authInfo)
     }
 
-  def update(loginInfo: LoginInfo, authInfo: PasswordInfo)(implicit hat: HatServer): Future[PasswordInfo] =
+  def update(
+      loginInfo: LoginInfo,
+      authInfo: PasswordInfo
+    )(implicit hat: HatServer
+    ): Future[PasswordInfo] =
     userService.retrieve(loginInfo).map {
       case Some(user) =>
         userService.save(user.copy(pass = Some(authInfo.password)))
         authInfo
-      case _ => throw new Exception("PasswordInfoDAO - update : the user must exists to update its password")
+      case _ =>
+        throw new Exception(
+          "PasswordInfoDAO - update : the user must exists to update its password"
+        )
     }
 
 }

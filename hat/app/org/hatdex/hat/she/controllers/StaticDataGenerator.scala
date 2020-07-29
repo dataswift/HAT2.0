@@ -28,7 +28,12 @@ import javax.inject.Inject
 import org.hatdex.hat.api.json.RichDataJsonFormats
 import org.hatdex.hat.api.models.Owner
 import org.hatdex.hat.api.service.applications.ApplicationsService
-import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
+import org.hatdex.hat.authentication.{
+  ContainsApplicationRole,
+  HatApiAuthEnvironment,
+  HatApiController,
+  WithRole
+}
 import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol
 import org.hatdex.hat.she.service.StaticDataGeneratorService
 import play.api.libs.json.Json
@@ -39,18 +44,20 @@ import scala.concurrent.ExecutionContext
 class StaticDataGenerator @Inject() (
     components: ControllerComponents,
     silhouette: Silhouette[HatApiAuthEnvironment],
-    feedGeneratorService: StaticDataGeneratorService)(
-    implicit
+    feedGeneratorService: StaticDataGeneratorService
+  )(implicit
     val ec: ExecutionContext,
     applicationsService: ApplicationsService)
-  extends HatApiController(components, silhouette)
-  with RichDataJsonFormats
-  with FunctionConfigurationJsonProtocol {
+    extends HatApiController(components, silhouette)
+    with RichDataJsonFormats
+    with FunctionConfigurationJsonProtocol {
 
   def getStaticData(endpoint: String): Action[AnyContent] = {
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request ⇒
-      feedGeneratorService.getStaticData(endpoint)
-        .map(items ⇒ Ok(Json.toJson(items)))
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async {
+      implicit request =>
+        feedGeneratorService
+          .getStaticData(endpoint)
+          .map(items => Ok(Json.toJson(items)))
     }
   }
 }
