@@ -36,10 +36,14 @@ import play.api.mvc.Request
 import scala.concurrent.{ ExecutionContext, Future }
 
 object WithTokenParameters {
-  def roleMatchesToken(user: HatUser, authenticator: JWTRS256Authenticator): Boolean = {
+  def roleMatchesToken(
+      user: HatUser,
+      authenticator: JWTRS256Authenticator
+    ): Boolean = {
     authenticator.customClaims.flatMap { claims =>
-      (claims \ "accessScope").validate[String].asOpt.map(_.toLowerCase).map { scope =>
-        user.roles.map(_.title.toLowerCase).contains(scope)
+      (claims \ "accessScope").validate[String].asOpt.map(_.toLowerCase).map {
+        scope =>
+          user.roles.map(_.title.toLowerCase).contains(scope)
       }
     } getOrElse {
       true
@@ -48,12 +52,18 @@ object WithTokenParameters {
 }
 
 /**
- * Only allows those users that have at least a service of the selected.
- * Master service is always allowed.
- * Ex: WithService("serviceA", "serviceB") => only users with services "serviceA" OR "serviceB" (or "master") are allowed.
- */
-case class WithRole(anyOf: UserRole*) extends Authorization[HatUser, JWTRS256Authenticator, HatServer] {
-  def isAuthorized[B](user: HatUser, authenticator: JWTRS256Authenticator, hat: HatServer)(implicit r: Request[B]): Future[Boolean] = {
+  * Only allows those users that have at least a service of the selected.
+  * Master service is always allowed.
+  * Ex: WithService("serviceA", "serviceB") => only users with services "serviceA" OR "serviceB" (or "master") are allowed.
+  */
+case class WithRole(anyOf: UserRole*)
+    extends Authorization[HatUser, JWTRS256Authenticator, HatServer] {
+  def isAuthorized[B](
+      user: HatUser,
+      authenticator: JWTRS256Authenticator,
+      hat: HatServer
+    )(implicit r: Request[B]
+    ): Future[Boolean] = {
     authenticator.customClaims.map(_ \ "application")
     Future.successful {
       WithRole.isAuthorized(user, authenticator, anyOf: _*)
@@ -62,20 +72,32 @@ case class WithRole(anyOf: UserRole*) extends Authorization[HatUser, JWTRS256Aut
 }
 
 object WithRole {
-  def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, anyOf: UserRole*): Boolean = {
+  def isAuthorized(
+      user: HatUser,
+      authenticator: JWTRS256Authenticator,
+      anyOf: UserRole*
+    ): Boolean = {
     WithTokenParameters.roleMatchesToken(user, authenticator) &&
-      authenticator.customClaims.forall(!_.keys.contains("application")) && // must NOT contain application claim
-      (anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner()))
+    authenticator.customClaims.forall(
+      !_.keys.contains("application")
+    ) && // must NOT contain application claim
+    (anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner()))
   }
 }
 
 /**
- * Only allows those users that have every of the selected services.
- * Master service is always allowed.
- * Ex: Restrict("serviceA", "serviceB") => only users with services "serviceA" AND "serviceB" (or "master") are allowed.
- */
-case class WithRoles(allOf: UserRole*) extends Authorization[HatUser, JWTRS256Authenticator, HatServer] {
-  def isAuthorized[B](user: HatUser, authenticator: JWTRS256Authenticator, hat: HatServer)(implicit r: Request[B]): Future[Boolean] = {
+  * Only allows those users that have every of the selected services.
+  * Master service is always allowed.
+  * Ex: Restrict("serviceA", "serviceB") => only users with services "serviceA" AND "serviceB" (or "master") are allowed.
+  */
+case class WithRoles(allOf: UserRole*)
+    extends Authorization[HatUser, JWTRS256Authenticator, HatServer] {
+  def isAuthorized[B](
+      user: HatUser,
+      authenticator: JWTRS256Authenticator,
+      hat: HatServer
+    )(implicit r: Request[B]
+    ): Future[Boolean] = {
     Future.successful {
       WithRoles.isAuthorized(user, authenticator, allOf: _*)
     }
@@ -83,18 +105,36 @@ case class WithRoles(allOf: UserRole*) extends Authorization[HatUser, JWTRS256Au
 }
 
 object WithRoles {
-  def isAuthorized(user: HatUser, authenticator: JWTRS256Authenticator, allOf: UserRole*): Boolean = {
+  def isAuthorized(
+      user: HatUser,
+      authenticator: JWTRS256Authenticator,
+      allOf: UserRole*
+    ): Boolean = {
     WithTokenParameters.roleMatchesToken(user, authenticator) &&
-      authenticator.customClaims.forall(!_.keys.contains("application")) && // must NOT contain application claim
-      (allOf.intersect(user.roles).length == allOf.length || user.roles.contains(Owner()))
+    authenticator.customClaims.forall(
+      !_.keys.contains("application")
+    ) && // must NOT contain application claim
+    (allOf.intersect(user.roles).length == allOf.length || user.roles.contains(
+      Owner()
+    ))
   }
 }
 
-case class ContainsApplicationRole(anyOf: UserRole*)(implicit val applicationsService: ApplicationsService, ec: ExecutionContext)
-  extends Authorization[HatUser, JWTRS256Authenticator, HatServer] {
+case class ContainsApplicationRole(
+    anyOf: UserRole*
+  )(implicit val applicationsService: ApplicationsService,
+    ec: ExecutionContext)
+    extends Authorization[HatUser, JWTRS256Authenticator, HatServer] {
 
-  def isAuthorized[B](user: HatUser, authenticator: JWTRS256Authenticator, hat: HatServer)(implicit r: Request[B]): Future[Boolean] = {
-    val containsApplicationClaim = authenticator.customClaims.exists(_.keys.contains("application")) // MUST contain application claim
+  def isAuthorized[B](
+      user: HatUser,
+      authenticator: JWTRS256Authenticator,
+      hat: HatServer
+    )(implicit r: Request[B]
+    ): Future[Boolean] = {
+    val containsApplicationClaim = authenticator.customClaims.exists(
+      _.keys.contains("application")
+    ) // MUST contain application claim
     val status = authenticator.customClaims.flatMap { customClaims =>
       (customClaims \ "application").asOpt[String]
     } map { app =>
@@ -105,7 +145,12 @@ case class ContainsApplicationRole(anyOf: UserRole*)(implicit val applicationsSe
 
     status map { maybeAppStatus =>
       val appStatusOk = maybeAppStatus exists { appStatus =>
-        ContainsApplicationRole.isAuthorized(user, appStatus, authenticator, anyOf: _*)
+        ContainsApplicationRole.isAuthorized(
+          user,
+          appStatus,
+          authenticator,
+          anyOf: _*
+        )
       } // Unauthorized if app status not found
       containsApplicationClaim && appStatusOk
     }
@@ -113,20 +158,39 @@ case class ContainsApplicationRole(anyOf: UserRole*)(implicit val applicationsSe
 }
 
 object ContainsApplicationRole {
-  private val rolesRequiringExplicitApproval: Set[String] = Set(RetrieveApplicationToken("").title)
+  private val rolesRequiringExplicitApproval: Set[String] = Set(
+    RetrieveApplicationToken("").title
+  )
 
-  def isAuthorized[B](user: HatUser, appStatus: HatApplication, authenticator: JWTRS256Authenticator, anyOf: UserRole*): Boolean = {
-    val containsApplicationClaim = authenticator.customClaims.forall(_.keys.contains("application")) // must NOT contain application claim
+  def isAuthorized[B](
+      user: HatUser,
+      appStatus: HatApplication,
+      authenticator: JWTRS256Authenticator,
+      anyOf: UserRole*
+    ): Boolean = {
+    val containsApplicationClaim = authenticator.customClaims.forall(
+      _.keys.contains("application")
+    ) // must NOT contain application claim
     val appStatusOk =
-      (appStatus.enabled && appStatus.application.permissions.rolesGranted.exists(role => anyOf.exists(req => roleSatisfiesRequirement(role, req)))) || // App has been granted a specific role
-        (appStatus.application.permissions.rolesGranted.contains(Owner()) && // Or is an owner app
-          anyOf.exists(r => !rolesRequiringExplicitApproval.contains(r.title))) // is there a required role that does not require explicit approval even for owner scope
+      (appStatus.enabled && appStatus.application.permissions.rolesGranted
+        .exists(role =>
+          anyOf.exists(req => roleSatisfiesRequirement(role, req))
+        )) || // App has been granted a specific role
+        (appStatus.application.permissions.rolesGranted
+          .contains(Owner()) && // Or is an owner app
+          anyOf.exists(r =>
+            !rolesRequiringExplicitApproval.contains(r.title)
+          )) // is there a required role that does not require explicit approval even for owner scope
 
-    val userRoleAuthorized = anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner())
+    val userRoleAuthorized =
+      anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner())
     containsApplicationClaim && appStatusOk && userRoleAuthorized
   }
 
-  def roleSatisfiesRequirement(role: UserRole, requirement: UserRole): Boolean =
+  def roleSatisfiesRequirement(
+      role: UserRole,
+      requirement: UserRole
+    ): Boolean =
     role.getClass == requirement.getClass &&
       role.title == requirement.title &&
       (role.extra == requirement.extra || requirement.extra.contains("*"))

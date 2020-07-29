@@ -55,13 +55,22 @@ trait HatDatabaseProvider {
 }
 
 @Singleton
-class HatDatabaseProviderConfig @Inject() (val configuration: Configuration) extends HatDatabaseProvider {
+class HatDatabaseProviderConfig @Inject() (val configuration: Configuration)
+    extends HatDatabaseProvider {
   def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {
     Future {
-      Database.forConfig(s"hat.${hat.replace(':', '.')}.database", configuration.underlying)
+      Database.forConfig(
+        s"hat.${hat.replace(':', '.')}.database",
+        configuration.underlying
+      )
     } recoverWith {
       case e =>
-        Future.failed(new HatServerDiscoveryException(s"Database configuration for $hat incorrect or unavailable", e))
+        Future.failed(
+          new HatServerDiscoveryException(
+            s"Database configuration for $hat incorrect or unavailable",
+            e
+          )
+        )
     }
   }
 }
@@ -70,7 +79,9 @@ class HatDatabaseProviderConfig @Inject() (val configuration: Configuration) ext
 class HatDatabaseProviderMilliner @Inject() (
     val configuration: Configuration,
     val cache: AsyncCacheApi,
-    val ws: WSClient) extends HatDatabaseProvider with MillinerHatSignup {
+    val ws: WSClient)
+    extends HatDatabaseProvider
+    with MillinerHatSignup {
   val logger = Logger(this.getClass)
 
   def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {
@@ -92,11 +103,17 @@ class HatDatabaseProviderMilliner @Inject() (
         "password" -> database.password,
         "databaseName" -> database.name,
         "portNumber" -> signup.databaseServer.get.port.toString,
-        "serverName" -> signup.databaseServer.get.host).asJava,
-      "numThreads" -> configuration.get[Int]("resourceManagement.hatDBThreads").toString,
-      "idleTimeout" -> configuration.get[Duration]("resourceManagement.hatDBIdleTimeout").toMillis.toString).asJava
+        "serverName" -> signup.databaseServer.get.host
+      ).asJava,
+      "numThreads" -> configuration
+        .get[Int]("resourceManagement.hatDBThreads")
+        .toString,
+      "idleTimeout" -> configuration
+        .get[Duration]("resourceManagement.hatDBIdleTimeout")
+        .toMillis
+        .toString
+    ).asJava
 
     ConfigFactory.parseMap(config)
   }
 }
-

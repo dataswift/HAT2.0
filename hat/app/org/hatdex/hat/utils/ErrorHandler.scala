@@ -27,11 +27,21 @@ package org.hatdex.hat.utils
 import java.sql.SQLTransientConnectionException
 import javax.inject._
 
-import com.mohiva.play.silhouette.api.actions.{ SecuredErrorHandler, UnsecuredErrorHandler }
-import com.mohiva.play.silhouette.impl.exceptions.{ IdentityNotFoundException, InvalidPasswordException }
+import com.mohiva.play.silhouette.api.actions.{
+  SecuredErrorHandler,
+  UnsecuredErrorHandler
+}
+import com.mohiva.play.silhouette.impl.exceptions.{
+  IdentityNotFoundException,
+  InvalidPasswordException
+}
 import org.hatdex.hat.resourceManagement.HatServerDiscoveryException
 import play.api._
-import play.api.http.{ ContentTypes, DefaultHttpErrorHandler, HttpErrorHandlerExceptions }
+import play.api.http.{
+  ContentTypes,
+  DefaultHttpErrorHandler,
+  HttpErrorHandlerExceptions
+}
 import play.api.i18n.{ I18nSupport, MessagesApi }
 import play.api.libs.json.Json
 import play.api.mvc.Results._
@@ -47,28 +57,38 @@ class ErrorHandler @Inject() (
     sourceMapper: OptionalSourceMapper,
     router: Provider[Router],
     hatMailer: HatMailer,
-    val messagesApi: MessagesApi) extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
-  with SecuredErrorHandler with UnsecuredErrorHandler with I18nSupport with ContentTypes with RequestExtractors with Rendering {
+    val messagesApi: MessagesApi)
+    extends DefaultHttpErrorHandler(env, config, sourceMapper, router)
+    with SecuredErrorHandler
+    with UnsecuredErrorHandler
+    with I18nSupport
+    with ContentTypes
+    with RequestExtractors
+    with Rendering {
 
   /**
-   * Exception handler which chains the exceptions handlers from the sub types.
-   *
-   * @param request The request header.
-   * @return A partial function which maps an exception to a Play result.
-   */
-  override def exceptionHandler(implicit request: RequestHeader): PartialFunction[Throwable, Future[Result]] = {
+    * Exception handler which chains the exceptions handlers from the sub types.
+    *
+    * @param request The request header.
+    * @return A partial function which maps an exception to a Play result.
+    */
+  override def exceptionHandler(
+      implicit request: RequestHeader
+    ): PartialFunction[Throwable, Future[Result]] = {
     hatExceptionHandler orElse
       super[SecuredErrorHandler].exceptionHandler orElse
       super[UnsecuredErrorHandler].exceptionHandler
   }
 
   /**
-   * Exception handler which handles the specific errors expected in our context
-   *
-   * @param request The request header.
-   * @return A partial function which maps an exception to a Play result.
-   */
-  protected def hatExceptionHandler(implicit request: RequestHeader): PartialFunction[Throwable, Future[Result]] = {
+    * Exception handler which handles the specific errors expected in our context
+    *
+    * @param request The request header.
+    * @return A partial function which maps an exception to a Play result.
+    */
+  protected def hatExceptionHandler(
+      implicit request: RequestHeader
+    ): PartialFunction[Throwable, Future[Result]] = {
     case _: InvalidPasswordException        => onNotAuthenticated
     case _: IdentityNotFoundException       => onNotAuthenticated
     case _: SQLTransientConnectionException => onHatUnavailable
@@ -76,21 +96,34 @@ class ErrorHandler @Inject() (
   }
 
   // 401 - Unauthorized
-  override def onNotAuthenticated(implicit request: RequestHeader): Future[Result] = {
+  override def onNotAuthenticated(
+      implicit request: RequestHeader
+    ): Future[Result] = {
     Future.successful {
       render {
-        case Accepts.Json() => Unauthorized(Json.obj("error" -> "Not Authenticated", "message" -> s"Not Authenticated"))
-        case _              => Redirect("/")
+        case Accepts.Json() =>
+          Unauthorized(
+            Json.obj(
+              "error" -> "Not Authenticated",
+              "message" -> s"Not Authenticated"
+            )
+          )
+        case _ => Redirect("/")
       }
     }
   }
 
   // 403 - Forbidden
-  override def onNotAuthorized(implicit request: RequestHeader): Future[Result] = {
+  override def onNotAuthorized(
+      implicit request: RequestHeader
+    ): Future[Result] = {
     Future.successful {
       render {
-        case Accepts.Json() => Forbidden(Json.obj("error" -> "Forbidden", "message" -> s"Access Denied"))
-        case _              => Redirect("/")
+        case Accepts.Json() =>
+          Forbidden(
+            Json.obj("error" -> "Forbidden", "message" -> s"Access Denied")
+          )
+        case _ => Redirect("/")
       }
     }
   }
@@ -98,39 +131,63 @@ class ErrorHandler @Inject() (
   def onHatUnavailable(implicit request: RequestHeader): Future[Result] = {
     Future.successful {
       render {
-        case Accepts.Json() => NotFound(Json.obj("error" -> "Not Found", "message" -> "HAT unavailable"))
-        case _              => NotFound(org.hatdex.hat.phata.views.html.hatNotFound())
+        case Accepts.Json() =>
+          NotFound(
+            Json.obj("error" -> "Not Found", "message" -> "HAT unavailable")
+          )
+        case _ => NotFound(org.hatdex.hat.phata.views.html.hatNotFound())
       }
     }
   }
 
   // 404 - page not found error
-  override def onNotFound(request: RequestHeader, message: String): Future[Result] = Future.successful {
-    implicit val _request = request
-    render {
-      case Accepts.Json() =>
-        NotFound(Json.obj(
-          "error" -> "Handler Not Found",
-          "message" -> s"Request handler at ${request.method}:${request.path} does not exist"))
-      case _ =>
-        NotFound(env.mode match {
-          case Mode.Prod => views.html.defaultpages.notFound(request.method, request.uri)
-          case _         => views.html.defaultpages.devNotFound(request.method, request.uri, Some(router.get))
-        })
+  override def onNotFound(
+      request: RequestHeader,
+      message: String
+    ): Future[Result] =
+    Future.successful {
+      implicit val _request = request
+      render {
+        case Accepts.Json() =>
+          NotFound(
+            Json.obj(
+              "error" -> "Handler Not Found",
+              "message" -> s"Request handler at ${request.method}:${request.path} does not exist"
+            )
+          )
+        case _ =>
+          NotFound(env.mode match {
+            case Mode.Prod =>
+              views.html.defaultpages.notFound(request.method, request.uri)
+            case _ =>
+              views.html.defaultpages
+                .devNotFound(request.method, request.uri, Some(router.get))
+          })
+      }
     }
-  }
 
   // 500 - internal server error
-  override def onServerError(request: RequestHeader, exception: Throwable): Future[Result] = {
-    exceptionHandler(request).applyOrElse(exception, onGenericServerError(request))
+  override def onServerError(
+      request: RequestHeader,
+      exception: Throwable
+    ): Future[Result] = {
+    exceptionHandler(request).applyOrElse(
+      exception,
+      onGenericServerError(request)
+    )
   }
 
-  def onGenericServerError(request: RequestHeader)(exception: Throwable): Future[Result] = {
+  def onGenericServerError(
+      request: RequestHeader
+    )(exception: Throwable
+    ): Future[Result] = {
     implicit val _request = request
 
     val usefulException = HttpErrorHandlerExceptions.throwableToUsefulException(
       sourceMapper.sourceMapper,
-      env.mode == Mode.Prod, exception)
+      env.mode == Mode.Prod,
+      exception
+    )
 
     Logger.error(s"Server Error ${usefulException.id}", usefulException)
 
@@ -139,28 +196,47 @@ class ErrorHandler @Inject() (
     Future.successful {
       render {
         case Accepts.Json() =>
-          InternalServerError(Json.obj(
-            "error" -> "Internal Server error",
-            "message" -> s"Server error occurred: ${usefulException.id}"))
+          InternalServerError(
+            Json.obj(
+              "error" -> "Internal Server error",
+              "message" -> s"Server error occurred: ${usefulException.id}"
+            )
+          )
         case _ =>
-          InternalServerError(s"A server error occurred, please report this error code to our admins: ${usefulException.id}")
+          InternalServerError(
+            s"A server error occurred, please report this error code to our admins: ${usefulException.id}"
+          )
       }
     }
   }
 
-  override def onBadRequest(request: RequestHeader, message: String): Future[Result] = {
+  override def onBadRequest(
+      request: RequestHeader,
+      message: String
+    ): Future[Result] = {
     implicit val _request = request
     Future.successful {
       render {
         case Accepts.Json() =>
           val jsonMessage = Try(Json.parse(message))
-          jsonMessage.map(parsed => BadRequest(Json.obj("error" -> "Bad Request", "message" -> parsed)))
+          jsonMessage
+            .map(parsed =>
+              BadRequest(
+                Json.obj("error" -> "Bad Request", "message" -> parsed)
+              )
+            )
             .recover({
               case _ =>
-                BadRequest(Json.obj("error" -> "Bad Request", "message" -> message))
+                BadRequest(
+                  Json.obj("error" -> "Bad Request", "message" -> message)
+                )
             })
             .get
-        case _ => BadRequest(views.html.defaultpages.badRequest(request.method, request.uri, message))
+        case _ =>
+          BadRequest(
+            views.html.defaultpages
+              .badRequest(request.method, request.uri, message)
+          )
       }
     }
   }

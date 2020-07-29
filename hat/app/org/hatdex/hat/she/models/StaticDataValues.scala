@@ -25,10 +25,11 @@ package org.hatdex.hat.she.models
 
 import play.api.libs.json.{ JsValue, Json, Writes }
 
-case class StaticDataValues(name: String, values: Map[String, JsValue]) {
-
-}
+case class StaticDataValues(
+    name: String,
+    values: Map[String, JsValue]) {}
 
 object StaticDataValues {
-  implicit val facebookLocationReads: Writes[StaticDataValues] = Json.writes[StaticDataValues]
+  implicit val facebookLocationReads: Writes[StaticDataValues] =
+    Json.writes[StaticDataValues]
 }

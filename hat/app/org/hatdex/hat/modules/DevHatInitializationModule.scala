@@ -42,8 +42,8 @@ import scala.concurrent.Future
 class DevHatInitializationModule extends ScalaModule with AkkaGuiceSupport {
 
   /**
-   * Configures the module.
-   */
+    * Configures the module.
+    */
   override protected def configure(): Unit = {
     bind[DevHatInitializer].asEagerSingleton()
   }
@@ -52,7 +52,8 @@ class DevHatInitializationModule extends ScalaModule with AkkaGuiceSupport {
 class DevHatInitializer @Inject() (
     configuration: Configuration,
     serverProvider: HatServerProvider,
-    usersService: UsersService)(implicit ec: DalExecutionContext) {
+    usersService: UsersService
+  )(implicit ec: DalExecutionContext) {
   val logger = Logger(this.getClass)
 
   import DevHatConfig.configLoader
@@ -64,11 +65,13 @@ class DevHatInitializer @Inject() (
   devHats.values.map(initializeHat)
 
   def initializeHat(hat: DevHatConfig) = {
-    val hatServer: Future[HatServer] = serverProvider.retrieve(hat.domain).map(_.get)
+    val hatServer: Future[HatServer] =
+      serverProvider.retrieve(hat.domain).map(_.get)
 
     val eventuallyMigrated = for {
       server <- hatServer
-      _ <- new HatDbSchemaMigration(configuration, server.db, ec).run(devHatMigrations)
+      _ <- new HatDbSchemaMigration(configuration, server.db, ec)
+        .run(devHatMigrations)
       _ <- setupCredentials(hat)(server)
     } yield ()
 
@@ -76,20 +79,44 @@ class DevHatInitializer @Inject() (
       logger.info(s"Database successfully initialized for ${hat.owner}")
     } recover {
       case e =>
-        logger.error(s"Database initialisation failed for ${hat.owner}: ${e.getMessage}", e)
+        logger.error(
+          s"Database initialisation failed for ${hat.owner}: ${e.getMessage}",
+          e
+        )
     } map { _ =>
       logger.debug(s"Shutting down connection to database for ${hat.owner}")
-      //      hatServer.map(_.db.shutdown)
+    //      hatServer.map(_.db.shutdown)
     }
   }
 
-  def setupCredentials(hat: DevHatConfig)(implicit server: HatServer): Future[Unit] = {
+  def setupCredentials(
+      hat: DevHatConfig
+    )(implicit server: HatServer
+    ): Future[Unit] = {
     logger.debug(s"Setup credentials for ${hat.owner}")
     val ownerId = UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42")
     val platformId = UUID.fromString("6507ae16-13d7-479b-8ebc-65c28fec1634")
     for {
-      savedOwner <- usersService.saveUser(HatUser(ownerId, hat.owner, Some(hat.ownerPasswordHash), hat.ownerName, Seq(Owner()), enabled = true))
-      savedPlatform <- usersService.saveUser(HatUser(platformId, hat.platform, Some(hat.platformPasswordHash), hat.platformName, Seq(Platform()), enabled = true))
+      savedOwner <- usersService.saveUser(
+        HatUser(
+          ownerId,
+          hat.owner,
+          Some(hat.ownerPasswordHash),
+          hat.ownerName,
+          Seq(Owner()),
+          enabled = true
+        )
+      )
+      savedPlatform <- usersService.saveUser(
+        HatUser(
+          platformId,
+          hat.platform,
+          Some(hat.platformPasswordHash),
+          hat.platformName,
+          Seq(Platform()),
+          enabled = true
+        )
+      )
     } yield {
       logger.info(s"Saved owner: $savedOwner")
       logger.info(s"Saved platform: $savedPlatform")
@@ -109,18 +136,23 @@ case class DevHatConfig(
     database: Config)
 
 object DevHatConfig {
-  implicit val configLoader: ConfigLoader[DevHatConfig] = new ConfigLoader[DevHatConfig] {
-    def load(rootConfig: Config, path: String): DevHatConfig = {
-      val config = ConfigLoader.configurationLoader.load(rootConfig, path)
-      DevHatConfig(
-        owner = config.get[String]("owner"),
-        domain = config.get[String]("domain"),
-        ownerName = config.get[String]("ownerName"),
-        ownerPasswordHash = config.get[String]("ownerPasswordHash"),
-        platform = config.get[String]("platform"),
-        platformName = config.get[String]("platformName"),
-        platformPasswordHash = config.get[String]("platformPasswordHash"),
-        database = config.get[Config]("database"))
+  implicit val configLoader: ConfigLoader[DevHatConfig] =
+    new ConfigLoader[DevHatConfig] {
+      def load(
+          rootConfig: Config,
+          path: String
+        ): DevHatConfig = {
+        val config = ConfigLoader.configurationLoader.load(rootConfig, path)
+        DevHatConfig(
+          owner = config.get[String]("owner"),
+          domain = config.get[String]("domain"),
+          ownerName = config.get[String]("ownerName"),
+          ownerPasswordHash = config.get[String]("ownerPasswordHash"),
+          platform = config.get[String]("platform"),
+          platformName = config.get[String]("platformName"),
+          platformPasswordHash = config.get[String]("platformPasswordHash"),
+          database = config.get[Config]("database")
+        )
+      }
     }
-  }
 }

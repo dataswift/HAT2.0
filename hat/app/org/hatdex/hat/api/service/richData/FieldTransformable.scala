@@ -40,7 +40,8 @@ object FieldTransformable {
 
   import FieldTransformation._
 
-  implicit val generateIdentityTranslation: Aux[Identity, Rep[JsValue] => Rep[JsValue]] =
+  implicit val generateIdentityTranslation
+      : Aux[Identity, Rep[JsValue] => Rep[JsValue]] =
     new FieldTransformable[Identity] {
       type Out = Rep[JsValue] => Rep[JsValue]
 
@@ -49,30 +50,38 @@ object FieldTransformable {
       }
     }
 
-  implicit val generateDateTimeExtractTranslation: Aux[DateTimeExtract, Rep[JsValue] => Rep[JsValue]] =
+  implicit val generateDateTimeExtractTranslation
+      : Aux[DateTimeExtract, Rep[JsValue] => Rep[JsValue]] =
     new FieldTransformable[DateTimeExtract] {
       type Out = Rep[JsValue] => Rep[JsValue]
 
-      def apply(in: DateTimeExtract): Rep[JsValue] => Rep[JsValue] = {
-        value => toJson(datePart(in.part, value.asColumnOf[String].asColumnOf[DateTime]))
+      def apply(in: DateTimeExtract): Rep[JsValue] => Rep[JsValue] = { value =>
+        toJson(datePart(in.part, value.asColumnOf[String].asColumnOf[DateTime]))
       }
     }
 
-  implicit val generateTimestampExtractTranslation: Aux[TimestampExtract, Rep[JsValue] => Rep[JsValue]] =
+  implicit val generateTimestampExtractTranslation
+      : Aux[TimestampExtract, Rep[JsValue] => Rep[JsValue]] =
     new FieldTransformable[TimestampExtract] {
       type Out = Rep[JsValue] => Rep[JsValue]
 
-      def apply(in: TimestampExtract): Rep[JsValue] => Rep[JsValue] = {
-        value => toJson(datePartTimestamp(in.part, toTimestamp(value.asColumnOf[String].asColumnOf[Double])))
+      def apply(in: TimestampExtract): Rep[JsValue] => Rep[JsValue] = { value =>
+        toJson(
+          datePartTimestamp(
+            in.part,
+            toTimestamp(value.asColumnOf[String].asColumnOf[Double])
+          )
+        )
       }
     }
 
-  implicit val generateSearchableTranslation: Aux[Searchable, Rep[JsValue] => Rep[TsVector]] =
+  implicit val generateSearchableTranslation
+      : Aux[Searchable, Rep[JsValue] => Rep[TsVector]] =
     new FieldTransformable[Searchable] {
       type Out = Rep[JsValue] => Rep[TsVector]
 
-      def apply(in: Searchable): Rep[JsValue] => Rep[TsVector] = {
-        value => toTsVector(value.asColumnOf[String])
+      def apply(in: Searchable): Rep[JsValue] => Rep[TsVector] = { value =>
+        toTsVector(value.asColumnOf[String])
       }
     }
 

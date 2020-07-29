@@ -48,16 +48,23 @@ object JsonDataTransformer {
     pathNodes.reduceLeft((path, node) => path.compose(node))
   }
 
-  def nestedDataPicker(destination: String, source: JsValue): Reads[JsObject] = {
+  def nestedDataPicker(
+      destination: String,
+      source: JsValue
+    ): Reads[JsObject] = {
     source match {
       case simpleSource: JsString =>
         parseJsPath(destination).json
           .copyFrom(parseJsPath(simpleSource.value).json.pick)
-          .orElse(Reads.pure(Json.obj())) // empty object (skipped) if nothing to copy from
+          .orElse(
+            Reads.pure(Json.obj())
+          ) // empty object (skipped) if nothing to copy from
 
       case source: JsObject =>
         val nestedMappingPrefix = (source \ "source").get.as[JsString]
-        val sourceJson = parseJsPath(nestedMappingPrefix.value.stripSuffix("[]")).json
+        val sourceJson = parseJsPath(
+          nestedMappingPrefix.value.stripSuffix("[]")
+        ).json
 
         val transformation = (source \ "mappings").get.as[JsObject].fields.map {
           case (subDestination, subSource) =>
@@ -66,10 +73,13 @@ object JsonDataTransformer {
 
         val transformed = if (destination.endsWith("[]")) {
           sourceJson.pick[JsArray].map { arr =>
-            JsArray(arr.value.flatMap(_.transform(transformation).map(Some(_)).getOrElse(None)))
+            JsArray(
+              arr.value.flatMap(
+                _.transform(transformation).map(Some(_)).getOrElse(None)
+              )
+            )
           }
-        }
-        else {
+        } else {
           sourceJson.pick.map(_.transform(transformation).get)
         }
 
@@ -78,7 +88,11 @@ object JsonDataTransformer {
           .orElse(Reads.pure(Json.obj()))
 
       case _ =>
-        Reads[JsObject](_ => JsError("Invalid mapping template - mappings can only be simple strings or well-structured objects"))
+        Reads[JsObject](_ =>
+          JsError(
+            "Invalid mapping template - mappings can only be simple strings or well-structured objects"
+          )
+        )
     }
   }
 

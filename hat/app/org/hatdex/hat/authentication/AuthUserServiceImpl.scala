@@ -34,43 +34,53 @@ import org.hatdex.hat.resourceManagement.HatServer
 import scala.concurrent.Future
 
 /**
- * Handles actions to users.
- *
- * @param usersService The underlying database User Service implementation
- */
-class AuthUserServiceImpl @Inject() (usersService: UsersService) extends AuthUserService {
+  * Handles actions to users.
+  *
+  * @param usersService The underlying database User Service implementation
+  */
+class AuthUserServiceImpl @Inject() (usersService: UsersService)
+    extends AuthUserService {
+
   /**
-   * Retrieves a user that matches the specified login info.
-   *
-   * @param loginInfo The login info to retrieve a user.
-   * @return The retrieved user or None if no user could be retrieved for the given login info.
-   */
-  def retrieve(loginInfo: LoginInfo)(implicit dyn: HatServer): Future[Option[HatUser]] = {
+    * Retrieves a user that matches the specified login info.
+    *
+    * @param loginInfo The login info to retrieve a user.
+    * @return The retrieved user or None if no user could be retrieved for the given login info.
+    */
+  def retrieve(
+      loginInfo: LoginInfo
+    )(implicit dyn: HatServer
+    ): Future[Option[HatUser]] = {
     usersService.getUser(loginInfo.providerKey)(dyn)
   }
 
   /**
-   * Saves a user.
-   *
-   * @param user The user to save.
-   * @return The saved user.
-   */
-  def save(user: HatUser)(implicit dyn: HatServer) = usersService.saveUser(user)(dyn)
+    * Saves a user.
+    *
+    * @param user The user to save.
+    * @return The saved user.
+    */
+  def save(user: HatUser)(implicit dyn: HatServer) =
+    usersService.saveUser(user)(dyn)
 
   /**
-   * Removes a user.
-   *
-   * @param user The user to save.
-   * @return The saved user.
-   */
+    * Removes a user.
+    *
+    * @param user The user to save.
+    * @return The saved user.
+    */
   def remove(loginInfo: LoginInfo)(implicit dyn: HatServer): Future[Unit] =
     usersService.removeUser(loginInfo.providerKey)(dyn)
 
   /**
-   * Link user profiles together
-   *
-   * @param mainUser The user to link to.
-   * @param linkedUser The linked user
-   */
-  def link(mainUser: HatUser, linkedUser: HatUser)(implicit dyn: HatServer) = Future.failed(new RuntimeException("Profile linking not implemented"))
+    * Link user profiles together
+    *
+    * @param mainUser The user to link to.
+    * @param linkedUser The linked user
+    */
+  def link(
+      mainUser: HatUser,
+      linkedUser: HatUser
+    )(implicit dyn: HatServer
+    ) = Future.failed(new RuntimeException("Profile linking not implemented"))
 }

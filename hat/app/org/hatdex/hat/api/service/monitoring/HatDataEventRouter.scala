@@ -40,7 +40,8 @@ trait HatDataEventRouter {
 class HatDataEventRouterImpl @Inject() (
     dataEventBus: HatDataEventBus,
     @Named("hatDataStatsProcessor") statsProcessor: ActorRef,
-    implicit val actorSystem: ActorSystem) extends HatDataEventRouter {
+    implicit val actorSystem: ActorSystem)
+    extends HatDataEventRouter {
 
   private implicit val materializer = ActorMaterializer()
 
@@ -48,25 +49,42 @@ class HatDataEventRouterImpl @Inject() (
 
   def init(): Done = {
     // Inbound/outbound data stats are reported via a buffering stage to control load and network traffic
-    dataEventBus.subscribe(buffer(statsProcessor), classOf[HatDataEventBus.DataCreatedEvent])
-    dataEventBus.subscribe(buffer(statsProcessor), classOf[HatDataEventBus.RichDataRetrievedEvent])
+    dataEventBus.subscribe(
+      buffer(statsProcessor),
+      classOf[HatDataEventBus.DataCreatedEvent]
+    )
+    dataEventBus.subscribe(
+      buffer(statsProcessor),
+      classOf[HatDataEventBus.RichDataRetrievedEvent]
+    )
     // Data Debit Events are dispatched without buffering
-    dataEventBus.subscribe(statsProcessor, classOf[HatDataEventBus.RichDataDebitEvent])
-    dataEventBus.subscribe(statsProcessor, classOf[HatDataEventBus.DataDebitEvent])
+    dataEventBus.subscribe(
+      statsProcessor,
+      classOf[HatDataEventBus.RichDataDebitEvent]
+    )
+    dataEventBus.subscribe(
+      statsProcessor,
+      classOf[HatDataEventBus.DataDebitEvent]
+    )
     Done
   }
 
   /**
-   * Uses Akka streams to generate a proxy actor that buffers messages up to a certain batch size and time, whichever
-   * gets reached first
-   *
-   * @param target Actor for which messages should be buffered
-   * @param batch batch size
-   * @param period time limit for every batch to be collected
-   * @returns ActorRef of a new actor to send messages to
-   */
-  private def buffer(target: ActorRef, batch: Int = 100, period: FiniteDuration = 60.seconds): ActorRef =
-    Source.actorRef(bufferSize = 1000, OverflowStrategy.dropNew)
+    * Uses Akka streams to generate a proxy actor that buffers messages up to a certain batch size and time, whichever
+    * gets reached first
+    *
+    * @param target Actor for which messages should be buffered
+    * @param batch batch size
+    * @param period time limit for every batch to be collected
+    * @returns ActorRef of a new actor to send messages to
+    */
+  private def buffer(
+      target: ActorRef,
+      batch: Int = 100,
+      period: FiniteDuration = 60.seconds
+    ): ActorRef =
+    Source
+      .actorRef(bufferSize = 1000, OverflowStrategy.dropNew)
       .groupedWithin(batch, period)
       .to(Sink.actorRef(target, NotUsed))
       .run()

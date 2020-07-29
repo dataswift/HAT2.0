@@ -29,7 +29,10 @@ import com.typesafe.config.Config
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.models.applications.Version
 import org.hatdex.hat.she.models.LambdaFunctionLoader
-import org.hatdex.hat.she.service.{ FunctionExecutableRegistry, FunctionExecutionTriggerHandler }
+import org.hatdex.hat.she.service.{
+  FunctionExecutableRegistry,
+  FunctionExecutionTriggerHandler
+}
 import org.hatdex.hat.utils.FutureTransformations
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.{ ConfigLoader, Configuration, Logger }
@@ -46,39 +49,61 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     ()
   }
 
-  implicit val seqFunctionConfigLoader: ConfigLoader[Seq[FunctionConfig]] = new ConfigLoader[Seq[FunctionConfig]] {
-    def load(config: Config, path: String): Seq[FunctionConfig] = {
-      val configs = config.getConfigList(path).asScala
-      logger.info(s"Got SHE function configs: $configs")
-      configs.map { config =>
-        FunctionConfig(
-          config.getString("id"),
-          Version(config.getString("version")),
-          config.getString("baseUrl"),
-          config.getString("namespace"),
-          config.getString("endpoint"),
-          config.getBoolean("experimental"))
+  implicit val seqFunctionConfigLoader: ConfigLoader[Seq[FunctionConfig]] =
+    new ConfigLoader[Seq[FunctionConfig]] {
+      def load(
+          config: Config,
+          path: String
+        ): Seq[FunctionConfig] = {
+        val configs = config.getConfigList(path).asScala
+        logger.info(s"Got SHE function configs: $configs")
+        configs.map { config =>
+          FunctionConfig(
+            config.getString("id"),
+            Version(config.getString("version")),
+            config.getString("baseUrl"),
+            config.getString("namespace"),
+            config.getString("endpoint"),
+            config.getBoolean("experimental")
+          )
+        }
       }
     }
-  }
 
   @Provides
   def provideFunctionExecutableRegistry(
-    config: Configuration,
-    loader: LambdaFunctionLoader)(implicit ec: ExecutionContext): FunctionExecutableRegistry = {
+      config: Configuration,
+      loader: LambdaFunctionLoader
+    )(implicit ec: ExecutionContext
+    ): FunctionExecutableRegistry = {
 
-    val includeExperimental: Boolean = config.getOptional[Boolean]("she.beta").getOrElse(false)
+    val includeExperimental: Boolean =
+      config.getOptional[Boolean]("she.beta").getOrElse(false)
 
     val eventuallyFunctionsLoaded = Future.sequence(
-      config.get[Seq[FunctionConfig]]("she.functions")
+      config
+        .get[Seq[FunctionConfig]]("she.functions")
         .filter(c => !c.experimental || (includeExperimental && c.experimental))
-        .map(c => FutureTransformations.futureToFutureTry(loader.load(c.id, c.version, c.baseUrl, c.namespace, c.endpoint))))
+        .map(c =>
+          FutureTransformations.futureToFutureTry(
+            loader.load(c.id, c.version, c.baseUrl, c.namespace, c.endpoint)
+          )
+        )
+    )
 
     val functionsLoaded = Await.result(eventuallyFunctionsLoaded, 30.seconds)
 
     // ignore any functions that failed to load without stopping the whole application
-    new FunctionExecutableRegistry(functionsLoaded.filter(_.isSuccess).flatMap(_.toOption))
+    new FunctionExecutableRegistry(
+      functionsLoaded.filter(_.isSuccess).flatMap(_.toOption)
+    )
   }
 
-  case class FunctionConfig(id: String, version: Version, baseUrl: String, namespace: String, endpoint: String, experimental: Boolean)
+  case class FunctionConfig(
+      id: String,
+      version: Version,
+      baseUrl: String,
+      namespace: String,
+      endpoint: String,
+      experimental: Boolean)
 }

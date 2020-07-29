@@ -28,7 +28,8 @@ import play.api.mvc._
 
 import scala.concurrent.Future
 
-class WellKnown @Inject() (components: ControllerComponents) extends AbstractController(components) {
+class WellKnown @Inject() (components: ControllerComponents)
+    extends AbstractController(components) {
 
   def appleAppSiteAssociation(): EssentialAction =
     Action.async { _ =>

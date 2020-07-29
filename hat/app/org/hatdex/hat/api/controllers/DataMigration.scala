@@ -30,7 +30,11 @@ import com.mohiva.play.silhouette.api.Silhouette
 import org.hatdex.hat.api.json.RichDataJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.MigrationService
-import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
+import org.hatdex.hat.authentication.{
+  HatApiAuthEnvironment,
+  HatApiController,
+  WithRole
+}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -40,19 +44,34 @@ import scala.concurrent.ExecutionContext
 class DataMigration @Inject() (
     components: ControllerComponents,
     silhouette: Silhouette[HatApiAuthEnvironment],
-    migrationService: MigrationService)(
-    implicit
-    val ec: ExecutionContext) extends HatApiController(components, silhouette) with RichDataJsonFormats {
+    migrationService: MigrationService
+  )(implicit
+    val ec: ExecutionContext)
+    extends HatApiController(components, silhouette)
+    with RichDataJsonFormats {
 
   private val logger = Logger(this.getClass)
 
-  def migrateData(fromSource: String, fromTableName: String, toNamespace: String, toEndpoint: String, includeTimestamp: Boolean): Action[AnyContent] =
+  def migrateData(
+      fromSource: String,
+      fromTableName: String,
+      toNamespace: String,
+      toEndpoint: String,
+      includeTimestamp: Boolean
+    ): Action[AnyContent] =
     SecuredAction(WithRole(Owner())).async { implicit request =>
-      logger.info(s"Migrate data from $fromSource:$fromTableName to $toNamespace/$toEndpoint")
+      logger.info(
+        s"Migrate data from $fromSource:$fromTableName to $toNamespace/$toEndpoint"
+      )
       val eventualCount = migrationService.migrateOldData(
-        request.identity.userId, s"$toNamespace/$toEndpoint",
-        fromTableName, fromSource,
-        None, None, includeTimestamp)
+        request.identity.userId,
+        s"$toNamespace/$toEndpoint",
+        fromTableName,
+        fromSource,
+        None,
+        None,
+        includeTimestamp
+      )
 
       eventualCount map { count =>
         Ok(Json.toJson(SuccessResponse(s"Migrated $count records")))
@@ -60,4 +79,3 @@ class DataMigration @Inject() (
     }
 
 }
-

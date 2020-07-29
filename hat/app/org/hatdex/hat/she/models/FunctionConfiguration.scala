@@ -26,11 +26,23 @@ package org.hatdex.hat.she.models
 
 import java.util.UUID
 
-import org.hatdex.hat.api.json.{ ApplicationJsonProtocol, DataFeedItemJsonProtocol, RichDataJsonFormats }
+import org.hatdex.hat.api.json.{
+  ApplicationJsonProtocol,
+  DataFeedItemJsonProtocol,
+  RichDataJsonFormats
+}
 import org.hatdex.hat.api.models.applications._
-import org.hatdex.hat.api.models.{ EndpointData, EndpointDataBundle, FormattedText }
+import org.hatdex.hat.api.models.{
+  EndpointData,
+  EndpointDataBundle,
+  FormattedText
+}
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.Tables.{ DataBundlesRow, SheFunctionRow, SheFunctionStatusRow }
+import org.hatdex.hat.dal.Tables.{
+  DataBundlesRow,
+  SheFunctionRow,
+  SheFunctionStatusRow
+}
 import org.joda.time.{ DateTime, Period }
 import play.api.libs.json._
 
@@ -81,12 +93,19 @@ case class FunctionConfiguration(
         other.status.available,
         this.status.enabled || other.status.enabled,
         this.status.lastExecution.orElse(other.status.lastExecution),
-        this.status.executionStarted.orElse(other.status.executionStarted)))
+        this.status.executionStarted.orElse(other.status.executionStarted)
+      )
+    )
   }
 }
 
 object FunctionConfiguration {
-  def apply(function: SheFunctionRow, functionStatus: Option[SheFunctionStatusRow], bundle: DataBundlesRow, available: Boolean = false): FunctionConfiguration = {
+  def apply(
+      function: SheFunctionRow,
+      functionStatus: Option[SheFunctionStatusRow],
+      bundle: DataBundlesRow,
+      available: Boolean = false
+    ): FunctionConfiguration = {
     import DataFeedItemJsonProtocol.feedItemFormat
     import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol._
     import org.hatdex.hat.she.models.FunctionTrigger.Trigger
@@ -99,19 +118,31 @@ object FunctionConfiguration {
         Version(function.version),
         function.versionReleaseDate,
         None,
-        function.name, function.headline, function.description.as[FormattedText], function.termsUrl,
+        function.name,
+        function.headline,
+        function.description.as[FormattedText],
+        function.termsUrl,
         function.developerSupportEmail,
         function.dataPreview.map(_.as[Seq[DataFeedItem]]),
         function.graphics.as[ApplicationGraphics],
-        function.dataPreviewEndpoint),
-      ApplicationDeveloper(function.developerId, function.developerName, function.developerUrl, function.developerCountry, None),
+        function.dataPreviewEndpoint
+      ),
+      ApplicationDeveloper(
+        function.developerId,
+        function.developerName,
+        function.developerUrl,
+        function.developerCountry,
+        None
+      ),
       function.trigger.as[Trigger],
       ModelTranslation.fromDbModel(bundle),
       FunctionStatus(
         available,
         functionStatus.exists(_.enabled),
         functionStatus.flatMap(_.lastExecution),
-        functionStatus.flatMap(_.executionStarted)))
+        functionStatus.flatMap(_.executionStarted)
+      )
+    )
 
   }
 }
@@ -136,7 +167,11 @@ object FunctionTrigger {
 
 }
 
-trait FunctionConfigurationJsonProtocol extends JodaWrites with JodaReads with RichDataJsonFormats with DataFeedItemJsonProtocol {
+trait FunctionConfigurationJsonProtocol
+    extends JodaWrites
+    with JodaReads
+    with RichDataJsonFormats
+    with DataFeedItemJsonProtocol {
   import FunctionTrigger._
   import ApplicationJsonProtocol.applicationDeveloperFormat
   import ApplicationJsonProtocol.applicationGraphicsFormat
@@ -144,15 +179,19 @@ trait FunctionConfigurationJsonProtocol extends JodaWrites with JodaReads with R
   import ApplicationJsonProtocol.applicationUpdateNotesFormat
   import ApplicationJsonProtocol.formattedTextFormat
 
-  protected implicit val triggerPeriodicFormat: Format[TriggerPeriodic] = Json.format[TriggerPeriodic]
+  protected implicit val triggerPeriodicFormat: Format[TriggerPeriodic] =
+    Json.format[TriggerPeriodic]
 
   implicit val triggerFormat: Format[Trigger] = new Format[Trigger] {
-    def reads(json: JsValue): JsResult[Trigger] = (json \ "triggerType").as[String] match {
-      case "periodic"   => Json.fromJson[TriggerPeriodic](json)(triggerPeriodicFormat)
-      case "individual" => JsSuccess(TriggerIndividual())
-      case "manual"     => JsSuccess(TriggerManual())
-      case triggerType  => JsError(s"Unexpected JSON value $triggerType in $json")
-    }
+    def reads(json: JsValue): JsResult[Trigger] =
+      (json \ "triggerType").as[String] match {
+        case "periodic" =>
+          Json.fromJson[TriggerPeriodic](json)(triggerPeriodicFormat)
+        case "individual" => JsSuccess(TriggerIndividual())
+        case "manual"     => JsSuccess(TriggerManual())
+        case triggerType =>
+          JsError(s"Unexpected JSON value $triggerType in $json")
+      }
 
     def writes(trigger: Trigger): JsValue = {
       val triggerJson = trigger match {
@@ -160,15 +199,21 @@ trait FunctionConfigurationJsonProtocol extends JodaWrites with JodaReads with R
         case _: TriggerIndividual => JsObject(Seq())
         case _: TriggerManual     => JsObject(Seq())
       }
-      triggerJson.as[JsObject].+(("triggerType", Json.toJson(trigger.triggerType)))
+      triggerJson
+        .as[JsObject]
+        .+(("triggerType", Json.toJson(trigger.triggerType)))
     }
   }
 
-  implicit val functionInfoFormat: Format[FunctionInfo] = Json.format[FunctionInfo]
-  implicit val functionStatusFormat: Format[FunctionStatus] = Json.format[FunctionStatus]
-  implicit val functionConfigurationFormat: Format[FunctionConfiguration] = Json.format[FunctionConfiguration]
+  implicit val functionInfoFormat: Format[FunctionInfo] =
+    Json.format[FunctionInfo]
+  implicit val functionStatusFormat: Format[FunctionStatus] =
+    Json.format[FunctionStatus]
+  implicit val functionConfigurationFormat: Format[FunctionConfiguration] =
+    Json.format[FunctionConfiguration]
   implicit val responseFormat: Format[Response] = Json.format[Response]
   implicit val requestFormat: Format[Request] = Json.format[Request]
 }
 
-object FunctionConfigurationJsonProtocol extends FunctionConfigurationJsonProtocol
+object FunctionConfigurationJsonProtocol
+    extends FunctionConfigurationJsonProtocol

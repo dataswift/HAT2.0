@@ -20,3 +20,4 @@ deployment/docker/docker-deploy
 .bloop
 .metals
 project/metals.sbt
+.scalafmt-common.conf
