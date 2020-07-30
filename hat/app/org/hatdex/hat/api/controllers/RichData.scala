@@ -739,7 +739,10 @@ class RichData @Inject() (
                   )
               }
             }
-            case _ => Future.successful(NotFound)
+            case Left(x) => {
+              logger.error(s"Contract Save Error: ${x} - ${namespace} - ${endpoint} - ${contractRequestBody}")
+              Future.successful(NotFound)
+            }
           }
         } recover {
           case e: RichDataDuplicateException =>
@@ -932,27 +935,30 @@ class RichData @Inject() (
   /* *** Contract Data *** */
 
   def getContractData(
-      namespace: String,
-      endpoint: String,
-      orderBy: Option[String],
-      ordering: Option[String],
-      skip: Option[Int],
-      take: Option[Int]
-    ): Action[ContractRequestBody] =
-    UserAwareAction.async(parsers.json[ContractRequestBody]) {
-      implicit request =>
-        val contractRequestBody = request.body
-        val requestIsAllowed = assessRequest(contractRequestBody, namespace)
+    namespace: String,
+    endpoint: String,
+    orderBy: Option[String],
+    ordering: Option[String],
+    skip: Option[Int],
+    take: Option[Int]): Action[ContractRequestBody] =
+    UserAwareAction.async(parsers.json[ContractRequestBody]) { implicit request =>
+      val contractRequestBody = request.body
+      val requestIsAllowed = assessRequest(contractRequestBody, namespace)
 
-        requestIsAllowed.flatMap { testResult =>
-          testResult match {
-            case Right(RequestVerified(ns)) =>
-              makeData(namespace, endpoint, orderBy, ordering, skip, take)
-            case _ => Future.successful(NotFound)
+      requestIsAllowed.flatMap { testResult =>
+        testResult match {
+          case Right(RequestVerified(ns)) => makeData(namespace, endpoint, orderBy, ordering, skip, take)
+          case Left(contractError) => {
+            logger.error(s"Contract Get Error: ${contractError} - ${namespace} - ${endpoint} - ${contractRequestBody}")
+            Future.successful(NotFound)
           }
-        } recover {
-          case _ => NotFound
         }
+      } recover {
+        case _ => {
+          logger.error(s"Contract Get Error: Request Not Allowed - ${namespace} - ${endpoint} - ${contractRequestBody}")
+          NotFound
+        }
+      }
     }
 
   def assessRequest(
