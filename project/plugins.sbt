@@ -6,8 +6,7 @@ resolvers += Resolver.typesafeRepo("releases")
 // S3 based SBT resolver
 resolvers ++= Seq(
   "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com",
-  "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com",
-  "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com"
+  "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com"
 )
 
 
@@ -35,4 +34,4 @@ addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")
 // ScalaFMT
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.3.4")
 
-addSbtPlugin("io.dataswift" % "sbt-scalafmt-common" % "0.1.1-SNAPSHOT")
+addSbtPlugin("io.dataswift" % "sbt-scalafmt-common" % "0.1.1")
