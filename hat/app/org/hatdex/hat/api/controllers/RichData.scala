@@ -723,6 +723,7 @@ class RichData @Inject() (
         requestIsAllowed.flatMap { testResult =>
           testResult match {
             case Right(RequestVerified(ns)) => {
+              logger.info(s"RequestVerified: ${ns}")
               contractRequestBody.body match {
                 case array: JsArray =>
                   handleJsArray(
@@ -972,13 +973,16 @@ class RichData @Inject() (
     eventuallyMaybeDecision.flatMap { maybeDecision =>
       eventuallyMaybeApp.flatMap { maybeApp =>
         decide(maybeDecision, maybeApp, namespace) match {
-          case Some(_ns) =>
+          case Some(ns) => {
+            logger.info(s"Found a namespace: ${ns}") 
             Future.successful(
               Right(
                 RequestVerified(s"Token: ${contractRequestBody.contractId}")
               )
             )
-          case None =>
+          }
+          case None => {
+            logger.error(s"ContractData.assessRequest:Failure ${contractRequestBody} - ${namespace}")  
             Future.successful(
               Left(
                 RequestValidationFailure.InvalidShortLivedToken(
@@ -986,15 +990,18 @@ class RichData @Inject() (
                 )
               )
             )
+          }
         }
       }
     } recover {
-      case _e =>
+      case e => {
+        logger.error(s"ContractData.assessRequest:Failure ${e}")
         Left(
           RequestValidationFailure.InvalidShortLivedToken(
             s"Token: ${contractRequestBody.contractId}"
           )
         )
+      }
     }
   }
 
@@ -1009,10 +1016,12 @@ class RichData @Inject() (
     import ContractVerificationSuccess._
 
     (eitherDecision, maybeApp) match {
-      case (Right(JwtClaimVerified(_jwtClaim)), Some(app)) => {
+      case (Right(JwtClaimVerified(_jwtClaim@_)), Some(app)) => {
+        logger.info(s"jwtclaim verified for ${app}")
         verifyNamespace(app, namespace)
       }
-      case (_, _) => {
+      case (Left(decision), _) => {
+        logger.error(s"ContractData.decide: ${decision}")
         None
       }
     }
