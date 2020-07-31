@@ -27,13 +27,17 @@ package org.hatdex.hat.phata.models
 import play.api.libs.json.{ JsPath, Json, Reads, Writes }
 import play.api.libs.functional.syntax._
 
-case class ApiClaimHatRequest(applicationId: String, email: String)
+case class ApiClaimHatRequest(
+    applicationId: String,
+    email: String)
 
 object ApiClaimHatRequest {
-  implicit val claimHatRequestApiReads: Reads[ApiClaimHatRequest] = (
-    (JsPath \ "applicationId").read[String] and (JsPath \ "email").read[String](Reads.email))(ApiClaimHatRequest.apply _)
+  implicit val claimHatRequestApiReads: Reads[ApiClaimHatRequest] =
+    ((JsPath \ "applicationId").read[String] and (JsPath \ "email")
+      .read[String](Reads.email))(ApiClaimHatRequest.apply _)
 
-  implicit val claimHatRequestApiWrites: Writes[ApiClaimHatRequest] = Json.format[ApiClaimHatRequest]
+  implicit val claimHatRequestApiWrites: Writes[ApiClaimHatRequest] =
+    Json.format[ApiClaimHatRequest]
 
 }
 
@@ -55,11 +59,21 @@ case class HattersClaimPayload(
     hatCluster: String)
 
 object HatClaimCompleteRequest {
-  implicit val hatClaimRequestReads: Reads[HatClaimCompleteRequest] = Json.reads[HatClaimCompleteRequest]
+  implicit val hatClaimRequestReads: Reads[HatClaimCompleteRequest] =
+    Json.reads[HatClaimCompleteRequest]
 }
 
 object HattersClaimPayload {
-  def apply(claim: HatClaimCompleteRequest): HattersClaimPayload = new HattersClaimPayload(
-    claim.email, claim.termsAgreed, claim.hatCluster == "hubat.net", "web", Some(claim.optins.nonEmpty), claim.hatName, claim.hatCluster)
-  implicit val HatClaimRequestWrites: Writes[HattersClaimPayload] = Json.format[HattersClaimPayload]
+  def apply(claim: HatClaimCompleteRequest): HattersClaimPayload =
+    new HattersClaimPayload(
+      claim.email,
+      claim.termsAgreed,
+      claim.hatCluster == "hubat.net",
+      "web",
+      Some(claim.optins.nonEmpty),
+      claim.hatName,
+      claim.hatCluster
+    )
+  implicit val HatClaimRequestWrites: Writes[HattersClaimPayload] =
+    Json.format[HattersClaimPayload]
 }

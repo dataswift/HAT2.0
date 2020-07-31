@@ -39,18 +39,37 @@ trait StaticDataEndpointMapper extends JodaWrites with JodaReads {
   protected lazy val logger: Logger = Logger(this.getClass)
 
   def dataQueries(): Seq[PropertyQuery]
-  def mapDataRecord(recordId: UUID, content: JsValue, endpoint: String): Seq[StaticDataValues]
+  def mapDataRecord(
+      recordId: UUID,
+      content: JsValue,
+      endpoint: String
+    ): Seq[StaticDataValues]
 
-  final def staticDataRecords()(
-    implicit
-    hatServer: HatServer, richDataService: RichDataService): Future[Seq[StaticDataValues]] = {
+  final def staticDataRecords(
+    )(implicit
+      hatServer: HatServer,
+      richDataService: RichDataService
+    ): Future[Seq[StaticDataValues]] = {
 
     val staticData = Future.sequence(dataQueries.map { query =>
+      val eventualDataSource: Future[Seq[EndpointData]] =
+        richDataService.propertyData(
+          query.endpoints,
+          query.orderBy,
+          orderingDescending = query.ordering.contains("descending"),
+          skip = 0,
+          limit = query.limit,
+          createdAfter = None
+        )(hatServer.db)
 
-      val eventualDataSource: Future[Seq[EndpointData]] = richDataService.propertyData(query.endpoints, query.orderBy,
-        orderingDescending = query.ordering.contains("descending"), skip = 0, limit = query.limit, createdAfter = None)(hatServer.db)
-
-      eventualDataSource.map { dataSource => dataSource.map(item => mapDataRecord(item.recordId.get, item.data, item.endpoint)).headOption.getOrElse(Seq()) }
+      eventualDataSource.map { dataSource =>
+        dataSource
+          .map(item =>
+            mapDataRecord(item.recordId.get, item.data, item.endpoint)
+          )
+          .headOption
+          .getOrElse(Seq())
+      }
     })
 
     staticData.map(_.flatten)

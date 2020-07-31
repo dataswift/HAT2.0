@@ -29,7 +29,13 @@
 package org.hatdex.hat.utils
 
 import concurrent.{ Future, Await, Promise, ExecutionContext }
-import java.util.concurrent.{ Future => JavaFuture, TimeUnit, Callable, CancellationException, ExecutorService }
+import java.util.concurrent.{
+  Future => JavaFuture,
+  TimeUnit,
+  Callable,
+  CancellationException,
+  ExecutorService
+}
 import concurrent.duration._
 import scala.util.Success
 import scala.util.Failure
@@ -38,12 +44,14 @@ import scala.collection.JavaConverters._
 import concurrent.duration.TimeUnit
 import java.{ util => jutil }
 
-class ExecutorServiceWrapper(implicit ec: ExecutionContext) extends ExecutorService {
+class ExecutorServiceWrapper(implicit ec: ExecutionContext)
+    extends ExecutorService {
 
   def execute(command: Runnable) = {
     ec.execute(new Runnable {
       def run() = {
-        try command.run() catch { case NonFatal(ex) => ec.reportFailure(ex) }
+        try command.run()
+        catch { case NonFatal(ex) => ec.reportFailure(ex) }
       }
     })
   }
@@ -55,18 +63,28 @@ class ExecutorServiceWrapper(implicit ec: ExecutionContext) extends ExecutorServ
     throw new UnsupportedOperationException("ExecutorServiceWrapper.shutdown")
   }
 
-  def awaitTermination(timeout: Long, unit: TimeUnit): Boolean =
-    throw new UnsupportedOperationException("ExecutorServiceWrapper.awaitTermination")
+  def awaitTermination(
+      timeout: Long,
+      unit: TimeUnit
+    ): Boolean =
+    throw new UnsupportedOperationException(
+      "ExecutorServiceWrapper.awaitTermination"
+    )
 
   def shutdownNow(): java.util.List[Runnable] =
-    throw new UnsupportedOperationException("ExecutorServiceWrapper.shutdownNow")
+    throw new UnsupportedOperationException(
+      "ExecutorServiceWrapper.shutdownNow"
+    )
 
   def submit(task: Runnable): JavaFuture[_] =
     wrapPromiseInJavaFuture(executeWithPromise {
       task.run()
     })
 
-  def submit[T](task: Runnable, result: T): JavaFuture[T] =
+  def submit[T](
+      task: Runnable,
+      result: T
+    ): JavaFuture[T] =
     wrapPromiseInJavaFuture(executeWithPromise {
       task.run(); result
     })
@@ -76,13 +94,23 @@ class ExecutorServiceWrapper(implicit ec: ExecutionContext) extends ExecutorServ
       task.call()
     })
 
-  def invokeAll[T](tasks: jutil.Collection[_ <: Callable[T]], timeout: Long, unit: TimeUnit): jutil.List[JavaFuture[T]] =
+  def invokeAll[T](
+      tasks: jutil.Collection[_ <: Callable[T]],
+      timeout: Long,
+      unit: TimeUnit
+    ): jutil.List[JavaFuture[T]] =
     invokeAll(tasks, durationFor(timeout, unit))
 
-  def invokeAll[T](tasks: java.util.Collection[_ <: Callable[T]]): jutil.List[JavaFuture[T]] =
+  def invokeAll[T](
+      tasks: java.util.Collection[_ <: Callable[T]]
+    ): jutil.List[JavaFuture[T]] =
     invokeAll(tasks, Duration.Inf)
 
-  def invokeAny[T](tasks: jutil.Collection[_ <: Callable[T]], timeout: Long, unit: TimeUnit): T =
+  def invokeAny[T](
+      tasks: jutil.Collection[_ <: Callable[T]],
+      timeout: Long,
+      unit: TimeUnit
+    ): T =
     invokeAny(tasks, durationFor(timeout, unit))
 
   def invokeAny[T](tasks: java.util.Collection[_ <: Callable[T]]): T =
@@ -92,7 +120,9 @@ class ExecutorServiceWrapper(implicit ec: ExecutionContext) extends ExecutorServ
   private[this] case object Cancelled extends TaskState[Nothing]
   private[this] case class Finished[+T](result: T) extends TaskState[T]
 
-  private[this] def executeWithPromise[T](callback: => T): Promise[TaskState[T]] = {
+  private[this] def executeWithPromise[T](
+      callback: => T
+    ): Promise[TaskState[T]] = {
     val promise = Promise[TaskState[T]]()
 
     ec.execute(new Runnable {
@@ -102,8 +132,7 @@ class ExecutorServiceWrapper(implicit ec: ExecutionContext) extends ExecutorServ
             val result = callback
             promise.tryComplete(Success(Finished(result)))
             ()
-          }
-          catch {
+          } catch {
             case NonFatal(ex) =>
               promise.tryComplete(Failure(ex))
               ec.reportFailure(ex)
@@ -114,14 +143,19 @@ class ExecutorServiceWrapper(implicit ec: ExecutionContext) extends ExecutorServ
     promise
   }
 
-  private[this] def wrapPromiseInJavaFuture[T](promise: Promise[TaskState[T]]): JavaFuture[T] = {
+  private[this] def wrapPromiseInJavaFuture[T](
+      promise: Promise[TaskState[T]]
+    ): JavaFuture[T] = {
     val future = promise.future
 
     new JavaFuture[T] {
       def isCancelled: Boolean =
         future.isCompleted && future.value.get == Success(Cancelled)
 
-      def get(timeout: Long, unit: TimeUnit): T =
+      def get(
+          timeout: Long,
+          unit: TimeUnit
+        ): T =
         Await.result(future, durationFor(timeout, unit)) match {
           case Finished(result) =>
             result
@@ -145,13 +179,18 @@ class ExecutorServiceWrapper(implicit ec: ExecutionContext) extends ExecutorServ
     }
   }
 
-  private[this] def invokeAny[T](tasks: java.util.Collection[_ <: Callable[T]], atMost: Duration): T = {
+  private[this] def invokeAny[T](
+      tasks: java.util.Collection[_ <: Callable[T]],
+      atMost: Duration
+    ): T = {
     if (tasks.size() == 0)
       throw new IllegalArgumentException("tasks is empty")
 
-    val promises = tasks.asScala.map(task => executeWithPromise {
-      task.call()
-    })
+    val promises = tasks.asScala.map(task =>
+      executeWithPromise {
+        task.call()
+      }
+    )
 
     val firstCompleted = Future.firstCompletedOf(promises.map(_.future))
 
@@ -162,13 +201,18 @@ class ExecutorServiceWrapper(implicit ec: ExecutionContext) extends ExecutorServ
     }
   }
 
-  private[this] def invokeAll[T](tasks: java.util.Collection[_ <: Callable[T]], atMost: Duration) = {
+  private[this] def invokeAll[T](
+      tasks: java.util.Collection[_ <: Callable[T]],
+      atMost: Duration
+    ) = {
     if (tasks.size() == 0)
       throw new IllegalArgumentException("tasks is empty")
 
-    val promises = tasks.asScala.map(task => executeWithPromise {
-      task.call()
-    })
+    val promises = tasks.asScala.map(task =>
+      executeWithPromise {
+        task.call()
+      }
+    )
     val futures = promises.map(_.future)
     val sequence = Future.sequence(futures)
 
@@ -176,9 +220,13 @@ class ExecutorServiceWrapper(implicit ec: ExecutionContext) extends ExecutorServ
     promises.map(wrapPromiseInJavaFuture).toList.asJava
   }
 
-  private[this] def durationFor(timeout: Long, unit: TimeUnit) = unit match {
-    case TimeUnit.NANOSECONDS  => timeout.nanos
-    case TimeUnit.MICROSECONDS => timeout.micros
-    case _                     => unit.toMillis(timeout).millis
-  }
+  private[this] def durationFor(
+      timeout: Long,
+      unit: TimeUnit
+    ) =
+    unit match {
+      case TimeUnit.NANOSECONDS  => timeout.nanos
+      case TimeUnit.MICROSECONDS => timeout.micros
+      case _                     => unit.toMillis(timeout).millis
+    }
 }

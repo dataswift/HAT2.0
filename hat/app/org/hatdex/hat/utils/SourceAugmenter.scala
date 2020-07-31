@@ -30,20 +30,28 @@ import akka.stream.stage.GraphStage
 import akka.stream.{ FanInShape2, SourceShape }
 
 class SourceAugmenter {
-  def augment[T, U](source: Source[T, NotUsed], extrasSource: Source[U, NotUsed], augmentFunction: (T, U) ⇒ Either[T, U]): Source[T, NotUsed] = {
-    augmentSource(new AugmentWith(augmentFunction), source, extrasSource) { (_, _) => NotUsed }
+  def augment[T, U](
+      source: Source[T, NotUsed],
+      extrasSource: Source[U, NotUsed],
+      augmentFunction: (T, U) => Either[T, U]
+    ): Source[T, NotUsed] = {
+    augmentSource(new AugmentWith(augmentFunction), source, extrasSource) {
+      (_, _) => NotUsed
+    }
   }
 
   private def augmentSource[T, U, MatIn0, MatIn1, Mat](
-    combinator: GraphStage[FanInShape2[T, U, T]],
-    s0: Source[T, MatIn0],
-    s1: Source[U, MatIn1])(combineMat: (MatIn0, MatIn1) => Mat): Source[T, Mat] =
-
-    Source.fromGraph(GraphDSL.create(s0, s1)(combineMat) { implicit builder => (s0, s1) =>
-      import GraphDSL.Implicits._
-      val merge = builder.add(combinator)
-      s0 ~> merge.in0
-      s1 ~> merge.in1
-      SourceShape(merge.out)
+      combinator: GraphStage[FanInShape2[T, U, T]],
+      s0: Source[T, MatIn0],
+      s1: Source[U, MatIn1]
+    )(combineMat: (MatIn0, MatIn1) => Mat
+    ): Source[T, Mat] =
+    Source.fromGraph(GraphDSL.create(s0, s1)(combineMat) {
+      implicit builder => (s0, s1) =>
+        import GraphDSL.Implicits._
+        val merge = builder.add(combinator)
+        s0 ~> merge.in0
+        s1 ~> merge.in1
+        SourceShape(merge.out)
     })
 }

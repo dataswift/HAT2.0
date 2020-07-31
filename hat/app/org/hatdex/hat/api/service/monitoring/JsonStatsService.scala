@@ -31,11 +31,17 @@ import play.api.libs.json._
 import scala.collection.immutable.HashMap
 
 object JsonStatsService {
-  protected[service] def countJsonPaths(data: JsValue, path: Seq[String] = Seq()): HashMap[String, Long] = {
+  protected[service] def countJsonPaths(
+      data: JsValue,
+      path: Seq[String] = Seq()
+    ): HashMap[String, Long] = {
     data match {
       case v: JsArray =>
-        val newPath = path.dropRight(1) :+ (path.lastOption.getOrElse("") + "[]")
-        Utils.mergeMap(v.value.map(countJsonPaths(_, newPath)))((v1, v2) => v1 + v2)
+        val newPath =
+          path.dropRight(1) :+ (path.lastOption.getOrElse("") + "[]")
+        Utils.mergeMap(v.value.map(countJsonPaths(_, newPath)))((v1, v2) =>
+          v1 + v2
+        )
 
       case v: JsObject =>
         val temp = v.fields map {
@@ -48,18 +54,24 @@ object JsonStatsService {
     }
   }
 
-  protected[service] def countEndpointData(data: EndpointData): HashMap[String, HashMap[String, Long]] = {
+  protected[service] def countEndpointData(
+      data: EndpointData
+    ): HashMap[String, HashMap[String, Long]] = {
     val counts = HashMap(data.endpoint -> countJsonPaths(data.data))
     val linkedCounts = data.links map { links =>
       links.map(countEndpointData)
     }
     val allCounts = linkedCounts.getOrElse(Seq()) :+ counts
-    Utils.mergeMap(allCounts)((v1, v2) => Utils.mergeMap(Seq(v1, v2))((v1, v2) => v1 + v2))
+    Utils.mergeMap(allCounts)((v1, v2) =>
+      Utils.mergeMap(Seq(v1, v2))((v1, v2) => v1 + v2)
+    )
   }
 
   def endpointDataCounts(data: Seq[EndpointData]): Iterable[EndpointStats] = {
     val counts = data.map(countEndpointData)
-    val combined = Utils.mergeMap(counts)((v1, v2) => Utils.mergeMap(Seq(v1, v2))((v1, v2) => v1 + v2))
+    val combined = Utils.mergeMap(counts)((v1, v2) =>
+      Utils.mergeMap(Seq(v1, v2))((v1, v2) => v1 + v2)
+    )
     combined map {
       case (endpoint, eCounts) => EndpointStats(endpoint, eCounts)
     }

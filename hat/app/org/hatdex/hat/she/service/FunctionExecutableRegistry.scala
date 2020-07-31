@@ -30,31 +30,39 @@ import org.hatdex.hat.she.models.FunctionExecutable
 import scala.reflect.ClassTag
 
 class FunctionExecutableRegistry(interfaces: Seq[FunctionExecutable]) {
+
   /**
-   * Gets a specific function by its type.
-   *
-   * @tparam T The type of the provider.
-   * @return Some specific FunctionExecutable or None if no function for the given type could be found.
-   */
+    * Gets a specific function by its type.
+    *
+    * @tparam T The type of the provider.
+    * @return Some specific FunctionExecutable or None if no function for the given type could be found.
+    */
   def get[T <: FunctionExecutable: ClassTag]: Option[T] = {
-    interfaces.find(p => TypeUtils.isInstance(p, implicitly[ClassTag[T]].runtimeClass)).map(_.asInstanceOf[T])
+    interfaces
+      .find(p => TypeUtils.isInstance(p, implicitly[ClassTag[T]].runtimeClass))
+      .map(_.asInstanceOf[T])
   }
 
   /**
-   * Gets a specific function by its name.
-   *
-   * @param id The ID of the provider to return.
-   * @return Some specific FunctionExecutable or None if no function for the given name could be found.
-   */
-  def get[T <: FunctionExecutable: ClassTag](id: String): Option[T] = getSeq[T].find(_.configuration.id == id)
+    * Gets a specific function by its name.
+    *
+    * @param id The ID of the provider to return.
+    * @return Some specific FunctionExecutable or None if no function for the given name could be found.
+    */
+  def get[T <: FunctionExecutable: ClassTag](id: String): Option[T] =
+    getSeq[T].find(_.configuration.id == id)
 
   /**
-   * Gets a list of function that match a certain type.
-   *
-   * @tparam T The type of the provider.
-   * @return A list of functions that match a certain type.
-   */
+    * Gets a list of function that match a certain type.
+    *
+    * @tparam T The type of the provider.
+    * @return A list of functions that match a certain type.
+    */
   def getSeq[T <: FunctionExecutable: ClassTag]: Seq[T] = {
-    interfaces.filter(p => TypeUtils.isInstance(p, implicitly[ClassTag[T]].runtimeClass)).map(_.asInstanceOf[T])
+    interfaces
+      .filter(p =>
+        TypeUtils.isInstance(p, implicitly[ClassTag[T]].runtimeClass)
+      )
+      .map(_.asInstanceOf[T])
   }
 }

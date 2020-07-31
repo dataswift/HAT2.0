@@ -30,8 +30,16 @@ import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.resourceManagement.HatServer
 
-case class HatUser(userId: UUID, email: String, pass: Option[String], name: String, roles: Seq[UserRole], enabled: Boolean) extends Identity {
-  def loginInfo(implicit hatServer: HatServer) = LoginInfo(hatServer.domain, email)
+case class HatUser(
+    userId: UUID,
+    email: String,
+    pass: Option[String],
+    name: String,
+    roles: Seq[UserRole],
+    enabled: Boolean)
+    extends Identity {
+  def loginInfo(implicit hatServer: HatServer) =
+    LoginInfo(hatServer.domain, email)
 
   def withRoles(roles: UserRole*): HatUser = {
     this.copy(roles = (this.roles.toSet ++ roles.toSet).toSeq)
@@ -44,19 +52,14 @@ case class HatUser(userId: UUID, email: String, pass: Option[String], name: Stri
   lazy val primaryRole: UserRole = {
     if (roles.contains(Owner())) {
       Owner()
-    }
-    else if (roles.contains(Platform())) {
+    } else if (roles.contains(Platform())) {
       Platform()
-    }
-    else if (roles.contains(DataCredit(""))) {
+    } else if (roles.contains(DataCredit(""))) {
       DataCredit("")
-    }
-    else if (roles.contains(DataDebitOwner(""))) {
+    } else if (roles.contains(DataDebitOwner(""))) {
       DataDebitOwner("")
-    }
-    else {
+    } else {
       Validate()
     }
   }
 }
-

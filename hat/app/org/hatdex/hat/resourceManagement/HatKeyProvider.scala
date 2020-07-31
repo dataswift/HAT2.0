@@ -40,9 +40,15 @@ import scala.util.Try
 trait HatKeyProvider {
   protected val keyUtils = new KeyUtils()
 
-  def publicKey(hat: String)(implicit ec: ExecutionContext): Future[RSAPublicKey]
+  def publicKey(
+      hat: String
+    )(implicit ec: ExecutionContext
+    ): Future[RSAPublicKey]
 
-  def privateKey(hat: String)(implicit ec: ExecutionContext): Future[RSAPrivateKey]
+  def privateKey(
+      hat: String
+    )(implicit ec: ExecutionContext
+    ): Future[RSAPrivateKey]
 
   def ownerEmail(hat: String)(implicit ec: ExecutionContext): Future[String]
 
@@ -64,7 +70,9 @@ trait HatKeyProvider {
       .map(Future.successful)
       .recover {
         case e =>
-          Future.failed(new HatServerDiscoveryException(s"Public Key reading failed", e))
+          Future.failed(
+            new HatServerDiscoveryException(s"Public Key reading failed", e)
+          )
       }
       .get
   }
@@ -75,35 +83,56 @@ trait HatKeyProvider {
       .map(Future.successful)
       .recover {
         case e =>
-          Future.failed(new HatServerDiscoveryException(s"Private Key reading failed", e))
+          Future.failed(
+            new HatServerDiscoveryException(s"Private Key reading failed", e)
+          )
       }
       .get
   }
 }
 
 @Singleton
-class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatKeyProvider {
-  def publicKey(hat: String)(implicit ec: ExecutionContext): Future[RSAPublicKey] = {
-    configuration.getOptional[String](s"hat.${hat.replace(':', '.')}.publicKey") map { confPublicKey =>
+class HatKeyProviderConfig @Inject() (configuration: Configuration)
+    extends HatKeyProvider {
+  def publicKey(
+      hat: String
+    )(implicit ec: ExecutionContext
+    ): Future[RSAPublicKey] = {
+    configuration.getOptional[String](
+      s"hat.${hat.replace(':', '.')}.publicKey"
+    ) map { confPublicKey =>
       readRsaPublicKey(confPublicKey)
     } getOrElse {
-      Future.failed(new HatServerDiscoveryException(s"Public Key for $hat not found"))
+      Future.failed(
+        new HatServerDiscoveryException(s"Public Key for $hat not found")
+      )
     }
   }
 
-  def privateKey(hat: String)(implicit ec: ExecutionContext): Future[RSAPrivateKey] = {
-    configuration.getOptional[String](s"hat.${hat.replace(':', '.')}.privateKey") map { confPrivateKey =>
+  def privateKey(
+      hat: String
+    )(implicit ec: ExecutionContext
+    ): Future[RSAPrivateKey] = {
+    configuration.getOptional[String](
+      s"hat.${hat.replace(':', '.')}.privateKey"
+    ) map { confPrivateKey =>
       readRsaPrivateKey(confPrivateKey)
     } getOrElse {
-      Future.failed(new HatServerDiscoveryException(s"Private Key for $hat not found"))
+      Future.failed(
+        new HatServerDiscoveryException(s"Private Key for $hat not found")
+      )
     }
   }
 
   def ownerEmail(hat: String)(implicit ec: ExecutionContext): Future[String] = {
-    configuration.getOptional[String](s"hat.${hat.replace(':', '.')}.ownerEmail") map { email =>
+    configuration.getOptional[String](
+      s"hat.${hat.replace(':', '.')}.ownerEmail"
+    ) map { email =>
       Future.successful(email)
     } getOrElse {
-      Future.failed(new HatServerDiscoveryException(s"Owner email for $hat not found"))
+      Future.failed(
+        new HatServerDiscoveryException(s"Owner email for $hat not found")
+      )
     }
   }
 }
@@ -112,26 +141,42 @@ class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatK
 class HatKeyProviderMilliner @Inject() (
     val configuration: Configuration,
     val cache: AsyncCacheApi,
-    val ws: WSClient) extends HatKeyProvider with MillinerHatSignup {
+    val ws: WSClient)
+    extends HatKeyProvider
+    with MillinerHatSignup {
   val logger = Logger(this.getClass)
 
-  def publicKey(hat: String)(implicit ec: ExecutionContext): Future[RSAPublicKey] = {
+  def publicKey(
+      hat: String
+    )(implicit ec: ExecutionContext
+    ): Future[RSAPublicKey] = {
     getHatSignup(hat) flatMap { signup =>
-      logger.debug(s"Received signup info, parsing public key ${signup.keys.map(_.publicKey)}")
+      logger.debug(
+        s"Received signup info, parsing public key ${signup.keys.map(_.publicKey)}"
+      )
       readRsaPublicKey(signup.keys.get.publicKey)
     } recoverWith {
       case e =>
-        Future.failed(new HatServerDiscoveryException(s"Public Key for $hat not found", e))
+        Future.failed(
+          new HatServerDiscoveryException(s"Public Key for $hat not found", e)
+        )
     }
   }
 
-  def privateKey(hat: String)(implicit ec: ExecutionContext): Future[RSAPrivateKey] = {
+  def privateKey(
+      hat: String
+    )(implicit ec: ExecutionContext
+    ): Future[RSAPrivateKey] = {
     getHatSignup(hat) flatMap { signup =>
-      logger.debug(s"Received signup info, parsing private key ${signup.keys.map(_.privateKey)}")
+      logger.debug(
+        s"Received signup info, parsing private key ${signup.keys.map(_.privateKey)}"
+      )
       readRsaPrivateKey(signup.keys.get.privateKey)
     } recoverWith {
       case _ =>
-        Future.failed(new HatServerDiscoveryException(s"Private Key for $hat not found"))
+        Future.failed(
+          new HatServerDiscoveryException(s"Private Key for $hat not found")
+        )
     }
   }
 
@@ -140,8 +185,9 @@ class HatKeyProviderMilliner @Inject() (
       signup.email
     } recoverWith {
       case _ =>
-        Future.failed(new HatServerDiscoveryException(s"Owner email for $hat not found"))
+        Future.failed(
+          new HatServerDiscoveryException(s"Owner email for $hat not found")
+        )
     }
   }
 }
-

@@ -4,7 +4,7 @@ email.welcome.dataRights.title=Your data rights are protected
 email.welcome.dataRights.description=This icon appears every time you access your HAT Personal Data Account and whenever you do data transactions with your HAT. HAT data rights protection ensures your HAT PDA is always secure and that the rights to your data are preserved.
 email.welcome.community.title=Join the community
 email.welcome.community.description=Help us grow a community of HAT owners claiming, controlling and sharing our data. Spread the word, and encourage new apps and new services to be built for your HAT. Do share your experiences with us!
-email.welcome.issuedBy=Your HAT PDA was issued by
+email.welcome.issuedBy=O seu PDA foi criado por
 
 email.hatclaim.subject=Olá de {0}
 email.hatClaim.title={0} recebe você em sua Personal Data Account

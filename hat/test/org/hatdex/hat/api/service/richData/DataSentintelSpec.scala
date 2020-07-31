@@ -73,9 +73,9 @@ class DataSentintelSpec(implicit ee: ExecutionEnv) extends PlaySpecification wit
         EndpointData("test/test", None, None, None, simpleJson2, None))
 
       val result = for {
-        saved ← dataService.saveData(owner.userId, data)
-        _ ← service.ensureUniquenessKey("test/test", "date")
-        retrieved ← dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+        saved <- dataService.saveData(owner.userId, data)
+        _ <- service.ensureUniquenessKey("test/test", "date")
+        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
       } yield retrieved
 
       result map { result =>
@@ -94,10 +94,10 @@ class DataSentintelSpec(implicit ee: ExecutionEnv) extends PlaySpecification wit
         EndpointData("test/test", None, None, None, simpleJson2, None))
 
       val result = for {
-        _ ← dataService.saveData(owner.userId, data)
-        _ ← dataService.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson2Updated, None)))
-        _ ← service.ensureUniquenessKey("test/test", "date")
-        retrieved ← dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+        _ <- dataService.saveData(owner.userId, data)
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson2Updated, None)))
+        _ <- service.ensureUniquenessKey("test/test", "date")
+        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
       } yield retrieved
 
       result map { result =>
@@ -117,15 +117,15 @@ class DataSentintelSpec(implicit ee: ExecutionEnv) extends PlaySpecification wit
         EndpointData("test/test", None, None, None, simpleJson2, None))
 
       val result = for {
-        _ ← dataService.saveData(owner.userId, data)
-        _ ← dataService.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson2Updated, None)))
-        _ ← service.ensureUniquenessKey("test/test", "testUniqueID")
-        retrieved ← dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+        _ <- dataService.saveData(owner.userId, data)
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson2Updated, None)))
+        _ <- service.ensureUniquenessKey("test/test", "testUniqueID")
+        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
       } yield retrieved
 
       result map { result =>
         result.find(_.sourceUniqueId.contains("1234567")) must beSome
-        result.count(r ⇒ (r.data \ "date").asOpt[Int].contains(1492799048)) must equalTo(2)
+        result.count(r => (r.data \ "date").asOpt[Int].contains(1492799048)) must equalTo(2)
       } await (3, 10.seconds)
     }
 
@@ -136,9 +136,9 @@ class DataSentintelSpec(implicit ee: ExecutionEnv) extends PlaySpecification wit
       val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
 
       val result = for {
-        _ ← dataService.saveData(owner.userId, data)
-        _ ← service.ensureUniquenessKey("test/test", "object.nestedInfo.deeplyLocatedUniqueId")
-        retrieved ← dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+        _ <- dataService.saveData(owner.userId, data)
+        _ <- service.ensureUniquenessKey("test/test", "object.nestedInfo.deeplyLocatedUniqueId")
+        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
       } yield retrieved
 
       result map { result =>
@@ -153,9 +153,9 @@ class DataSentintelSpec(implicit ee: ExecutionEnv) extends PlaySpecification wit
       val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
 
       val result = for {
-        _ ← dataService.saveData(owner.userId, data)
-        _ ← service.ensureUniquenessKey("test/test", "object.objectFieldArray[]")
-        retrieved ← dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+        _ <- dataService.saveData(owner.userId, data)
+        _ <- service.ensureUniquenessKey("test/test", "object.objectFieldArray[]")
+        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
       } yield retrieved
 
       result map { result =>
@@ -172,9 +172,9 @@ class DataSentintelSpec(implicit ee: ExecutionEnv) extends PlaySpecification wit
       val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
 
       val result = for {
-        _ ← dataService.saveData(owner.userId, data)
-        _ ← service.updateSourceTimestamp("test/test", "date_iso")
-        retrieved ← dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+        _ <- dataService.saveData(owner.userId, data)
+        _ <- service.updateSourceTimestamp("test/test", "date_iso")
+        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
       } yield retrieved
 
       result map { result =>
@@ -190,9 +190,9 @@ class DataSentintelSpec(implicit ee: ExecutionEnv) extends PlaySpecification wit
       val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
 
       val result = for {
-        _ ← dataService.saveData(owner.userId, data)
-        _ ← service.updateSourceTimestamp("test/test", "date_ms")
-        retrieved ← dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+        _ <- dataService.saveData(owner.userId, data)
+        _ <- service.updateSourceTimestamp("test/test", "date_ms")
+        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
       } yield retrieved
 
       result map { result =>
@@ -208,9 +208,9 @@ class DataSentintelSpec(implicit ee: ExecutionEnv) extends PlaySpecification wit
       val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
 
       val result = for {
-        _ ← dataService.saveData(owner.userId, data)
-        _ ← service.updateSourceTimestamp("test/test", "date", "'epoch'")
-        retrieved ← dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+        _ <- dataService.saveData(owner.userId, data)
+        _ <- service.updateSourceTimestamp("test/test", "date", "'epoch'")
+        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
       } yield retrieved
 
       result map { result =>

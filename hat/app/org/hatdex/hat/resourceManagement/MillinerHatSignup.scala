@@ -38,25 +38,35 @@ trait MillinerHatSignup {
   val logger: Logger
   val ws: WSClient
   val configuration: Configuration
-  val schema: String = configuration.get[String]("resourceManagement.millinerAddress") match {
-    case address if address.startsWith("https") => "https://"
-    case address if address.startsWith("http")  => "http://"
-    case _                                      => "https://"
-  }
+  val schema: String =
+    configuration.get[String]("resourceManagement.millinerAddress") match {
+      case address if address.startsWith("https") => "https://"
+      case address if address.startsWith("http")  => "http://"
+      case _                                      => "https://"
+    }
 
-  val millinerAddress: String = configuration.get[String]("resourceManagement.millinerAddress")
+  val millinerAddress: String = configuration
+    .get[String]("resourceManagement.millinerAddress")
     .stripPrefix("http://")
     .stripPrefix("https://")
-  val hatSharedSecret: String = configuration.get[String]("resourceManagement.hatSharedSecret")
+  val hatSharedSecret: String =
+    configuration.get[String]("resourceManagement.hatSharedSecret")
 
   val cache: AsyncCacheApi
 
-  def getHatSignup(hatAddress: String)(implicit ec: ExecutionContext): Future[HatSignup] = {
+  def getHatSignup(
+      hatAddress: String
+    )(implicit ec: ExecutionContext
+    ): Future[HatSignup] = {
     // Cache the signup information for subsequent calls (For private/public key and database details)
     cache.getOrElseUpdate[HatSignup](s"configuration:$hatAddress") {
-      val request: WSRequest = ws.url(s"$schema$millinerAddress/api/manage/configuration/$hatAddress")
+      val request: WSRequest = ws
+        .url(s"$schema$millinerAddress/api/manage/configuration/$hatAddress")
         .withVirtualHost(millinerAddress)
-        .withHttpHeaders("Accept" -> "application/json", "X-Auth-Token" -> hatSharedSecret)
+        .withHttpHeaders(
+          "Accept" -> "application/json",
+          "X-Auth-Token" -> hatSharedSecret
+        )
 
       val futureResponse: Future[WSResponse] = request.get()
       futureResponse.map { response =>
@@ -69,11 +79,15 @@ trait MillinerHatSignup {
                 signup.value
               case e: JsError =>
                 logger.error(s"Parsing HAT configuration failed: $e")
-                throw new HatServerDiscoveryException("Fetching HAT configuration failed")
+                throw new HatServerDiscoveryException(
+                  "Fetching HAT configuration failed"
+                )
             }
           case _ =>
             logger.error(s"Fetching HAT configuration failed: ${response.body}")
-            throw new HatServerDiscoveryException("Fetching HAT configuration failed")
+            throw new HatServerDiscoveryException(
+              "Fetching HAT configuration failed"
+            )
         }
       }
     }

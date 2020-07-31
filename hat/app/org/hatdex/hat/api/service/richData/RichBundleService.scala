@@ -37,24 +37,37 @@ import play.api.libs.json._
 
 import scala.concurrent.Future
 
-class RichBundleService @Inject() (implicit ec: DalExecutionContext) extends RichDataJsonFormats {
+class RichBundleService @Inject() (implicit ec: DalExecutionContext)
+    extends RichDataJsonFormats {
 
   val logger = Logger(this.getClass)
 
-  def saveCombinator(combinatorId: String, combinator: Seq[EndpointQuery])(implicit db: Database): Future[Unit] = {
-    val insertQuery = DataCombinators.insertOrUpdate(DataCombinatorsRow(combinatorId, Json.toJson(combinator)))
+  def saveCombinator(
+      combinatorId: String,
+      combinator: Seq[EndpointQuery]
+    )(implicit db: Database
+    ): Future[Unit] = {
+    val insertQuery = DataCombinators.insertOrUpdate(
+      DataCombinatorsRow(combinatorId, Json.toJson(combinator))
+    )
     db.run(insertQuery).map(_ => ())
   }
 
-  def combinator(combinatorId: String)(implicit db: Database): Future[Option[Seq[EndpointQuery]]] = {
-    db.run(DataCombinators.filter(_.combinatorId === combinatorId).result) map { queries =>
-      queries.headOption map { q =>
-        q.combinator.as[Seq[EndpointQuery]]
-      }
+  def combinator(
+      combinatorId: String
+    )(implicit db: Database
+    ): Future[Option[Seq[EndpointQuery]]] = {
+    db.run(DataCombinators.filter(_.combinatorId === combinatorId).result) map {
+      queries =>
+        queries.headOption map { q =>
+          q.combinator.as[Seq[EndpointQuery]]
+        }
     }
   }
 
-  def combinators()(implicit db: Database): Future[Seq[(String, Seq[EndpointQuery])]] = {
+  def combinators(
+    )(implicit db: Database
+    ): Future[Seq[(String, Seq[EndpointQuery])]] = {
     db.run(DataCombinators.result) map { queries =>
       queries map { q =>
         (q.combinatorId, q.combinator.as[Seq[EndpointQuery]])
@@ -62,17 +75,29 @@ class RichBundleService @Inject() (implicit ec: DalExecutionContext) extends Ric
     }
   }
 
-  def deleteCombinator(combinatorId: String)(implicit db: Database): Future[Unit] = {
-    val deleteQuery = DataCombinators.filter(_.combinatorId === combinatorId).delete
+  def deleteCombinator(
+      combinatorId: String
+    )(implicit db: Database
+    ): Future[Unit] = {
+    val deleteQuery =
+      DataCombinators.filter(_.combinatorId === combinatorId).delete
     db.run(deleteQuery).map(_ => ())
   }
 
-  def saveBundle(bundle: EndpointDataBundle)(implicit db: Database): Future[Unit] = {
-    val insertQuery = DataBundles.insertOrUpdate(DataBundlesRow(bundle.name, Json.toJson(bundle.bundle)))
+  def saveBundle(
+      bundle: EndpointDataBundle
+    )(implicit db: Database
+    ): Future[Unit] = {
+    val insertQuery = DataBundles.insertOrUpdate(
+      DataBundlesRow(bundle.name, Json.toJson(bundle.bundle))
+    )
     db.run(insertQuery).map(_ => ())
   }
 
-  def bundle(bundleId: String)(implicit db: Database): Future[Option[EndpointDataBundle]] = {
+  def bundle(
+      bundleId: String
+    )(implicit db: Database
+    ): Future[Option[EndpointDataBundle]] = {
     db.run(DataBundles.filter(_.bundleId === bundleId).result)
       .map(_.headOption.map(ModelTranslation.fromDbModel))
   }
@@ -87,4 +112,3 @@ class RichBundleService @Inject() (implicit ec: DalExecutionContext) extends Ric
     db.run(deleteQuery).map(_ => ())
   }
 }
-

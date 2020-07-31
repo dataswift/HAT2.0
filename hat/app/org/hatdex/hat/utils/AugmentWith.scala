@@ -27,49 +27,59 @@ package org.hatdex.hat.utils
 import akka.stream.stage.{ GraphStage, GraphStageLogic }
 import akka.stream.{ Attributes, FanInShape2, Inlet, Outlet }
 
-final class AugmentWith[T, U](augmentFunction: (T, U) ⇒ Either[T, U]) extends GraphStage[FanInShape2[T, U, T]] {
+final class AugmentWith[T, U](augmentFunction: (T, U) => Either[T, U])
+    extends GraphStage[FanInShape2[T, U, T]] {
   private val left = Inlet[T]("left")
   private val right = Inlet[U]("right")
   private val out = Outlet[T]("out")
 
   override val shape = new FanInShape2(left, right, out)
 
-  override def createLogic(attr: Attributes) = new GraphStageLogic(shape) {
-    setHandler(left, eagerTerminateInput)
-    setHandler(right, ignoreTerminateInput)
-    setHandler(out, eagerTerminateOutput)
+  override def createLogic(attr: Attributes) =
+    new GraphStageLogic(shape) {
+      setHandler(left, eagerTerminateInput)
+      setHandler(right, ignoreTerminateInput)
+      setHandler(out, eagerTerminateOutput)
 
-    var retainedL: T = _
-    var retainedR: U = _
+      var retainedL: T = _
+      var retainedR: U = _
 
-    def dispatch(l: T, r: U): Unit = {
-      augmentFunction(l, r).fold(
-        augmented ⇒ {
-          retainedR = r
-          emit(out, augmented, readL)
-        },
-        _ ⇒ {
-          retainedL = l
-          readR()
-        })
+      def dispatch(
+          l: T,
+          r: U
+        ): Unit = {
+        augmentFunction(l, r).fold(
+          augmented => {
+            retainedR = r
+            emit(out, augmented, readL)
+          },
+          _ => {
+            retainedL = l
+            readR()
+          }
+        )
 
+      }
+
+      val dispatchR = dispatch(retainedL, _: U)
+      val dispatchL = dispatch(_: T, retainedR)
+      val passL = () =>
+        emit(out, retainedL, () => { passAlong(left, out, doPull = true) })
+      val readR = () => read(right)(dispatchR, passL)
+      val readL = () => read(left)(dispatchL, readR)
+
+      override def preStart(): Unit = {
+        // all fan-in stages need to eagerly pull all inputs to get cycles started
+        pull(right)
+        read(left)(
+          l => {
+            retainedL = l
+            readR()
+          },
+          () => {
+            abortReading(right)
+          }
+        )
+      }
     }
-
-    val dispatchR = dispatch(retainedL, _: U)
-    val dispatchL = dispatch(_: T, retainedR)
-    val passL = () ⇒ emit(out, retainedL, () ⇒ { passAlong(left, out, doPull = true) })
-    val readR = () ⇒ read(right)(dispatchR, passL)
-    val readL = () ⇒ read(left)(dispatchL, readR)
-
-    override def preStart(): Unit = {
-      // all fan-in stages need to eagerly pull all inputs to get cycles started
-      pull(right)
-      read(left)(l ⇒ {
-        retainedL = l
-        readR()
-      }, () ⇒ {
-        abortReading(right)
-      })
-    }
-  }
 }
