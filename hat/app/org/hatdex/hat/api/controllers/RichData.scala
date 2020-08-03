@@ -741,7 +741,9 @@ class RichData @Inject() (
               }
             }
             case Left(x) => {
-              logger.error(s"Contract Save Error: ${x} - ${namespace} - ${endpoint} - ${contractRequestBody}")
+              logger.error(
+                s"Contract Save Error: ${x} - ${namespace} - ${endpoint} - ${contractRequestBody}"
+              )
               Future.successful(NotFound)
             }
           }
@@ -854,6 +856,7 @@ class RichData @Inject() (
 
     maybeContractDataRequestKeyId match {
       case Some((contractDataRequest, keyId)) =>
+        logger.info(s"ContractData-keyId: ${keyId}")
         verifyTokenWithAdjudicator(contractDataRequest, keyId)
       case _ =>
         Future.successful(
@@ -873,18 +876,29 @@ class RichData @Inject() (
     import ContractVerificationFailure._
     import ContractVerificationSuccess._
 
+    logger.error(
+      s"ContractData.verifyJwtClaim.token: ${contractRequestBodyRefined.token.toString}"
+    )
+    logger.error(
+      s"ContractData.verifyJwtClaim.pubKey: ${publicKeyAsByteArray}"
+    )
+
     val tryJwtClaim = ShortLivedTokenOps.verifyToken(
       Some(contractRequestBodyRefined.token.toString),
       publicKeyAsByteArray
     )
     tryJwtClaim match {
       case Success(jwtClaim) => Right(JwtClaimVerified(jwtClaim))
-      case Failure(_) =>
+      case Failure(errorMsg) => {
+        logger.error(
+          s"ContractData.verifyJwtClaim.failureMessage: ${errorMsg.getMessage}"
+        )
         Left(
           InvalidTokenFailure(
             s"Token: ${contractRequestBodyRefined.token.toString} was not verified."
           )
         )
+      }
     }
   }
 
@@ -901,9 +915,9 @@ class RichData @Inject() (
         contractRequestBodyRefined.contractId,
         keyId
       )
-      .map { publicKeyReqsponse =>
+      .map { publicKeyResponse =>
         {
-          publicKeyReqsponse match {
+          publicKeyResponse match {
             case Left(
                   PublicKeyRequestFailure.ServiceRespondedWithFailure(
                     failureDescription
@@ -926,8 +940,9 @@ class RichData @Inject() (
                 )
               )
             }
-            case Right(PublicKeyReceived(publicKey)) =>
+            case Right(PublicKeyReceived(publicKey)) => {
               verifyJwtClaim(contractRequestBodyRefined, publicKey)
+            }
           }
         }
       }
@@ -936,30 +951,37 @@ class RichData @Inject() (
   /* *** Contract Data *** */
 
   def getContractData(
-    namespace: String,
-    endpoint: String,
-    orderBy: Option[String],
-    ordering: Option[String],
-    skip: Option[Int],
-    take: Option[Int]): Action[ContractRequestBody] =
-    UserAwareAction.async(parsers.json[ContractRequestBody]) { implicit request =>
-      val contractRequestBody = request.body
-      val requestIsAllowed = assessRequest(contractRequestBody, namespace)
+      namespace: String,
+      endpoint: String,
+      orderBy: Option[String],
+      ordering: Option[String],
+      skip: Option[Int],
+      take: Option[Int]
+    ): Action[ContractRequestBody] =
+    UserAwareAction.async(parsers.json[ContractRequestBody]) {
+      implicit request =>
+        val contractRequestBody = request.body
+        val requestIsAllowed = assessRequest(contractRequestBody, namespace)
 
-      requestIsAllowed.flatMap { testResult =>
-        testResult match {
-          case Right(RequestVerified(ns)) => makeData(namespace, endpoint, orderBy, ordering, skip, take)
-          case Left(contractError) => {
-            logger.error(s"Contract Get Error: ${contractError} - ${namespace} - ${endpoint} - ${contractRequestBody}")
-            Future.successful(NotFound)
+        requestIsAllowed.flatMap { testResult =>
+          testResult match {
+            case Right(RequestVerified(ns)) =>
+              makeData(namespace, endpoint, orderBy, ordering, skip, take)
+            case Left(contractError) => {
+              logger.error(
+                s"Contract Get Error: ${contractError} - ${namespace} - ${endpoint} - ${contractRequestBody}"
+              )
+              Future.successful(NotFound)
+            }
+          }
+        } recover {
+          case _ => {
+            logger.error(
+              s"Contract Get Error: Request Not Allowed - ${namespace} - ${endpoint} - ${contractRequestBody}"
+            )
+            NotFound
           }
         }
-      } recover {
-        case _ => {
-          logger.error(s"Contract Get Error: Request Not Allowed - ${namespace} - ${endpoint} - ${contractRequestBody}")
-          NotFound
-        }
-      }
     }
 
   def assessRequest(
@@ -974,7 +996,7 @@ class RichData @Inject() (
       eventuallyMaybeApp.flatMap { maybeApp =>
         decide(maybeDecision, maybeApp, namespace) match {
           case Some(ns) => {
-            logger.info(s"Found a namespace: ${ns}") 
+            logger.error(s"Found a namespace: ${ns}")
             Future.successful(
               Right(
                 RequestVerified(s"Token: ${contractRequestBody.contractId}")
@@ -982,7 +1004,9 @@ class RichData @Inject() (
             )
           }
           case None => {
-            logger.error(s"ContractData.assessRequest:Failure ${contractRequestBody} - ${namespace}")  
+            logger.error(
+              s"ContractData.assessRequest:Failure ${contractRequestBody} - ${namespace}"
+            )
             Future.successful(
               Left(
                 RequestValidationFailure.InvalidShortLivedToken(
@@ -1016,8 +1040,8 @@ class RichData @Inject() (
     import ContractVerificationSuccess._
 
     (eitherDecision, maybeApp) match {
-      case (Right(JwtClaimVerified(_jwtClaim@_)), Some(app)) => {
-        logger.info(s"jwtclaim verified for ${app}")
+      case (Right(JwtClaimVerified(_jwtClaim @ _)), Some(app)) => {
+        logger.error(s"jwtclaim verified for ${app}")
         verifyNamespace(app, namespace)
       }
       case (Left(decision), _) => {
