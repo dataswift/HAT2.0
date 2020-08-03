@@ -806,11 +806,16 @@ class RichData @Inject() (
       app: Application,
       namespace: String
     ): Boolean = {
-    logger.error(s"Verifying the namespace ${namespace} for app ${app}")
-    (verifyNamespaceRead(app, namespace) || verifyNamespaceWrite(
-      app,
-      namespace
-    ))
+    logger.info(s"def verifyNamespace ${namespace} for app ${app}")
+
+    val canReadNamespace = verifyNamespaceRead(app, namespace)
+    val canWriteNamespace = verifyNamespaceWrite(app, namespace)
+
+    logger.info(
+      s"def verifyNamespace read: ${canReadNamespace} - write: ${canWriteNamespace}"
+    )
+
+    (canReadNamespace || canWriteNamespace)
   }
 
   def verifyNamespaceRead(
@@ -819,16 +824,22 @@ class RichData @Inject() (
     ): Boolean = {
 
     logger.error(
-      s"NamespaceRead: Roles: ${app.permissions} - Namespace: ${namespace}"
+      s"NamespaceRead: Perms: ${app.permissions} - Namespace: ${namespace}"
     )
     val roles = app.permissions.rolesGranted.map(r =>
       UserRole.userRoleDeserialize(r.name, r.extra)
+    )
+    logger.error(
+      s"NamespaceRead: Roles: ${roles} - Namespace: ${namespace}"
     )
 
     val rolesOk = roles.map {
       case NamespaceRead(namespace) => Some(namespace)
       case _                        => None
     }
+    logger.error(
+      s"NamespaceRead: RolesOk: ${rolesOk} - Namespace: ${namespace} - results: ${!rolesOk.flatten.isEmpty}"
+    )
 
     // flatten removes any Nones, so if this is flattened and .isEmpty then there
     // was no NamespaceRead found
@@ -839,17 +850,24 @@ class RichData @Inject() (
       app: Application,
       namespace: String
     ): Boolean = {
-    logger.error(
-      s"NamespaceWrite: Roles: ${app.permissions} - Namespace: ${namespace}"
+
+    logger.info(
+      s"NamespaceWrite: Perms: ${app.permissions} - Namespace: ${namespace}"
     )
     val roles = app.permissions.rolesGranted.map(r =>
       UserRole.userRoleDeserialize(r.name, r.extra)
+    )
+    logger.info(
+      s"NamespaceWrite: Roles: ${roles} - Namespace: ${namespace}"
     )
 
     val rolesOk = roles.map {
       case NamespaceWrite(namespace) => Some(namespace)
       case _                         => None
     }
+    logger.info(
+      s"NamespaceWrite: RolesOk: ${rolesOk} - Namespace: ${namespace} - result: ${!rolesOk.flatten.isEmpty}"
+    )
 
     // flatten removes any Nones, so if this is flattened and .isEmpty then there
     // was no NamespaceWrite found
@@ -1035,9 +1053,12 @@ class RichData @Inject() (
 
     eventuallyMaybeDecision.flatMap { maybeDecision =>
       eventuallyMaybeApp.flatMap { maybeApp =>
+        logger.info(
+          s"AssessRequest: ${maybeDecision} - ${maybeApp} - ${namespace}"
+        )
         decide(maybeDecision, maybeApp, namespace) match {
           case Some(ns) => {
-            logger.error(s"Found a namespace: ${ns}")
+            logger.info(s"Found a namespace: ${ns}")
             Future.successful(
               Right(
                 RequestVerified(s"Token: ${contractRequestBody.contractId}")
@@ -1046,7 +1067,7 @@ class RichData @Inject() (
           }
           case None => {
             logger.error(
-              s"ContractData.assessRequest:Failure ${contractRequestBody} - ${namespace}"
+              s"def assessRequest: decide returned None - ${contractRequestBody} - ${namespace}"
             )
             Future.successful(
               Left(
@@ -1080,9 +1101,13 @@ class RichData @Inject() (
     ): Option[String] = {
     import ContractVerificationSuccess._
 
+    logger.info(
+      s"def decide: decision: ${eitherDecision} - app: ${maybeApp} - ns: ${namespace}"
+    )
+
     (eitherDecision, maybeApp) match {
       case (Right(JwtClaimVerified(_jwtClaim @ _)), Some(app)) => {
-        logger.error(s"jwtclaim verified for ${app}")
+        logger.info(s"def decide: JwtClaim verified for app ${app}")
         if (verifyNamespace(app, namespace)) {
           Some(namespace)
         } else {
@@ -1090,7 +1115,7 @@ class RichData @Inject() (
         }
       }
       case (Left(decision), _) => {
-        logger.error(s"ContractData.decide: ${decision}")
+        logger.error(s"def decide: decision: ${decision}")
         None
       }
     }
