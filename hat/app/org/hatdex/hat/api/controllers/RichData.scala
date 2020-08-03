@@ -805,14 +805,55 @@ class RichData @Inject() (
   def verifyNamespace(
       app: Application,
       namespace: String
-    ): Option[String] = {
+    ): Boolean = {
+    logger.error(s"Verifying the namespace ${namespace} for app ${app}")
+    (verifyNamespaceRead(app, namespace) || verifyNamespaceWrite(
+      app,
+      namespace
+    ))
+  }
+
+  def verifyNamespaceRead(
+      app: Application,
+      namespace: String
+    ): Boolean = {
+
+    logger.error(
+      s"NamespaceRead: Roles: ${app.permissions} - Namespace: ${namespace}"
+    )
     val roles = app.permissions.rolesGranted.map(r =>
       UserRole.userRoleDeserialize(r.name, r.extra)
     )
-    if (roles.exists(_.name == namespace))
-      Some(namespace)
-    else
-      None
+
+    val rolesOk = roles.map {
+      case NamespaceRead(namespace) => Some(namespace)
+      case _                        => None
+    }
+
+    // flatten removes any Nones, so if this is flattened and .isEmpty then there
+    // was no NamespaceRead found
+    !rolesOk.flatten.isEmpty
+  }
+
+  def verifyNamespaceWrite(
+      app: Application,
+      namespace: String
+    ): Boolean = {
+    logger.error(
+      s"NamespaceWrite: Roles: ${app.permissions} - Namespace: ${namespace}"
+    )
+    val roles = app.permissions.rolesGranted.map(r =>
+      UserRole.userRoleDeserialize(r.name, r.extra)
+    )
+
+    val rolesOk = roles.map {
+      case NamespaceWrite(namespace) => Some(namespace)
+      case _                         => None
+    }
+
+    // flatten removes any Nones, so if this is flattened and .isEmpty then there
+    // was no NamespaceWrite found
+    !rolesOk.flatten.isEmpty
   }
 
   // Convert the basic JSON representation of the ContactRequestBody to the Refined Version
@@ -1042,7 +1083,11 @@ class RichData @Inject() (
     (eitherDecision, maybeApp) match {
       case (Right(JwtClaimVerified(_jwtClaim @ _)), Some(app)) => {
         logger.error(s"jwtclaim verified for ${app}")
-        verifyNamespace(app, namespace)
+        if (verifyNamespace(app, namespace)) {
+          Some(namespace)
+        } else {
+          None
+        }
       }
       case (Left(decision), _) => {
         logger.error(s"ContractData.decide: ${decision}")
