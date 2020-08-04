@@ -823,17 +823,12 @@ class RichData @Inject() (
       namespace: String
     ): Boolean = {
 
+    // ApplicationPermissions(List(NamespaceWrite(samplecontract), NamespaceRead(samplecontract)),None,None)
     logger.error(
       s"NamespaceRead: Perms: ${app.permissions} - Namespace: ${namespace}"
     )
-    val roles = app.permissions.rolesGranted.map(r =>
-      UserRole.userRoleDeserialize(r.name, r.extra)
-    )
-    logger.error(
-      s"NamespaceRead: Roles: ${roles} - Namespace: ${namespace}"
-    )
 
-    val rolesOk = roles.map {
+    val rolesOk = app.permissions.rolesGranted.map {
       case NamespaceRead(namespace) => Some(namespace)
       case _                        => None
     }
@@ -850,18 +845,10 @@ class RichData @Inject() (
       app: Application,
       namespace: String
     ): Boolean = {
-
     logger.info(
       s"NamespaceWrite: Perms: ${app.permissions} - Namespace: ${namespace}"
     )
-    val roles = app.permissions.rolesGranted.map(r =>
-      UserRole.userRoleDeserialize(r.name, r.extra)
-    )
-    logger.info(
-      s"NamespaceWrite: Roles: ${roles} - Namespace: ${namespace}"
-    )
-
-    val rolesOk = roles.map {
+    val rolesOk = app.permissions.rolesGranted.map {
       case NamespaceWrite(namespace) => Some(namespace)
       case _                         => None
     }
