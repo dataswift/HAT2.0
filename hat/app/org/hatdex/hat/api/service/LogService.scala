@@ -34,7 +34,7 @@ import play.api.Logger
 import scala.concurrent.Future
 
 class LogService @Inject() (implicit val ec: DalExecutionContext) {
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   def logAction(
       hat: String,

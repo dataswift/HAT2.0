@@ -41,7 +41,7 @@ import scala.concurrent.Future
 import scala.util.{ Failure, Success }
 
 class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   def getUniqueFileId(
       file: ApiHatFile

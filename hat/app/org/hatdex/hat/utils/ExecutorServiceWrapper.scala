@@ -47,7 +47,7 @@ import java.{ util => jutil }
 class ExecutorServiceWrapper(implicit ec: ExecutionContext)
     extends ExecutorService {
 
-  def execute(command: Runnable) = {
+  def execute(command: Runnable): Unit = {
     ec.execute(new Runnable {
       def run() = {
         try command.run()
@@ -59,7 +59,7 @@ class ExecutorServiceWrapper(implicit ec: ExecutionContext)
   def isTerminated: Boolean = false
   def isShutdown: Boolean = false
 
-  def shutdown() = {
+  def shutdown(): Unit = {
     throw new UnsupportedOperationException("ExecutorServiceWrapper.shutdown")
   }
 

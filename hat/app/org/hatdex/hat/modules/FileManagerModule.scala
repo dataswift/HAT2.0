@@ -42,7 +42,7 @@ class FileManagerModule
     with ScalaModule
     with AkkaGuiceSupport {
 
-  override def configure() = {
+  override def configure(): Unit = {
     bind[FileManager].to[FileManagerS3]
     ()
   }

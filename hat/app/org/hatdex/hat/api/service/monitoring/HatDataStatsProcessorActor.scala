@@ -98,7 +98,7 @@ class HatDataStatsProcessor @Inject() (
   )(implicit
     val ec: ExecutionContext) {
 
-  protected val logger = Logger(this.getClass)
+  protected val logger: Logger = Logger(this.getClass)
 
   def computeInboundStats(event: DataCreatedEvent): InboundDataStats = {
     val endpointStats = JsonStatsService.endpointDataCounts(event.data)

@@ -34,5 +34,7 @@ addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")
 
 // ScalaFMT
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.3.4")
-
 addSbtPlugin("io.dataswift" % "sbt-scalafmt-common" % "0.1.1-SNAPSHOT")
+
+// ScalaFix
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.19")
