@@ -38,7 +38,7 @@ case class HatUser(
     roles: Seq[UserRole],
     enabled: Boolean)
     extends Identity {
-  def loginInfo(implicit hatServer: HatServer) =
+  def loginInfo(implicit hatServer: HatServer): LoginInfo =
     LoginInfo(hatServer.domain, email)
 
   def withRoles(roles: UserRole*): HatUser = {

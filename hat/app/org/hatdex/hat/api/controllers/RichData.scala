@@ -70,6 +70,7 @@ import org.hatdex.hat.resourceManagement.HatServer
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
 import scala.util.control.NonFatal
+import play.api.libs.json.Reads
 
 sealed trait RequestValidationFailure
 object RequestValidationFailure {
@@ -707,7 +708,7 @@ class RichData @Inject() (
       hatName: String,
       contractId: String,
       body: Option[JsValue])
-  implicit val contractRequestBodyReads = Json.reads[ContractRequestBody]
+  implicit val contractRequestBodyReads: Reads[ContractRequestBody] = Json.reads[ContractRequestBody]
 
   def saveContractData(
       namespace: String,
@@ -798,7 +799,7 @@ class RichData @Inject() (
       dataEndpoint: String,
       skipErrors: Option[Boolean]
     )(implicit hatServer: HatServer
-    ) = {
+    ): Future[Result] = {
     val values =
       array.value.map(EndpointData(dataEndpoint, None, None, None, _, None))
     dataService
@@ -811,7 +812,7 @@ class RichData @Inject() (
       value: JsValue,
       dataEndpoint: String
     )(implicit hatServer: HatServer
-    ) = {
+    ): Future[Result] = {
     val values = Seq(EndpointData(dataEndpoint, None, None, None, value, None))
     dataService
       .saveData(userId, values)
@@ -1123,13 +1124,13 @@ class RichData @Inject() (
   }
 
   private object Errors {
-    def dataDebitDoesNotExist =
+    def dataDebitDoesNotExist: ErrorMessage =
       ErrorMessage("Not Found", "Data Debit with this ID does not exist")
-    def dataDebitNotFound(id: String) =
+    def dataDebitNotFound(id: String): ErrorMessage =
       ErrorMessage("Not Found", s"Data Debit $id not found")
-    def dataDebitNotEnabled(id: String) =
+    def dataDebitNotEnabled(id: String): ErrorMessage =
       ErrorMessage("Bad Request", s"Data Debit $id not enabled")
-    def dataDebitMalformed(err: Throwable) =
+    def dataDebitMalformed(err: Throwable): ErrorMessage =
       ErrorMessage(
         "Bad Request",
         s"Data Debit request malformed: ${err.getMessage}"
@@ -1137,35 +1138,35 @@ class RichData @Inject() (
     def dataDebitBundleMalformed(
         id: String,
         err: Throwable
-      ) =
+      ): ErrorMessage =
       ErrorMessage(
         "Data Debit Bundle malformed",
         s"Data Debit $id active bundle malformed: ${err.getMessage}"
       )
 
-    def bundleNotFound(bundleId: String) =
+    def bundleNotFound(bundleId: String): ErrorMessage =
       ErrorMessage("Bundle Not Found", s"Bundle $bundleId not found")
 
-    def dataUpdateMissing(message: String) =
+    def dataUpdateMissing(message: String): ErrorMessage =
       ErrorMessage("Data Missing", s"Could not update records: $message")
-    def dataDeleteMissing(message: String) =
+    def dataDeleteMissing(message: String): ErrorMessage =
       ErrorMessage("Data Missing", s"Could not delete records: $message")
-    def dataLinkMissing(message: String) =
+    def dataLinkMissing(message: String): ErrorMessage =
       ErrorMessage("Data Missing", s"Could not link records: $message")
 
-    def dataCombinatorNotFound(combinator: String) =
+    def dataCombinatorNotFound(combinator: String): ErrorMessage =
       ErrorMessage("Combinator Not Found", s"Combinator $combinator not found")
 
-    def richDataDuplicate(error: Throwable) =
+    def richDataDuplicate(error: Throwable): ErrorMessage =
       ErrorMessage("Bad Request", s"Duplicate data - ${error.getMessage}")
-    def richDataError(error: Throwable) =
+    def richDataError(error: Throwable): ErrorMessage =
       ErrorMessage(
         "Bad Request",
         s"Could not insert data - ${error.getMessage}"
       )
-    def forbidden(error: Throwable) =
+    def forbidden(error: Throwable): ErrorMessage =
       ErrorMessage("Forbidden", s"Access Denied - ${error.getMessage}")
-    def forbidden(message: String) =
+    def forbidden(message: String): ErrorMessage =
       ErrorMessage("Forbidden", s"Access Denied - ${message}")
   }
 }

@@ -82,7 +82,7 @@ class HatDatabaseProviderMilliner @Inject() (
     val ws: WSClient)
     extends HatDatabaseProvider
     with MillinerHatSignup {
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {
     getHatSignup(hat) map { signup =>

@@ -49,7 +49,7 @@ import scala.util.Success
 
 class RichDataService @Inject() (implicit ec: DalExecutionContext) {
 
-  protected val logger = Logger(this.getClass)
+  protected val logger: Logger = Logger(this.getClass)
 
   private def dbDataRow(
       endpoint: String,

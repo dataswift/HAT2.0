@@ -52,7 +52,7 @@ class MigrationService @Inject() (
     materializer: Materializer,
     ec: DalExecutionContext) {
 
-  protected val logger = Logger(this.getClass)
+  protected val logger: Logger = Logger(this.getClass)
 
   protected def convertRecordJson(
       record: ApiDataRecord,

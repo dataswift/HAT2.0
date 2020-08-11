@@ -33,7 +33,7 @@ import play.api.Logger
 import scala.concurrent.Future
 
 class SystemStatusService @Inject() (implicit val ec: DalExecutionContext) {
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   def tableSizeTotal(implicit db: Database): Future[Long] = {
     val sizeQuery = DataTableSize.map(_.totalSize).sum

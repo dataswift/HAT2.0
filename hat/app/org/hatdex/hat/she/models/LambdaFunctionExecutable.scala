@@ -65,7 +65,7 @@ class LambdaFunctionExecutable(
     extends FunctionExecutable {
   import FunctionConfigurationJsonProtocol._
 
-  protected val logger = Logger(this.getClass)
+  protected val logger: Logger = Logger(this.getClass)
   private val lambdaLogs = config.get[String]("she.aws.logs")
 
   logger.debug(s"Initialised SHE lambda function $id v$version $baseUrl")
@@ -119,7 +119,7 @@ class LambdaFunctionLoader @Inject() (
 
   import FunctionConfigurationJsonProtocol.functionConfigurationFormat
 
-  protected val logger = Logger(this.getClass)
+  protected val logger: Logger = Logger(this.getClass)
   private val lambdaLogs = config.get[String]("she.aws.logs")
 
   def load(
@@ -159,7 +159,7 @@ class AwsLambdaExecutor @Inject() (
     val actorSystem: ActorSystem,
     ec: RemoteExecutionContext) {
 
-  protected val logger = Logger(this.getClass)
+  protected val logger: Logger = Logger(this.getClass)
 
   private implicit val materializer: Materializer = ActorMaterializer()
 

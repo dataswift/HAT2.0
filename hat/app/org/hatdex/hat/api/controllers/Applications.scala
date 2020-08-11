@@ -56,7 +56,7 @@ class Applications @Inject() (
     errorMessage
   }
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   def applications(): Action[AnyContent] =
     SecuredAction(
