@@ -39,14 +39,14 @@ trait MillinerHatSignup {
   val ws: WSClient
   val configuration: Configuration
   val schema: String =
-    configuration.get[String]("resourceManagement.millinerAddress") match {
+    configuration.get[String]("datacenter.millinerAddress") match {
       case address if address.startsWith("https") => "https://"
       case address if address.startsWith("http")  => "http://"
       case _                                      => "https://"
     }
 
   val millinerAddress: String = configuration
-    .get[String]("resourceManagement.millinerAddress")
+    .get[String]("datacenter.millinerAddress")
     .stripPrefix("http://")
     .stripPrefix("https://")
   val hatSharedSecret: String =
