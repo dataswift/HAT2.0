@@ -93,7 +93,9 @@ class Authentication @Inject() (
     .status(req => s"${req.host}${req.path}", 200)
     .includeStatus(404, 600)
 
-  // Error Responses
+  // * Error Responses *
+  // Extracted as these messages increased the length of functions.
+  // So as a small effort to increase readability, I pulled them out.
   private def unauthorizedMessage(title: String, body: String) = 
     Unauthorized(Json.toJson(ErrorMessage(s"${title}", s"${body}")))    
 
@@ -120,13 +122,14 @@ class Authentication @Inject() (
   val iSEClaimFailed = InternalServerError(Json.toJson(ErrorMessage("Internal Server Error", "Failed to initialize HAT claim process")))
                         
           
-  // Ok Responses  
+  // * Ok Responses *
   private def okMessage(body: String) = Ok(Json.toJson(SuccessResponse(s"${body}")))  
   val hatIsAlreadyClaimed = 
     okMessage("The HAT is already claimed")
 
   val resendValidationEmail = 
     okMessage("If the email you have entered is correct and your HAT is not validated, you will receive an email with a link to validate your HAT.")
+
 
 
   def publicKey(): EssentialAction =
@@ -354,7 +357,7 @@ class Authentication @Inject() (
       tokenService.retrieve(tokenId).flatMap {
         // Token was found, is not signup nor expired
         case Some(token) if !token.isSignUp && !token.isExpired => {
-          // ???: Token.email matches the dynamicEnv (what is this)
+          // Token.email matches the dynamicEnv (what is this)
           if (token.email == request.dynamicEnvironment.ownerEmail) {
             // Find the users with the owner role
             // ???: Why not using the email
@@ -624,14 +627,14 @@ class Authentication @Inject() (
         val uniformResponse = resendValidationEmail
 
         tokenService.retrieve(email, isSigupToken).flatMap {
-          // there is a token that is a signUp Token, meaning the hat is not claimed.
-          case Some(token) => {
+          // There is a token that is a signUp Token, meaning the hat is not claimed.
+          case Some(token@_) => {
             // Match the email from the request and the Silhouette Env
             if (email == request.dynamicEnvironment.ownerEmail) {
               // Find the specific user who is the owner, only owners can resend
               usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
                 case Some(user) => {
-                  sendRevalidationEmail(email, applicationId, request.host, request.lang)
+                  sendRevalidationEmail(user.email, applicationId, request.host, request.lang)
                   Future.successful(uniformResponse)
                 }
                 // The user is not an owner, but return the "If we found an email address, we'll send the link."
@@ -639,7 +642,6 @@ class Authentication @Inject() (
                   Future.successful(uniformResponse)
                 }
               }
-
             } else {
               // Email in the request does not match the dynamic env.
               Future.successful(uniformResponse)
@@ -652,6 +654,7 @@ class Authentication @Inject() (
       }
     }
 
+  // applicationId is currently unused 2020/09/23
   def sendRevalidationEmail(email: String, applicationId: String, requestHost: String, lang: Lang)(implicit hatServer: HatServer): Future[Done] = { 
     implicit val l = lang
     val token = MailTokenUser(email, isSignUp = false)
