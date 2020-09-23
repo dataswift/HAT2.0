@@ -665,47 +665,55 @@ class Authentication @Inject() (
     UserAwareAction.async(parsers.json[ApiValidationRequest]) {
       implicit request =>
         logger.debug("Processing resend validation request")
-        println("Processing resend validation request")
 
         val email = request.body.email
         val applicationId = request.body.applicationId
+        val isSigupToken = true
 
         // Generic message regardless if the user is found or not.
         val uniformResponse = resendValidationEmail
 
-        // Match the email from the request and the Silhouette Env
-        if (email == request.dynamicEnvironment.ownerEmail) {
-          // Find the specific user who is the owner, only owners can resend
-          usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
-              case Some(user) => {
-                println("*** user is an owner")
-                if (!user.validated) {
+        tokenService.retrieve(email, isSigupToken).flatMap {
+          // there is a token that is a signUp Token, meaning the hat is not claimed.
+          case Some(token) => {
+            // Match the email from the request and the Silhouette Env
+            if (email == request.dynamicEnvironment.ownerEmail) {
+              // Find the specific user who is the owner, only owners can resend
+              usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
+                case Some(user) => {
                   sendRevalidationEmail(email, applicationId, request.host, request.lang)
+                  Future.successful(uniformResponse)
                 }
-                Future.successful(uniformResponse)
+                // The user is not an owner, but return the "If we found an email address, we'll send the link."
+                case None => {
+                  Future.successful(uniformResponse)
+                }
               }
-              // The user was not found, but return the "If we found an email address, we'll send the link."
-              case None => {
-                println("*** user is not an owner")
-                Future.successful(uniformResponse)
-              }
-            }
-        } else {
-          println("*** user is not in the dynamicEnv")
-          Future.successful(uniformResponse)
-        }
+
+            } else {
+              // Email in the request does not match the dynamic env.
+              Future.successful(uniformResponse)
+            } 
+          }
+          case None => {
+            // User does not have an existing isSignup Token
+            Future.successful(uniformResponse)
+          }
+      }
     }
 
-  def sendRevalidationEmail(email: String, _applicationId: String, requestHost: String, lang: Lang)(implicit hatServer: HatServer): Unit = { 
+  def sendRevalidationEmail(email: String, applicationId: String, requestHost: String, lang: Lang)(implicit hatServer: HatServer): Unit = { 
+    implicit val l = lang
     val token = MailTokenUser(email, isSignUp = false)
     // Store that token
-    tokenService.create(token).map { _ =>
+    val foo = tokenService.create(token).map { _ =>
       // Assume https now
       val claimLink = s"https://${requestHost}/hat/claim/${token.id}?email=${URLEncoder.encode(email, "UTF-8")}"
       println(s"*** Sending this link in an email: ${claimLink}")
       mailer.claimHat(email, claimLink, None)
     }
 
+    foo
   }
 
 }
