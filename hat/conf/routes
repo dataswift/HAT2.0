@@ -31,6 +31,7 @@ POST        /control/v2/auth/passwordReset                       org.hatdex.hat.
 POST        /control/v2/auth/passwordreset/confirm/:token        org.hatdex.hat.api.controllers.Authentication.handleResetPassword(token: String)
 POST        /control/v2/auth/claim                               org.hatdex.hat.api.controllers.Authentication.handleClaimStart(lang: Option[String])
 POST        /control/v2/auth/claim/complete/:claimToken          org.hatdex.hat.api.controllers.Authentication.handleClaimComplete(claimToken: String)
+POST        /control/v2/auth/revalidate                          org.hatdex.hat.api.controllers.Authentication.handleRevalidation
 
 ->          /api/v2                                              v20.Routes
 ->          /api/v2.0                                            v20.Routes

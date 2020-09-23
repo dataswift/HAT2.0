@@ -87,8 +87,7 @@ object ApiPasswordChange {
     Json.format[ApiPasswordChange]
 }
 
-case class ApiPasswordResetRequest(
-    email: String)
+case class ApiPasswordResetRequest(email: String)
 
 object ApiPasswordResetRequest {
   implicit val passwordResetApiReads: Reads[ApiPasswordResetRequest] =
@@ -97,4 +96,15 @@ object ApiPasswordResetRequest {
     }
   implicit val passwordResetApiWrites: Writes[ApiPasswordResetRequest] =
     Json.format[ApiPasswordResetRequest]
+}
+
+case class ApiValidationRequest(email: String, applicationId: String)
+
+object ApiValidationRequest {
+  implicit val passwordValidationApiReads: Reads[ApiValidationRequest] =
+    ((JsPath \ "email").read[String](Reads.email) and
+      (JsPath \ "applicationId").read[String])(ApiValidationRequest.apply _)
+
+  implicit val passwordValidationApiWrites: Writes[ApiValidationRequest] =
+    Json.format[ApiValidationRequest]
 }

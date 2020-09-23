@@ -78,15 +78,18 @@ class UsersService @Inject() (
     cache
       .get[HatUser](s"${server.domain}:user:$username")
       .flatMap {
-        case Some(cached) => Future.successful(Some(cached))
-        case None =>
+        case Some(cachedHatUser) => Future.successful(Some(cachedHatUser))
+        case None => {
+          // Find the user
           queryUser(UserUser.filter(_.email === username))
             .map(_.headOption)
+            // cache the user
             .andThen({
               case Success(Some(u)) =>
                 cache.set(s"${server.domain}:user:${u.userId}", u)
                 cache.set(s"${server.domain}:user:${u.email}", u)
             })
+        }
       }
   }
 

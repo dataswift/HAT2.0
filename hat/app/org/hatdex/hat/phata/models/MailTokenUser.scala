@@ -57,6 +57,7 @@ object MailTokenUser {
     )
 }
 
+// isSignUp is true here since the user has not claimed their HAT.
 object MailClaimTokenUser {
   private val mailClaimTokenValidityDays = 7
 
