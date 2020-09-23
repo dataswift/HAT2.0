@@ -26,14 +26,11 @@ package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.test._
 import org.hatdex.hat.api.service.applications.ApplicationsServiceContext
-
 import org.hatdex.hat.api.json.ApplicationJsonProtocol
-import org.hatdex.hat.api.models.applications.HatApplication
-
+import org.hatdex.hat.api.models.applications.{ Application, HatApplication }
 import org.hatdex.hat.api.models.{ AccessToken, ErrorMessage }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import play.api.libs.json.{ JsObject, JsString }
-
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
@@ -42,27 +39,30 @@ import play.api.test.{ FakeRequest, PlaySpecification }
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsServiceContext with BeforeEach with BeforeAll {
+class ApplicationsSpec
+    extends PlaySpecification
+    with Mockito
+    with ApplicationsServiceContext
+    with BeforeEach
+    with BeforeAll {
 
   val logger = Logger(this.getClass)
 
   sequential
 
-  def beforeAll: Unit = {
+  def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
-  }
 
   override def before: Unit = {
     import org.hatdex.hat.dal.Tables
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
-    val action = DBIO.seq(
-      Tables.ApplicationStatus.delete)
+    val action = DBIO.seq(Tables.ApplicationStatus.delete)
 
     Await.result(hatDatabase.run(action), 60.seconds)
   }
 
-  import ApplicationJsonProtocol.applicationStatusFormat
+  import ApplicationJsonProtocol._
   import org.hatdex.hat.api.json.HatJsonFormats.{ accessTokenFormat, errorMessage }
 
   "The `applications` method" should {
@@ -71,7 +71,7 @@ class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsS
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[Applications]
-      val result = controller.applications().apply(request)
+      val result     = controller.applications().apply(request)
 
       status(result) must equalTo(OK)
       contentAsJson(result).validate[Seq[HatApplication]].isSuccess must beTrue
@@ -90,7 +90,7 @@ class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsS
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[Applications]
-      val result = controller.applicationStatus(notablesApp.id).apply(request)
+      val result     = controller.applicationStatus(notablesApp.id).apply(request)
 
       status(result) must equalTo(OK)
       val app = contentAsJson(result).as[HatApplication]
@@ -102,11 +102,35 @@ class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsS
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[Applications]
-      val result = controller.applicationStatus("random-id").apply(request)
+      val result     = controller.applicationStatus("random-id").apply(request)
 
       status(result) must equalTo(NOT_FOUND)
       val error = contentAsJson(result).as[ErrorMessage]
       error.message must be equalTo "Application not Found"
+    }
+  }
+
+  "The `hmi` method" should {
+    "Return the information about the specified application" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+
+      val controller = application.injector.instanceOf[Applications]
+      val result     = controller.hmi(notablesApp.id).apply(request)
+
+      status(result) must equalTo(OK)
+      val app = contentAsJson(result).as[Application]
+      app.id must beEqualTo(notablesApp.id)
+    }
+
+    "Return 404 for non-existend application" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+
+      val controller = application.injector.instanceOf[Applications]
+      val result     = controller.hmi("random-id").apply(request)
+
+      status(result) must equalTo(NOT_FOUND)
+      val error = contentAsJson(result).as[ErrorMessage]
+      error.cause must startWith("Application configuration for ID random-id could not be found")
     }
   }
 
@@ -116,7 +140,7 @@ class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsS
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[Applications]
-      val result = controller.applicationSetup(notablesApp.id).apply(request)
+      val result     = controller.applicationSetup(notablesApp.id).apply(request)
 
       status(result) must equalTo(OK)
       val app = contentAsJson(result).as[HatApplication]
@@ -130,7 +154,7 @@ class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsS
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[Applications]
-      val result = controller.applicationSetup("random-id").apply(request)
+      val result     = controller.applicationSetup("random-id").apply(request)
 
       status(result) must equalTo(BAD_REQUEST)
       val error = contentAsJson(result).as[ErrorMessage]
@@ -144,7 +168,7 @@ class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsS
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[Applications]
-      val result = controller.applicationDisable(notablesApp.id).apply(request)
+      val result     = controller.applicationDisable(notablesApp.id).apply(request)
 
       status(result) must equalTo(OK)
       val app = contentAsJson(result).as[HatApplication]
@@ -158,7 +182,7 @@ class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsS
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[Applications]
-      val result = controller.applicationDisable("random-id").apply(request)
+      val result     = controller.applicationDisable("random-id").apply(request)
 
       status(result) must equalTo(BAD_REQUEST)
       val error = contentAsJson(result).as[ErrorMessage]
@@ -168,14 +192,24 @@ class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsS
 
   "The `applicationToken` method" should {
     "Return 401 Forbidden for application token with no explicit permission" in {
-      val authenticator: HatApiAuthEnvironment#A = FakeAuthenticator[HatApiAuthEnvironment](owner.loginInfo)
-        .copy(customClaims = Some(JsObject(Map("application" -> JsString("notables"), "applicationVersion" -> JsString("1.0.0")))))
+      val authenticator: HatApiAuthEnvironment#A =
+        FakeAuthenticator[HatApiAuthEnvironment](owner.loginInfo)
+          .copy(customClaims =
+            Some(
+              JsObject(
+                Map(
+                  "application" -> JsString("notables"),
+                  "applicationVersion" -> JsString("1.0.0")
+                )
+              )
+            )
+          )
 
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator[HatApiAuthEnvironment](authenticator)(environment)
 
       val controller = application.injector.instanceOf[Applications]
-      val result = controller.applicationToken(notablesApp.id).apply(request)
+      val result     = controller.applicationToken(notablesApp.id).apply(request)
 
       status(result) must equalTo(FORBIDDEN)
       logger.info(s"Got back result ${contentAsString(result)}")
@@ -188,7 +222,7 @@ class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsS
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[Applications]
-      val result = controller.applicationToken("random-id").apply(request)
+      val result     = controller.applicationToken("random-id").apply(request)
 
       status(result) must equalTo(NOT_FOUND)
       val error = contentAsJson(result).as[ErrorMessage]
@@ -200,7 +234,7 @@ class ApplicationsSpec extends PlaySpecification with Mockito with ApplicationsS
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[Applications]
-      val result = controller.applicationToken(notablesApp.id).apply(request)
+      val result     = controller.applicationToken(notablesApp.id).apply(request)
 
       status(result) must equalTo(OK)
       val token = contentAsJson(result).as[AccessToken]

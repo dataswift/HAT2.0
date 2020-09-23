@@ -25,11 +25,11 @@
 package org.hatdex.hat.api.service.applications
 
 import javax.inject.Inject
-
 import org.hatdex.dex.apiV2.services.DexClient
+import org.hatdex.dex.apiV2.services.Errors.ApiException
 import org.hatdex.hat.api.models.applications.Application
 import org.hatdex.hat.api.service.RemoteExecutionContext
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
 
@@ -49,6 +49,8 @@ class TrustedApplicationProviderDex @Inject() (
     cache: AsyncCacheApi
   )(implicit val rec: RemoteExecutionContext)
     extends TrustedApplicationProvider {
+
+  private val logger = Logger(this.getClass)
 
   private val dexClient = new DexClient(
     wsClient,
@@ -70,6 +72,22 @@ class TrustedApplicationProviderDex @Inject() (
       dexClient.applications(includeUnpublished = includeUnpublished)
     }
 
-  def application(id: String): Future[Option[Application]] =
-    applications.map(_.find(_.id == id))
+  def application(id: String): Future[Option[Application]] = {
+    cache.getOrElseUpdate(
+      s"apps:dex:$id",
+      dexApplicationsCacheDuration
+    ) {
+      dexClient.application(id, None)
+    }.map(Some(_))
+      .recover {
+        case e: ApiException =>
+          logger.warn(s"Application config not found: ${e.getMessage}")
+          None
+
+        case e =>
+          logger.error(s"Unexpected failure while fetching application. ${e.getMessage}")
+          None
+      }
+
+  }
 }
