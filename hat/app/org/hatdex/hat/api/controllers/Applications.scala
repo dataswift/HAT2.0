@@ -58,6 +58,25 @@ class Applications @Inject() (
 
   val logger: Logger = Logger(this.getClass)
 
+  def hmi(id: String): Action[AnyContent] =
+    UnsecuredAction.async { _ =>
+      applicationsService
+        .hmiDetails(id)
+        .map(
+          _.map(app => Ok(Json.toJson(app)))
+            .getOrElse(
+              NotFound(
+                Json.toJson(
+                  ErrorMessage(
+                    "Not Found",
+                    s"Application configuration for ID $id could not be found. Make sure application is correctly registered"
+                  )
+                )
+              )
+            )
+        )
+    }
+
   def applications(): Action[AnyContent] =
     SecuredAction(
       ContainsApplicationRole(Owner(), ApplicationList()) || WithRole(Owner())

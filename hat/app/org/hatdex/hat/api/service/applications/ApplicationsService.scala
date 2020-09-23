@@ -132,6 +132,10 @@ class ApplicationsService @Inject() (
     wsClient
   )
 
+  def hmiDetails(id: String): Future[Option[Application]] = {
+    trustedApplicationProvider.application(id) // calls cached by TrustedApplicationProvider
+  }
+
   def applicationStatus(
       id: String,
       bustCache: Boolean = false
