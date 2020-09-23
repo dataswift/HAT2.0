@@ -628,6 +628,7 @@ class Authentication @Inject() (
 
         tokenService.retrieve(email, isSigupToken).flatMap {
           // There is a token that is a signUp Token, meaning the hat is not claimed.
+          // I don't think it matters if it has expired.
           case Some(token@_) => {
             // Match the email from the request and the Silhouette Env
             if (email == request.dynamicEnvironment.ownerEmail) {
@@ -654,15 +655,15 @@ class Authentication @Inject() (
       }
     }
 
-  // applicationId is currently unused 2020/09/23
+  // applicationId is currently unused
   def sendRevalidationEmail(email: String, applicationId: String, requestHost: String, lang: Lang)(implicit hatServer: HatServer): Future[Done] = { 
     implicit val l = lang
-    val token = MailTokenUser(email, isSignUp = false)
+    // Create a signup token
+    val token = MailTokenUser(email, isSignUp = true)
     // Store that token
     tokenService.create(token).map { _ =>
       // Assume https now
       val claimLink = s"https://${requestHost}/hat/claim/${token.id}?email=${URLEncoder.encode(email, "UTF-8")}"
-      println(s"*** Sending this link in an email: ${claimLink}")
       mailer.claimHat(email, claimLink, None)
     }
   }
