@@ -37,7 +37,6 @@ case class HatPublicInfo(
 
 object HatPublicInfo {
   implicit def hatServer2PublicInfo(
-      implicit hatServer: HatServer
-    ): HatPublicInfo =
+      implicit hatServer: HatServer): HatPublicInfo =
     HatPublicInfo(hatServer.domain, hatServer.hatName, hatServer.publicKey)
 }

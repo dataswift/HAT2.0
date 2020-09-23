@@ -34,7 +34,7 @@ case class ApiClaimHatRequest(
 object ApiClaimHatRequest {
   implicit val claimHatRequestApiReads: Reads[ApiClaimHatRequest] =
     ((JsPath \ "applicationId").read[String] and (JsPath \ "email")
-      .read[String](Reads.email))(ApiClaimHatRequest.apply _)
+          .read[String](Reads.email))(ApiClaimHatRequest.apply _)
 
   implicit val claimHatRequestApiWrites: Writes[ApiClaimHatRequest] =
     Json.format[ApiClaimHatRequest]

@@ -19,25 +19,20 @@ object AdjudicatorRequestTypes {
   sealed trait PublicKeyRequestFailure
   object PublicKeyRequestFailure {
 
-    final case class ServiceRespondedWithFailure(failureDescription: String)
-        extends PublicKeyRequestFailure
+    final case class ServiceRespondedWithFailure(failureDescription: String) extends PublicKeyRequestFailure
 
-    final case class InvalidPublicKeyFailure(failureDescription: String)
-        extends PublicKeyRequestFailure
+    final case class InvalidPublicKeyFailure(failureDescription: String) extends PublicKeyRequestFailure
 
   }
-  final case class PublicKeyReceived(publicKeyAsByteArray: Array[Byte])
-      extends AnyVal
+  final case class PublicKeyReceived(publicKeyAsByteArray: Array[Byte]) extends AnyVal
 
   // Join Contract Request
   sealed trait JoinContractRequestFailure
   object JoinContractRequestFailure {
 
-    final case class ServiceRespondedWithFailure(failureDescription: String)
-        extends JoinContractRequestFailure
+    final case class ServiceRespondedWithFailure(failureDescription: String) extends JoinContractRequestFailure
 
-    final case class JoinContractFailure(failureDescription: String)
-        extends JoinContractRequestFailure
+    final case class JoinContractFailure(failureDescription: String) extends JoinContractRequestFailure
 
   }
   // TODO: if we attempt to extend AnyVal here, the compiler complains
@@ -47,11 +42,9 @@ object AdjudicatorRequestTypes {
   sealed trait LeaveContractRequestFailure
   object LeaveContractRequestFailure {
 
-    final case class ServiceRespondedWithFailure(failureDescription: String)
-        extends LeaveContractRequestFailure
+    final case class ServiceRespondedWithFailure(failureDescription: String) extends LeaveContractRequestFailure
 
-    final case class LeaveContractFailure(failureDescription: String)
-        extends LeaveContractRequestFailure
+    final case class LeaveContractFailure(failureDescription: String) extends LeaveContractRequestFailure
 
   }
   final case class ContractLeft(contractId: ContractId)
@@ -67,18 +60,15 @@ class AdjudicatorRequest(
 
   private def createHatClaimFromString(
       hatNameAsStr: String,
-      contractId: ContractId
-    ): Option[HatClaim] = {
+      contractId: ContractId): Option[HatClaim] =
     for {
       hatName <- refineV[NonEmpty](hatNameAsStr).toOption
       hatClaim = HatClaim(HatName(hatName), contractId)
     } yield hatClaim
-  }
 
   private def createHatClaimFromHatName(
       maybeHatName: Option[HatName],
-      contractId: ContractId
-    ): Option[HatClaim] =
+      contractId: ContractId): Option[HatClaim] =
     maybeHatName.map(HatClaim(_, contractId))
 
   // Internal calls
@@ -86,16 +76,14 @@ class AdjudicatorRequest(
       hatName: HatName,
       contractId: ContractId,
       keyId: String
-    )(implicit ec: ExecutionContext
-    ): Future[Either[PublicKeyRequestFailure, PublicKeyReceived]] = {
+    )(implicit ec: ExecutionContext): Future[Either[PublicKeyRequestFailure, PublicKeyReceived]] = {
     val claim = createHatClaimFromHatName(Some(hatName), contractId)
 
     val url = s"${adjudicatorEndpoint}/v1/contracts/hat/kid/${keyId}"
 
     makeRequest(url, claim, ws) match {
-      case Some(req) => {
+      case Some(req) =>
         runPublicKeyRequest(req)
-      }
       case None =>
         Future.successful(
           Left(
@@ -110,8 +98,7 @@ class AdjudicatorRequest(
   def joinContract(
       hatName: String,
       contractId: ContractId
-    )(implicit ec: ExecutionContext
-    ): Future[Either[
+    )(implicit ec: ExecutionContext): Future[Either[
     JoinContractRequestFailure.ServiceRespondedWithFailure,
     ContractJoined
   ]] = {
@@ -120,9 +107,8 @@ class AdjudicatorRequest(
     val url = s"${adjudicatorEndpoint}/v1/contracts/hat"
 
     makeRequest(url, claim, ws) match {
-      case Some(req) => {
+      case Some(req) =>
         runJoinContractRequest(req, contractId)
-      }
       case None =>
         Future.successful(
           Left(
@@ -137,16 +123,14 @@ class AdjudicatorRequest(
   def leaveContract(
       hatName: String,
       contractId: ContractId
-    )(implicit ec: ExecutionContext
-    ): Future[Either[LeaveContractRequestFailure, ContractLeft]] = {
+    )(implicit ec: ExecutionContext): Future[Either[LeaveContractRequestFailure, ContractLeft]] = {
     val claim = createHatClaimFromString(hatName, contractId)
 
     val url = s"${adjudicatorEndpoint}/v1/contracts/hat"
 
     makeRequest(url, claim, ws) match {
-      case Some(req) => {
+      case Some(req) =>
         runLeaveContractRequest(req, contractId)
-      }
       case None =>
         Future.successful(
           Left(
@@ -162,40 +146,34 @@ class AdjudicatorRequest(
   private def runJoinContractRequest(
       req: WSRequest,
       contractId: ContractId
-    )(implicit ec: ExecutionContext
-    ): Future[Either[
+    )(implicit ec: ExecutionContext): Future[Either[
     JoinContractRequestFailure.ServiceRespondedWithFailure,
     ContractJoined
-  ]] = {
+  ]] =
     req.put("").map { response =>
       response.status match {
-        case OK => {
+        case OK =>
           Right(ContractJoined(contractId))
-        }
-        case _ => {
+        case _ =>
           Left(
             JoinContractRequestFailure.ServiceRespondedWithFailure(
               s"The Adjudicator Service responded with an error: ${response.statusText}"
             )
           )
-        }
       }
     } recover {
-      case e => {
-        Left(
-          JoinContractRequestFailure.ServiceRespondedWithFailure(
-            s"The Adjudicator Service responded with an error: ${e.getMessage}"
+        case e =>
+          Left(
+            JoinContractRequestFailure.ServiceRespondedWithFailure(
+              s"The Adjudicator Service responded with an error: ${e.getMessage}"
+            )
           )
-        )
       }
-    }
-  }
 
   private def runLeaveContractRequest(
       req: WSRequest,
       contractId: ContractId
-    )(implicit ec: ExecutionContext
-    ): Future[Either[LeaveContractRequestFailure, ContractLeft]] = {
+    )(implicit ec: ExecutionContext): Future[Either[LeaveContractRequestFailure, ContractLeft]] =
     req.delete().map { response =>
       response.status match {
         case OK =>
@@ -208,24 +186,20 @@ class AdjudicatorRequest(
           )
       }
     } recover {
-      case e => {
-        Left(
-          LeaveContractRequestFailure.ServiceRespondedWithFailure(
-            s"The Adjudicator Service responded with an error: ${e.getMessage}"
+        case e =>
+          Left(
+            LeaveContractRequestFailure.ServiceRespondedWithFailure(
+              s"The Adjudicator Service responded with an error: ${e.getMessage}"
+            )
           )
-        )
       }
-    }
-
-  }
 
   private def runPublicKeyRequest(
       req: WSRequest
-    )(implicit ec: ExecutionContext
-    ): Future[Either[PublicKeyRequestFailure, PublicKeyReceived]] = {
+    )(implicit ec: ExecutionContext): Future[Either[PublicKeyRequestFailure, PublicKeyReceived]] =
     req.get().map { response =>
       response.status match {
-        case OK => {
+        case OK =>
           val maybeArrayByte = Json.parse(response.body).asOpt[Array[Byte]]
           maybeArrayByte match {
             case None =>
@@ -236,39 +210,32 @@ class AdjudicatorRequest(
               )
             case Some(arrayByte) => Right(PublicKeyReceived(arrayByte))
           }
-        }
-        case _ => {
+        case _ =>
           Left(
             PublicKeyRequestFailure.ServiceRespondedWithFailure(
               s"The Adjudicator Service responded with an error: ${response.statusText}"
             )
           )
-        }
       }
     } recover {
-      case e => {
-        Left(
-          PublicKeyRequestFailure.ServiceRespondedWithFailure(
-            s"The Adjudicator Service responded with an error: ${e.getMessage}"
+        case e =>
+          Left(
+            PublicKeyRequestFailure.ServiceRespondedWithFailure(
+              s"The Adjudicator Service responded with an error: ${e.getMessage}"
+            )
           )
-        )
       }
-    }
-  }
 
   // Base Request
   private def makeRequest(
       url: String,
       maybeHatClaim: Option[HatClaim],
       ws: WSClient
-    )(implicit ec: ExecutionContext
-    ): Option[WSRequest] = {
+    )(implicit ec: ExecutionContext): Option[WSRequest] =
     for {
       hatClaim <- maybeHatClaim
       token: JwtClaim = hatClaimBuiler.build(hatClaim)
-      encoded = Jwt.encode(JwtHeader(JwtAlgorithm.HS256), token, secret.value)
-      request =
-        ws.url(url).withHttpHeaders("Authorization" -> s"Bearer ${encoded}")
+      encoded         = Jwt.encode(JwtHeader(JwtAlgorithm.HS256), token, secret.value)
+      request         = ws.url(url).withHttpHeaders("Authorization" -> s"Bearer ${encoded}")
     } yield request
-  }
 }

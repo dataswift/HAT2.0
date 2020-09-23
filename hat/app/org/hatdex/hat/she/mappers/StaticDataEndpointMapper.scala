@@ -42,14 +42,12 @@ trait StaticDataEndpointMapper extends JodaWrites with JodaReads {
   def mapDataRecord(
       recordId: UUID,
       content: JsValue,
-      endpoint: String
-    ): Seq[StaticDataValues]
+      endpoint: String): Seq[StaticDataValues]
 
   final def staticDataRecords(
     )(implicit
       hatServer: HatServer,
-      richDataService: RichDataService
-    ): Future[Seq[StaticDataValues]] = {
+      richDataService: RichDataService): Future[Seq[StaticDataValues]] = {
 
     val staticData = Future.sequence(dataQueries.map { query =>
       val eventualDataSource: Future[Seq[EndpointData]] =
@@ -64,9 +62,7 @@ trait StaticDataEndpointMapper extends JodaWrites with JodaReads {
 
       eventualDataSource.map { dataSource =>
         dataSource
-          .map(item =>
-            mapDataRecord(item.recordId.get, item.data, item.endpoint)
-          )
+          .map(item => mapDataRecord(item.recordId.get, item.data, item.endpoint))
           .headOption
           .getOrElse(Seq())
       }

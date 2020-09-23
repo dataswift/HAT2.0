@@ -30,11 +30,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import org.hatdex.hat.api.json.RichDataJsonFormats
 import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.MigrationService
-import org.hatdex.hat.authentication.{
-  HatApiAuthEnvironment,
-  HatApiController,
-  WithRole
-}
+import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, WithRole }
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -57,8 +53,7 @@ class DataMigration @Inject() (
       fromTableName: String,
       toNamespace: String,
       toEndpoint: String,
-      includeTimestamp: Boolean
-    ): Action[AnyContent] =
+      includeTimestamp: Boolean): Action[AnyContent] =
     SecuredAction(WithRole(Owner())).async { implicit request =>
       logger.info(
         s"Migrate data from $fromSource:$fromTableName to $toNamespace/$toEndpoint"

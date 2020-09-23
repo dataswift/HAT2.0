@@ -62,16 +62,14 @@ class TrustedApplicationProviderDex @Inject() (
 
   private val dexApplicationsCacheDuration: FiniteDuration = 30.minutes
 
-  def applications: Future[Seq[Application]] = {
+  def applications: Future[Seq[Application]] =
     cache.getOrElseUpdate(
       "apps:dexApplications",
       dexApplicationsCacheDuration
     ) {
       dexClient.applications(includeUnpublished = includeUnpublished)
     }
-  }
 
-  def application(id: String): Future[Option[Application]] = {
+  def application(id: String): Future[Option[Application]] =
     applications.map(_.find(_.id == id))
-  }
 }

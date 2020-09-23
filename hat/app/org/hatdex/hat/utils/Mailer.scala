@@ -51,14 +51,12 @@ trait Mailer {
   def serverErrorNotify(
       request: RequestHeader,
       exception: UsefulException
-    )(implicit m: Messages
-    ): Done
+    )(implicit m: Messages): Done
 
   def serverExceptionNotify(
       request: RequestHeader,
       exception: Throwable
-    )(implicit m: Messages
-    ): Done
+    )(implicit m: Messages): Done
 
   def sendEmail(
       recipients: String*
@@ -66,15 +64,13 @@ trait Mailer {
       subject: String,
       bodyHtml: String,
       bodyText: String
-    )(implicit ec: ExecutionContext
-    ): Future[Done] = {
+    )(implicit ec: ExecutionContext): Future[Done] =
     Future(
       mailerClient.send(
         Email(subject, from, recipients, Some(bodyText), Some(bodyHtml))
       )
     )
       .map(_ => Done)
-  }
 }
 
 case class ApplicationMailDetails(
@@ -86,26 +82,22 @@ trait HatMailer extends Mailer {
   def serverErrorNotify(
       request: RequestHeader,
       exception: UsefulException
-    )(implicit m: Messages
-    ): Done
+    )(implicit m: Messages): Done
   def serverExceptionNotify(
       request: RequestHeader,
       exception: Throwable
-    )(implicit m: Messages
-    ): Done
+    )(implicit m: Messages): Done
   def passwordReset(
       email: String,
       user: HatUser,
       resetLink: String
     )(implicit m: Messages,
-      server: HatServer
-    ): Done
+      server: HatServer): Done
   def passwordChanged(
       email: String,
       user: HatUser
     )(implicit m: Messages,
-      server: HatServer
-    ): Done
+      server: HatServer): Done
 
   def claimHat(
       email: String,
@@ -113,8 +105,7 @@ trait HatMailer extends Mailer {
       applicationDetails: Option[ApplicationMailDetails]
     )(implicit m: MessagesApi,
       l: Lang,
-      server: HatServer
-    ): Done
+      server: HatServer): Done
 }
 
 class HatMailerImpl @Inject() (
@@ -123,20 +114,18 @@ class HatMailerImpl @Inject() (
     val mailerClient: MailerClient
   )(implicit ec: RemoteExecutionContext)
     extends HatMailer {
-  private val emailFrom = configuration.get[String]("play.mailer.from")
+  private val emailFrom   = configuration.get[String]("play.mailer.from")
   private val adminEmails = configuration.get[Seq[String]]("exchange.admin")
 
   def serverErrorNotify(
       request: RequestHeader,
       exception: UsefulException
-    )(implicit m: Messages
-    ): Done = {
+    )(implicit m: Messages): Done = {
     sendEmail(adminEmails: _*)(
       from = emailFrom,
       subject = s"HAT server ${request.host} error #${exception.id}",
       bodyHtml = views.html.mails.emailServerError(request, exception),
-      bodyText =
-        views.html.mails.emailServerError(request, exception).toString()
+      bodyText = views.html.mails.emailServerError(request, exception).toString()
     )
     Done
   }
@@ -144,15 +133,13 @@ class HatMailerImpl @Inject() (
   def serverExceptionNotify(
       request: RequestHeader,
       exception: Throwable
-    )(implicit m: Messages
-    ): Done = {
+    )(implicit m: Messages): Done = {
     sendEmail(adminEmails: _*)(
       from = emailFrom,
       subject =
         s"HAT server ${request.host} error: ${exception.getMessage} for ${request.path + request.rawQueryString}",
       bodyHtml = views.html.mails.emailServerThrowable(request, exception),
-      bodyText =
-        views.html.mails.emailServerThrowable(request, exception).toString()
+      bodyText = views.html.mails.emailServerThrowable(request, exception).toString()
     )
     Done
   }
@@ -162,13 +149,11 @@ class HatMailerImpl @Inject() (
       user: HatUser,
       resetLink: String
     )(implicit m: Messages,
-      server: HatServer
-    ): Done = {
+      server: HatServer): Done = {
     sendEmail(email)(
       from = emailFrom,
       subject = s"HAT ${server.domain} - reset your password",
-      bodyHtml =
-        views.html.mails.emailPasswordReset(user, server.domain, resetLink),
+      bodyHtml = views.html.mails.emailPasswordReset(user, server.domain, resetLink),
       bodyText = views.txt.mails
         .emailPasswordReset(user, server.domain, resetLink)
         .toString()
@@ -180,14 +165,12 @@ class HatMailerImpl @Inject() (
       email: String,
       user: HatUser
     )(implicit m: Messages,
-      server: HatServer
-    ): Done = {
+      server: HatServer): Done = {
     sendEmail(email)(
       from = emailFrom,
       subject = s"HAT ${server.domain} - password changed",
       bodyHtml = views.html.mails.emailPasswordChanged(user, server.domain),
-      bodyText =
-        views.txt.mails.emailPasswordChanged(user, server.domain).toString()
+      bodyText = views.txt.mails.emailPasswordChanged(user, server.domain).toString()
     )
     Done
   }
@@ -198,8 +181,7 @@ class HatMailerImpl @Inject() (
       applicationDetails: Option[ApplicationMailDetails]
     )(implicit m: MessagesApi,
       l: Lang,
-      server: HatServer
-    ): Done = {
+      server: HatServer): Done = {
     sendEmail(email)(
       from = "pda@hubofallthings.net",
       subject = m(

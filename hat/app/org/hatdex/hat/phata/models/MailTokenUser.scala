@@ -47,8 +47,7 @@ object MailTokenUser {
 
   def apply(
       email: String,
-      isSignUp: Boolean
-    ): MailTokenUser =
+      isSignUp: Boolean): MailTokenUser =
     MailTokenUser(
       UUID.randomUUID().toString,
       email,
