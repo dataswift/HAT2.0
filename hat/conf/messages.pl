@@ -19,3 +19,12 @@ email.dataswift.fullAddress=Dataswift Ltd 8 Comberton Road, Cambridge, CB23 7BA
 email.dataswift.companyNumber=Company number: 09821157
 email.dataswift.haveQuestion=Have a question?
 email.dataswift.copyrightAllRightsReserved=Copyright © 2020 Dataswift Ltd, All rights reserved.
+
+email.dataswift.auth.hi=Hi,
+email.dataswift.auth.thankYou=Thank you,
+email.dataswift.auth.dataswift=Dataswift
+
+email.dataswift.auth.completePdaSignupProcess=Complete the Personal Data Account sign up process by following this link:
+email.dataswift.auth.resetPasswordFollowThisLink=To reset your password, follow this link:
+email.dataswift.auth.temporaryLink=The temporary link will expire after a few minutes.
+email.dataswift.auth.passwordChangedSuccessfully=You have successfully changed your PDA password.

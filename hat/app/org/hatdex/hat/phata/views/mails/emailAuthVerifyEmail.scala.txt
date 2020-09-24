@@ -1,0 +1,15 @@
+@import play.api.i18n.{ Lang, MessagesApi }
+
+@(hatDomain: String, claimLink: String, name: Option[String], url: Option[String])(implicit messagesApi: MessagesApi, language: Lang)
+
+@messagesApi("email.dataswift.auth.hi")
+
+@messagesApi("email.dataswift.auth.completePdaSignupProcess")
+
+@claimLink
+
+@messagesApi("email.dataswift.auth.temporaryLink")
+
+@messagesApi("email.dataswift.auth.thankYou")
+
+@messagesApi("email.dataswift.auth.dataswift")
