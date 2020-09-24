@@ -419,7 +419,6 @@ class Authentication @Inject() (
       implicit request =>
         
         implicit val language: Lang = Lang.get(lang.getOrElse("en")).getOrElse(Lang.defaultLang)
-
         val claimHatRequest = request.body
         // ???: Not sure how this is hydrated.
         val email = request.dynamicEnvironment.ownerEmail
@@ -431,7 +430,7 @@ class Authentication @Inject() (
         // Look up the application (Is this in the HAT itself?  Not DEX)
         if (claimHatRequest.email == email) {
           usersService.listUsers
-            .map(_.find(_.roles.contains(Owner())))
+            .map(_.find(u -> (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified)))
             .flatMap {
               case Some(user) =>
                 applicationsService
@@ -672,9 +671,6 @@ class Authentication @Inject() (
   // applicationId is currently unused
   def sendRevalidationEmail(email: String, applicationId: String, requestHost: String, token: MailTokenUser, lang: Lang)(implicit hatServer: HatServer): Future[Done] = { 
     implicit val l = lang
-    // Create a signup token
-    
-    // Store that token
     tokenService.create(token).map { _ =>
       // Assume https now
       val claimLink = s"https://${requestHost}/hat/claim/${token.id}?email=${URLEncoder.encode(email, "UTF-8")}"
