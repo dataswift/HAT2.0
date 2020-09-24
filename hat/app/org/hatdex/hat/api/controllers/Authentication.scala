@@ -640,8 +640,8 @@ class Authentication @Inject() (
             tokenOpt match {
               case Some(token) => {
                 // Is Owner and is NOT EmailVerified
-                val eventuallyUsers = usersService.listUsers
-                eventuallyUsers.flatMap { users => 
+                val eventualyUsers = usersService.listUsers
+                eventualyUsers.flatMap { users => 
                   users.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified(""))))) 
                   match {
                     case Some(user) => {
