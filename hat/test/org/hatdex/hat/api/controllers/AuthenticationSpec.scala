@@ -345,7 +345,7 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
           .withJsonBody(Json.toJson(passwordValidationIncorrect))
 
         val controller = application.injector.instanceOf[Authentication]
-        val result: Future[Result] = Helpers.call(controller.handleRevalidation, request)
+        val result: Future[Result] = Helpers.call(controller.handleRequestVerification, request)
 
         status(result) must equalTo(OK)
       }
@@ -356,7 +356,7 @@ class AuthenticationSpec(implicit ee: ExecutionEnv) extends PlaySpecification wi
           .withJsonBody(Json.toJson(passwordValidationIncorrect))
 
         val controller = application.injector.instanceOf[Authentication]
-        val result: Future[Result] = Helpers.call(controller.handleRevalidation, request)
+        val result: Future[Result] = Helpers.call(controller.handleRequestVerification , request)
 
         val ret = scala.concurrent.Await.ready(result, 10.seconds)
         status(ret) must equalTo(OK)
