@@ -157,6 +157,9 @@ class HatMailerImpl @Inject() (
     Done
   }
 
+  // add messagesApi
+  // change the txt and html email templates
+  // emailAuthPasswordChange {txt|html}
   def passwordReset(
       email: String,
       user: HatUser,
@@ -168,7 +171,10 @@ class HatMailerImpl @Inject() (
       from = emailFrom,
       subject = s"HAT ${server.domain} - reset your password",
       bodyHtml =
-        views.html.mails.emailPasswordReset(user, server.domain, resetLink),
+        views.html.mails.emailPasswordReset(
+          user, 
+          server.domain, 
+          resetLink),
       bodyText = views.txt.mails
         .emailPasswordReset(user, server.domain, resetLink)
         .toString()
@@ -176,6 +182,9 @@ class HatMailerImpl @Inject() (
     Done
   }
 
+  // add messagesApi
+  // change the txt and html email templates
+  // emailAuthPasswordChange {txt|html}
   def passwordChanged(
       email: String,
       user: HatUser

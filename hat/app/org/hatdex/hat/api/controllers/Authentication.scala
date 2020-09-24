@@ -337,6 +337,7 @@ class Authentication @Inject() (
                 // Store that token
                 tokenService.create(token).map { _ =>
                   val scheme = if (request.secure) "https://" else "http://"
+                  // update below to this: /auth/change-password/:resetToken
                   val resetLink = s"$scheme${request.host}/#/user/password/change/${token.id}"
                   mailer.passwordReset(email, user, resetLink)
                   response
@@ -412,25 +413,21 @@ class Authentication @Inject() (
     * Sends an email to the owner with a link to claim the hat
     * /control/v2/auth/claim
     */
-
-    // Role EmailVerified
   def handleClaimStart(lang: Option[String]): Action[ApiClaimHatRequest] =
     UserAwareAction.async(parsers.json[ApiClaimHatRequest]) {
       implicit request =>
         
         implicit val language: Lang = Lang.get(lang.getOrElse("en")).getOrElse(Lang.defaultLang)
         val claimHatRequest = request.body
-        // ???: Not sure how this is hydrated.
         val email = request.dynamicEnvironment.ownerEmail
         val response = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions")))
         val scheme = if (request.secure) "https://" else "http://"
 
         // (email, applicationId) in the body
-        // Match the mail to that of the ENV
         // Look up the application (Is this in the HAT itself?  Not DEX)
         if (claimHatRequest.email == email) {
           usersService.listUsers
-            .map(_.find(u -> (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified)))
+            .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified(""))))))
             .flatMap {
               case Some(user) =>
                 applicationsService
@@ -478,9 +475,7 @@ class Authentication @Inject() (
 
                         val eventualResult = for {
                           _ <- tokenService.create(token)
-                          _ <-
-                            logService
-                              .logAction(
+                          _ <- logService.logAction(
                                 request.dynamicEnvironment.domain,
                                 LogRequest("unclaimed", None, None),
                                 appLogDetails
@@ -508,6 +503,7 @@ class Authentication @Inject() (
                             )
                             iSEClaimFailed
                         }
+                      
                     }
                   }
               case None => Future.successful(response)
@@ -560,7 +556,6 @@ class Authentication @Inject() (
                     // ???: this is fishy
                     //env.eventBus.publish(LoginEvent(user, request))
                     //mailer.passwordChanged(token.email, user)
-
                     result
                   }
 
@@ -573,7 +568,8 @@ class Authentication @Inject() (
                 case None =>
                   Future.successful(noClaimNoMatchingToken)
               }
-
+            
+          
           case Some(_) =>
             Future.successful(expiredToken)
 
@@ -597,6 +593,7 @@ class Authentication @Inject() (
       .url(s"$hattersUrl/$path")
       //.withHttpHeaders("x-auth-token" -> token.accessToken)
       .post(Json.toJson(hattersClaimPayload))
+
 
     futureResponse.flatMap { response =>
       response.status match {
@@ -624,7 +621,7 @@ class Authentication @Inject() (
 
         val email = request.body.email
         val applicationId = request.body.applicationId
-        val isSigupToken = true
+        val isSignupToken = true
 
         // Generic message regardless if the user is found or not.
         val uniformResponse = resendVerificationEmail
@@ -635,7 +632,7 @@ class Authentication @Inject() (
         }
         else {
           val enventuallTtokenToSend = for {
-            token <- tokenService.retrieve(email, isSigupToken)
+            token <- tokenService.retrieve(email, isSignupToken)
             tokenToSend <- createOrResendToken(email, token)
           } yield tokenToSend
 
@@ -645,7 +642,8 @@ class Authentication @Inject() (
                 // Is Owner and is NOT EmailVerified
                 val eventuallyUsers = usersService.listUsers
                 eventuallyUsers.flatMap { users => 
-                  users.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified)))) match {
+                  users.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified(""))))) 
+                  match {
                     case Some(user) => {
                       sendRevalidationEmail(user.email, applicationId, request.host, token, request.lang)
                       Future.successful(uniformResponse)
@@ -673,6 +671,7 @@ class Authentication @Inject() (
     implicit val l = lang
     tokenService.create(token).map { _ =>
       // Assume https now
+      // /auth/verify-email
       val claimLink = s"https://${requestHost}/hat/claim/${token.id}?email=${URLEncoder.encode(email, "UTF-8")}"
       mailer.claimHat(email, claimLink, None)
     }
