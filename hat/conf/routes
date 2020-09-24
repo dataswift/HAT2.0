@@ -29,9 +29,12 @@ GET         /control/v2/auth/hatlogin                            org.hatdex.hat.
 POST        /control/v2/auth/password                            org.hatdex.hat.api.controllers.Authentication.passwordChangeProcess
 POST        /control/v2/auth/passwordReset                       org.hatdex.hat.api.controllers.Authentication.handleForgotPassword
 POST        /control/v2/auth/passwordreset/confirm/:token        org.hatdex.hat.api.controllers.Authentication.handleResetPassword(token: String)
-POST        /control/v2/auth/claim                               org.hatdex.hat.api.controllers.Authentication.handleClaimStart(lang: Option[String])
 POST        /control/v2/auth/claim/complete/:claimToken          org.hatdex.hat.api.controllers.Authentication.handleClaimComplete(claimToken: String)
-POST        /control/v2/auth/revalidate                          org.hatdex.hat.api.controllers.Authentication.handleRevalidation
+
+# ???: Can I combine these handlers? 
+POST        /control/v2/auth/claim                               org.hatdex.hat.api.controllers.Authentication.handleClaimStart(lang: Option[String])
+POST        /control/v2/auth/request-verification                org.hatdex.hat.api.controllers.Authentication.handleRequestVerification
+
 
 ->          /api/v2                                              v20.Routes
 ->          /api/v2.0                                            v20.Routes

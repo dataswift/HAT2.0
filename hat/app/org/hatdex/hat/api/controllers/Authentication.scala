@@ -117,17 +117,19 @@ class Authentication @Inject() (
   val noUserOrPass = 
     unauthorizedMessage("Credentials required", "No username or password provided to retrieve token")
 
-  val claimProcessFailed = BadRequest(Json.toJson(ErrorMessage("Bad Request", "HAT claim process failed")))
+  val emailVerificationFailed = 
+    BadRequest(Json.toJson(ErrorMessage("Bad Request", "HAT email verification failed")))
 
-  val iSEClaimFailed = InternalServerError(Json.toJson(ErrorMessage("Internal Server Error", "Failed to initialize HAT claim process")))
+  val iSEClaimFailed = 
+    InternalServerError(Json.toJson(ErrorMessage("Internal Server Error", "Failed to initialize HAT email verification process")))
                         
           
   // * Ok Responses *
   private def okMessage(body: String) = Ok(Json.toJson(SuccessResponse(s"${body}")))  
   val hatIsAlreadyClaimed = 
-    okMessage("The HAT is already claimed")
+    okMessage("The email associated with this HAT has already been verified.")
 
-  val resendValidationEmail = 
+  val resendVerificationEmail = 
     okMessage("If the email you have entered is correct and your HAT is not validated, you will receive an email with a link to validate your HAT.")
 
 
@@ -410,6 +412,8 @@ class Authentication @Inject() (
     * Sends an email to the owner with a link to claim the hat
     * /control/v2/auth/claim
     */
+
+    // Role EmailVerified
   def handleClaimStart(lang: Option[String]): Action[ApiClaimHatRequest] =
     UserAwareAction.async(parsers.json[ApiClaimHatRequest]) {
       implicit request =>
@@ -564,7 +568,7 @@ class Authentication @Inject() (
                   eventualResult.recover {
                     case e =>
                       logger.error(s"HAT claim process failed with error ${e.getMessage}")
-                      claimProcessFailed
+                      emailVerificationFailed
                   }
 
                 case None =>
@@ -614,7 +618,7 @@ class Authentication @Inject() (
     * Resends the email to claim/validate the HAT
     * This is unauthenticated request
     */
-  def handleRevalidation: Action[ApiValidationRequest] =
+  def handleRequestVerification: Action[ApiValidationRequest] =
     UserAwareAction.async(parsers.json[ApiValidationRequest]) {
       implicit request =>
         logger.debug("Processing resend validation request")
@@ -624,42 +628,52 @@ class Authentication @Inject() (
         val isSigupToken = true
 
         // Generic message regardless if the user is found or not.
-        val uniformResponse = resendValidationEmail
+        val uniformResponse = resendVerificationEmail
 
-        tokenService.retrieve(email, isSigupToken).flatMap {
-          // There is a token that is a signUp Token, meaning the hat is not claimed.
-          // I don't think it matters if it has expired.
-          case Some(token@_) => {
-            // Match the email from the request and the Silhouette Env
-            if (email == request.dynamicEnvironment.ownerEmail) {
-              // Find the specific user who is the owner, only owners can resend
-              usersService.listUsers.map(_.find(_.roles.contains(Owner()))).flatMap {
-                case Some(user) => {
-                  sendRevalidationEmail(user.email, applicationId, request.host, request.lang)
-                  Future.successful(uniformResponse)
-                }
-                // The user is not an owner, but return the "If we found an email address, we'll send the link."
-                case None => {
-                  Future.successful(uniformResponse)
-                }
+        // The email from the request and the Silhouette Env do not match
+        if (email != request.dynamicEnvironment.ownerEmail) {
+          Future.successful(uniformResponse)
+        }
+        else {
+          val enventuallTtokenToSend = for {
+            token <- tokenService.retrieve(email, isSigupToken)
+            tokenToSend <- createOrResendToken(email, token)
+          } yield tokenToSend
+
+          enventuallTtokenToSend.flatMap { tokenOpt =>
+            tokenOpt match {
+              case Some(token) => {
+                // Is Owner and is NOT EmailVerified
+                val eventuallyUsers = usersService.listUsers
+                eventuallyUsers.flatMap { users => 
+                  users.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified)))) match {
+                    case Some(user) => {
+                      sendRevalidationEmail(user.email, applicationId, request.host, token, request.lang)
+                      Future.successful(uniformResponse)
+                    }
+                    // The user is not an owner, but return the "If we found an email address, we'll send the link."
+                    case None => {
+                      Future.successful(uniformResponse)
+                    }
+                  }
+                } 
               }
-            } else {
-              // Email in the request does not match the dynamic env.
-              Future.successful(uniformResponse)
-            } 
+              case None => {
+                // User does not have an existing isSignup Token
+                Future.successful(uniformResponse)
+              }
+            }
           }
-          case None => {
-            // User does not have an existing isSignup Token
-            Future.successful(uniformResponse)
-          }
+            
+          Future.successful(uniformResponse)
+        }
       }
-    }
 
   // applicationId is currently unused
-  def sendRevalidationEmail(email: String, applicationId: String, requestHost: String, lang: Lang)(implicit hatServer: HatServer): Future[Done] = { 
+  def sendRevalidationEmail(email: String, applicationId: String, requestHost: String, token: MailTokenUser, lang: Lang)(implicit hatServer: HatServer): Future[Done] = { 
     implicit val l = lang
     // Create a signup token
-    val token = MailTokenUser(email, isSignUp = true)
+    
     // Store that token
     tokenService.create(token).map { _ =>
       // Assume https now
@@ -667,5 +681,28 @@ class Authentication @Inject() (
       mailer.claimHat(email, claimLink, None)
     }
   }
+
+  def createOrResendToken(email: String, tokenOpt: Option[MailTokenUser])(implicit hatServer: HatServer): Future[Option[MailTokenUser]] = {
+    tokenOpt match {
+      case Some(token) => {
+        token.isExpired match {
+          // If the token has expired, delete it, create a new one, send that in the email
+          case true => {
+            tokenService.consume(token.id)
+            val newToken = MailTokenUser(email, isSignUp = true)
+            tokenService.create(newToken)
+          }
+          // If the token has not expired, send it to the user again in the email
+          case false => {
+            Future.successful(Some(token))
+          }
+        }
+      }
+      case None => {
+        Future.successful(None)
+      }
+    }
+  }
+
 
 }
