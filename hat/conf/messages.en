@@ -37,6 +37,10 @@ email.dataswift.auth.hi=Hi,
 email.dataswift.auth.thankYou=Thank you,
 email.dataswift.auth.dataswift=Dataswift
 
+email.dataswift.auth.subject.verifyEmail=Your Personal Data Account Sign Up
+email.dataswift.auth.subject.resetPassword=Password reset instructions
+email.dataswift.auth.subject.passwordChanged=Your password has been changed
+
 email.dataswift.auth.completePdaSignupProcess=Complete the Personal Data Account sign up process by following this link:
 email.dataswift.auth.resetPasswordFollowThisLink=To reset your password, follow this link:
 email.dataswift.auth.temporaryLink=The temporary link will expire after a few minutes.
