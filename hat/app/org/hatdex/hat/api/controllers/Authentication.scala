@@ -389,6 +389,7 @@ class Authentication @Inject() (
   def handleVerificationRequest(lang: Option[String]): Action[ApiVerificationRequest] =
     UserAwareAction.async(parsers.json[ApiVerificationRequest]) { implicit request =>
       implicit val language: Lang = Lang.get(lang.getOrElse("en")).getOrElse(Lang.defaultLang)
+      
       val claimHatRequest         = request.body
       val email                   = request.dynamicEnvironment.ownerEmail
       val response                = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions")))
@@ -397,7 +398,7 @@ class Authentication @Inject() (
       // Look up the application (Is this in the HAT itself?  Not DEX)
       if (claimHatRequest.email == email)
         usersService.listUsers
-          .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified(""))))))
+          .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified())))))
           .flatMap {
             case Some(user) =>
               val eventualClaimContext = for {
@@ -446,17 +447,18 @@ class Authentication @Inject() (
         case Some(token)
             if token.isSignUp && !token.isExpired && token.email == request.dynamicEnvironment.ownerEmail =>
           usersService.listUsers
-            .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified(""))))))
+            .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified())))))
             .flatMap {
-              case Some(user) =>
+              case Some(user) => {
+                val updatedUser = user.copy(roles = user.roles ++ Seq(EmailVerified()))
                 val eventualResult = for {
                   _ <- updateHatMembership(hatClaimComplete)
                   _ <- authInfoRepository.update(
-                         user.loginInfo,
+                         updatedUser.loginInfo,
                          passwordHasherRegistry.current.hash(request.body.password)
                        )
                   _ <- tokenService.consume(token.id)
-                  authenticator <- env.authenticatorService.create(user.loginInfo)
+                  authenticator <- env.authenticatorService.create(updatedUser.loginInfo)
                   result <- env.authenticatorService.renew(
                               authenticator,
                               Ok(Json.toJson(SuccessResponse("HAT claimed")))
@@ -487,7 +489,7 @@ class Authentication @Inject() (
                     logger.error(s"HAT claim process failed with error ${e.getMessage}")
                     emailVerificationFailed
                 }
-
+              }
               case None =>
                 Future.successful(noClaimNoMatchingToken)
             }
@@ -556,8 +558,25 @@ class Authentication @Inject() (
       token: String,
       verificationOptions: EmailVerificationOptions): String =
     s"$emailScheme$host/auth/verify-email/$token?${verificationOptions.asQueryParameters}"
-}
 
+
+    // private def roleMatcher(rolesToMatch: Seq[UserRole], rolesRequired: Seq[UserRole]): Boolean = {
+    //   //rolesToMatch.map(userRole => roleMatch(userRole, rolesRequired)
+    //   false
+    // }
+
+    // private def roleMatch(roleToMatch: UserRole, rolesRequired: Seq[UserRole]): Boolean = {
+    //   rolesRequired.map(roleRequired => )
+    // }
+
+    def roleMatchIt(roleToMatch: UserRole, roleRequired: UserRole): Boolean = {
+      (roleRequired equals roleToMatch)
+      // roleToMatch match {
+      //   case roleRequired: EmailVerified => true
+      //   case _            => false
+      // }
+    }
+  }
 case class EmailVerificationOptions(
     email: String,
     language: Lang,
@@ -573,3 +592,5 @@ case class EmailVerificationOptions(
     s"$encodedEmail&$lang&$application&$redirect"
   }
 }
+
+
