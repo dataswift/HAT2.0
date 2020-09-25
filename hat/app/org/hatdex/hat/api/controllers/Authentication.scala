@@ -683,9 +683,10 @@ class Authentication @Inject() (
         token.isExpired match {
           // If the token has expired, delete it, create a new one, send that in the email
           case true => {
-            tokenService.consume(token.id)
-            val newToken = MailTokenUser(email, isSignUp = true)
-            tokenService.create(newToken)
+            tokenService.consume(token.id).flatMap { _ =>
+              val newToken = MailTokenUser(email, isSignUp = true)
+              tokenService.create(newToken)
+            }
           }
           // If the token has not expired, send it to the user again in the email
           case false => {
