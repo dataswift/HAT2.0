@@ -247,6 +247,7 @@ class Authentication @Inject() (
     */
   def passwordChangeProcess: Action[ApiPasswordChange] =
     SecuredAction(WithRole(Owner())).async(parsers.json[ApiPasswordChange]) { implicit request =>
+      implicit val language: Lang = Lang.defaultLang
       logger.debug("Processing password change request")
       request.body.password map { oldPassword =>
         val eventualResult = for {
@@ -264,7 +265,7 @@ class Authentication @Inject() (
                     )
         } yield {
           env.eventBus.publish(LoginEvent(request.identity, request))
-          mailer.passwordChanged(request.identity.email, request.identity)
+          mailer.passwordChanged(request.identity.email)
           result
         }
 
@@ -293,6 +294,7 @@ class Authentication @Inject() (
     */
   def handleForgotPassword: Action[ApiPasswordResetRequest] =
     UserAwareAction.async(parsers.json[ApiPasswordResetRequest]) { implicit request =>
+      implicit val language: Lang = Lang.defaultLang
       logger.debug("Processing forgotten password request")
       val email = request.body.email
       val response = Ok(
@@ -307,16 +309,15 @@ class Authentication @Inject() (
         usersService.listUsers
           .map(_.find(_.roles.contains(Owner())))
           .flatMap {
-            case Some(user) =>
+            case Some(_) =>
               // Create a token for the reset with a 24 hour expiry
               // isSignUp is potentially the issue here.
               val token = MailTokenUser(email, isSignUp = false)
               // Store that token
               tokenService.create(token).map { _ =>
-                val scheme = if (request.secure) "https://" else "http://"
                 // update below to this: /auth/change-password/:resetToken
-                val resetLink = s"$scheme${request.host}/#/user/password/change/${token.id}"
-                mailer.passwordReset(email, user, resetLink)
+                val resetLink = s"$emailScheme${request.host}/#/user/password/change/${token.id}"
+                mailer.passwordReset(email, resetLink)
                 response
               }
             // The user was not found, but return the "If we found an email address, we'll send the link."
@@ -331,6 +332,7 @@ class Authentication @Inject() (
     */
   def handleResetPassword(tokenId: String): Action[ApiPasswordChange] =
     UserAwareAction.async(parsers.json[ApiPasswordChange]) { implicit request =>
+      implicit val language: Lang = Lang.defaultLang
       tokenService.retrieve(tokenId).flatMap {
         // Token was found, is not signup nor expired
         case Some(token) if !token.isSignUp && !token.isExpired =>
@@ -363,7 +365,7 @@ class Authentication @Inject() (
                     // Push a loginEvent on the bus
                     env.eventBus.publish(LoginEvent(user, request))
                     // Mail the user, telling them the password changed
-                    mailer.passwordChanged(token.email, user)
+                    mailer.passwordChanged(token.email)
                     // ???: return an AuthenticatorResult, why
                     result
                   }
@@ -424,7 +426,7 @@ class Authentication @Inject() (
 
                   val verificationLink = emailVerificationLink(request.host, token.id, emailVerificationOptions)
 
-                  mailer.claimHat(email, verificationLink, None) // TODO: Update email template parameters
+                  mailer.verifyEmail(email, verificationLink)
 
                   response
               }
@@ -438,6 +440,7 @@ class Authentication @Inject() (
   def handleVerification(verificationToken: String): Action[ApiVerificationCompletionRequest] =
     UserAwareAction.async(parsers.json[ApiVerificationCompletionRequest]) { implicit request =>
       implicit val hatClaimComplete: ApiVerificationCompletionRequest = request.body
+      implicit val language: Lang                                     = Lang.defaultLang
 
       tokenService.retrieve(verificationToken).flatMap {
         case Some(token)
@@ -473,12 +476,11 @@ class Authentication @Inject() (
                         )
                         Done
                     }
-
+                  mailer.passwordChanged(token.email)
                   result
                 }
                 // ???: this is fishy
                 //env.eventBus.publish(LoginEvent(user, request))
-                //mailer.passwordChanged(token.email, user)
 
                 eventualResult.recover {
                   case e =>
