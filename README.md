@@ -153,3 +153,4 @@ We have put together a [docker-compose](https://docs.docker.com/compose/) file t
 ## License
 
 HAT including HAT Schema and API is licensed under [AGPL - GNU AFFERO GENERAL PUBLIC LICENSE](https://github.com/Hub-of-all-Things/HAT/blob/master/LICENSE/AGPL)
+
