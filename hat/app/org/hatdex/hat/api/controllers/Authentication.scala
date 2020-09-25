@@ -677,7 +677,7 @@ class Authentication @Inject() (
     }
   }
 
-  def createOrResendToken(email: String, tokenOpt: Option[MailTokenUser])(implicit hatServer: HatServer): Future[Option[MailTokenUser]] = {
+  private def createOrResendToken(email: String, tokenOpt: Option[MailTokenUser])(implicit hatServer: HatServer): Future[Option[MailTokenUser]] = {
     tokenOpt match {
       case Some(token) => {
         token.isExpired match {
