@@ -29,33 +29,19 @@ import java.net.{ URLDecoder, URLEncoder }
 import akka.Done
 import javax.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.api.util.{
-  Credentials,
-  PasswordHasherRegistry
-}
+import com.mohiva.play.silhouette.api.util.{ Credentials, PasswordHasherRegistry }
 import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
-import com.mohiva.play.silhouette.impl.exceptions.{
-  IdentityNotFoundException,
-  InvalidPasswordException
-}
+import com.mohiva.play.silhouette.impl.exceptions.{ IdentityNotFoundException, InvalidPasswordException }
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import org.hatdex.hat.api.json.HatJsonFormats
 import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.models.applications.ApplicationSetup
 import org.hatdex.hat.api.service.applications.ApplicationsService
-import org.hatdex.hat.api.service.{
-  HatServicesService,
-  LogService,
-  MailTokenService,
-  UsersService
-}
+import org.hatdex.hat.api.service.{ HatServicesService, LogService, MailTokenService, UsersService }
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models._
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
-import org.hatdex.hat.utils.{
-  ApplicationMailDetails,
-  HatBodyParsers,
-  HatMailer
-}
+import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer }
 import play.api.{ Configuration, Logger }
 import play.api.cache.{ Cached, CachedBuilder }
 import play.api.i18n.Lang
@@ -93,46 +79,49 @@ class Authentication @Inject() (
     .status(req => s"${req.host}${req.path}", 200)
     .includeStatus(404, 600)
 
+  private val emailScheme = "https://"
+
   // * Error Responses *
   // Extracted as these messages increased the length of functions.
   // So as a small effort to increase readability, I pulled them out.
-  private def unauthorizedMessage(title: String, body: String) = 
-    Unauthorized(Json.toJson(ErrorMessage(s"${title}", s"${body}")))    
+  private def unauthorizedMessage(title: String, body: String) =
+    Unauthorized(Json.toJson(ErrorMessage(s"${title}", s"${body}")))
 
-  val noUserMatchingToken = 
+  val noUserMatchingToken =
     unauthorizedMessage("Password reset unauthorized", "No user matching token")
 
-  val onlyHatOwnerCanReset = 
+  val onlyHatOwnerCanReset =
     unauthorizedMessage("Password reset unauthorized", "Only HAT owner can reset their password")
 
-  val expiredToken = 
+  val expiredToken =
     unauthorizedMessage("Invalid Token", "Token expired or invalid")
-            
-  val invalidToken = 
+
+  val invalidToken =
     unauthorizedMessage("Invalid Token", "Token does not exist")
 
-  val noClaimNoMatchingToken = 
+  val noClaimNoMatchingToken =
     unauthorizedMessage("HAT claim unauthorized", "No user matching token")
 
-  val noUserOrPass = 
+  val noUserOrPass =
     unauthorizedMessage("Credentials required", "No username or password provided to retrieve token")
 
-  val emailVerificationFailed = 
+  val emailVerificationFailed =
     BadRequest(Json.toJson(ErrorMessage("Bad Request", "HAT email verification failed")))
 
-  val iSEClaimFailed = 
-    InternalServerError(Json.toJson(ErrorMessage("Internal Server Error", "Failed to initialize HAT email verification process")))
-                        
-          
+  val iSEClaimFailed =
+    InternalServerError(
+      Json.toJson(ErrorMessage("Internal Server Error", "Failed to initialize HAT email verification process"))
+    )
+
   // * Ok Responses *
-  private def okMessage(body: String) = Ok(Json.toJson(SuccessResponse(s"${body}")))  
-  val hatIsAlreadyClaimed = 
+  private def okMessage(body: String) = Ok(Json.toJson(SuccessResponse(s"${body}")))
+  val hatIsAlreadyClaimed =
     okMessage("The email associated with this HAT has already been verified.")
 
-  val resendVerificationEmail = 
-    okMessage("If the email you have entered is correct and your HAT is not validated, you will receive an email with a link to validate your HAT.")
-
-
+  val resendVerificationEmail =
+    okMessage(
+      "If the email you have entered is correct and your HAT is not validated, you will receive an email with a link to validate your HAT."
+    )
 
   def publicKey(): EssentialAction =
     indefiniteSuccessCaching {
@@ -151,39 +140,33 @@ class Authentication @Inject() (
 
   def hatLogin(
       name: String,
-      redirectUrl: String
-    ): Action[AnyContent] =
+      redirectUrl: String): Action[AnyContent] =
     SecuredAction(WithRole(Owner())).async { implicit request =>
       for {
         service <- hatServicesService.findOrCreateHatService(name, redirectUrl)
         linkedService <- hatServicesService.hatServiceLink(
-          request.identity,
-          service,
-          Some(redirectUrl)
-        )
+                           request.identity,
+                           service,
+                           Some(redirectUrl)
+                         )
         _ <- usersService.logLogin(
-          request.identity,
-          "hatLogin",
-          linkedService.category,
-          Some(name),
-          Some(redirectUrl)
-        )
-      } yield {
-        Ok(Json.toJson(SuccessResponse(linkedService.url)))
-      }
+               request.identity,
+               "hatLogin",
+               linkedService.category,
+               Some(name),
+               Some(redirectUrl)
+             )
+      } yield Ok(Json.toJson(SuccessResponse(linkedService.url)))
     }
 
   def applicationToken(
       name: String,
-      resource: String
-    ): Action[AnyContent] =
+      resource: String): Action[AnyContent] =
     SecuredAction(WithRole(Owner())).async { implicit request =>
       for {
         service <- hatServicesService.findOrCreateHatService(name, resource)
         token <- hatServicesService.hatServiceToken(request.identity, service)
-      } yield {
-        Ok(Json.toJson(token))
-      }
+      } yield Ok(Json.toJson(token))
     }
 
   // ???: this seems weird. :)
@@ -202,111 +185,107 @@ class Authentication @Inject() (
 
   // Trade username and password for an access_token
   def accessToken(): Action[AnyContent] =
-    (UserAwareAction andThen limiter.UserAwareRateLimit).async {
-      implicit request =>
-        // pull details from the headers
-        val eventuallyAuthenticatedUser = for {
-          usernameParam <- request.headers.get("username")
-          passwordParam <- request.headers.get("password")
-        } yield {
-          val username = URLDecoder.decode(usernameParam, "UTF-8")
-          val password = URLDecoder.decode(passwordParam, "UTF-8")
-          credentialsProvider
-            .authenticate(Credentials(username, password))
-            .map(_.copy(request.dynamicEnvironment.id))
-            .flatMap { loginInfo =>
-              usersService.getUser(loginInfo.providerKey).flatMap {
-                // If we find a user, create and return an access token (JWT)
-                case Some(user) => {
-                  val customClaims = hatServicesService.generateUserTokenClaims(user, hatService)
-                  for {
-                    // JWT Authenticator
-                    authenticator <- env.authenticatorService.create(loginInfo)
-                    // JWT serialized as a String
-                    token <- env.authenticatorService.init(
-                      authenticator.copy(customClaims = Some(customClaims))
-                    )
-                    // Logging
-                    _ <- usersService.logLogin(
-                      user,
-                      "api",
-                      user.roles
-                        .filter(_.extra.isEmpty)
-                        .map(_.title)
-                        .mkString(":"),
-                      None,
-                      None
-                    )
-                    // AuthenticatorResult
-                    result <- env.authenticatorService.embed(
-                      token,
-                      Ok(Json.toJson(AccessToken(token, user.userId)))
-                    )
-                  } yield {
-                    // ???: Learn about the event bus
-                    env.eventBus.publish(LoginEvent(user, request))
-                    // AuthenticatorResult
-                    result
-                  }
+    (UserAwareAction andThen limiter.UserAwareRateLimit).async { implicit request =>
+      // pull details from the headers
+      val eventuallyAuthenticatedUser = for {
+        usernameParam <- request.headers.get("username")
+        passwordParam <- request.headers.get("password")
+      } yield {
+        val username = URLDecoder.decode(usernameParam, "UTF-8")
+        val password = URLDecoder.decode(passwordParam, "UTF-8")
+        credentialsProvider
+          .authenticate(Credentials(username, password))
+          .map(_.copy(request.dynamicEnvironment.id))
+          .flatMap { loginInfo =>
+            usersService.getUser(loginInfo.providerKey).flatMap {
+              // If we find a user, create and return an access token (JWT)
+              case Some(user) =>
+                val customClaims = hatServicesService.generateUserTokenClaims(user, hatService)
+                for {
+                  // JWT Authenticator
+                  authenticator <- env.authenticatorService.create(loginInfo)
+                  // JWT serialized as a String
+                  token <- env.authenticatorService.init(
+                             authenticator.copy(customClaims = Some(customClaims))
+                           )
+                  // Logging
+                  _ <- usersService.logLogin(
+                         user,
+                         "api",
+                         user.roles
+                           .filter(_.extra.isEmpty)
+                           .map(_.title)
+                           .mkString(":"),
+                         None,
+                         None
+                       )
+                  // AuthenticatorResult
+                  result <- env.authenticatorService.embed(
+                              token,
+                              Ok(Json.toJson(AccessToken(token, user.userId)))
+                            )
+                } yield {
+                  // ???: Learn about the event bus
+                  env.eventBus.publish(LoginEvent(user, request))
+                  // AuthenticatorResult
+                  result
                 }
-                // No user found
-                case None => {
-                  Future.failed(new IdentityNotFoundException("Couldn't find user"))
-                }
-              }
+              // No user found
+              case None =>
+                Future.failed(new IdentityNotFoundException("Couldn't find user"))
             }
-        }
-        // Credentials are no good --> Error
-        eventuallyAuthenticatedUser getOrElse {
-          Future.successful(noUserOrPass)
-        }
+          }
+      }
+      // Credentials are no good --> Error
+      eventuallyAuthenticatedUser getOrElse {
+        Future.successful(noUserOrPass)
+      }
     }
 
   /**
     * This is the authenticated, "I have the password, but I want to change it."
     */
   def passwordChangeProcess: Action[ApiPasswordChange] =
-    SecuredAction(WithRole(Owner())).async(parsers.json[ApiPasswordChange]) {
-      implicit request =>
-        logger.debug("Processing password change request")
-        request.body.password map { oldPassword =>
-          val eventualResult = for {
-            _ <- credentialsProvider.authenticate(
-              Credentials(request.identity.email, oldPassword)
-            )
-            _ <- authInfoRepository.update(
-              request.identity.loginInfo,
-              passwordHasherRegistry.current.hash(request.body.newPassword)
-            )
-            authenticator <-
-              env.authenticatorService.create(request.identity.loginInfo)
-            result <- env.authenticatorService.renew(
-              authenticator,
-              Ok(Json.toJson(SuccessResponse("Password changed")))
-            )
-          } yield {
-            env.eventBus.publish(LoginEvent(request.identity, request))
-            mailer.passwordChanged(request.identity.email, request.identity)
-            result
-          }
+    SecuredAction(WithRole(Owner())).async(parsers.json[ApiPasswordChange]) { implicit request =>
+      implicit val language: Lang = Lang.defaultLang
+      logger.debug("Processing password change request")
+      request.body.password map { oldPassword =>
+        val eventualResult = for {
+          _ <- credentialsProvider.authenticate(
+                 Credentials(request.identity.email, oldPassword)
+               )
+          _ <- authInfoRepository.update(
+                 request.identity.loginInfo,
+                 passwordHasherRegistry.current.hash(request.body.newPassword)
+               )
+          authenticator <- env.authenticatorService.create(request.identity.loginInfo)
+          result <- env.authenticatorService.renew(
+                      authenticator,
+                      Ok(Json.toJson(SuccessResponse("Password changed")))
+                    )
+        } yield {
+          env.eventBus.publish(LoginEvent(request.identity, request))
+          mailer.passwordChanged(request.identity.email)
+          result
+        }
 
-          eventualResult recover {
-            case _: InvalidPasswordException =>
-              Forbidden(
-                Json.toJson(
-                  ErrorMessage("Invalid password", "Old password invalid")
-                )
-              )
-          }
-        } getOrElse {
-          Future.successful(
+        eventualResult recover {
+          case _: InvalidPasswordException =>
             Forbidden(
               Json.toJson(
-                ErrorMessage("Invalid password", "Old password missing")
+                ErrorMessage("Invalid password", "Old password invalid")
               )
             )
-          )
         }
+      } getOrElse {
+        Future.successful(
+          Forbidden(
+            Json.toJson(
+              ErrorMessage("Invalid password", "Old password missing")
+            )
+          )
+        )
+      }
     }
 
   /**
@@ -314,54 +293,51 @@ class Authentication @Inject() (
     * This is unauthenticated.
     */
   def handleForgotPassword: Action[ApiPasswordResetRequest] =
-    UserAwareAction.async(parsers.json[ApiPasswordResetRequest]) {
-      implicit request =>
-        logger.debug("Processing forgotten password request")
-        val email = request.body.email
-        val response = Ok(
-          Json.toJson(
-            SuccessResponse(
-              "If the email you have entered is correct, you will shortly receive an email with password reset instructions"
-            )
+    UserAwareAction.async(parsers.json[ApiPasswordResetRequest]) { implicit request =>
+      implicit val language: Lang = Lang.defaultLang
+      logger.debug("Processing forgotten password request")
+      val email = request.body.email
+      val response = Ok(
+        Json.toJson(
+          SuccessResponse(
+            "If the email you have entered is correct, you will shortly receive an email with password reset instructions"
           )
         )
-        if (email == request.dynamicEnvironment.ownerEmail) {
-          // Find the specific user who is the owner.
-          usersService.listUsers
-            .map(_.find(_.roles.contains(Owner())))
-            .flatMap {
-              case Some(user) => {
-                // Create a token for the reset with a 24 hour expiry
-                // isSignUp is potentially the issue here.
-                val token = MailTokenUser(email, isSignUp = false)
-                // Store that token
-                tokenService.create(token).map { _ =>
-                  val scheme = if (request.secure) "https://" else "http://"
-                  // update below to this: /auth/change-password/:resetToken
-                  val resetLink = s"$scheme${request.host}/#/user/password/change/${token.id}"
-                  mailer.passwordReset(email, user, resetLink)
-                  response
-                }
+      )
+      if (email == request.dynamicEnvironment.ownerEmail)
+        // Find the specific user who is the owner.
+        usersService.listUsers
+          .map(_.find(_.roles.contains(Owner())))
+          .flatMap {
+            case Some(_) =>
+              // Create a token for the reset with a 24 hour expiry
+              // isSignUp is potentially the issue here.
+              val token = MailTokenUser(email, isSignUp = false)
+              // Store that token
+              tokenService.create(token).map { _ =>
+                // update below to this: /auth/change-password/:resetToken
+                val resetLink = s"$emailScheme${request.host}/#/user/password/change/${token.id}"
+                mailer.passwordReset(email, resetLink)
+                response
               }
-              // The user was not found, but return the "If we found an email address, we'll send the link."
-              case None => Future.successful(response)
-            }
-        } else {
-          Future.successful(response)
-        }
+            // The user was not found, but return the "If we found an email address, we'll send the link."
+            case None => Future.successful(response)
+          }
+      else
+        Future.successful(response)
     }
-
 
   /**
     * Saves the new password and authenticates the user
     */
   def handleResetPassword(tokenId: String): Action[ApiPasswordChange] =
     UserAwareAction.async(parsers.json[ApiPasswordChange]) { implicit request =>
+      implicit val language: Lang = Lang.defaultLang
       tokenService.retrieve(tokenId).flatMap {
         // Token was found, is not signup nor expired
-        case Some(token) if !token.isSignUp && !token.isExpired => {
+        case Some(token) if !token.isSignUp && !token.isExpired =>
           // Token.email matches the dynamicEnv (what is this)
-          if (token.email == request.dynamicEnvironment.ownerEmail) {
+          if (token.email == request.dynamicEnvironment.ownerEmail)
             // Find the users with the owner role
             // ???: Why not using the email
             usersService.listUsers
@@ -372,17 +348,16 @@ class Authentication @Inject() (
                     // ???: authInfoRepo
                     // Update with the new password info
                     _ <- authInfoRepository.update(
-                      user.loginInfo,
-                      passwordHasherRegistry.current
-                        .hash(request.body.newPassword)
-                    )
+                           user.loginInfo,
+                           passwordHasherRegistry.current
+                             .hash(request.body.newPassword)
+                         )
                     // ???: Get the authenticator - JWT maker
-                    authenticator <-
-                      env.authenticatorService.create(user.loginInfo)
+                    authenticator <- env.authenticatorService.create(user.loginInfo)
                     result <- env.authenticatorService.renew(
-                      authenticator,
-                      Ok(Json.toJson(SuccessResponse("Password reset")))
-                    )
+                                authenticator,
+                                Ok(Json.toJson(SuccessResponse("Password reset")))
+                              )
                   } yield {
                     // Delete the token
                     tokenService.consume(tokenId)
@@ -390,17 +365,15 @@ class Authentication @Inject() (
                     // Push a loginEvent on the bus
                     env.eventBus.publish(LoginEvent(user, request))
                     // Mail the user, telling them the password changed
-                    mailer.passwordChanged(token.email, user)
+                    mailer.passwordChanged(token.email)
                     // ???: return an AuthenticatorResult, why
                     result
                   }
                 case None =>
                   Future.successful(noUserMatchingToken)
               }
-          } else {
+          else
             Future.successful(onlyHatOwnerCanReset)
-          }
-        }
         case Some(_) =>
           tokenService.consume(tokenId)
           Future.successful(expiredToken)
@@ -413,174 +386,122 @@ class Authentication @Inject() (
     * Sends an email to the owner with a link to claim the hat
     * /control/v2/auth/claim
     */
-  def handleClaimStart(lang: Option[String]): Action[ApiClaimHatRequest] =
-    UserAwareAction.async(parsers.json[ApiClaimHatRequest]) {
-      implicit request =>
-        
-        implicit val language: Lang = Lang.get(lang.getOrElse("en")).getOrElse(Lang.defaultLang)
-        val claimHatRequest = request.body
-        val email = request.dynamicEnvironment.ownerEmail
-        val response = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions")))
-        val scheme = if (request.secure) "https://" else "http://"
+  def handleVerificationRequest(lang: Option[String]): Action[ApiVerificationRequest] =
+    UserAwareAction.async(parsers.json[ApiVerificationRequest]) { implicit request =>
+      implicit val language: Lang = Lang.get(lang.getOrElse("en")).getOrElse(Lang.defaultLang)
+      val claimHatRequest         = request.body
+      val email                   = request.dynamicEnvironment.ownerEmail
+      val response                = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions")))
 
-        // (email, applicationId) in the body
-        // Look up the application (Is this in the HAT itself?  Not DEX)
-        if (claimHatRequest.email == email) {
+      // (email, applicationId) in the body
+      // Look up the application (Is this in the HAT itself?  Not DEX)
+      if (claimHatRequest.email == email)
+        usersService.listUsers
+          .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified(""))))))
+          .flatMap {
+            case Some(user) =>
+              val eventualClaimContext = for {
+                maybeApplication <- applicationsService
+                                      .applicationStatus()(request.dynamicEnvironment, user, request)
+                                      .map(_.find(_.application.id.equals(claimHatRequest.applicationId)))
+                token <- ensureValidToken(email, isSignup = true)
+              } yield (maybeApplication, token)
+
+              eventualClaimContext.map {
+                case (maybeApp, token) =>
+                  val emailVerificationOptions = maybeApp
+                    .map { app =>
+                      val maybeSetupUrl: Option[String] = app.application.setup match {
+                        case setupInfo: ApplicationSetup.External =>
+                          setupInfo.url
+                        case _ =>
+                          None
+                      }
+
+                      EmailVerificationOptions(email, language, app.application.id, maybeSetupUrl.getOrElse(""))
+                    }
+                    .getOrElse {
+                      EmailVerificationOptions(email, language, "", "")
+                    }
+
+                  val verificationLink = emailVerificationLink(request.host, token.id, emailVerificationOptions)
+
+                  mailer.verifyEmail(email, verificationLink)
+
+                  response
+              }
+
+            case None => Future.successful(response)
+          }
+      else
+        Future.successful(response)
+    }
+
+  def handleVerification(verificationToken: String): Action[ApiVerificationCompletionRequest] =
+    UserAwareAction.async(parsers.json[ApiVerificationCompletionRequest]) { implicit request =>
+      implicit val hatClaimComplete: ApiVerificationCompletionRequest = request.body
+      implicit val language: Lang                                     = Lang.defaultLang
+
+      tokenService.retrieve(verificationToken).flatMap {
+        case Some(token)
+            if token.isSignUp && !token.isExpired && token.email == request.dynamicEnvironment.ownerEmail =>
           usersService.listUsers
             .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified(""))))))
             .flatMap {
               case Some(user) =>
-                applicationsService
-                  .applicationStatus()(
-                    request.dynamicEnvironment,
-                    user,
-                    request
-                  )
-                  .flatMap { applications =>
-                    val maybeApplication = applications.find(
-                      _.application.id.equals(claimHatRequest.applicationId)
-                    )
-
-                    val appMailDetails: Option[ApplicationMailDetails] =
-                      maybeApplication.map { app =>
-                        ApplicationMailDetails(
-                          app.application.info.name,
-                          app.application.info.graphics.logo.normal,
-                          app.application.info.url
-                        )
-                      }
-
-                    val appLogDetails: Option[(String, String)] =
-                      maybeApplication.map { app =>
-                        (
-                          app.application.id,
-                          app.application.info.version.toString
-                        )
-                      }
-
-                    tokenService.retrieve(email, isSignup = true).flatMap {
-                      case Some(existingTokenUser)
-                          if !existingTokenUser.isExpired =>
-                        val claimLink =
-                          s"$scheme${request.host}/hat/claim/${existingTokenUser.id}?email=${URLEncoder
-                            .encode(email, "UTF-8")}"
-                        mailer.claimHat(email, claimLink, appMailDetails)
-
-                        Future.successful(response)
-                      case Some(_) =>
-                        Future.successful(hatIsAlreadyClaimed)
-
-                      case None =>
-                        val token = MailClaimTokenUser(email)
-
-                        val eventualResult = for {
-                          _ <- tokenService.create(token)
-                          _ <- logService.logAction(
-                                request.dynamicEnvironment.domain,
-                                LogRequest("unclaimed", None, None),
-                                appLogDetails
-                              )
-                              .recover {
-                                case e =>
-                                  logger.error(
-                                    s"LogActionError::unclaimed. Reason: ${e.getMessage}"
-                                  )
-                                  Done
-                              }
-                        } yield {
-                          val claimLink =
-                            s"$scheme${request.host}/hat/claim/${token.id}?email=${URLEncoder
-                              .encode(email, "UTF-8")}"
-                          mailer.claimHat(email, claimLink, appMailDetails)
-
-                          response
-                        }
-
-                        eventualResult.recover {
-                          case e =>
-                            logger.error(
-                              s"Could not create new HAT claim token. Reason: ${e.getMessage}"
+                val eventualResult = for {
+                  _ <- updateHatMembership(hatClaimComplete)
+                  _ <- authInfoRepository.update(
+                         user.loginInfo,
+                         passwordHasherRegistry.current.hash(request.body.password)
+                       )
+                  _ <- tokenService.consume(token.id)
+                  authenticator <- env.authenticatorService.create(user.loginInfo)
+                  result <- env.authenticatorService.renew(
+                              authenticator,
+                              Ok(Json.toJson(SuccessResponse("HAT claimed")))
                             )
-                            iSEClaimFailed
-                        }
-                      
+
+                } yield {
+                  logService
+                    .logAction(
+                      request.dynamicEnvironment.domain,
+                      LogRequest("claimed", None, None),
+                      None
+                    )
+                    .recover {
+                      case e =>
+                        logger.error(
+                          s"LogActionError::unclaimed. Reason: ${e.getMessage}"
+                        )
+                        Done
                     }
-                  }
-              case None => Future.successful(response)
+                  mailer.passwordChanged(token.email)
+                  result
+                }
+                // ???: this is fishy
+                //env.eventBus.publish(LoginEvent(user, request))
+
+                eventualResult.recover {
+                  case e =>
+                    logger.error(s"HAT claim process failed with error ${e.getMessage}")
+                    emailVerificationFailed
+                }
+
+              case None =>
+                Future.successful(noClaimNoMatchingToken)
             }
-        } else {
-          Future.successful(response)
-        }
-    }
 
-  def handleClaimComplete(claimToken: String): Action[HatClaimCompleteRequest] =
-    UserAwareAction.async(parsers.json[HatClaimCompleteRequest]) {
-      implicit request =>
-        implicit val hatClaimComplete: HatClaimCompleteRequest = request.body
+        case Some(_) =>
+          Future.successful(expiredToken)
 
-        tokenService.retrieve(claimToken).flatMap {
-          case Some(token)
-              if token.isSignUp && !token.isExpired && token.email == request.dynamicEnvironment.ownerEmail =>
-            usersService.listUsers
-              .map(_.find(_.roles.contains(Owner())))
-              .flatMap {
-                case Some(user) =>
-                  val eventualResult = for {
-                    _ <- updateHatMembership(hatClaimComplete)
-                    _ <- authInfoRepository.update(
-                      user.loginInfo,
-                      passwordHasherRegistry.current.hash(request.body.password)
-                    )
-                    _ <- tokenService.expire(token.id)
-                    authenticator <-
-                      env.authenticatorService.create(user.loginInfo)
-                    result <- env.authenticatorService.renew(
-                      authenticator,
-                      Ok(Json.toJson(SuccessResponse("HAT claimed")))
-                    )
-                    _ <-
-                      logService
-                        .logAction(
-                          request.dynamicEnvironment.domain,
-                          LogRequest("claimed", None, None),
-                          None
-                        )
-                        .recover {
-                          case e =>
-                            logger.error(
-                              s"LogActionError::unclaimed. Reason: ${e.getMessage}"
-                            )
-                            Done
-                        }
-                  } yield {
-                    // ???: this is fishy
-                    //env.eventBus.publish(LoginEvent(user, request))
-                    //mailer.passwordChanged(token.email, user)
-                    result
-                  }
-
-                  eventualResult.recover {
-                    case e =>
-                      logger.error(s"HAT claim process failed with error ${e.getMessage}")
-                      emailVerificationFailed
-                  }
-
-                case None =>
-                  Future.successful(noClaimNoMatchingToken)
-              }
-            
-          
-          case Some(_) =>
-            Future.successful(expiredToken)
-
-          case None =>
-            Future.successful(invalidToken)
-        }
+        case None =>
+          Future.successful(invalidToken)
+      }
     }
 
   private def updateHatMembership(
-      claim: HatClaimCompleteRequest
-    ): Future[Done] = {
+      claim: ApiVerificationCompletionRequest): Future[Done] = {
     val path = "api/services/daas/claim"
     val hattersUrl =
       s"${configuration.underlying.getString("hatters.scheme")}${configuration.underlying.getString("hatters.address")}"
@@ -593,7 +514,6 @@ class Authentication @Inject() (
       .url(s"$hattersUrl/$path")
       //.withHttpHeaders("x-auth-token" -> token.accessToken)
       .post(Json.toJson(hattersClaimPayload))
-
 
     futureResponse.flatMap { response =>
       response.status match {
@@ -608,97 +528,48 @@ class Authentication @Inject() (
     }
   }
 
-
-
-    /**
-    * Resends the email to claim/validate the HAT
-    * This is unauthenticated request
+  /**
+    * The function ensures there is a valid token to be returned to the client
     */
-  def handleRequestVerification: Action[ApiValidationRequest] =
-    UserAwareAction.async(parsers.json[ApiValidationRequest]) {
-      implicit request =>
-        logger.debug("Processing resend validation request")
 
-        val email = request.body.email
-        val applicationId = request.body.applicationId
-        val isSignupToken = true
-
-        // Generic message regardless if the user is found or not.
-        val uniformResponse = resendVerificationEmail
-
-        // The email from the request and the Silhouette Env do not match
-        if (email != request.dynamicEnvironment.ownerEmail) {
-          Future.successful(uniformResponse)
-        }
-        else {
-          val enventuallTtokenToSend = for {
-            token <- tokenService.retrieve(email, isSignupToken)
-            tokenToSend <- createOrResendToken(email, token)
-          } yield tokenToSend
-
-          enventuallTtokenToSend.flatMap { tokenOpt =>
-            tokenOpt match {
-              case Some(token) => {
-                // Is Owner and is NOT EmailVerified
-                val eventualyUsers = usersService.listUsers
-                eventualyUsers.flatMap { users => 
-                  users.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified(""))))) 
-                  match {
-                    case Some(user) => {
-                      sendRevalidationEmail(user.email, applicationId, request.host, token, request.lang)
-                      Future.successful(uniformResponse)
-                    }
-                    // The user is not an owner, but return the "If we found an email address, we'll send the link."
-                    case None => {
-                      Future.successful(uniformResponse)
-                    }
-                  }
-                } 
-              }
-              case None => {
-                // User does not have an existing isSignup Token
-                Future.successful(uniformResponse)
-              }
-            }
-          }
-            
-          Future.successful(uniformResponse)
-        }
-      }
-
-  // applicationId is currently unused
-  def sendRevalidationEmail(email: String, applicationId: String, requestHost: String, token: MailTokenUser, lang: Lang)(implicit hatServer: HatServer): Future[Done] = { 
-    implicit val l = lang
-    tokenService.create(token).map { _ =>
-      // Assume https now
-      // /auth/verify-email
-      val claimLink = s"https://${requestHost}/hat/claim/${token.id}?email=${URLEncoder.encode(email, "UTF-8")}"
-      mailer.claimHat(email, claimLink, None)
+  private def ensureValidToken(email: String, isSignup: Boolean)(implicit hatServer: HatServer): Future[MailTokenUser] =
+    tokenService.retrieve(email, isSignup).flatMap {
+      case Some(token) if token.isExpired =>
+        // TODO: log event for audit purpose
+        for {
+          _ <- tokenService.consume(token.id)
+          newToken <- tokenService.create(MailTokenUser(email, isSignUp = isSignup))
+        } yield newToken.get // TODO: Using .get is not great here
+      // the underlying implementation generates non-option type and then wraps it in Option, interface not great, suggestions appreciated
+      case Some(token) =>
+        Future.successful(token)
+      case None =>
+        // TODO: log event for audit purpose
+        tokenService.create(MailTokenUser(email, isSignUp = isSignup)).map(_.get)
     }
+
+  /**
+    * Generate email verification string
+    */
+  private def emailVerificationLink(
+      host: String,
+      token: String,
+      verificationOptions: EmailVerificationOptions): String =
+    s"$emailScheme$host/auth/verify-email/$token?${verificationOptions.asQueryParameters}"
+}
+
+case class EmailVerificationOptions(
+    email: String,
+    language: Lang,
+    applicationId: String,
+    redirectUri: String) {
+
+  lazy val asQueryParameters: String = {
+    val encodedEmail = s"email=${URLEncoder.encode(email, "UTF-8")}"
+    val lang         = s"lang=$language"
+    val application  = s"application_id=$applicationId"
+    val redirect     = s"redirect_uri=$redirectUri"
+
+    s"$encodedEmail&$lang&$application&$redirect"
   }
-
-  private def createOrResendToken(email: String, tokenOpt: Option[MailTokenUser])(implicit hatServer: HatServer): Future[Option[MailTokenUser]] = {
-    tokenOpt match {
-      case Some(token) => {
-        token.isExpired match {
-          // If the token has expired, delete it, create a new one, send that in the email
-          case true => {
-            tokenService.consume(token.id).flatMap { _ =>
-              val newToken = MailTokenUser(email, isSignUp = true)
-              tokenService.create(newToken)
-            }
-          }
-          // If the token has not expired, send it to the user again in the email
-          case false => {
-            Future.successful(Some(token))
-          }
-        }
-      }
-      case None => {
-        Future.successful(None)
-      }
-    }
-  }
-
-
 }
