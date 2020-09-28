@@ -403,32 +403,43 @@ class Authentication @Inject() (
                 maybeApplication <- applicationsService
                                       .applicationStatus()(request.dynamicEnvironment, user, request)
                                       .map(_.find(_.application.id.equals(claimHatRequest.applicationId)))
+                if maybeApplication.isDefined
                 token <- ensureValidToken(email, isSignup = true)
-              } yield (maybeApplication, token)
+              } yield (maybeApplication.get, token) // We only can reach this code if application is defined
 
-              eventualClaimContext.map {
-                case (maybeApp, token) =>
-                  val emailVerificationOptions = maybeApp
-                    .map { app =>
-                      val maybeSetupUrl: Option[String] = app.application.setup match {
-                        case setupInfo: ApplicationSetup.External =>
-                          setupInfo.url
-                        case _ =>
-                          None
-                      }
+              eventualClaimContext
+                .map {
+                  case (app, token) =>
+                    val maybeSetupUrl: Option[String] = app.application.setup match {
+                      case setupInfo: ApplicationSetup.External =>
+                        setupInfo.validRedirectUris.find(_ == claimHatRequest.redirectUri)
+                      case _ =>
+                        None
+                    }
 
+                    if (maybeSetupUrl.isEmpty) {
+                      val message =
+                        s"Application [${claimHatRequest.applicationId}] mis-configured. \n Cause: ${claimHatRequest.redirectUri} is not a registered redirect URI"
+                      logger.warn(message)
+                      mailer.serverExceptionNotify(request, new RuntimeException(message))
+                    }
+
+                    val emailVerificationOptions =
                       EmailVerificationOptions(email, language, app.application.id, maybeSetupUrl.getOrElse(""))
-                    }
-                    .getOrElse {
-                      EmailVerificationOptions(email, language, "", "")
-                    }
+                    val verificationLink = emailVerificationLink(request.host, token.id, emailVerificationOptions)
+                    mailer.verifyEmail(email, verificationLink)
 
-                  val verificationLink = emailVerificationLink(request.host, token.id, emailVerificationOptions)
-
-                  mailer.verifyEmail(email, verificationLink)
-
-                  response
-              }
+                    response
+                }
+                .recover {
+                  case e =>
+                    logger.error(s"Application ${claimHatRequest.applicationId} not available. Cause: $e")
+                    BadRequest(
+                      Json.toJson(
+                        ErrorMessage("Bad request", s"Application ${claimHatRequest.applicationId} not available")
+                      )
+                    )
+                }
 
             case None => Future.successful(response)
           }
