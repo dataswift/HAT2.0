@@ -396,7 +396,7 @@ class Authentication @Inject() (
       // Look up the application (Is this in the HAT itself?  Not DEX)
       if (claimHatRequest.email == email)
         usersService.listUsers
-          .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified())))))
+          .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(Verified("email"))))))
           .flatMap {
             case Some(user) =>
               val eventualClaimContext = for {
@@ -456,10 +456,10 @@ class Authentication @Inject() (
         case Some(token)
             if token.isSignUp && !token.isExpired && token.email == request.dynamicEnvironment.ownerEmail =>
           usersService.listUsers
-            .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified())))))
+            .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(Verified("email"))))))
             .flatMap {
               case Some(user) =>
-                val updatedUser = user.copy(roles = user.roles ++ Seq(EmailVerified()))
+                val updatedUser = user.copy(roles = user.roles ++ Seq(Verified("email")))
                 val eventualResult = for {
                   _ <- updateHatMembership(hatClaimComplete)
                   _ <- authInfoRepository.update(
