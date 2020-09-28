@@ -312,11 +312,10 @@ class Authentication @Inject() (
             case Some(_) =>
               // Create a token for the reset with a 24 hour expiry
               // isSignUp is potentially the issue here.
-              val token = MailTokenUser(email, isSignUp = false)
+              val token = MailTokenUser(email, isSignup = false)
               // Store that token
               tokenService.create(token).map { _ =>
-                val resetLink = s"$emailScheme${request.host}/auth/change-password/${token.id}"
-                mailer.passwordReset(email, resetLink)
+                mailer.passwordReset(email, passwordResetLink(request.host, token.id))
                 response
               }
             // The user was not found, but return the "If we found an email address, we'll send the link."
@@ -538,14 +537,14 @@ class Authentication @Inject() (
         // TODO: log event for audit purpose
         for {
           _ <- tokenService.consume(token.id)
-          newToken <- tokenService.create(MailTokenUser(email, isSignUp = isSignup))
+          newToken <- tokenService.create(MailTokenUser(email, isSignup = isSignup))
         } yield newToken.get // TODO: Using .get is not great here
       // the underlying implementation generates non-option type and then wraps it in Option, interface not great, suggestions appreciated
       case Some(token) =>
         Future.successful(token)
       case None =>
         // TODO: log event for audit purpose
-        tokenService.create(MailTokenUser(email, isSignUp = isSignup)).map(_.get)
+        tokenService.create(MailTokenUser(email, isSignup = isSignup)).map(_.get)
     }
 
   /**
@@ -557,6 +556,12 @@ class Authentication @Inject() (
       verificationOptions: EmailVerificationOptions): String =
     s"$emailScheme$host/auth/verify-email/$token?${verificationOptions.asQueryParameters}"
 
+  // TODO: add reset options support
+  private def passwordResetLink(
+      host: String,
+      token: String): String =
+    s"$emailScheme$host/auth/change-password/$token"
+
   // private def roleMatcher(rolesToMatch: Seq[UserRole], rolesRequired: Seq[UserRole]): Boolean = {
   //   //rolesToMatch.map(userRole => roleMatch(userRole, rolesRequired)
   //   false
@@ -567,7 +572,7 @@ class Authentication @Inject() (
   // }
 
   def roleMatchIt(roleToMatch: UserRole, roleRequired: UserRole): Boolean =
-    (roleRequired equals roleToMatch)
+    roleRequired equals roleToMatch
   // roleToMatch match {
   //   case roleRequired: EmailVerified => true
   //   case _            => false

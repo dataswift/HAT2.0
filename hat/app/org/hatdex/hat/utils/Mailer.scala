@@ -157,12 +157,12 @@ class HatMailerImpl @Inject() (
   def passwordReset(
       email: String,
       resetLink: String
-    )(implicit m: MessagesApi,
+    )(implicit messages: MessagesApi,
       lang: Lang,
       server: HatServer): Done = {
     sendEmail(email)(
       from = emailFrom,
-      subject = s"HAT ${server.domain} - reset your password",
+      subject = messages("email.dataswift.auth.subject.resetPassword"),
       bodyHtml = views.html.mails.emailAuthResetPassword(resetLink),
       bodyText = views.txt.mails.emailAuthResetPassword(resetLink).toString()
     )
@@ -175,12 +175,12 @@ class HatMailerImpl @Inject() (
   // emailAuthPasswordChanged.scala.{txt|html}
   def passwordChanged(
       email: String
-    )(implicit m: MessagesApi,
+    )(implicit messages: MessagesApi,
       lang: Lang,
       server: HatServer): Done = {
     sendEmail(email)(
       from = emailFrom,
-      subject = s"HAT ${server.domain} - password changed",
+      subject = messages("email.dataswift.auth.subject.passwordChanged"),
       bodyHtml = views.html.mails.emailAuthPasswordChanged(),
       bodyText = views.txt.mails.emailAuthPasswordChanged().toString()
     )
@@ -193,15 +193,12 @@ class HatMailerImpl @Inject() (
   def verifyEmail(
       email: String,
       verificationLink: String
-    )(implicit m: MessagesApi,
+    )(implicit messages: MessagesApi,
       lang: Lang,
       server: HatServer): Done = {
     sendEmail(email)(
       from = "pda@hubofallthings.net",
-      subject = m(
-        "email.hatclaim.subject",
-        ""
-      ),
+      subject = messages("email.dataswift.auth.subject.verifyEmail"),
       bodyHtml = views.html.mails.emailAuthVerifyEmail(verificationLink),
       bodyText = views.txt.mails
         .emailAuthVerifyEmail(verificationLink)
