@@ -27,21 +27,21 @@ package org.hatdex.hat.phata.models
 import play.api.libs.json.{ JsPath, Json, Reads, Writes }
 import play.api.libs.functional.syntax._
 
-case class ApiClaimHatRequest(
+case class ApiVerificationRequest(
     applicationId: String,
     email: String)
 
-object ApiClaimHatRequest {
-  implicit val claimHatRequestApiReads: Reads[ApiClaimHatRequest] =
+object ApiVerificationRequest {
+  implicit val claimHatRequestApiReads: Reads[ApiVerificationRequest] =
     ((JsPath \ "applicationId").read[String] and (JsPath \ "email")
-      .read[String](Reads.email))(ApiClaimHatRequest.apply _)
+          .read[String](Reads.email))(ApiVerificationRequest.apply _)
 
-  implicit val claimHatRequestApiWrites: Writes[ApiClaimHatRequest] =
-    Json.format[ApiClaimHatRequest]
+  implicit val claimHatRequestApiWrites: Writes[ApiVerificationRequest] =
+    Json.format[ApiVerificationRequest]
 
 }
 
-case class HatClaimCompleteRequest(
+case class ApiVerificationCompletionRequest(
     email: String,
     termsAgreed: Boolean,
     optins: Array[String],
@@ -58,13 +58,13 @@ case class HattersClaimPayload(
     hatName: String,
     hatCluster: String)
 
-object HatClaimCompleteRequest {
-  implicit val hatClaimRequestReads: Reads[HatClaimCompleteRequest] =
-    Json.reads[HatClaimCompleteRequest]
+object ApiVerificationCompletionRequest {
+  implicit val hatClaimRequestReads: Reads[ApiVerificationCompletionRequest] =
+    Json.reads[ApiVerificationCompletionRequest]
 }
 
 object HattersClaimPayload {
-  def apply(claim: HatClaimCompleteRequest): HattersClaimPayload =
+  def apply(claim: ApiVerificationCompletionRequest): HattersClaimPayload =
     new HattersClaimPayload(
       claim.email,
       claim.termsAgreed,
