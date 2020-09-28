@@ -119,7 +119,8 @@ Specifically, it has 4 major sections:
       "evolutions/hat-database-schema/11_hat.sql",
       "evolutions/hat-database-schema/12_hatEvolutions.sql",
       "evolutions/hat-database-schema/13_liveEvolutions.sql",
-      "evolutions/hat-database-schema/14_newHat.sql"]
+      "evolutions/hat-database-schema/14_newHat.sql",
+      "evolutions/hat-database-schema/15_verified_role.sql"]
     ```  
 - `devhats` list sets out the list of HATs that are served by the current server, for 
 each including owner details to be initialised with and database access
