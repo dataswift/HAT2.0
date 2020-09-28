@@ -315,8 +315,7 @@ class Authentication @Inject() (
               val token = MailTokenUser(email, isSignUp = false)
               // Store that token
               tokenService.create(token).map { _ =>
-                // update below to this: /auth/change-password/:resetToken
-                val resetLink = s"$emailScheme${request.host}/#/user/password/change/${token.id}"
+                val resetLink = s"$emailScheme${request.host}/auth/change-password/${token.id}"
                 mailer.passwordReset(email, resetLink)
                 response
               }
@@ -389,10 +388,10 @@ class Authentication @Inject() (
   def handleVerificationRequest(lang: Option[String]): Action[ApiVerificationRequest] =
     UserAwareAction.async(parsers.json[ApiVerificationRequest]) { implicit request =>
       implicit val language: Lang = Lang.get(lang.getOrElse("en")).getOrElse(Lang.defaultLang)
-      
-      val claimHatRequest         = request.body
-      val email                   = request.dynamicEnvironment.ownerEmail
-      val response                = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions")))
+
+      val claimHatRequest = request.body
+      val email           = request.dynamicEnvironment.ownerEmail
+      val response        = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions")))
 
       // (email, applicationId) in the body
       // Look up the application (Is this in the HAT itself?  Not DEX)
@@ -449,7 +448,7 @@ class Authentication @Inject() (
           usersService.listUsers
             .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified())))))
             .flatMap {
-              case Some(user) => {
+              case Some(user) =>
                 val updatedUser = user.copy(roles = user.roles ++ Seq(EmailVerified()))
                 val eventualResult = for {
                   _ <- updateHatMembership(hatClaimComplete)
@@ -489,7 +488,6 @@ class Authentication @Inject() (
                     logger.error(s"HAT claim process failed with error ${e.getMessage}")
                     emailVerificationFailed
                 }
-              }
               case None =>
                 Future.successful(noClaimNoMatchingToken)
             }
@@ -559,24 +557,22 @@ class Authentication @Inject() (
       verificationOptions: EmailVerificationOptions): String =
     s"$emailScheme$host/auth/verify-email/$token?${verificationOptions.asQueryParameters}"
 
+  // private def roleMatcher(rolesToMatch: Seq[UserRole], rolesRequired: Seq[UserRole]): Boolean = {
+  //   //rolesToMatch.map(userRole => roleMatch(userRole, rolesRequired)
+  //   false
+  // }
 
-    // private def roleMatcher(rolesToMatch: Seq[UserRole], rolesRequired: Seq[UserRole]): Boolean = {
-    //   //rolesToMatch.map(userRole => roleMatch(userRole, rolesRequired)
-    //   false
-    // }
+  // private def roleMatch(roleToMatch: UserRole, rolesRequired: Seq[UserRole]): Boolean = {
+  //   rolesRequired.map(roleRequired => )
+  // }
 
-    // private def roleMatch(roleToMatch: UserRole, rolesRequired: Seq[UserRole]): Boolean = {
-    //   rolesRequired.map(roleRequired => )
-    // }
-
-    def roleMatchIt(roleToMatch: UserRole, roleRequired: UserRole): Boolean = {
-      (roleRequired equals roleToMatch)
-      // roleToMatch match {
-      //   case roleRequired: EmailVerified => true
-      //   case _            => false
-      // }
-    }
-  }
+  def roleMatchIt(roleToMatch: UserRole, roleRequired: UserRole): Boolean =
+    (roleRequired equals roleToMatch)
+  // roleToMatch match {
+  //   case roleRequired: EmailVerified => true
+  //   case _            => false
+  // }
+}
 case class EmailVerificationOptions(
     email: String,
     language: Lang,
@@ -592,5 +588,3 @@ case class EmailVerificationOptions(
     s"$encodedEmail&$lang&$application&$redirect"
   }
 }
-
-
