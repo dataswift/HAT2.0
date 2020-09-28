@@ -23,7 +23,9 @@ psql ${DATABASE} -U$DBUSER < ${HAT_HOME}/11_hat.sql
 echo "Setting up evolutions (without running the evolutions engine)"
 psql ${DATABASE} -U$DBUSER < ${HAT_HOME}/12_hatEvolutions.sql
 psql ${DATABASE} -U$DBUSER < ${HAT_HOME}/13_liveEvolutions.sql
-
+# This was missing, are we not using it?
+psql ${DATABASE} -U$DBUSER < ${HAT_HOME}/14_newHat.sql
+psql ${DATABASE} -U$DBUSER < ${HAT_HOME}/15_verified_role.sql
 
 # Setup HAT access
 echo "Setting up HAT access"

@@ -87,7 +87,8 @@ trait HATTestContext extends Scope with Mockito {
     "evolutions/hat-database-schema/11_hat.sql",
     "evolutions/hat-database-schema/12_hatEvolutions.sql",
     "evolutions/hat-database-schema/13_liveEvolutions.sql",
-    "evolutions/hat-database-schema/14_newHat.sql")
+    "evolutions/hat-database-schema/14_newHat.sql",
+    "evolutions/hat-database-schema/15_verified_role.sql")
 
   def databaseReady: Future[Unit] = {
     val schemaMigration = new HatDbSchemaMigration(configuration, hatDatabase, global)
