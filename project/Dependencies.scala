@@ -102,7 +102,8 @@ object Dependencies {
       val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
     }
 
-    val scalaGuice = "net.codingwell" %% "scala-guice" % "4.2.6"
+    val scalaGuice  = "net.codingwell" %% "scala-guice"  % "4.2.6"
+    val circeConfig = "io.circe"       %% "circe-config" % "0.8.0"
 
     object ContractLibrary {
       val adjudicator = "io.dataswift" %% "adjudicatorlib" % Versions.adjudicator

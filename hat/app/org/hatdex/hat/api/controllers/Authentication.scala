@@ -28,6 +28,8 @@ import java.net.{ URLDecoder, URLEncoder }
 
 import akka.Done
 import javax.inject.Inject
+import io.circe.generic.auto._
+import io.circe.config.syntax._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.{ Credentials, PasswordHasherRegistry }
 import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
@@ -41,7 +43,7 @@ import org.hatdex.hat.api.service.{ HatServicesService, LogService, MailTokenSer
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models._
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
-import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer }
+import org.hatdex.hat.utils.{ DataswiftServiceConfig, HatBodyParsers, HatMailer }
 import play.api.{ Configuration, Logger }
 import play.api.cache.{ Cached, CachedBuilder }
 import play.api.i18n.Lang
@@ -80,6 +82,9 @@ class Authentication @Inject() (
     .includeStatus(404, 600)
 
   private val emailScheme = "https://"
+
+  private val pdaAccountRegistry: DataswiftServiceConfig =
+    configuration.underlying.as[DataswiftServiceConfig]("pdaAccountRegistry.verificationCallback").right.get
 
   // * Error Responses *
   // Extracted as these messages increased the length of functions.
@@ -512,16 +517,13 @@ class Authentication @Inject() (
 
   private def updateHatMembership(
       claim: ApiVerificationCompletionRequest): Future[Done] = {
-    val path = "api/services/daas/claim"
-    val hattersUrl =
-      s"${configuration.underlying.getString("hatters.scheme")}${configuration.underlying.getString("hatters.address")}"
     val hattersClaimPayload = HattersClaimPayload(claim)
 
-    logger.info(s"Proxy POST request to $hattersUrl/$path with parameters: $claim")
+    logger.info(s"Proxy POST request to ${pdaAccountRegistry.address} with parameters: $claim")
 
-    // Tell Hatters this HAT is claimed
+    // Tell Pda account registry this HAT is verified
     val futureResponse = wsClient
-      .url(s"$hattersUrl/$path")
+      .url(pdaAccountRegistry.address)
       //.withHttpHeaders("x-auth-token" -> token.accessToken)
       .post(Json.toJson(hattersClaimPayload))
 
