@@ -85,6 +85,8 @@ class Authentication @Inject() (
 
   private val pdaAccountRegistry: DataswiftServiceConfig =
     configuration.underlying.as[DataswiftServiceConfig]("pdaAccountRegistry.verificationCallback").right.get
+  private val isSandboxPda: Boolean =
+    configuration.getOptional[Boolean]("exchange.beta").getOrElse(true)
 
   // * Error Responses *
   // Extracted as these messages increased the length of functions.
@@ -517,7 +519,7 @@ class Authentication @Inject() (
 
   private def updateHatMembership(
       claim: ApiVerificationCompletionRequest): Future[Done] = {
-    val hattersClaimPayload = HattersClaimPayload(claim)
+    val hattersClaimPayload = HattersClaimPayload(claim, isSandboxPda)
 
     logger.info(s"Proxy POST request to ${pdaAccountRegistry.address} with parameters: $claim")
 
@@ -599,7 +601,7 @@ case class EmailVerificationOptions(
 
   lazy val asQueryParameters: String = {
     val encodedEmail = s"email=${URLEncoder.encode(email, "UTF-8")}"
-    val lang         = s"lang=$language"
+    val lang         = s"lang=${language.language}"
     val application  = s"application_id=$applicationId"
     val redirect     = s"redirect_uri=$redirectUri"
 
