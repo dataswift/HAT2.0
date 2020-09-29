@@ -59,11 +59,11 @@ object ApiVerificationCompletionRequest {
 }
 
 object HattersClaimPayload {
-  def apply(claim: ApiVerificationCompletionRequest): HattersClaimPayload =
+  def apply(claim: ApiVerificationCompletionRequest, sandbox: Boolean): HattersClaimPayload =
     new HattersClaimPayload(
       claim.email,
       claim.termsAgreed,
-      claim.hatCluster == "hubat.net",
+      sandbox,
       "web",
       Some(claim.optins.nonEmpty),
       claim.hatName,
