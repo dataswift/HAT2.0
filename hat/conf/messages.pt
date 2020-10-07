@@ -26,10 +26,6 @@ email.dataswift.haveQuestion=Você tem alguma pergunta?
 email.dataswift.copyright=Copyright © 2019 - 2020 Dataswift Ltd,
 email.dataswift.copyrightAllRightsReserved=Copyright © 2019 - 2020 Dataswift Ltd, All rights reserved.
 
-email.dataswift.auth.hi=Alá,
-email.dataswift.auth.thankYou=Obrigado,
-email.dataswift.auth.dataswift=Dataswift
-
 email.dataswift.auth.subject.verifyEmail=Inscreva-se na sua conta de dados pessoais
 email.dataswift.auth.subject.resetPassword=Instruções para redefinir senha
 email.dataswift.auth.subject.passwordChanged=Sua senha foi redefinida
@@ -38,3 +34,25 @@ email.dataswift.auth.completePdaSignupProcess=Conclua o processo de inscrição 
 email.dataswift.auth.resetPasswordFollowThisLink=Para redefinir a sua senha, siga este link:
 email.dataswift.auth.temporaryLink=O link temporário vai expirar em alguns minutos.
 email.dataswift.auth.passwordChangedSuccessfully=Você mudou com sucesso a senha da sua Conta de Dados Pessoais
+
+email.dataswift.auth.hi=Alá
+email.dataswift.auth.thank.you=Obrigado,
+email.dataswift.auth.dataswift=Dataswift
+
+email.dataswift.auth.welcome.to.dataswift=Welcome to Dataswift!
+email.dataswift.auth.someone.signed.up=Someone signed up for a Dataswift Personal Data Account using this email address
+email.dataswift.auth.if.this.was.you=If this was you, complete your sign up by following this link:
+email.dataswift.auth.complete.signup=Complete Sign Up
+
+email.dataswift.auth.if.that.doesnt.work=If that doesn’t work simply copy and paste the following link in your browser:
+email.dataswift.auth.if.this.was.not.you=If this was not you, send an email to
+email.dataswift.auth.temporary.links=Both of these temporary links will expire 60 minutes after arrival.
+
+email.dataswift.auth.footer.copyrights=©2020 DATASWIFT LTD, a company incorporated in England and Wales with registered number 09821157 whose registered office is at 8 Comberton Road, Barton, Cambridge, England, CB23 7BA.
+email.dataswift.auth.footer.authorised.by=Authorised and regulated by the
+email.dataswift.auth.footer.hat.community.foundation=HAT Community Foundation
+email.dataswift.auth.footer.financial.conduct.authority=and Financial Conduct Authority.
+
+email.dataswift.auth.reset.password.title=Password Reset
+email.dataswift.auth.reset.password.follow.link=To reset your password, follow this link:
+email.dataswift.auth.reset.password.link=Reset Password
