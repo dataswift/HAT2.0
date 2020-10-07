@@ -2,7 +2,7 @@
 
 @(email: String, verificationLink: String)(implicit messagesApi: MessagesApi, language: Lang)
 
-@messagesApi("email.dataswift.welcome.to.dataswift")
+@messagesApi("email.dataswift.auth.welcome.to.dataswift")
 
 @messagesApi("email.dataswift.auth.hi"),
 
