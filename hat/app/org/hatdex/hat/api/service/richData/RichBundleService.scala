@@ -40,7 +40,7 @@ import scala.concurrent.Future
 class RichBundleService @Inject() (implicit ec: DalExecutionContext)
     extends RichDataJsonFormats {
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   def saveCombinator(
       combinatorId: String,

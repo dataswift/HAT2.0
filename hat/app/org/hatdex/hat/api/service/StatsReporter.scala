@@ -58,7 +58,7 @@ class StatsReporter @Inject() (
       HatServer
     ]) {
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   private implicit val scheduler: Scheduler = system.scheduler
   private val retryLimit =

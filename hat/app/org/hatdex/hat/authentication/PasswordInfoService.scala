@@ -41,7 +41,7 @@ class PasswordInfoService @Inject() (
   )(implicit ec: DalExecutionContext)
     extends DelegableAuthInfoDAO[PasswordInfo, HatServer] {
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   def add(
       loginInfo: LoginInfo,

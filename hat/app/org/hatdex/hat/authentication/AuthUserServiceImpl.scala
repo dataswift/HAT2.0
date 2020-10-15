@@ -60,7 +60,7 @@ class AuthUserServiceImpl @Inject() (usersService: UsersService)
     * @param user The user to save.
     * @return The saved user.
     */
-  def save(user: HatUser)(implicit dyn: HatServer) =
+  def save(user: HatUser)(implicit dyn: HatServer): Future[HatUser] =
     usersService.saveUser(user)(dyn)
 
   /**
@@ -82,5 +82,5 @@ class AuthUserServiceImpl @Inject() (usersService: UsersService)
       mainUser: HatUser,
       linkedUser: HatUser
     )(implicit dyn: HatServer
-    ) = Future.failed(new RuntimeException("Profile linking not implemented"))
+    ): Future[Unit] = Future.failed(new RuntimeException("Profile linking not implemented"))
 }

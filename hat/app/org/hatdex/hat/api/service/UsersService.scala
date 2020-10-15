@@ -43,7 +43,7 @@ import scala.util.Success
 class UsersService @Inject() (
     cache: AsyncCacheApi
   )(implicit ec: DalExecutionContext) {
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   implicit def hatServer2db(implicit hatServer: HatServer): Database =
     hatServer.db

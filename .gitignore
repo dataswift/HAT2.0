@@ -21,3 +21,4 @@ deployment/docker/docker-deploy
 .metals
 project/metals.sbt
 .scalafmt-common.conf
+.vscode

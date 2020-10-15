@@ -27,9 +27,9 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val crossScala = Seq("2.12.11")
+    val crossScala   = Seq("2.12.11")
     val scalaVersion = crossScala.head
-    val adjudicator = "0.1.0-SNAPSHOT"
+    val adjudicator  = "0.1.0-SNAPSHOT"
   }
 
   val resolvers = Seq(
@@ -44,65 +44,66 @@ object Dependencies {
   object Library {
 
     object Play {
-      val version = play.core.PlayVersion.current
-      val ws = "com.typesafe.play" %% "play-ws" % version
-      val cache = "com.typesafe.play" %% "play-cache" % version
-      val test = "com.typesafe.play" %% "play-test" % version
-      val specs2 = "com.typesafe.play" %% "play-specs2" % version
-      val jdbc = "com.typesafe.play" %% "play-jdbc" % version
-      val json = "com.typesafe.play" %% "play-json" % "2.6.14"
-      val jsonJoda = "com.typesafe.play" %% "play-json-joda" % "2.6.14"
-      val mailer = "com.typesafe.play" %% "play-mailer" % "6.0.1"
+      val version     = play.core.PlayVersion.current
+      val ws          = "com.typesafe.play" %% "play-ws"           % version
+      val cache       = "com.typesafe.play" %% "play-cache"        % version
+      val test        = "com.typesafe.play" %% "play-test"         % version
+      val specs2      = "com.typesafe.play" %% "play-specs2"       % version
+      val jdbc        = "com.typesafe.play" %% "play-jdbc"         % version
+      val json        = "com.typesafe.play" %% "play-json"         % "2.6.14"
+      val jsonJoda    = "com.typesafe.play" %% "play-json-joda"    % "2.6.14"
+      val mailer      = "com.typesafe.play" %% "play-mailer"       % "6.0.1"
       val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
 
-      val htmlCompressor = "com.mohiva" %% "play-html-compressor" % "0.6.3"
-      val playGuard = "com.digitaltangible" %% "play-guard" % "2.2.0"
+      val htmlCompressor = "com.mohiva"          %% "play-html-compressor" % "0.6.3"
+      val playGuard      = "com.digitaltangible" %% "play-guard"           % "2.2.0"
 
       object Jwt {
         private val bouncyCastleVersion = "1.60"
-        val bouncyCastle = "org.bouncycastle" % "bcprov-jdk15on" % bouncyCastleVersion
-        val bouncyCastlePkix = "org.bouncycastle" % "bcpkix-jdk15on" % bouncyCastleVersion
-        val atlassianJwtVersion = "2.0.5"
-        val atlassianJwtCore = "com.atlassian.jwt" % "jwt-core" % atlassianJwtVersion
+        val bouncyCastle                = "org.bouncycastle"  % "bcprov-jdk15on" % bouncyCastleVersion
+        val bouncyCastlePkix            = "org.bouncycastle"  % "bcpkix-jdk15on" % bouncyCastleVersion
+        val atlassianJwtVersion         = "2.0.5"
+        val atlassianJwtCore            = "com.atlassian.jwt" % "jwt-core"       % atlassianJwtVersion
       }
 
       object Silhouette {
-        val version = "5.1.4"
-        val passwordBcrypt = "com.mohiva" %% "play-silhouette-password-bcrypt" % version
-        val persistence = "com.mohiva" %% "play-silhouette-persistence" % version
-        val cryptoJca = "com.mohiva" %% "play-silhouette-crypto-jca" % version
-        val silhouette = "com.mohiva" %% "play-silhouette" % version
-        val silhouetteTestkit = "com.mohiva" %% "play-silhouette-testkit" % version % "test"
+        val version           = "5.1.4"
+        val passwordBcrypt    = "com.mohiva" %% "play-silhouette-password-bcrypt" % version
+        val persistence       = "com.mohiva" %% "play-silhouette-persistence"     % version
+        val cryptoJca         = "com.mohiva" %% "play-silhouette-crypto-jca"      % version
+        val silhouette        = "com.mohiva" %% "play-silhouette"                 % version
+        val silhouetteTestkit = "com.mohiva" %% "play-silhouette-testkit"         % version % "test"
       }
     }
 
     object Specs2 {
       private val version = "3.9.5"
-      val core = "org.specs2" %% "specs2-core" % version
-      val matcherExtra = "org.specs2" %% "specs2-matcher-extra" % version
-      val mock = "org.specs2" %% "specs2-mock" % version
+      val core            = "org.specs2" %% "specs2-core"          % version
+      val matcherExtra    = "org.specs2" %% "specs2-matcher-extra" % version
+      val mock            = "org.specs2" %% "specs2-mock"          % version
     }
 
     object Utils {
-      private val awsSdkVersion = "1.11.755"
-      val pegdown = "org.pegdown" % "pegdown" % "1.6.0"
-      val awsJavaSdk = "com.amazonaws" % "aws-java-sdk" % awsSdkVersion
-      val awsJavaS3Sdk = "com.amazonaws" % "aws-java-sdk-s3" % awsSdkVersion
-      val prettyTime = "org.ocpsoft.prettytime" % "prettytime" % "4.0.4.Final"
-      val nbvcxz = "me.gosimple" % "nbvcxz" % "1.4.3"
-      val elasticacheClusterClient = "com.amazonaws" % "elasticache-java-cluster-client" % "1.1.1"
-      val playMemcached = "com.github.mumoshu" %% "play2-memcached-play26" % "0.9.3" exclude ("net.spy", "spymemcached")
-      val alpakkaAwsLambda = "com.lightbend.akka" %% "akka-stream-alpakka-awslambda" % "0.20"
-      val apacheCommonLang = "org.apache.commons" % "commons-lang3" % "3.10"
+      private val awsSdkVersion    = "1.11.755"
+      val pegdown                  = "org.pegdown"            % "pegdown"                         % "1.6.0"
+      val awsJavaSdk               = "com.amazonaws"          % "aws-java-sdk"                    % awsSdkVersion
+      val awsJavaS3Sdk             = "com.amazonaws"          % "aws-java-sdk-s3"                 % awsSdkVersion
+      val prettyTime               = "org.ocpsoft.prettytime" % "prettytime"                      % "4.0.4.Final"
+      val nbvcxz                   = "me.gosimple"            % "nbvcxz"                          % "1.4.3"
+      val elasticacheClusterClient = "com.amazonaws"          % "elasticache-java-cluster-client" % "1.1.1"
+      val playMemcached            = "com.github.mumoshu"    %% "play2-memcached-play26"          % "0.9.3" exclude ("net.spy", "spymemcached")
+      val alpakkaAwsLambda         = "com.lightbend.akka"    %% "akka-stream-alpakka-awslambda"   % "0.20"
+      val apacheCommonLang         = "org.apache.commons"     % "commons-lang3"                   % "3.10"
     }
 
     object HATDeX {
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.6.12"
-      val dexClient = "org.hatdex" %% "dex-client-scala" % "2.6.10"
-      val codegen = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.6.16"
+      val dexClient = "org.hatdex" %% "dex-client-scala"      % "2.6.10"
+      val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
     }
 
-    val scalaGuice = "net.codingwell" %% "scala-guice" % "4.2.6"
+    val scalaGuice  = "net.codingwell" %% "scala-guice"  % "4.2.6"
+    val circeConfig = "io.circe"       %% "circe-config" % "0.8.0"
 
     object ContractLibrary {
       val adjudicator = "io.dataswift" %% "adjudicatorlib" % Versions.adjudicator

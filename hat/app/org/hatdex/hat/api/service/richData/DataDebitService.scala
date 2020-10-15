@@ -53,7 +53,7 @@ class DataDebitService @Inject() (
   )(implicit val ec: RemoteExecutionContext)
     extends RichDataJsonFormats {
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   def createDataDebit(
       key: String,

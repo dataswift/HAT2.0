@@ -24,24 +24,19 @@
 
 package org.hatdex.hat.phata.models
 
-import play.api.libs.json.{ JsPath, Json, Reads, Writes }
-import play.api.libs.functional.syntax._
+import play.api.libs.json.{ Json, OFormat, Reads, Writes }
 
-case class ApiClaimHatRequest(
+case class ApiVerificationRequest(
     applicationId: String,
-    email: String)
+    email: String,
+    redirectUri: String)
 
-object ApiClaimHatRequest {
-  implicit val claimHatRequestApiReads: Reads[ApiClaimHatRequest] =
-    ((JsPath \ "applicationId").read[String] and (JsPath \ "email")
-      .read[String](Reads.email))(ApiClaimHatRequest.apply _)
-
-  implicit val claimHatRequestApiWrites: Writes[ApiClaimHatRequest] =
-    Json.format[ApiClaimHatRequest]
-
+object ApiVerificationRequest {
+  implicit val claimHatRequestApiFormat: OFormat[ApiVerificationRequest] =
+    Json.format[ApiVerificationRequest]
 }
 
-case class HatClaimCompleteRequest(
+case class ApiVerificationCompletionRequest(
     email: String,
     termsAgreed: Boolean,
     optins: Array[String],
@@ -58,17 +53,17 @@ case class HattersClaimPayload(
     hatName: String,
     hatCluster: String)
 
-object HatClaimCompleteRequest {
-  implicit val hatClaimRequestReads: Reads[HatClaimCompleteRequest] =
-    Json.reads[HatClaimCompleteRequest]
+object ApiVerificationCompletionRequest {
+  implicit val hatClaimRequestReads: Reads[ApiVerificationCompletionRequest] =
+    Json.reads[ApiVerificationCompletionRequest]
 }
 
 object HattersClaimPayload {
-  def apply(claim: HatClaimCompleteRequest): HattersClaimPayload =
+  def apply(claim: ApiVerificationCompletionRequest, sandbox: Boolean): HattersClaimPayload =
     new HattersClaimPayload(
       claim.email,
       claim.termsAgreed,
-      claim.hatCluster == "hubat.net",
+      sandbox,
       "web",
       Some(claim.optins.nonEmpty),
       claim.hatName,

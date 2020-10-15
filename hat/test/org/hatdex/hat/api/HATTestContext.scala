@@ -51,7 +51,7 @@ import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
-import play.api.i18n.Messages
+import play.api.i18n.{Messages, MessagesApi, Lang}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{ Application, Configuration, Logger }
 import play.cache.NamedCacheImpl
@@ -104,7 +104,7 @@ trait HATTestContext extends Scope with Mockito {
   }
 
   val mockMailer: HatMailer = mock[HatMailer]
-  doReturn(Done).when(mockMailer).passwordReset(any[String], any[HatUser], any[String])(any[Messages], any[HatServer])
+  doReturn(Done).when(mockMailer).passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])
 
   val fileManagerS3Mock = FileManagerS3Mock()
 

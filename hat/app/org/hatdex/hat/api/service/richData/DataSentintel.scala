@@ -168,7 +168,7 @@ case class EndpointConfiguration(
     keyField.map(JsonDataTransformer.parseJsPath)
   lazy val timestampPath: Option[JsPath] =
     timestampField.map(JsonDataTransformer.parseJsPath)
-  private implicit val timestampJsonFormat = jodaDateReads(
+  private implicit val timestampJsonFormat: Reads[DateTime] = jodaDateReads(
     timestampFormat.getOrElse("")
   )
 

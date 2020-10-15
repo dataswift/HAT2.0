@@ -43,7 +43,7 @@ class HatDataEventRouterImpl @Inject() (
     implicit val actorSystem: ActorSystem)
     extends HatDataEventRouter {
 
-  private implicit val materializer = ActorMaterializer()
+  private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   init()
 

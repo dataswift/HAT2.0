@@ -54,17 +54,17 @@ class DevHatInitializer @Inject() (
     serverProvider: HatServerProvider,
     usersService: UsersService
   )(implicit ec: DalExecutionContext) {
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   import DevHatConfig.configLoader
 
-  val devHats = configuration.get[Map[String, DevHatConfig]]("devhats")
-  val devHatMigrations = configuration.get[Seq[String]]("devhatMigrations")
+  val devHats: Map[String,DevHatConfig] = configuration.get[Map[String, DevHatConfig]]("devhats")
+  val devHatMigrations: Seq[String] = configuration.get[Seq[String]]("devhatMigrations")
 
   logger.info(s"Initializing HATs: $devHats")
   devHats.values.map(initializeHat)
 
-  def initializeHat(hat: DevHatConfig) = {
+  def initializeHat(hat: DevHatConfig): Future[Unit] = {
     val hatServer: Future[HatServer] =
       serverProvider.retrieve(hat.domain).map(_.get)
 

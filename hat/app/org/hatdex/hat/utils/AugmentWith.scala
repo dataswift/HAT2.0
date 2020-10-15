@@ -35,7 +35,7 @@ final class AugmentWith[T, U](augmentFunction: (T, U) => Either[T, U])
 
   override val shape = new FanInShape2(left, right, out)
 
-  override def createLogic(attr: Attributes) =
+  override def createLogic(attr: Attributes): GraphStageLogic =
     new GraphStageLogic(shape) {
       setHandler(left, eagerTerminateInput)
       setHandler(right, ignoreTerminateInput)
