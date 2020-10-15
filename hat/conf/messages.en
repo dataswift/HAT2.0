@@ -50,7 +50,7 @@ email.dataswift.auth.complete.signup=Complete Sign Up
 
 email.dataswift.auth.if.that.doesnt.work=If that doesn’t work simply copy and paste the following link in your browser:
 email.dataswift.auth.if.this.was.not.you=If this was not you, send an email to
-email.dataswift.auth.temporary.links=Both of these temporary links will expire 60 minutes after arrival.
+email.dataswift.auth.temporary.links=Both of these temporary links will expire 24 hours after arrival.
 
 email.dataswift.auth.footer.copyrights=©2020 DATASWIFT LTD, a company incorporated in England and Wales with registered number 09821157 whose registered office is at 8 Comberton Road, Barton, Cambridge, England, CB23 7BA.
 email.dataswift.auth.footer.authorised.by=Authorised and regulated by the

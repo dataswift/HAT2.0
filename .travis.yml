@@ -69,9 +69,12 @@ matrix:
 before_install:
   - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
   - git submodule update --init --recursive
+  - 'curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"'
+  - 'unzip awscli-bundle.zip'
+  - './awscli-bundle/install -b $HOME/.local/bin/aws'
 
 install:
-  - pip install --user awscli
+  # - pip install --user awscli
   - export PATH=$PATH:$HOME/.local/bin
 
 # Set up test database and user
