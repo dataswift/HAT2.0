@@ -30,7 +30,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.json.{ JsArray, JsPath, JsValue, Json, Reads, _ }
 
 object JsonDataTransformer {
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   // How array elements could be accessed by index
   private val arrayAccessPattern = "(\\w+)(\\[([0-9]+)?\\])?".r

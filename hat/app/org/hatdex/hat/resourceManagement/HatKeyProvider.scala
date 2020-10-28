@@ -144,7 +144,7 @@ class HatKeyProviderMilliner @Inject() (
     val ws: WSClient)
     extends HatKeyProvider
     with MillinerHatSignup {
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   def publicKey(
       hat: String

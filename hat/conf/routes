@@ -8,6 +8,8 @@ GET         /user/login                                          org.hatdex.hat.
 GET         /user/password/recover                               org.hatdex.hat.phata.controllers.Phata.altRumpelIndex
 GET         /.well-known/apple-app-site-association              org.hatdex.hat.phata.controllers.WellKnown.appleAppSiteAssociation
 
+GET         /auth/*authPath                                      org.hatdex.hat.phata.controllers.Phata.altRumpelIndexClaim(authPath: String)
+
 # USER Routes
 GET         /users/user                                          org.hatdex.hat.api.controllers.Users.listUsers
 POST        /users/user                                          org.hatdex.hat.api.controllers.Users.createUser
@@ -29,8 +31,9 @@ GET         /control/v2/auth/hatlogin                            org.hatdex.hat.
 POST        /control/v2/auth/password                            org.hatdex.hat.api.controllers.Authentication.passwordChangeProcess
 POST        /control/v2/auth/passwordReset                       org.hatdex.hat.api.controllers.Authentication.handleForgotPassword
 POST        /control/v2/auth/passwordreset/confirm/:token        org.hatdex.hat.api.controllers.Authentication.handleResetPassword(token: String)
-POST        /control/v2/auth/claim                               org.hatdex.hat.api.controllers.Authentication.handleClaimStart(lang: Option[String])
-POST        /control/v2/auth/claim/complete/:claimToken          org.hatdex.hat.api.controllers.Authentication.handleClaimComplete(claimToken: String)
+POST        /control/v2/auth/claim                               org.hatdex.hat.api.controllers.Authentication.handleVerificationRequest(lang: Option[String])
+POST        /control/v2/auth/request-verification                org.hatdex.hat.api.controllers.Authentication.handleVerificationRequest(lang: Option[String])
+POST        /control/v2/auth/claim/complete/:verificationToken   org.hatdex.hat.api.controllers.Authentication.handleVerification(verificationToken: String)
 
 ->          /api/v2                                              v20.Routes
 ->          /api/v2.0                                            v20.Routes

@@ -28,6 +28,7 @@ import java.util.UUID
 
 import org.joda.time.DateTime
 import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
 case class DatabaseInstance(
     id: UUID,
@@ -62,8 +63,8 @@ object HatSignup {
   import play.api.libs.json.JodaWrites._
   import play.api.libs.json.JodaReads._
 
-  implicit val databaseInstanceFormat = Json.format[DatabaseInstance]
-  implicit val databaseServerFormat = Json.format[DatabaseServer]
-  implicit val hatKeysFormat = Json.format[HatKeys]
-  implicit val hatSignupFormat = Json.format[HatSignup]
+  implicit val databaseInstanceFormat: OFormat[DatabaseInstance] = Json.format[DatabaseInstance]
+  implicit val databaseServerFormat: OFormat[DatabaseServer] = Json.format[DatabaseServer]
+  implicit val hatKeysFormat: OFormat[HatKeys] = Json.format[HatKeys]
+  implicit val hatSignupFormat: OFormat[HatSignup] = Json.format[HatSignup]
 }

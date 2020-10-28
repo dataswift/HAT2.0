@@ -64,7 +64,7 @@ class Files @Inject() (
     extends HatApiController(components, silhouette)
     with HatJsonFormats {
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   def startUpload: Action[ApiHatFile] =
     SecuredAction(

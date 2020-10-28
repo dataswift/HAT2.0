@@ -56,12 +56,12 @@ class HatDataEventBus extends EventBus with SubchannelClassification {
   protected def compareSubscribers(
       a: Subscriber,
       b: Subscriber
-    ) = a compareTo b
+    ): Int = a compareTo b
 
   /**
     * The logic to form sub-class hierarchy
     */
-  override protected implicit val subclassification =
+  override protected implicit val subclassification: Subclassification[Classifier] =
     new Subclassification[Classifier] {
       def isEqual(
           x: Classifier,

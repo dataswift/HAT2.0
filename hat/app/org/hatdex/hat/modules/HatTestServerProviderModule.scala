@@ -48,7 +48,7 @@ class HatTestServerProviderModule
     with ScalaModule
     with AkkaGuiceSupport {
 
-  override def configure() = {
+  override def configure(): Unit = {
     bindActor[HatServerProviderActor]("hatServerProviderActor")
     bindActorFactory[HatServerActor, HatServerActor.Factory]
 
