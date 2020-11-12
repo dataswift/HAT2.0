@@ -52,8 +52,8 @@ object Dependencies {
       val jdbc        = "com.typesafe.play" %% "play-jdbc"         % version
       val json        = "com.typesafe.play" %% "play-json"         % "2.6.14"
       val jsonJoda    = "com.typesafe.play" %% "play-json-joda"    % "2.6.14"
-      val mailer      = "com.typesafe.play" %% "play-mailer"       % "6.0.1"
-      val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
+      val mailer      = "com.typesafe.play" %% "play-mailer"       % "8.0.1"
+      val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "8.0.1"
 
       val htmlCompressor = "com.mohiva"          %% "play-html-compressor" % "0.6.3"
       val playGuard      = "com.digitaltangible" %% "play-guard"           % "2.2.0"
