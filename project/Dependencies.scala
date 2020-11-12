@@ -62,7 +62,7 @@ object Dependencies {
         private val bouncyCastleVersion = "1.60"
         val bouncyCastle                = "org.bouncycastle"  % "bcprov-jdk15on" % bouncyCastleVersion
         val bouncyCastlePkix            = "org.bouncycastle"  % "bcpkix-jdk15on" % bouncyCastleVersion
-        val atlassianJwtVersion         = "2.0.5"
+        val atlassianJwtVersion         = "2.1.0"
         val atlassianJwtCore            = "com.atlassian.jwt" % "jwt-core"       % atlassianJwtVersion
       }
 
