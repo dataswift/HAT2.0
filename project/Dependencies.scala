@@ -92,7 +92,7 @@ object Dependencies {
       val nbvcxz                   = "me.gosimple"            % "nbvcxz"                          % "1.4.3"
       val elasticacheClusterClient = "com.amazonaws"          % "elasticache-java-cluster-client" % "1.1.1"
       val playMemcached            = "com.github.mumoshu"    %% "play2-memcached-play26"          % "0.9.3" exclude ("net.spy", "spymemcached")
-      val alpakkaAwsLambda         = "com.lightbend.akka"    %% "akka-stream-alpakka-awslambda"   % "0.20"
+      val alpakkaAwsLambda         = "com.lightbend.akka"    %% "akka-stream-alpakka-awslambda"   % "2.0.2"
       val apacheCommonLang         = "org.apache.commons"     % "commons-lang3"                   % "3.10"
     }
 
