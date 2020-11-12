@@ -56,7 +56,7 @@ object Dependencies {
       val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
 
       val htmlCompressor = "com.mohiva"          %% "play-html-compressor" % "0.6.3"
-      val playGuard      = "com.digitaltangible" %% "play-guard"           % "2.2.0"
+      val playGuard      = "com.digitaltangible" %% "play-guard"           % "2.5.0"
 
       object Jwt {
         private val bouncyCastleVersion = "1.60"
