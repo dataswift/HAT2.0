@@ -60,3 +60,5 @@ email.dataswift.auth.footer.financial.conduct.authority=and Financial Conduct Au
 email.dataswift.auth.reset.password.title=Password Reset
 email.dataswift.auth.reset.password.follow.link=To reset your password, follow this link:
 email.dataswift.auth.reset.password.link=Reset Password
+
+email.dataswift.auth.password.updated=Password Updated
