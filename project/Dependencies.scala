@@ -59,7 +59,7 @@ object Dependencies {
       val playGuard      = "com.digitaltangible" %% "play-guard"           % "2.2.0"
 
       object Jwt {
-        private val bouncyCastleVersion = "1.60"
+        private val bouncyCastleVersion = "1.67"
         val bouncyCastle                = "org.bouncycastle"  % "bcprov-jdk15on" % bouncyCastleVersion
         val bouncyCastlePkix            = "org.bouncycastle"  % "bcpkix-jdk15on" % bouncyCastleVersion
         val atlassianJwtVersion         = "2.0.5"
