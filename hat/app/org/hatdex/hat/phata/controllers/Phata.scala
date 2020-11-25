@@ -70,11 +70,10 @@ class Phata @Inject() (
     }
     .toMap
 
-  def dashboard(path: String): EssentialAction =
-    indefiniteSuccessCaching {
-      logger.debug(s"Serving PDA Dashboard v4 on path [$path]")
-      assets.at("index.html")
-    }
+  def dashboard(path: String): EssentialAction = {
+    logger.debug(s"Serving PDA Dashboard v4 on path [$path]")
+    assets.at("index.html")
+  }
 
   def profile: Action[AnyContent] =
     UserAwareAction.async { implicit request =>
