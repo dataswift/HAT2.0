@@ -28,10 +28,7 @@ import controllers.{ Assets, AssetsFinder, AssetsFinderProvider }
 import javax.inject.Inject
 import org.hatdex.hat.api.json.{ HatJsonFormats, RichDataJsonFormats }
 import org.hatdex.hat.api.models.EndpointDataBundle
-import org.hatdex.hat.api.service.richData.{
-  RichBundleService,
-  RichDataService
-}
+import org.hatdex.hat.api.service.richData.{ RichBundleService, RichDataService }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.phata.{ views => phataViews }
 import play.api.cache.{ Cached, CachedBuilder }
@@ -67,32 +64,14 @@ class Phata @Inject() (
     .get[String]("play.filters.headers.contentSecurityPolicy")
     .split(';')
     .map(_.trim)
-    .map({ p =>
+    .map { p =>
       val splits = p.split(' ')
       splits.head -> splits.tail.mkString(" ")
-    })
+    }
     .toMap
 
-  def rumpelIndex(): EssentialAction =
-    indefiniteSuccessCaching {
-      UserAwareAction.async { implicit request =>
-        val rumpelConfigScript = s"""var httpProtocol = "${if (request.secure) {
-          "https"
-        } else { "http" }}:";"""
-
-        Future.successful(
-          Ok(phataViews.html.rumpelIndex(rumpelConfigScript, af))
-        )
-      }
-    }
-
-  def altRumpelIndex: EssentialAction = {
-    logger.debug(s"Serving Rumpel v4")
-    assets.at("index.html")
-  }
-
-  def altRumpelIndexClaim(claimToken: String): EssentialAction = {
-    logger.debug(s"Serving Rumpel claim v4. Token: $claimToken")
+  def dashboard(path: String): EssentialAction = {
+    logger.debug(s"Serving PDA Dashboard v4 on path [$path]")
     assets.at("index.html")
   }
 
@@ -102,29 +81,10 @@ class Phata @Inject() (
         .parse(configuration.get[String]("phata.defaultBundle"))
         .as[EndpointDataBundle]
       for {
-        bundle <-
-          bundleService
-            .bundle(defaultBundleDefinition.name)
-            .map(_.getOrElse(defaultBundleDefinition))
+        bundle <- bundleService
+                    .bundle(defaultBundleDefinition.name)
+                    .map(_.getOrElse(defaultBundleDefinition))
         data <- dataService.bundleData(bundle, None, None, None)
-      } yield {
-        Ok(Json.toJson(data))
-      }
+      } yield Ok(Json.toJson(data))
     }
-
-  //  def hatLogin(name: String, redirectUrl: String) = indefiniteSuccessCaching {
-  //    Action { implicit request =>
-  //      val scheme = if (request.secure) { "https://" } else { "http://" }
-  //      val newRedirectUrl = s"$scheme${request.domain}/#/hatlogin?name=$name&redirect=${redirectUrl}"
-  //      logger.debug(s"Redirect url from ${request.uri}: $newRedirectUrl")
-  //      Redirect(newRedirectUrl)
-  //    }
-  //  }
-
-  //  def remoteAsset(file: String): String = {
-  //    val versionedUrl = assets.path(file)
-  //    val maybeAssetsUrl = Some("https://rumpel.hubat.net/assets") //configuration.getOptional[String]("assets.url")
-  //    maybeAssetsUrl.fold(versionedUrl)(_ + file)
-  //  }
-
 }
