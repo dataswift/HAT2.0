@@ -24,21 +24,16 @@
 
 package org.hatdex.hat.phata.models
 
-import play.api.libs.json.{ JsPath, Json, Reads, Writes }
-import play.api.libs.functional.syntax._
+import play.api.libs.json.{ Json, OFormat, Reads, Writes }
 
 case class ApiVerificationRequest(
     applicationId: String,
-    email: String)
+    email: String,
+    redirectUri: String)
 
 object ApiVerificationRequest {
-  implicit val claimHatRequestApiReads: Reads[ApiVerificationRequest] =
-    ((JsPath \ "applicationId").read[String] and (JsPath \ "email")
-          .read[String](Reads.email))(ApiVerificationRequest.apply _)
-
-  implicit val claimHatRequestApiWrites: Writes[ApiVerificationRequest] =
+  implicit val claimHatRequestApiFormat: OFormat[ApiVerificationRequest] =
     Json.format[ApiVerificationRequest]
-
 }
 
 case class ApiVerificationCompletionRequest(
@@ -64,11 +59,11 @@ object ApiVerificationCompletionRequest {
 }
 
 object HattersClaimPayload {
-  def apply(claim: ApiVerificationCompletionRequest): HattersClaimPayload =
+  def apply(claim: ApiVerificationCompletionRequest, sandbox: Boolean): HattersClaimPayload =
     new HattersClaimPayload(
       claim.email,
       claim.termsAgreed,
-      claim.hatCluster == "hubat.net",
+      sandbox,
       "web",
       Some(claim.optins.nonEmpty),
       claim.hatName,

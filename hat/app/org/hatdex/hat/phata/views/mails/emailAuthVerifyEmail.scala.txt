@@ -1,15 +1,21 @@
 @import play.api.i18n.{ Lang, MessagesApi }
 
-@(verificationLink: String)(implicit messagesApi: MessagesApi, language: Lang)
+@(email: String, verificationLink: String)(implicit messagesApi: MessagesApi, language: Lang)
 
-@messagesApi("email.dataswift.auth.hi")
+@messagesApi("email.dataswift.auth.welcome.to.dataswift")
 
-@messagesApi("email.dataswift.auth.completePdaSignupProcess")
+@messagesApi("email.dataswift.auth.hi"),
 
+@messagesApi("email.dataswift.auth.someone.signed.up") [@email].
+
+@messagesApi("email.dataswift.auth.if.this.was.you")
 @verificationLink
 
-@messagesApi("email.dataswift.auth.temporaryLink")
+@messagesApi("email.dataswift.auth.if.this.was.not.you")
+contact@@dataswift.io
 
-@messagesApi("email.dataswift.auth.thankYou")
+@messagesApi("email.dataswift.auth.temporary.links")
+
+@messagesApi("email.dataswift.auth.thank.you")
 
 @messagesApi("email.dataswift.auth.dataswift")

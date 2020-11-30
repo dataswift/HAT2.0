@@ -28,6 +28,8 @@ import java.net.{ URLDecoder, URLEncoder }
 
 import akka.Done
 import javax.inject.Inject
+import io.circe.generic.auto._
+import io.circe.config.syntax._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.{ Credentials, PasswordHasherRegistry }
 import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
@@ -41,7 +43,7 @@ import org.hatdex.hat.api.service.{ HatServicesService, LogService, MailTokenSer
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models._
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
-import org.hatdex.hat.utils.{ HatBodyParsers, HatMailer }
+import org.hatdex.hat.utils.{ DataswiftServiceConfig, HatBodyParsers, HatMailer }
 import play.api.{ Configuration, Logger }
 import play.api.cache.{ Cached, CachedBuilder }
 import play.api.i18n.Lang
@@ -80,6 +82,11 @@ class Authentication @Inject() (
     .includeStatus(404, 600)
 
   private val emailScheme = "https://"
+
+  private val pdaAccountRegistry: DataswiftServiceConfig =
+    configuration.underlying.as[DataswiftServiceConfig]("pdaAccountRegistry.verificationCallback").right.get
+  private val isSandboxPda: Boolean =
+    configuration.getOptional[Boolean]("exchange.beta").getOrElse(true)
 
   // * Error Responses *
   // Extracted as these messages increased the length of functions.
@@ -396,39 +403,50 @@ class Authentication @Inject() (
       // Look up the application (Is this in the HAT itself?  Not DEX)
       if (claimHatRequest.email == email)
         usersService.listUsers
-          .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified())))))
+          .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(Verified("email"))))))
           .flatMap {
             case Some(user) =>
               val eventualClaimContext = for {
                 maybeApplication <- applicationsService
                                       .applicationStatus()(request.dynamicEnvironment, user, request)
                                       .map(_.find(_.application.id.equals(claimHatRequest.applicationId)))
+                if maybeApplication.isDefined
                 token <- ensureValidToken(email, isSignup = true)
-              } yield (maybeApplication, token)
+              } yield (maybeApplication.get, token) // We only can reach this code if application is defined
 
-              eventualClaimContext.map {
-                case (maybeApp, token) =>
-                  val emailVerificationOptions = maybeApp
-                    .map { app =>
-                      val maybeSetupUrl: Option[String] = app.application.setup match {
-                        case setupInfo: ApplicationSetup.External =>
-                          setupInfo.url
-                        case _ =>
-                          None
-                      }
+              eventualClaimContext
+                .map {
+                  case (app, token) =>
+                    val maybeSetupUrl: Option[String] = app.application.setup match {
+                      case setupInfo: ApplicationSetup.External =>
+                        setupInfo.validRedirectUris.find(_ == claimHatRequest.redirectUri)
+                      case _ =>
+                        None
+                    }
 
+                    if (maybeSetupUrl.isEmpty) {
+                      val message =
+                        s"Application [${claimHatRequest.applicationId}] mis-configured. \n Cause: ${claimHatRequest.redirectUri} is not a registered redirect URI"
+                      logger.warn(message)
+                      mailer.serverExceptionNotify(request, new RuntimeException(message))
+                    }
+
+                    val emailVerificationOptions =
                       EmailVerificationOptions(email, language, app.application.id, maybeSetupUrl.getOrElse(""))
-                    }
-                    .getOrElse {
-                      EmailVerificationOptions(email, language, "", "")
-                    }
+                    val verificationLink = emailVerificationLink(request.host, token.id, emailVerificationOptions)
+                    mailer.verifyEmail(email, verificationLink)
 
-                  val verificationLink = emailVerificationLink(request.host, token.id, emailVerificationOptions)
-
-                  mailer.verifyEmail(email, verificationLink)
-
-                  response
-              }
+                    response
+                }
+                .recover {
+                  case e =>
+                    logger.error(s"Application ${claimHatRequest.applicationId} not available. Cause: $e")
+                    BadRequest(
+                      Json.toJson(
+                        ErrorMessage("Bad request", s"Application ${claimHatRequest.applicationId} not available")
+                      )
+                    )
+                }
 
             case None => Future.successful(response)
           }
@@ -445,10 +463,10 @@ class Authentication @Inject() (
         case Some(token)
             if token.isSignUp && !token.isExpired && token.email == request.dynamicEnvironment.ownerEmail =>
           usersService.listUsers
-            .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(EmailVerified())))))
+            .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(Verified("email"))))))
             .flatMap {
               case Some(user) =>
-                val updatedUser = user.copy(roles = user.roles ++ Seq(EmailVerified()))
+                val updatedUser = user.copy(roles = user.roles ++ Seq(Verified("email")))
                 val eventualResult = for {
                   _ <- updateHatMembership(hatClaimComplete)
                   _ <- authInfoRepository.update(
@@ -501,16 +519,13 @@ class Authentication @Inject() (
 
   private def updateHatMembership(
       claim: ApiVerificationCompletionRequest): Future[Done] = {
-    val path = "api/services/daas/claim"
-    val hattersUrl =
-      s"${configuration.underlying.getString("hatters.scheme")}${configuration.underlying.getString("hatters.address")}"
-    val hattersClaimPayload = HattersClaimPayload(claim)
+    val hattersClaimPayload = HattersClaimPayload(claim, isSandboxPda)
 
-    logger.info(s"Proxy POST request to $hattersUrl/$path with parameters: $claim")
+    logger.info(s"Proxy POST request to ${pdaAccountRegistry.address} with parameters: $claim")
 
-    // Tell Hatters this HAT is claimed
+    // Tell Pda account registry this HAT is verified
     val futureResponse = wsClient
-      .url(s"$hattersUrl/$path")
+      .url(pdaAccountRegistry.address)
       //.withHttpHeaders("x-auth-token" -> token.accessToken)
       .post(Json.toJson(hattersClaimPayload))
 
@@ -586,7 +601,7 @@ case class EmailVerificationOptions(
 
   lazy val asQueryParameters: String = {
     val encodedEmail = s"email=${URLEncoder.encode(email, "UTF-8")}"
-    val lang         = s"lang=$language"
+    val lang         = s"lang=${language.language}"
     val application  = s"application_id=$applicationId"
     val redirect     = s"redirect_uri=$redirectUri"
 

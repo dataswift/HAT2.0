@@ -26,15 +26,26 @@ email.dataswift.haveQuestion=Você tem alguma pergunta?
 email.dataswift.copyright=Copyright © 2019 - 2020 Dataswift Ltd,
 email.dataswift.copyrightAllRightsReserved=Copyright © 2019 - 2020 Dataswift Ltd, All rights reserved.
 
-email.dataswift.auth.hi=Alá,
-email.dataswift.auth.thankYou=Obrigado,
-email.dataswift.auth.dataswift=Dataswift
-
 email.dataswift.auth.subject.verifyEmail=Inscreva-se na sua conta de dados pessoais
 email.dataswift.auth.subject.resetPassword=Instruções para redefinir senha
 email.dataswift.auth.subject.passwordChanged=Sua senha foi redefinida
 
-email.dataswift.auth.completePdaSignupProcess=Conclua o processo de inscrição da conta de dados pessoais seguindo este link:
-email.dataswift.auth.resetPasswordFollowThisLink=Para redefinir a sua senha, siga este link:
-email.dataswift.auth.temporaryLink=O link temporário vai expirar em alguns minutos.
 email.dataswift.auth.passwordChangedSuccessfully=Você mudou com sucesso a senha da sua Conta de Dados Pessoais
+
+email.dataswift.auth.hi=Olá
+email.dataswift.auth.thank.you=Obrigada,
+email.dataswift.auth.dataswift=Dataswift
+email.dataswift.auth.welcome.to.dataswift=Bem-vindo à Dataswift!
+email.dataswift.auth.someone.signed.up=Alguém se inscreveu em uma conta de dados pessoais da Dataswift usando este endereço de e-mail
+email.dataswift.auth.if.this.was.you=Se foi você, conclua sua inscrição seguindo este link:
+email.dataswift.auth.complete.signup=Inscrição Completa
+email.dataswift.auth.if.that.doesnt.work=Se isso não funcionar, basta copiar e colar o seguinte link no seu navegador:
+email.dataswift.auth.if.this.was.not.you=Se não foi você, envie um e-mail para
+email.dataswift.auth.temporary.links=Ambos os links temporários expirarão 24 horas após a chegada.
+email.dataswift.auth.footer.copyrights=©2020 DATASWIFT LTD, uma empresa incorporada na Inglaterra e País de Gales com o número registrado 09821157, com sede em 8 Comberton Road, Barton, Cambridge, Inglaterra, CB23 7BA.
+email.dataswift.auth.footer.authorised.by=Autorizado e regulamentado pela
+email.dataswift.auth.footer.hat.community.foundation=HAT Community Foundation
+email.dataswift.auth.footer.financial.conduct.authority=e pela Financial Conduct Authority.
+email.dataswift.auth.reset.password.title=Redefinição de senha
+email.dataswift.auth.reset.password.follow.link=Para redefinir sua senha, siga este link:
+email.dataswift.auth.reset.password.link=Redefinir senha

@@ -3,7 +3,7 @@
 
 # [Hub of All Things](https://hubofallthings.com)
 
-This repository contains an implementation of the [Hub-of-All-Things](http://hubofallthings.com) HAT Microserver project.
+ This repository contains an implementation of the [Hub-of-All-Things](http://hubofallthings.com) HAT Microserver project.
 
 ## Releases
 

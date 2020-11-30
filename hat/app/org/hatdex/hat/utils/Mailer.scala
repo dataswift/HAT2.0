@@ -163,8 +163,8 @@ class HatMailerImpl @Inject() (
     sendEmail(email)(
       from = emailFrom,
       subject = messages("email.dataswift.auth.subject.resetPassword"),
-      bodyHtml = views.html.mails.emailAuthResetPassword(resetLink),
-      bodyText = views.txt.mails.emailAuthResetPassword(resetLink).toString()
+      bodyHtml = views.html.mails.emailAuthResetPassword(email, resetLink),
+      bodyText = views.txt.mails.emailAuthResetPassword(email, resetLink).toString()
     )
     Done
   }
@@ -199,9 +199,9 @@ class HatMailerImpl @Inject() (
     sendEmail(email)(
       from = emailFrom,
       subject = messages("email.dataswift.auth.subject.verifyEmail"),
-      bodyHtml = views.html.mails.emailAuthVerifyEmail(verificationLink),
+      bodyHtml = views.html.mails.emailAuthVerifyEmail(email, verificationLink),
       bodyText = views.txt.mails
-        .emailAuthVerifyEmail(verificationLink)
+        .emailAuthVerifyEmail(email, verificationLink)
         .toString()
     )
     Done
