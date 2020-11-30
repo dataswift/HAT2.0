@@ -197,7 +197,7 @@ class HatMailerImpl @Inject() (
       lang: Lang,
       server: HatServer): Done = {
     sendEmail(email)(
-      from = "pda@hubofallthings.net",
+      from = emailFrom,
       subject = messages("email.dataswift.auth.subject.verifyEmail"),
       bodyHtml = views.html.mails.emailAuthVerifyEmail(email, verificationLink),
       bodyText = views.txt.mails
