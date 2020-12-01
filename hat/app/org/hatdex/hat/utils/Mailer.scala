@@ -112,6 +112,14 @@ trait HatMailer extends Mailer {
     )(implicit m: MessagesApi,
       lang: Lang,
       server: HatServer): Done
+
+  // no changes
+  def hatClaimed(
+      email: String,
+      loginLink: String
+    )(implicit m: MessagesApi,
+      lang: Lang,
+      server: HatServer): Done
 }
 
 class HatMailerImpl @Inject() (
@@ -203,6 +211,23 @@ class HatMailerImpl @Inject() (
       bodyText = views.txt.mails
         .emailAuthVerifyEmail(email, verificationLink)
         .toString()
+    )
+    Done
+  }
+
+  // change txt and html to
+  // hatClaimed.scala.{txt|html}
+  // data is ok
+  def hatClaimed(email: String,
+                 loginLink: String
+    )(implicit messages: MessagesApi,
+                   lang: Lang,
+                   server: HatServer): Done = {
+    sendEmail(email)(
+      from = emailFrom,
+      subject = messages("email.dataswift.auth.subject.verifyEmail"),
+      bodyHtml = views.html.mails.emailHatClaim(email, loginLink),
+      bodyText = views.txt.mails.emailHatClaim(email, loginLink).toString()
     )
     Done
   }

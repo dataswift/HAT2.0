@@ -494,7 +494,7 @@ class Authentication @Inject() (
                         )
                         Done
                     }
-                  mailer.passwordChanged(token.email)
+                  mailer.hatClaimed(token.email, user.name)
                   result
                 }
                 // ???: this is fishy
