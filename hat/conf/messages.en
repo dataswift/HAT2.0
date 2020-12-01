@@ -74,3 +74,7 @@ email.dataswift.auth.activate.text=Activate your account to continue using {0} a
 email.dataswift.auth.start.here=Start Here
 
 email.dataswift.auth.issued.by=Your PDA was issued by
+
+email.dataswift.auth.completed.successfully=Welcome to Dataswift. You have successfully completed setting up your Personal Data Account.
+email.dataswift.auth.login.to.your.account=Log into your account now and take a look around!
+email.dataswift.auth.login=Log in

@@ -1,29 +1,29 @@
 @import play.api.i18n.{ Lang, MessagesApi }
 
-@(hatDomain: String, claimLink: String, name: Option[String], url: Option[String])(implicit messagesApi: MessagesApi, language: Lang)
+@(email: String, loginLink: String)(implicit messagesApi: MessagesApi, language: Lang)
 
-@messagesApi("email.hatClaim.title", name.getOrElse(""))
+@messagesApi("email.dataswift.auth.welcome.to.dataswift")
 
-@hatDomain
+@messagesApi("email.dataswift.auth.hi")
 
-@messagesApi("email.hatClaim.hatPdaCreated") @name.getOrElse("")
+@email
 
-@messagesApi("email.hatClaim.goToAppName", url.getOrElse(""))
+@messagesApi("email.dataswift.auth.completed.successfully")
 
-====================
+@messagesApi("email.dataswift.auth.login.to.your.account")
 
-@messagesApi("email.hatClaim.safePlace.title")
+@loginLink
 
-@messagesApi("email.hatClaim.safePlace.description")
+@messagesApi("email.dataswift.auth.login")
 
-====================
-
-@messagesApi("email.hatClaim.activateYourAccount", name.getOrElse(""))
-
-Click here to start => @claimLink
+@messagesApi("email.dataswift.auth.issued.by")
 
 ====================
 
-@messagesApi("email.welcome.issuedBy") @messagesApi("email.dataswift.companyName")
+@messagesApi("email.dataswift.auth.footer.copyrights")
 
-@messagesApi("email.dataswift.copyrightAllRightsReserved")
+@messagesApi("email.dataswift.auth.footer.authorised.by")
+
+@messagesApi"email.dataswift.auth.footer.hat.community.foundation")
+
+@messagesApi("email.dataswift.auth.footer.financial.conduct.authority")

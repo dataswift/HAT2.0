@@ -63,3 +63,8 @@ email.dataswift.auth.activate.text=Ative sua conta para continuar usando o {0} e
 email.dataswift.auth.start.here=Comece Aqui
 
 email.dataswift.auth.issued.by=Publicado por:
+
+email.dataswift.auth.completed.successfully=Bem-vindo à Dataswift. Você concluiu com êxito a configuração da sua conta de dados pessoais.
+email.dataswift.auth.login.to.your.account=Faça login na sua conta agora e dê uma olhada!
+email.dataswift.auth.login=Conecte-se
+
