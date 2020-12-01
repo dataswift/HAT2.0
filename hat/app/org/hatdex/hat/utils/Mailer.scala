@@ -207,8 +207,8 @@ class HatMailerImpl @Inject() (
     sendEmail(email)(
       from = emailFrom,
       subject = messages("email.dataswift.auth.subject.verifyEmail"),
-      bodyHtml = views.html.mails.emailAuthVerifyEmail(email, loginLink),
-      bodyText = views.txt.mails.emailAuthVerifyEmail(email, loginLink).toString()
+      bodyHtml = views.html.mails.emailHatClaimed(email, loginLink),
+      bodyText = views.txt.mails.emailHatClaimed(email, loginLink).toString()
     )
     Done
   }
