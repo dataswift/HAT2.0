@@ -11,7 +11,7 @@ env:
   RUMPEL: sandbox
   RUMPEL_ALT: latest
   RUMPEL_BUCKET: dswift-hat-sandbox-frontend-build-artifacts
-  REPOSITORY: public.ecr.aws/b3s6h6d5/hat
+  REPOSITORY: dataswift/hat
 
 jobs:
   build:
@@ -51,16 +51,15 @@ jobs:
           sbt -Denv=prod -Dhttp.port=8080 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null docker:stage
           docker build -t ${{ env.REPOSITORY }}:${{ github.sha }} hat/target/docker/stage
 
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
-        env:
-          AWS_REGION: us-east-1
-          AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOYER_SHARED_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYER_SHARED_SECRET_ACCESS_KEY }}
+      - name: Login - Container Registry
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_DATASWIFT_USER }}
+          password: ${{ secrets.DOCKERHUB_DATASWIFT_PASS }}
         
       - name: Container Push
         run: docker push ${{ env.REPOSITORY }}:${{ github.sha }}
 
-      - name: Logout of Amazon ECR
+      - name: Logout - Container Registry
         if: always()
         run: docker logout ${{ steps.login-ecr.outputs.registry }}
