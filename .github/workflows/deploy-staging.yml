@@ -49,7 +49,7 @@ jobs:
       - name: Build
         run: |
           sbt -Denv=prod -Dhttp.port=8080 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null docker:stage
-          docker build -t ${{ env.REPOSITORY }}/hat:${{ github.sha }} hat/target/docker/stage
+          docker build -t ${{ env.REPOSITORY }}:${{ github.sha }} hat/target/docker/stage
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
@@ -59,7 +59,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYER_SHARED_SECRET_ACCESS_KEY }}
         
       - name: Container Push
-        run: docker push ${{ env.REPOSITORY }}/hat:${{ github.sha }}
+        run: docker push ${{ env.REPOSITORY }}:${{ github.sha }}
 
       - name: Logout of Amazon ECR
         if: always()
