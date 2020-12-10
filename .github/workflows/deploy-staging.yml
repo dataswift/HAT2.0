@@ -1,0 +1,49 @@
+name: Staging Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+      - add-github-pipelines
+
+env:
+  RUMPEL: sandbox
+  RUMPEL_ALT: sandbox-react
+  RUMPEL_BUCKET: dswift-hat-sandbox-frontend-build-artifacts
+  REPOSITORY: dataswift-platform-stage
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup 
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+          java-package: jdk
+          architecture: x64
+
+      - name: Frontend
+        run: |
+          cd ./hat/app/org/hatdex/hat/phata/assets/
+          aws s3 cp s3://${{ env.RUMPEL_BUCKET }}/${{ env.RUMPEL }} rumpel --recursive
+          aws s3 cp s3://${{ env.RUMPEL_BUCKET }}/${{ env.RUMPEL_ALT }} alt-rumpel --recursive
+          cp rumpel/*.js* js/
+          cp rumpel/*.css stylesheets/
+          gzip --keep --force js/*.bundle.js
+          cp -r rumpel/assets/* .
+          cp -r alt-rumpel/* .
+          rm -r rumpel
+          rm -r alt-rumpel
+          cd -
+
+      - name: Build
+        run: |
+          sbt -Denv=prod -Dhttp.port=8080 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null docker:stage
+          docker build -t ${{ env.REPOSITORY }}/hat:${{ github.sha }} hat/target/docker/stage

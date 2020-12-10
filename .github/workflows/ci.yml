@@ -29,8 +29,8 @@ jobs:
       - name: Test
         run: sbt test:compile
 
-      - name: Coverage
-        run: sbt "project hat" coverage test -Dconfig.file=hat/conf/application.test.conf
+      # - name: Coverage
+      #   run: sbt "project hat" coverage test -Dconfig.file=hat/conf/application.test.conf
 
       - name: Build
         run: sbt docker:stage && docker build hat/target/docker/stage
