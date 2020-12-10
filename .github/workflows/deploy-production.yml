@@ -1,15 +1,15 @@
-name: Deploy Staging
+name: Deploy Production
 
 on:
-  workflow_dispatch:
-  push:
+  release:
+    types: [published]
     branches:
-      - dev
-      - add-github-pipelines
+      - main
+      - master
 
 env:
   APP_ENV: prod
-  RUMPEL: sandbox
+  RUMPEL: live
   RUMPEL_ALT: latest
   RUMPEL_BUCKET: dswift-hat-sandbox-frontend-build-artifacts
   REPOSITORY: dataswift/hat
