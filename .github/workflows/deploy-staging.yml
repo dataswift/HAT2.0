@@ -54,6 +54,7 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
         env:
+          AWS_REGION: eu-west-1
           AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOYER_SHARED_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYER_SHARED_SECRET_ACCESS_KEY }}
         
