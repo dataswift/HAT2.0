@@ -32,7 +32,7 @@ jobs:
       - name: Frontend
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOYER_SANDBOX_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYER_SANDBOX_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYER_SANDBOX_SECRET_ACCESS_KEY }}
         run: |
           cd ./hat/app/org/hatdex/hat/phata/assets/
           aws s3 cp s3://${{ env.RUMPEL_BUCKET }}/${{ env.RUMPEL }} rumpel --recursive
