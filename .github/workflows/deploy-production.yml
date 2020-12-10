@@ -54,15 +54,15 @@ jobs:
           sbt -Denv=${{ env.APP_ENV }} -Dhttp.port=8080 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null docker:stage
           docker build -t ${{ env.REPOSITORY }}:${{ github.sha }} hat/target/docker/stage
 
-      - name: Login - Container Registry
+      - name: Container Registry - Login
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_DATASWIFT_USER }}
           password: ${{ secrets.DOCKERHUB_DATASWIFT_PASS }}
         
-      - name: Container Push
+      - name: Container Registry - Push
         run: docker push ${{ env.REPOSITORY }}:${{ github.sha }}
 
-      - name: Logout - Container Registry
+      - name: Container Registry - Logout
         if: always()
         run: docker logout
