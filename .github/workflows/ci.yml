@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore:
+      - main
+      - dev
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+          java-package: jdk
+          architecture: x64
+
+      - name: Compile
+        run: sbt compile
+
+      - name: Test
+        run: sbt test:compile
+
+      # - name: Coverage
+      #   run: sbt "project hat" coverage test -Dconfig.file=hat/conf/application.test.conf
+
+      - name: Build
+        run: sbt docker:stage && docker build hat/target/docker/stage
+   
