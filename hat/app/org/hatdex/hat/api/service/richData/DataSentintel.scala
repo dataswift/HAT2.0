@@ -33,11 +33,7 @@ import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
-import org.joda.time.format.{
-  DateTimeFormat,
-  DateTimeFormatter,
-  ISODateTimeFormat
-}
+import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter, ISODateTimeFormat }
 import play.api.libs.json._
 
 import scala.concurrent.Future
@@ -46,8 +42,8 @@ class DataSentintel @Inject() (
     implicit ec: DalExecutionContext,
     actorSystem: ActorSystem) {
 
-  protected implicit val materializer: ActorMaterializer = ActorMaterializer()
-  protected val updateBatchSize = 500
+  implicit protected val materializer: ActorMaterializer = ActorMaterializer()
+  protected val updateBatchSize                          = 500
 
   //  def validateDataStructure(data: JsValue, configuration: EndpointConfiguration): (JsValue, Option[String], Option[DateTime]) = {
   //    throw new RuntimeException("Not Implemented")
@@ -56,8 +52,7 @@ class DataSentintel @Inject() (
   def ensureUniquenessKey(
       source: String,
       key: String
-    )(implicit db: Database
-    ): Future[Done] = {
+    )(implicit db: Database): Future[Done] = {
     import com.github.tminglei.slickpg.window.PgWindowFuncSupport.WindowFunctions._
     val config = EndpointConfiguration(Some(key), None, None)
 
@@ -93,7 +88,7 @@ class DataSentintel @Inject() (
         )
       )
       .via(Flow[DataJsonRow].grouped(updateBatchSize))
-      .mapAsync(1)({ batch =>
+      .mapAsync(1) { batch =>
         db.run(
           DBIO
             .sequence(
@@ -105,14 +100,14 @@ class DataSentintel @Inject() (
             )
             .transactionally
         ) // update the row with sourceUniqueId inserted
-      })
+      }
 
     db.run(deleteQuery)
-      .flatMap(_ => {
+      .flatMap { _ =>
         updatingStream.runWith(
           Sink.ignore
         ) // the result is not important as long as it succeeds
-      })
+      }
       .map(_ => Done)
   }
 
@@ -120,8 +115,7 @@ class DataSentintel @Inject() (
       source: String,
       key: String,
       format: String = ""
-    )(implicit db: Database
-    ): Future[Done] = {
+    )(implicit db: Database): Future[Done] = {
     val config = EndpointConfiguration(None, Some(key), Some(format))
 
     val updatingStream = Source
@@ -135,19 +129,17 @@ class DataSentintel @Inject() (
         )
       )
       .via(Flow[DataJsonRow].grouped(updateBatchSize))
-      .mapAsync(parallelism = 1)({ batch =>
+      .mapAsync(parallelism = 1) { batch =>
         db.run(
           DBIO
             .sequence(
               batch
-                .map(r =>
-                  r.copy(sourceTimestamp = config.getTimestamp(r.data))
-                ) // take the value at key as DateTime
+                .map(r => r.copy(sourceTimestamp = config.getTimestamp(r.data))) // take the value at key as DateTime
                 .map(DataJson.insertOrUpdate)
             )
             .transactionally
         ) // update the row with sourceUniqueId inserted
-      })
+      }
 
     updatingStream
       .runWith(
@@ -168,7 +160,7 @@ case class EndpointConfiguration(
     keyField.map(JsonDataTransformer.parseJsPath)
   lazy val timestampPath: Option[JsPath] =
     timestampField.map(JsonDataTransformer.parseJsPath)
-  private implicit val timestampJsonFormat: Reads[DateTime] = jodaDateReads(
+  implicit private val timestampJsonFormat: Reads[DateTime] = jodaDateReads(
     timestampFormat.getOrElse("")
   )
 
@@ -221,11 +213,11 @@ case class EndpointConfiguration(
                 JsError(
                   Seq(
                     JsPath() -> Seq(
-                      JsonValidationError(
-                        "error.expected.jodadate.format",
-                        pattern
-                      )
-                    )
+                          JsonValidationError(
+                            "error.expected.jodadate.format",
+                            pattern
+                          )
+                        )
                   )
                 )
             }

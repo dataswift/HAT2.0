@@ -58,8 +58,7 @@ class StaticDataGeneratorService @Inject() (
 
   def getStaticData(
       endpoint: String
-    )(implicit hatServer: HatServer
-    ): Future[Seq[StaticDataValues]] = {
+    )(implicit hatServer: HatServer): Future[Seq[StaticDataValues]] = {
     val mappers = staticDataMappers.find(_._1.startsWith(endpoint))
 
     logger.debug(s"Fetching feed data for ${mappers.map(_._1)}")

@@ -50,7 +50,7 @@ class HatServerProviderActor @Inject() (
   import HatServerProviderActor._
 
   private val activeServers = mutable.HashMap[String, ActorRef]()
-  private implicit val hatServerTimeout: Timeout =
+  implicit private val hatServerTimeout: Timeout =
     configuration.get[FiniteDuration](
       "resourceManagement.serverProvisioningTimeout"
     )
@@ -82,16 +82,14 @@ class HatServerProviderActor @Inject() (
       log.debug(s"Received unexpected message $message")
   }
 
-  private def getHatServerActor(hat: String): Future[ActorRef] = {
+  private def getHatServerActor(hat: String): Future[ActorRef] =
     doFindOrCreate(hat, hatServerTimeout.duration / 4)
-  }
 
   private val maxAttempts = 3
   private def doFindOrCreate(
       hat: String,
       timeout: FiniteDuration,
-      depth: Int = 0
-    ): Future[ActorRef] = {
+      depth: Int = 0): Future[ActorRef] = {
     if (depth >= maxAttempts) {
       log.error(s"HAT server actor for $hat not resolved")
       throw new RuntimeException(
@@ -100,18 +98,16 @@ class HatServerProviderActor @Inject() (
     }
     val selection = s"/user/hatServerProviderActor/hat:$hat"
 
-    context.actorSelection(selection).resolveOne(timeout) map {
-      hatServerActor =>
-        log.debug(s"HAT server actor $selection resolved")
-        hatServerActor
+    context.actorSelection(selection).resolveOne(timeout) map { hatServerActor =>
+      log.debug(s"HAT server actor $selection resolved")
+      hatServerActor
     } recoverWith {
       case ActorNotFound(_) =>
         log.debug(s"HAT server actor ($selection) not found, injecting child")
         val hatServerActor = injectedChild(
           hatServerActorFactory(hat),
           s"hat:$hat",
-          props = (props: Props) =>
-            props.withDispatcher("hat-server-provider-actor-dispatcher")
+          props = (props: Props) => props.withDispatcher("hat-server-provider-actor-dispatcher")
         )
         activeServers(hat) = hatServerActor
         log.debug(s"Injected actor $hatServerActor")

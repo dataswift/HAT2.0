@@ -42,8 +42,7 @@ object HatServerActor {
   sealed trait HatServerActorMessage
   case class HatConnect() extends HatServerActorMessage
   case class HatConnected(hatServer: HatServer) extends HatServerActorMessage
-  case class HatFailed(error: HatServerDiscoveryException)
-      extends HatServerActorMessage
+  case class HatFailed(error: HatServerDiscoveryException) extends HatServerActorMessage
   case class HatRetrieve() extends HatServerActorMessage
   case class HatState(hatServer: HatServer) extends HatServerActorMessage
 
@@ -120,13 +119,12 @@ class HatServerActor @Inject() (
     hatDatabaseProvider.shutdown(server.db)
   }
 
-  private def connect(): Future[HatServerActorMessage] = {
+  private def connect(): Future[HatServerActorMessage] =
     server(hat)
       .map(hatConnected => HatConnected(hatConnected))
       .recover {
         case e: HatServerDiscoveryException => HatFailed(e)
       }
-  }
 
   private def server(hat: String): Future[HatServer] = {
     val server = for {
