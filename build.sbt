@@ -4,6 +4,9 @@ import Dependencies.Versions
 import sbt.Keys._
 import com.typesafe.sbt.packager.docker._
 
+val codeguruURI =
+  "https://repo1.maven.org/maven2/software/amazon/codeguruprofiler/codeguru-profiler-java-agent-standalone/1.1.0/codeguru-profiler-java-agent-standalone-1.1.0.jar"
+
 // the application
 lazy val hat = project
   .in(file("hat"))
@@ -97,7 +100,7 @@ lazy val hat = project
               Cmd("RUN", "apk add wget"),
               Cmd(
                 "RUN",
-                "wget --no-check-certificate https://repo1.maven.org/maven2/software/amazon/codeguruprofiler/codeguru-profiler-java-agent-standalone/1.1.0/codeguru-profiler-java-agent-standalone-1.1.0.jar"
+                s"wget --no-check-certificate ${codeguruURI}"
               ),
               Cmd("WORKDIR", "/opt/docker/"),
               Cmd("COPY", "opt", "/opt"),
