@@ -8,7 +8,7 @@ on:
       - add-github-pipelines
 
 env:
-  APP_ENV: prod
+  APP_ENV: dev
   RUMPEL: sandbox
   RUMPEL_ALT: latest
   RUMPEL_BUCKET: dswift-hat-sandbox-frontend-build-artifacts
