@@ -50,7 +50,7 @@ object Dependencies {
       val test        = "com.typesafe.play" %% "play-test"         % version
       val specs2      = "com.typesafe.play" %% "play-specs2"       % version
       val jdbc        = "com.typesafe.play" %% "play-jdbc"         % version
-      val json        = "com.typesafe.play" %% "play-json"         % "2.6.14"
+      val json        = "com.typesafe.play" %% "play-json"         % "2.9.2"
       val jsonJoda    = "com.typesafe.play" %% "play-json-joda"    % "2.6.14"
       val mailer      = "com.typesafe.play" %% "play-mailer"       % "6.0.1"
       val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
