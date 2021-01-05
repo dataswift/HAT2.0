@@ -59,6 +59,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
 import scala.util.control.NonFatal
 import play.api.libs.json.Reads
+import org.hatdex.hat.NamespaceUtils.NamespaceUtils
 
 sealed trait RequestValidationFailure
 object RequestValidationFailure {
@@ -789,42 +790,23 @@ class RichData @Inject() (
   def verifyNamespaceRead(
       app: Application,
       namespace: String): Boolean = {
-
-    // ApplicationPermissions(List(NamespaceWrite(samplecontract), NamespaceRead(samplecontract)),None,None)
-    logger.error(
-      s"NamespaceRead: Perms: ${app.permissions} - Namespace: ${namespace}"
+    val rolesOk = NamespaceUtils.testReadNamespacePermissions(app.permissions.rolesGranted, namespace)
+    logger.info(
+      s"NamespaceRead: AppPerms: ${app.permissions}, RolesOk: ${rolesOk}, namespace: ${namespace}, result: ${rolesOk}"
     )
 
-    val rolesOk = app.permissions.rolesGranted.map {
-      case NamespaceRead(n) if n == namespace => Some(namespace)
-      case _                                  => None
-    }
-    logger.error(
-      s"NamespaceRead: RolesOk: ${rolesOk} - Namespace: ${namespace} - results: ${!rolesOk.flatten.isEmpty}"
-    )
-
-    // flatten removes any Nones, so if this is flattened and .isEmpty then there
-    // was no NamespaceRead found
-    !rolesOk.flatten.isEmpty
+    rolesOk
   }
 
   def verifyNamespaceWrite(
       app: Application,
       namespace: String): Boolean = {
+    val rolesOk = NamespaceUtils.testWriteNamespacePermissions(app.permissions.rolesGranted, namespace)
     logger.info(
-      s"NamespaceWrite: Perms: ${app.permissions} - Namespace: ${namespace}"
-    )
-    val rolesOk = app.permissions.rolesGranted.map {
-      case NamespaceWrite(n) if n == namespace => Some(namespace)
-      case _                                   => None
-    }
-    logger.info(
-      s"NamespaceWrite: RolesOk: ${rolesOk} - Namespace: ${namespace} - result: ${!rolesOk.flatten.isEmpty}"
+      s"NamespaceWrite: AppPerms: ${app.permissions}, RolesOk: ${rolesOk}, namespace: ${namespace}, result: ${rolesOk}"
     )
 
-    // flatten removes any Nones, so if this is flattened and .isEmpty then there
-    // was no NamespaceWrite found
-    !rolesOk.flatten.isEmpty
+    rolesOk
   }
 
   // Convert the basic JSON representation of the ContactRequestBody to the Refined Version
