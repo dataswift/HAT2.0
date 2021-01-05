@@ -796,8 +796,8 @@ class RichData @Inject() (
     )
 
     val rolesOk = app.permissions.rolesGranted.map {
-      case NamespaceRead(namespace) => Some(namespace)
-      case _                        => None
+      case NamespaceRead(n) if n == namespace => Some(namespace)
+      case _                                  => None
     }
     logger.error(
       s"NamespaceRead: RolesOk: ${rolesOk} - Namespace: ${namespace} - results: ${!rolesOk.flatten.isEmpty}"
@@ -815,8 +815,8 @@ class RichData @Inject() (
       s"NamespaceWrite: Perms: ${app.permissions} - Namespace: ${namespace}"
     )
     val rolesOk = app.permissions.rolesGranted.map {
-      case NamespaceWrite(namespace) => Some(namespace)
-      case _                         => None
+      case NamespaceWrite(n) if n == namespace => Some(namespace)
+      case _                                   => None
     }
     logger.info(
       s"NamespaceWrite: RolesOk: ${rolesOk} - Namespace: ${namespace} - result: ${!rolesOk.flatten.isEmpty}"
