@@ -36,7 +36,7 @@ object NamespaceUtils {
       case NamespaceWrite(n) if n == namespace => Some(namespace)
       case _                                   => None
     }
-    !matchedRoles.flatten.isEmpty
+    matchedRoles.flatten.nonEmpty
   }
 
   def testReadNamespacePermissions(
@@ -46,6 +46,6 @@ object NamespaceUtils {
       case NamespaceRead(n) if n == namespace => Some(namespace)
       case _                                  => None
     }
-    !matchedRoles.flatten.isEmpty
+    matchedRoles.flatten.nonEmpty
   }
 }
