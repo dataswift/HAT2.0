@@ -27,7 +27,6 @@ import play.api.Logger
 import org.hatdex.hat.api.models.{ NamespaceRead, NamespaceWrite, UserRole }
 
 object NamespaceUtils {
-  val logger = Logger(this.getClass)
 
   def testWriteNamespacePermissions(
       roles: Seq[UserRole],
