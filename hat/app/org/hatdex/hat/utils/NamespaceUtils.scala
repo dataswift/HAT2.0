@@ -23,7 +23,6 @@
  */
 package org.hatdex.hat.NamespaceUtils
 
-import play.api.Logger
 import org.hatdex.hat.api.models.{ NamespaceRead, NamespaceWrite, UserRole }
 
 object NamespaceUtils {
