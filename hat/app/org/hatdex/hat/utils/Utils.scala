@@ -39,14 +39,13 @@ object Utils {
   }
 
   // Utility function to return None for empty sequences
-  def seqOption[T](seq: Seq[T]): Option[Seq[T]] = {
+  def seqOption[T](seq: Seq[T]): Option[Seq[T]] =
     if (seq.isEmpty)
       None
     else
       Some(seq)
-  }
 
-  def reverseOptionTry[T](a: Option[Try[T]]): Try[Option[T]] = {
+  def reverseOptionTry[T](a: Option[Try[T]]): Try[Option[T]] =
     a match {
       case None =>
         Success(None)
@@ -55,24 +54,24 @@ object Utils {
       case Some(Failure(e)) =>
         Failure(e)
     }
-  }
 
   def mergeMap[A, B](
       ms: Iterable[HashMap[A, B]]
-    )(f: (B, B) => B
-    ): HashMap[A, B] =
-    (for (m <- ms; kv <- m) yield kv).foldLeft(HashMap[A, B]()) { (a, kv) =>
+    )(f: (B, B) => B): HashMap[A, B] =
+    (for {
+      m <- ms
+      kv <- m
+    } yield kv).foldLeft(HashMap[A, B]()) { (a, kv) =>
       a + (if (a.contains(kv._1)) kv._1 -> f(a(kv._1), kv._2) else kv)
     }
 
   def time[R](
       name: String,
       logger: Logger
-    )(block: => R
-    ): R = {
-    val t0 = System.nanoTime()
+    )(block: => R): R = {
+    val t0     = System.nanoTime()
     val result = block // call-by-name
-    val t1 = System.nanoTime()
+    val t1     = System.nanoTime()
     logger.info(s"[$name] Elapsed time: ${(t1 - t0) / 1000000.0}ms")
     result
   }
@@ -81,8 +80,7 @@ object Utils {
       name: String,
       logger: Logger
     )(block: => Future[R]
-    )(implicit ec: ExecutionContext
-    ): Future[R] = {
+    )(implicit ec: ExecutionContext): Future[R] = {
     val t0 = System.nanoTime()
     block // call-by-name
       .andThen {
