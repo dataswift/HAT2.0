@@ -82,7 +82,7 @@ class HatServerProviderImpl @Inject() (
     configuration.get[FiniteDuration]("resourceManagement.serverIdleTimeout")
 
   def retrieve(hatAddress: String): Future[Option[HatServer]] = {
-    logger.warn(s"HatServiceProvider.retrieve: looking up hatAddress: server:${hatAddress}")
+    logger.info(s"HatServiceProvider.retrieve: looking up hatAddress: server:${hatAddress}")
 
     cache
       .get[HatServer](s"server:$hatAddress")
@@ -108,7 +108,7 @@ class HatServerProviderImpl @Inject() (
             } recoverWith {
               case e =>
                 logger.warn(
-                  s"Error while retrieving HAT $hatAddress info: ${e.getMessage}"
+                  s"Error while retrieving HAT $hatAddress info: ${e.getMessage} ${e.getStackTrace()}"
                 )
                 val error = new HatServerDiscoveryException(
                   "HAT Server info retrieval failed",
