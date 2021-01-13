@@ -47,8 +47,8 @@ trait HatServerProvider extends DynamicEnvironmentProviderService[HatServer] {
   def retrieve[B](request: Request[B]): Future[Option[HatServer]]
   def retrieve(hatAddress: String): Future[Option[HatServer]]
   def toString(publicKey: RSAPublicKey): String = {
-    val pemObject = new PemObject("PUBLIC KEY", publicKey.getEncoded)
-    val stringPemWriter = new StringWriter()
+    val pemObject            = new PemObject("PUBLIC KEY", publicKey.getEncoded)
+    val stringPemWriter      = new StringWriter()
     val pemWriter: PemWriter = new PemWriter(stringPemWriter)
     pemWriter.writeObject(pemObject)
     pemWriter.flush()
@@ -82,39 +82,40 @@ class HatServerProviderImpl @Inject() (
     configuration.get[FiniteDuration]("resourceManagement.serverIdleTimeout")
 
   def retrieve(hatAddress: String): Future[Option[HatServer]] = {
+    logger.warn(s"HatServiceProvider.retrieve: looking up hatAddress: server:${hatAddress}")
+
     cache
       .get[HatServer](s"server:$hatAddress")
       .flatMap {
         case Some(server) => Future.successful(Some(server))
         case _ =>
           (serverProviderActor ? HatServerProviderActor.HatServerRetrieve(
-            hatAddress
-          )) map {
-            case server: HatServer =>
-              logger.debug(s"Got back server $server")
-              cache.set(s"server:$hatAddress", server, serverInfoTimeout)
-              Some(server)
-            case error: HatServerDiscoveryException =>
-              logger.warn(s"Got back error $error")
-              throw error
-            case message =>
-              logger.warn(
-                s"Unknown message $message from HAT Server provider actor"
-              )
-              val error = new HatServerDiscoveryException("Unknown message")
-              throw error
-          } recoverWith {
-            case e =>
-              logger.warn(
-                s"Error while retrieving HAT $hatAddress info: ${e.getMessage}"
-              )
-              val error = new HatServerDiscoveryException(
-                "HAT Server info retrieval failed",
-                e
-              )
-              throw error
-          }
+                hatAddress
+              )) map {
+              case server: HatServer =>
+                logger.info(s"Got back server $server")
+                cache.set(s"server:$hatAddress", server, serverInfoTimeout)
+                Some(server)
+              case error: HatServerDiscoveryException =>
+                logger.warn(s"Got back error $error")
+                throw error
+              case message =>
+                logger.warn(
+                  s"Unknown message $message from HAT Server provider actor"
+                )
+                val error = new HatServerDiscoveryException("Unknown message")
+                throw error
+            } recoverWith {
+              case e =>
+                logger.warn(
+                  s"Error while retrieving HAT $hatAddress info: ${e.getMessage}"
+                )
+                val error = new HatServerDiscoveryException(
+                  "HAT Server info retrieval failed",
+                  e
+                )
+                throw error
+            }
       }
   }
-
 }
