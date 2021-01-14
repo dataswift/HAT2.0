@@ -4,6 +4,9 @@ import Dependencies.Versions
 import sbt.Keys._
 import com.typesafe.sbt.packager.docker._
 
+val codeguruURI =
+  "https://repo1.maven.org/maven2/software/amazon/codeguruprofiler/codeguru-profiler-java-agent-standalone/1.1.0/codeguru-profiler-java-agent-standalone-1.1.0.jar"
+
 // the application
 lazy val hat = project
   .in(file("hat"))
@@ -84,9 +87,55 @@ lazy val hat = project
     packageName in Docker := "hat",
     maintainer in Docker := "andrius.aucinas@hatdex.org",
     version in Docker := version.value,
-    dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine",
+    //dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine",
     dockerExposedPorts := Seq(9000),
-    dockerEntrypoint := Seq("bin/hat")
+    //dockerEntrypoint := Seq("bin/hat"),
+    // add a flag to not run in prod
+    // modify the binary to include "-javaagent:codeguru-profiler-java-agent-standalone-1.1.0.jar="profilingGroupName:HatInDev,heapSummaryEnabled:true"
+    dockerCommands := (buildEnv.value match {
+          case BuildEnv.Developement | BuildEnv.Test =>
+            Seq(
+              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine"),
+              Cmd("WORKDIR", "/opt/docker/bin"),
+              Cmd("RUN", "apk add wget"),
+              Cmd(
+                "RUN",
+                s"wget --no-check-certificate ${codeguruURI}"
+              ),
+              Cmd("WORKDIR", "/opt/docker/"),
+              Cmd("COPY", "opt", "/opt"),
+              Cmd("COPY", "1/opt", "/opt"),
+              Cmd("RUN", "chown -R daemon:daemon /opt/docker"),
+              Cmd("RUN", "chmod -R u=rX,g=rX /opt/docker"),
+              Cmd("RUN", "chmod -R u+x,g+x /opt/docker/bin"),
+              Cmd("EXPOSE", "9000"),
+              Cmd("USER", "daemon"),
+              Cmd("ENTRYPOINT", s"bin/${packageName.value}")
+            )
+          case BuildEnv.Stage | BuildEnv.Production =>
+            Seq(
+              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine"),
+              Cmd("WORKDIR", "/opt/docker/bin"),
+              Cmd("WORKDIR", "/opt/docker/"),
+              Cmd("COPY", "opt", "/opt"),
+              Cmd("COPY", "1/opt", "/opt"),
+              Cmd("RUN", "chown -R daemon:daemon /opt/docker"),
+              Cmd("RUN", "chmod -R u=rX,g=rX /opt/docker"),
+              Cmd("RUN", "chmod -R u+x,g+x /opt/docker/bin"),
+              Cmd("EXPOSE", "9000"),
+              Cmd("USER", "daemon"),
+              Cmd("ENTRYPOINT", s"bin/${packageName.value}")
+            )
+        }),
+    javaOptions in Universal ++= (buildEnv.value match {
+          case BuildEnv.Developement | BuildEnv.Test =>
+            Seq(
+              "-javaagent:/opt/docker/bin/codeguru-profiler-java-agent-standalone-1.1.0.jar=\"profilingGroupName:HatInDev,heapSummaryEnabled:true\""
+            )
+          case BuildEnv.Stage | BuildEnv.Production =>
+            Seq(
+            )
+        })
   )
   .enablePlugins(SlickCodeGeneratorPlugin)
   .settings(

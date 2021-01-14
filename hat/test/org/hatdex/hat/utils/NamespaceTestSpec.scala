@@ -4,7 +4,7 @@ import org.specs2.mock.Mockito
 import play.api.Logger
 import play.api.test.{ PlaySpecification }
 
-import org.hatdex.hat.api.models.{ NamespaceRead, NamespaceWrite }
+import org.hatdex.hat.api.models.{ NamespaceRead, NamespaceWrite, UserRole }
 import org.hatdex.hat.NamespaceUtils._
 
 class NamespaceTestSpec extends PlaySpecification with Mockito {
@@ -53,8 +53,18 @@ class NamespaceTestSpec extends PlaySpecification with Mockito {
       val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
       val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
 
+      readRoles == writeRoles
+    }
+
+    "NamespaceUtils: Mis-matched types" in {
+      val namespace                             = "correctnamespace"
+      val applicationPermissions: Seq[UserRole] = List(NamespaceWrite("correctnamespace"))
+
+      val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
+      val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
+
       readRoles == false
-      writeRoles == false
+      writeRoles == true
     }
   }
 }
