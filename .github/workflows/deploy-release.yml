@@ -59,10 +59,10 @@ jobs:
           password: ${{ secrets.DOCKERHUB_DATASWIFT_PASS }}
 
       - name: Container Registry - Tag
-        run: docker tag ${{ env.ECR_REGISTRY }}:${{ github.sha }} ${{ env.ECR_REGISTRY }}:$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g") 
+        run: docker tag ${{ env.REPOSITORY }}:${{ github.sha }} ${{ env.REPOSITORY }}:$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g") 
         
       - name: Container Registry - Push
-        run: docker push ${{ env.ECR_REGISTRY }}:$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g") 
+        run: docker push ${{ env.REPOSITORY }}:$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g") 
 
       - name: Container Registry - Logout
         if: always()
