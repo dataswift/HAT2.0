@@ -4,7 +4,6 @@ import org.specs2.mock.Mockito
 import play.api.Logger
 import play.api.test.{ PlaySpecification }
 
-
 import org.hatdex.hat.api.models.{ NamespaceRead, NamespaceWrite, UserRole }
 import org.hatdex.hat.NamespaceUtils._
 
@@ -21,7 +20,8 @@ class NamespaceTestSpec extends PlaySpecification with Mockito {
       val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
       val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
 
-      readRoles == writeRoles
+      readRoles == true
+      writeRoles == true
     }
 
     "NamespaceUtils: Disallow the incorrect namespace" in {
@@ -31,7 +31,8 @@ class NamespaceTestSpec extends PlaySpecification with Mockito {
       val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
       val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
 
-      readRoles == writeRoles
+      readRoles == false
+      writeRoles == false
     }
 
     "NamespaceUtils: Empty App Permission" in {
@@ -41,7 +42,8 @@ class NamespaceTestSpec extends PlaySpecification with Mockito {
       val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
       val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
 
-      readRoles == writeRoles
+      readRoles == false
+      writeRoles == false
     }
 
     "NamespaceUtils: Empty Namespace" in {
