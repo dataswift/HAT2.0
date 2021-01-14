@@ -1,11 +1,9 @@
-name: Deploy Staging
+name: Deploy Sandbox
 
 on:
-  workflow_dispatch:
   push:
     branches:
-      - dev
-      - add-github-pipelines
+      - main
 
 env:
   APP_ENV: prod

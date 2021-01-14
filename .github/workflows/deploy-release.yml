@@ -2,10 +2,8 @@ name: Deploy Production
 
 on:
   release:
-    types: [published]
-    branches:
-      - main
-      - master
+    types:
+      - released
 
 env:
   APP_ENV: prod
