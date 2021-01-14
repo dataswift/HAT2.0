@@ -4,6 +4,7 @@ import org.specs2.mock.Mockito
 import play.api.Logger
 import play.api.test.{ PlaySpecification }
 
+
 import org.hatdex.hat.api.models.{ NamespaceRead, NamespaceWrite, UserRole }
 import org.hatdex.hat.NamespaceUtils._
 
