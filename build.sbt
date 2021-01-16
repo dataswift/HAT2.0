@@ -62,7 +62,7 @@ lazy val hat = project
             libraryDependencies.value.map(excludeSpecs2)
         }),
     libraryDependencies += "org.codehaus.janino" % "janino"       % "3.1.2",
-    libraryDependencies += "org.mockito"         % "mockito-core" % "3.3.3" % Test,
+    libraryDependencies += "org.mockito"         % "mockito-core" % "3.7.7" % Test,
     pipelineStages in Assets := Seq(digest),
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     aggregate in update := false,
