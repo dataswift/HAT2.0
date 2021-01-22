@@ -60,6 +60,7 @@ import scala.util.{ Failure, Success }
 import scala.util.control.NonFatal
 import play.api.libs.json.Reads
 import org.hatdex.hat.NamespaceUtils.NamespaceUtils
+import org.joda.time.{ DateTime, Duration, LocalDateTime }
 
 sealed trait RequestValidationFailure
 object RequestValidationFailure {
@@ -242,6 +243,7 @@ class RichData @Inject() (
       namespaces + namespace
     } getOrElse Set()
 
+  // Extract to namespace library
   private def authorizeEndpointDataWrite(
       data: Seq[EndpointData],
       appStatus: Option[HatApplication]
@@ -668,7 +670,6 @@ class RichData @Inject() (
       hatName: HatName,
       contractId: ContractId,
       body: Option[JsValue])
-  //  implicit val contractRequestBodyRefinedReads = Json.reads[ContractRequestBodyRefined]
   case class ContractRequestBody(
       token: String,
       hatName: String,
@@ -676,6 +677,7 @@ class RichData @Inject() (
       body: Option[JsValue])
   implicit val contractRequestBodyReads: Reads[ContractRequestBody] = Json.reads[ContractRequestBody]
 
+  // -- Contract Data: Write --
   def saveContractData(
       namespace: String,
       endpoint: String,
@@ -772,10 +774,58 @@ class RichData @Inject() (
       .map(saved => Created(Json.toJson(saved.head)))
   }
 
+  // -- Contract Data: Update --
+  case class ContractUpdateBody(
+      token: String,
+      hatName: String,
+      contractId: String,
+      body: Seq[ContractUpdateData])
+  implicit val contractUpdateBodyReads: Reads[ContractUpdateBody] = Json.reads[ContractUpdateBody]
+
+  case class ContractUpdateData(
+      endpoint: String,
+      recordId: UUID,
+      data: JsValue)
+  implicit val contractUpdateDataReads: Reads[ContractUpdateData] = Json.reads[ContractUpdateData]
+
+  // -- Contract Data: Update
+  def updateContractData(
+      namespace: String,
+      endpoint: String,
+      skipErrors: Option[Boolean]): Action[ContractUpdateBody] =
+    UserAwareAction.async(parsers.json[ContractUpdateBody]) { implicit request =>
+      val contractUpdateBody = request.body
+
+      if (contractUpdateBody.body.isEmpty) {
+        logger.error {
+          s"updateContractData included no Endpoint Data body - ns:${namespace} - endpoint:${endpoint}"
+        }
+        Future.successful(NotFound)
+      } else
+        usersService.getUser(contractUpdateBody.hatName).flatMap { hatUser =>
+          hatUser match {
+            case None =>
+              logger.error {
+                s"handleJsArray - No user found for ${contractUpdateBody.hatName}"
+              }
+              Future.successful(BadRequest("No hat found"))
+            case Some(hatUser) =>
+              val dataEndpoint =
+                s"$namespace/$endpoint"
+              println(dataEndpoint)
+
+              val requestIsAllowed =
+                assessRequest(contractUpdateBody, namespace)
+
+              Future.successful(Ok("No hat found"))
+          }
+        }
+    }
+
   def verifyNamespace(
       app: Application,
       namespace: String): Boolean = {
-    logger.info(s"def verifyNamespace ${namespace} for app ${app}")
+    logger.info(s"verifyNamespace ${namespace} for app ${app}")
 
     val canReadNamespace  = verifyNamespaceRead(app, namespace)
     val canWriteNamespace = verifyNamespaceWrite(app, namespace)
@@ -838,6 +888,7 @@ class RichData @Inject() (
   ] = {
     import ContractVerificationFailure._
 
+    // This logic is tied up with special types
     val maybeContractDataRequestKeyId = for {
       contractDataRequest <- requestBodyToContractDataRequest(
                                contractRequestBody
@@ -959,6 +1010,10 @@ class RichData @Inject() (
       }
     }
 
+  // This is tied to ContractRequestBody
+  // Let's generalize it
+  // - we need the contractId
+  // -
   def assessRequest(
       contractRequestBody: ContractRequestBody,
       namespace: String): Future[Either[RequestValidationFailure, RequestVerified]] = {
