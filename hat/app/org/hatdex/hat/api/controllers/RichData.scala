@@ -65,9 +65,7 @@ import org.joda.time.{ DateTime, Duration, LocalDateTime }
 sealed trait RequestValidationFailure
 object RequestValidationFailure {
   final case class InaccessibleNamespace(namespace: String) extends RequestValidationFailure
-
   final case class InvalidShortLivedToken(contractId: String) extends RequestValidationFailure
-
 }
 final case class RequestVerified(namespace: String) extends AnyVal
 
@@ -649,6 +647,9 @@ class RichData @Inject() (
     data.map(d => Ok(Json.toJson(d)))
   }
 
+  // ------------------------------------------------------------------------------------
+  // Contracts
+
   // ** TODO this should be in a better place.
   sealed abstract class ContractVerificationFailure
   object ContractVerificationFailure {
@@ -662,6 +663,60 @@ class RichData @Inject() (
   object ContractVerificationSuccess {
     final case class JwtClaimVerified(jwtClaim: JwtClaim) extends ContractVerificationSuccess
   }
+
+  trait ContractRequest {
+    def refineContract: ContractDataInfoRefined
+  }
+
+  // New Consolidated Contract Types
+
+  // Extract this from each of the types below
+  case class ContractDataInfoRefined(
+      token: ShortLivedToken,
+      hatName: HatName,
+      contractId: ContractId)
+      extends ContractRequest
+
+  case class ContractDataReadRequest(
+      token: String,
+      hatName: String,
+      contractId: String)
+
+  case class ContractDataCreateRequest(
+      token: String,
+      hatName: String,
+      contractId: String,
+      body: Option[JsValue])
+
+  case class ContractDataUpdateRequest(
+      token: String,
+      hatName: String,
+      contractId: String,
+      body: Option[JsValue])
+
+  def refineContractInfo(
+      token: String,
+      hatName: String,
+      contractId: String): Option[ContractDataInfoRefined] =
+    for {
+      tokenR <- refineV[NonEmpty](token).toOption
+      hatNameR <- refineV[NonEmpty](hatName).toOption
+      contractIdR <- refineV[NonEmpty](contractId).toOption
+      contractDataInfoRefined = ContractDataInfoRefined(
+                                  ShortLivedToken(tokenR),
+                                  HatName(hatNameR),
+                                  ContractId(UUID.fromString(contractIdR))
+                                )
+    } yield contractDataInfoRefined
+
+  def refineContractDataReadRequest(req: ContractDataReadRequest): Option[ContractDataInfoRefined] =
+    refineContractInfo(req.token, req.hatName, req.contractId)
+
+  def refineContractDataCreateRequest(req: ContractDataCreateRequest): Option[ContractDataInfoRefined] =
+    refineContractInfo(req.token, req.hatName, req.contractId)
+
+  def refineContractDataUpdateRequest(req: ContractDataUpdateRequest): Option[ContractDataInfoRefined] =
+    refineContractInfo(req.token, req.hatName, req.contractId)
 
   // ** TODO this should be in a better place.
   // final case class ContractDataRequest(token: ShortLivedToken, hatName: HatName, contractId: ContractId)
