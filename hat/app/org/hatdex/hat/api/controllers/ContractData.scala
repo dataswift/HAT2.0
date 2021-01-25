@@ -216,7 +216,7 @@ class ContractData @Inject() (
 
   // --- API Handlers ---
 
-  def newGetContractData(
+  def readContractData(
       namespace: String,
       endpoint: String,
       orderBy: Option[String],
@@ -239,29 +239,7 @@ class ContractData @Inject() (
       }
     }
 
-  def newUpdateContractData(
-      namespace: String,
-      endpoint: String,
-      skipErrors: Option[Boolean]): Action[ContractDataUpdateRequest] =
-    UserAwareAction.async(parsers.json[ContractDataUpdateRequest]) { implicit request =>
-      val contractDataUpdate    = request.body
-      val maybeContractDataInfo = refineContractDataUpdateRequest(contractDataUpdate)
-      maybeContractDataInfo match {
-        case Some(contractDataInfo) =>
-          contractValid(contractDataInfo, namespace, endpoint).flatMap { contractOk =>
-            contractOk match {
-              case (Some(hatUser), Right(RequestVerified(ns))) =>
-                handleUpdateContractData(hatUser, contractDataUpdate, ns, endpoint, skipErrors)
-              case (_, Left(x)) => handleFailedRequestAssessment(x)
-            }
-          }
-        case None => Future.successful(BadRequest("Missing Contract Details."))
-      }
-
-      Future.successful(BadRequest("Not Implemented."))
-    }
-
-  def newCreateContractData(
+  def createContractData(
       namespace: String,
       endpoint: String,
       skipErrors: Option[Boolean]): Action[ContractDataCreateRequest] =
@@ -283,8 +261,30 @@ class ContractData @Inject() (
       Future.successful(BadRequest("Not Implemented."))
     }
 
+  def updateContractData(
+      namespace: String,
+      endpoint: String,
+      skipErrors: Option[Boolean]): Action[ContractDataUpdateRequest] =
+    UserAwareAction.async(parsers.json[ContractDataUpdateRequest]) { implicit request =>
+      val contractDataUpdate    = request.body
+      val maybeContractDataInfo = refineContractDataUpdateRequest(contractDataUpdate)
+      maybeContractDataInfo match {
+        case Some(contractDataInfo) =>
+          contractValid(contractDataInfo, namespace, endpoint).flatMap { contractOk =>
+            contractOk match {
+              case (Some(hatUser), Right(RequestVerified(ns))) =>
+                handleUpdateContractData(hatUser, contractDataUpdate, ns, endpoint, skipErrors)
+              case (_, Left(x)) => handleFailedRequestAssessment(x)
+            }
+          }
+        case None => Future.successful(BadRequest("Missing Contract Details."))
+      }
+
+      Future.successful(BadRequest("Not Implemented."))
+    }
+
   // Read Contract Data
-  def getContractData(
+  def readContractDataOLD(
       namespace: String,
       endpoint: String,
       orderBy: Option[String],
@@ -317,7 +317,7 @@ class ContractData @Inject() (
     }
 
   // Create Contract Data - New
-  def saveContractDataNew(
+  def createContractDataOLD(
       namespace: String,
       endpoint: String,
       skipErrors: Option[Boolean]): Action[ContractDataCreateRequest] =
@@ -393,79 +393,80 @@ class ContractData @Inject() (
     }
 
   // Create Contract Data - Old
-  def saveContractData(
-      namespace: String,
-      endpoint: String,
-      skipErrors: Option[Boolean]): Action[ContractRequestBody] =
-    UserAwareAction.async(parsers.json[ContractRequestBody]) { implicit request =>
-      val contractRequestBody = request.body
-      contractRequestBody.body match {
-        // There was no body to store, so fail quickly
-        case None =>
-          logger.error {
-            s"saveContractData included no json body - ns:${namespace} - endpoint:${endpoint}"
-          }
-          Future.successful(NotFound)
+  // def saveContractDataOLD(
+  //     namespace: String,
+  //     endpoint: String,
+  //     skipErrors: Option[Boolean]): Action[ContractRequestBody] =
+  //   UserAwareAction.async(parsers.json[ContractRequestBody]) { implicit request =>
+  //     val contractRequestBody = request.body
+  //     contractRequestBody.body match {
+  //       // There was no body to store, so fail quickly
+  //       case None =>
+  //         logger.error {
+  //           s"saveContractData included no json body - ns:${namespace} - endpoint:${endpoint}"
+  //         }
+  //         Future.successful(NotFound)
 
-        // Body exists, so verify the request and process the body
-        case Some(jsonBody) =>
-          usersService.getUser(contractRequestBody.hatName).flatMap { hatUser =>
-            hatUser match {
-              case None =>
-                logger.error {
-                  s"handleJsArray - No user found for ${contractRequestBody.hatName}"
-                }
-                Future.successful(BadRequest("No user found."))
-              case Some(hatUser) =>
-                val dataEndpoint =
-                  s"$namespace/$endpoint"
-                val requestIsAllowed =
-                  assessRequest(contractRequestBody, namespace)
+  //       // Body exists, so verify the request and process the body
+  //       case Some(jsonBody) =>
+  //         usersService.getUser(contractRequestBody.hatName).flatMap { hatUser =>
+  //           hatUser match {
+  //             case None =>
+  //               logger.error {
+  //                 s"handleJsArray - No user found for ${contractRequestBody.hatName}"
+  //               }
+  //               Future.successful(BadRequest("No user found."))
+  //             case Some(hatUser) =>
+  //               val dataEndpoint =
+  //                 s"$namespace/$endpoint"
+  //               val requestIsAllowed =
+  //                 assessRequest(contractRequestBody, namespace)
 
-                requestIsAllowed.flatMap {
-                  case Right(RequestVerified(ns)) =>
-                    logger.info(s"RequestVerified: ${ns}")
-                    jsonBody match {
-                      case array: JsArray =>
-                        logger.info {
-                          s"saveContractData.body is JsArray: ${jsonBody}"
-                        }
-                        handleJsArray(
-                          hatUser.userId,
-                          array,
-                          dataEndpoint,
-                          skipErrors
-                        )
-                      case value: JsValue =>
-                        logger.info {
-                          s"saveContractData.body is JsValue: ${jsonBody}"
-                        }
-                        handleJsValue(
-                          hatUser.userId,
-                          value,
-                          dataEndpoint
-                        )
-                    }
-                  case Left(x) =>
-                    logger.error {
-                      s"Contract Save Error: ${x} - ${namespace} - ${endpoint} - ${contractRequestBody}"
-                    }
-                    Future.successful(NotFound)
-                } recover {
-                  case e: RichDataDuplicateException =>
-                    BadRequest(Json.toJson(Errors.richDataDuplicate(e)))
-                  case e: RichDataServiceException =>
-                    BadRequest(Json.toJson(Errors.richDataError(e)))
-                  case e: Exception =>
-                    logger.error(e.getMessage)
-                    BadRequest("Contract Data request creation failure.")
-                }
-            }
-          }
-      }
-    }
-// Contract Data - Update
-  def updateContractData(
+  //               requestIsAllowed.flatMap {
+  //                 case Right(RequestVerified(ns)) =>
+  //                   logger.info(s"RequestVerified: ${ns}")
+  //                   jsonBody match {
+  //                     case array: JsArray =>
+  //                       logger.info {
+  //                         s"saveContractData.body is JsArray: ${jsonBody}"
+  //                       }
+  //                       handleJsArray(
+  //                         hatUser.userId,
+  //                         array,
+  //                         dataEndpoint,
+  //                         skipErrors
+  //                       )
+  //                     case value: JsValue =>
+  //                       logger.info {
+  //                         s"saveContractData.body is JsValue: ${jsonBody}"
+  //                       }
+  //                       handleJsValue(
+  //                         hatUser.userId,
+  //                         value,
+  //                         dataEndpoint
+  //                       )
+  //                   }
+  //                 case Left(x) =>
+  //                   logger.error {
+  //                     s"Contract Save Error: ${x} - ${namespace} - ${endpoint} - ${contractRequestBody}"
+  //                   }
+  //                   Future.successful(NotFound)
+  //               } recover {
+  //                 case e: RichDataDuplicateException =>
+  //                   BadRequest(Json.toJson(Errors.richDataDuplicate(e)))
+  //                 case e: RichDataServiceException =>
+  //                   BadRequest(Json.toJson(Errors.richDataError(e)))
+  //                 case e: Exception =>
+  //                   logger.error(e.getMessage)
+  //                   BadRequest("Contract Data request creation failure.")
+  //               }
+  //           }
+  //         }
+  //     }
+  //   }
+
+  // Contract Data - Update
+  def updateContractDataOLD2(
       namespace: String,
       endpoint: String,
       skipErrors: Option[Boolean]): Action[ContractUpdateBody] =
@@ -563,20 +564,15 @@ class ContractData @Inject() (
 
   // -----------------------------------------------
 
-  // I don't use this, should I?
   def contractValid(
       contract: ContractDataInfoRefined,
       namespace: String,
       endpoint: String
     )(implicit hatServer: HatServer): Future[(Option[HatUser], Either[RequestValidationFailure, RequestVerified])] =
-    usersService.getUser(contract.hatName.value).flatMap { hatUser =>
-      hatUser match {
-        case Some(hatUser) =>
-          val dataEndpoint = s"$namespace/$endpoint"
-          (hatUser, assessRequest(contract, namespace))
-        case None => Future.successful((None, Left(RequestValidationFailure.MissingHatName(contract.hatName.value))))
-      }
-    }
+    for {
+      hatUser <- usersService.getUser(contract.hatName.value)
+      requestAssestment <- assessRequest(contract, namespace)
+    } yield (hatUser, requestAssestment)
 
   def handleJsArray(
       userId: UUID,
@@ -756,57 +752,42 @@ class ContractData @Inject() (
         }
       }
 
-  // This is tied to ContractRequestBody
-  // Let's generalize it
-  // - we need the contractId
-  // -
   def assessRequest(
       contractDataInfo: ContractDataInfoRefined,
-      namespace: String
-    )(implicit hatServer: HatServer): Future[(Option[HatUser], Either[RequestValidationFailure, RequestVerified])] = {
+      namespace: String): Future[Either[RequestValidationFailure, RequestVerified]] = {
     val eventuallyMaybeDecision = verifyContract(contractDataInfo)
     val eventuallyMaybeApp =
       trustedApplicationProvider.application(contractDataInfo.contractId.value.toString())
 
-    val eventuallyHatUser = usersService.getUser(contractDataInfo.hatName.value.toString())
-
-    eventuallyHatUser.flatMap { hatUser =>
-      eventuallyMaybeDecision.flatMap { maybeDecision =>
-        eventuallyMaybeApp.flatMap { maybeApp =>
-          logger.info(s"AssessRequest: ${maybeDecision} - ${maybeApp} - ${namespace}")
-          decide(maybeDecision, maybeApp, namespace) match {
-            case Some(ns) =>
-              logger.info(s"Found a namespace: ${ns}")
-              Future.successful(
-                (Some(hatUser),
-                 Right(
-                   RequestVerified(s"Token: ${contractDataInfo.contractId}")
-                 )
+    eventuallyMaybeDecision.flatMap { maybeDecision =>
+      eventuallyMaybeApp.flatMap { maybeApp =>
+        logger.info(s"AssessRequest: ${maybeDecision} - ${maybeApp} - ${namespace}")
+        decide(maybeDecision, maybeApp, namespace) match {
+          case Some(ns) =>
+            logger.info(s"Found a namespace: ${ns}")
+            Future.successful(
+              Right(
+                RequestVerified(s"Token: ${contractDataInfo.contractId}")
+              )
+            )
+          case None =>
+            logger.error(s"def assessRequest: decide returned None - ${contractDataInfo} - ${namespace}")
+            Future.successful(
+              Left(
+                RequestValidationFailure.InvalidShortLivedToken(
+                  s"Token: ${contractDataInfo.contractId}"
                 )
               )
-            case None =>
-              logger.error(s"def assessRequest: decide returned None - ${contractDataInfo} - ${namespace}")
-              Future.successful(
-                (None,
-                 Left(
-                   RequestValidationFailure.InvalidShortLivedToken(
-                     s"Token: ${contractDataInfo.contractId}"
-                   )
-                 )
-                )
-              )
-          }
+            )
         }
       }
     } recover {
       case e =>
         logger.error(s"ContractData.assessRequest:Failure ${e}")
-        (None,
-         Left(
-           RequestValidationFailure.InvalidShortLivedToken(
-             s"Token: ${contractDataInfo.contractId}"
-           )
-         )
+        Left(
+          RequestValidationFailure.InvalidShortLivedToken(
+            s"Token: ${contractDataInfo.contractId}"
+          )
         )
     }
   }
@@ -820,9 +801,7 @@ class ContractData @Inject() (
       namespace: String): Option[String] = {
     import ContractVerificationSuccess._
 
-    logger.info(
-      s"def decide: decision: ${eitherDecision} - app: ${maybeApp} - ns: ${namespace}"
-    )
+    logger.info(s"def decide: decision: ${eitherDecision} - app: ${maybeApp} - ns: ${namespace}")
 
     (eitherDecision, maybeApp) match {
       case (Right(JwtClaimVerified(_jwtClaim @ _)), Some(app)) =>
