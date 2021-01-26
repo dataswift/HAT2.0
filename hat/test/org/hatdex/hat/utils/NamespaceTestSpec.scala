@@ -30,7 +30,8 @@ class NamespaceTestSpec extends PlaySpecification with Mockito {
       val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
       val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
 
-      readRoles == writeRoles
+      readRoles == false
+      writeRoles == false
     }
 
     "NamespaceUtils: Empty App Permission" in {
@@ -40,7 +41,8 @@ class NamespaceTestSpec extends PlaySpecification with Mockito {
       val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
       val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
 
-      readRoles == writeRoles
+      readRoles == false
+      writeRoles == false
     }
 
     "NamespaceUtils: Empty Namespace" in {
