@@ -82,32 +82,31 @@ class ContractDataSpec(implicit ee: ExecutionEnv)
     }
   }
 
-  // "The Read Contract Data method" should {
-  //   "Return an empty array for an unknown endpoint" in {
-  //     val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-  //       .withAuthenticator(owner.loginInfo)
+  "The Read Contract Data method" should {
+    "Return an empty array for an unknown endpoint" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
 
-  //     val controller = application.injector.instanceOf[RichData]
+      val controller = application.injector.instanceOf[RichData]
 
-  //     val response     = Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None), request)
-  //     val responseData = contentAsJson(response).as[Seq[EndpointData]]
-  //     responseData must beEmpty
-  //   }
-  // }
+      val response     = Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None), request)
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData must beEmpty
+    }
+  }
 
-  // "The Update Contract Data method" should {
-  //   "Return an empty array for an unknown endpoint" in {
-  //     val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-  //       .withAuthenticator(owner.loginInfo)
+  "The Update Contract Data method" should {
+    "Return an empty array for an unknown endpoint" in {
+      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+        .withAuthenticator(owner.loginInfo)
 
-  //     val controller = application.injector.instanceOf[RichData]
+      val controller = application.injector.instanceOf[RichData]
 
-  //     val response     = Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None), request)
-  //     val responseData = contentAsJson(response).as[Seq[EndpointData]]
-  //     responseData must beEmpty
-  //   }
-  // }
-
+      val response     = Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None), request)
+      val responseData = contentAsJson(response).as[Seq[EndpointData]]
+      responseData must beEmpty
+    }
+  }
 }
 
 trait ContractDataContext extends HATTestContext {
@@ -115,216 +114,4 @@ trait ContractDataContext extends HATTestContext {
     Json.parse(
       """{"token":"acf871b6-6008-11eb-ae93-0242ac130002","hatName":"contracthat","contractId":"acf871b6-6008-11eb-ae93-0242ac130002","body":{"a":"b"}}"""
     )
-
-  val simpleJson: JsValue = Json.parse("""
-      | {
-      |   "field": "value",
-      |   "date": 1492699047,
-      |   "date_iso": "2017-04-20T14:37:27+00:00",
-      |   "anotherField": "anotherFieldValue",
-      |   "object": {
-      |     "objectField": "objectFieldValue",
-      |     "objectFieldArray": ["objectFieldArray1", "objectFieldArray2", "objectFieldArray3"],
-      |     "objectFieldObjectArray": [
-      |       {"subObjectName": "subObject1", "subObjectName2": "subObject1-2"},
-      |       {"subObjectName": "subObject2", "subObjectName2": "subObject2-2"}
-      |     ]
-      |   }
-      | }
-    """.stripMargin)
-
-  val simpleJson2: JsValue = Json.parse("""
-      | {
-      |   "field": "value2",
-      |   "date": 1492799047,
-      |   "date_iso": "2017-04-21T18:24:07+00:00",
-      |   "anotherField": "anotherFieldDifferentValue",
-      |   "object": {
-      |     "objectField": "objectFieldValue",
-      |     "objectFieldArray": ["objectFieldArray1", "objectFieldArray2", "objectFieldArray3"],
-      |     "objectFieldObjectArray": [
-      |       {"subObjectName": "subObject1", "subObjectName2": "subObject1-2"},
-      |       {"subObjectName": "subObject2", "subObjectName2": "subObject2-2"}
-      |     ]
-      |   }
-      | }
-    """.stripMargin)
-
-  val complexJson: JsValue = Json.parse("""
-      | {
-      |  "birthday": "01/01/1970",
-      |  "age_range": {
-      |    "min": 18
-      |  },
-      |  "education": [
-      |    {
-      |      "school": {
-      |        "id": "123456789",
-      |        "name": "school name"
-      |      },
-      |      "type": "High School",
-      |      "year": {
-      |        "id": "123456789",
-      |        "name": "1972"
-      |      },
-      |      "id": "123456789"
-      |    },
-      |    {
-      |      "concentration": [
-      |        {
-      |          "id": "123456789",
-      |          "name": "Computer science"
-      |        }
-      |      ],
-      |      "school": {
-      |        "id": "12345678910",
-      |        "name": "university name"
-      |      },
-      |      "type": "Graduate School",
-      |      "year": {
-      |        "id": "123456889",
-      |        "name": "1973"
-      |      },
-      |      "id": "12345678910"
-      |    }
-      |  ],
-      |  "email": "email@example.com",
-      |  "hometown": {
-      |    "id": "12345678910",
-      |    "name": "london, uk"
-      |  },
-      |  "locale": "en_GB",
-      |  "id": "12345678910"
-      |}
-    """.stripMargin)
-
-  private val simpleTransformation: JsObject = Json
-    .parse("""
-      | {
-      |   "data.newField": "anotherField",
-      |   "data.arrayField": "object.objectFieldArray",
-      |   "data.onemore": "object.education[1]"
-      | }
-    """.stripMargin)
-    .as[JsObject]
-
-  private val complexTransformation: JsObject = Json
-    .parse("""
-      | {
-      |   "data.newField": "hometown.name",
-      |   "data.arrayField": "education",
-      |   "data.onemore": "education[0].type"
-      | }
-    """.stripMargin)
-    .as[JsObject]
-
-  val testEndpointQuery = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
-                              EndpointQuery("test/complex", Some(complexTransformation), None, None)
-  )
-
-  val testEndpointQueryUpdated = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
-                                     EndpointQuery("test/anothertest", None, None, None)
-  )
-
-  val testBundle = EndpointDataBundle(
-    "testBundle",
-    Map(
-      "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
-                              Some("data.newField"),
-                              None,
-                              Some(3)
-          ),
-      "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)),
-                                 Some("data.newField"),
-                                 None,
-                                 Some(1)
-          )
-    )
-  )
-
-  val failingCondition = EndpointDataBundle(
-    "testfailCondition",
-    Map(
-      "test" -> PropertyQuery(
-            List(
-              EndpointQuery("test/test",
-                            None,
-                            Some(
-                              Seq(
-                                EndpointQueryFilter("field",
-                                                    transformation = None,
-                                                    operator = FilterOperator.Contains(Json.toJson("N/A"))
-                                )
-                              )
-                            ),
-                            None
-              )
-            ),
-            Some("data.newField"),
-            None,
-            Some(3)
-          )
-    )
-  )
-
-  val matchingCondition = EndpointDataBundle(
-    "testfailCondition",
-    Map(
-      "test" -> PropertyQuery(
-            List(
-              EndpointQuery("test/test",
-                            None,
-                            Some(
-                              Seq(
-                                EndpointQueryFilter("field",
-                                                    transformation = None,
-                                                    operator = FilterOperator.Contains(Json.toJson("value"))
-                                )
-                              )
-                            ),
-                            None
-              )
-            ),
-            Some("data.newField"),
-            None,
-            Some(3)
-          )
-    )
-  )
-
-  val testBundle2 = EndpointDataBundle(
-    "testBundle2",
-    Map(
-      "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
-                              Some("data.newField"),
-                              None,
-                              Some(3)
-          ),
-      "complex" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)),
-                                 Some("data.newField"),
-                                 None,
-                                 Some(1)
-          )
-    )
-  )
-
-  val testDataDebitRequest =
-    DataDebitRequest(testBundle, None, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
-
-  val testDataDebitRequestUpdate =
-    DataDebitRequest(testBundle2, None, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
-
-  val ddRequestionConditionsFailed = DataDebitRequest(testBundle,
-                                                      Some(failingCondition),
-                                                      LocalDateTime.now(),
-                                                      LocalDateTime.now().plusDays(3),
-                                                      rolling = false
-  )
-
-  val ddRequestionConditionsFulfilled = DataDebitRequest(testBundle,
-                                                         Some(matchingCondition),
-                                                         LocalDateTime.now(),
-                                                         LocalDateTime.now().plusDays(3),
-                                                         rolling = false
-  )
 }

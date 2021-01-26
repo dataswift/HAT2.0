@@ -26,7 +26,7 @@ jobs:
           architecture: x64
 
       - name: Compile
-        run: sbt compile
+        run: sbt +compile
 
       - name: Test
         run: sbt test:compile
