@@ -238,6 +238,9 @@ class ContractData @Inject() (
               case (Some(_hatUser @ _), Right(RequestVerified(ns))) =>
                 makeData(ns, endpoint, orderBy, ordering, skip, take)
               case (_, Left(x)) => handleFailedRequestAssessment(x)
+              case (_, _) =>
+                logger.warn(s"ReadContract: Neither hatUser found or contract verified for ${contractDataRead}")
+                handleFailedRequestAssessment(GeneralError)
             }
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
@@ -258,6 +261,9 @@ class ContractData @Inject() (
               case (Some(hatUser), Right(RequestVerified(ns))) =>
                 handleCreateContractData(hatUser, contractDataCreate, ns, endpoint, skipErrors)
               case (_, Left(x)) => handleFailedRequestAssessment(x)
+              case (_, _) =>
+                logger.warn(s"Neither hatUser found or contract verified for ${contractDataCreate}")
+                handleFailedRequestAssessment(GeneralError)
             }
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
@@ -277,7 +283,9 @@ class ContractData @Inject() (
               case (Some(hatUser), Right(RequestVerified(ns))) =>
                 handleUpdateContractData(hatUser, contractDataUpdate, ns)
               case (_, Left(x)) => handleFailedRequestAssessment(x)
-              case (_, _)       => handleFailedRequestAssessment(GeneralError)
+              case (_, _) =>
+                logger.warn(s"Neither hatUser found or contract verified for ${contractDataUpdate}")
+                handleFailedRequestAssessment(GeneralError)
             }
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
