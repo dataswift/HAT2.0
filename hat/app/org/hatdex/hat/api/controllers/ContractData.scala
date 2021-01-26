@@ -215,7 +215,7 @@ class ContractData @Inject() (
           Created(Json.toJson(saved))
         } recover {
           case RichDataMissingException(message, _) =>
-            BadRequest(Json.toJson(Errors2.dataUpdateMissing(message)))
+            BadRequest(Json.toJson(ErrorsFromRichData.dataUpdateMissing(message)))
         }
     }
 
@@ -286,7 +286,7 @@ class ContractData @Inject() (
       Future.successful(BadRequest("Not Implemented."))
     }
 
-  // -- Pull this out from RichData and ContractData --
+  // -- Pull this out from RichData and ContractData - this is duplicated --
   private def makeData(
       namespace: String,
       endpoint: String,
@@ -335,19 +335,6 @@ class ContractData @Inject() (
 
   def refineContractDataUpdateRequest(req: ContractDataUpdateRequest): Option[ContractDataInfoRefined] =
     refineContractInfo(req.token, req.hatName, req.contractId)
-
-  // ** TODO this should be in a better place.
-  case class ContractRequestBodyRefined(
-      token: ShortLivedToken,
-      hatName: HatName,
-      contractId: ContractId,
-      body: Option[JsValue])
-  case class ContractRequestBody(
-      token: String,
-      hatName: String,
-      contractId: String,
-      body: Option[JsValue])
-  implicit val contractRequestBodyReads: Reads[ContractRequestBody] = Json.reads[ContractRequestBody]
 
   def contractValid(
       contract: ContractDataInfoRefined,
@@ -589,49 +576,8 @@ class ContractData @Inject() (
     }
   }
 
-  private object Errors2 {
-    def dataDebitDoesNotExist: ErrorMessage =
-      ErrorMessage("Not Found", "Data Debit with this ID does not exist")
-    def dataDebitNotFound(id: String): ErrorMessage =
-      ErrorMessage("Not Found", s"Data Debit $id not found")
-    def dataDebitNotEnabled(id: String): ErrorMessage =
-      ErrorMessage("Bad Request", s"Data Debit $id not enabled")
-    def dataDebitMalformed(err: Throwable): ErrorMessage =
-      ErrorMessage(
-        "Bad Request",
-        s"Data Debit request malformed: ${err.getMessage}"
-      )
-    def dataDebitBundleMalformed(
-        id: String,
-        err: Throwable): ErrorMessage =
-      ErrorMessage(
-        "Data Debit Bundle malformed",
-        s"Data Debit $id active bundle malformed: ${err.getMessage}"
-      )
-
-    def bundleNotFound(bundleId: String): ErrorMessage =
-      ErrorMessage("Bundle Not Found", s"Bundle $bundleId not found")
-
+  private object ErrorsFromRichData {
     def dataUpdateMissing(message: String): ErrorMessage =
       ErrorMessage("Data Missing", s"Could not update records: $message")
-    def dataDeleteMissing(message: String): ErrorMessage =
-      ErrorMessage("Data Missing", s"Could not delete records: $message")
-    def dataLinkMissing(message: String): ErrorMessage =
-      ErrorMessage("Data Missing", s"Could not link records: $message")
-
-    def dataCombinatorNotFound(combinator: String): ErrorMessage =
-      ErrorMessage("Combinator Not Found", s"Combinator $combinator not found")
-
-    def richDataDuplicate(error: Throwable): ErrorMessage =
-      ErrorMessage("Bad Request", s"Duplicate data - ${error.getMessage}")
-    def richDataError(error: Throwable): ErrorMessage =
-      ErrorMessage(
-        "Bad Request",
-        s"Could not insert data - ${error.getMessage}"
-      )
-    def forbidden(error: Throwable): ErrorMessage =
-      ErrorMessage("Forbidden", s"Access Denied - ${error.getMessage}")
-    def forbidden(message: String): ErrorMessage =
-      ErrorMessage("Forbidden", s"Access Denied - ${message}")
   }
 }
