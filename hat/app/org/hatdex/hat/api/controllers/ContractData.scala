@@ -65,6 +65,7 @@ import org.hatdex.hat.api.controllers.RequestValidationFailure._
 
 sealed trait RequestValidationFailure
 object RequestValidationFailure {
+  final case class HatNotFound(hatName: String) extends RequestValidationFailure
   final case class MissingHatName(hatName: String) extends RequestValidationFailure
   final case class InaccessibleNamespace(namespace: String) extends RequestValidationFailure
   final case class InvalidShortLivedToken(contractId: String) extends RequestValidationFailure
@@ -151,6 +152,7 @@ class ContractData @Inject() (
   // -- Error Handler
   def handleFailedRequestAssessment(failure: RequestValidationFailure): Future[Result] =
     failure match {
+      case HatNotFound(hatName)               => Future.successful(BadRequest(s"HatName not found: ${hatName}"))
       case MissingHatName(hatName)            => Future.successful(BadRequest(s"Missing HatName: ${hatName}"))
       case InaccessibleNamespace(namespace)   => Future.successful(BadRequest(s"Namespace Inaccessible: ${namespace}"))
       case InvalidShortLivedToken(contractId) => Future.successful(BadRequest(s"Invalid Token: ${contractId}"))
@@ -238,8 +240,11 @@ class ContractData @Inject() (
               case (Some(_hatUser @ _), Right(RequestVerified(ns))) =>
                 makeData(ns, endpoint, orderBy, ordering, skip, take)
               case (_, Left(x)) => handleFailedRequestAssessment(x)
+              case (None, Right(_)) =>
+                logger.warn(s"ReadContract: Hat not found for:  ${contractDataRead}")
+                handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
               case (_, _) =>
-                logger.warn(s"ReadContract: Neither hatUser found or contract verified for ${contractDataRead}")
+                logger.warn(s"ReadContract: Fallback Error case for: ${contractDataRead}")
                 handleFailedRequestAssessment(GeneralError)
             }
           }
@@ -261,8 +266,11 @@ class ContractData @Inject() (
               case (Some(hatUser), Right(RequestVerified(ns))) =>
                 handleCreateContractData(hatUser, contractDataCreate, ns, endpoint, skipErrors)
               case (_, Left(x)) => handleFailedRequestAssessment(x)
+              case (None, Right(_)) =>
+                logger.warn(s"CreateContract: Hat not found for:  ${contractDataCreate}")
+                handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
               case (_, _) =>
-                logger.warn(s"Neither hatUser found or contract verified for ${contractDataCreate}")
+                logger.warn(s"CreateContract: Fallback Error case for: ${contractDataCreate}")
                 handleFailedRequestAssessment(GeneralError)
             }
           }
@@ -283,8 +291,11 @@ class ContractData @Inject() (
               case (Some(hatUser), Right(RequestVerified(ns))) =>
                 handleUpdateContractData(hatUser, contractDataUpdate, ns)
               case (_, Left(x)) => handleFailedRequestAssessment(x)
+              case (None, Right(_)) =>
+                logger.warn(s"UpdateContract: Hat not found for:  ${contractDataUpdate}")
+                handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
               case (_, _) =>
-                logger.warn(s"Neither hatUser found or contract verified for ${contractDataUpdate}")
+                logger.warn(s"UpdateContract: Fallback Error case for:  ${contractDataUpdate}")
                 handleFailedRequestAssessment(GeneralError)
             }
           }
