@@ -26,12 +26,15 @@ jobs:
           architecture: x64
 
       - name: Compile
-        run: sbt compile
+        run: sbt +compile
 
-      - name: Test
+      - name: Test:Compile
         run: sbt test:compile
 
-      # - name: Coverage
+      - name: Test
+        run: sbt +test -Dconfig.file=hat/conf/application.test.conf
+
+      # - name: Coverage - off until we re-add Coverage
       #   run: sbt "project hat" coverage test -Dconfig.file=hat/conf/application.test.conf
 
       - name: Build
