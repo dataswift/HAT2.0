@@ -62,6 +62,7 @@ import play.api.libs.json.Reads
 import org.hatdex.hat.NamespaceUtils.NamespaceUtils
 import org.joda.time.{ DateTime, Duration, LocalDateTime }
 import org.hatdex.hat.api.controllers.RequestValidationFailure._
+import doobie.util.log
 
 sealed trait RequestValidationFailure
 object RequestValidationFailure {
@@ -263,8 +264,8 @@ class ContractData @Inject() (
         case Some(contractDataInfo) =>
           contractValid(contractDataInfo, namespace).flatMap { contractOk =>
             contractOk match {
-              case (Some(hatUser), Right(RequestVerified(ns))) =>
-                handleCreateContractData(hatUser, contractDataCreate, ns, endpoint, skipErrors)
+              case (Some(hatUser), Right(RequestVerified(_ns))) =>
+                handleCreateContractData(hatUser, contractDataCreate, namespace, endpoint, skipErrors)
               case (_, Left(x)) => handleFailedRequestAssessment(x)
               case (None, Right(_)) =>
                 logger.warn(s"CreateContract: Hat not found for:  ${contractDataCreate}")
@@ -367,6 +368,7 @@ class ContractData @Inject() (
     )(implicit hatServer: HatServer): Future[Result] = {
     val values =
       array.value.map(EndpointData(dataEndpoint, None, None, None, _, None))
+    logger.info(s"handleJsArray: Values: ${values}")
     dataService
       .saveData(userId, values, skipErrors.getOrElse(false))
       .map(saved => Created(Json.toJson(saved)))
@@ -378,6 +380,7 @@ class ContractData @Inject() (
       dataEndpoint: String
     )(implicit hatServer: HatServer): Future[Result] = {
     val values = Seq(EndpointData(dataEndpoint, None, None, None, value, None))
+    logger.info(s"handleJsArray: Values: ${values}")
     dataService
       .saveData(userId, values)
       .map(saved => Created(Json.toJson(saved.head)))
