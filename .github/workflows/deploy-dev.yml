@@ -1,16 +1,16 @@
-name: Deploy Staging
+name: Deploy Dev
 
 on:
   workflow_dispatch:
   push:
     branches:
       - dev
+      - improve-build
 
 env:
-  APP_ENV: prod
-  RUMPEL: sandbox
+  RUMPEL: live
   RUMPEL_ALT: latest
-  RUMPEL_BUCKET: dswift-hat-sandbox-frontend-build-artifacts
+  RUMPEL_BUCKET: dswift-hat-stage-frontend-build-artifacts
   REPOSITORY: dataswift/hat
 
 jobs:
@@ -33,8 +33,8 @@ jobs:
 
       - name: Frontend
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOYER_SANDBOX_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYER_SANDBOX_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOYER_STAGING_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYER_STAGING_SECRET_ACCESS_KEY }}
         run: |
           cd ./hat/app/org/hatdex/hat/phata/assets/
           aws s3 cp s3://${{ env.RUMPEL_BUCKET }}/${{ env.RUMPEL }} rumpel --recursive
@@ -50,7 +50,7 @@ jobs:
 
       - name: Build
         run: |
-          sbt -Denv=${{ env.APP_ENV }} -Dhttp.port=8080 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null docker:stage
+          sbt -Denv=prod -Dhttp.port=8080 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null docker:stage
           docker build -t ${{ env.REPOSITORY }}:${{ github.sha }} hat/target/docker/stage
 
       - name: Container Registry - Login
