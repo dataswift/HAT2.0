@@ -205,7 +205,7 @@ class ContractData @Inject() (
     contractDataUpdate.body.length match {
       // Missing Json Body, do nothing, return error
       case 0 =>
-        logger.error(s"saveContractData included no json body - ns:${namespace}")
+        logger.error(s"updateContractData included no json body - ns:${namespace}")
         Future.successful(NotFound)
       // There is a Json body, process either an JsArray or a JsValue
       case _ =>
@@ -276,8 +276,6 @@ class ContractData @Inject() (
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
       }
-
-      Future.successful(BadRequest("Not Implemented."))
     }
 
   def updateContractData(namespace: String): Action[ContractDataUpdateRequest] =
@@ -301,11 +299,8 @@ class ContractData @Inject() (
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
       }
-
-      Future.successful(BadRequest("Not Implemented."))
     }
 
-  // -- Pull this out from RichData and ContractData - this is duplicated --
   private def makeData(
       namespace: String,
       endpoint: String,
