@@ -20,8 +20,7 @@ class NamespaceTestSpec extends PlaySpecification with Mockito {
       val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
       val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
 
-      readRoles == true
-      writeRoles == true
+      readRoles == writeRoles
     }
 
     "NamespaceUtils: Disallow the incorrect namespace" in {

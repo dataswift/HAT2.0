@@ -6,7 +6,7 @@ on:
     branches-ignore:
       - main
       - dev
-    
+
 jobs:
   build:
     name: Build
@@ -25,17 +25,18 @@ jobs:
           java-package: jdk
           architecture: x64
 
-      - name: Clean
-        run: sbt clean
-
       - name: Compile
         run: sbt +compile
 
-      - name: Test - Compile 
-        run: sbt +test:compile
+      - name: Test:Compile
+        run: sbt test:compile
 
-      # - name: Test
-      #   run: sbt +test
+      - name: Test
+        run: sbt +test -Dconfig.file=hat/conf/application.test.conf
+
+      # - name: Coverage - off until we re-add Coverage
+      #   run: sbt "project hat" coverage test -Dconfig.file=hat/conf/application.test.conf
 
       - name: Build
         run: sbt docker:stage && docker build hat/target/docker/stage
+   
