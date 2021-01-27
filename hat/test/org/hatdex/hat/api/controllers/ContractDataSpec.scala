@@ -49,69 +49,60 @@ class ContractDataSpec(implicit ee: ExecutionEnv)
 
   val logger = Logger(this.getClass)
 
-  import org.hatdex.hat.api.json.RichDataJsonFormats._
-
   sequential
 
   def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
 
-  override def before: Unit = {
-    import org.hatdex.hat.dal.Tables._
-    import org.hatdex.libs.dal.HATPostgresProfile.api._
-    val action = DBIO.seq()
-    Await.result(hatDatabase.run(action), 60.seconds)
-  }
-
   "The Save Contract method" should {
-    "Save a single record" in {
+    "Return 400 on an empty request" in {
       val request = FakeRequest("POST", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
-        .withJsonBody(saveContractJson)
+        .withJsonBody(emptyRequestBody)
 
       val controller = application.injector.instanceOf[ContractData]
 
       val response = for {
-        _ <- Helpers.call(controller.createContractData("testnamespace", "testendpoint", None), request)
-        r <- Helpers.call(controller.readContractData("testnamespace", "testendpoint", None, None, None, None), request)
+        _ <- Helpers.call(controller.createContractData("samplecontract", "testendpoint", None), request)
+        r <-
+          Helpers.call(controller.readContractData("samplecontract", "testendpoint", None, None, None, None), request)
       } yield r
 
-      val responseData = contentAsJson(response).as[Seq[EndpointData]]
-      responseData.length must beEqualTo(1)
-      responseData.head.data must be equalTo saveContractJson
+      val res = Await.result(response, 5.seconds)
+      res.header.status must beEqualTo(400)
     }
   }
 
   "The Read Contract Data method" should {
-    "Return an empty array for an unknown endpoint" in {
+    "Return 400 on an empty request" in {
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(emptyRequestBody)
 
-      val controller = application.injector.instanceOf[RichData]
+      val controller = application.injector.instanceOf[ContractData]
 
-      val response     = Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None), request)
-      val responseData = contentAsJson(response).as[Seq[EndpointData]]
-      responseData must beEmpty
+      val response =
+        Helpers.call(controller.readContractData("samplecontract", "testendpoint", None, None, None, None), request)
+
+      val res = Await.result(response, 5.seconds)
+      res.header.status must beEqualTo(400)
     }
   }
 
   "The Update Contract Data method" should {
-    "Return an empty array for an unknown endpoint" in {
+    "Return 400 on an empty request" in {
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
+        .withJsonBody(emptyRequestBody)
 
-      val controller = application.injector.instanceOf[RichData]
+      val controller = application.injector.instanceOf[ContractData]
 
-      val response     = Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None), request)
-      val responseData = contentAsJson(response).as[Seq[EndpointData]]
-      responseData must beEmpty
+      val response =
+        Helpers.call(controller.readContractData("samplecontract", "testendpoint", None, None, None, None), request)
+
+      val res = Await.result(response, 5.seconds)
+      res.header.status must beEqualTo(400)
     }
   }
 }
 
 trait ContractDataContext extends HATTestContext {
-  val saveContractJson: JsValue =
-    Json.parse(
-      """{"token":"acf871b6-6008-11eb-ae93-0242ac130002","hatName":"contracthat","contractId":"acf871b6-6008-11eb-ae93-0242ac130002","body":{"a":"b"}}"""
-    )
+  val emptyRequestBody: JsValue = Json.parse("""{"token":"", "contractId":"", "hatName":"","body":""}""")
 }
