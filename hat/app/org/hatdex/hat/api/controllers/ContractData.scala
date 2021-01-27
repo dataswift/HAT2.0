@@ -205,7 +205,7 @@ class ContractData @Inject() (
     contractDataUpdate.body.length match {
       // Missing Json Body, do nothing, return error
       case 0 =>
-        logger.error(s"saveContractData included no json body - ns:${namespace}")
+        logger.error(s"updateContractData included no json body - ns:${namespace}")
         Future.successful(NotFound)
       // There is a Json body, process either an JsArray or a JsValue
       case _ =>
@@ -263,8 +263,8 @@ class ContractData @Inject() (
         case Some(contractDataInfo) =>
           contractValid(contractDataInfo, namespace).flatMap { contractOk =>
             contractOk match {
-              case (Some(hatUser), Right(RequestVerified(ns))) =>
-                handleCreateContractData(hatUser, contractDataCreate, ns, endpoint, skipErrors)
+              case (Some(hatUser), Right(RequestVerified(_ns))) =>
+                handleCreateContractData(hatUser, contractDataCreate, namespace, endpoint, skipErrors)
               case (_, Left(x)) => handleFailedRequestAssessment(x)
               case (None, Right(_)) =>
                 logger.warn(s"CreateContract: Hat not found for:  ${contractDataCreate}")
@@ -276,8 +276,6 @@ class ContractData @Inject() (
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
       }
-
-      Future.successful(BadRequest("Not Implemented."))
     }
 
   def updateContractData(namespace: String): Action[ContractDataUpdateRequest] =
@@ -301,11 +299,8 @@ class ContractData @Inject() (
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
       }
-
-      Future.successful(BadRequest("Not Implemented."))
     }
 
-  // -- Pull this out from RichData and ContractData - this is duplicated --
   private def makeData(
       namespace: String,
       endpoint: String,
@@ -372,6 +367,7 @@ class ContractData @Inject() (
     )(implicit hatServer: HatServer): Future[Result] = {
     val values =
       array.value.map(EndpointData(dataEndpoint, None, None, None, _, None))
+    logger.info(s"handleJsArray: Values: ${values}")
     dataService
       .saveData(userId, values, skipErrors.getOrElse(false))
       .map(saved => Created(Json.toJson(saved)))
@@ -383,6 +379,7 @@ class ContractData @Inject() (
       dataEndpoint: String
     )(implicit hatServer: HatServer): Future[Result] = {
     val values = Seq(EndpointData(dataEndpoint, None, None, None, value, None))
+    logger.info(s"handleJsArray: Values: ${values}")
     dataService
       .saveData(userId, values)
       .map(saved => Created(Json.toJson(saved.head)))
