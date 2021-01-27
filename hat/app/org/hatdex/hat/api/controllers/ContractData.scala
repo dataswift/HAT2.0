@@ -62,10 +62,6 @@ import play.api.libs.json.Reads
 import org.hatdex.hat.NamespaceUtils.NamespaceUtils
 import org.joda.time.{ DateTime, Duration, LocalDateTime }
 import org.hatdex.hat.api.controllers.RequestValidationFailure._
-<<<<<<< HEAD
-import doobie.util.log
-=======
->>>>>>> dev
 
 sealed trait RequestValidationFailure
 object RequestValidationFailure {
@@ -209,11 +205,7 @@ class ContractData @Inject() (
     contractDataUpdate.body.length match {
       // Missing Json Body, do nothing, return error
       case 0 =>
-<<<<<<< HEAD
         logger.error(s"updateContractData included no json body - ns:${namespace}")
-=======
-        logger.error(s"saveContractData included no json body - ns:${namespace}")
->>>>>>> dev
         Future.successful(NotFound)
       // There is a Json body, process either an JsArray or a JsValue
       case _ =>
@@ -271,13 +263,8 @@ class ContractData @Inject() (
         case Some(contractDataInfo) =>
           contractValid(contractDataInfo, namespace).flatMap { contractOk =>
             contractOk match {
-<<<<<<< HEAD
               case (Some(hatUser), Right(RequestVerified(_ns))) =>
                 handleCreateContractData(hatUser, contractDataCreate, namespace, endpoint, skipErrors)
-=======
-              case (Some(hatUser), Right(RequestVerified(ns))) =>
-                handleCreateContractData(hatUser, contractDataCreate, ns, endpoint, skipErrors)
->>>>>>> dev
               case (_, Left(x)) => handleFailedRequestAssessment(x)
               case (None, Right(_)) =>
                 logger.warn(s"CreateContract: Hat not found for:  ${contractDataCreate}")
@@ -289,11 +276,6 @@ class ContractData @Inject() (
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
       }
-<<<<<<< HEAD
-=======
-
-      Future.successful(BadRequest("Not Implemented."))
->>>>>>> dev
     }
 
   def updateContractData(namespace: String): Action[ContractDataUpdateRequest] =
@@ -317,16 +299,8 @@ class ContractData @Inject() (
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
       }
-<<<<<<< HEAD
     }
 
-=======
-
-      Future.successful(BadRequest("Not Implemented."))
-    }
-
-  // -- Pull this out from RichData and ContractData - this is duplicated --
->>>>>>> dev
   private def makeData(
       namespace: String,
       endpoint: String,
