@@ -7,7 +7,7 @@
 
 ## Releases
 
-The current project version is 2.6.9: [HAT 2.6.9](https://github.com/Hub-of-all-Things/HAT2.0/releases/tag/v2.6.9).
+The current project version is [here](https://github.com/dataswift/HAT2.0/releases).
 
 ## About the project
 
