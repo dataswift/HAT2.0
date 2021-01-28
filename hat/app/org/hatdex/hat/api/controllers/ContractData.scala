@@ -237,8 +237,8 @@ class ContractData @Inject() (
         case Some(contractDataInfo) =>
           contractValid(contractDataInfo, namespace).flatMap { contractOk =>
             contractOk match {
-              case (Some(_hatUser @ _), Right(RequestVerified(ns))) =>
-                makeData(ns, endpoint, orderBy, ordering, skip, take)
+              case (Some(_hatUser @ _), Right(RequestVerified(_ns @ _))) =>
+                makeData(namespace, endpoint, orderBy, ordering, skip, take)
               case (_, Left(x)) => handleFailedRequestAssessment(x)
               case (None, Right(_)) =>
                 logger.warn(s"ReadContract: Hat not found for:  ${contractDataRead}")
