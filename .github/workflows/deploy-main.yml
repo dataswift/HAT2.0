@@ -1,4 +1,4 @@
-name: Deploy Sandbox
+name: Deploy Main
 
 on:
   push:
@@ -6,8 +6,7 @@ on:
       - main
 
 env:
-  APP_ENV: prod
-  RUMPEL: sandbox
+  RUMPEL: live
   RUMPEL_ALT: latest
   RUMPEL_BUCKET: dswift-hat-sandbox-frontend-build-artifacts
   REPOSITORY: dataswift/hat
@@ -49,7 +48,7 @@ jobs:
 
       - name: Build
         run: |
-          sbt -Denv=${{ env.APP_ENV }} -Dhttp.port=8080 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null docker:stage
+          sbt -Denv=prod -Dhttp.port=8080 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null docker:stage
           docker build -t ${{ env.REPOSITORY }}:${{ github.sha }} hat/target/docker/stage
 
       - name: Container Registry - Login
