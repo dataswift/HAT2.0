@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/Hub-of-all-Things/HAT2.0.svg?branch=master)](https://travis-ci.org/Hub-of-all-Things/HAT2.0)
+[![Build Status](https://travis-ci.org/Hub-of-all-Things/HAT2.0.svg?branch=master)](https://travis-ci.org/Hub-of-all-Things/HAT2.0)[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fdataswift%2FHAT2.0.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fdataswift%2FHAT2.0?ref=badge_shield)
+
 <!--[![Coverage Status](https://coveralls.io/repos/Hub-of-all-Things/HAT2.0/badge.svg?branch=master&service=github)](https://coveralls.io/github/Hub-of-all-Things/HAT2.0?branch=master)-->
 
 # [Hub of All Things](https://hubofallthings.com)
@@ -153,3 +154,6 @@ We have put together a [docker-compose](https://docs.docker.com/compose/) file t
 ## License
 
 HAT including HAT Schema and API is licensed under [AGPL - GNU AFFERO GENERAL PUBLIC LICENSE](https://github.com/Hub-of-all-Things/HAT/blob/master/LICENSE/AGPL)
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fdataswift%2FHAT2.0.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fdataswift%2FHAT2.0?ref=badge_large)
