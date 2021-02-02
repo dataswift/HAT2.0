@@ -48,7 +48,9 @@ lazy val hat = project
           Library.circeConfig,
           Library.ContractLibrary.adjudicator,
           Library.Utils.apacheCommonLang,
-          Library.Prometheus.filter
+          Library.Prometheus.filter,
+          Library.Prometheus.client,
+          Library.Akka.akkaStream
         ),
     libraryDependencies := (buildEnv.value match {
           case BuildEnv.Developement | BuildEnv.Test =>
@@ -57,7 +59,8 @@ lazy val hat = project
                   Library.Specs2.core,
                   Library.Specs2.matcherExtra,
                   Library.Specs2.mock,
-                  Library.Play.Silhouette.silhouetteTestkit
+                  Library.Play.Silhouette.silhouetteTestkit,
+                  Library.Test.common
                 )
           case BuildEnv.Stage | BuildEnv.Production =>
             libraryDependencies.value.map(excludeSpecs2)

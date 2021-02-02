@@ -110,7 +110,25 @@ object Dependencies {
     }
 
     object Prometheus {
+      val client = "io.prometheus"              % "simpleclient"            % "0.9.0"
       val filter = "io.github.jyllands-posten" %% "play-prometheus-filters" % "0.6.1"
+    }
+
+    object Test {
+      private val version = "0.1.3"
+      val common          = "io.dataswift" %% "test-common"             % version
+      val integration     = "io.dataswift" %% "integration-test-common" % version
+    }
+
+    object Akka {
+      private val version = "2.6.5"
+      val slf4j           = "com.typesafe.akka" %% "akka-slf4j"      % version
+      val httpCore        = "com.typesafe.akka" %% "akka-http-core"  % "10.1.12"
+      val sslConfig       = "com.typesafe"      %% "ssl-config-akka" % "0.2.3"
+      val akkaStream      = "com.typesafe.akka" %% "akka-stream"     % version
+      val akkaActor       = "com.typesafe.akka" %% "akka-actor"      % version
+      val akkaTestkit     = "com.typesafe.akka" %% "akka-testkit"    % version
+      val akkaProtoBuf    = "com.typesafe.akka" %% "akka-protobuf"   % version
     }
 
   }
