@@ -50,10 +50,10 @@ object Dependencies {
       val test        = "com.typesafe.play" %% "play-test"         % version
       val specs2      = "com.typesafe.play" %% "play-specs2"       % version
       val jdbc        = "com.typesafe.play" %% "play-jdbc"         % version
-      val json        = "com.typesafe.play" %% "play-json"         % "2.6.14"
-      val jsonJoda    = "com.typesafe.play" %% "play-json-joda"    % "2.6.14"
-      val mailer      = "com.typesafe.play" %% "play-mailer"       % "6.0.1"
-      val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
+      val json        = "com.typesafe.play" %% "play-json"         % "2.9.2"
+      val jsonJoda    = "com.typesafe.play" %% "play-json-joda"    % "2.9.2"
+      val mailer      = "com.typesafe.play" %% "play-mailer"       % "8.0.1"
+      val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "8.0.1"
 
       val htmlCompressor = "com.mohiva"          %% "play-html-compressor" % "0.6.3"
       val playGuard      = "com.digitaltangible" %% "play-guard"           % "2.2.0"
@@ -116,12 +116,13 @@ object Dependencies {
 
     object Test {
       private val version = "0.1.3"
-      val common          = "io.dataswift" %% "test-common"             % version
-      val integration     = "io.dataswift" %% "integration-test-common" % version
+      val common          = "io.dataswift"           %% "test-common"             % version
+      val integration     = "io.dataswift"           %% "integration-test-common" % version
+      val scalatestplus   = "org.scalatestplus.play" %% "scalatestplus-play"      % "5.1.0"
     }
 
     object Akka {
-      private val version = "2.6.5"
+      private val version = "2.5.25"
       val slf4j           = "com.typesafe.akka" %% "akka-slf4j"      % version
       val httpCore        = "com.typesafe.akka" %% "akka-http-core"  % "10.1.12"
       val sslConfig       = "com.typesafe"      %% "ssl-config-akka" % "0.2.3"

@@ -1,20 +1,9 @@
 package org.hatdex.hat.filters
 
-//import java.util.concurrent.TimeUnit
-
 import scala.concurrent.{ Await, ExecutionContextExecutor, Future }
-
 import akka.actor.ActorSystem
-import akka.stream.Materializer
-//import akka.stream.{ ActorMaterializer, Materializer }
-//import akka.util.Timeout
-//import com.typesafe.config.ConfigFactory
 import io.dataswift.test.common.BaseSpec
-//import org.scalamock.scalatest.MockFactory
 import play.api.Configuration
-//import play.api.http.Status
-//import play.api.libs.json.Json
-//import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import play.api.routing.Router
@@ -26,18 +15,17 @@ import com.github.stijndehaes.playprometheusfilters.filters.{
 }
 import play.api.libs.typedmap.TypedMap
 import play.api.routing.HandlerDef
-//import com.github.stijndehaes.playprometheusfilters.controllers.PrometheusController
-
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.mvc.{ AbstractController, ControllerComponents }
-import javax.inject.Inject
-//import com.github.stijndehaes.playprometheusfilters.metrics.LatencyRequestMetric
 
-class PrometheusFiltersSpec extends BaseSpec {
+import javax.inject.Inject
+
+class PrometheusFiltersSpec extends BaseSpec with GuiceOneAppPerSuite {
 
   implicit val ec: ExecutionContextExecutor = scala.concurrent.ExecutionContext.global
   implicit val system: ActorSystem          = ActorSystem()
-  implicit val materializer: Materializer   = Materializer.matFromSystem(system)
   private val configuration                 = mock[Configuration]
+  implicit private val materializer         = app.materializer
 
   "LatencyFilter" should "Measure the latency" in {
     // I needed to have an independnt collector per test, otherwise they complain about having duplicate labels.
@@ -65,7 +53,7 @@ class PrometheusFiltersSpec extends BaseSpec {
     val expectedVerb             = "GET"
     val expectedLatencyBucket    = "0.005"
 
-    // I needed to have an independnt collector per test, otherwise they complain about having duplicate labels.
+    // I needed to have an independnt collector per test, otherwise they complain about having duplicate labels.
     val registryTwo = new CollectorRegistry(true)
     val promFilter  = new StatusAndRouteLatencyFilter(registryTwo, configuration)
     val fakeRequest = FakeRequest().withAttrs(
@@ -94,7 +82,7 @@ class PrometheusFiltersSpec extends BaseSpec {
   }
 
   "StatusCounterFilter" should "Count the requests with status" in {
-    // I needed to have an independnt collector per test, otherwise they complain about having duplicate labels.
+    // I needed to have an independnt collector per test, otherwise they complain about having duplicate labels.
     val registryThree = new CollectorRegistry(true)
     val promFilter    = new StatusCounterFilter(registryThree, configuration)
     val fakeRequest   = FakeRequest()

@@ -60,7 +60,8 @@ lazy val hat = project
                   Library.Specs2.matcherExtra,
                   Library.Specs2.mock,
                   Library.Play.Silhouette.silhouetteTestkit,
-                  Library.Test.common
+                  Library.Test.common,
+                  Library.Test.scalatestplus
                 )
           case BuildEnv.Stage | BuildEnv.Production =>
             libraryDependencies.value.map(excludeSpecs2)

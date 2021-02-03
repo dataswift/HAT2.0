@@ -52,10 +52,7 @@ class HatDataStatsProcessorSpec extends PlaySpecification with Mockito with HatD
   "The `computeInboundStats` method" should {
     "Correctly count numbers of values for simple objects" in {
       val service = application.injector.instanceOf[HatDataStatsProcessor]
-      val stats = service.computeInboundStats(simpleDataCreatedEvent)
-
-      import org.hatdex.hat.api.json.DataStatsFormat._
-      logger.debug(s"Got back stats: ${Json.prettyPrint(Json.toJson(stats))}")
+      val stats   = service.computeInboundStats(simpleDataCreatedEvent)
 
       stats.logEntry must be equalTo "test item"
       stats.statsType must be equalTo "inbound"
@@ -82,9 +79,8 @@ trait HatDataStatsProcessorContext extends Scope {
   val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
 
   class ExtrasModule extends AbstractModule with ScalaModule {
-    override def configure(): Unit = {
+    override def configure(): Unit =
       bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(Seq()))
-    }
   }
 
   lazy val application: Application = new GuiceApplicationBuilder()
@@ -94,8 +90,7 @@ trait HatDataStatsProcessorContext extends Scope {
 
   implicit lazy val materializer: Materializer = application.materializer
 
-  val simpleJson: JsValue = Json.parse(
-    """
+  val simpleJson: JsValue = Json.parse("""
       | {
       |   "field": "value",
       |   "date": 1492699047,
@@ -115,7 +110,8 @@ trait HatDataStatsProcessorContext extends Scope {
   val simpleDataCreatedEvent = DataCreatedEvent(
     "testhat.hubofallthings.net",
     ModelTranslation.fromInternalModel(owner).clean,
-    DateTime.now(), "test item",
-    Seq(
-      EndpointData("testendpoint", Option(UUID.randomUUID()), None, None, simpleJson, None)))
+    DateTime.now(),
+    "test item",
+    Seq(EndpointData("testendpoint", Option(UUID.randomUUID()), None, None, simpleJson, None))
+  )
 }
