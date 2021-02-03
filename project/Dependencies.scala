@@ -119,6 +119,7 @@ object Dependencies {
       val common          = "io.dataswift"           %% "test-common"             % version
       val integration     = "io.dataswift"           %% "integration-test-common" % version
       val scalatestplus   = "org.scalatestplus.play" %% "scalatestplus-play"      % "5.1.0"
+      val mockito         = "org.mockito"             % "mockito-core"            % "3.3.3"
     }
 
     object Akka {
@@ -132,5 +133,8 @@ object Dependencies {
       val akkaProtoBuf    = "com.typesafe.akka" %% "akka-protobuf"   % version
     }
 
+    object Janino {
+      val core = "org.codehaus.janino" % "janino" % "3.1.2"
+    }
   }
 }

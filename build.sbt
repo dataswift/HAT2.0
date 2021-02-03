@@ -50,7 +50,7 @@ lazy val hat = project
           Library.Utils.apacheCommonLang,
           Library.Prometheus.filter,
           Library.Prometheus.client,
-          Library.Akka.akkaStream
+          Library.Janino.core
         ),
     libraryDependencies := (buildEnv.value match {
           case BuildEnv.Developement | BuildEnv.Test =>
@@ -61,13 +61,12 @@ lazy val hat = project
                   Library.Specs2.mock,
                   Library.Play.Silhouette.silhouetteTestkit,
                   Library.Test.common,
-                  Library.Test.scalatestplus
+                  Library.Test.scalatestplus,
+                  Library.Test.mockito
                 )
           case BuildEnv.Stage | BuildEnv.Production =>
             libraryDependencies.value.map(excludeSpecs2)
         }),
-    libraryDependencies += "org.codehaus.janino" % "janino"       % "3.1.2",
-    libraryDependencies += "org.mockito"         % "mockito-core" % "3.3.3" % Test,
     pipelineStages in Assets := Seq(digest),
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     aggregate in update := false,
