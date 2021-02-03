@@ -82,3 +82,6 @@ GET           /she/static/$endpoint<[0-9a-z-/]+>                                
 POST          /contract-data/read/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>              org.hatdex.hat.api.controllers.ContractData.readContractData(namespace, endpoint, orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
 POST          /contract-data/create/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>            org.hatdex.hat.api.controllers.ContractData.createContractData(namespace, endpoint, skipErrors: Option[Boolean])
 PUT           /contract-data/update/$namespace<[0-9a-z-]+>                                   org.hatdex.hat.api.controllers.ContractData.updateContractData(namespace)
+
+# Metrics
+GET           /metrics                                                                       com.github.stijndehaes.playprometheusfilters.controllers.PrometheusController.getMetrics
