@@ -35,8 +35,8 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
         run: |
           cd ./hat/app/org/hatdex/hat/phata/assets/
-          aws s3 cp s3://${{ env.RUMPEL_BUCKET }}/${{ env.RUMPEL }} rumpel --recursive
-          aws s3 cp s3://${{ env.RUMPEL_BUCKET }}/${{ env.RUMPEL_ALT }} alt-rumpel --recursive
+          aws s3 cp s3://${{ env.RUMPEL_BUCKET }}/${{ env.RUMPEL }} rumpel --recursive --region eu-west-1
+          aws s3 cp s3://${{ env.RUMPEL_BUCKET }}/${{ env.RUMPEL_ALT }} alt-rumpel --recursive --region eu-west-1
           cp rumpel/*.js* js/
           cp rumpel/*.css stylesheets/
           gzip --keep --force js/*.bundle.js
