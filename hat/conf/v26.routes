@@ -84,4 +84,5 @@ POST          /contract-data/create/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+
 PUT           /contract-data/update/$namespace<[0-9a-z-]+>                                   org.hatdex.hat.api.controllers.ContractData.updateContractData(namespace)
 
 # Metrics
-GET           /metrics                                                                       com.github.stijndehaes.playprometheusfilters.controllers.PrometheusController.getMetrics
+# Hide for now
+# GET           /metrics                                                                       com.github.stijndehaes.playprometheusfilters.controllers.PrometheusController.getMetrics
