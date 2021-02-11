@@ -186,10 +186,11 @@ class ApplicationsServiceSpec(implicit ee: ExecutionEnv)
       val service = application.injector.instanceOf[ApplicationsService]
       val result = for {
         app <- service.applicationStatus(notablesAppExternalFailing.id)
-        _ <- service.setup(app.get)
+        appSetupResponse <- service.setup(app.get)
         setup <- service.applicationStatus(notablesAppExternalFailing.id)
       } yield {
         setup must beSome
+        appSetupResponse.setup must beTrue
         setup.get.setup must beTrue
         setup.get.active must beFalse
       }
