@@ -16,6 +16,7 @@ import play.api.libs.typedmap.TypedMap
 import play.api.routing.HandlerDef
 import play.api.mvc.{ AbstractController, ControllerComponents }
 import javax.inject.Inject
+import scala.collection.JavaConverters._
 
 class PrometheusFiltersSpec extends PlaySpecification with Mockito {
   implicit val system       = ActorSystem()
@@ -50,7 +51,8 @@ class PrometheusFiltersSpec extends PlaySpecification with Mockito {
       val expectedControllerName   = "promController"
       val expectedPath             = "/path"
       val expectedVerb             = "GET"
-      val listOfMatches            = List(expectedMethod, expectedStatus, expectedControllerName, expectedPath, expectedVerb)
+      val listOfMatches            = java.util.Arrays.asList(expectedMethod, expectedStatus, expectedControllerName, expectedPath, expectedVerb)
+
 
       val promFilter = new StatusAndRouteLatencyFilter(mock[CollectorRegistry])
       val fakeRequest = FakeRequest().withAttrs(
