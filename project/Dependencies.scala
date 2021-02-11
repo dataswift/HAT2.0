@@ -110,7 +110,7 @@ object Dependencies {
     }
 
     object Prometheus {
-      val filters = "com.github.stijndehaes" %% "play-prometheus-filters" % "0.4.0"
+      val filters = "com.github.stijndehaes" %% "play-prometheus-filters" % "0.5.0"
     }
 
   }
