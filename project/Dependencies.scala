@@ -109,5 +109,9 @@ object Dependencies {
       val adjudicator = "io.dataswift" %% "adjudicatorlib" % Versions.adjudicator
     }
 
+    object Prometheus {
+      val filters = "com.github.stijndehaes" %% "play-prometheus-filters" % "0.4.0"
+    }
+
   }
 }

@@ -47,7 +47,8 @@ lazy val hat = project
           Library.scalaGuice,
           Library.circeConfig,
           Library.ContractLibrary.adjudicator,
-          Library.Utils.apacheCommonLang
+          Library.Utils.apacheCommonLang,
+          Library.Prometheus.filters
         ),
     libraryDependencies := (buildEnv.value match {
           case BuildEnv.Developement | BuildEnv.Test =>
