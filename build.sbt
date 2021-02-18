@@ -53,11 +53,15 @@ lazy val hat = project
     libraryDependencies := (buildEnv.value match {
           case BuildEnv.Developement | BuildEnv.Test =>
             libraryDependencies.value ++ Seq(
-                  Library.Play.specs2,
-                  Library.Specs2.core,
-                  Library.Specs2.matcherExtra,
-                  Library.Specs2.mock,
-                  Library.Play.Silhouette.silhouetteTestkit
+                  Library.Play.Silhouette.silhouetteTestkit,
+                  Library.Test.scalatest,
+                  Library.Test.scalatestwordspec,
+                  Library.Test.scalaplaytest,
+                  Library.Test.scalaplaytestmock,
+                  Library.TestContainers.postgresql,
+                  Library.TestContainers.localstack,
+                  Library.TestContainers.scalaTest,
+                  Library.Dataswift.testCommon
                 )
           case BuildEnv.Stage | BuildEnv.Production =>
             libraryDependencies.value.map(excludeSpecs2)
