@@ -1,45 +1,45 @@
-// /*
-//  * Copyright (C) 2017 HAT Data Exchange Ltd
-//  * SPDX-License-Identifier: AGPL-3.0
-//  *
-//  * This file is part of the Hub of All Things project (HAT).
-//  *
-//  * HAT is free software: you can redistribute it and/or modify
-//  * it under the terms of the GNU Affero General Public License
-//  * as published by the Free Software Foundation, version 3 of
-//  * the License.
-//  *
-//  * HAT is distributed in the hope that it will be useful, but
-//  * WITHOUT ANY WARRANTY; without even the implied warranty of
-//  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
-//  * the GNU Affero General Public License for more details.
-//  *
-//  * You should have received a copy of the GNU Affero General
-//  * Public License along with this program. If not, see
-//  * <http://www.gnu.org/licenses/>.
-//  *
-//  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
-//  * 5 / 2017
-//  */
+/*
+ * Copyright (C) 2017 HAT Data Exchange Ltd
+ * SPDX-License-Identifier: AGPL-3.0
+ *
+ * This file is part of the Hub of All Things project (HAT).
+ *
+ * HAT is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, version 3 of
+ * the License.
+ *
+ * HAT is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+ * the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General
+ * Public License along with this program. If not, see
+ * <http://www.gnu.org/licenses/>.
+ *
+ * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
+ * 5 / 2017
+ */
 
-// package org.hatdex.hat.api.service.richData
+package org.hatdex.hat.api.service.richData
 
-// import java.util.UUID
+import java.util.UUID
 
-// import akka.stream.scaladsl.Sink
-// import org.hatdex.hat.api.HATTestContext
-// import org.hatdex.hat.api.models._
-// import org.hatdex.hat.dal.Tables.{ DataJson, DataJsonGroups }
-// import org.hatdex.libs.dal.HATPostgresProfile.api._
-// import org.specs2.concurrent.ExecutionEnv
-// import org.specs2.mock.Mockito
-// import org.specs2.specification.{ BeforeAll, BeforeEach }
-// import play.api.Logger
-// import play.api.libs.json.{ JsObject, JsValue, Json }
-// import play.api.test.PlaySpecification
+import akka.stream.scaladsl.Sink
+import org.hatdex.hat.api.HATTestContext
+import org.hatdex.hat.api.models._
+import org.hatdex.hat.dal.Tables.{ DataJson, DataJsonGroups }
+import org.hatdex.libs.dal.HATPostgresProfile.api._
+import org.specs2.concurrent.ExecutionEnv
+import org.specs2.mock.Mockito
+import org.specs2.specification.{ BeforeAll, BeforeEach }
+import play.api.Logger
+import play.api.libs.json.{ JsObject, JsValue, Json }
+import play.api.test.PlaySpecification
 
-// import scala.concurrent.duration._
-// import scala.concurrent.{ Await, Future }
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
 
 // class RichDataStreamingServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichDataServiceContext with BeforeEach with BeforeAll {
 //   val logger = Logger(this.getClass)
@@ -729,145 +729,152 @@
 //   }
 // }
 
-// trait RichDataServiceContext extends HATTestContext {
-//   val simpleJson: JsValue = Json.parse(
-//     """
-//       | {
-//       |   "field": "value",
-//       |   "testUniqueID": "1234567",
-//       |   "date": 1492699047,
-//       |   "date_ms": 1492699047000,
-//       |   "date_iso": "2017-04-20T14:37:27+00:00",
-//       |   "anotherField": "anotherFieldValue",
-//       |   "object": {
-//       |     "objectField": "objectFieldValue",
-//       |     "nestedInfo": {
-//       |       "deeplyLocatedUniqueId": "7654321"
-//       |     },
-//       |     "objectFieldArray": ["objectFieldArray1", "objectFieldArray2", "objectFieldArray3"],
-//       |     "objectFieldObjectArray": [
-//       |       {"subObjectName": "subObject1", "subObjectName2": "subObject1-2"},
-//       |       {"subObjectName": "subObject2", "subObjectName2": "subObject2-2"}
-//       |     ]
-//       |   }
-//       | }
-//     """.stripMargin)
+trait RichDataServiceContext extends HATTestContext {
+  val simpleJson: JsValue = Json.parse("""
+      | {
+      |   "field": "value",
+      |   "testUniqueID": "1234567",
+      |   "date": 1492699047,
+      |   "date_ms": 1492699047000,
+      |   "date_iso": "2017-04-20T14:37:27+00:00",
+      |   "anotherField": "anotherFieldValue",
+      |   "object": {
+      |     "objectField": "objectFieldValue",
+      |     "nestedInfo": {
+      |       "deeplyLocatedUniqueId": "7654321"
+      |     },
+      |     "objectFieldArray": ["objectFieldArray1", "objectFieldArray2", "objectFieldArray3"],
+      |     "objectFieldObjectArray": [
+      |       {"subObjectName": "subObject1", "subObjectName2": "subObject1-2"},
+      |       {"subObjectName": "subObject2", "subObjectName2": "subObject2-2"}
+      |     ]
+      |   }
+      | }
+    """.stripMargin)
 
-//   val simpleJsonFragment: JsValue = Json.parse(
-//     """
-//       | {
-//       |     "objectField": "objectFieldValue",
-//       |     "objectFieldObjectArray": [
-//       |       {"subObjectName": "subObject1", "subObjectName2": "subObject1-2"},
-//       |       {"subObjectName": "subObject2", "subObjectName2": "subObject2-2"}
-//       |     ]
-//       | }
-//     """.stripMargin)
+  val simpleJsonFragment: JsValue = Json.parse("""
+      | {
+      |     "objectField": "objectFieldValue",
+      |     "objectFieldObjectArray": [
+      |       {"subObjectName": "subObject1", "subObjectName2": "subObject1-2"},
+      |       {"subObjectName": "subObject2", "subObjectName2": "subObject2-2"}
+      |     ]
+      | }
+    """.stripMargin)
 
-//   val simpleJson2: JsValue = Json.parse(
-//     """
-//       | {
-//       |   "field": "value2",
-//       |   "date": 1492799048,
-//       |   "date_iso": "2017-04-21T18:24:07+00:00",
-//       |   "anotherField": "anotherFieldDifferentValue",
-//       |   "object": {
-//       |     "objectField": "objectFieldValue",
-//       |     "objectFieldArray": ["objectFieldArray1", "objectFieldArray2", "objectFieldArray3"],
-//       |     "objectFieldObjectArray": [
-//       |       {"subObjectName": "subObject1", "subObjectName2": "subObject1-2"},
-//       |       {"subObjectName": "subObject2", "subObjectName2": "subObject2-2"}
-//       |     ]
-//       |   }
-//       | }
-//     """.stripMargin)
+  val simpleJson2: JsValue = Json.parse("""
+      | {
+      |   "field": "value2",
+      |   "date": 1492799048,
+      |   "date_iso": "2017-04-21T18:24:07+00:00",
+      |   "anotherField": "anotherFieldDifferentValue",
+      |   "object": {
+      |     "objectField": "objectFieldValue",
+      |     "objectFieldArray": ["objectFieldArray1", "objectFieldArray2", "objectFieldArray3"],
+      |     "objectFieldObjectArray": [
+      |       {"subObjectName": "subObject1", "subObjectName2": "subObject1-2"},
+      |       {"subObjectName": "subObject2", "subObjectName2": "subObject2-2"}
+      |     ]
+      |   }
+      | }
+    """.stripMargin)
 
-//   val simpleJson2Updated = Json.parse(
-//     """
-//       | {
-//       |   "field": "value2",
-//       |   "date": 1492799048,
-//       |   "date_iso": "2017-04-21T18:24:07+00:00",
-//       |   "anotherField": "aaa",
-//       |   "differentField": "new"
-//       | }
-//     """.stripMargin)
+  val simpleJson2Updated = Json.parse("""
+      | {
+      |   "field": "value2",
+      |   "date": 1492799048,
+      |   "date_iso": "2017-04-21T18:24:07+00:00",
+      |   "anotherField": "aaa",
+      |   "differentField": "new"
+      | }
+    """.stripMargin)
 
-//   val complexJson: JsValue = Json.parse(
-//     """
-//       | {
-//       |  "birthday": "01/01/1970",
-//       |  "age_range": {
-//       |    "min": 18
-//       |  },
-//       |  "education": [
-//       |    {
-//       |      "school": {
-//       |        "id": "123456789",
-//       |        "name": "school name"
-//       |      },
-//       |      "type": "High School",
-//       |      "year": {
-//       |        "id": "123456789",
-//       |        "name": "1972"
-//       |      },
-//       |      "id": "123456789"
-//       |    },
-//       |    {
-//       |      "concentration": [
-//       |        {
-//       |          "id": "123456789",
-//       |          "name": "Computer science"
-//       |        }
-//       |      ],
-//       |      "school": {
-//       |        "id": "12345678910",
-//       |        "name": "university name"
-//       |      },
-//       |      "type": "Graduate School",
-//       |      "year": {
-//       |        "id": "123456889",
-//       |        "name": "1973"
-//       |      },
-//       |      "id": "12345678910"
-//       |    }
-//       |  ],
-//       |  "email": "email@example.com",
-//       |  "hometown": {
-//       |    "id": "12345678910",
-//       |    "name": "london, uk"
-//       |  },
-//       |  "locale": "en_GB",
-//       |  "id": "12345678910"
-//       |}
-//     """.stripMargin)
+  val complexJson: JsValue = Json.parse("""
+      | {
+      |  "birthday": "01/01/1970",
+      |  "age_range": {
+      |    "min": 18
+      |  },
+      |  "education": [
+      |    {
+      |      "school": {
+      |        "id": "123456789",
+      |        "name": "school name"
+      |      },
+      |      "type": "High School",
+      |      "year": {
+      |        "id": "123456789",
+      |        "name": "1972"
+      |      },
+      |      "id": "123456789"
+      |    },
+      |    {
+      |      "concentration": [
+      |        {
+      |          "id": "123456789",
+      |          "name": "Computer science"
+      |        }
+      |      ],
+      |      "school": {
+      |        "id": "12345678910",
+      |        "name": "university name"
+      |      },
+      |      "type": "Graduate School",
+      |      "year": {
+      |        "id": "123456889",
+      |        "name": "1973"
+      |      },
+      |      "id": "12345678910"
+      |    }
+      |  ],
+      |  "email": "email@example.com",
+      |  "hometown": {
+      |    "id": "12345678910",
+      |    "name": "london, uk"
+      |  },
+      |  "locale": "en_GB",
+      |  "id": "12345678910"
+      |}
+    """.stripMargin)
 
-//   val simpleTransformation: JsObject = Json.parse(
-//     """
-//       | {
-//       |   "data.newField": "anotherField",
-//       |   "data.arrayField": "object.objectFieldArray",
-//       |   "data.onemore": "object.education[1]"
-//       | }
-//     """.stripMargin).as[JsObject]
+  val simpleTransformation: JsObject = Json
+    .parse("""
+      | {
+      |   "data.newField": "anotherField",
+      |   "data.arrayField": "object.objectFieldArray",
+      |   "data.onemore": "object.education[1]"
+      | }
+    """.stripMargin)
+    .as[JsObject]
 
-//   val complexTransformation: JsObject = Json.parse(
-//     """
-//       | {
-//       |   "data.newField": "hometown.name",
-//       |   "data.arrayField": "education",
-//       |   "data.onemore": "education[0].type"
-//       | }
-//     """.stripMargin).as[JsObject]
+  val complexTransformation: JsObject = Json
+    .parse("""
+      | {
+      |   "data.newField": "hometown.name",
+      |   "data.arrayField": "education",
+      |   "data.onemore": "education[0].type"
+      | }
+    """.stripMargin)
+    .as[JsObject]
 
-//   val sampleData = List(
-//     EndpointData("test/test", None, None, None, simpleJson, None),
-//     EndpointData("test/test", None, None, None, simpleJson2, None),
-//     EndpointData("test/complex", None, None, None, complexJson, None))
+  val sampleData = List(
+    EndpointData("test/test", None, None, None, simpleJson, None),
+    EndpointData("test/test", None, None, None, simpleJson2, None),
+    EndpointData("test/complex", None, None, None, complexJson, None)
+  )
 
-//   val linkedSampleData = List(
-//     EndpointData("test/test", None, None, None, simpleJson,
-//       Some(List(
-//         EndpointData("test/testlinked", None, None, None, simpleJson2, None),
-//         EndpointData("test/complex", None, None, None, complexJson, None)))))
-// }
+  val linkedSampleData = List(
+    EndpointData(
+      "test/test",
+      None,
+      None,
+      None,
+      simpleJson,
+      Some(
+        List(EndpointData("test/testlinked", None, None, None, simpleJson2, None),
+             EndpointData("test/complex", None, None, None, complexJson, None)
+        )
+      )
+    )
+  )
+}
