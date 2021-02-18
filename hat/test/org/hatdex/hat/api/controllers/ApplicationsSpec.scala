@@ -71,9 +71,9 @@ class ApplicationsSpec extends BaseSpec with BeforeAndAfter with ApplicationsSer
     contentAsJson(result).validate[Seq[HatApplication]].isSuccess must equal(true)
     val apps = contentAsJson(result).as[Seq[HatApplication]]
     apps.length must equal(8)
-    // apps.find(_.application.id == notablesApp.id) must beSome
-    // apps.find(_.application.id == notablesAppDebitless.id) must beSome
-    // apps.find(_.application.id == notablesAppIncompatible.id) must beSome
+    apps.find(_.application.id == notablesApp.id) === Some
+    apps.find(_.application.id == notablesAppDebitless.id) === Some
+    apps.find(_.application.id == notablesAppIncompatible.id) === Some
   }
 
   // "The `applicationStatus` method" should "Return status of a single application" in {
