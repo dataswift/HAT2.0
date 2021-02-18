@@ -39,7 +39,6 @@ import io.dataswift.test.common.BaseSpec
 import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import play.api.test.Helpers
 import play.api.test.Helpers._
-import org.hatdex.hat.api.HATTestContext
 
 class EndpointSubscriberServiceSpec
     extends BaseSpec

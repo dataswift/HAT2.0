@@ -1,40 +1,40 @@
-// /*
-//  * Copyright (C) 2017 HAT Data Exchange Ltd
-//  * SPDX-License-Identifier: AGPL-3.0
-//  *
-//  * This file is part of the Hub of All Things project (HAT).
-//  *
-//  * HAT is free software: you can redistribute it and/or modify
-//  * it under the terms of the GNU Affero General Public License
-//  * as published by the Free Software Foundation, version 3 of
-//  * the License.
-//  *
-//  * HAT is distributed in the hope that it will be useful, but
-//  * WITHOUT ANY WARRANTY; without even the implied warranty of
-//  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
-//  * the GNU Affero General Public License for more details.
-//  *
-//  * You should have received a copy of the GNU Affero General
-//  * Public License along with this program. If not, see
-//  * <http://www.gnu.org/licenses/>.
-//  *
-//  * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
-//  * 5 / 2017
-//  */
+/*
+ * Copyright (C) 2017 HAT Data Exchange Ltd
+ * SPDX-License-Identifier: AGPL-3.0
+ *
+ * This file is part of the Hub of All Things project (HAT).
+ *
+ * HAT is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, version 3 of
+ * the License.
+ *
+ * HAT is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+ * the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General
+ * Public License along with this program. If not, see
+ * <http://www.gnu.org/licenses/>.
+ *
+ * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
+ * 5 / 2017
+ */
 
-// package org.hatdex.hat.api.service.richData
+package org.hatdex.hat.api.service.richData
 
-// import org.hatdex.hat.api.HATTestContext
-// import org.hatdex.hat.api.models._
-// import org.specs2.concurrent.ExecutionEnv
-// import org.specs2.mock.Mockito
-// import org.specs2.specification.{ BeforeAll, BeforeEach }
-// import play.api.Logger
-// import play.api.libs.json.{ JsObject, Json }
-// import play.api.test.PlaySpecification
+import org.hatdex.hat.api.HATTestContext
+import org.hatdex.hat.api.models._
+import org.specs2.concurrent.ExecutionEnv
+import org.specs2.mock.Mockito
+import org.specs2.specification.{ BeforeAll, BeforeEach }
+import play.api.Logger
+import play.api.libs.json.{ JsObject, Json }
+import play.api.test.PlaySpecification
 
-// import scala.concurrent.Await
-// import scala.concurrent.duration._
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 // class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichBundleServiceContext with BeforeEach with BeforeAll {
 
@@ -215,46 +215,96 @@
 
 // }
 
-// trait RichBundleServiceContext extends HATTestContext {
-//   protected val simpleTransformation: JsObject = Json.parse(
-//     """
-//       | {
-//       |   "data.newField": "anotherField",
-//       |   "data.arrayField": "object.objectFieldArray",
-//       |   "data.onemore": "object.education[1]"
-//       | }
-//     """.stripMargin).as[JsObject]
+trait RichBundleServiceContext extends HATTestContext {
+  protected val simpleTransformation: JsObject = Json
+    .parse("""
+      | {
+      |   "data.newField": "anotherField",
+      |   "data.arrayField": "object.objectFieldArray",
+      |   "data.onemore": "object.education[1]"
+      | }
+    """.stripMargin)
+    .as[JsObject]
 
-//   protected val complexTransformation: JsObject = Json.parse(
-//     """
-//       | {
-//       |   "data.newField": "hometown.name",
-//       |   "data.arrayField": "education",
-//       |   "data.onemore": "education[0].type"
-//       | }
-//     """.stripMargin).as[JsObject]
+  protected val complexTransformation: JsObject = Json
+    .parse("""
+      | {
+      |   "data.newField": "hometown.name",
+      |   "data.arrayField": "education",
+      |   "data.onemore": "education[0].type"
+      | }
+    """.stripMargin)
+    .as[JsObject]
 
-//   val testEndpointQuery = Seq(
-//     EndpointQuery("test/test", Some(simpleTransformation), None, None),
-//     EndpointQuery("test/complex", Some(complexTransformation), None, None))
+  val testEndpointQuery = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+                              EndpointQuery("test/complex", Some(complexTransformation), None, None)
+  )
 
-//   val testEndpointQueryUpdated = Seq(
-//     EndpointQuery("test/test", Some(simpleTransformation), None, None),
-//     EndpointQuery("test/anothertest", None, None, None))
+  val testEndpointQueryUpdated = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+                                     EndpointQuery("test/anothertest", None, None, None)
+  )
 
-//   val testBundle = EndpointDataBundle("testBundle", Map(
-//     "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-//     "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
+  val testBundle = EndpointDataBundle(
+    "testBundle",
+    Map(
+      "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                              Some("data.newField"),
+                              None,
+                              Some(3)
+          ),
+      "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)),
+                                 Some("data.newField"),
+                                 None,
+                                 Some(1)
+          )
+    )
+  )
 
-//   val testBundle2 = EndpointDataBundle("testBundle2", Map(
-//     "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-//     "complex" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)), Some("data.newField"), None, Some(1))))
+  val testBundle2 = EndpointDataBundle(
+    "testBundle2",
+    Map(
+      "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                              Some("data.newField"),
+                              None,
+                              Some(3)
+          ),
+      "complex" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)),
+                                 Some("data.newField"),
+                                 None,
+                                 Some(1)
+          )
+    )
+  )
 
-//   val conditionsBundle = EndpointDataBundle("testConditionsBundle", Map(
-//     "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-//     "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
+  val conditionsBundle = EndpointDataBundle(
+    "testConditionsBundle",
+    Map(
+      "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                              Some("data.newField"),
+                              None,
+                              Some(3)
+          ),
+      "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)),
+                                 Some("data.newField"),
+                                 None,
+                                 Some(1)
+          )
+    )
+  )
 
-//   val conditionsBundle2 = EndpointDataBundle("testConditionsBundle2", Map(
-//     "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-//     "complex" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)), Some("data.newField"), None, Some(1))))
-// }
+  val conditionsBundle2 = EndpointDataBundle(
+    "testConditionsBundle2",
+    Map(
+      "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                              Some("data.newField"),
+                              None,
+                              Some(3)
+          ),
+      "complex" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)),
+                                 Some("data.newField"),
+                                 None,
+                                 Some(1)
+          )
+    )
+  )
+}
