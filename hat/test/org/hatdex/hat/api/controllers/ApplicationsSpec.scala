@@ -32,7 +32,7 @@ import org.hatdex.hat.api.models.{ AccessToken, ErrorMessage }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import play.api.libs.json.{ JsObject, JsString }
 import play.api.Logger
-import play.api.test.{ FakeRequest, PlaySpecification }
+import play.api.test.{ FakeRequest }
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -44,8 +44,6 @@ import play.api.test.Helpers._
 class ApplicationsSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with ApplicationsServiceContext {
 
   val logger = Logger(this.getClass)
-
-  //sequential
 
   override def beforeAll() =
     Await.result(databaseReady, 60.seconds)
