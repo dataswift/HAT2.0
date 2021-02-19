@@ -102,7 +102,7 @@ class PhataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll 
   //     .withAuthenticator(LoginInfo("xing", "comedian@watchmen.com"))
 
   //   val controller = application.injector.instanceOf[Phata]
-  //   val result     = databaseReady.flatMap(_ => controller.launcher().apply(request))
+  //   val result     = Helpers.call(controller.profile, request)
 
   //   status(result) must equal(UNAUTHORIZED)
   // }
@@ -112,11 +112,11 @@ class PhataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll 
   //     .withAuthenticator(owner.loginInfo)
 
   //   val controller = application.injector.instanceOf[Phata]
-  //   val result     = databaseReady.flatMap(_ => controller.launcher().apply(request))
+  //   val result     = Helpers.call(controller.profile, request)
 
   //   status(result) must equal(OK)
-  //   contentAsString(result) must contain("MarketSquare")
-  //   contentAsString(result) must contain("Rumpel")
+  //   //contentAsString(result) must contain("MarketSquare")
+  //   //contentAsString(result) must contain("Rumpel")
   // }
 }
 

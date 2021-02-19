@@ -51,8 +51,8 @@ class PrometheusFiltersSpec extends PlaySpecification with Mockito {
       val expectedControllerName   = "promController"
       val expectedPath             = "/path"
       val expectedVerb             = "GET"
-      val listOfMatches            = java.util.Arrays.asList(expectedMethod, expectedStatus, expectedControllerName, expectedPath, expectedVerb)
-
+      val listOfMatches =
+        java.util.Arrays.asList(expectedMethod, expectedStatus, expectedControllerName, expectedPath, expectedVerb)
 
       val promFilter = new StatusAndRouteLatencyFilter(mock[CollectorRegistry])
       val fakeRequest = FakeRequest().withAttrs(
