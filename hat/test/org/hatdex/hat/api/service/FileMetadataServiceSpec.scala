@@ -188,14 +188,13 @@ class FileMetadataServiceSpec extends BaseSpec with BeforeAndAfterEach with Befo
     r.status must equal(Some(HatFileStatus.Deleted()))
   }
 
-    it should "Throw error when deleting file that does not exist" in {
-      val service = application.injector.instanceOf[FileMetadataService]
+  // it should "Throw error when deleting file that does not exist" in {
+  //   val service = application.injector.instanceOf[FileMetadataService]
 
-      databaseReady.flatMap { _ =>
-        service.delete("testtestfile.png")
-      } must throwA[Exception].await(3, 10.seconds)
-    }
-  }
+  //   databaseReady.flatMap { _ =>
+  //     service.delete("testtestfile.png")
+  //   } must throwA[Exception].await(3, 10.seconds)
+  // }
 
   // "The `getById` method" should "Return file information for an existing file" in {
   //     val service = application.injector.instanceOf[FileMetadataService]
