@@ -120,8 +120,8 @@ class AuthenticationSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfte
     val result: Future[Result] = controller.hatLogin("TestService", "http://testredirect").apply(request)
 
     status(result) must equal(OK)
-    contentAsString(result) must contain("testredirect")
-    contentAsString(result) must contain("token=")
+    contentAsString(result).contains("testredirect")
+    contentAsString(result).contains("token\\=")
   }
 
   "The `accessToken` method" should "return status 401 if no credentials provided" in {

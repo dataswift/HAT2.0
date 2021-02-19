@@ -196,44 +196,45 @@ class FileMetadataServiceSpec extends BaseSpec with BeforeAndAfterEach with Befo
   //   } must throwA[Exception].await(3, 10.seconds)
   // }
 
-  // "The `getById` method" should "Return file information for an existing file" in {
-  //     val service = application.injector.instanceOf[FileMetadataService]
-  //     val file = ApiHatFile(Some("testtestfile.png"),
-  //                           "testFile.png",
-  //                           "test",
-  //                           None,
-  //                           None,
-  //                           None,
-  //                           None,
-  //                           None,
-  //                           None,
-  //                           Some(HatFileStatus.New()),
-  //                           None,
-  //                           None
-  //     )
+  "The `getById` method" should "Return file information for an existing file" in {
+    val service = application.injector.instanceOf[FileMetadataService]
+    val file = ApiHatFile(Some("testtestfile.png"),
+                          "testFile.png",
+                          "test",
+                          None,
+                          None,
+                          None,
+                          None,
+                          None,
+                          None,
+                          Some(HatFileStatus.New()),
+                          None,
+                          None
+    )
 
-  //     val saved = service.save(file)
+    val saved = service.save(file)
 
-  //     saved flatMap { savedFile =>
-  //       service.getById("testtestfile.png")
-  //     } map { foundFile =>
-  //       foundFile must not be empty
-  //       foundFile.get.fileId === "testtestfile.png"
-  //     } await (3, 10.seconds)
-  //   }
+    saved flatMap { savedFile =>
+      service.getById("testtestfile.png")
+    } map { foundFile =>
+      foundFile must not be empty
+      foundFile.get.fileId === "testtestfile.png"
+    }
+    Await.result(saved, 10.seconds)
+  }
 
-  // it should  "Return `None` for file that does not exist" in {
-  //     val service = application.injector.instanceOf[FileMetadataService]
-  //     service.getById("testtestfile.png") must beNone.await(3, 10.seconds)
-  //   }
-  // }
+  it should "Return `None` for file that does not exist" in {
+    val service = application.injector.instanceOf[FileMetadataService]
+    service.getById("testtestfile.png") === None
+  }
 
-  // "The `search` method" should "Return empty list when no files exist" in {
-  //     val service = application.injector.instanceOf[FileMetadataService]
-  //     val found   = service.search(ApiHatFile(None, "", "", None, None, None, None, None, None, None, None, None))
+  "The `search` method" should "Return empty list when no files exist" in {
+    val service = application.injector.instanceOf[FileMetadataService]
+    val found   = service.search(ApiHatFile(None, "", "", None, None, None, None, None, None, None, None, None))
 
-  //     found must haveSize[Seq[ApiHatFile]](0).await(3, 10.seconds)
-  //   }
+    //found must haveSize[Seq[ApiHatFile]](0).await(3, 10.seconds)
+    fail()
+  }
 
   // it should  "Look up a single file by Id" in {
   //     val service = application.injector.instanceOf[FileMetadataService]
