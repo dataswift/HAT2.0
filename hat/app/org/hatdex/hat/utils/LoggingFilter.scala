@@ -25,12 +25,13 @@
 package org.hatdex.hat.utils
 
 import javax.inject.{ Inject, Singleton }
+
+import scala.concurrent.ExecutionContext
+
 import akka.stream.Materializer
 import io.dataswift.log.Component
 import io.dataswift.log.play.Slf4jLoggingFilter
 import play.api.Configuration
-
-import scala.concurrent.ExecutionContext
 
 @Singleton
 class ActiveHatCounter() {

@@ -24,21 +24,16 @@
 
 package org.hatdex.hat.api.controllers
 
-import com.mohiva.play.silhouette.test._
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 import org.hatdex.hat.api.HATTestContext
-import io.dataswift.models.hat._
-import org.hatdex.hat.api.service.richData.{ DataDebitContractService, RichDataService }
-import org.joda.time.LocalDateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
-import play.api.libs.json.{ JsArray, JsObject, JsValue, Json }
-import play.api.mvc.Result
+import play.api.libs.json.{ JsValue, Json }
 import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
-
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
 
 class ContractDataSpec(implicit ee: ExecutionEnv)
     extends PlaySpecification

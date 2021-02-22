@@ -24,14 +24,14 @@
 
 package org.hatdex.hat.api.service
 
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import org.hatdex.hat.api.HATTestContext
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import play.api.Logger
 import play.api.test.PlaySpecification
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
 
 class FileManagerS3Spec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with FileManagerContext {
 

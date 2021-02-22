@@ -26,11 +26,11 @@ package org.hatdex.hat.resourceManagement
 
 import java.util.UUID
 
+import scala.concurrent.duration._
+
 import org.hatdex.hat.resourceManagement.models.{ DatabaseInstance, DatabaseServer, HatKeys, HatSignup }
 import org.joda.time.DateTime
 import play.api.test.PlaySpecification
-
-import scala.concurrent.duration._
 
 class HatDatabaseProviderSpec extends PlaySpecification with HatServerProviderContext {
   "The `signupDatabaseConfig` method" should {

@@ -24,10 +24,13 @@
 
 package org.hatdex.hat.api.controllers
 
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
-import org.hatdex.hat.api.HATTestContext
 import io.dataswift.models.hat._
+import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.service._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -36,9 +39,6 @@ import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
-
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
 
 class FilesSpec(implicit ee: ExecutionEnv)
     extends PlaySpecification

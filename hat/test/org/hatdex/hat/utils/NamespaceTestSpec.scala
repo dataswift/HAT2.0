@@ -1,11 +1,10 @@
 package org.hatdex.hat.utils
 
+import io.dataswift.models.hat.{ NamespaceRead, NamespaceWrite, UserRole }
+import org.hatdex.hat.NamespaceUtils._
 import org.specs2.mock.Mockito
 import play.api.Logger
 import play.api.test.{ PlaySpecification }
-
-import io.dataswift.models.hat.{ NamespaceRead, NamespaceWrite, UserRole }
-import org.hatdex.hat.NamespaceUtils._
 
 class NamespaceTestSpec extends PlaySpecification with Mockito {
 

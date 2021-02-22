@@ -24,6 +24,9 @@
 
 package org.hatdex.hat.she.controllers
 
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+
 import akka.util
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
@@ -38,9 +41,6 @@ import org.specs2.specification.BeforeAfterAll
 import play.api.Logger
 import play.api.mvc.Result
 import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
-
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
 
 class FunctionManagerSpec(implicit ee: ExecutionEnv)
     extends PlaySpecification

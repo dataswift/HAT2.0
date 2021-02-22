@@ -3,20 +3,17 @@ package com.github.stijndehaes.playprometheusfilters.filters
 
 /* Test cases based on the archived project: https://github.com/stijndehaes/play-prometheus-filters */
 
-import org.specs2.mock.Mockito
-import play.api.test.{ FakeRequest, PlaySpecification }
+import javax.inject.Inject
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import io.prometheus.client.CollectorRegistry
+import org.specs2.mock.Mockito
+import play.api.libs.typedmap.TypedMap
 import play.api.mvc._
+import play.api.routing.{ HandlerDef, Router }
 import play.api.test.Helpers._
 import play.api.test._
-import play.api.routing.Router
-import io.prometheus.client.CollectorRegistry
-import play.api.libs.typedmap.TypedMap
-import play.api.routing.HandlerDef
-import play.api.mvc.{ AbstractController, ControllerComponents }
-import javax.inject.Inject
-import scala.collection.JavaConverters._
 
 class PrometheusFiltersSpec extends PlaySpecification with Mockito {
   implicit val system       = ActorSystem()

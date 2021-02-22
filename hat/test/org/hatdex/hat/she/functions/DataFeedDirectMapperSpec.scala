@@ -24,6 +24,9 @@
 
 package org.hatdex.hat.she.functions
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 import io.dataswift.models.hat.FilterOperator.Between
 import org.hatdex.hat.she.mappers._
 import org.joda.time.{ DateTime, DateTimeUtils }
@@ -31,9 +34,6 @@ import org.specs2.mock.Mockito
 import org.specs2.specification.BeforeAfterAll
 import play.api.Logger
 import play.api.test.PlaySpecification
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
 
 class DataFeedDirectMapperSpec
     extends PlaySpecification

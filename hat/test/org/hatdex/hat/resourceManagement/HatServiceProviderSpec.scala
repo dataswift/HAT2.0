@@ -24,6 +24,8 @@
 
 package org.hatdex.hat.resourceManagement
 
+import scala.concurrent.duration._
+
 import com.google.inject.{ AbstractModule, Provides }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.FakeCache
@@ -39,8 +41,6 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.test.{ FakeRequest, PlaySpecification }
 import play.api.{ Application, Logger }
-
-import scala.concurrent.duration._
 
 class HatServiceProviderSpec(implicit ee: ExecutionEnv) extends PlaySpecification with HatServerProviderContext {
 

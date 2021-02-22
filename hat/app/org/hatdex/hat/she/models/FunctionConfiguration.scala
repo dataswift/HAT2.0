@@ -26,8 +26,8 @@ package org.hatdex.hat.she.models
 
 import java.util.UUID
 
-import io.dataswift.models.hat.json.{ ApplicationJsonProtocol, DataFeedItemJsonProtocol, RichDataJsonFormats }
 import io.dataswift.models.hat.applications._
+import io.dataswift.models.hat.json.{ ApplicationJsonProtocol, DataFeedItemJsonProtocol, RichDataJsonFormats }
 import io.dataswift.models.hat.{ EndpointData, EndpointDataBundle, FormattedText }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataBundlesRow, SheFunctionRow, SheFunctionStatusRow }

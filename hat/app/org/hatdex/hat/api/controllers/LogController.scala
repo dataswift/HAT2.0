@@ -1,17 +1,19 @@
 package org.hatdex.hat.api.controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-import io.dataswift.models.hat.json.HatJsonFormats
+
+import scala.util.Try
+
+import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat._
+import io.dataswift.models.hat.json.HatJsonFormats
+import io.dataswift.models.hat.json.LogRequestFormats._
 import org.hatdex.hat.api.service.{ LogService, RemoteExecutionContext }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.utils.HatBodyParsers
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{ Action, ControllerComponents }
-import scala.util.Try
-import io.dataswift.models.hat.json.LogRequestFormats._
 
 class LogController @Inject() (
     components: ControllerComponents,

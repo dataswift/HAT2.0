@@ -24,20 +24,20 @@
 
 package org.hatdex.hat.api.controllers
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 import com.mohiva.play.silhouette.test._
-import org.hatdex.hat.api.service.applications.ApplicationsServiceContext
-import io.dataswift.models.hat.json.ApplicationJsonProtocol
 import io.dataswift.models.hat.applications.{ Application, HatApplication }
+import io.dataswift.models.hat.json.ApplicationJsonProtocol
 import io.dataswift.models.hat.{ AccessToken, ErrorMessage }
+import org.hatdex.hat.api.service.applications.ApplicationsServiceContext
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
-import play.api.libs.json.{ JsObject, JsString }
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
+import play.api.libs.json.{ JsObject, JsString }
 import play.api.test.{ FakeRequest, PlaySpecification }
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
 
 class ApplicationsSpec
     extends PlaySpecification

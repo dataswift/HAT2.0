@@ -28,9 +28,8 @@ import java.util.UUID
 
 import akka.stream.Materializer
 import com.google.inject.AbstractModule
-import io.dataswift.models.hat.InboundDataStats
+import io.dataswift.models.hat.{ EndpointData, InboundDataStats, Owner }
 import net.codingwell.scalaguice.ScalaModule
-import io.dataswift.models.hat.{ EndpointData, Owner }
 import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.DataCreatedEvent
 import org.hatdex.hat.authentication.models.HatUser

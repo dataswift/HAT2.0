@@ -24,6 +24,9 @@
 
 package org.hatdex.hat.api.service.richData
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 import io.dataswift.models.hat._
 import org.joda.time.LocalDateTime
 import org.specs2.concurrent.ExecutionEnv
@@ -31,9 +34,6 @@ import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
 import play.api.test.PlaySpecification
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
 
 class DataDebitContractServiceSpec(implicit ee: ExecutionEnv)
     extends PlaySpecification

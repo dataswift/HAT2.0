@@ -24,18 +24,18 @@
 
 package org.hatdex.hat.api.controllers
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 import com.mohiva.play.silhouette.test._
-import org.hatdex.hat.api.HATTestContext
 import io.dataswift.models.hat.json.HatJsonFormats
 import io.dataswift.models.hat.{ HatStatus, StatusKind }
+import org.hatdex.hat.api.HATTestContext
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.BeforeAll
 import play.api.Logger
 import play.api.test.{ FakeRequest, PlaySpecification }
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
 
 class SystemStatusSpec(implicit ee: ExecutionEnv)
     extends PlaySpecification

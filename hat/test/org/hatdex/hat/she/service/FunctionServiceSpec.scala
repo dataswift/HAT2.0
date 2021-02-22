@@ -24,6 +24,9 @@
 
 package org.hatdex.hat.she.service
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 import io.dataswift.models.hat.EndpointQuery
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
@@ -33,9 +36,6 @@ import org.specs2.mock.Mockito
 import org.specs2.specification.BeforeAfterAll
 import play.api.Logger
 import play.api.test.PlaySpecification
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
 
 class FunctionServiceSpec(implicit ee: ExecutionEnv)
     extends PlaySpecification

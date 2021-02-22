@@ -27,6 +27,9 @@ package org.hatdex.hat.api
 import java.io.StringReader
 import java.util.UUID
 
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+
 import akka.Done
 import akka.stream.Materializer
 import com.amazonaws.services.s3.AmazonS3
@@ -35,9 +38,9 @@ import com.google.inject.name.Named
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette, SilhouetteProvider }
 import com.mohiva.play.silhouette.test._
+import io.dataswift.models.hat.{ DataCredit, DataDebitOwner, Owner }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.FakeCache
-import io.dataswift.models.hat.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
@@ -51,13 +54,10 @@ import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
-import play.api.i18n.{ Lang, Messages, MessagesApi }
+import play.api.i18n.{ Lang, MessagesApi }
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{ Application, Configuration, Logger }
 import play.cache.NamedCacheImpl
-
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
 
 trait HATTestContext extends Scope with Mockito {
   import scala.concurrent.ExecutionContext.Implicits.global

@@ -24,9 +24,12 @@
 
 package org.hatdex.hat.phata.controllers
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 import com.mohiva.play.silhouette.test._
-import org.hatdex.hat.api.HATTestContext
 import io.dataswift.models.hat.EndpointData
+import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -34,9 +37,6 @@ import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
 
 class PhataSpec(implicit ee: ExecutionEnv)
     extends PlaySpecification

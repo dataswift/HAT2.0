@@ -26,15 +26,17 @@ package org.hatdex.hat.api.controllers
 
 import java.util.UUID
 
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
 import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, JWTRS256AuthenticatorSettings }
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.test._
-import org.hatdex.hat.api.HATTestContext
 import io.dataswift.models.hat.DataDebitOwner
+import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.service._
-import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, ApiValidationRequest, MailTokenUser }
 import org.hatdex.hat.resourceManagement.HatServer
 import org.joda.time.DateTime
@@ -42,14 +44,11 @@ import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.BeforeAll
 import play.api.Logger
-import play.api.i18n.{ Lang, Messages, MessagesApi }
+import play.api.i18n.{ Lang, MessagesApi }
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Result
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers, PlaySpecification }
 import play.mvc.Http.{ HeaderNames, MimeTypes }
-
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
 
 class AuthenticationSpec(implicit ee: ExecutionEnv)
     extends PlaySpecification
