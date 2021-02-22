@@ -28,9 +28,10 @@ import java.util.UUID
 
 import akka.stream.Materializer
 import com.google.inject.AbstractModule
+import io.dataswift.models.hat.InboundDataStats
 import net.codingwell.scalaguice.ScalaModule
-import io.dataswift.models.hat.{ EndpointData, Owner }
-import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
+import io.dataswift.models.hat.{EndpointData, Owner}
+import org.hatdex.hat.api.service.applications.{TestApplicationProvider, TrustedApplicationProvider}
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.DataCreatedEvent
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
@@ -39,9 +40,9 @@ import org.joda.time.DateTime
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json.{Json, JsValue}
 import play.api.test.PlaySpecification
-import play.api.{ Application, Logger }
+import play.api.{Application, Logger}
 
 class HatDataStatsProcessorSpec extends PlaySpecification with Mockito with HatDataStatsProcessorContext {
 
@@ -52,7 +53,7 @@ class HatDataStatsProcessorSpec extends PlaySpecification with Mockito with HatD
   "The `computeInboundStats` method" should {
     "Correctly count numbers of values for simple objects" in {
       val service = application.injector.instanceOf[HatDataStatsProcessor]
-      val stats = service.computeInboundStats(simpleDataCreatedEvent)
+      val stats: InboundDataStats = service.computeInboundStats(simpleDataCreatedEvent)
 
       import io.dataswift.models.hat.json.DataStatsFormat._
       logger.debug(s"Got back stats: ${Json.prettyPrint(Json.toJson(stats))}")
