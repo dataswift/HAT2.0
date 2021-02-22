@@ -2,12 +2,7 @@ package org.hatdex.hat.she.mappers
 
 import java.util.UUID
 
-import io.dataswift.models.hat.{
-  EndpointQuery,
-  EndpointQueryFilter,
-  FilterOperator,
-  PropertyQuery
-}
+import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, FilterOperator, PropertyQuery }
 import io.dataswift.models.hat.applications.{
   DataFeedItem,
   DataFeedItemContent,
@@ -19,16 +14,7 @@ import io.dataswift.models.hat.applications.{
 }
 import org.hatdex.hat.she.models.StaticDataValues
 import org.joda.time.DateTime
-import play.api.libs.json.{
-  JsError,
-  JsNumber,
-  JsObject,
-  JsResult,
-  JsSuccess,
-  JsValue,
-  Json,
-  __
-}
+import play.api.libs.json.{ __, JsError, JsNumber, JsObject, JsResult, JsSuccess, JsValue, Json }
 
 import scala.util.Try
 
@@ -36,8 +22,7 @@ class InstagramMediaMapper extends DataEndpointMapper {
   override protected val dataDeduplicationField: Option[String] = Some("id")
   def dataQueries(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]
-    ): Seq[PropertyQuery] = {
+      untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     val unixDateFilter = fromDate.flatMap { _ =>
       Some(
         FilterOperator.Between(
@@ -52,9 +37,7 @@ class InstagramMediaMapper extends DataEndpointMapper {
         EndpointQuery(
           "instagram/feed",
           None,
-          unixDateFilter.map(f =>
-            Seq(EndpointQueryFilter("created_time", None, f))
-          ),
+          unixDateFilter.map(f => Seq(EndpointQueryFilter("created_time", None, f))),
           None
         )
       ),
@@ -68,9 +51,7 @@ class InstagramMediaMapper extends DataEndpointMapper {
         EndpointQuery(
           "instagram/feed",
           None,
-          unixDateFilter.map(f =>
-            Seq(EndpointQueryFilter("ds_created_time", None, f))
-          ),
+          unixDateFilter.map(f => Seq(EndpointQueryFilter("ds_created_time", None, f))),
           None
         )
       ),
@@ -86,54 +67,51 @@ class InstagramMediaMapper extends DataEndpointMapper {
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID] = None,
-      tailContent: Option[JsValue] = None
-    ): Try[DataFeedItem] = {
+      tailContent: Option[JsValue] = None): Try[DataFeedItem] =
     (content \ "ds_api_version").asOpt[String] match {
       case Some(_) => instagramApiv2(content)
       case None    => instagramApiv1(content)
     }
-  }
 
-  private def instagramApiv1(content: JsValue): Try[DataFeedItem] = {
+  private def instagramApiv1(content: JsValue): Try[DataFeedItem] =
     for {
       createdTime <- Try(
-        new DateTime((content \ "created_time").as[String].toLong * 1000)
-      )
+                       new DateTime((content \ "created_time").as[String].toLong * 1000)
+                     )
       tags <- Try((content \ "tags").as[List[String]])
       kind <- Try((content \ "type").as[String])
       title <- Try(Some(DataFeedItemTitle("You posted", None, Some(kind))))
       feedItemContent <- Try(
-        Some(
-          DataFeedItemContent(
-            (content \ "caption" \ "text").asOpt[String],
-            None,
-            kind match {
-              case "image" =>
-                Some(
-                  Seq(
-                    DataFeedItemMedia(
-                      (content \ "images" \ "thumbnail" \ "url").asOpt[String],
-                      (content \ "images" \ "standard_resolution" \ "url")
-                        .asOpt[String]
-                    )
-                  )
-                )
-              case "carousel" =>
-                Some((content \ "carousel_media").as[Seq[JsObject]].map {
-                  imageInfo =>
-                    DataFeedItemMedia(
-                      (imageInfo \ "images" \ "thumbnail" \ "url")
-                        .asOpt[String],
-                      (imageInfo \ "images" \ "standard_resolution" \ "url")
-                        .asOpt[String]
-                    )
-                })
-              case _ => None
-            },
-            None
-          )
-        )
-      )
+                           Some(
+                             DataFeedItemContent(
+                               (content \ "caption" \ "text").asOpt[String],
+                               None,
+                               kind match {
+                                 case "image" =>
+                                   Some(
+                                     Seq(
+                                       DataFeedItemMedia(
+                                         (content \ "images" \ "thumbnail" \ "url").asOpt[String],
+                                         (content \ "images" \ "standard_resolution" \ "url")
+                                           .asOpt[String]
+                                       )
+                                     )
+                                   )
+                                 case "carousel" =>
+                                   Some((content \ "carousel_media").as[Seq[JsObject]].map { imageInfo =>
+                                     DataFeedItemMedia(
+                                       (imageInfo \ "images" \ "thumbnail" \ "url")
+                                         .asOpt[String],
+                                       (imageInfo \ "images" \ "standard_resolution" \ "url")
+                                         .asOpt[String]
+                                     )
+                                   })
+                                 case _ => None
+                               },
+                               None
+                             )
+                           )
+                         )
     } yield {
       val location = Try(
         DataFeedItemLocation(
@@ -147,9 +125,7 @@ class InstagramMediaMapper extends DataEndpointMapper {
             ),
           address = (content \ "location" \ "street_address")
             .asOpt[String]
-            .map(fullAddress =>
-              LocationAddress(None, None, Some(fullAddress), None, None)
-            ),
+            .map(fullAddress => LocationAddress(None, None, Some(fullAddress), None, None)),
           tags = None
         )
       ).toOption
@@ -163,46 +139,44 @@ class InstagramMediaMapper extends DataEndpointMapper {
         location
       )
     }
-  }
 
-  private def instagramApiv2(content: JsValue): Try[DataFeedItem] = {
+  private def instagramApiv2(content: JsValue): Try[DataFeedItem] =
     for {
       createdTime <- Try(
-        new DateTime((content \ "ds_created_time").as[String].toLong * 1000)
-      )
+                       new DateTime((content \ "ds_created_time").as[String].toLong * 1000)
+                     )
       description <- Try((content \ "caption").as[String])
       kind <- Try((content \ "media_type").as[String])
       title <- Try(
-        Some(DataFeedItemTitle("You posted", None, Some(kind.toLowerCase)))
-      )
+                 Some(DataFeedItemTitle("You posted", None, Some(kind.toLowerCase)))
+               )
       feedItemContent <- Try(
-        Some(
-          DataFeedItemContent(
-            Some(description),
-            None,
-            kind match {
-              case "IMAGE" =>
-                Some(
-                  Seq(
-                    DataFeedItemMedia(
-                      (content \ "media_url").asOpt[String],
-                      (content \ "media_url").asOpt[String]
-                    )
-                  )
-                )
-              case _ => None
-            },
-            None
-          )
-        )
-      )
+                           Some(
+                             DataFeedItemContent(
+                               Some(description),
+                               None,
+                               kind match {
+                                 case "IMAGE" =>
+                                   Some(
+                                     Seq(
+                                       DataFeedItemMedia(
+                                         (content \ "media_url").asOpt[String],
+                                         (content \ "media_url").asOpt[String]
+                                       )
+                                     )
+                                   )
+                                 case _ => None
+                               },
+                               None
+                             )
+                           )
+                         )
     } yield {
       val regex = "#\\w+".r
-      val tags = regex.findAllIn(description).toList
+      val tags  = regex.findAllIn(description).toList
       logger.debug(s"Tags: $tags")
       DataFeedItem("instagram", createdTime, tags, title, feedItemContent, None)
     }
-  }
 }
 
 class InstagramProfileStaticDataMapper extends StaticDataEndpointMapper {
@@ -226,8 +200,7 @@ class InstagramProfileStaticDataMapper extends StaticDataEndpointMapper {
   def mapDataRecord(
       recordId: UUID,
       content: JsValue,
-      endpoint: String
-    ): Seq[StaticDataValues] = {
+      endpoint: String): Seq[StaticDataValues] = {
     val eventualData = content.validate[JsObject]
     eventualData match {
       case JsSuccess(value, _) =>
@@ -245,11 +218,8 @@ class InstagramProfileStaticDataMapper extends StaticDataEndpointMapper {
 
   private def instagramApiv1(
       lastPartOfEndpointString: String,
-      value: JsObject
-    ): Seq[StaticDataValues] = {
-    val maybeTransformedData = transformInstagramv1(value).flatMap(item =>
-      item.validate[Map[String, JsValue]]
-    )
+      value: JsObject): Seq[StaticDataValues] = {
+    val maybeTransformedData = transformInstagramv1(value).flatMap(item => item.validate[Map[String, JsValue]])
     maybeTransformedData match {
       case JsSuccess(data, _) =>
         Seq(StaticDataValues(lastPartOfEndpointString, data - "counts"))
@@ -265,7 +235,7 @@ class InstagramProfileStaticDataMapper extends StaticDataEndpointMapper {
   private def transformInstagramv1(rawData: JsObject): JsResult[JsValue] = {
     val transformation = __.json.update(
       __.read[JsObject]
-        .map(profile => {
+        .map { profile =>
           logger.info(s"Trying to map profile: $profile")
           val totalImagesUploaded = (profile \ "counts" \ "media")
             .asOpt[JsNumber]
@@ -284,7 +254,7 @@ class InstagramProfileStaticDataMapper extends StaticDataEndpointMapper {
               "followers" -> totalFollowers
             )
           )
-        })
+        }
     )
 
     rawData.transform(transformation)
@@ -292,8 +262,7 @@ class InstagramProfileStaticDataMapper extends StaticDataEndpointMapper {
 
   private def instagramApiv2(
       lastPartOfEndpointString: String,
-      value: JsObject
-    ): Seq[StaticDataValues] = {
+      value: JsObject): Seq[StaticDataValues] = {
     val maybeData = value.validate[Map[String, JsValue]]
     maybeData match {
       case JsSuccess(data, _) =>

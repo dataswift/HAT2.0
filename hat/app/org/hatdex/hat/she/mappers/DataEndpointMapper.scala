@@ -41,34 +41,30 @@ import play.api.libs.json._
 import scala.util.{ Success, Try }
 
 trait DataEndpointMapper extends JodaWrites with JodaReads {
-  protected lazy val logger: Logger = Logger(this.getClass)
-  protected val dateTimeFormat: DateTimeFormatter = ISODateTimeFormat.dateTime()
+  protected lazy val logger: Logger                    = Logger(this.getClass)
+  protected val dateTimeFormat: DateTimeFormatter      = ISODateTimeFormat.dateTime()
   protected val dataDeduplicationField: Option[String] = None
 
   protected def dateFilter(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]
-    ): Option[FilterOperator.Operator] = {
+      untilDate: Option[DateTime]): Option[FilterOperator.Operator] =
     fromDate.map { date =>
       FilterOperator.Between(
         Json.toJson(date.toString(dateTimeFormat)),
         Json.toJson(untilDate.map(_.toString(dateTimeFormat)))
       )
     }
-  }
 
   def dataQueries(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]
-    ): Seq[PropertyQuery]
+      untilDate: Option[DateTime]): Seq[PropertyQuery]
   def mapDataRecord(
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID] = None,
-      tailContent: Option[JsValue] = None
-    ): Try[DataFeedItem]
+      tailContent: Option[JsValue] = None): Try[DataFeedItem]
 
-  private implicit def dataFeedItemOrdering: Ordering[DataFeedItem] =
+  implicit private def dataFeedItemOrdering: Ordering[DataFeedItem] =
     Ordering.fromLessThan(_.date isAfter _.date)
 
   final def feed(
@@ -76,10 +72,9 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
       untilDate: Option[DateTime]
     )(implicit
       hatServer: HatServer,
-      richDataService: RichDataService
-    ): Source[DataFeedItem, NotUsed] = {
+      richDataService: RichDataService): Source[DataFeedItem, NotUsed] = {
 
-    val feeds = dataQueries(fromDate, untilDate).map({ query =>
+    val feeds = dataQueries(fromDate, untilDate).map { query =>
       logger.debug(s"query is: $query")
       val dataSource: Source[EndpointData, NotUsed] =
         richDataService.propertyDataStreaming(
@@ -122,28 +117,26 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
         .collect({
           case Success(x) => x
         })
-    })
+    }
 
     new SourceMergeSorter().mergeWithSorter(feeds)
   }
 
   protected def eventTimeIntervalString(
       start: DateTime,
-      end: Option[DateTime]
-    ): (String, Option[String]) = {
-    val startString = if (start.getMillisOfDay == 0) {
-      s"${start.toString("dd MMMM")}"
-    } else {
-      s"${start.withZone(start.getZone).toString("dd MMMM HH:mm")}"
-    }
+      end: Option[DateTime]): (String, Option[String]) = {
+    val startString =
+      if (start.getMillisOfDay == 0)
+        s"${start.toString("dd MMMM")}"
+      else
+        s"${start.withZone(start.getZone).toString("dd MMMM HH:mm")}"
 
     val endString = end.map {
       case t if t.isAfter(start.withTimeAtStartOfDay().plusDays(1)) =>
-        if (t.hourOfDay().get() == 0) {
+        if (t.hourOfDay().get() == 0)
           s"- ${t.minusMinutes(1).toString("dd MMMM")}"
-        } else {
+        else
           s"- ${t.withZone(start.getZone).toString("dd MMMM HH:mm ZZZ")}"
-        }
       case t if t.hourOfDay().get() == 0 => ""
       case t                             => s"- ${t.withZone(start.getZone).toString("HH:mm ZZZ")}"
     }
@@ -153,8 +146,7 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
 
   protected def eventTimeIntervalString(
       start: Option[DateTime],
-      end: Option[DateTime]
-    ): (Option[String], Option[String]) = {
+      end: Option[DateTime]): (Option[String], Option[String]) = {
     val startString = start.map {
       case t if t.getMillisOfDay == 0 => s"${t.toString("dd MMMM")}"
       case t                          => s"${t.withZone(t.getZone).toString("dd MMMM HH:mm")}"
@@ -162,18 +154,15 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
 
     val endString = (start, end) match {
       case (None, Some(t)) =>
-        if (t.hourOfDay().get() == 0) {
+        if (t.hourOfDay().get() == 0)
           Some(s"before ${t.minusMinutes(1).toString("dd MMMM")}")
-        } else {
+        else
           Some(s"before ${t.toString("dd MMMM HH:mm z")}")
-        }
-      case (Some(s), Some(t))
-          if t.isAfter(s.withTimeAtStartOfDay().plusDays(1)) =>
-        if (t.hourOfDay().get() == 0) {
+      case (Some(s), Some(t)) if t.isAfter(s.withTimeAtStartOfDay().plusDays(1)) =>
+        if (t.hourOfDay().get() == 0)
           Some(s"- ${t.minusMinutes(1).toString("dd MMMM")}")
-        } else {
+        else
           Some(s"- ${t.withZone(s.getZone).toString("dd MMMM HH:mm z")}")
-        }
       case (_, Some(t)) if t.hourOfDay.get == 0 => None
       case (Some(s), Some(t)) =>
         Some(s"- ${t.withZone(s.getZone).toString("HH:mm z")}")
@@ -189,8 +178,7 @@ trait FeedItemComparator {
       content: JsValue,
       tailContent: JsValue,
       dataKey: String,
-      dataKeyRoot: Option[String] = None
-    ): (JsLookupResult, JsLookupResult) = {
+      dataKeyRoot: Option[String] = None): (JsLookupResult, JsLookupResult) = {
     val tailContentResult =
       if (dataKeyRoot.isEmpty) tailContent \ dataKey
       else tailContent \ dataKeyRoot.get \ dataKey
@@ -206,13 +194,12 @@ trait FeedItemComparator {
       tailContent: JsValue,
       dataKey: String,
       humanKey: String,
-      dataKeyRoot: Option[String] = None
-    ): (Boolean, String) = {
+      dataKeyRoot: Option[String] = None): (Boolean, String) = {
     val (contentResult, tailContentResult) =
       extractContent(content, tailContent, dataKey, dataKeyRoot)
     val previousValue = tailContentResult.asOpt[Int].getOrElse(0)
-    val currentValue = contentResult.asOpt[Int].getOrElse(0)
-    val contentValue = previousValue == currentValue
+    val currentValue  = contentResult.asOpt[Int].getOrElse(0)
+    val contentValue  = previousValue == currentValue
     val contentText =
       s"Your $humanKey has changed from $previousValue to $currentValue."
     (contentValue, contentText)
@@ -223,13 +210,12 @@ trait FeedItemComparator {
       tailContent: JsValue,
       dataKey: String,
       humanKey: String,
-      dataKeyRoot: Option[String] = None
-    ): (Boolean, String) = {
+      dataKeyRoot: Option[String] = None): (Boolean, String) = {
     val (contentResult, tailContentResult) =
       extractContent(content, tailContent, dataKey, dataKeyRoot)
     val previousValue = tailContentResult.asOpt[String].getOrElse("")
-    val currentValue = contentResult.asOpt[String].getOrElse("")
-    val contentValue = previousValue == currentValue
+    val currentValue  = contentResult.asOpt[String].getOrElse("")
+    val contentValue  = previousValue == currentValue
     val contentText =
       s"Your $humanKey has changed from $previousValue to $currentValue."
     (contentValue, contentText)
@@ -240,13 +226,12 @@ trait FeedItemComparator {
       tailContent: JsValue,
       dataKey: String,
       humanKey: String,
-      dataKeyRoot: Option[String] = None
-    ): (Boolean, String) = {
+      dataKeyRoot: Option[String] = None): (Boolean, String) = {
     val (contentResult, tailContentResult) =
       extractContent(content, tailContent, dataKey, dataKeyRoot)
     val previousValue = contentResult.asOpt[Float].getOrElse(0.0f)
-    val currentValue = tailContentResult.asOpt[Float].getOrElse(0.0f)
-    val contentValue = previousValue == currentValue
+    val currentValue  = tailContentResult.asOpt[Float].getOrElse(0.0f)
+    val contentValue  = previousValue == currentValue
     val contentText =
       s"Your $humanKey has changed from $previousValue to $currentValue."
     (contentValue, contentText)
@@ -256,17 +241,14 @@ trait FeedItemComparator {
 class InsightSentimentMapper extends DataEndpointMapper {
   def dataQueries(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]
-    ): Seq[PropertyQuery] = {
+      untilDate: Option[DateTime]): Seq[PropertyQuery] =
     Seq(
       PropertyQuery(
         List(
           EndpointQuery(
             "she/insights/emotions",
             None,
-            dateFilter(fromDate, untilDate).map(f =>
-              Seq(EndpointQueryFilter("timestamp", None, f))
-            ),
+            dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("timestamp", None, f))),
             None
           )
         ),
@@ -275,7 +257,6 @@ class InsightSentimentMapper extends DataEndpointMapper {
         None
       )
     )
-  }
 
   private val textMappings = Map(
     "twitter/tweets" -> "Twitter",
@@ -287,8 +268,7 @@ class InsightSentimentMapper extends DataEndpointMapper {
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID] = None,
-      tailContent: Option[JsValue] = None
-    ): Try[DataFeedItem] = {
+      tailContent: Option[JsValue] = None): Try[DataFeedItem] =
     for {
       sentiment <- Try((content \ "sentiment").as[String])
       text <- Try((content \ "text").as[String])
@@ -322,23 +302,19 @@ class InsightSentimentMapper extends DataEndpointMapper {
         None
       )
     }
-  }
 }
 
 class InsightsMapper extends DataEndpointMapper {
   def dataQueries(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]
-    ): Seq[PropertyQuery] = {
+      untilDate: Option[DateTime]): Seq[PropertyQuery] =
     Seq(
       PropertyQuery(
         List(
           EndpointQuery(
             "she/insights/activity-records",
             None,
-            dateFilter(fromDate, untilDate).map(f =>
-              Seq(EndpointQueryFilter("timestamp", None, f))
-            ),
+            dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("timestamp", None, f))),
             None
           )
         ),
@@ -347,7 +323,6 @@ class InsightsMapper extends DataEndpointMapper {
         None
       )
     )
-  }
 
   private val textMappings = Map(
     "twitter/tweets" -> "Tweets sent",
@@ -389,8 +364,7 @@ class InsightsMapper extends DataEndpointMapper {
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID],
-      tailContent: Option[JsValue]
-    ): Try[DataFeedItem] = {
+      tailContent: Option[JsValue]): Try[DataFeedItem] =
     for {
       startDate <- Try((content \ "since").asOpt[DateTime])
       endDate <- Try((content \ "timestamp").asOpt[DateTime])
@@ -407,16 +381,15 @@ class InsightsMapper extends DataEndpointMapper {
       )
 
       val nested: Map[String, Seq[DataFeedNestedStructureItem]] = counters
-        .foldLeft(Seq[(String, DataFeedNestedStructureItem)]())({
-          (structured, newitem) =>
-            val item = DataFeedNestedStructureItem(
-              textMappings.getOrElse(newitem._1, "unrecognised"),
-              Some(newitem._2.toString),
-              None
-            )
-            val source = sourceMappings.getOrElse(newitem._1, "unrecognised")
-            structured :+ (source -> item)
-        })
+        .foldLeft(Seq[(String, DataFeedNestedStructureItem)]()) { (structured, newitem) =>
+          val item = DataFeedNestedStructureItem(
+            textMappings.getOrElse(newitem._1, "unrecognised"),
+            Some(newitem._2.toString),
+            None
+          )
+          val source = sourceMappings.getOrElse(newitem._1, "unrecognised")
+          structured :+ (source -> item)
+        }
         .filterNot(_._2.content == "unrecognised")
         .filterNot(_._2.badge.contains("0"))
         .groupBy(_._1)
@@ -451,23 +424,19 @@ class InsightsMapper extends DataEndpointMapper {
         None
       )
     }
-  }
 }
 
 class DropsTwitterWordcloudMapper extends DataEndpointMapper {
   def dataQueries(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]
-    ): Seq[PropertyQuery] = {
+      untilDate: Option[DateTime]): Seq[PropertyQuery] =
     Seq(
       PropertyQuery(
         List(
           EndpointQuery(
             "drops/insights/twitter/word-cloud",
             None,
-            dateFilter(fromDate, untilDate).map(f =>
-              Seq(EndpointQueryFilter("timestamp", None, f))
-            ),
+            dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("timestamp", None, f))),
             None
           )
         ),
@@ -476,19 +445,16 @@ class DropsTwitterWordcloudMapper extends DataEndpointMapper {
         None
       )
     )
-  }
 
   def mapDataRecord(
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID] = None,
-      tailContent: Option[JsValue] = None
-    ): Try[DataFeedItem] = {
+      tailContent: Option[JsValue] = None): Try[DataFeedItem] =
     for {
       counters <- Try((content \ "summary" \ "totalCount").as[Int])
       if counters > 0
-      _ =
-        counters // Workaround scala/bug#11175 -Ywarn-unused:params false positive
+      _ = counters // Workaround scala/bug#11175 -Ywarn-unused:params false positive
     } yield {
       val title = DataFeedItemTitle(
         "Twitter Word Cloud",
@@ -510,23 +476,19 @@ class DropsTwitterWordcloudMapper extends DataEndpointMapper {
         None
       )
     }
-  }
 }
 
 class DropsSentimentHistoryMapper extends DataEndpointMapper {
   def dataQueries(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]
-    ): Seq[PropertyQuery] = {
+      untilDate: Option[DateTime]): Seq[PropertyQuery] =
     Seq(
       PropertyQuery(
         List(
           EndpointQuery(
             "drops/insights/sentiment-history",
             None,
-            dateFilter(fromDate, untilDate).map(f =>
-              Seq(EndpointQueryFilter("timestamp", None, f))
-            ),
+            dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("timestamp", None, f))),
             None
           )
         ),
@@ -535,19 +497,16 @@ class DropsSentimentHistoryMapper extends DataEndpointMapper {
         None
       )
     )
-  }
 
   def mapDataRecord(
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID] = None,
-      tailContent: Option[JsValue] = None
-    ): Try[DataFeedItem] = {
+      tailContent: Option[JsValue] = None): Try[DataFeedItem] =
     for {
       counters <- Try((content \ "summary" \ "totalCount").as[Int])
       if counters > 0
-      _ =
-        counters // Workaround scala/bug#11175 -Ywarn-unused:params false positive
+      _ = counters // Workaround scala/bug#11175 -Ywarn-unused:params false positive
     } yield {
       val title =
         DataFeedItemTitle("Sentiment History", None, Some("sentiment-history"))
@@ -566,23 +525,19 @@ class DropsSentimentHistoryMapper extends DataEndpointMapper {
         None
       )
     }
-  }
 }
 
 class InsightCommonLocationsMapper extends DataEndpointMapper {
   def dataQueries(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]
-    ): Seq[PropertyQuery] = {
+      untilDate: Option[DateTime]): Seq[PropertyQuery] =
     Seq(
       PropertyQuery(
         List(
           EndpointQuery(
             "she/insights/common-locations",
             None,
-            dateFilter(fromDate, untilDate).map(f =>
-              Seq(EndpointQueryFilter("dateCreated", None, f))
-            ),
+            dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("dateCreated", None, f))),
             None
           )
         ),
@@ -591,19 +546,16 @@ class InsightCommonLocationsMapper extends DataEndpointMapper {
         None
       )
     )
-  }
 
   def mapDataRecord(
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID] = None,
-      tailContent: Option[JsValue] = None
-    ): Try[DataFeedItem] = {
+      tailContent: Option[JsValue] = None): Try[DataFeedItem] =
     for {
       counters <- Try((content \ "summary" \ "totalCount").as[Int])
       if counters > 0
-      _ =
-        counters // Workaround scala/bug#11175 -Ywarn-unused:params false positive
+      _ = counters // Workaround scala/bug#11175 -Ywarn-unused:params false positive
     } yield {
       val title =
         DataFeedItemTitle("Common Locations", None, Some("common-locations"))
@@ -622,5 +574,4 @@ class InsightCommonLocationsMapper extends DataEndpointMapper {
         None
       )
     }
-  }
 }

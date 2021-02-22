@@ -35,7 +35,11 @@ import play.api.test.PlaySpecification
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataFeedDirectMapperContext with BeforeAfterAll {
+class DataFeedDirectMapperSpec
+    extends PlaySpecification
+    with Mockito
+    with DataFeedDirectMapperContext
+    with BeforeAfterAll {
   val logger = Logger(this.getClass)
 
   def beforeAll: Unit = {
@@ -43,20 +47,23 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
     Await.result(databaseReady, 60.seconds)
   }
 
-  def afterAll: Unit = {
+  def afterAll: Unit =
     DateTimeUtils.setCurrentMillisSystem()
-  }
 
   override def before(): Unit = {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
-    val endpointRecrodsQuery = DataJson.filter(d => d.source.like("test%") ||
-      d.source.like("rumpel%") ||
-      d.source.like("twitter%") ||
-      d.source.like("facebook%") ||
-      d.source.like("fitbit%") ||
-      d.source.like("calendar%")).map(_.recordId)
+    val endpointRecrodsQuery = DataJson
+      .filter(d =>
+        d.source.like("test%") ||
+          d.source.like("rumpel%") ||
+          d.source.like("twitter%") ||
+          d.source.like("facebook%") ||
+          d.source.like("fitbit%") ||
+          d.source.like("calendar%")
+      )
+      .map(_.recordId)
 
     val action = DBIO.seq(
       DataDebitBundle.filter(_.bundleId.like("test%")).delete,
@@ -65,14 +72,15 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
       DataBundles.filter(_.bundleId.like("test%")).delete,
       DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
+    )
 
     Await.result(hatDatabase.run(action), 60.seconds)
   }
 
   "The `mapGoogleCalendarEvent` method" should {
     "translate google calendar event with timezone information" in {
-      val mapper = new GoogleCalendarMapper()
+      val mapper      = new GoogleCalendarMapper()
       val transformed = mapper.mapDataRecord(googleCalendarEvent.recordId.get, googleCalendarEvent.data).get
       transformed.source must be equalTo "google"
       transformed.types must contain("event")
@@ -82,21 +90,22 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
     }
 
     "remove html tags from google calendar event description" in {
-      val mapper = new GoogleCalendarMapper()
+      val mapper      = new GoogleCalendarMapper()
       val transformed = mapper.mapDataRecord(googleCalendarEventHtml.recordId.get, googleCalendarEventHtml.data).get
       transformed.source must be equalTo "google"
       transformed.types must contain("event")
       transformed.title.get.text must contain("MadHATTERs Tea Party: The Boston Party")
       transformed.title.get.subtitle.get must contain("12 December 18:30 - 22:30 America/New_York")
       transformed.content.get.text.get must contain("BD call")
-      transformed.content.get.text.get must not contain ("<br>")
-      transformed.content.get.text.get must not contain ("&nbsp;")
-      transformed.content.get.text.get must not contain ("</a>")
+      transformed.content.get.text.get must not contain "<br>"
+      transformed.content.get.text.get must not contain "&nbsp;"
+      transformed.content.get.text.get must not contain "</a>"
     }
 
     "translate google calendar full-day event" in {
       val mapper = new GoogleCalendarMapper()
-      val transformed = mapper.mapDataRecord(googleCalendarFullDayEvent.recordId.get, googleCalendarFullDayEvent.data).get
+      val transformed =
+        mapper.mapDataRecord(googleCalendarFullDayEvent.recordId.get, googleCalendarFullDayEvent.data).get
       transformed.source must be equalTo "google"
       transformed.types must contain("event")
       transformed.content.get.text must beNone
@@ -106,7 +115,7 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
   // TODO: updated tweet with retweet structure
   "The `mapTweet` method" should {
     "translate twitter retweets" in {
-      val mapper = new TwitterFeedMapper()
+      val mapper      = new TwitterFeedMapper()
       val transformed = mapper.mapDataRecord(exampleTweetRetweet.recordId.get, exampleTweetRetweet.data).get
       transformed.source must be equalTo "twitter"
       transformed.types must contain("post")
@@ -120,14 +129,14 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
 
     // TODO: update tweet with reply structure
     "translate twitter replies" in {
-      val mapper = new TwitterFeedMapper()
+      val mapper      = new TwitterFeedMapper()
       val transformed = mapper.mapDataRecord(exampleTweetMentions.recordId.get, exampleTweetMentions.data).get
       transformed.source must be equalTo "twitter"
       transformed.title.get.text must contain("You replied to @drgeep")
     }
 
     "translate minimal tweet structure correctly" in {
-      val mapper = new TwitterFeedMapper()
+      val mapper      = new TwitterFeedMapper()
       val transformed = mapper.mapDataRecord(exampleTweetMinimalFields.recordId.get, exampleTweetMinimalFields.data).get
       transformed.source must be equalTo "twitter"
       transformed.content.get.text.get must contain("Tweet from Portugal.")
@@ -137,7 +146,7 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
   "The `InstagramMediaMapper` class" should {
 
     "translate single image posts using v1 API" in {
-      val mapper = new InstagramMediaMapper()
+      val mapper      = new InstagramMediaMapper()
       val transformed = mapper.mapDataRecord(exampleInstagramImagev1.recordId.get, exampleInstagramImagev1.data).get
       transformed.source must be equalTo "instagram"
       transformed.title.get.text must contain("You posted")
@@ -149,7 +158,8 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
 
     "translate multiple image carousel posts using v1 API" in {
       val mapper = new InstagramMediaMapper()
-      val transformed = mapper.mapDataRecord(exampleMultipleInstagramImages.recordId.get, exampleMultipleInstagramImages.data).get
+      val transformed =
+        mapper.mapDataRecord(exampleMultipleInstagramImages.recordId.get, exampleMultipleInstagramImages.data).get
       transformed.source must be equalTo "instagram"
       transformed.title.get.text must contain("You posted")
       transformed.title.get.action.get must be equalTo "carousel"
@@ -159,7 +169,7 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
     }
 
     "translate single image posts using v2 API" in {
-      val mapper = new InstagramMediaMapper()
+      val mapper      = new InstagramMediaMapper()
       val transformed = mapper.mapDataRecord(exampleInstagramImagev2.recordId.get, exampleInstagramImagev2.data).get
       transformed.source must be equalTo "instagram"
       transformed.title.get.text must contain("You posted")
@@ -170,21 +180,27 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
     }
 
     "create data queries using correct unix timestamp format" in {
-      val mapper = new InstagramMediaMapper()
-      val fromDate = new DateTime("2018-05-01T09:00:00Z")
+      val mapper    = new InstagramMediaMapper()
+      val fromDate  = new DateTime("2018-05-01T09:00:00Z")
       val untilDate = fromDate.plusDays(1)
 
       val propertyQuery = mapper.dataQueries(Some(fromDate), Some(untilDate))
       propertyQuery.head.orderBy.get must be equalTo "ds_created_time"
       propertyQuery.head.endpoints.head.endpoint must be equalTo "instagram/feed"
-      propertyQuery.head.endpoints.head.filters.get.head.operator.asInstanceOf[Between].lower.as[String] must be equalTo "1525165200"
-      propertyQuery.head.endpoints.head.filters.get.head.operator.asInstanceOf[Between].upper.as[String] must be equalTo "1525251600"
+      propertyQuery.head.endpoints.head.filters.get.head.operator
+        .asInstanceOf[Between]
+        .lower
+        .as[String] must be equalTo "1525165200"
+      propertyQuery.head.endpoints.head.filters.get.head.operator
+        .asInstanceOf[Between]
+        .upper
+        .as[String] must be equalTo "1525251600"
     }
   }
 
   "The `mapFacebookPost` method" should {
     "translate facebook photo posts" in {
-      val mapper = new FacebookFeedMapper()
+      val mapper      = new FacebookFeedMapper()
       val transformed = mapper.mapDataRecord(exampleFacebookPhotoPost.recordId.get, exampleFacebookPhotoPost.data).get
 
       transformed.source must be equalTo "facebook"
@@ -193,7 +209,7 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
     }
 
     "translate facebook replies" in {
-      val mapper = new FacebookFeedMapper()
+      val mapper      = new FacebookFeedMapper()
       val transformed = mapper.mapDataRecord(exampleFacebookPost.recordId.get, exampleFacebookPost.data).get
       transformed.source must be equalTo "facebook"
       transformed.title.get.text must be equalTo "You posted"
@@ -201,7 +217,7 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
     }
 
     "translate facebook stories" in {
-      val mapper = new FacebookFeedMapper()
+      val mapper      = new FacebookFeedMapper()
       val transformed = mapper.mapDataRecord(facebookStory.recordId.get, facebookStory.data).get
       transformed.source must be equalTo "facebook"
       transformed.title.get.text must be equalTo "You shared a story"
@@ -212,7 +228,7 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
 
   "The `mapFacebookEvent` method" should {
     "translate facebook events with location" in {
-      val mapper = new FacebookEventMapper()
+      val mapper      = new FacebookEventMapper()
       val transformed = mapper.mapDataRecord(facebookEvent.recordId.get, facebookEvent.data).get
 
       transformed.source must be equalTo "facebook"
@@ -224,7 +240,7 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
     }
 
     "translate facebook events without location" in {
-      val mapper = new FacebookEventMapper()
+      val mapper      = new FacebookEventMapper()
       val transformed = mapper.mapDataRecord(facebookEvenNoLocation.recordId.get, facebookEvenNoLocation.data).get
 
       transformed.source must be equalTo "facebook"
@@ -236,7 +252,8 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
 
     "translate facebook events with incomplete location" in {
       val mapper = new FacebookEventMapper()
-      val transformed = mapper.mapDataRecord(facebookEvenPartialLocation.recordId.get, facebookEvenPartialLocation.data).get
+      val transformed =
+        mapper.mapDataRecord(facebookEvenPartialLocation.recordId.get, facebookEvenPartialLocation.data).get
 
       transformed.source must be equalTo "facebook"
       transformed.types must contain("event")
@@ -248,7 +265,7 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
 
   "The `mapFitbitWeight` method" should {
     "translate fitbit weight" in {
-      val mapper = new FitbitWeightMapper()
+      val mapper      = new FitbitWeightMapper()
       val transformed = mapper.mapDataRecord(fitbitWeightMeasurement.recordId.get, fitbitWeightMeasurement.data).get
 
       transformed.source must be equalTo "fitbit"
@@ -262,7 +279,7 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
 
   "The `mapFitbitSleep` method" should {
     "translate fitbit sleep" in {
-      val mapper = new FitbitSleepMapper()
+      val mapper      = new FitbitSleepMapper()
       val transformed = mapper.mapDataRecord(fitbitSleepMeasurement.recordId.get, fitbitSleepMeasurement.data).get
 
       transformed.source must be equalTo "fitbit"
@@ -276,7 +293,7 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
 
   "The `mapFitbitActivity` method" should {
     "translate fitbit activity" in {
-      val mapper = new FitbitActivityMapper()
+      val mapper      = new FitbitActivityMapper()
       val transformed = mapper.mapDataRecord(fitbitActivity.recordId.get, fitbitActivity.data).get
 
       transformed.source must be equalTo "fitbit"
@@ -291,13 +308,13 @@ class DataFeedDirectMapperSpec extends PlaySpecification with Mockito with DataF
 
   "The `mapFitbitDaySummarySteps` method" should {
     "not generate a feed item for days with 0 steps recorded" in {
-      val mapper = new FitbitActivityDaySummaryMapper()
+      val mapper      = new FitbitActivityDaySummaryMapper()
       val transformed = mapper.mapDataRecord(fitbitDayEmptySummary.recordId.get, fitbitDayEmptySummary.data)
       transformed must beAFailedTry
     }
 
     "translate fitbit day summary to steps" in {
-      val mapper = new FitbitActivityDaySummaryMapper()
+      val mapper      = new FitbitActivityDaySummaryMapper()
       val transformed = mapper.mapDataRecord(fitbitDaySummary.recordId.get, fitbitDaySummary.data).get
       transformed.source must be equalTo "fitbit"
       transformed.types must contain("fitness")

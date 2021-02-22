@@ -31,7 +31,7 @@ import org.specs2.specification.Scope
 import play.api.libs.json.{ Format, Json }
 
 trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
-  private implicit val endpointDataFormat: Format[EndpointData] = RichDataJsonFormats.endpointDataFormat
+  implicit private val endpointDataFormat: Format[EndpointData] = RichDataJsonFormats.endpointDataFormat
 
   private val exampleTweetRetweetText =
     """

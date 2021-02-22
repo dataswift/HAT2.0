@@ -39,8 +39,7 @@ class LogService @Inject() (implicit val ec: DalExecutionContext) {
   def logAction(
       hat: String,
       logDetails: LogRequest,
-      applicationDetails: Option[(String, String)]
-    ): Future[Done] = {
+      applicationDetails: Option[(String, String)]): Future[Done] =
     Future {
       val logId = UUID.randomUUID()
       val applicationVersion =
@@ -52,5 +51,4 @@ class LogService @Inject() (implicit val ec: DalExecutionContext) {
 
       Done
     }
-  }
 }

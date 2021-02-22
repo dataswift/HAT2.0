@@ -64,7 +64,7 @@ object HatSignup {
   import play.api.libs.json.JodaReads._
 
   implicit val databaseInstanceFormat: OFormat[DatabaseInstance] = Json.format[DatabaseInstance]
-  implicit val databaseServerFormat: OFormat[DatabaseServer] = Json.format[DatabaseServer]
-  implicit val hatKeysFormat: OFormat[HatKeys] = Json.format[HatKeys]
-  implicit val hatSignupFormat: OFormat[HatSignup] = Json.format[HatSignup]
+  implicit val databaseServerFormat: OFormat[DatabaseServer]     = Json.format[DatabaseServer]
+  implicit val hatKeysFormat: OFormat[HatKeys]                   = Json.format[HatKeys]
+  implicit val hatSignupFormat: OFormat[HatSignup]               = Json.format[HatSignup]
 }

@@ -37,22 +37,26 @@ import play.api.test.{ FakeRequest, PlaySpecification }
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class SystemStatusSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with HATTestContext with BeforeAll with HatJsonFormats {
+class SystemStatusSpec(implicit ee: ExecutionEnv)
+    extends PlaySpecification
+    with Mockito
+    with HATTestContext
+    with BeforeAll
+    with HatJsonFormats {
 
   val logger = Logger(this.getClass)
 
   sequential
 
-  def beforeAll: Unit = {
+  def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
-  }
 
   "The `update` method" should {
     "Return success response after updating HAT database" in {
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
 
       val controller = application.injector.instanceOf[SystemStatus]
-      val result = controller.update().apply(request)
+      val result     = controller.update().apply(request)
 
       status(result) must equalTo(OK)
       (contentAsJson(result) \ "message").as[String] must be equalTo "Database updated"
@@ -65,7 +69,7 @@ class SystemStatusSpec(implicit ee: ExecutionEnv) extends PlaySpecification with
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[SystemStatus]
-      val result = controller.status().apply(request)
+      val result     = controller.status().apply(request)
 
       status(result) must equalTo(OK)
       val stats = contentAsJson(result).as[List[HatStatus]]

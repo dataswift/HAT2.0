@@ -24,7 +24,7 @@
 
 package org.hatdex.hat.utils
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.{ Inject, Singleton }
 import akka.stream.Materializer
 import io.dataswift.log.Component
 import io.dataswift.log.play.Slf4jLoggingFilter
@@ -37,13 +37,13 @@ class ActiveHatCounter() {
   // Careful! Mutable state
   private var count: Long = 0
 
-  def get(): Long = count
+  def get(): Long      = count
   def increase(): Unit = this.synchronized(count += 1)
   def decrease(): Unit = this.synchronized(count -= 1)
 }
 
-
-class LoggingFilter @Inject() (configuration: Configuration,
-                                implicit override val mat: Materializer,
-                                implicit override val ec: ExecutionContext)
-  extends Slf4jLoggingFilter(configuration, Component.Hat)
+class LoggingFilter @Inject() (
+    configuration: Configuration,
+    implicit override val mat: Materializer,
+    implicit override val ec: ExecutionContext)
+    extends Slf4jLoggingFilter(configuration, Component.Hat)

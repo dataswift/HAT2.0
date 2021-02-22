@@ -36,15 +36,19 @@ import play.api.test.PlaySpecification
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichBundleServiceContext with BeforeEach with BeforeAll {
+class RichBundleServiceSpec(implicit ee: ExecutionEnv)
+    extends PlaySpecification
+    with Mockito
+    with RichBundleServiceContext
+    with BeforeEach
+    with BeforeAll {
 
   val logger = Logger(this.getClass)
 
   sequential
 
-  def beforeAll: Unit = {
+  def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
-  }
 
   override def before: Unit = {
     import org.hatdex.hat.dal.Tables._
@@ -59,7 +63,8 @@ class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification
       DataBundles.filter(_.bundleId.like("test%")).delete,
       DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
+    )
 
     Await.result(hatDatabase.run(action), 60.seconds)
   }
@@ -67,7 +72,7 @@ class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification
   "The `saveCombinator` method" should {
     "Save a combinator" in {
       val service = application.injector.instanceOf[RichBundleService]
-      val saved = service.saveCombinator("testCombinator", testEndpointQuery)
+      val saved   = service.saveCombinator("testCombinator", testEndpointQuery)
       saved map { _ =>
         true must beTrue
       } await (3, 10.seconds)
@@ -147,7 +152,7 @@ class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification
   "The `saveBundle` method" should {
     "Save a bundle" in {
       val service = application.injector.instanceOf[RichBundleService]
-      val saved = service.saveBundle(testBundle)
+      val saved   = service.saveBundle(testBundle)
       saved map { _ =>
         true must beTrue
       } await (3, 10.seconds)
@@ -216,45 +221,95 @@ class RichBundleServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification
 }
 
 trait RichBundleServiceContext extends HATTestContext {
-  protected val simpleTransformation: JsObject = Json.parse(
-    """
+  protected val simpleTransformation: JsObject = Json
+    .parse("""
       | {
       |   "data.newField": "anotherField",
       |   "data.arrayField": "object.objectFieldArray",
       |   "data.onemore": "object.education[1]"
       | }
-    """.stripMargin).as[JsObject]
+    """.stripMargin)
+    .as[JsObject]
 
-  protected val complexTransformation: JsObject = Json.parse(
-    """
+  protected val complexTransformation: JsObject = Json
+    .parse("""
       | {
       |   "data.newField": "hometown.name",
       |   "data.arrayField": "education",
       |   "data.onemore": "education[0].type"
       | }
-    """.stripMargin).as[JsObject]
+    """.stripMargin)
+    .as[JsObject]
 
-  val testEndpointQuery = Seq(
-    EndpointQuery("test/test", Some(simpleTransformation), None, None),
-    EndpointQuery("test/complex", Some(complexTransformation), None, None))
+  val testEndpointQuery = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+                              EndpointQuery("test/complex", Some(complexTransformation), None, None)
+  )
 
-  val testEndpointQueryUpdated = Seq(
-    EndpointQuery("test/test", Some(simpleTransformation), None, None),
-    EndpointQuery("test/anothertest", None, None, None))
+  val testEndpointQueryUpdated = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+                                     EndpointQuery("test/anothertest", None, None, None)
+  )
 
-  val testBundle = EndpointDataBundle("testBundle", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-    "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
+  val testBundle = EndpointDataBundle(
+    "testBundle",
+    Map(
+      "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                              Some("data.newField"),
+                              None,
+                              Some(3)
+          ),
+      "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)),
+                                 Some("data.newField"),
+                                 None,
+                                 Some(1)
+          )
+    )
+  )
 
-  val testBundle2 = EndpointDataBundle("testBundle2", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-    "complex" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)), Some("data.newField"), None, Some(1))))
+  val testBundle2 = EndpointDataBundle(
+    "testBundle2",
+    Map(
+      "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                              Some("data.newField"),
+                              None,
+                              Some(3)
+          ),
+      "complex" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)),
+                                 Some("data.newField"),
+                                 None,
+                                 Some(1)
+          )
+    )
+  )
 
-  val conditionsBundle = EndpointDataBundle("testConditionsBundle", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-    "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
+  val conditionsBundle = EndpointDataBundle(
+    "testConditionsBundle",
+    Map(
+      "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                              Some("data.newField"),
+                              None,
+                              Some(3)
+          ),
+      "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)),
+                                 Some("data.newField"),
+                                 None,
+                                 Some(1)
+          )
+    )
+  )
 
-  val conditionsBundle2 = EndpointDataBundle("testConditionsBundle2", Map(
-    "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-    "complex" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)), Some("data.newField"), None, Some(1))))
+  val conditionsBundle2 = EndpointDataBundle(
+    "testConditionsBundle2",
+    Map(
+      "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                              Some("data.newField"),
+                              None,
+                              Some(3)
+          ),
+      "complex" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)),
+                                 Some("data.newField"),
+                                 None,
+                                 Some(1)
+          )
+    )
+  )
 }

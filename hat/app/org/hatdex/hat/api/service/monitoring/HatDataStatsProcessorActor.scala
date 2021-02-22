@@ -41,11 +41,7 @@ import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{
   RichDataDebitEvent,
   RichDataRetrievedEvent
 }
-import org.hatdex.hat.resourceManagement.{
-  HatServer,
-  HatServerDiscoveryException,
-  HatServerProvider
-}
+import org.hatdex.hat.resourceManagement.{ HatServer, HatServerDiscoveryException, HatServerProvider }
 import play.api.Logger
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -84,9 +80,8 @@ class HatDataStatsProcessorActor @Inject() (
       }
       .foreach {
         case (hat, hatStats) =>
-          if (hatStats.nonEmpty) {
+          if (hatStats.nonEmpty)
             processor.publishStats(hat, hatStats)
-          }
       }
   }
 
@@ -121,7 +116,7 @@ class HatDataStatsProcessor @Inject() (
     )
   }
 
-  def reportDataDebitEvent(event: RichDataDebitEvent): DataDebitAction = {
+  def reportDataDebitEvent(event: RichDataDebitEvent): DataDebitAction =
     DataDebitAction(
       event.dataDebit,
       event.operation.toString,
@@ -129,9 +124,8 @@ class HatDataStatsProcessor @Inject() (
       event.user,
       event.logEntry
     )
-  }
 
-  def reportDataDebitEvent(event: DataDebitEvent): DataDebitOperation = {
+  def reportDataDebitEvent(event: DataDebitEvent): DataDebitOperation =
     DataDebitOperation(
       event.dataDebit,
       event.operation.toString,
@@ -139,12 +133,10 @@ class HatDataStatsProcessor @Inject() (
       event.user,
       event.logEntry
     )
-  }
 
   def publishStats(
       hat: String,
-      stats: Iterable[DataStats]
-    ): Future[Done] = {
+      stats: Iterable[DataStats]): Future[Done] = {
     logger.debug(s"Publish stats for $hat: $stats")
 
     hatServerProvider.retrieve(hat) flatMap {

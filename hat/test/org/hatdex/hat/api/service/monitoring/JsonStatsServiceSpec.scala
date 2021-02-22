@@ -76,7 +76,14 @@ class JsonStatsServiceSpec extends PlaySpecification with Mockito with JsonStats
     "Correctly count numbers of values for linked endpoint data objects" in {
 
       val counts = JsonStatsService.countEndpointData(
-        EndpointData("test", None, None, None, simpleJson, Some(Seq(EndpointData("test", None, None, None, simpleJson, None)))))
+        EndpointData("test",
+                     None,
+                     None,
+                     None,
+                     simpleJson,
+                     Some(Seq(EndpointData("test", None, None, None, simpleJson, None)))
+        )
+      )
       val result = counts("test")
       result("field") must equalTo(2)
       result("date") must equalTo(2)
@@ -94,8 +101,16 @@ class JsonStatsServiceSpec extends PlaySpecification with Mockito with JsonStats
 
       val counts = JsonStatsService.endpointDataCounts(
         Seq(
-          EndpointData("test", None, None, None, simpleJson, Some(Seq(EndpointData("test", None, None, None, simpleJson, None)))),
-          EndpointData("test", None, None, None, simpleJson, None)))
+          EndpointData("test",
+                       None,
+                       None,
+                       None,
+                       simpleJson,
+                       Some(Seq(EndpointData("test", None, None, None, simpleJson, None)))
+          ),
+          EndpointData("test", None, None, None, simpleJson, None)
+        )
+      )
 
       counts.headOption must beSome
       val result = counts.head.propertyStats
@@ -123,8 +138,7 @@ trait JsonStatsServiceContext extends Scope {
 
   implicit lazy val materializer: Materializer = application.materializer
 
-  val simpleJson: JsValue = Json.parse(
-    """
+  val simpleJson: JsValue = Json.parse("""
       | {
       |   "field": "value",
       |   "date": 1492699047,

@@ -42,23 +42,25 @@ import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
-class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification with DataFeedDirectMapperContext with BeforeAfterAll {
+class FunctionManagerSpec(implicit ee: ExecutionEnv)
+    extends PlaySpecification
+    with DataFeedDirectMapperContext
+    with BeforeAfterAll {
 
   val logger = Logger(this.getClass)
 
   import io.dataswift.models.hat.json.HatJsonFormats.{ errorMessage, successResponse }
   import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol._
 
-  override implicit def defaultAwaitTimeout: util.Timeout = 60.seconds
+  implicit override def defaultAwaitTimeout: util.Timeout = 60.seconds
 
   def beforeAll: Unit = {
     DateTimeUtils.setCurrentMillisFixed(1514764800000L)
     Await.result(databaseReady, 60.seconds)
   }
 
-  def afterAll: Unit = {
+  def afterAll: Unit =
     DateTimeUtils.setCurrentMillisSystem()
-  }
 
   sequential
 
@@ -67,7 +69,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(LoginInfo("xing", "comedian@watchmen.com"))
 
-      val controller = application.injector.instanceOf[FunctionManager]
+      val controller             = application.injector.instanceOf[FunctionManager]
       val result: Future[Result] = Helpers.call(controller.functionList(), request)
 
       status(result) must equalTo(UNAUTHORIZED)
@@ -77,7 +79,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(dataDebitUser.loginInfo)
 
-      val controller = application.injector.instanceOf[FunctionManager]
+      val controller             = application.injector.instanceOf[FunctionManager]
       val result: Future[Result] = Helpers.call(controller.functionList(), request)
 
       status(result) must equalTo(FORBIDDEN)
@@ -87,7 +89,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[FunctionManager]
+      val controller             = application.injector.instanceOf[FunctionManager]
       val result: Future[Result] = Helpers.call(controller.functionList(), request)
 
       status(result) must equalTo(OK)
@@ -105,7 +107,8 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = Helpers.call(controller.functionGet(registeredDummyFunctionAvailable.configuration.id), request)
+      val result: Future[Result] =
+        Helpers.call(controller.functionGet(registeredDummyFunctionAvailable.configuration.id), request)
 
       status(result) must equalTo(OK)
       val function = contentAsJson(result).as[FunctionConfiguration]
@@ -117,7 +120,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[FunctionManager]
+      val controller             = application.injector.instanceOf[FunctionManager]
       val result: Future[Result] = Helpers.call(controller.functionGet("random-function"), request)
 
       status(result) must equalTo(NOT_FOUND)
@@ -138,7 +141,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       } yield (enabled, result)
 
       val enabled = chained.map(_._1)
-      val result = chained.map(_._2)
+      val result  = chained.map(_._2)
 
       status(enabled) must equalTo(OK)
       val fEnabled = contentAsJson(result).as[FunctionConfiguration]
@@ -157,7 +160,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[FunctionManager]
+      val controller             = application.injector.instanceOf[FunctionManager]
       val result: Future[Result] = Helpers.call(controller.functionEnable("random-function"), request)
 
       status(result) must equalTo(NOT_FOUND)
@@ -179,7 +182,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       } yield (disabled, result)
 
       val disabled = chained.map(_._1)
-      val result = chained.map(_._2)
+      val result   = chained.map(_._2)
 
       status(disabled) must equalTo(OK)
       val fDisabled = contentAsJson(result).as[FunctionConfiguration]
@@ -200,7 +203,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[FunctionManager]
+      val controller             = application.injector.instanceOf[FunctionManager]
       val result: Future[Result] = Helpers.call(controller.functionTrigger("random-function", useAll = false), request)
 
       status(result) must equalTo(NOT_FOUND)
@@ -213,7 +216,10 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = Helpers.call(controller.functionTrigger(registeredDummyFunctionAvailable.configuration.id, useAll = false), request)
+      val result: Future[Result] =
+        Helpers.call(controller.functionTrigger(registeredDummyFunctionAvailable.configuration.id, useAll = false),
+                     request
+        )
 
       status(result) must equalTo(BAD_REQUEST)
       val message = contentAsJson(result).as[ErrorMessage]
@@ -224,7 +230,7 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
 
-      val service = application.injector.instanceOf[FunctionService]
+      val service    = application.injector.instanceOf[FunctionService]
       val controller = application.injector.instanceOf[FunctionManager]
       val result: Future[Result] = for {
         _ <- service.save(dummyFunctionConfiguration)
@@ -241,11 +247,23 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         .withAuthenticator(owner.loginInfo)
 
       val dataService = application.injector.instanceOf[RichDataService]
-      val controller = application.injector.instanceOf[FunctionManager]
+      val controller  = application.injector.instanceOf[FunctionManager]
 
-      val records = Seq(exampleTweetRetweet, exampleTweetMentions, exampleFacebookPhotoPost, exampleFacebookPost,
-        facebookStory, facebookEvent, facebookEvenNoLocation, facebookEvenPartialLocation, fitbitSleepMeasurement,
-        fitbitWeightMeasurement, fitbitActivity, googleCalendarEvent, googleCalendarFullDayEvent)
+      val records = Seq(
+        exampleTweetRetweet,
+        exampleTweetMentions,
+        exampleFacebookPhotoPost,
+        exampleFacebookPost,
+        facebookStory,
+        facebookEvent,
+        facebookEvenNoLocation,
+        facebookEvenPartialLocation,
+        fitbitSleepMeasurement,
+        fitbitWeightMeasurement,
+        fitbitActivity,
+        googleCalendarEvent,
+        googleCalendarFullDayEvent
+      )
 
       val setup = for {
         _ <- dataService.saveData(owner.userId, records)
@@ -259,12 +277,19 @@ class FunctionManagerSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val message = contentAsJson(result).as[SuccessResponse]
       message.message must be equalTo "Function Executed"
 
-      dataService.propertyData(
-        Seq(EndpointQuery(s"${registeredFunction.namespace}/${registeredFunction.endpoint}", None, None, None)),
-        None, orderingDescending = false, 0, None)
+      dataService
+        .propertyData(
+          Seq(EndpointQuery(s"${registeredFunction.namespace}/${registeredFunction.endpoint}", None, None, None)),
+          None,
+          orderingDescending = false,
+          0,
+          None
+        )
         .map { data =>
           data.length must be greaterThanOrEqualTo records.length
-          data.forall(_.endpoint == s"${registeredFunction.namespace}/${registeredFunction.endpoint}") must be equalTo true
+          data.forall(
+            _.endpoint == s"${registeredFunction.namespace}/${registeredFunction.endpoint}"
+          ) must be equalTo true
         } await (3, 60.seconds)
     }
   }

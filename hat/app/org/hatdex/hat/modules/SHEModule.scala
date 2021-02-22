@@ -29,10 +29,7 @@ import com.typesafe.config.Config
 import net.codingwell.scalaguice.ScalaModule
 import io.dataswift.models.hat.applications.Version
 import org.hatdex.hat.she.models.LambdaFunctionLoader
-import org.hatdex.hat.she.service.{
-  FunctionExecutableRegistry,
-  FunctionExecutionTriggerHandler
-}
+import org.hatdex.hat.she.service.{ FunctionExecutableRegistry, FunctionExecutionTriggerHandler }
 import org.hatdex.hat.utils.FutureTransformations
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.{ ConfigLoader, Configuration, Logger }
@@ -53,8 +50,7 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
     new ConfigLoader[Seq[FunctionConfig]] {
       def load(
           config: Config,
-          path: String
-        ): Seq[FunctionConfig] = {
+          path: String): Seq[FunctionConfig] = {
         val configs = config.getConfigList(path).asScala
         logger.info(s"Got SHE function configs: $configs")
         configs.map { config =>
@@ -74,8 +70,7 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   def provideFunctionExecutableRegistry(
       config: Configuration,
       loader: LambdaFunctionLoader
-    )(implicit ec: ExecutionContext
-    ): FunctionExecutableRegistry = {
+    )(implicit ec: ExecutionContext): FunctionExecutableRegistry = {
 
     val includeExperimental: Boolean =
       config.getOptional[Boolean]("she.beta").getOrElse(false)

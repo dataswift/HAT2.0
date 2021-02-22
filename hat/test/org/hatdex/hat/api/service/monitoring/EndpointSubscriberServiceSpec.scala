@@ -45,91 +45,221 @@ class EndpointSubscriberServiceSpec extends PlaySpecification with Mockito with 
 
   "The `matchesBundle` method" should {
     "Trigger when endpoint query with no filters matches" in {
-      val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test/test", None, None, None)), None, None, Some(3))))
+      val query = EndpointDataBundle(
+        "test",
+        Map("test" -> PropertyQuery(List(EndpointQuery("test/test", None, None, None)), None, None, Some(3)))
+      )
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
 
     "Not trigger when endpoint no query matches" in {
-      val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)), None, None, Some(3))))
+      val query = EndpointDataBundle(
+        "test",
+        Map("test" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)), None, None, Some(3)))
+      )
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beFalse
     }
 
     "Trigger when endpoint query with `Contains` filter matches" in {
-      val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test/test", None, Some(Seq(
-          EndpointQueryFilter("object", None, FilterOperator.Contains(simpleJsonFragment)))), None)), None, None, Some(3))))
+      val query = EndpointDataBundle(
+        "test",
+        Map(
+          "test" -> PropertyQuery(
+                List(
+                  EndpointQuery(
+                    "test/test",
+                    None,
+                    Some(Seq(EndpointQueryFilter("object", None, FilterOperator.Contains(simpleJsonFragment)))),
+                    None
+                  )
+                ),
+                None,
+                None,
+                Some(3)
+              )
+        )
+      )
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
 
     "Trigger when endpoint query with `Contains` filter matches for equality" in {
-      val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test/test", None,
-          Some(Seq(
-            EndpointQueryFilter(
-              "object.objectField",
-              None,
-              FilterOperator.Contains(Json.toJson("objectFieldValue"))))), None)), None, None, Some(3))))
+      val query = EndpointDataBundle(
+        "test",
+        Map(
+          "test" -> PropertyQuery(
+                List(
+                  EndpointQuery("test/test",
+                                None,
+                                Some(
+                                  Seq(
+                                    EndpointQueryFilter("object.objectField",
+                                                        None,
+                                                        FilterOperator.Contains(Json.toJson("objectFieldValue"))
+                                    )
+                                  )
+                                ),
+                                None
+                  )
+                ),
+                None,
+                None,
+                Some(3)
+              )
+        )
+      )
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
 
     "Trigger when endpoint query with `Contains` filter matches for array containment" in {
-      val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test/test", None,
-          Some(Seq(
-            EndpointQueryFilter("object.objectFieldArray", None,
-              FilterOperator.Contains(Json.toJson("objectFieldArray2"))))), None)), None, None, Some(3))))
+      val query = EndpointDataBundle(
+        "test",
+        Map(
+          "test" -> PropertyQuery(
+                List(
+                  EndpointQuery("test/test",
+                                None,
+                                Some(
+                                  Seq(
+                                    EndpointQueryFilter("object.objectFieldArray",
+                                                        None,
+                                                        FilterOperator.Contains(Json.toJson("objectFieldArray2"))
+                                    )
+                                  )
+                                ),
+                                None
+                  )
+                ),
+                None,
+                None,
+                Some(3)
+              )
+        )
+      )
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
 
     "Trigger when endpoint query with `Contains` filter matches for array intersection" in {
-      val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test/test", None,
-          Some(Seq(
-            EndpointQueryFilter("object.objectFieldArray", None,
-              FilterOperator.Contains(Json.parse("""["objectFieldArray2", "objectFieldArray3"]"""))))), None)), None, None, Some(3))))
+      val query = EndpointDataBundle(
+        "test",
+        Map(
+          "test" -> PropertyQuery(
+                List(
+                  EndpointQuery(
+                    "test/test",
+                    None,
+                    Some(
+                      Seq(
+                        EndpointQueryFilter(
+                          "object.objectFieldArray",
+                          None,
+                          FilterOperator.Contains(Json.parse("""["objectFieldArray2", "objectFieldArray3"]"""))
+                        )
+                      )
+                    ),
+                    None
+                  )
+                ),
+                None,
+                None,
+                Some(3)
+              )
+        )
+      )
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
 
     "Trigger when endpoint query with `DateTimeExtract` filter matches" in {
-      val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test/test", None,
-          Some(Seq(
-            EndpointQueryFilter(
-              "date_iso",
-              Some(FieldTransformation.DateTimeExtract("hour")),
-              FilterOperator.Between(Json.toJson(14), Json.toJson(17))))), None)), None, None, Some(3))))
+      val query = EndpointDataBundle(
+        "test",
+        Map(
+          "test" -> PropertyQuery(
+                List(
+                  EndpointQuery(
+                    "test/test",
+                    None,
+                    Some(
+                      Seq(
+                        EndpointQueryFilter("date_iso",
+                                            Some(FieldTransformation.DateTimeExtract("hour")),
+                                            FilterOperator.Between(Json.toJson(14), Json.toJson(17))
+                        )
+                      )
+                    ),
+                    None
+                  )
+                ),
+                None,
+                None,
+                Some(3)
+              )
+        )
+      )
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
 
     "Trigger when endpoint query with `TimestampExtract` filter matches" in {
-      val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test/test", None,
-          Some(Seq(
-            EndpointQueryFilter(
-              "date",
-              Some(FieldTransformation.TimestampExtract("hour")),
-              FilterOperator.Between(Json.toJson(14), Json.toJson(17))))), None)), None, None, Some(3))))
+      val query = EndpointDataBundle(
+        "test",
+        Map(
+          "test" -> PropertyQuery(
+                List(
+                  EndpointQuery(
+                    "test/test",
+                    None,
+                    Some(
+                      Seq(
+                        EndpointQueryFilter("date",
+                                            Some(FieldTransformation.TimestampExtract("hour")),
+                                            FilterOperator.Between(Json.toJson(14), Json.toJson(17))
+                        )
+                      )
+                    ),
+                    None
+                  )
+                ),
+                None,
+                None,
+                Some(3)
+              )
+        )
+      )
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must beTrue
     }
 
     "Throw an error for text search field transformation" in {
-      val query = EndpointDataBundle("test", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test/test", None,
-          Some(Seq(
-            EndpointQueryFilter(
-              "anotherField",
-              Some(FieldTransformation.Searchable()),
-              FilterOperator.Find(Json.toJson("anotherFieldValue"))))), None)), None, None, Some(3))))
+      val query = EndpointDataBundle(
+        "test",
+        Map(
+          "test" -> PropertyQuery(
+                List(
+                  EndpointQuery(
+                    "test/test",
+                    None,
+                    Some(
+                      Seq(
+                        EndpointQueryFilter("anotherField",
+                                            Some(FieldTransformation.Searchable()),
+                                            FilterOperator.Find(Json.toJson("anotherFieldValue"))
+                        )
+                      )
+                    ),
+                    None
+                  )
+                ),
+                None,
+                None,
+                Some(3)
+              )
+        )
+      )
 
       EndpointSubscriberService.matchesBundle(simpleEndpointData, query) must throwA[EndpointQueryException]
     }
@@ -147,8 +277,7 @@ trait EndpointSubscriberServiceContext extends Scope {
 
   implicit lazy val materializer: Materializer = application.materializer
 
-  val simpleJson: JsValue = Json.parse(
-    """
+  val simpleJson: JsValue = Json.parse("""
       | {
       |   "field": "value",
       |   "date": 1492699047,
@@ -165,8 +294,7 @@ trait EndpointSubscriberServiceContext extends Scope {
       | }
     """.stripMargin)
 
-  val simpleJsonFragment: JsValue = Json.parse(
-    """
+  val simpleJsonFragment: JsValue = Json.parse("""
       | {
       |     "objectField": "objectFieldValue",
       |     "objectFieldObjectArray": [

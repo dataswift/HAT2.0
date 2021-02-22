@@ -44,9 +44,8 @@ class DevHatInitializationModule extends ScalaModule with AkkaGuiceSupport {
   /**
     * Configures the module.
     */
-  override protected def configure(): Unit = {
+  override protected def configure(): Unit =
     bind[DevHatInitializer].asEagerSingleton()
-  }
 }
 
 class DevHatInitializer @Inject() (
@@ -58,8 +57,8 @@ class DevHatInitializer @Inject() (
 
   import DevHatConfig.configLoader
 
-  val devHats: Map[String,DevHatConfig] = configuration.get[Map[String, DevHatConfig]]("devhats")
-  val devHatMigrations: Seq[String] = configuration.get[Seq[String]]("devhatMigrations")
+  val devHats: Map[String, DevHatConfig] = configuration.get[Map[String, DevHatConfig]]("devhats")
+  val devHatMigrations: Seq[String]      = configuration.get[Seq[String]]("devhatMigrations")
 
   logger.info(s"Initializing HATs: $devHats")
   devHats.values.map(initializeHat)
@@ -71,7 +70,7 @@ class DevHatInitializer @Inject() (
     val eventuallyMigrated = for {
       server <- hatServer
       _ <- new HatDbSchemaMigration(configuration, server.db, ec)
-        .run(devHatMigrations)
+             .run(devHatMigrations)
       _ <- setupCredentials(hat)(server)
     } yield ()
 
@@ -91,32 +90,31 @@ class DevHatInitializer @Inject() (
 
   def setupCredentials(
       hat: DevHatConfig
-    )(implicit server: HatServer
-    ): Future[Unit] = {
+    )(implicit server: HatServer): Future[Unit] = {
     logger.debug(s"Setup credentials for ${hat.owner}")
-    val ownerId = UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42")
+    val ownerId    = UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42")
     val platformId = UUID.fromString("6507ae16-13d7-479b-8ebc-65c28fec1634")
     for {
       savedOwner <- usersService.saveUser(
-        HatUser(
-          ownerId,
-          hat.owner,
-          Some(hat.ownerPasswordHash),
-          hat.ownerName,
-          Seq(Owner()),
-          enabled = true
-        )
-      )
+                      HatUser(
+                        ownerId,
+                        hat.owner,
+                        Some(hat.ownerPasswordHash),
+                        hat.ownerName,
+                        Seq(Owner()),
+                        enabled = true
+                      )
+                    )
       savedPlatform <- usersService.saveUser(
-        HatUser(
-          platformId,
-          hat.platform,
-          Some(hat.platformPasswordHash),
-          hat.platformName,
-          Seq(Platform()),
-          enabled = true
-        )
-      )
+                         HatUser(
+                           platformId,
+                           hat.platform,
+                           Some(hat.platformPasswordHash),
+                           hat.platformName,
+                           Seq(Platform()),
+                           enabled = true
+                         )
+                       )
     } yield {
       logger.info(s"Saved owner: $savedOwner")
       logger.info(s"Saved platform: $savedPlatform")
@@ -140,8 +138,7 @@ object DevHatConfig {
     new ConfigLoader[DevHatConfig] {
       def load(
           rootConfig: Config,
-          path: String
-        ): DevHatConfig = {
+          path: String): DevHatConfig = {
         val config = ConfigLoader.configurationLoader.load(rootConfig, path)
         DevHatConfig(
           owner = config.get[String]("owner"),

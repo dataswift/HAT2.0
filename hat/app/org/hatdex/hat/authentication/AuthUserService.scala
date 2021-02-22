@@ -44,8 +44,7 @@ trait AuthUserService extends IdentityService[HatUser, HatServer] {
     */
   def retrieve(
       loginInfo: LoginInfo
-    )(implicit dyn: HatServer
-    ): Future[Option[HatUser]]
+    )(implicit dyn: HatServer): Future[Option[HatUser]]
 
   /**
     * Saves a user.
@@ -58,6 +57,5 @@ trait AuthUserService extends IdentityService[HatUser, HatServer] {
   def link(
       mainUser: HatUser,
       linkedUser: HatUser
-    )(implicit dyn: HatServer
-    ): Future[Unit]
+    )(implicit dyn: HatServer): Future[Unit]
 }

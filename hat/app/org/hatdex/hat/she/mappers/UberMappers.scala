@@ -2,12 +2,7 @@ package org.hatdex.hat.she.mappers
 
 import java.util.UUID
 
-import io.dataswift.models.hat.{
-  EndpointQuery,
-  EndpointQueryFilter,
-  FilterOperator,
-  PropertyQuery
-}
+import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, FilterOperator, PropertyQuery }
 import io.dataswift.models.hat.applications.{
   DataFeedItem,
   DataFeedItemContent,
@@ -28,8 +23,7 @@ class UberRidesMapper extends DataEndpointMapper {
 
   def dataQueries(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]
-    ): Seq[PropertyQuery] = {
+      untilDate: Option[DateTime]): Seq[PropertyQuery] = {
     val unixDateFilter = fromDate.flatMap { _ =>
       Some(
         FilterOperator.Between(
@@ -45,9 +39,7 @@ class UberRidesMapper extends DataEndpointMapper {
           EndpointQuery(
             "uber/rides",
             None,
-            unixDateFilter.map(f =>
-              Seq(EndpointQueryFilter("start_time", None, f))
-            ),
+            unixDateFilter.map(f => Seq(EndpointQueryFilter("start_time", None, f))),
             None
           )
         ),
@@ -62,61 +54,60 @@ class UberRidesMapper extends DataEndpointMapper {
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID] = None,
-      tailContent: Option[JsValue] = None
-    ): Try[DataFeedItem] = {
+      tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     logger.debug(s"uber content: $content")
     for {
       distance <- Try(
-        (content \ "distance").asOpt[Double].getOrElse(0.doubleValue()).toString
-      )
+                    (content \ "distance").asOpt[Double].getOrElse(0.doubleValue()).toString
+                  )
       startDate <- Try(
-        new DateTime((content \ "start_time").as[Long] * 1000.longValue())
-      )
+                     new DateTime((content \ "start_time").as[Long] * 1000.longValue())
+                   )
       durationSeconds <- Try(
-        (content \ "end_time")
-          .asOpt[Int]
-          .getOrElse(0) - (content \ "start_time").asOpt[Int].getOrElse(0)
-      )
+                           (content \ "end_time")
+                             .asOpt[Int]
+                             .getOrElse(0) - (content \ "start_time").asOpt[Int].getOrElse(0)
+                         )
       duration <- Try {
-        val m = (durationSeconds / 60) % 60
-        val h = (durationSeconds / 60 / 60) % 24
-        "%02d h %02d min".format(h, m)
-      }
+                    val m = (durationSeconds / 60)      % 60
+                    val h = (durationSeconds / 60 / 60) % 24
+                    "%02d h %02d min".format(h, m)
+                  }
       title <- Try(
-        DataFeedItemTitle(
-          s"Your trip on ${startDate.toString("dd/MM/YYYY")}",
-          None,
-          None
-        )
-      )
+                 DataFeedItemTitle(
+                   s"Your trip on ${startDate.toString("dd/MM/YYYY")}",
+                   None,
+                   None
+                 )
+               )
       itemContent <- Try(
-        DataFeedItemContent(
-          Some(s"""${(content \ "start_city" \ "display_name")
-            .asOpt[String]
-            .getOrElse("Unknown City")},
+                       DataFeedItemContent(
+                         Some(s"""${(content \ "start_city" \ "display_name")
+                           .asOpt[String]
+                           .getOrElse("Unknown City")},
              |${BigDecimal
-            .decimal(distance.toFloat)
-            .setScale(1, BigDecimal.RoundingMode.HALF_UP)
-            .toDouble} miles,
+                           .decimal(distance.toFloat)
+                           .setScale(1, BigDecimal.RoundingMode.HALF_UP)
+                           .toDouble} miles,
              |${duration}""".stripMargin),
-          None,
-          None,
-          None
-        )
-      )
+                         None,
+                         None,
+                         None
+                       )
+                     )
       latitude <- Try(
-        (content \ "start_city" \ "latitude")
-          .asOpt[Double]
-          .getOrElse(0.doubleValue())
-      )
+                    (content \ "start_city" \ "latitude")
+                      .asOpt[Double]
+                      .getOrElse(0.doubleValue())
+                  )
       longitude <- Try(
-        (content \ "start_city" \ "longitude")
-          .asOpt[Double]
-          .getOrElse(0.doubleValue())
-      )
+                     (content \ "start_city" \ "longitude")
+                       .asOpt[Double]
+                       .getOrElse(0.doubleValue())
+                   )
       location <- Try(
-        DataFeedItemLocation(Some(LocationGeo(longitude, latitude)), None, None)
-      )
+                    DataFeedItemLocation(Some(LocationGeo(longitude, latitude)), None, None)
+                  )
     } yield DataFeedItem(
       "uber",
       startDate,
@@ -129,7 +120,7 @@ class UberRidesMapper extends DataEndpointMapper {
 }
 
 class UberProfileStaticDataMapper extends StaticDataEndpointMapper {
-  def dataQueries(): Seq[PropertyQuery] = {
+  def dataQueries(): Seq[PropertyQuery] =
     Seq(
       PropertyQuery(
         List(EndpointQuery("uber/profile", None, None, None)),
@@ -138,13 +129,11 @@ class UberProfileStaticDataMapper extends StaticDataEndpointMapper {
         Some(1)
       )
     )
-  }
 
   def mapDataRecord(
       recordId: UUID,
       content: JsValue,
-      endpoint: String
-    ): Seq[StaticDataValues] = {
+      endpoint: String): Seq[StaticDataValues] = {
     val eventualData = content.validate[Map[String, JsValue]]
     eventualData match {
       case JsSuccess(value, _) =>

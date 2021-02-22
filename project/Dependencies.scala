@@ -96,10 +96,12 @@ object Dependencies {
       val apacheCommonLang         = "org.apache.commons"     % "commons-lang3"                   % "3.10"
     }
 
-    object Backend{
+    object Backend {
       private val version =
         "2.0.4"
       val logPlay = "io.dataswift" %% "log-play" % version
+      val hatPlay = "io.dataswift" %% "hat-play" % version
+      val dexPlay = "io.dataswift" %% "dex-play" % version
     }
 
     object HATDeX {
