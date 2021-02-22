@@ -48,7 +48,7 @@ class DataDebitServiceSpec
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
-    val endpointRecrodsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
+    //val endpointRecrodsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
 
     val action = DBIO.seq(
       // DataDebitPermissions.filter(_.bundleId.like("test%")).delete,
@@ -58,6 +58,7 @@ class DataDebitServiceSpec
       // DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
       // DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
       // DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
+      SheFunction.delete,
       DataDebitPermissions.delete,
       DataDebit.delete,
       DataCombinators.delete,
@@ -83,23 +84,33 @@ class DataDebitServiceSpec
 
   it should "Throw an error when a duplicate data debit is getting saved" in {
     val service = application.injector.instanceOf[DataDebitService]
-    val saved = for {
-      _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
-      saved <- service.createDataDebit("testdd", testDataDebitRequestUpdate, owner.userId)
-    } yield saved
 
-    an[RichDataDuplicateDebitException] should be thrownBy saved
+    try for {
+      _ <- service.createDataDebit("testdd2", testDataDebitRequest, owner.userId)
+      saved <- service.createDataDebit("testdd2", testDataDebitRequestUpdate, owner.userId)
+    } yield saved
+    catch {
+      case (rddde: RichDataDuplicateDebitException) =>
+        true
+      case _: Throwable =>
+        fail()
+    }
   }
 
   it should "Throw an error when a different data debit with same bundle ID is getting saved" in {
     val service = application.injector.instanceOf[DataDebitService]
-    val saved = for {
+
+    try for {
       _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
       saved <-
         service.createDataDebit("testdd2", testDataDebitDetailsUpdate.copy(dataDebitKey = "testdd2"), owner.userId)
     } yield saved
-
-    an[RichDataDuplicateDebitException] should be thrownBy saved
+    catch {
+      case (rddde: RichDataDuplicateDebitException) =>
+        true
+      case _: Throwable =>
+        fail()
+    }
   }
 
   "The `dataDebit` method" should "Return a data debit by ID" in {
@@ -250,17 +261,21 @@ class DataDebitServiceSpec
 
   it should "Throw an error when updating data debit that does not already exist" in {
     val service = application.injector.instanceOf[DataDebitService]
-    val saved = for {
+
+    try for {
       updated <- service.updateDataDebitPermissions("testdd2", testDataDebitDetailsUpdate, owner.userId)
     } yield updated
-
-    an[RichDataDebitException] should be thrownBy saved
-    //saved must throwA[RichDataDebitException].await(3, 10.seconds)
+    catch {
+      case (rdde: RichDataDebitException) =>
+        true
+      case _: Throwable =>
+        fail()
+    }
   }
 
   it should "Throw an error when updating data debit with bundle linked to another debit" in {
     val service = application.injector.instanceOf[DataDebitService]
-    val saved = for {
+    try for {
       _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
       _ <- service.createDataDebit("testdd2", testDataDebitRequestUpdate, owner.userId)
       updated <-
@@ -269,14 +284,17 @@ class DataDebitServiceSpec
                                            owner.userId
         )
     } yield updated
-
-    an[RichDataDuplicateBundleException] should be thrownBy saved
-    //saved must throwA[RichDataDuplicateBundleException].await(3, 10.seconds)
+    catch {
+      case (rdde: RichDataDuplicateBundleException) =>
+        true
+      case _: Throwable =>
+        fail()
+    }
   }
 
   it should "Throw an error when updating data debit with conditions bundle linked to another debit" in {
     val service = application.injector.instanceOf[DataDebitService]
-    val saved = for {
+    try for {
       _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
       _ <- service.createDataDebit("testdd2", testDataDebitRequestUpdate, owner.userId)
       updated <- service.updateDataDebitPermissions(
@@ -285,9 +303,13 @@ class DataDebitServiceSpec
                    owner.userId
                  )
     } yield updated
+    catch {
+      case (rdde: RichDataDuplicateBundleException) =>
+        true
+      case _: Throwable =>
+        fail()
+    }
 
-    an[RichDataDuplicateBundleException] should be thrownBy saved
-    //saved must throwA[RichDataDuplicateBundleException].await(3, 10.seconds)
   }
 
   "The `all` method" should "List all setup data debits" in {
