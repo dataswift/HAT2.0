@@ -26,19 +26,15 @@ package org.hatdex.hat.api.service.monitoring
 
 import java.util.UUID
 
-import akka.stream.Materializer
-import org.hatdex.hat.api.models.{ Owner, _ }
-import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.resourceManagement.FakeHatConfiguration
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{ JsValue, Json }
-
-import play.api.{ Application, Logger }
-
 import io.dataswift.test.common.BaseSpec
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
-import play.api.test.Helpers
-import play.api.test.Helpers._
+import org.hatdex.hat.api.models.Owner
+import org.hatdex.hat.api.models._
+import org.hatdex.hat.authentication.models.HatUser
+import org.scalatest.BeforeAndAfter
+import org.scalatest.BeforeAndAfterAll
+import play.api.Logger
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
 
 class EndpointSubscriberServiceSpec
     extends BaseSpec

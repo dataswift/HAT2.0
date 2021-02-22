@@ -31,9 +31,6 @@ lazy val hat = project
           Library.Play.Silhouette.silhouette,
           Library.Play.Jwt.atlassianJwtCore,
           Library.Play.Jwt.bouncyCastlePkix,
-          Library.Specs2.core,
-          Library.Specs2.matcherExtra,
-          Library.Specs2.mock,
           Library.HATDeX.hatClient,
           Library.HATDeX.dexClient,
           Library.HATDeX.codegen,
@@ -158,7 +155,8 @@ inThisBuild(
   List(
     scalaVersion := Versions.scalaVersion,
     semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision
+    semanticdbVersion := scalafixSemanticdb.revision,
+    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.4.4"
   )
 )
 

@@ -29,7 +29,7 @@ import org.hatdex.dex.apiV2.services.DexClient
 import org.hatdex.dex.apiV2.services.Errors.ApiException
 import org.hatdex.hat.api.models.applications.Application
 import org.hatdex.hat.api.service.RemoteExecutionContext
-import play.api.{Configuration, Logger}
+import play.api.{ Configuration, Logger }
 import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
 
@@ -64,22 +64,23 @@ class TrustedApplicationProviderDex @Inject() (
 
   private val dexApplicationsCacheDuration: FiniteDuration = 30.minutes
 
-  def applications: Future[Seq[Application]] = {
+  def applications: Future[Seq[Application]] =
     cache.getOrElseUpdate(
       "apps:dexApplications",
       dexApplicationsCacheDuration
     ) {
       dexClient.applications(includeUnpublished = includeUnpublished)
     }
-  }
 
-  def application(id: String): Future[Option[Application]] = {
-    cache.getOrElseUpdate(
-      s"apps:dex:$id",
-      dexApplicationsCacheDuration
-    ) {
-      dexClient.application(id, None)
-    }.map(Some(_))
+  def application(id: String): Future[Option[Application]] =
+    cache
+      .getOrElseUpdate(
+        s"apps:dex:$id",
+        dexApplicationsCacheDuration
+      ) {
+        dexClient.application(id, None)
+      }
+      .map(Some(_))
       .recover {
         case e: ApiException =>
           logger.warn(s"Application config not found: ${e.getMessage}")
@@ -90,5 +91,4 @@ class TrustedApplicationProviderDex @Inject() (
           None
       }
 
-  }
 }

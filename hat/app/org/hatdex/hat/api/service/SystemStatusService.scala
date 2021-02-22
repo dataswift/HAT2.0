@@ -52,25 +52,25 @@ class SystemStatusService @Inject() (implicit val ec: DalExecutionContext) {
 object SystemStatusService {
   def humanReadableByteCount(
       bytes: Long,
-      si: Boolean = true
-    ): (BigDecimal, String) = {
-    val unit = if (si) { 1000 }
-    else { 1024 }
-    if (bytes < unit) {
+      si: Boolean = true): (BigDecimal, String) = {
+    val unit =
+      if (si) 1000
+      else 1024
+    if (bytes < unit)
       (bytes, "B")
-    } else {
+    else {
       val exp = (Math.log(bytes.toDouble) / Math.log(unit.toDouble)).toInt
-      val preLetter = if (si) {
-        "kMGTPE"
-      } else {
-        "KMGTPE"
-      }
-      val preSi = if (si) {
-        ""
-      } else {
-        "i"
-      }
-      val pre = preLetter.substring(exp - 1, exp) + preSi
+      val preLetter =
+        if (si)
+          "kMGTPE"
+        else
+          "KMGTPE"
+      val preSi =
+        if (si)
+          ""
+        else
+          "i"
+      val pre     = preLetter.substring(exp - 1, exp) + preSi
       val bdbytes = BigDecimal(bytes / Math.pow(unit.toDouble, exp.toDouble))
       (bdbytes, pre + "B")
     }

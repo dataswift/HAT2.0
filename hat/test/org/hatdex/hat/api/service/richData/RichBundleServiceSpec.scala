@@ -272,6 +272,38 @@ trait RichBundleServiceContext extends HATTestContext {
     )
   )
 
+  val testBundleA = EndpointDataBundle(
+    "testBundleA",
+    Map(
+      "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                              Some("data.newField"),
+                              None,
+                              Some(3)
+          ),
+      "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)),
+                                 Some("data.newField"),
+                                 None,
+                                 Some(1)
+          )
+    )
+  )
+
+  val testBundleB = EndpointDataBundle(
+    "testBundleB",
+    Map(
+      "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                              Some("data.newField"),
+                              None,
+                              Some(3)
+          ),
+      "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)),
+                                 Some("data.newField"),
+                                 None,
+                                 Some(1)
+          )
+    )
+  )
+
   val conditionsBundle = EndpointDataBundle(
     "testConditionsBundle",
     Map(

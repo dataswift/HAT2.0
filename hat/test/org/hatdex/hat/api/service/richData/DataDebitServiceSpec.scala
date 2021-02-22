@@ -48,16 +48,16 @@ class DataDebitServiceSpec
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
+    val endpointRecordsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
+
     val action = DBIO.seq(
-      DataDebitPermissions.delete,
-      SheFunction.delete,
-      DataBundles.delete,
-      DataDebit.delete,
-      DataCombinators.delete,
-      DataBundles.delete,
-      DataJsonGroupRecords.delete,
-      DataJsonGroups.delete,
-      DataJson.delete
+      DataDebitPermissions.filter(_.bundleId.like("test%")).delete,
+      DataDebit.filter(_.dataDebitKey.like("test%")).delete,
+      DataCombinators.filter(_.combinatorId.like("test%")).delete,
+      DataBundles.filter(_.bundleId.like("test%")).delete,
+      DataJsonGroupRecords.filter(_.recordId in endpointRecordsQuery).delete,
+      DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
+      DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
     )
 
     Await.result(db.run(action), 60.seconds)
@@ -309,8 +309,8 @@ class DataDebitServiceSpec
     val service = application.injector.instanceOf[DataDebitService]
 
     val saved = for {
-      _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
-      _ <- service.createDataDebit("testdd2", testDataDebitRequestUpdate, owner.userId)
+      _ <- service.createDataDebit("testddA", testDataDebitRequestA, owner.userId)
+      _ <- service.createDataDebit("testddB", testDataDebitRequestB, owner.userId)
       saved <- service.all()
     } yield saved
 
@@ -337,6 +337,40 @@ trait DataDebitServiceSpecContext extends RichBundleServiceContext {
     "http://client.com/terms.html",
     Some(conditionsBundle),
     testBundle
+  )
+
+  val testDataDebitRequestA: DataDebitSetupRequest = DataDebitSetupRequest(
+    "testddA",
+    "purpose of the data use",
+    org.joda.time.DateTime.now(),
+    org.joda.time.Duration.standardDays(5),
+    false,
+    "clientName",
+    "http://client.com",
+    "http://client.com/logo.png",
+    None,
+    None,
+    Some("Detailed description of the data debit"),
+    "http://client.com/terms.html",
+    Some(conditionsBundle),
+    testBundleA
+  )
+
+  val testDataDebitRequestB: DataDebitSetupRequest = DataDebitSetupRequest(
+    "testddB",
+    "purpose of the data use",
+    org.joda.time.DateTime.now(),
+    org.joda.time.Duration.standardDays(5),
+    false,
+    "clientName",
+    "http://client.com",
+    "http://client.com/logo.png",
+    None,
+    None,
+    Some("Detailed description of the data debit"),
+    "http://client.com/terms.html",
+    Some(conditionsBundle2),
+    testBundleB
   )
 
   val testDataDebitDetailsUpdate: DataDebitSetupRequest = DataDebitSetupRequest(

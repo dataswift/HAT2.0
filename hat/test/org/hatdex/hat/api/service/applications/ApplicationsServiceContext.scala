@@ -53,8 +53,9 @@ import play.core.server.Server
 import scala.concurrent.Future
 import org.scalamock.scalatest.MockFactory
 import org.scalatestplus.mockito.MockitoSugar
+//import org.mockito.Mockito._
 
-trait ApplicationsServiceContext extends HATTestContext with MockitoSugar with MockFactory {
+trait ApplicationsServiceContext extends HATTestContext {
   override lazy val application: PlayApplication = new GuiceApplicationBuilder()
     .configure(conf)
     .overrides(new FakeModule)
@@ -361,19 +362,17 @@ trait ApplicationsServiceContext extends HATTestContext with MockitoSugar with M
       }
     }
 
-    val mockStatusChecker = MockitoSugar.mock[ApplicationStatusCheckService]
-    (mockStatusChecker.status _)
-      .expects(any[ApplicationStatus.Internal], any[String])
-      .returning(Future.successful(true))
-    when(mockStatusChecker.status(any[ApplicationStatus.Status], any[String]))
-      .thenAnswer(StatusCheck())
+    val mockStatusChecker = mock[ApplicationStatusCheckService]
+    when(mockStatusChecker.status(any[ApplicationStatus.Internal], any[String])).thenReturn(Future.successful(true))
+    when(mockStatusChecker.status(any[ApplicationStatus.Status], any[String])).thenAnswer(StatusCheck())
 
     mockStatusChecker
   }
 
   lazy val mockStatsReporter = {
-    val mockStatsReporter = MockitoSugar.mock[StatsReporter]
-    (mockStatsReporter.registerOwnerConsent _).expects(any[String]) returns Future.successful(Done)
+    val mockStatsReporter = mock[StatsReporter]
+    when(mockStatsReporter.registerOwnerConsent(any[String])(any[HatServer])).thenReturn(Future.successful(Done))
+    //(mockStatsReporter.registerOwnerConsent _).expects(any[String]) returns Future.successful(Done)
 
     mockStatsReporter
   }

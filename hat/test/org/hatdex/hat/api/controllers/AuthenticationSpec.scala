@@ -197,6 +197,7 @@ class AuthenticationSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfte
       .withAuthenticator(owner.loginInfo)
 
     val maybeResult: Option[Future[Result]] = Helpers.route(application, request)
+    // What is this?
     //      val controller = application.injector.instanceOf[Authentication]
     //      val result: Future[Result] = Helpers.call(controller.passwordChangeProcess(), request)
     maybeResult must not be empty
@@ -208,6 +209,7 @@ class AuthenticationSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfte
   }
 
   it should "Change password if it is sufficiently strong" in {
+
     val request = FakeRequest("POST", "http://hat.hubofallthings.net")
       .withAuthenticator(owner.loginInfo)
       .withJsonBody(Json.toJson(passwordChangeStrong))
@@ -230,7 +232,9 @@ class AuthenticationSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfte
     status(result) must equal(OK)
   }
 
+  // Times out
   it should "Send email to the owner if provided email matches" in {
+    import org.mockito.ArgumentMatchers.{ any }
     val request = FakeRequest("POST", "http://hat.hubofallthings.net")
       .withAuthenticator(dataDebitUser.loginInfo)
       .withJsonBody(Json.toJson(passwordForgottenOwner))
@@ -290,6 +294,7 @@ class AuthenticationSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfte
     (contentAsJson(result) \ "cause").as[String] must equal("Only HAT owner can reset their password")
   }
 
+  // Times out
   it should "Reset password" in {
     val request = FakeRequest("POST", "http://hat.hubofallthings.net")
       .withAuthenticator(owner.loginInfo)

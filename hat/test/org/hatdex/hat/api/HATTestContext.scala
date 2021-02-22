@@ -47,19 +47,19 @@ import org.hatdex.hat.phata.models.MailTokenUser
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, LoggingProvider, MockLoggingProvider }
 import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
-// import org.specs2.mock.Mockito
-// import org.specs2.specification.Scope
 import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
-import play.api.i18n.{ Lang, Messages, MessagesApi }
+import play.api.i18n.{ Lang, MessagesApi }
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{ Application, Configuration, Logger }
 import play.cache.NamedCacheImpl
-import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.dimafeng.testcontainers.{ PostgreSQLContainer }
 
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 import org.scalatestplus.mockito.MockitoSugar
+import org.mockito.ArgumentMatchers.{ any }
+import org.mockito.Mockito._
 
 trait HATTestContext extends MockitoSugar {
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -208,7 +208,7 @@ trait HATTestContext extends MockitoSugar {
   }
 
   val mockMailer: HatMailer = mock[HatMailer]
-  //doReturn(Done).when(mockMailer).passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])
+  when(mockMailer.passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])).thenReturn(Done)
 
   val fileManagerS3Mock = FileManagerS3Mock()
 

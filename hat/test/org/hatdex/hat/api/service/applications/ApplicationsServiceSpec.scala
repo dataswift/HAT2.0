@@ -124,7 +124,7 @@ class ApplicationsServiceSpec
       app <- service.applicationStatus("randomid")
     } yield app
     val app = Await.result(result, 20.seconds)
-    app must equal(empty)
+    app must equal(None)
   }
 
   it should "Return `active=false` status for Internal status check apps that are not setup" in {
@@ -133,6 +133,7 @@ class ApplicationsServiceSpec
       app <- service.applicationStatus(notablesApp.id)
     } yield {
       app must not be empty
+      // ???
       app.get.active must equal(false)
     }
     Await.result(result, 20.seconds)
@@ -312,7 +313,7 @@ class ApplicationsServiceSpec
     } yield {
       setup.active must equal(false)
       dd must not be empty
-      dd.get.activePermissions must equal(empty)
+      dd.get.activePermissions must equal(None)
     }
 
     Await.result(result, 10.seconds)
@@ -373,6 +374,7 @@ class ApplicationsServiceSpec
           }
           Await.result(result, 10.seconds)
       }
+    }
     
 
     it should "Return `true` for external check with matching status" in {
@@ -407,7 +409,7 @@ class ApplicationsServiceSpec
       val service = application.injector.instanceOf[ApplicationsService]
 
       val result = for {
-        contractApp <- service.joinContract(fakeContract, "hatName")
+        _ <- service.joinContract(fakeContract, "hatName")
         notablesApp <- service.joinContract(notablesApp, "hatName")
       } yield {
         notablesApp must equal(Done)
@@ -441,4 +443,4 @@ class ApplicationsServiceSpec
   //      result await (1, 20.seconds)
   //    }
   }
-  }
+  

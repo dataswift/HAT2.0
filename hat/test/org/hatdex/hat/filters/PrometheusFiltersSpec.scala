@@ -11,7 +11,6 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import io.dataswift.test.common.BaseSpec
 import io.prometheus.client.CollectorRegistry
-import play.api.Configuration
 import play.api.libs.typedmap.TypedMap
 import play.api.mvc._
 import play.api.routing.HandlerDef

@@ -81,13 +81,6 @@ object Dependencies {
       }
     }
 
-    object Specs2 {
-      private val version = "3.9.5"
-      val core            = "org.specs2" %% "specs2-core"          % version
-      val matcherExtra    = "org.specs2" %% "specs2-matcher-extra" % version
-      val mock            = "org.specs2" %% "specs2-mock"          % version
-    }
-
     object Utils {
       private val awsSdkVersion    = "1.11.755"
       val pegdown                  = "org.pegdown"            % "pegdown"                         % "1.6.0"
