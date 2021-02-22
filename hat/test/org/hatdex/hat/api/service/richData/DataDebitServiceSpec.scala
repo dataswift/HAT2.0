@@ -48,18 +48,10 @@ class DataDebitServiceSpec
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
-    //val endpointRecrodsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
-
     val action = DBIO.seq(
-      // DataDebitPermissions.filter(_.bundleId.like("test%")).delete,
-      // DataDebit.filter(_.dataDebitKey.like("test%")).delete,
-      // DataCombinators.filter(_.combinatorId.like("test%")).delete,
-      // DataBundles.filter(_.bundleId.like("test%")).delete,
-      // DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
-      // DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      // DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
-      SheFunction.delete,
       DataDebitPermissions.delete,
+      SheFunction.delete,
+      DataBundles.delete,
       DataDebit.delete,
       DataCombinators.delete,
       DataBundles.delete,
@@ -312,6 +304,7 @@ class DataDebitServiceSpec
 
   }
 
+  // Fails with duplicate bundle ID
   "The `all` method" should "List all setup data debits" in {
     val service = application.injector.instanceOf[DataDebitService]
 
