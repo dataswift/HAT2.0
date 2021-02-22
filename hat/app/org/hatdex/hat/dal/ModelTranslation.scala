@@ -24,8 +24,8 @@
 
 package org.hatdex.hat.dal
 
-import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{
+import io.dataswift.models.hat.json.HatJsonFormats
+import io.dataswift.models.hat.{
   DataDebit => ApiDataDebit,
   DataDebitPermissions => ApiDataDebitPermissions,
   UserRole => ApiUserRole,
@@ -136,7 +136,7 @@ object ModelTranslation {
   }
 
   def fromDbModel(value: DataStatsLogRow): DataStats = {
-    import org.hatdex.hat.api.json.DataStatsFormat.dataStatsFormat
+    import io.dataswift.models.hat.json.DataStatsFormat.dataStatsFormat
     value.stats.as[DataStats]
   }
 
@@ -215,7 +215,7 @@ object ModelTranslation {
   }
 
   def fromDbModel(dataBundleRow: DataBundlesRow): EndpointDataBundle = {
-    import org.hatdex.hat.api.json.RichDataJsonFormats.propertyQueryFormat
+    import io.dataswift.models.hat.json.RichDataJsonFormats.propertyQueryFormat
     EndpointDataBundle(
       dataBundleRow.bundleId,
       dataBundleRow.bundle.as[Map[String, PropertyQuery]]

@@ -24,7 +24,7 @@
 
 package org.hatdex.hat.api.service.applications
 
-import org.hatdex.hat.api.models.applications.Application
+import io.dataswift.models.hat.applications.Application
 
 import scala.concurrent.{ ExecutionContext, Future }
 

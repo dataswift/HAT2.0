@@ -24,7 +24,7 @@
 
 package org.hatdex.hat.api.service
 
-import org.hatdex.hat.api.models.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus }
+import io.dataswift.models.hat.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeAll, BeforeEach }

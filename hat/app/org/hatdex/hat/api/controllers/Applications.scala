@@ -26,8 +26,8 @@ package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-import org.hatdex.hat.api.json.ApplicationJsonProtocol
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat.json.ApplicationJsonProtocol
+import io.dataswift.models.hat._
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.richData.RichDataDuplicateBundleException
 import org.hatdex.hat.authentication.{
@@ -51,7 +51,7 @@ class Applications @Inject() (
     extends HatApiController(components, silhouette)
     with ApplicationJsonProtocol {
 
-  import org.hatdex.hat.api.json.HatJsonFormats.{
+  import io.dataswift.models.hat.json.HatJsonFormats.{
     accessTokenFormat,
     errorMessage
   }

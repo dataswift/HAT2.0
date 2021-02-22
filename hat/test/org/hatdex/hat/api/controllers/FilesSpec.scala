@@ -27,7 +27,7 @@ package org.hatdex.hat.api.controllers
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat._
 import org.hatdex.hat.api.service._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -44,7 +44,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
 
   val logger = Logger(this.getClass)
 
-  import org.hatdex.hat.api.json.HatJsonFormats._
+  import io.dataswift.models.hat.json.HatJsonFormats._
 
   sequential
 

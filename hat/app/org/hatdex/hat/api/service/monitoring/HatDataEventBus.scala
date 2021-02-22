@@ -31,7 +31,7 @@ import akka.event.{ EventBus, SubchannelClassification }
 import akka.util.Subclassification
 import com.google.inject.Singleton
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat._
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation

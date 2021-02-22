@@ -29,7 +29,7 @@ import java.util.UUID
 import akka.stream.Materializer
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.models.{ EndpointData, Owner }
+import io.dataswift.models.hat.{ EndpointData, Owner }
 import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.DataCreatedEvent
 import org.hatdex.hat.authentication.models.HatUser
@@ -54,7 +54,7 @@ class HatDataStatsProcessorSpec extends PlaySpecification with Mockito with HatD
       val service = application.injector.instanceOf[HatDataStatsProcessor]
       val stats = service.computeInboundStats(simpleDataCreatedEvent)
 
-      import org.hatdex.hat.api.json.DataStatsFormat._
+      import io.dataswift.models.hat.json.DataStatsFormat._
       logger.debug(s"Got back stats: ${Json.prettyPrint(Json.toJson(stats))}")
 
       stats.logEntry must be equalTo "test item"

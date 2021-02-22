@@ -2,13 +2,13 @@ package org.hatdex.hat.she.mappers
 
 import java.util.UUID
 
-import org.hatdex.hat.api.models.{
+import io.dataswift.models.hat.{
   EndpointQuery,
   EndpointQueryFilter,
   FilterOperator,
   PropertyQuery
 }
-import org.hatdex.hat.api.models.applications.{
+import io.dataswift.models.hat.applications.{
   DataFeedItem,
   DataFeedItemContent,
   DataFeedItemLocation,

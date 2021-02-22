@@ -26,7 +26,7 @@ package org.hatdex.hat.phata.controllers
 
 import com.mohiva.play.silhouette.test._
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models.EndpointData
+import io.dataswift.models.hat.EndpointData
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -42,7 +42,7 @@ class PhataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
 
   val logger = Logger(this.getClass)
 
-  import org.hatdex.hat.api.json.RichDataJsonFormats._
+  import io.dataswift.models.hat.json.RichDataJsonFormats._
 
   sequential
 

@@ -28,11 +28,11 @@ import java.security.MessageDigest
 
 import javax.inject.Inject
 import akka.Done
-import org.hatdex.hat.api.json.{
+import io.dataswift.models.hat.json.{
   ApplicationJsonProtocol,
   DataFeedItemJsonProtocol
 }
-import org.hatdex.hat.api.models.{ EndpointData, Owner }
+import io.dataswift.models.hat.{ EndpointData, Owner }
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.models._
@@ -165,7 +165,7 @@ class FunctionService @Inject() (
     )(implicit db: Database
     ): Future[FunctionConfiguration] = {
     logger.debug(s"Save function configuration $configuration")
-    import org.hatdex.hat.api.json.RichDataJsonFormats.propertyQueryFormat
+    import io.dataswift.models.hat.json.RichDataJsonFormats.propertyQueryFormat
     import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol.triggerFormat
     import ApplicationJsonProtocol.formattedTextFormat
     import DataFeedItemJsonProtocol.feedItemFormat

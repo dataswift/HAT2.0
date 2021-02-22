@@ -25,7 +25,7 @@ package org.hatdex.hat.she.mappers
 
 import java.util.UUID
 
-import org.hatdex.hat.api.models.{ EndpointData, PropertyQuery }
+import io.dataswift.models.hat.{ EndpointData, PropertyQuery }
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.she.models.StaticDataValues

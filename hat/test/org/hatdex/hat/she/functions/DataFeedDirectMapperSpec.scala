@@ -24,7 +24,7 @@
 
 package org.hatdex.hat.she.functions
 
-import org.hatdex.hat.api.models.FilterOperator.Between
+import io.dataswift.models.hat.FilterOperator.Between
 import org.hatdex.hat.she.mappers._
 import org.joda.time.{ DateTime, DateTimeUtils }
 import org.specs2.mock.Mockito

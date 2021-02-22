@@ -96,9 +96,15 @@ object Dependencies {
       val apacheCommonLang         = "org.apache.commons"     % "commons-lang3"                   % "3.10"
     }
 
+    object Backend{
+      private val version =
+        "2.0.3"
+      val logPlay = "io.dataswift" %% "log-play" % version
+    }
+
     object HATDeX {
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.6.16"
-      val dexClient = "org.hatdex" %% "dex-client-scala"      % "2.6.10"
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "3.0.2"
+      val dexClient = "org.hatdex" %% "dex-client-scala"      % "3.1.1"
       val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
     }
 

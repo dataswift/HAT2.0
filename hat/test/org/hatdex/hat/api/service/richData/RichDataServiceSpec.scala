@@ -28,7 +28,7 @@ import java.util.UUID
 
 import akka.stream.scaladsl.Sink
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat._
 import org.hatdex.hat.dal.Tables.{ DataJson, DataJsonGroups }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.specs2.concurrent.ExecutionEnv

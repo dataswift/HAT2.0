@@ -37,7 +37,7 @@ import com.mohiva.play.silhouette.api.{ Environment, Silhouette, SilhouetteProvi
 import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.FakeCache
-import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
+import io.dataswift.models.hat.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment

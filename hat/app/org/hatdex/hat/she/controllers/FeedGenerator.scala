@@ -26,9 +26,9 @@ package org.hatdex.hat.she.controllers
 
 import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
-import org.hatdex.hat.api.json.{ DataFeedItemJsonProtocol, RichDataJsonFormats }
-import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.models.applications.Version
+import io.dataswift.models.hat.json.{ DataFeedItemJsonProtocol, RichDataJsonFormats }
+import io.dataswift.models.hat._
+import io.dataswift.models.hat.applications.Version
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.{
   ContainsApplicationRole,

@@ -27,7 +27,7 @@ package org.hatdex.hat.api.service.monitoring
 import java.util.UUID
 
 import akka.stream.Materializer
-import org.hatdex.hat.api.models.{ Owner, _ }
+import io.dataswift.models.hat.{ Owner, _ }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
 import org.specs2.mock.Mockito

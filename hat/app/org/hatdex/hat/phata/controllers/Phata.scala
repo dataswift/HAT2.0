@@ -26,8 +26,8 @@ package org.hatdex.hat.phata.controllers
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.{ Assets, AssetsFinder, AssetsFinderProvider }
 import javax.inject.Inject
-import org.hatdex.hat.api.json.{ HatJsonFormats, RichDataJsonFormats }
-import org.hatdex.hat.api.models.EndpointDataBundle
+import io.dataswift.models.hat.json.{ HatJsonFormats, RichDataJsonFormats }
+import io.dataswift.models.hat.EndpointDataBundle
 import org.hatdex.hat.api.service.richData.{ RichBundleService, RichDataService }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.phata.{ views => phataViews }

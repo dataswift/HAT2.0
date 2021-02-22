@@ -26,7 +26,7 @@ package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.test._
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat._
 import org.hatdex.hat.api.service.richData.{ DataDebitContractService, RichDataService }
 import org.joda.time.LocalDateTime
 import org.specs2.concurrent.ExecutionEnv

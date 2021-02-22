@@ -31,7 +31,7 @@ import akka.stream.SubstreamCancelStrategy
 import akka.stream.scaladsl.Source
 import akka.{ Done, NotUsed }
 import javax.inject.Inject
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat._
 import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._

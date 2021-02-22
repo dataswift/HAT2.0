@@ -35,6 +35,7 @@ lazy val hat = project
           Library.Specs2.matcherExtra,
           Library.Specs2.mock,
           Library.HATDeX.hatClient,
+          Library.Backend.logPlay,
           Library.HATDeX.dexClient,
           Library.HATDeX.codegen,
           Library.Utils.pegdown,

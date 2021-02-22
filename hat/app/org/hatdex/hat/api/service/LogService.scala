@@ -28,7 +28,7 @@ import java.util.UUID
 
 import akka.Done
 import javax.inject.Inject
-import org.hatdex.hat.api.models.LogRequest
+import io.dataswift.models.hat.LogRequest
 import play.api.Logger
 
 import scala.concurrent.Future

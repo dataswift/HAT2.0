@@ -25,9 +25,9 @@
 package org.hatdex.hat.api.service.applications
 
 import javax.inject.Inject
-import org.hatdex.dex.apiV2.services.DexClient
-import org.hatdex.dex.apiV2.services.Errors.ApiException
-import org.hatdex.hat.api.models.applications.Application
+import org.hatdex.dex.apiV2.DexClient
+import org.hatdex.dex.apiV2.Errors.ApiException
+import io.dataswift.models.hat.applications.Application
 import org.hatdex.hat.api.service.RemoteExecutionContext
 import play.api.{Configuration, Logger}
 import play.api.cache.AsyncCacheApi

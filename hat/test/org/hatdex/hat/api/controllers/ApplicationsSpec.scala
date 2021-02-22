@@ -26,9 +26,9 @@ package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.test._
 import org.hatdex.hat.api.service.applications.ApplicationsServiceContext
-import org.hatdex.hat.api.json.ApplicationJsonProtocol
-import org.hatdex.hat.api.models.applications.{ Application, HatApplication }
-import org.hatdex.hat.api.models.{ AccessToken, ErrorMessage }
+import io.dataswift.models.hat.json.ApplicationJsonProtocol
+import io.dataswift.models.hat.applications.{ Application, HatApplication }
+import io.dataswift.models.hat.{ AccessToken, ErrorMessage }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import play.api.libs.json.{ JsObject, JsString }
 import org.specs2.mock.Mockito
@@ -63,7 +63,7 @@ class ApplicationsSpec
   }
 
   import ApplicationJsonProtocol._
-  import org.hatdex.hat.api.json.HatJsonFormats.{ accessTokenFormat, errorMessage }
+  import io.dataswift.models.hat.json.HatJsonFormats.{ accessTokenFormat, errorMessage }
 
   "The `applications` method" should {
     "Return list of available applications" in {

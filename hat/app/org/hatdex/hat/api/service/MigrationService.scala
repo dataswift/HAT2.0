@@ -31,8 +31,8 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{ Flow, Keep, RunnableGraph, Sink, Source }
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import javax.inject.Inject
-import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ ApiDataRecord, _ }
+import io.dataswift.models.hat.json.HatJsonFormats
+import io.dataswift.models.hat.{ ApiDataRecord, _ }
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.authentication.HatApiAuthEnvironment

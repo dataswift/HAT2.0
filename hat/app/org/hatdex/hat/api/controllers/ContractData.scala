@@ -32,9 +32,9 @@ import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import dev.profunktor.auth.jwt.JwtSecretKey
 import io.dataswift.adjudicator.ShortLivedTokenOps
 import io.dataswift.adjudicator.Types.{ ContractId, HatName, ShortLivedToken }
-import org.hatdex.hat.api.json.RichDataJsonFormats
-import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.models.applications.{ Application, HatApplication }
+import io.dataswift.models.hat.json.RichDataJsonFormats
+import io.dataswift.models.hat._
+import io.dataswift.models.hat.applications.{ Application, HatApplication }
 import org.hatdex.hat.api.service.applications.{ ApplicationsService, TrustedApplicationProvider }
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher

@@ -29,9 +29,9 @@ import java.util.UUID
 import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
-import org.hatdex.hat.api.json.RichDataJsonFormats
-import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.models.applications.{ Application, HatApplication }
+import io.dataswift.models.hat.json.RichDataJsonFormats
+import io.dataswift.models.hat._
+import io.dataswift.models.hat.applications.{ Application, HatApplication }
 import org.hatdex.hat.api.service.applications.{ ApplicationsService, TrustedApplicationProvider }
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher

@@ -23,7 +23,7 @@
  */
 package org.hatdex.hat.api.service
 
-import org.hatdex.hat.api.models.{
+import io.dataswift.models.hat.{
   ApiDataField,
   ApiDataRecord,
   ApiDataTable,

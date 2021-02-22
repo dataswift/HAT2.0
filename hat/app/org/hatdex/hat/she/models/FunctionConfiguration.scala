@@ -26,13 +26,13 @@ package org.hatdex.hat.she.models
 
 import java.util.UUID
 
-import org.hatdex.hat.api.json.{
+import io.dataswift.models.hat.json.{
   ApplicationJsonProtocol,
   DataFeedItemJsonProtocol,
   RichDataJsonFormats
 }
-import org.hatdex.hat.api.models.applications._
-import org.hatdex.hat.api.models.{
+import io.dataswift.models.hat.applications._
+import io.dataswift.models.hat.{
   EndpointData,
   EndpointDataBundle,
   FormattedText

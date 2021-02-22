@@ -28,8 +28,8 @@ import java.sql.SQLException
 import java.util.UUID
 import javax.inject.Inject
 
-import org.hatdex.hat.api.json.RichDataJsonFormats
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat.json.RichDataJsonFormats
+import io.dataswift.models.hat._
 import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
