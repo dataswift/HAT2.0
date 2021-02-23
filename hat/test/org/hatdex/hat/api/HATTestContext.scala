@@ -210,7 +210,6 @@ trait HATTestContext extends MockitoSugar {
       }
   }
 
-  //import org.slf4j.Logger
   val mockLogger            = mock[play.api.Logger]
   val mockMailer: HatMailer = mock[HatMailer]
   when(mockMailer.passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])).thenReturn(Done)
