@@ -24,27 +24,19 @@
 
 package org.hatdex.hat.modules
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
+
 import com.google.inject.name.Named
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api._
-import com.mohiva.play.silhouette.api.actions.{
-  SecuredErrorHandler,
-  UnsecuredErrorHandler
-}
+import com.mohiva.play.silhouette.api.actions.{ SecuredErrorHandler, UnsecuredErrorHandler }
 import com.mohiva.play.silhouette.api.crypto.{ Crypter, _ }
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services._
 import com.mohiva.play.silhouette.api.util._
-import com.mohiva.play.silhouette.crypto.{
-  JcaCrypter,
-  JcaCrypterSettings,
-  JcaSigner,
-  JcaSignerSettings
-}
-import com.mohiva.play.silhouette.impl.authenticators.{
-  JWTRS256Authenticator,
-  _
-}
+import com.mohiva.play.silhouette.crypto.{ JcaCrypter, JcaCrypterSettings, JcaSigner, JcaSignerSettings }
+import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, _ }
 import com.mohiva.play.silhouette.impl.providers._
 import com.mohiva.play.silhouette.impl.util._
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
@@ -61,16 +53,10 @@ import play.api.http.HttpErrorHandler
 import play.api.libs.ws.WSClient
 import play.api.{ ConfigLoader, Configuration }
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
-
 /**
   * The Guice module which wires all Silhouette dependencies.
   */
-class SilhouetteModule
-    extends AbstractModule
-    with ScalaModule
-    with SilhouetteConfigLoaders {
+class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteConfigLoaders {
 
   /**
     * Configures the module.
@@ -112,8 +98,7 @@ class SilhouetteModule
   @Provides
   def provideHTTPLayer(
       client: WSClient
-    )(implicit ec: ExecutionContext
-    ): HTTPLayer = new PlayHTTPLayer(client)
+    )(implicit ec: ExecutionContext): HTTPLayer = new PlayHTTPLayer(client)
 
   /**
     * Provides the Silhouette environment.
@@ -134,9 +119,7 @@ class SilhouetteModule
         HatServer
       ],
       eventBus: EventBus
-    )(implicit ec: ExecutionContext
-    ): Environment[HatApiAuthEnvironment] = {
-
+    )(implicit ec: ExecutionContext): Environment[HatApiAuthEnvironment] =
     Environment[HatApiAuthEnvironment](
       userService,
       authenticatorService,
@@ -144,7 +127,6 @@ class SilhouetteModule
       dynamicEnvironmentProviderService,
       eventBus
     )
-  }
 
   /**
     * Provides the auth info repository.
@@ -155,10 +137,8 @@ class SilhouetteModule
   @Provides
   def provideAuthInfoRepository(
       passwordInfoDAO: DelegableAuthInfoDAO[PasswordInfo, HatServer]
-    )(implicit ec: ExecutionContext
-    ): AuthInfoRepository[HatServer] = {
+    )(implicit ec: ExecutionContext): AuthInfoRepository[HatServer] =
     new DelegableAuthInfoRepository[HatServer](passwordInfoDAO)
-  }
 
   /**
     * Provides the cookie signer for the authenticator.
@@ -204,8 +184,7 @@ class SilhouetteModule
       idGenerator: IDGenerator,
       configuration: Configuration,
       clock: Clock
-    )(implicit ec: ExecutionContext
-    ): AuthenticatorService[JWTRS256Authenticator, HatServer] = {
+    )(implicit ec: ExecutionContext): AuthenticatorService[JWTRS256Authenticator, HatServer] = {
 
     val config = configuration.get[JWTRS256AuthenticatorSettings](
       "silhouette.authenticator"
@@ -229,10 +208,8 @@ class SilhouetteModule
     */
   @Provides
   def providePasswordHasherRegistry(
-      passwordHasher: PasswordHasher
-    ): PasswordHasherRegistry = {
+      passwordHasher: PasswordHasher): PasswordHasherRegistry =
     PasswordHasherRegistry(passwordHasher)
-  }
 
   /**
     * Provides the credentials provider.
@@ -245,34 +222,26 @@ class SilhouetteModule
   def provideCredentialsProvider(
       authInfoRepository: AuthInfoRepository[HatServer],
       passwordHasherRegistry: PasswordHasherRegistry
-    )(implicit ec: ExecutionContext
-    ): CredentialsProvider[HatServer] = {
+    )(implicit ec: ExecutionContext): CredentialsProvider[HatServer] =
     new CredentialsProvider(authInfoRepository, passwordHasherRegistry)
-  }
 }
 
 trait SilhouetteConfigLoaders {
-  implicit val JWTRS256AuthenticatorSettingsLoader
-      : ConfigLoader[JWTRS256AuthenticatorSettings] =
+  implicit val JWTRS256AuthenticatorSettingsLoader: ConfigLoader[JWTRS256AuthenticatorSettings] =
     new ConfigLoader[JWTRS256AuthenticatorSettings] {
       def load(
           rootConfig: Config,
-          path: String
-        ): JWTRS256AuthenticatorSettings = {
+          path: String): JWTRS256AuthenticatorSettings = {
         val config = ConfigLoader.configurationLoader.load(rootConfig, path)
 
         JWTRS256AuthenticatorSettings(
           fieldName = config.get[String]("fieldName"),
           requestParts = config
             .getOptional[Seq[String]]("requestParts")
-            .map(rps =>
-              rps.flatMap(r => RequestPart.values.find(_.toString == r))
-            ),
+            .map(rps => rps.flatMap(r => RequestPart.values.find(_.toString == r))),
           issuerClaim = config.get[String]("issuerClaim"),
-          authenticatorIdleTimeout =
-            config.get[Option[FiniteDuration]]("authenticatorIdleTimeout"),
-          authenticatorExpiry =
-            config.get[FiniteDuration]("authenticatorExpiry")
+          authenticatorIdleTimeout = config.get[Option[FiniteDuration]]("authenticatorIdleTimeout"),
+          authenticatorExpiry = config.get[FiniteDuration]("authenticatorExpiry")
         )
       }
     }
@@ -281,8 +250,7 @@ trait SilhouetteConfigLoaders {
     new ConfigLoader[JcaCrypterSettings] {
       def load(
           rootConfig: Config,
-          path: String
-        ): JcaCrypterSettings = {
+          path: String): JcaCrypterSettings = {
         val config = ConfigLoader.configurationLoader.load(rootConfig, path)
         JcaCrypterSettings(config.get[String]("key"))
       }
@@ -292,8 +260,7 @@ trait SilhouetteConfigLoaders {
     new ConfigLoader[JcaSignerSettings] {
       def load(
           rootConfig: Config,
-          path: String
-        ): JcaSignerSettings = {
+          path: String): JcaSignerSettings = {
         val config = ConfigLoader.configurationLoader.load(rootConfig, path)
         JcaSignerSettings(
           config.get[String]("key"),

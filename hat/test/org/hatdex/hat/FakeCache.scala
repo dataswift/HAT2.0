@@ -24,27 +24,35 @@
 
 package org.hatdex.hat
 
-import akka.Done
 import javax.inject.Singleton
-import play.api.cache.AsyncCacheApi
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
+import akka.Done
+import play.api.cache.AsyncCacheApi
+
 @Singleton
 class FakeCache extends AsyncCacheApi {
 
   private var store = Map[String, Any]()
 
-  override def set(key: String, value: Any, expiration: Duration): Future[Done] =
+  override def set(
+      key: String,
+      value: Any,
+      expiration: Duration): Future[Done] =
     Future(store = store + (key -> value)).map(_ => Done)
 
   override def get[T](key: String)(implicit evidence$2: ClassTag[T]): Future[Option[T]] =
     Future(store.get(key).asInstanceOf[Option[T]])
 
-  override def getOrElseUpdate[A](key: String, expiration: Duration)(orElse: => Future[A])(implicit evidence$1: ClassTag[A]): Future[A] =
+  override def getOrElseUpdate[A](
+      key: String,
+      expiration: Duration
+    )(orElse: => Future[A]
+    )(implicit evidence$1: ClassTag[A]): Future[A] =
     Future(store.get(key).asInstanceOf[Option[A]])
       .flatMap(_.map(Future.successful(_)).getOrElse(orElse))
 

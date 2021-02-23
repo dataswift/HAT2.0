@@ -24,9 +24,12 @@
 
 package org.hatdex.hat.phata.controllers
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 import com.mohiva.play.silhouette.test._
+import io.dataswift.models.hat.EndpointData
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models.EndpointData
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -35,20 +38,21 @@ import play.api.Logger
 import play.api.libs.json.Json
 import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
-class PhataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with Context with BeforeEach with BeforeAll {
+class PhataSpec(implicit ee: ExecutionEnv)
+    extends PlaySpecification
+    with Mockito
+    with Context
+    with BeforeEach
+    with BeforeAll {
 
   val logger = Logger(this.getClass)
 
-  import org.hatdex.hat.api.json.RichDataJsonFormats._
+  import io.dataswift.models.hat.json.RichDataJsonFormats._
 
   sequential
 
-  def beforeAll: Unit = {
+  def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
-  }
 
   override def before: Unit = {
     import org.hatdex.hat.dal.Tables._
@@ -63,7 +67,8 @@ class PhataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       DataBundles.filter(_.bundleId.like("test%")).delete,
       DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
+    )
 
     Await.result(hatDatabase.run(action), 60.seconds)
   }
@@ -73,13 +78,14 @@ class PhataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[Phata]
+      val controller  = application.injector.instanceOf[Phata]
       val dataService = application.injector.instanceOf[RichDataService]
 
       val data = List(
         EndpointData("rumpel/notablesv1", None, None, None, samplePublicNotable, None),
         EndpointData("rumpel/notablesv1", None, None, None, samplePrivateNotable, None),
-        EndpointData("rumpel/notablesv1", None, None, None, sampleSocialNotable, None))
+        EndpointData("rumpel/notablesv1", None, None, None, sampleSocialNotable, None)
+      )
 
       val result = for {
         _ <- dataService.saveData(owner.userId, data)
@@ -90,7 +96,7 @@ class PhataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val phataData = contentAsJson(result).as[Map[String, Seq[EndpointData]]]
 
       phataData.get("notables") must beSome
-      phataData("notables").length must be equalTo (1)
+      phataData("notables").length must be equalTo 1
 
     }
   }
@@ -123,8 +129,7 @@ class PhataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
 
 trait Context extends HATTestContext {
 
-  val samplePublicNotable = Json.parse(
-    """
+  val samplePublicNotable = Json.parse("""
       |{
       |    "kind": "note",
       |    "author":
@@ -140,8 +145,7 @@ trait Context extends HATTestContext {
       |}
     """.stripMargin)
 
-  val samplePrivateNotable = Json.parse(
-    """
+  val samplePrivateNotable = Json.parse("""
       |{
       |    "kind": "note",
       |    "author":
@@ -157,8 +161,7 @@ trait Context extends HATTestContext {
       |}
     """.stripMargin)
 
-  val sampleSocialNotable = Json.parse(
-    """
+  val sampleSocialNotable = Json.parse("""
       |{
       |    "kind": "note",
       |    "author":

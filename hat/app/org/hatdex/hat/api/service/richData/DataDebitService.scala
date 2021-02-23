@@ -26,27 +26,23 @@ package org.hatdex.hat.api.service.richData
 
 import java.sql.SQLException
 import java.util.UUID
-
 import javax.inject.Inject
+
+import scala.concurrent.Future
+import scala.util.Success
+
 import akka.Done
-import org.hatdex.hat.api.json.RichDataJsonFormats
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat._
+import io.dataswift.models.hat.json.RichDataJsonFormats
 import org.hatdex.hat.api.service.{ RemoteExecutionContext, UsersService }
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.Tables.{
-  DataDebit => DbDataDebit,
-  DataDebitPermissions => DbDataDebitPermissions,
-  _
-}
+import org.hatdex.hat.dal.Tables.{ DataDebit => DbDataDebit, DataDebitPermissions => DbDataDebitPermissions, _ }
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.FutureTransformations
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
 import play.api.libs.json._
-
-import scala.concurrent.Future
-import scala.util.Success
 
 class DataDebitService @Inject() (
     usersService: UsersService
@@ -59,44 +55,41 @@ class DataDebitService @Inject() (
       key: String,
       ddRequest: DataDebitSetupRequest,
       userId: UUID
-    )(implicit server: HatServer
-    ): Future[DataDebit] = {
+    )(implicit server: HatServer): Future[DataDebit] = {
     val dataDebitInsert = (DbDataDebit returning DbDataDebit) += DataDebitRow(
-      key,
-      LocalDateTime.now(),
-      ddRequest.requestClientName,
-      ddRequest.requestClientUrl,
-      ddRequest.requestClientLogoUrl,
-      ddRequest.requestApplicationId,
-      ddRequest.requestDescription
-    )
+            key,
+            LocalDateTime.now(),
+            ddRequest.requestClientName,
+            ddRequest.requestClientUrl,
+            ddRequest.requestClientLogoUrl,
+            ddRequest.requestApplicationId,
+            ddRequest.requestDescription
+          )
     val dataDebitBundleInserts = DataBundles ++= Seq(
-      Some(
-        DataBundlesRow(
-          ddRequest.bundle.name,
-          Json.toJson(ddRequest.bundle.bundle)
-        )
-      ),
-      ddRequest.conditions.map(b =>
-        DataBundlesRow(b.name, Json.toJson(b.bundle))
-      )
-    ).flatten
+            Some(
+              DataBundlesRow(
+                ddRequest.bundle.name,
+                Json.toJson(ddRequest.bundle.bundle)
+              )
+            ),
+            ddRequest.conditions.map(b => DataBundlesRow(b.name, Json.toJson(b.bundle)))
+          ).flatten
 
     val dataDebitBundleLinkInserts =
       DbDataDebitPermissions += DataDebitPermissionsRow(
-        0,
-        key,
-        LocalDateTime.now(),
-        ddRequest.purpose,
-        ddRequest.start.toLocalDateTime,
-        ddRequest.period.getStandardSeconds,
-        ddRequest.cancelAtPeriodEnd,
-        None,
-        ddRequest.termsUrl,
-        ddRequest.bundle.name,
-        ddRequest.conditions.map(_.name),
-        accepted = false
-      )
+            0,
+            key,
+            LocalDateTime.now(),
+            ddRequest.purpose,
+            ddRequest.start.toLocalDateTime,
+            ddRequest.period.getStandardSeconds,
+            ddRequest.cancelAtPeriodEnd,
+            None,
+            ddRequest.termsUrl,
+            ddRequest.bundle.name,
+            ddRequest.conditions.map(_.name),
+            accepted = false
+          )
 
     val query = for {
       _ <- dataDebitInsert
@@ -141,8 +134,7 @@ class DataDebitService @Inject() (
   def updateDataDebitInfo(
       key: String,
       ddRequest: DataDebitSetupRequest
-    )(implicit server: HatServer
-    ): Future[DataDebit] = {
+    )(implicit server: HatServer): Future[DataDebit] = {
     val updateQuery = DbDataDebit
       .filter(_.dataDebitKey === key)
       .map(dd =>
@@ -172,86 +164,78 @@ class DataDebitService @Inject() (
       key: String,
       ddRequest: DataDebitSetupRequest,
       userId: UUID
-    )(implicit server: HatServer
-    ): Future[DataDebit] = {
+    )(implicit server: HatServer): Future[DataDebit] = {
 
     val bundleRow = DataBundlesRow(
       ddRequest.bundle.name,
       Json.toJson(ddRequest.bundle.bundle)
     )
-    val conditionsRow = ddRequest.conditions.map(c =>
-      DataBundlesRow(c.name, Json.toJson(c.bundle))
-    )
+    val conditionsRow = ddRequest.conditions.map(c => DataBundlesRow(c.name, Json.toJson(c.bundle)))
 
     val query = for {
-      bundlesWrongOwner <-
-        DbDataDebitPermissions
-          .filter(_.bundleId === bundleRow.bundleId)
-          .filter(_.dataDebitKey =!= key)
-          .length
-          .result
-      bundleMatching <-
-        DbDataDebitPermissions
-          .filter(_.bundleId === bundleRow.bundleId)
-          .filter(_.dataDebitKey === key)
-          .length
-          .result
+      bundlesWrongOwner <- DbDataDebitPermissions
+                             .filter(_.bundleId === bundleRow.bundleId)
+                             .filter(_.dataDebitKey =!= key)
+                             .length
+                             .result
+      bundleMatching <- DbDataDebitPermissions
+                          .filter(_.bundleId === bundleRow.bundleId)
+                          .filter(_.dataDebitKey === key)
+                          .length
+                          .result
       _ <- (bundlesWrongOwner, bundleMatching) match {
-        case (0, 0) =>
-          DataBundles += bundleRow // insert a new bundle, fail if previously inserted bundle with same ID
-        case (0, n) =>
-          DBIO.successful(
-            n
-          ) // do nothing if previously linked bundle matches ID
-        case (_, _) =>
-          DBIO.failed(
-            RichDataDuplicateBundleException(
-              s"Bundle ${bundleRow.bundleId} already linked and could not be reassigned to a different data debit"
-            )
-          )
-      }
-      conditionsWrongOwner <-
-        DbDataDebitPermissions
-          .filter(_.conditions === conditionsRow.map(_.bundleId))
-          .filter(_.dataDebitKey =!= key)
-          .length
-          .result
-      conditionsMatching <-
-        DbDataDebitPermissions
-          .filter(_.conditions === conditionsRow.map(_.bundleId))
-          .filter(_.dataDebitKey === key)
-          .length
-          .result
+             case (0, 0) =>
+               DataBundles += bundleRow // insert a new bundle, fail if previously inserted bundle with same ID
+             case (0, n) =>
+               DBIO.successful(
+                 n
+               ) // do nothing if previously linked bundle matches ID
+             case (_, _) =>
+               DBIO.failed(
+                 RichDataDuplicateBundleException(
+                   s"Bundle ${bundleRow.bundleId} already linked and could not be reassigned to a different data debit"
+                 )
+               )
+           }
+      conditionsWrongOwner <- DbDataDebitPermissions
+                                .filter(_.conditions === conditionsRow.map(_.bundleId))
+                                .filter(_.dataDebitKey =!= key)
+                                .length
+                                .result
+      conditionsMatching <- DbDataDebitPermissions
+                              .filter(_.conditions === conditionsRow.map(_.bundleId))
+                              .filter(_.dataDebitKey === key)
+                              .length
+                              .result
       _ <- (conditionsRow, conditionsWrongOwner, conditionsMatching) match {
-        case (None, _, _) => DBIO.successful(0)
-        case (Some(conditions), 0, 0) =>
-          DataBundles += conditions // insert a new bundle if previously not have a matching bundle
-        case (Some(_), 0, n) =>
-          DBIO.successful(
-            n
-          ) // do nothing if previously linked bundle matches ID
-        case (Some(_), _, _) =>
-          DBIO.failed(
-            RichDataDuplicateBundleException(
-              s"Condition Bundle ${conditionsRow.map(_.bundleId)} already linked and could not be reassigned to a different data debit"
-            )
-          )
-      }
-      ddb <-
-        (DbDataDebitPermissions returning DbDataDebitPermissions) += DataDebitPermissionsRow(
-          0,
-          key,
-          LocalDateTime.now(),
-          ddRequest.purpose,
-          ddRequest.start.toLocalDateTime,
-          ddRequest.period.getStandardSeconds,
-          ddRequest.cancelAtPeriodEnd,
-          None,
-          ddRequest.termsUrl,
-          ddRequest.bundle.name,
-          ddRequest.conditions.map(_.name),
-          accepted = false
-        ) // Insert a new permissions record
+             case (None, _, _) => DBIO.successful(0)
+             case (Some(conditions), 0, 0) =>
+               DataBundles += conditions // insert a new bundle if previously not have a matching bundle
+             case (Some(_), 0, n) =>
+               DBIO.successful(
+                 n
+               ) // do nothing if previously linked bundle matches ID
+             case (Some(_), _, _) =>
+               DBIO.failed(
+                 RichDataDuplicateBundleException(
+                   s"Condition Bundle ${conditionsRow.map(_.bundleId)} already linked and could not be reassigned to a different data debit"
+                 )
+               )
+           }
+      ddb <- (DbDataDebitPermissions returning DbDataDebitPermissions) += DataDebitPermissionsRow(
+                   0,
+                   key,
+                   LocalDateTime.now(),
+                   ddRequest.purpose,
+                   ddRequest.start.toLocalDateTime,
+                   ddRequest.period.getStandardSeconds,
+                   ddRequest.cancelAtPeriodEnd,
+                   None,
+                   ddRequest.termsUrl,
+                   ddRequest.bundle.name,
+                   ddRequest.conditions.map(_.name),
+                   accepted = false
+                 ) // Insert a new permissions record
     } yield ddb
 
     server.db
@@ -283,20 +267,16 @@ class DataDebitService @Inject() (
 
   def dataDebit(
       dataDebitKey: String
-    )(implicit db: Database
-    ): Future[Option[DataDebit]] = {
+    )(implicit db: Database): Future[Option[DataDebit]] =
     filterDataDebits(
       DbDataDebitPermissions.filter(_.dataDebitKey === dataDebitKey)
     ).map(_.headOption)
-  }
 
   protected def filterDataDebits(
       filter: Query[DbDataDebitPermissions, DataDebitPermissionsRow, Seq]
-    )(implicit db: Database
-    ): Future[Seq[DataDebit]] = {
+    )(implicit db: Database): Future[Seq[DataDebit]] = {
     val query = for {
-      (ddb, conditions) <-
-        filter.joinLeft(DataBundles).on(_.conditions === _.bundleId)
+      (ddb, conditions) <- filter.joinLeft(DataBundles).on(_.conditions === _.bundleId)
       dd <- ddb.dataDebitFk
       bundleDefinition <- ddb.dataBundlesFk1
     } yield (dd, (ddb, bundleDefinition, conditions))
@@ -319,21 +299,23 @@ class DataDebitService @Inject() (
         _.map(dd =>
           dd.copy(
             permissions = dd.permissions.map { p =>
-              if (p.purpose.isEmpty) {
+              if (p.purpose.isEmpty)
                 p.copy(purpose = legacyWarning)
-              } else {
+              else
                 p
-              }
             },
-            requestClientName = if (dd.requestClientName.isEmpty) {
-              "Data Exchange"
-            } else { dd.requestClientName },
-            requestClientLogoUrl = if (dd.requestClientName.isEmpty) {
-              "https://dex.hubofallthings.com/assets//images/dex.png"
-            } else { dd.requestClientLogoUrl },
-            requestClientUrl = if (dd.requestClientName.isEmpty) {
-              "https://dex.hubofallthings.com/"
-            } else { dd.requestClientUrl }
+            requestClientName =
+              if (dd.requestClientName.isEmpty)
+                "Data Exchange"
+              else dd.requestClientName,
+            requestClientLogoUrl =
+              if (dd.requestClientName.isEmpty)
+                "https://dex.hubofallthings.com/assets//images/dex.png"
+              else dd.requestClientLogoUrl,
+            requestClientUrl =
+              if (dd.requestClientName.isEmpty)
+                "https://dex.hubofallthings.com/"
+              else dd.requestClientUrl
           )
         )
       )
@@ -342,8 +324,7 @@ class DataDebitService @Inject() (
   def dataDebitDisable(
       dataDebitKey: String,
       cancelAtPeriodEnd: Boolean
-    )(implicit server: HatServer
-    ): Future[Done] = {
+    )(implicit server: HatServer): Future[Done] = {
     val dataBundlesDisabled = DbDataDebitPermissions
       .filter(_.dataDebitKey === dataDebitKey)
       .map(ddp => (ddp.canceledAt, ddp.cancelAtPeriodEnd))
@@ -355,8 +336,7 @@ class DataDebitService @Inject() (
 
   def dataDebitEnableNewestPermissions(
       dataDebitKey: String
-    )(implicit server: HatServer
-    ): Future[Done] = {
+    )(implicit server: HatServer): Future[Done] = {
     val oldPermissionsDisabled = DbDataDebitPermissions
       .filter(_.dataDebitKey === dataDebitKey)
       .map(_.accepted)

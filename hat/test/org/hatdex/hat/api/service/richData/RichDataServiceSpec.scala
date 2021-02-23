@@ -26,9 +26,12 @@ package org.hatdex.hat.api.service.richData
 
 import java.util.UUID
 
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+
 import akka.stream.scaladsl.Sink
+import io.dataswift.models.hat._
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models._
 import org.hatdex.hat.dal.Tables.{ DataJson, DataJsonGroups }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.specs2.concurrent.ExecutionEnv
@@ -38,17 +41,18 @@ import play.api.Logger
 import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.test.PlaySpecification
 
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-
-class RichDataStreamingServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichDataServiceContext with BeforeEach with BeforeAll {
+class RichDataStreamingServiceSpec(implicit ee: ExecutionEnv)
+    extends PlaySpecification
+    with Mockito
+    with RichDataServiceContext
+    with BeforeEach
+    with BeforeAll {
   val logger = Logger(this.getClass)
 
   sequential
 
-  def beforeAll: Unit = {
+  def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
-  }
 
   override def before: Unit = {
     import org.hatdex.hat.dal.Tables._
@@ -63,7 +67,8 @@ class RichDataStreamingServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
       DataBundles.filter(_.bundleId.like("test%")).delete,
       DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
+    )
 
     Await.result(hatDatabase.run(action), 60.seconds)
   }
@@ -74,7 +79,14 @@ class RichDataStreamingServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
 
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
-        retrieved <- service.propertyDataStreaming(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), false, 0, Some(1)).runWith(Sink.seq)
+        retrieved <- service
+                       .propertyDataStreaming(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                                              Some("data.newField"),
+                                              false,
+                                              0,
+                                              Some(1)
+                       )
+                       .runWith(Sink.seq)
       } yield retrieved
 
       result map { result =>
@@ -88,11 +100,17 @@ class RichDataStreamingServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
 
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
-        retrieved <- service.propertyDataStreaming(
-          List(
-            EndpointQuery("test/test", Some(simpleTransformation), None, None),
-            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
-          Some("data.newField"), false, 0, Some(3)).runWith(Sink.seq)
+        retrieved <- service
+                       .propertyDataStreaming(
+                         List(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+                              EndpointQuery("test/complex", Some(complexTransformation), None, None)
+                         ),
+                         Some("data.newField"),
+                         false,
+                         0,
+                         Some(3)
+                       )
+                       .runWith(Sink.seq)
       } yield retrieved
 
       result map { result =>
@@ -108,11 +126,17 @@ class RichDataStreamingServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
 
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
-        retrieved <- service.propertyDataStreaming(
-          List(
-            EndpointQuery("test/test", Some(simpleTransformation), None, None),
-            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
-          Some("data.newField"), false, 0, Some(3)).runWith(Sink.seq)
+        retrieved <- service
+                       .propertyDataStreaming(
+                         List(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+                              EndpointQuery("test/complex", Some(complexTransformation), None, None)
+                         ),
+                         Some("data.newField"),
+                         false,
+                         0,
+                         Some(3)
+                       )
+                       .runWith(Sink.seq)
       } yield retrieved
 
       result map { result =>
@@ -126,12 +150,25 @@ class RichDataStreamingServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
 
       val result = for {
         _ <- service.saveData(owner.userId, linkedSampleData)
-        retrieved <- service.propertyDataStreaming(
-          List(EndpointQuery("test/test", Some(simpleTransformation), None,
-            Some(List(
-              EndpointQuery("test/testlinked", None, None, None),
-              EndpointQuery("test/complex", None, None, None))))),
-          Some("data.newField"), false, 0, Some(1)).runWith(Sink.seq)
+        retrieved <- service
+                       .propertyDataStreaming(
+                         List(
+                           EndpointQuery("test/test",
+                                         Some(simpleTransformation),
+                                         None,
+                                         Some(
+                                           List(EndpointQuery("test/testlinked", None, None, None),
+                                                EndpointQuery("test/complex", None, None, None)
+                                           )
+                                         )
+                           )
+                         ),
+                         Some("data.newField"),
+                         false,
+                         0,
+                         Some(1)
+                       )
+                       .runWith(Sink.seq)
       } yield retrieved
 
       result map { result =>
@@ -149,10 +186,21 @@ class RichDataStreamingServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
 
       val result = for {
         _ <- service.saveData(owner.userId, linkedSampleData)
-        retrieved <- service.propertyDataStreaming(
-          List(EndpointQuery("test/test", Some(simpleTransformation), None,
-            Some(List(EndpointQuery("test/testlinked", None, None, None))))),
-          Some("data.newField"), false, 0, Some(1)).runWith(Sink.seq)
+        retrieved <- service
+                       .propertyDataStreaming(
+                         List(
+                           EndpointQuery("test/test",
+                                         Some(simpleTransformation),
+                                         None,
+                                         Some(List(EndpointQuery("test/testlinked", None, None, None)))
+                           )
+                         ),
+                         Some("data.newField"),
+                         false,
+                         0,
+                         Some(1)
+                       )
+                       .runWith(Sink.seq)
       } yield retrieved
 
       result map { result =>
@@ -169,10 +217,22 @@ class RichDataStreamingServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
 
       val result = for {
         _ <- service.saveData(owner.userId, linkedSampleData)
-        retrieved <- service.propertyDataStreaming(
-          List(EndpointQuery("test/test", Some(simpleTransformation), None,
-            Some(List(EndpointQuery("test/testlinked", Some(simpleTransformation), None, None))))),
-          Some("data.newField"), false, 0, Some(1)).runWith(Sink.seq)
+        retrieved <- service
+                       .propertyDataStreaming(
+                         List(
+                           EndpointQuery(
+                             "test/test",
+                             Some(simpleTransformation),
+                             None,
+                             Some(List(EndpointQuery("test/testlinked", Some(simpleTransformation), None, None)))
+                           )
+                         ),
+                         Some("data.newField"),
+                         false,
+                         0,
+                         Some(1)
+                       )
+                       .runWith(Sink.seq)
       } yield retrieved
 
       result map { result =>
@@ -187,15 +247,19 @@ class RichDataStreamingServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecif
 
 }
 
-class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichDataServiceContext with BeforeEach with BeforeAll {
+class RichDataServiceSpec(implicit ee: ExecutionEnv)
+    extends PlaySpecification
+    with Mockito
+    with RichDataServiceContext
+    with BeforeEach
+    with BeforeAll {
 
   val logger = Logger(this.getClass)
 
   sequential
 
-  def beforeAll: Unit = {
+  def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
-  }
 
   override def before: Unit = {
     import org.hatdex.hat.dal.Tables._
@@ -210,7 +274,8 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       DataBundles.filter(_.bundleId.like("test%")).delete,
       DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
+    )
 
     Await.result(hatDatabase.run(action), 60.seconds)
   }
@@ -252,8 +317,14 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val service = application.injector.instanceOf[RichDataService]
 
       val data = List(
-        EndpointData("test/test", None, None, None, simpleJson,
-          Some(List(EndpointData("test/test", None, None, None, simpleJson2, None)))))
+        EndpointData("test/test",
+                     None,
+                     None,
+                     None,
+                     simpleJson,
+                     Some(List(EndpointData("test/test", None, None, None, simpleJson2, None)))
+        )
+      )
       val saved = service.saveData(owner.userId, data)
 
       saved map { record =>
@@ -271,7 +342,12 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
-        retrieved <- service.propertyData(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), false, 0, Some(1))
+        retrieved <- service.propertyData(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                                          Some("data.newField"),
+                                          false,
+                                          0,
+                                          Some(1)
+                     )
       } yield retrieved
 
       result map { result =>
@@ -286,10 +362,14 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
         retrieved <- service.propertyData(
-          List(
-            EndpointQuery("test/test", Some(simpleTransformation), None, None),
-            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
-          Some("data.newField"), false, 0, Some(3))
+                       List(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+                            EndpointQuery("test/complex", Some(complexTransformation), None, None)
+                       ),
+                       Some("data.newField"),
+                       false,
+                       0,
+                       Some(3)
+                     )
       } yield retrieved
 
       result map { result =>
@@ -306,10 +386,14 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
         retrieved <- service.propertyData(
-          List(
-            EndpointQuery("test/test", Some(simpleTransformation), None, None),
-            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
-          Some("data.newField"), false, 0, Some(3))
+                       List(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+                            EndpointQuery("test/complex", Some(complexTransformation), None, None)
+                       ),
+                       Some("data.newField"),
+                       false,
+                       0,
+                       Some(3)
+                     )
       } yield retrieved
 
       result map { result =>
@@ -324,11 +408,22 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val result = for {
         _ <- service.saveData(owner.userId, linkedSampleData)
         retrieved <- service.propertyData(
-          List(EndpointQuery("test/test", Some(simpleTransformation), None,
-            Some(List(
-              EndpointQuery("test/testlinked", None, None, None),
-              EndpointQuery("test/complex", None, None, None))))),
-          Some("data.newField"), false, 0, Some(1))
+                       List(
+                         EndpointQuery("test/test",
+                                       Some(simpleTransformation),
+                                       None,
+                                       Some(
+                                         List(EndpointQuery("test/testlinked", None, None, None),
+                                              EndpointQuery("test/complex", None, None, None)
+                                         )
+                                       )
+                         )
+                       ),
+                       Some("data.newField"),
+                       false,
+                       0,
+                       Some(1)
+                     )
       } yield retrieved
 
       result map { result =>
@@ -347,9 +442,18 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val result = for {
         _ <- service.saveData(owner.userId, linkedSampleData)
         retrieved <- service.propertyData(
-          List(EndpointQuery("test/test", Some(simpleTransformation), None,
-            Some(List(EndpointQuery("test/testlinked", None, None, None))))),
-          Some("data.newField"), false, 0, Some(1))
+                       List(
+                         EndpointQuery("test/test",
+                                       Some(simpleTransformation),
+                                       None,
+                                       Some(List(EndpointQuery("test/testlinked", None, None, None)))
+                         )
+                       ),
+                       Some("data.newField"),
+                       false,
+                       0,
+                       Some(1)
+                     )
       } yield retrieved
 
       result map { result =>
@@ -367,9 +471,19 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
       val result = for {
         _ <- service.saveData(owner.userId, linkedSampleData)
         retrieved <- service.propertyData(
-          List(EndpointQuery("test/test", Some(simpleTransformation), None,
-            Some(List(EndpointQuery("test/testlinked", Some(simpleTransformation), None, None))))),
-          Some("data.newField"), false, 0, Some(1))
+                       List(
+                         EndpointQuery(
+                           "test/test",
+                           Some(simpleTransformation),
+                           None,
+                           Some(List(EndpointQuery("test/testlinked", Some(simpleTransformation), None, None)))
+                         )
+                       ),
+                       Some("data.newField"),
+                       false,
+                       0,
+                       Some(1)
+                     )
       } yield retrieved
 
       result map { result =>
@@ -390,11 +504,22 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         saved <- service.saveData(owner.userId, sampleData)
         linked <- service.saveRecordGroup(owner.userId, saved.flatMap(_.recordId))
         retrieved <- service.propertyData(
-          List(EndpointQuery("test/test", Some(simpleTransformation), None,
-            Some(List(
-              EndpointQuery("test/test", None, None, None),
-              EndpointQuery("test/complex", None, None, None))))),
-          Some("data.newField"), false, 0, Some(3))
+                       List(
+                         EndpointQuery("test/test",
+                                       Some(simpleTransformation),
+                                       None,
+                                       Some(
+                                         List(EndpointQuery("test/test", None, None, None),
+                                              EndpointQuery("test/complex", None, None, None)
+                                         )
+                                       )
+                         )
+                       ),
+                       Some("data.newField"),
+                       false,
+                       0,
+                       Some(3)
+                     )
       } yield retrieved
 
       result map { result =>
@@ -424,7 +549,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "retrieve all results without any additional filters" in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test/test", None, None, None), DataJson)
+      val query   = service.generatedDataQuery(EndpointQuery("test/test", None, None, None), DataJson)
 
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
@@ -438,9 +563,21 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "retrieve results with a `Contains` filter " in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test/test", None,
-        Some(Seq(
-          EndpointQueryFilter("object.objectFieldArray", None, FilterOperator.Contains(Json.toJson("objectFieldArray2"))))), None), DataJson)
+      val query = service.generatedDataQuery(
+        EndpointQuery("test/test",
+                      None,
+                      Some(
+                        Seq(
+                          EndpointQueryFilter("object.objectFieldArray",
+                                              None,
+                                              FilterOperator.Contains(Json.toJson("objectFieldArray2"))
+                          )
+                        )
+                      ),
+                      None
+        ),
+        DataJson
+      )
 
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
@@ -454,9 +591,14 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "retrieve results with a `Contains` filter for complex objects " in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test/test", None,
-        Some(Seq(
-          EndpointQueryFilter("object", None, FilterOperator.Contains(simpleJsonFragment)))), None), DataJson)
+      val query = service.generatedDataQuery(
+        EndpointQuery("test/test",
+                      None,
+                      Some(Seq(EndpointQueryFilter("object", None, FilterOperator.Contains(simpleJsonFragment)))),
+                      None
+        ),
+        DataJson
+      )
 
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
@@ -470,9 +612,14 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "use `Contains` filter for equality" in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test/test", None,
-        Some(Seq(
-          EndpointQueryFilter("field", None, FilterOperator.Contains(Json.toJson("value2"))))), None), DataJson)
+      val query = service.generatedDataQuery(
+        EndpointQuery("test/test",
+                      None,
+                      Some(Seq(EndpointQueryFilter("field", None, FilterOperator.Contains(Json.toJson("value2"))))),
+                      None
+        ),
+        DataJson
+      )
 
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
@@ -487,9 +634,21 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "retrieve results with a `Between` filter" in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test/test", None,
-        Some(Seq(
-          EndpointQueryFilter("date", None, FilterOperator.Between(Json.toJson(1492699000), Json.toJson(1492799000))))), None), DataJson)
+      val query = service.generatedDataQuery(
+        EndpointQuery("test/test",
+                      None,
+                      Some(
+                        Seq(
+                          EndpointQueryFilter("date",
+                                              None,
+                                              FilterOperator.Between(Json.toJson(1492699000), Json.toJson(1492799000))
+                          )
+                        )
+                      ),
+                      None
+        ),
+        DataJson
+      )
 
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
@@ -504,9 +663,15 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "Use the `In` filter for a 'one-of' matching " in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test/test", None,
-        Some(Seq(
-          EndpointQueryFilter("field", None, FilterOperator.In(Json.parse("""["value", "value2"]"""))))), None), DataJson)
+      val query = service.generatedDataQuery(
+        EndpointQuery(
+          "test/test",
+          None,
+          Some(Seq(EndpointQueryFilter("field", None, FilterOperator.In(Json.parse("""["value", "value2"]"""))))),
+          None
+        ),
+        DataJson
+      )
 
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
@@ -520,12 +685,22 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "Use transformation operator for date conversion combined with a `Between` filter" in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test/test", None,
-        Some(Seq(
-          EndpointQueryFilter(
-            "date_iso",
-            Some(FieldTransformation.DateTimeExtract("hour")),
-            FilterOperator.Between(Json.toJson(14), Json.toJson(17))))), None), DataJson)
+      val query = service.generatedDataQuery(
+        EndpointQuery(
+          "test/test",
+          None,
+          Some(
+            Seq(
+              EndpointQueryFilter("date_iso",
+                                  Some(FieldTransformation.DateTimeExtract("hour")),
+                                  FilterOperator.Between(Json.toJson(14), Json.toJson(17))
+              )
+            )
+          ),
+          None
+        ),
+        DataJson
+      )
 
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
@@ -540,12 +715,22 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "Use transformation operator for unix timestamp conversion combined with a `Between` filter" in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test/test", None,
-        Some(Seq(
-          EndpointQueryFilter(
-            "date",
-            Some(FieldTransformation.TimestampExtract("hour")),
-            FilterOperator.Between(Json.toJson(14), Json.toJson(17))))), None), DataJson)
+      val query = service.generatedDataQuery(
+        EndpointQuery(
+          "test/test",
+          None,
+          Some(
+            Seq(
+              EndpointQueryFilter("date",
+                                  Some(FieldTransformation.TimestampExtract("hour")),
+                                  FilterOperator.Between(Json.toJson(14), Json.toJson(17))
+              )
+            )
+          ),
+          None
+        ),
+        DataJson
+      )
 
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
@@ -560,12 +745,14 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
     "Run search with a `Find` filter" in {
       val service = application.injector.instanceOf[RichDataService]
-      val query = service.generatedDataQuery(EndpointQuery("test/complex", None,
-        Some(Seq(
-          EndpointQueryFilter(
-            "hometown.name",
-            None,
-            FilterOperator.Find(Json.toJson("london"))))), None), DataJson)
+      val query = service.generatedDataQuery(
+        EndpointQuery("test/complex",
+                      None,
+                      Some(Seq(EndpointQueryFilter("hometown.name", None, FilterOperator.Find(Json.toJson("london"))))),
+                      None
+        ),
+        DataJson
+      )
 
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
@@ -583,9 +770,21 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "retrieve values into corresponding properties" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val query = EndpointDataBundle("testBundle", Map(
-        "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)), Some("data.newField"), None, Some(3)),
-        "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)), Some("data.newField"), None, Some(1))))
+      val query = EndpointDataBundle(
+        "testBundle",
+        Map(
+          "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                                  Some("data.newField"),
+                                  None,
+                                  Some(3)
+              ),
+          "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)),
+                                     Some("data.newField"),
+                                     None,
+                                     Some(1)
+              )
+        )
+      )
       val result = for {
         _ <- service.saveData(owner.userId, sampleData)
         retrieved <- service.bundleData(query)
@@ -611,10 +810,14 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         saved <- service.saveData(owner.userId, sampleData)
         deleted <- service.deleteRecords(owner.userId, Seq(saved(1).recordId.get))
         retrieved <- service.propertyData(
-          List(
-            EndpointQuery("test/test", Some(simpleTransformation), None, None),
-            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
-          Some("data.newField"), false, 0, Some(3))
+                       List(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+                            EndpointQuery("test/complex", Some(complexTransformation), None, None)
+                       ),
+                       Some("data.newField"),
+                       false,
+                       0,
+                       Some(3)
+                     )
       } yield retrieved
 
       result map { result =>
@@ -629,12 +832,18 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       val result = for {
         saved <- service.saveData(owner.userId, sampleData)
-        _ <- service.deleteRecords(owner.userId, Seq(saved(1).recordId.get, UUID.randomUUID())).recover { case _ => Future.successful(()) }
+        _ <- service.deleteRecords(owner.userId, Seq(saved(1).recordId.get, UUID.randomUUID())).recover {
+               case _ => Future.successful(())
+             }
         retrieved <- service.propertyData(
-          List(
-            EndpointQuery("test/test", Some(simpleTransformation), None, None),
-            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
-          Some("data.newField"), false, 0, Some(3))
+                       List(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+                            EndpointQuery("test/complex", Some(complexTransformation), None, None)
+                       ),
+                       Some("data.newField"),
+                       false,
+                       0,
+                       Some(3)
+                     )
       } yield retrieved
 
       result map { result =>
@@ -658,7 +867,8 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 
       val result = for {
         saved <- service.saveData(owner.userId, linkedSampleData)
-        deleted <- service.deleteRecords(owner.userId, saved.head.links.get.map(_.recordId.get) :+ saved.head.recordId.get)
+        deleted <-
+          service.deleteRecords(owner.userId, saved.head.links.get.map(_.recordId.get) :+ saved.head.recordId.get)
         groups <- hatDatabase.run(DataJsonGroups.take(1).result)
       } yield groups
 
@@ -676,10 +886,14 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
         saved <- service.saveData(owner.userId, sampleData)
         updated <- service.updateRecords(owner.userId, Seq(saved(1).copy(data = simpleJson2Updated)))
         retrieved <- service.propertyData(
-          List(
-            EndpointQuery("test/test", Some(simpleTransformation), None, None),
-            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
-          Some("data.newField"), false, 0, Some(3))
+                       List(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+                            EndpointQuery("test/complex", Some(complexTransformation), None, None)
+                       ),
+                       Some("data.newField"),
+                       false,
+                       0,
+                       Some(3)
+                     )
       } yield retrieved
 
       result map { result =>
@@ -693,20 +907,28 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
     "not update any records if some requested records do not exist" in {
       val service = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("test/test", None, None, None, simpleJson, None),
-        EndpointData("test/test", None, None, None, simpleJson2, None))
+      val data = List(EndpointData("test/test", None, None, None, simpleJson, None),
+                      EndpointData("test/test", None, None, None, simpleJson2, None)
+      )
 
       val result = for {
         saved <- service.saveData(owner.userId, data)
-        _ <- service.updateRecords(owner.userId, Seq(
-          saved(1).copy(data = simpleJson2Updated),
-          EndpointData("test/complex", None, None, None, complexJson, None))).recover { case _ => Future.successful(()) }
+        _ <- service
+               .updateRecords(owner.userId,
+                              Seq(saved(1).copy(data = simpleJson2Updated),
+                                  EndpointData("test/complex", None, None, None, complexJson, None)
+                              )
+               )
+               .recover { case _ => Future.successful(()) }
         retrieved <- service.propertyData(
-          List(
-            EndpointQuery("test/test", Some(simpleTransformation), None, None),
-            EndpointQuery("test/complex", Some(complexTransformation), None, None)),
-          Some("data.newField"), false, 0, Some(3))
+                       List(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+                            EndpointQuery("test/complex", Some(complexTransformation), None, None)
+                       ),
+                       Some("data.newField"),
+                       false,
+                       0,
+                       Some(3)
+                     )
       } yield retrieved
 
       result map { result =>
@@ -730,8 +952,7 @@ class RichDataServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification w
 }
 
 trait RichDataServiceContext extends HATTestContext {
-  val simpleJson: JsValue = Json.parse(
-    """
+  val simpleJson: JsValue = Json.parse("""
       | {
       |   "field": "value",
       |   "testUniqueID": "1234567",
@@ -753,8 +974,7 @@ trait RichDataServiceContext extends HATTestContext {
       | }
     """.stripMargin)
 
-  val simpleJsonFragment: JsValue = Json.parse(
-    """
+  val simpleJsonFragment: JsValue = Json.parse("""
       | {
       |     "objectField": "objectFieldValue",
       |     "objectFieldObjectArray": [
@@ -764,8 +984,7 @@ trait RichDataServiceContext extends HATTestContext {
       | }
     """.stripMargin)
 
-  val simpleJson2: JsValue = Json.parse(
-    """
+  val simpleJson2: JsValue = Json.parse("""
       | {
       |   "field": "value2",
       |   "date": 1492799048,
@@ -782,8 +1001,7 @@ trait RichDataServiceContext extends HATTestContext {
       | }
     """.stripMargin)
 
-  val simpleJson2Updated = Json.parse(
-    """
+  val simpleJson2Updated = Json.parse("""
       | {
       |   "field": "value2",
       |   "date": 1492799048,
@@ -793,8 +1011,7 @@ trait RichDataServiceContext extends HATTestContext {
       | }
     """.stripMargin)
 
-  val complexJson: JsValue = Json.parse(
-    """
+  val complexJson: JsValue = Json.parse("""
       | {
       |  "birthday": "01/01/1970",
       |  "age_range": {
@@ -842,32 +1059,44 @@ trait RichDataServiceContext extends HATTestContext {
       |}
     """.stripMargin)
 
-  val simpleTransformation: JsObject = Json.parse(
-    """
+  val simpleTransformation: JsObject = Json
+    .parse("""
       | {
       |   "data.newField": "anotherField",
       |   "data.arrayField": "object.objectFieldArray",
       |   "data.onemore": "object.education[1]"
       | }
-    """.stripMargin).as[JsObject]
+    """.stripMargin)
+    .as[JsObject]
 
-  val complexTransformation: JsObject = Json.parse(
-    """
+  val complexTransformation: JsObject = Json
+    .parse("""
       | {
       |   "data.newField": "hometown.name",
       |   "data.arrayField": "education",
       |   "data.onemore": "education[0].type"
       | }
-    """.stripMargin).as[JsObject]
+    """.stripMargin)
+    .as[JsObject]
 
   val sampleData = List(
     EndpointData("test/test", None, None, None, simpleJson, None),
     EndpointData("test/test", None, None, None, simpleJson2, None),
-    EndpointData("test/complex", None, None, None, complexJson, None))
+    EndpointData("test/complex", None, None, None, complexJson, None)
+  )
 
   val linkedSampleData = List(
-    EndpointData("test/test", None, None, None, simpleJson,
-      Some(List(
-        EndpointData("test/testlinked", None, None, None, simpleJson2, None),
-        EndpointData("test/complex", None, None, None, complexJson, None)))))
+    EndpointData(
+      "test/test",
+      None,
+      None,
+      None,
+      simpleJson,
+      Some(
+        List(EndpointData("test/testlinked", None, None, None, simpleJson2, None),
+             EndpointData("test/complex", None, None, None, complexJson, None)
+        )
+      )
+    )
+  )
 }

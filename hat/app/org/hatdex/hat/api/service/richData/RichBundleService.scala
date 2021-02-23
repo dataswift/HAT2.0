@@ -26,8 +26,10 @@ package org.hatdex.hat.api.service.richData
 
 import javax.inject.Inject
 
-import org.hatdex.hat.api.json.RichDataJsonFormats
-import org.hatdex.hat.api.models._
+import scala.concurrent.Future
+
+import io.dataswift.models.hat._
+import io.dataswift.models.hat.json.RichDataJsonFormats
 import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
@@ -35,18 +37,14 @@ import org.hatdex.libs.dal.HATPostgresProfile.api._
 import play.api.Logger
 import play.api.libs.json._
 
-import scala.concurrent.Future
-
-class RichBundleService @Inject() (implicit ec: DalExecutionContext)
-    extends RichDataJsonFormats {
+class RichBundleService @Inject() (implicit ec: DalExecutionContext) extends RichDataJsonFormats {
 
   val logger: Logger = Logger(this.getClass)
 
   def saveCombinator(
       combinatorId: String,
       combinator: Seq[EndpointQuery]
-    )(implicit db: Database
-    ): Future[Unit] = {
+    )(implicit db: Database): Future[Unit] = {
     val insertQuery = DataCombinators.insertOrUpdate(
       DataCombinatorsRow(combinatorId, Json.toJson(combinator))
     )
@@ -55,30 +53,24 @@ class RichBundleService @Inject() (implicit ec: DalExecutionContext)
 
   def combinator(
       combinatorId: String
-    )(implicit db: Database
-    ): Future[Option[Seq[EndpointQuery]]] = {
-    db.run(DataCombinators.filter(_.combinatorId === combinatorId).result) map {
-      queries =>
-        queries.headOption map { q =>
-          q.combinator.as[Seq[EndpointQuery]]
-        }
+    )(implicit db: Database): Future[Option[Seq[EndpointQuery]]] =
+    db.run(DataCombinators.filter(_.combinatorId === combinatorId).result) map { queries =>
+      queries.headOption map { q =>
+        q.combinator.as[Seq[EndpointQuery]]
+      }
     }
-  }
 
   def combinators(
-    )(implicit db: Database
-    ): Future[Seq[(String, Seq[EndpointQuery])]] = {
+    )(implicit db: Database): Future[Seq[(String, Seq[EndpointQuery])]] =
     db.run(DataCombinators.result) map { queries =>
       queries map { q =>
         (q.combinatorId, q.combinator.as[Seq[EndpointQuery]])
       }
     }
-  }
 
   def deleteCombinator(
       combinatorId: String
-    )(implicit db: Database
-    ): Future[Unit] = {
+    )(implicit db: Database): Future[Unit] = {
     val deleteQuery =
       DataCombinators.filter(_.combinatorId === combinatorId).delete
     db.run(deleteQuery).map(_ => ())
@@ -86,8 +78,7 @@ class RichBundleService @Inject() (implicit ec: DalExecutionContext)
 
   def saveBundle(
       bundle: EndpointDataBundle
-    )(implicit db: Database
-    ): Future[Unit] = {
+    )(implicit db: Database): Future[Unit] = {
     val insertQuery = DataBundles.insertOrUpdate(
       DataBundlesRow(bundle.name, Json.toJson(bundle.bundle))
     )
@@ -96,16 +87,13 @@ class RichBundleService @Inject() (implicit ec: DalExecutionContext)
 
   def bundle(
       bundleId: String
-    )(implicit db: Database
-    ): Future[Option[EndpointDataBundle]] = {
+    )(implicit db: Database): Future[Option[EndpointDataBundle]] =
     db.run(DataBundles.filter(_.bundleId === bundleId).result)
       .map(_.headOption.map(ModelTranslation.fromDbModel))
-  }
 
-  def bundles()(implicit db: Database): Future[Seq[EndpointDataBundle]] = {
+  def bundles()(implicit db: Database): Future[Seq[EndpointDataBundle]] =
     db.run(DataBundles.result)
       .map(_.map(ModelTranslation.fromDbModel))
-  }
 
   def deleteBundle(bundleId: String)(implicit db: Database): Future[Unit] = {
     val deleteQuery = DataBundles.filter(_.bundleId === bundleId).delete

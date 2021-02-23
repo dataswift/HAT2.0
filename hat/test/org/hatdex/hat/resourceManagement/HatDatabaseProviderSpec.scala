@@ -26,11 +26,11 @@ package org.hatdex.hat.resourceManagement
 
 import java.util.UUID
 
+import scala.concurrent.duration._
+
 import org.hatdex.hat.resourceManagement.models.{ DatabaseInstance, DatabaseServer, HatKeys, HatSignup }
 import org.joda.time.DateTime
 import play.api.test.PlaySpecification
-
-import scala.concurrent.duration._
 
 class HatDatabaseProviderSpec extends PlaySpecification with HatServerProviderContext {
   "The `signupDatabaseConfig` method" should {
@@ -38,12 +38,17 @@ class HatDatabaseProviderSpec extends PlaySpecification with HatServerProviderCo
       val service = application.injector.instanceOf[HatDatabaseProviderMilliner]
       val signup = HatSignup(
         UUID.randomUUID(),
-        "Bob ThePlumber", "bobtheplumber", "bob@theplumber.com",
-        "testing", "testing", true,
+        "Bob ThePlumber",
+        "bobtheplumber",
+        "bob@theplumber.com",
+        "testing",
+        "testing",
+        true,
         DateTime.now(),
         Some(DatabaseInstance(UUID.randomUUID(), "testhatdb1", "testing")),
         Some(DatabaseServer(0, "localhost", 5432, DateTime.now(), Seq())),
-        Some(HatKeys("", "")))
+        Some(HatKeys("", ""))
+      )
 
       val config = service.signupDatabaseConfig(signup)
       config.getLong("idleTimeout") must be equalTo 30.seconds.toMillis

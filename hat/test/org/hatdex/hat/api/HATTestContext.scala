@@ -27,6 +27,9 @@ package org.hatdex.hat.api
 import java.io.StringReader
 import java.util.UUID
 
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+
 import akka.Done
 import akka.stream.Materializer
 import com.amazonaws.services.s3.AmazonS3
@@ -35,9 +38,9 @@ import com.google.inject.name.Named
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette, SilhouetteProvider }
 import com.mohiva.play.silhouette.test._
+import io.dataswift.models.hat.{ DataCredit, DataDebitOwner, Owner }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.FakeCache
-import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
@@ -51,47 +54,73 @@ import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
-import play.api.i18n.{Messages, MessagesApi, Lang}
+import play.api.i18n.{ Lang, MessagesApi }
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{ Application, Configuration, Logger }
 import play.cache.NamedCacheImpl
 
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-
 trait HATTestContext extends Scope with Mockito {
   import scala.concurrent.ExecutionContext.Implicits.global
   // Initialize configuration
-  val hatAddress = "hat.hubofallthings.net"
-  val hatUrl = s"http://$hatAddress"
+  val hatAddress            = "hat.hubofallthings.net"
+  val hatUrl                = s"http://$hatAddress"
   private val configuration = Configuration.from(FakeHatConfiguration.config)
-  private val hatConfig = configuration.get[Configuration](s"hat.$hatAddress")
+  private val hatConfig     = configuration.get[Configuration](s"hat.$hatAddress")
 
   // Build up the FakeEnvironment for authentication testing
   private val keyUtils = new KeyUtils()
-  implicit protected def hatDatabase: Database = Database.forConfig("", hatConfig.get[Configuration]("database").underlying)
-  implicit val hatServer: HatServer = HatServer(hatAddress, "hat", "user@hat.org",
+  implicit protected def hatDatabase: Database =
+    Database.forConfig("", hatConfig.get[Configuration]("database").underlying)
+  implicit val hatServer: HatServer = HatServer(
+    hatAddress,
+    "hat",
+    "user@hat.org",
     keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.get[String]("privateKey"))),
-    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))), hatDatabase)
+    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))),
+    hatDatabase
+  )
 
   // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "hatuser", Seq(Owner()), enabled = true)
-  val dataDebitUser = HatUser(UUID.randomUUID(), "dataDebitUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataDebitUser", Seq(DataDebitOwner("")), enabled = true)
-  val dataCreditUser = HatUser(UUID.randomUUID(), "dataCreditUser", Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."), "dataCreditUser", Seq(DataCredit(""), DataCredit("namespace")), enabled = true)
+  val owner = HatUser(UUID.randomUUID(),
+                      "hatuser",
+                      Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."),
+                      "hatuser",
+                      Seq(Owner()),
+                      enabled = true
+  )
+  val dataDebitUser = HatUser(
+    UUID.randomUUID(),
+    "dataDebitUser",
+    Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."),
+    "dataDebitUser",
+    Seq(DataDebitOwner("")),
+    enabled = true
+  )
+  val dataCreditUser = HatUser(
+    UUID.randomUUID(),
+    "dataCreditUser",
+    Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."),
+    "dataCreditUser",
+    Seq(DataCredit(""), DataCredit("namespace")),
+    enabled = true
+  )
   implicit val environment: Environment[HatApiAuthEnvironment] = FakeEnvironment[HatApiAuthEnvironment](
     Seq(owner.loginInfo -> owner, dataDebitUser.loginInfo -> dataDebitUser, dataCreditUser.loginInfo -> dataCreditUser),
-    hatServer)
+    hatServer
+  )
 
   // Helpers to (re-)initialize the test database and await for it to be ready
   val devHatMigrations = Seq(
     "evolutions/hat-database-schema/11_hat.sql",
     "evolutions/hat-database-schema/12_hatEvolutions.sql",
     "evolutions/hat-database-schema/13_liveEvolutions.sql",
-    "evolutions/hat-database-schema/14_newHat.sql")
+    "evolutions/hat-database-schema/14_newHat.sql"
+  )
 
   def databaseReady: Future[Unit] = {
     val schemaMigration = new HatDbSchemaMigration(configuration, hatDatabase, global)
-    schemaMigration.resetDatabase()
+    schemaMigration
+      .resetDatabase()
       .flatMap(_ => schemaMigration.run(devHatMigrations))
       .flatMap { _ =>
         val usersService = application.injector.instanceOf[UsersService]
@@ -113,8 +142,8 @@ trait HATTestContext extends Scope with Mockito {
   lazy val remoteEC = new RemoteExecutionContext(application.actorSystem)
 
   /**
-   * A fake Guice module.
-   */
+    * A fake Guice module.
+    */
   class FakeModule extends AbstractModule with ScalaModule {
     override def configure(): Unit = {
       bind[Environment[HatApiAuthEnvironment]].toInstance(environment)
@@ -130,21 +159,18 @@ trait HATTestContext extends Scope with Mockito {
     }
 
     @Provides
-    def provideCookieAuthenticatorService(): AwsS3Configuration = {
+    def provideCookieAuthenticatorService(): AwsS3Configuration =
       fileManagerS3Mock.s3Configuration
-    }
 
     @Provides @Named("s3client-file-manager")
-    def provides3Client(): AmazonS3 = {
+    def provides3Client(): AmazonS3 =
       fileManagerS3Mock.mockS3client
-    }
 
   }
 
   class ExtrasModule extends AbstractModule with ScalaModule {
-    override def configure(): Unit = {
+    override def configure(): Unit =
       bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(Seq()))
-    }
   }
 
   lazy val application: Application = new GuiceApplicationBuilder()
@@ -155,7 +181,6 @@ trait HATTestContext extends Scope with Mockito {
 
   implicit lazy val materializer: Materializer = application.materializer
 
-  def before(): Unit = {
+  def before(): Unit =
     Await.result(databaseReady, 60.seconds)
-  }
 }

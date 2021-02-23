@@ -27,9 +27,11 @@ package org.hatdex.hat.api.controllers
 import java.util.UUID
 import javax.inject.Inject
 
+import scala.concurrent.{ ExecutionContext, Future }
+
 import com.mohiva.play.silhouette.api.Silhouette
-import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ Owner, Platform, _ }
+import io.dataswift.models.hat.json.HatJsonFormats
+import io.dataswift.models.hat.{ Owner, Platform, _ }
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.models.HatUser
@@ -39,8 +41,6 @@ import org.hatdex.hat.utils.HatBodyParsers
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
-
-import scala.concurrent.{ ExecutionContext, Future }
 
 class Users @Inject() (
     components: ControllerComponents,
@@ -63,24 +63,23 @@ class Users @Inject() (
 
   private def privilegedRole(user: HatUser): Boolean = {
     val privileged = Seq(Platform(), Owner())
-    if (user.roles.intersect(privileged).nonEmpty) {
+    if (user.roles.intersect(privileged).nonEmpty)
       true
-    } else {
+    else
       false
-    }
   }
 
   def createUser(): Action[User] =
     SecuredAction(
       WithRole(Owner(), Platform()) || ContainsApplicationRole(
-        Owner(),
-        Platform()
-      )
+          Owner(),
+          Platform()
+        )
     ).async(hatBodyParsers.json[User]) { implicit request =>
       val user = request.body
       logger.debug(s"Creating user $user")
       val hatUser = ModelTranslation.fromExternalModel(user, enabled = true)
-      if (privilegedRole(hatUser)) {
+      if (privilegedRole(hatUser))
         Future.successful(
           BadRequest(
             Json.toJson(
@@ -91,7 +90,7 @@ class Users @Inject() (
             )
           )
         )
-      } else {
+      else
         usersService.getUser(user.email).flatMap { maybeExistingUser =>
           maybeExistingUser map { _ =>
             Future.successful(
@@ -120,19 +119,18 @@ class Users @Inject() (
             }
           }
         }
-      }
     }
 
   def deleteUser(userId: UUID): Action[AnyContent] =
     SecuredAction(
       WithRole(Owner(), Platform()) || ContainsApplicationRole(
-        Owner(),
-        Platform()
-      )
+          Owner(),
+          Platform()
+        )
     ).async { implicit request =>
       usersService.getUser(userId) flatMap { maybeUser =>
         maybeUser map { user =>
-          if (privilegedRole(user)) {
+          if (privilegedRole(user))
             Future.successful(
               Forbidden(
                 Json.toJson(
@@ -143,11 +141,10 @@ class Users @Inject() (
                 )
               )
             )
-          } else {
+          else
             usersService.deleteUser(userId) map { _ =>
               Ok(Json.toJson(SuccessResponse(s"Account deleted")))
             }
-          }
         } getOrElse {
           Future.successful(
             NotFound(
@@ -163,15 +160,15 @@ class Users @Inject() (
   def updateUser(userId: UUID): Action[User] =
     SecuredAction(
       WithRole(Owner(), Platform()) || ContainsApplicationRole(
-        Owner(),
-        Platform()
-      )
+          Owner(),
+          Platform()
+        )
     ).async(hatBodyParsers.json[User]) { implicit request =>
       usersService.getUser(userId) flatMap { maybeUser =>
         maybeUser.filter(_.userId == request.body.userId) map { user =>
           val updatedUser =
             ModelTranslation.fromExternalModel(request.body, enabled = true)
-          if (privilegedRole(user) || privilegedRole(updatedUser)) {
+          if (privilegedRole(user) || privilegedRole(updatedUser))
             Future.successful(
               Forbidden(
                 Json.toJson(
@@ -182,11 +179,10 @@ class Users @Inject() (
                 )
               )
             )
-          } else {
+          else
             usersService.saveUser(updatedUser) map { created =>
               Created(Json.toJson(ModelTranslation.fromInternalModel(created)))
             }
-          }
         } getOrElse {
           Future.successful(
             NotFound(
@@ -202,13 +198,13 @@ class Users @Inject() (
   def enableUser(userId: UUID): Action[AnyContent] =
     SecuredAction(
       WithRole(Owner(), Platform()) || ContainsApplicationRole(
-        Owner(),
-        Platform()
-      )
+          Owner(),
+          Platform()
+        )
     ).async { implicit request =>
       usersService.getUser(userId) flatMap { maybeUser =>
         maybeUser map { user =>
-          if (privilegedRole(user)) {
+          if (privilegedRole(user))
             Future.successful(
               Forbidden(
                 Json.toJson(
@@ -219,11 +215,10 @@ class Users @Inject() (
                 )
               )
             )
-          } else {
+          else
             usersService.changeUserState(userId, enabled = true).map { _ =>
               Ok(Json.toJson(SuccessResponse("Enabled")))
             }
-          }
         } getOrElse {
           Future.successful(
             NotFound(
@@ -239,13 +234,13 @@ class Users @Inject() (
   def disableUser(userId: UUID): Action[AnyContent] =
     SecuredAction(
       WithRole(Owner(), Platform()) || ContainsApplicationRole(
-        Owner(),
-        Platform()
-      )
+          Owner(),
+          Platform()
+        )
     ).async { implicit request =>
       usersService.getUser(userId) flatMap { maybeUser =>
         maybeUser map { user =>
-          if (privilegedRole(user)) {
+          if (privilegedRole(user))
             Future.successful(
               Forbidden(
                 Json.toJson(
@@ -256,11 +251,10 @@ class Users @Inject() (
                 )
               )
             )
-          } else {
+          else
             usersService.changeUserState(userId, enabled = true).map { _ =>
               Ok(Json.toJson(SuccessResponse("Enabled")))
             }
-          }
         } getOrElse {
           Future.successful(
             NotFound(

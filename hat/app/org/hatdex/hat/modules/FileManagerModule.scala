@@ -29,18 +29,11 @@ import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
 import com.google.inject.name.Named
 import com.google.inject.{ AbstractModule, Provides }
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.service.{
-  AwsS3Configuration,
-  FileManager,
-  FileManagerS3
-}
+import org.hatdex.hat.api.service.{ AwsS3Configuration, FileManager, FileManagerS3 }
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
 
-class FileManagerModule
-    extends AbstractModule
-    with ScalaModule
-    with AkkaGuiceSupport {
+class FileManagerModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
   override def configure(): Unit = {
     bind[FileManager].to[FileManagerS3]
@@ -49,8 +42,7 @@ class FileManagerModule
 
   @Provides
   def provideCookieAuthenticatorService(
-      configuration: Configuration
-    ): AwsS3Configuration = {
+      configuration: Configuration): AwsS3Configuration = {
     import AwsS3Configuration.configLoader
     configuration.get[AwsS3Configuration]("storage.s3Configuration")
   }

@@ -24,10 +24,13 @@
 
 package org.hatdex.hat.api.controllers
 
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
+import io.dataswift.models.hat._
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -37,20 +40,21 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
 
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-
-class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with FilesContext with BeforeAll with BeforeEach {
+class FilesSpec(implicit ee: ExecutionEnv)
+    extends PlaySpecification
+    with Mockito
+    with FilesContext
+    with BeforeAll
+    with BeforeEach {
 
   val logger = Logger(this.getClass)
 
-  import org.hatdex.hat.api.json.HatJsonFormats._
+  import io.dataswift.models.hat.json.HatJsonFormats._
 
   sequential
 
-  def beforeAll: Unit = {
+  def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
-  }
 
   override def before: Unit = {
     import org.hatdex.hat.dal.Tables._
@@ -58,9 +62,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
 
     val testFilesQuery = HatFile.filter(_.source.like("test%"))
 
-    val action = DBIO.seq(
-      HatFileAccess.filter(_.fileId in testFilesQuery.map(_.id)).delete,
-      testFilesQuery.delete)
+    val action = DBIO.seq(HatFileAccess.filter(_.fileId in testFilesQuery.map(_.id)).delete, testFilesQuery.delete)
 
     Await.result(hatDatabase.run(action), 60.seconds)
   }
@@ -71,7 +73,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
         .withAuthenticator(LoginInfo("xing", "comedian@watchmen.com"))
         .withJsonBody(Json.toJson(hatFileSimple))
 
-      val controller = application.injector.instanceOf[Files]
+      val controller             = application.injector.instanceOf[Files]
       val result: Future[Result] = Helpers.call(controller.startUpload, request)
 
       status(result) must equalTo(UNAUTHORIZED)
@@ -82,7 +84,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
         .withAuthenticator(dataDebitUser.loginInfo)
         .withJsonBody(Json.toJson(hatFileSimple))
 
-      val controller = application.injector.instanceOf[Files]
+      val controller             = application.injector.instanceOf[Files]
       val result: Future[Result] = Helpers.call(controller.startUpload, request)
 
       status(result) must equalTo(FORBIDDEN)
@@ -93,7 +95,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
         .withAuthenticator(dataCreditUser.loginInfo)
         .withJsonBody(Json.toJson(hatFileSimple))
 
-      val controller = application.injector.instanceOf[Files]
+      val controller             = application.injector.instanceOf[Files]
       val result: Future[Result] = Helpers.call(controller.startUpload, request)
 
       status(result) must equalTo(OK)
@@ -114,7 +116,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[Files]
+      val controller             = application.injector.instanceOf[Files]
       val result: Future[Result] = controller.completeUpload("testFile.png").apply(request)
 
       status(result) must equalTo(NOT_FOUND)
@@ -137,7 +139,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[Files]
+      val controller          = application.injector.instanceOf[Files]
       val fileMetadataService = application.injector.instanceOf[FileMetadataService]
 
       val result: Future[Result] = for {
@@ -153,7 +155,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[Files]
+      val controller          = application.injector.instanceOf[Files]
       val fileMetadataService = application.injector.instanceOf[FileMetadataService]
 
       val result: Future[Result] = for {
@@ -172,7 +174,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val request = FakeRequest("POST", "http://hat.hubofallthings.net")
         .withAuthenticator(LoginInfo("xing", "comedian@watchmen.com"))
 
-      val controller = application.injector.instanceOf[Files]
+      val controller             = application.injector.instanceOf[Files]
       val result: Future[Result] = databaseReady.flatMap(_ => controller.getDetail("testFile.png").apply(request))
 
       status(result) must equalTo(UNAUTHORIZED)
@@ -182,7 +184,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[Files]
+      val controller             = application.injector.instanceOf[Files]
       val result: Future[Result] = databaseReady.flatMap(_ => controller.getDetail("testFile.png").apply(request))
 
       status(result) must equalTo(NOT_FOUND)
@@ -193,7 +195,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(dataCreditUser.loginInfo)
 
-      val controller = application.injector.instanceOf[Files]
+      val controller          = application.injector.instanceOf[Files]
       val fileMetadataService = application.injector.instanceOf[FileMetadataService]
 
       val result: Future[Result] = for {
@@ -209,7 +211,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(dataCreditUser.loginInfo)
 
-      val controller = application.injector.instanceOf[Files]
+      val controller          = application.injector.instanceOf[Files]
       val fileMetadataService = application.injector.instanceOf[FileMetadataService]
 
       val result: Future[Result] = for {
@@ -229,7 +231,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(dataCreditUser.loginInfo)
 
-      val controller = application.injector.instanceOf[Files]
+      val controller          = application.injector.instanceOf[Files]
       val fileMetadataService = application.injector.instanceOf[FileMetadataService]
 
       val result: Future[Result] = for {
@@ -262,7 +264,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(dataCreditUser.loginInfo)
 
-      val controller = application.injector.instanceOf[Files]
+      val controller          = application.injector.instanceOf[Files]
       val fileMetadataService = application.injector.instanceOf[FileMetadataService]
 
       val result: Future[Result] = for {
@@ -278,7 +280,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
     "Redirect to file url for publicly readable files" in {
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
 
-      val controller = application.injector.instanceOf[Files]
+      val controller          = application.injector.instanceOf[Files]
       val fileMetadataService = application.injector.instanceOf[FileMetadataService]
 
       val result: Future[Result] = for {
@@ -291,14 +293,16 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       }
 
       redirectLocation(result) must beSome
-      redirectLocation(result).get must startWith("https://hat-storage-test.s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile")
+      redirectLocation(result).get must startWith(
+        "https://hat-storage-test.s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile"
+      )
     }
 
     "Redirect to file url for permitted files files" in {
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(dataCreditUser.loginInfo)
 
-      val controller = application.injector.instanceOf[Files]
+      val controller          = application.injector.instanceOf[Files]
       val fileMetadataService = application.injector.instanceOf[FileMetadataService]
 
       val result: Future[Result] = for {
@@ -308,7 +312,9 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       } yield result
 
       redirectLocation(result) must beSome
-      redirectLocation(result).get must startWith("https://hat-storage-test.s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile")
+      redirectLocation(result).get must startWith(
+        "https://hat-storage-test.s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile"
+      )
     }
   }
 
@@ -317,7 +323,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[Files]
+      val controller          = application.injector.instanceOf[Files]
       val fileMetadataService = application.injector.instanceOf[FileMetadataService]
 
       val result: Future[Result] = for {
@@ -333,7 +339,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[Files]
+      val controller          = application.injector.instanceOf[Files]
       val fileMetadataService = application.injector.instanceOf[FileMetadataService]
 
       val result: Future[Result] = for {
@@ -349,7 +355,7 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
         .withAuthenticator(dataCreditUser.loginInfo)
 
-      val controller = application.injector.instanceOf[Files]
+      val controller          = application.injector.instanceOf[Files]
       val fileMetadataService = application.injector.instanceOf[FileMetadataService]
 
       val result: Future[Result] = for {
@@ -364,8 +370,57 @@ class FilesSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
 }
 
 trait FilesContext extends HATTestContext {
-  val hatFileSimple = ApiHatFile(Some("testFile"), "testFile", "test", None, None, None, None, None, None, Some(HatFileStatus.New()), None, None)
-  val hatFileSimpleComplete = ApiHatFile(Some("testFile"), "testFile", "test", None, None, None, None, None, None, Some(HatFileStatus.Completed(123456L)), None, None)
-  val hatFileSimpleCompletePublic = ApiHatFile(Some("testFile"), "testFile", "test", None, None, None, None, None, None, Some(HatFileStatus.Completed(123456L)), None, None, Some(true))
-  val hatFileSimplePng = ApiHatFile(Some("testtestFile.png"), "testFile.png", "test", None, None, None, None, None, None, Some(HatFileStatus.New()), None, None)
+  val hatFileSimple = ApiHatFile(Some("testFile"),
+                                 "testFile",
+                                 "test",
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 Some(HatFileStatus.New()),
+                                 None,
+                                 None
+  )
+  val hatFileSimpleComplete = ApiHatFile(Some("testFile"),
+                                         "testFile",
+                                         "test",
+                                         None,
+                                         None,
+                                         None,
+                                         None,
+                                         None,
+                                         None,
+                                         Some(HatFileStatus.Completed(123456L)),
+                                         None,
+                                         None
+  )
+  val hatFileSimpleCompletePublic = ApiHatFile(Some("testFile"),
+                                               "testFile",
+                                               "test",
+                                               None,
+                                               None,
+                                               None,
+                                               None,
+                                               None,
+                                               None,
+                                               Some(HatFileStatus.Completed(123456L)),
+                                               None,
+                                               None,
+                                               Some(true)
+  )
+  val hatFileSimplePng = ApiHatFile(Some("testtestFile.png"),
+                                    "testFile.png",
+                                    "test",
+                                    None,
+                                    None,
+                                    None,
+                                    None,
+                                    None,
+                                    None,
+                                    Some(HatFileStatus.New()),
+                                    None,
+                                    None
+  )
 }
