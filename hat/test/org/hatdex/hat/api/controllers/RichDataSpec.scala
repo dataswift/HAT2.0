@@ -37,11 +37,11 @@ import play.api.test.{ FakeRequest, Helpers }
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 import io.dataswift.test.common.BaseSpec
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import play.api.test.Helpers
 import play.api.test.Helpers._
 
-class RichDataSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with RichDataContext {
+class RichDataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with RichDataContext {
   import scala.concurrent.ExecutionContext.Implicits.global
   import org.hatdex.hat.api.json.RichDataJsonFormats._
 
@@ -50,28 +50,28 @@ class RichDataSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll w
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
 
-  override def before: Unit = {
+  override def beforeEach: Unit = {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
-    val endpointRecrodsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
+    val endpointRecordsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
 
     val action = DBIO.seq(
-      // DataDebitBundle.filter(_.bundleId.like("test%")).delete,
-      // DataDebitContract.filter(_.dataDebitKey.like("test%")).delete,
-      // DataCombinators.filter(_.combinatorId.like("test%")).delete,
-      // DataBundles.filter(_.bundleId.like("test%")).delete,
-      // DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
-      // DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      // DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
-      DataDebitBundle.delete,
-      DataDebitContract.delete,
-      DataDebit.delete,
-      DataCombinators.delete,
-      DataBundles.delete,
-      DataJsonGroupRecords.delete,
-      DataJsonGroups.delete,
-      DataJson.delete
+      DataDebitBundle.filter(_.bundleId.like("test%")).delete,
+      DataDebitContract.filter(_.dataDebitKey.like("test%")).delete,
+      DataCombinators.filter(_.combinatorId.like("test%")).delete,
+      DataBundles.filter(_.bundleId.like("test%")).delete,
+      DataJsonGroupRecords.filter(_.recordId in endpointRecordsQuery).delete,
+      DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
+      DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
+      // DataDebitBundle.delete,
+      // DataDebitContract.delete,
+      // DataDebit.delete,
+      // DataCombinators.delete,
+      // DataBundles.delete,
+      // DataJsonGroupRecords.delete,
+      // DataJsonGroups.delete,
+      // DataJson.delete
     )
 
     Await.result(db.run(action), 60.seconds)
@@ -516,7 +516,7 @@ class RichDataSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll w
 
     status(result) must equal(OK)
     val data = contentAsJson(result).as[RichDataDebitData].bundle
-    data must equal(empty)
+    data must equal(Map.empty)
   }
 
   it should "Return data for data debit with fulfilled conditions" in {

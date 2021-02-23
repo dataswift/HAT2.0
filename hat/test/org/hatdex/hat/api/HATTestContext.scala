@@ -57,9 +57,12 @@ import com.dimafeng.testcontainers.{ PostgreSQLContainer }
 
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
-import org.scalatestplus.mockito.MockitoSugar
 import org.mockito.ArgumentMatchers.{ any }
 import org.mockito.Mockito._
+import org.scalatest.BeforeAndAfterAll
+
+//import io.dataswift.integrationtest.common.PostgresqlSpec
+import org.scalatestplus.mockito.MockitoSugar
 
 trait HATTestContext extends MockitoSugar {
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -207,12 +210,12 @@ trait HATTestContext extends MockitoSugar {
       }
   }
 
+  //import org.slf4j.Logger
+  val mockLogger            = mock[play.api.Logger]
   val mockMailer: HatMailer = mock[HatMailer]
   when(mockMailer.passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])).thenReturn(Done)
 
   val fileManagerS3Mock = FileManagerS3Mock()
-
-  val mockLogger = mock[Logger]
 
   lazy val remoteEC = new RemoteExecutionContext(application.actorSystem)
 
@@ -258,4 +261,7 @@ trait HATTestContext extends MockitoSugar {
 
   def before(): Unit =
     Await.result(databaseReady, 60.seconds)
+
+  // override protected def beforeAll(): Unit = ()
+  // override protected def afterAll(): Unit  = container.close()
 }

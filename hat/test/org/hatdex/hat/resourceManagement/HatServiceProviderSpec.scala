@@ -80,10 +80,15 @@ class HatServiceProviderSpec extends BaseSpec with HATTestContext {
     val request = FakeRequest("GET", "http://nohat.hubofallthings.net")
     val service = application.injector.instanceOf[HatServerProvider]
 
-    an[HatServerDiscoveryException] must be thrownBy (service.retrieve(request))
+    try service.retrieve(request)
+    catch {
+      case (hsde: HatServerDiscoveryException) => true
+      case _                                   => fail()
+    }
   }
 }
 
+// I believe this is no longer required.
 // trait HatServerProviderContext {
 //   import scala.concurrent.ExecutionContext.Implicits.global
 //   //val mockLogger = mock[Logger]

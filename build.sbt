@@ -58,7 +58,8 @@ lazy val hat = project
                   Library.TestContainers.postgresql,
                   Library.TestContainers.localstack,
                   Library.TestContainers.scalaTest,
-                  Library.Dataswift.testCommon
+                  Library.Dataswift.testCommon,
+                  Library.Dataswift.integrationTestCommon
                 )
           case BuildEnv.Stage | BuildEnv.Production =>
             libraryDependencies.value.map(excludeSpecs2)
