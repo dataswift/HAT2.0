@@ -99,22 +99,22 @@ object Dependencies {
     object Backend {
       private val version =
         "2.0.4"
-      val logPlay = "io.dataswift" %% "log-play" % version
-      val hatPlay = "io.dataswift" %% "hat-play" % version
-      val dexPlay = "io.dataswift" %% "dex-play" % version
+      val logPlay = "io.dataswift" %% "log-play" % version exclude ("com.typesafe.play", "*")
+      val hatPlay = "io.dataswift" %% "hat-play" % version exclude ("com.typesafe.play", "*")
+      val dexPlay = "io.dataswift" %% "dex-play" % version exclude ("com.typesafe.play", "*")
     }
 
     object HATDeX {
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "3.0.2"
-      val dexClient = "org.hatdex" %% "dex-client-scala"      % "3.1.1"
-      val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "3.0.2" exclude ("com.typesafe.play", "*")
+      val dexClient = "org.hatdex" %% "dex-client-scala"      % "3.1.1" exclude ("com.typesafe.play", "*")
+      val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.0.9" exclude ("com.typesafe.play", "*")
     }
 
     val scalaGuice  = "net.codingwell" %% "scala-guice"  % "4.2.6"
     val circeConfig = "io.circe"       %% "circe-config" % "0.8.0"
 
     object ContractLibrary {
-      val adjudicator = "io.dataswift" %% "adjudicatorlib" % Versions.adjudicator
+      val adjudicator = "io.dataswift" %% "adjudicatorlib" % Versions.adjudicator exclude ("com.typesafe.play", "*")
     }
 
     object Prometheus {
