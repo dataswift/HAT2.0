@@ -133,7 +133,7 @@ class ApplicationsServiceSpec
       app <- service.applicationStatus(notablesApp.id)
     } yield {
       app must not be empty
-      // ???
+      // Failing in CI
       app.get.active must equal(false)
     }
     Await.result(result, 20.seconds)

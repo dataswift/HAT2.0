@@ -26,7 +26,6 @@ package org.hatdex.hat.api.service
 
 import org.hatdex.hat.api.HATTestContext
 import play.api.Logger
-import play.api.test.PlaySpecification
 
 import scala.concurrent.{ Await, Future }
 import scala.concurrent.duration._
