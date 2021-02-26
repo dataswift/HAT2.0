@@ -297,7 +297,6 @@ class DataFeedDirectMapperSpec
   "The `mapFitbitDaySummarySteps` method" should "not generate a feed item for days with 0 steps recorded" in {
     val mapper      = new FitbitActivityDaySummaryMapper()
     val transformed = mapper.mapDataRecord(fitbitDayEmptySummary.recordId.get, fitbitDayEmptySummary.data)
-    println(transformed)
     transformed match {
       case Failure(_) => true
       case _ => fail() 

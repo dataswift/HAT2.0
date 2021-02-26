@@ -325,7 +325,7 @@ class ApplicationsServiceSpec
       app <- service.applicationStatus(notablesAppDebitless.id)
       _ <- service.setup(app.get)
       setup <- service.disable(app.get)
-    } yield setup.active must equal(true)
+    } yield setup.active must equal(false)
 
     Await.result(result, 10.seconds)
   }
