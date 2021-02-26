@@ -260,7 +260,4 @@ trait HATTestContext extends MockitoSugar {
 
   def before(): Unit =
     Await.result(databaseReady, 60.seconds)
-
-  // override protected def beforeAll(): Unit = ()
-  // override protected def afterAll(): Unit  = container.close()
 }

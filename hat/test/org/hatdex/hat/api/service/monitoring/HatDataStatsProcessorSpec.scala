@@ -28,6 +28,7 @@ import java.util.UUID
 
 import akka.stream.Materializer
 import com.google.inject.AbstractModule
+import io.dataswift.test.common.BaseSpec
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.models.{ EndpointData, Owner }
 import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
@@ -36,14 +37,10 @@ import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
 import org.joda.time.DateTime
+import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsValue, Json }
 import play.api.{ Application, Logger }
-
-import io.dataswift.test.common.BaseSpec
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
-import play.api.test.Helpers
-import play.api.test.Helpers._
 
 class HatDataStatsProcessorSpec
     extends BaseSpec
