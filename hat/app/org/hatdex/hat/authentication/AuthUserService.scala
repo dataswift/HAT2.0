@@ -24,12 +24,12 @@
 
 package org.hatdex.hat.authentication
 
-import scala.concurrent.Future
-
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.HatServer
+
+import scala.concurrent.Future
 
 /**
   * Handles actions to users.
@@ -44,7 +44,8 @@ trait AuthUserService extends IdentityService[HatUser, HatServer] {
     */
   def retrieve(
       loginInfo: LoginInfo
-    )(implicit dyn: HatServer): Future[Option[HatUser]]
+    )(implicit dyn: HatServer
+    ): Future[Option[HatUser]]
 
   /**
     * Saves a user.
@@ -57,5 +58,6 @@ trait AuthUserService extends IdentityService[HatUser, HatServer] {
   def link(
       mainUser: HatUser,
       linkedUser: HatUser
-    )(implicit dyn: HatServer): Future[Unit]
+    )(implicit dyn: HatServer
+    ): Future[Unit]
 }

@@ -25,15 +25,15 @@ package org.hatdex.hat.she.mappers
 
 import java.util.UUID
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
-import io.dataswift.models.hat.{ EndpointData, PropertyQuery }
+import org.hatdex.hat.api.models.{ EndpointData, PropertyQuery }
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.she.models.StaticDataValues
 import play.api.Logger
 import play.api.libs.json._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 trait StaticDataEndpointMapper extends JodaWrites with JodaReads {
   protected lazy val logger: Logger = Logger(this.getClass)
@@ -42,12 +42,14 @@ trait StaticDataEndpointMapper extends JodaWrites with JodaReads {
   def mapDataRecord(
       recordId: UUID,
       content: JsValue,
-      endpoint: String): Seq[StaticDataValues]
+      endpoint: String
+    ): Seq[StaticDataValues]
 
   final def staticDataRecords(
     )(implicit
       hatServer: HatServer,
-      richDataService: RichDataService): Future[Seq[StaticDataValues]] = {
+      richDataService: RichDataService
+    ): Future[Seq[StaticDataValues]] = {
 
     val staticData = Future.sequence(dataQueries.map { query =>
       val eventualDataSource: Future[Seq[EndpointData]] =
@@ -62,7 +64,9 @@ trait StaticDataEndpointMapper extends JodaWrites with JodaReads {
 
       eventualDataSource.map { dataSource =>
         dataSource
-          .map(item => mapDataRecord(item.recordId.get, item.data, item.endpoint))
+          .map(item =>
+            mapDataRecord(item.recordId.get, item.data, item.endpoint)
+          )
           .headOption
           .getOrElse(Seq())
       }

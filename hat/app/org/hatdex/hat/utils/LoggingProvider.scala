@@ -33,11 +33,13 @@ trait LoggingProvider {
 }
 
 class DefaultLoggingProvider extends LoggingProvider {
-  def logger(clazz: Class[_]): Logger =
+  def logger(clazz: Class[_]): Logger = {
     Logger(clazz)
+  }
 }
 
 class MockLoggingProvider(mockLogger: Logger) extends LoggingProvider {
-  def logger(clazz: Class[_]): Logger =
+  def logger(clazz: Class[_]): Logger = {
     mockLogger
+  }
 }

@@ -24,29 +24,25 @@
 
 package org.hatdex.hat.api.service.richData
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
-import io.dataswift.models.hat._
+import org.hatdex.hat.api.models._
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
 import play.api.test.PlaySpecification
 
-class DataDebitServiceSpec(implicit ee: ExecutionEnv)
-    extends PlaySpecification
-    with Mockito
-    with DataDebitServiceSpecContext
-    with BeforeEach
-    with BeforeAll {
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+class DataDebitServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with DataDebitServiceSpecContext with BeforeEach with BeforeAll {
 
   val logger = Logger(this.getClass)
 
   sequential
 
-  def beforeAll: Unit =
+  def beforeAll: Unit = {
     Await.result(databaseReady, 60.seconds)
+  }
 
   override def before: Unit = {
     import org.hatdex.hat.dal.Tables._
@@ -61,8 +57,7 @@ class DataDebitServiceSpec(implicit ee: ExecutionEnv)
       DataBundles.filter(_.bundleId.like("test%")).delete,
       DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
-    )
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
 
     Await.result(hatDatabase.run(action), 60.seconds)
   }
@@ -70,7 +65,7 @@ class DataDebitServiceSpec(implicit ee: ExecutionEnv)
   "The `createDataDebit` method" should {
     "Save a data debit" in {
       val service = application.injector.instanceOf[DataDebitService]
-      val saved   = service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+      val saved = service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
       saved map { debit =>
         debit.dataDebitKey must be equalTo "testdd"
         debit.permissions.length must be equalTo 1
@@ -92,8 +87,7 @@ class DataDebitServiceSpec(implicit ee: ExecutionEnv)
       val service = application.injector.instanceOf[DataDebitService]
       val saved = for {
         _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
-        saved <-
-          service.createDataDebit("testdd2", testDataDebitDetailsUpdate.copy(dataDebitKey = "testdd2"), owner.userId)
+        saved <- service.createDataDebit("testdd2", testDataDebitDetailsUpdate.copy(dataDebitKey = "testdd2"), owner.userId)
       } yield saved
 
       saved must throwA[RichDataDuplicateBundleException].await(3, 10.seconds)
@@ -259,11 +253,7 @@ class DataDebitServiceSpec(implicit ee: ExecutionEnv)
       val saved = for {
         _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
         _ <- service.createDataDebit("testdd2", testDataDebitRequestUpdate, owner.userId)
-        updated <-
-          service.updateDataDebitPermissions("testdd2",
-                                             testDataDebitRequestUpdate.copy(bundle = testDataDebitRequest.bundle),
-                                             owner.userId
-          )
+        updated <- service.updateDataDebitPermissions("testdd2", testDataDebitRequestUpdate.copy(bundle = testDataDebitRequest.bundle), owner.userId)
       } yield updated
 
       saved must throwA[RichDataDuplicateBundleException].await(3, 10.seconds)
@@ -274,11 +264,7 @@ class DataDebitServiceSpec(implicit ee: ExecutionEnv)
       val saved = for {
         _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
         _ <- service.createDataDebit("testdd2", testDataDebitRequestUpdate, owner.userId)
-        updated <- service.updateDataDebitPermissions(
-                     "testdd2",
-                     testDataDebitRequestUpdate.copy(conditions = testDataDebitRequest.conditions),
-                     owner.userId
-                   )
+        updated <- service.updateDataDebitPermissions("testdd2", testDataDebitRequestUpdate.copy(conditions = testDataDebitRequest.conditions), owner.userId)
       } yield updated
 
       saved must throwA[RichDataDuplicateBundleException].await(3, 10.seconds)
@@ -305,70 +291,22 @@ class DataDebitServiceSpec(implicit ee: ExecutionEnv)
 
 trait DataDebitServiceSpecContext extends RichBundleServiceContext {
   val testDataDebitRequest: DataDebitSetupRequest = DataDebitSetupRequest(
-    "testdd",
-    "purpose of the data use",
-    org.joda.time.DateTime.now(),
-    org.joda.time.Duration.standardDays(5),
-    false,
-    "clientName",
-    "http://client.com",
-    "http://client.com/logo.png",
-    None,
-    None,
-    Some("Detailed description of the data debit"),
-    "http://client.com/terms.html",
-    Some(conditionsBundle),
-    testBundle
-  )
+    "testdd", "purpose of the data use", org.joda.time.DateTime.now(), org.joda.time.Duration.standardDays(5), false,
+    "clientName", "http://client.com", "http://client.com/logo.png", None, None, Some("Detailed description of the data debit"),
+    "http://client.com/terms.html", Some(conditionsBundle), testBundle)
 
   val testDataDebitDetailsUpdate: DataDebitSetupRequest = DataDebitSetupRequest(
-    "testdd",
-    "updated purpose of the data use",
-    org.joda.time.DateTime.now(),
-    org.joda.time.Duration.standardDays(15),
-    false,
-    "clientName",
-    "http://client.com",
-    "http://client.com/logo.png",
-    None,
-    None,
-    Some("Detailed description of the data debit"),
-    "http://client.com/terms.html",
-    Some(conditionsBundle),
-    testBundle
-  )
+    "testdd", "updated purpose of the data use", org.joda.time.DateTime.now(), org.joda.time.Duration.standardDays(15), false,
+    "clientName", "http://client.com", "http://client.com/logo.png", None, None, Some("Detailed description of the data debit"),
+    "http://client.com/terms.html", Some(conditionsBundle), testBundle)
 
   val testDataDebitRequestUpdate: DataDebitSetupRequest = DataDebitSetupRequest(
-    "testdd",
-    "updated purpose of the data use",
-    org.joda.time.DateTime.now(),
-    org.joda.time.Duration.standardDays(10),
-    false,
-    "clientName",
-    "http://client.com",
-    "http://client.com/logo.png",
-    None,
-    None,
-    Some("Detailed description of the data debit"),
-    "http://client.com/terms.html",
-    None,
-    testBundle2
-  )
+    "testdd", "updated purpose of the data use", org.joda.time.DateTime.now(), org.joda.time.Duration.standardDays(10), false,
+    "clientName", "http://client.com", "http://client.com/logo.png", None, None, Some("Detailed description of the data debit"),
+    "http://client.com/terms.html", None, testBundle2)
 
   val testDataDebitRequestUpdateConditions: DataDebitSetupRequest = DataDebitSetupRequest(
-    "testdd",
-    "updated purpose of the data use",
-    org.joda.time.DateTime.now(),
-    org.joda.time.Duration.standardDays(10),
-    false,
-    "clientName",
-    "http://client.com",
-    "http://client.com/logo.png",
-    None,
-    None,
-    Some("Detailed description of the data debit"),
-    "http://client.com/terms.html",
-    Some(conditionsBundle2),
-    testBundle2
-  )
+    "testdd", "updated purpose of the data use", org.joda.time.DateTime.now(), org.joda.time.Duration.standardDays(10), false,
+    "clientName", "http://client.com", "http://client.com/logo.png", None, None, Some("Detailed description of the data debit"),
+    "http://client.com/terms.html", Some(conditionsBundle2), testBundle2)
 }

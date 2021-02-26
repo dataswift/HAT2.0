@@ -30,6 +30,6 @@ addSbtPlugin("org.hatdex" % "sbt-slick-postgres-generator" % "0.0.11")
 addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")
 
 // ScalaFMT, ScalaFIX and Tools Common
-addSbtPlugin("org.scalameta" % "sbt-scalafmt"          % "2.3.4")
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix"          % "0.9.19")
-addSbtPlugin("io.dataswift"  % "sbt-scalatools-common" % "0.2.3")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt"        % "2.3.4")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix"        % "0.9.19")
+addSbtPlugin("io.dataswift"  % "sbt-scalafmt-common" % "0.1.1")

@@ -50,7 +50,8 @@ object JsonDataTransformer {
 
   def nestedDataPicker(
       destination: String,
-      source: JsValue): Reads[JsObject] =
+      source: JsValue
+    ): Reads[JsObject] = {
     source match {
       case simpleSource: JsString =>
         parseJsPath(destination).json
@@ -70,17 +71,17 @@ object JsonDataTransformer {
             nestedDataPicker(subDestination, subSource)
         } reduceLeft { (reads, addedReads) => reads.and(addedReads).reduce }
 
-        val transformed =
-          if (destination.endsWith("[]"))
-            sourceJson.pick[JsArray].map { arr =>
-              JsArray(
-                arr.value.flatMap(
-                  _.transform(transformation).map(Some(_)).getOrElse(None)
-                )
+        val transformed = if (destination.endsWith("[]")) {
+          sourceJson.pick[JsArray].map { arr =>
+            JsArray(
+              arr.value.flatMap(
+                _.transform(transformation).map(Some(_)).getOrElse(None)
               )
-            }
-          else
-            sourceJson.pick.map(_.transform(transformation).get)
+            )
+          }
+        } else {
+          sourceJson.pick.map(_.transform(transformation).get)
+        }
 
         parseJsPath(destination.stripSuffix("[]")).json
           .copyFrom(transformed)
@@ -93,6 +94,7 @@ object JsonDataTransformer {
           )
         )
     }
+  }
 
   //  private def sumFieldsTogether(): Unit = {
   //    // TODO: example future code to potentially do more complex transformations based on operators
@@ -104,9 +106,10 @@ object JsonDataTransformer {
   //          .map(JsNumber(_)))
   //  }
 
-  def mappingTransformer(mapping: JsObject): Reads[JsObject] =
+  def mappingTransformer(mapping: JsObject): Reads[JsObject] = {
     mapping.fields
       .map(f => nestedDataPicker(f._1, f._2))
       .reduceLeftOption((reads, addedReads) => reads.and(addedReads).reduce)
       .getOrElse(Reads.pure(JsObject.empty))
+  }
 }

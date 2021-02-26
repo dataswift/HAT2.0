@@ -25,9 +25,6 @@
 package org.hatdex.hat.utils
 
 import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-
 import akka.Done
 import akka.actor.ActorSystem
 import org.hatdex.hat.api.service.RemoteExecutionContext
@@ -38,6 +35,8 @@ import play.api.libs.mailer.{ Email, MailerClient }
 import play.api.mvc.RequestHeader
 import play.api.{ Configuration, UsefulException }
 import play.twirl.api.Html
+
+import scala.concurrent.{ ExecutionContext, Future }
 
 trait Mailer {
   protected val configuration: Configuration

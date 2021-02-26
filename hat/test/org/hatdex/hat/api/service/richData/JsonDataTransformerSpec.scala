@@ -39,16 +39,14 @@ class JsonDataTransformerSpec extends PlaySpecification with Mockito {
 
   "JSON mappers" should {
     "remap from simple fields to flat json" in new JsonDataTransformerContext {
-      val transformation: JsObject = Json
-        .parse("""
+      val transformation: JsObject = Json.parse("""
                                         | {
                                         |   "data.newField": "field",
                                         |   "data.newField": "anotherField",
                                         |   "data.arrayField": "object.objectFieldArray",
                                         |   "data.onemore": "object.objectFieldArray[1]"
                                         | }
-                                      """.stripMargin)
-        .as[JsObject]
+                                      """.stripMargin).as[JsObject]
 
       val resultJson: JsResult[JsObject] = simpleJson.transform(JsonDataTransformer.mappingTransformer(transformation))
 
@@ -58,8 +56,7 @@ class JsonDataTransformerSpec extends PlaySpecification with Mockito {
     }
 
     "remap array objects" in new JsonDataTransformerContext {
-      val transformation: JsObject = Json
-        .parse("""
+      val transformation: JsObject = Json.parse("""
                                         | {
                                         |   "data.newField": "field",
                                         |   "data.simpleArray": "object.objectFieldArray",
@@ -72,8 +69,7 @@ class JsonDataTransformerSpec extends PlaySpecification with Mockito {
                                         |     }
                                         |   }
                                         | }
-                                      """.stripMargin)
-        .as[JsObject]
+                                      """.stripMargin).as[JsObject]
 
       val resultJson: JsResult[JsObject] = simpleJson.transform(JsonDataTransformer.mappingTransformer(transformation))
 
@@ -84,15 +80,13 @@ class JsonDataTransformerSpec extends PlaySpecification with Mockito {
     }
 
     "silently ignore missing fields" in new JsonDataTransformerContext {
-      val transformation: JsObject = Json
-        .parse("""
+      val transformation: JsObject = Json.parse("""
                                         | {
                                         |   "data.newField": "field",
                                         |   "data.otherField": "missingField",
                                         |   "data.onemore": "object.objectFieldArray[4]"
                                         | }
-                                      """.stripMargin)
-        .as[JsObject]
+                                      """.stripMargin).as[JsObject]
 
       val resultJson: JsResult[JsObject] = simpleJson.transform(JsonDataTransformer.mappingTransformer(transformation))
 
@@ -101,8 +95,7 @@ class JsonDataTransformerSpec extends PlaySpecification with Mockito {
     }
 
     "silently ignore missing arrays" in new JsonDataTransformerContext {
-      val transformation: JsObject = Json
-        .parse("""
+      val transformation: JsObject = Json.parse("""
                                         | {
                                         |   "data.newField": "field",
                                         |   "newArray[]": {
@@ -112,8 +105,7 @@ class JsonDataTransformerSpec extends PlaySpecification with Mockito {
                                         |     }
                                         |   }
                                         | }
-                                      """.stripMargin)
-        .as[JsObject]
+                                      """.stripMargin).as[JsObject]
 
       val resultJson: JsResult[JsObject] = simpleJson.transform(JsonDataTransformer.mappingTransformer(transformation))
 
@@ -122,13 +114,11 @@ class JsonDataTransformerSpec extends PlaySpecification with Mockito {
     }
 
     "return an error for an invalid mapping" in new JsonDataTransformerContext {
-      val transformation: JsObject = Json
-        .parse("""
+      val transformation: JsObject = Json.parse("""
                                         | {
                                         |   "data.newField": true
                                         | }
-                                      """.stripMargin)
-        .as[JsObject]
+                                      """.stripMargin).as[JsObject]
 
       val resultJson: JsResult[JsObject] = simpleJson.transform(JsonDataTransformer.mappingTransformer(transformation))
 

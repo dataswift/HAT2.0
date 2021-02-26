@@ -25,7 +25,7 @@
 package org.hatdex.hat.api.service.richData
 
 import com.github.tminglei.slickpg.TsVector
-import io.dataswift.models.hat._
+import org.hatdex.hat.api.models._
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.libs.json._
@@ -40,16 +40,18 @@ object FieldTransformable {
 
   import FieldTransformation._
 
-  implicit val generateIdentityTranslation: Aux[Identity, Rep[JsValue] => Rep[JsValue]] =
+  implicit val generateIdentityTranslation
+      : Aux[Identity, Rep[JsValue] => Rep[JsValue]] =
     new FieldTransformable[Identity] {
       type Out = Rep[JsValue] => Rep[JsValue]
 
-      def apply(in: Identity): Rep[JsValue] => Rep[JsValue] = { value: Rep[JsValue] =>
-        value
+      def apply(in: Identity): Rep[JsValue] => Rep[JsValue] = {
+        value: Rep[JsValue] => value
       }
     }
 
-  implicit val generateDateTimeExtractTranslation: Aux[DateTimeExtract, Rep[JsValue] => Rep[JsValue]] =
+  implicit val generateDateTimeExtractTranslation
+      : Aux[DateTimeExtract, Rep[JsValue] => Rep[JsValue]] =
     new FieldTransformable[DateTimeExtract] {
       type Out = Rep[JsValue] => Rep[JsValue]
 
@@ -58,7 +60,8 @@ object FieldTransformable {
       }
     }
 
-  implicit val generateTimestampExtractTranslation: Aux[TimestampExtract, Rep[JsValue] => Rep[JsValue]] =
+  implicit val generateTimestampExtractTranslation
+      : Aux[TimestampExtract, Rep[JsValue] => Rep[JsValue]] =
     new FieldTransformable[TimestampExtract] {
       type Out = Rep[JsValue] => Rep[JsValue]
 
@@ -72,7 +75,8 @@ object FieldTransformable {
       }
     }
 
-  implicit val generateSearchableTranslation: Aux[Searchable, Rep[JsValue] => Rep[TsVector]] =
+  implicit val generateSearchableTranslation
+      : Aux[Searchable, Rep[JsValue] => Rep[TsVector]] =
     new FieldTransformable[Searchable] {
       type Out = Rep[JsValue] => Rep[TsVector]
 

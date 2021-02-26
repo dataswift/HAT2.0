@@ -24,39 +24,35 @@
 
 package org.hatdex.hat.api.controllers
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import com.mohiva.play.silhouette.test._
-import io.dataswift.models.hat.json.HatJsonFormats
-import io.dataswift.models.hat.{ HatStatus, StatusKind }
 import org.hatdex.hat.api.HATTestContext
+import org.hatdex.hat.api.json.HatJsonFormats
+import org.hatdex.hat.api.models.{ HatStatus, StatusKind }
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
 import org.specs2.specification.BeforeAll
 import play.api.Logger
 import play.api.test.{ FakeRequest, PlaySpecification }
 
-class SystemStatusSpec(implicit ee: ExecutionEnv)
-    extends PlaySpecification
-    with Mockito
-    with HATTestContext
-    with BeforeAll
-    with HatJsonFormats {
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+class SystemStatusSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with HATTestContext with BeforeAll with HatJsonFormats {
 
   val logger = Logger(this.getClass)
 
   sequential
 
-  def beforeAll: Unit =
+  def beforeAll: Unit = {
     Await.result(databaseReady, 60.seconds)
+  }
 
   "The `update` method" should {
     "Return success response after updating HAT database" in {
       val request = FakeRequest("GET", "http://hat.hubofallthings.net")
 
       val controller = application.injector.instanceOf[SystemStatus]
-      val result     = controller.update().apply(request)
+      val result = controller.update().apply(request)
 
       status(result) must equalTo(OK)
       (contentAsJson(result) \ "message").as[String] must be equalTo "Database updated"
@@ -69,7 +65,7 @@ class SystemStatusSpec(implicit ee: ExecutionEnv)
         .withAuthenticator(owner.loginInfo)
 
       val controller = application.injector.instanceOf[SystemStatus]
-      val result     = controller.status().apply(request)
+      val result = controller.status().apply(request)
 
       status(result) must equalTo(OK)
       val stats = contentAsJson(result).as[List[HatStatus]]

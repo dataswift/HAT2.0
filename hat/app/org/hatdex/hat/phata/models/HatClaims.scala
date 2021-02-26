@@ -59,9 +59,7 @@ object ApiVerificationCompletionRequest {
 }
 
 object HattersClaimPayload {
-  def apply(
-      claim: ApiVerificationCompletionRequest,
-      sandbox: Boolean): HattersClaimPayload =
+  def apply(claim: ApiVerificationCompletionRequest, sandbox: Boolean): HattersClaimPayload =
     new HattersClaimPayload(
       claim.email,
       claim.termsAgreed,

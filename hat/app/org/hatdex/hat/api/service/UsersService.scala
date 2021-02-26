@@ -25,12 +25,9 @@
 package org.hatdex.hat.api.service
 
 import java.util.UUID
+
 import javax.inject.Inject
-
-import scala.concurrent.Future
-import scala.util.Success
-
-import io.dataswift.models.hat.{ UserRole, _ }
+import org.hatdex.hat.api.models.{ UserRole, _ }
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ UserRole => UserRoleDb, _ }
@@ -40,6 +37,9 @@ import org.joda.time.LocalDateTime
 import play.api.Logger
 import play.api.cache.AsyncCacheApi
 
+import scala.concurrent.Future
+import scala.util.Success
+
 class UsersService @Inject() (
     cache: AsyncCacheApi
   )(implicit ec: DalExecutionContext) {
@@ -48,12 +48,14 @@ class UsersService @Inject() (
   implicit def hatServer2db(implicit hatServer: HatServer): Database =
     hatServer.db
 
-  def listUsers()(implicit server: HatServer): Future[Seq[HatUser]] =
+  def listUsers()(implicit server: HatServer): Future[Seq[HatUser]] = {
     queryUser(UserUser)
+  }
 
   def getUser(
       userId: UUID
-    )(implicit server: HatServer): Future[Option[HatUser]] =
+    )(implicit server: HatServer
+    ): Future[Option[HatUser]] = {
     cache
       .get[HatUser](s"${server.domain}:user:$userId")
       .flatMap {
@@ -67,10 +69,12 @@ class UsersService @Inject() (
                 cache.set(s"${server.domain}:user:${u.email}", u)
             })
       }
+  }
 
   def getUser(
       username: String
-    )(implicit server: HatServer): Future[Option[HatUser]] =
+    )(implicit server: HatServer
+    ): Future[Option[HatUser]] = {
     cache
       .get[HatUser](s"${server.domain}:user:$username")
       .flatMap {
@@ -84,12 +88,16 @@ class UsersService @Inject() (
                 cache.set(s"${server.domain}:user:${u.email}", u)
             })
       }
+  }
 
   def getUserByRole(
       role: UserRole
-    )(implicit server: HatServer): Future[Seq[HatUser]] = {
+    )(implicit server: HatServer
+    ): Future[Seq[HatUser]] = {
     val usersWithRole = UserRoleDb
-      .filter(r => r.role === role.title && (r.extra.isEmpty || r.extra === role.extra))
+      .filter(r =>
+        r.role === role.title && (r.extra.isEmpty || r.extra === role.extra)
+      )
       .map(_.userId)
     val query = UserUser.filter(_.userId in usersWithRole)
     queryUser(query)
@@ -97,8 +105,11 @@ class UsersService @Inject() (
 
   private def queryUser(
       userFilter: Query[UserUser, UserUserRow, Seq]
-    )(implicit db: Database): Future[Seq[HatUser]] = {
-    val debits2 = DataDebitContract.map(d => (d.clientId.asColumnOf[String], d.dataDebitKey))
+    )(implicit db: Database
+    ): Future[Seq[HatUser]] = {
+    val debits2 = DataDebitContract.map(d =>
+      (d.clientId.asColumnOf[String], d.dataDebitKey)
+    )
 
     val eventualUsers = queryUsers(userFilter)
 
@@ -109,25 +120,31 @@ class UsersService @Inject() (
     for {
       users <- eventualUsers
       dataDebits <- db.run(userDataDebits.result)
-    } yield users map { user =>
-      val roles = dataDebits.filter(_._1.userId == user.userId) map { userDataDebit =>
-        UserRole.userRoleDeserialize(
-          "datadebit",
-          userDataDebit._2.map(_._2)
-        )
+    } yield {
+      users map { user =>
+        val roles = dataDebits.filter(_._1.userId == user.userId) map {
+          userDataDebit =>
+            UserRole.userRoleDeserialize(
+              "datadebit",
+              userDataDebit._2.map(_._2)
+            )
+        }
+        user.withRoles(roles: _*)
       }
-      user.withRoles(roles: _*)
     }
   }
 
   implicit def equalDataJsonRowIdentity(
       a: UserUserRow,
-      b: UserUserRow): Boolean =
+      b: UserUserRow
+    ): Boolean = {
     a.userId == b.userId
+  }
 
   private def queryUsers(
       userFilter: Query[UserUser, UserUserRow, Seq]
-    )(implicit db: Database): Future[Seq[HatUser]] = {
+    )(implicit db: Database
+    ): Future[Seq[HatUser]] = {
     val query = userFilter
       .joinLeft(UserRoleDb)
       .on(_.userId === _.userId)
@@ -168,34 +185,37 @@ class UsersService @Inject() (
       })
   }
 
-  def deleteUser(userId: UUID)(implicit server: HatServer): Future[Unit] =
+  def deleteUser(userId: UUID)(implicit server: HatServer): Future[Unit] = {
     getUser(userId) flatMap {
-        case Some(user) if user.roles.contains(Owner()) =>
-          Future.failed(new RuntimeException("Can not delete owner user"))
-        case Some(user) if user.roles.contains(Platform()) =>
-          Future.failed(new RuntimeException("Can not delete platform user"))
-        case None => Future.failed(new RuntimeException("User does not exist"))
-        case Some(user) =>
-          val deleteRoles = UserRoleDb.filter(_.userId === user.userId).delete
-          val deleteUsers = UserUser.filter(_.userId === user.userId).delete
-          server.db
-            .run(DBIO.seq(deleteRoles, deleteUsers).transactionally)
-            .map(_ => ())
-            .andThen {
-              case Success(_) =>
-                cache.remove(s"${server.domain}:user:${user.userId}")
-                cache.remove(s"${server.domain}:user:${user.email}")
-            }
-      }
+      case Some(user) if user.roles.contains(Owner()) =>
+        Future.failed(new RuntimeException("Can not delete owner user"))
+      case Some(user) if user.roles.contains(Platform()) =>
+        Future.failed(new RuntimeException("Can not delete platform user"))
+      case None => Future.failed(new RuntimeException("User does not exist"))
+      case Some(user) =>
+        val deleteRoles = UserRoleDb.filter(_.userId === user.userId).delete
+        val deleteUsers = UserUser.filter(_.userId === user.userId).delete
+        server.db
+          .run(DBIO.seq(deleteRoles, deleteUsers).transactionally)
+          .map(_ => ())
+          .andThen {
+            case Success(_) =>
+              cache.remove(s"${server.domain}:user:${user.userId}")
+              cache.remove(s"${server.domain}:user:${user.email}")
+          }
+    }
+  }
 
   def changeUserState(
       userId: UUID,
       enabled: Boolean
-    )(implicit server: HatServer): Future[Unit] =
+    )(implicit server: HatServer
+    ): Future[Unit] = {
     getUser(userId).flatMap {
       case Some(user) => saveUser(user.copy(enabled = enabled)).map(_ => ())
       case None       => Future.successful(())
     }
+  }
 
   def removeUser(username: String)(implicit server: HatServer): Future[Unit] = {
     val eventualUserIds =
@@ -209,14 +229,16 @@ class UsersService @Inject() (
 
   def previousLogin(
       user: HatUser
-    )(implicit server: HatServer): Future[Option[HatAccessLog]] = {
+    )(implicit server: HatServer
+    ): Future[Option[HatAccessLog]] = {
     logger.debug(s"Getting previous login for $user@${server.domain}")
     val query = for {
-      access <- UserAccessLog
-                  .filter(l => l.userId === user.userId)
-                  .sortBy(_.date.desc)
-                  .take(2)
-                  .drop(1)
+      access <-
+        UserAccessLog
+          .filter(l => l.userId === user.userId)
+          .sortBy(_.date.desc)
+          .take(2)
+          .drop(1)
       user <- access.userUserFk
     } yield (access, user)
     server.db
@@ -240,7 +262,8 @@ class UsersService @Inject() (
       scope: String,
       appName: Option[String],
       appResource: Option[String]
-    )(implicit server: HatServer): Future[Unit] = {
+    )(implicit server: HatServer
+    ): Future[Unit] = {
     val accessLog = UserAccessLogRow(
       LocalDateTime.now(),
       user.userId,
