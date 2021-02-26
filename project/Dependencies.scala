@@ -27,7 +27,7 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val crossScala   = Seq("2.12.11")
+    val crossScala   = Seq("2.12.13")
     val scalaVersion = crossScala.head
     val adjudicator  = "0.1.0-SNAPSHOT"
   }
