@@ -24,10 +24,7 @@
 
 package org.hatdex.hat.she.service
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
-import io.dataswift.models.hat.EndpointQuery
+import org.hatdex.hat.api.models.EndpointQuery
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
 import org.joda.time.DateTimeUtils
@@ -37,11 +34,10 @@ import org.specs2.specification.BeforeAfterAll
 import play.api.Logger
 import play.api.test.PlaySpecification
 
-class FunctionServiceSpec(implicit ee: ExecutionEnv)
-    extends PlaySpecification
-    with Mockito
-    with DataFeedDirectMapperContext
-    with BeforeAfterAll {
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+class FunctionServiceSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with DataFeedDirectMapperContext with BeforeAfterAll {
 
   val logger = Logger(this.getClass)
 
@@ -52,8 +48,9 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv)
     Await.result(databaseReady, 60.seconds)
   }
 
-  def afterAll: Unit =
+  def afterAll: Unit = {
     DateTimeUtils.setCurrentMillisSystem()
+  }
 
   override def before(): Unit = {
     import org.hatdex.hat.dal.Tables._
@@ -66,8 +63,7 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv)
       SheFunction.filter(_.id.like("test%")).delete,
       DataJsonGroupRecords.filter(_.recordId in endpointRecordsQuery).delete,
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
-    )
+      DataJson.filter(r => r.recordId in endpointRecordsQuery).delete)
 
     Await.result(hatDatabase.run(action), 60.seconds)
   }
@@ -86,14 +82,12 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv)
         saved <- service.get(unavailableFunctionConfiguration.id)
       } yield saved
 
-      saved
-        .map { mSaved =>
-          mSaved must beSome
-          val c = mSaved.get
-          c.id must be equalTo unavailableFunctionConfiguration.id
-          c.status.available must beFalse
-        }
-        .await(3, 10.seconds)
+      saved.map { mSaved =>
+        mSaved must beSome
+        val c = mSaved.get
+        c.id must be equalTo unavailableFunctionConfiguration.id
+        c.status.available must beFalse
+      }.await(3, 10.seconds)
     }
 
     "return available, not saved function by name" in {
@@ -104,14 +98,12 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv)
         available <- service.get(registeredFunction.configuration.id)
       } yield available
 
-      saved
-        .map { mAvailable =>
-          mAvailable must beSome
-          val c2 = mAvailable.get
-          c2.id must be equalTo registeredFunction.configuration.id
-          c2.status.available must beTrue
-        }
-        .await(3, 10.seconds)
+      saved.map { mAvailable =>
+        mAvailable must beSome
+        val c2 = mAvailable.get
+        c2.id must be equalTo registeredFunction.configuration.id
+        c2.status.available must beTrue
+      }.await(3, 10.seconds)
     }
   }
 
@@ -124,14 +116,12 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv)
         all <- service.saved()
       } yield all
 
-      all
-        .map { functions =>
-          functions.length must be greaterThan 0
-          val dummy = functions.find(_.id == unavailableFunctionConfiguration.id)
-          dummy must beSome
-          dummy.get.status.available must beFalse
-        }
-        .await(3, 10.seconds)
+      all.map { functions =>
+        functions.length must be greaterThan 0
+        val dummy = functions.find(_.id == unavailableFunctionConfiguration.id)
+        dummy must beSome
+        dummy.get.status.available must beFalse
+      }.await(3, 10.seconds)
     }
 
     "List multiple saved functions" in {
@@ -143,18 +133,16 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv)
         all <- service.saved()
       } yield all
 
-      all
-        .map { functions =>
-          functions.length must be greaterThanOrEqualTo 2
-          val dummy = functions.find(_.id == unavailableFunctionConfiguration.id)
-          dummy must beSome
-          dummy.get.status.available must beFalse
+      all.map { functions =>
+        functions.length must be greaterThanOrEqualTo 2
+        val dummy = functions.find(_.id == unavailableFunctionConfiguration.id)
+        dummy must beSome
+        dummy.get.status.available must beFalse
 
-          val available = functions.find(_.id == registeredFunction.configuration.id)
-          available must beSome
-          available.get.status.available must beTrue
-        }
-        .await(3, 10.seconds)
+        val available = functions.find(_.id == registeredFunction.configuration.id)
+        available must beSome
+        available.get.status.available must beTrue
+      }.await(3, 10.seconds)
     }
   }
 
@@ -167,17 +155,15 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv)
         all <- service.all(active = false)
       } yield all
 
-      all
-        .map { functions =>
-          val dummy = functions.find(_.id == dummyFunctionConfiguration.id)
-          dummy must beSome
-          dummy.get.status.available must beFalse
+      all.map { functions =>
+        val dummy = functions.find(_.id == dummyFunctionConfiguration.id)
+        dummy must beSome
+        dummy.get.status.available must beFalse
 
-          val available = functions.find(_.id == registeredFunction.configuration.id)
-          available must beSome
-          available.get.status.available must beTrue
-        }
-        .await(3, 10.seconds)
+        val available = functions.find(_.id == registeredFunction.configuration.id)
+        available must beSome
+        available.get.status.available must beTrue
+      }.await(3, 10.seconds)
     }
   }
 
@@ -185,13 +171,11 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv)
     "return the saved function configuration" in {
       val service = application.injector.instanceOf[FunctionService]
 
-      service
-        .save(dummyFunctionConfiguration)
+      service.save(dummyFunctionConfiguration)
         .map { c =>
           c.id must be equalTo dummyFunctionConfiguration.id
           c.status.available must beFalse
-        }
-        .await(3, 10.seconds)
+        }.await(3, 10.seconds)
     }
 
     "update function configuration with matching name, keeping configuration paramters as higher priority" in {
@@ -202,54 +186,33 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv)
         c <- service.save(dummyFunctionConfigurationUpdated)
       } yield c
 
-      saved
-        .map { c =>
-          c.id must be equalTo dummyFunctionConfiguration.id
-          c.status.enabled must beTrue
-          c.info.headline must be equalTo dummyFunctionConfiguration.info.headline
-        }
-        .await(3, 10.seconds)
+      saved.map { c =>
+        c.id must be equalTo dummyFunctionConfiguration.id
+        c.status.enabled must beTrue
+        c.info.headline must be equalTo dummyFunctionConfiguration.info.headline
+      }.await(3, 10.seconds)
     }
   }
 
   "The `run` method" should {
     "Execute function that is available" in {
-      val service     = application.injector.instanceOf[FunctionService]
+      val service = application.injector.instanceOf[FunctionService]
       val dataService = application.injector.instanceOf[RichDataService]
 
-      val records = Seq(
-        exampleTweetRetweet,
-        exampleTweetMentions,
-        exampleFacebookPhotoPost,
-        exampleFacebookPost,
-        facebookStory,
-        facebookEvent,
-        facebookEvenNoLocation,
-        facebookEvenPartialLocation,
-        fitbitSleepMeasurement,
-        fitbitWeightMeasurement,
-        fitbitActivity,
-        googleCalendarEvent,
-        googleCalendarFullDayEvent
-      )
+      val records = Seq(exampleTweetRetweet, exampleTweetMentions, exampleFacebookPhotoPost, exampleFacebookPost,
+        facebookStory, facebookEvent, facebookEvenNoLocation, facebookEvenPartialLocation, fitbitSleepMeasurement,
+        fitbitWeightMeasurement, fitbitActivity, googleCalendarEvent, googleCalendarFullDayEvent)
 
       val executed = for {
         _ <- dataService.saveData(owner.userId, records)
         _ <- service.run(registeredFunction.configuration, None, useAll = false)
-        data <-
-          dataService.propertyData(
-            Seq(EndpointQuery(s"${registeredFunction.namespace}/${registeredFunction.endpoint}", None, None, None)),
-            None,
-            orderingDescending = false,
-            0,
-            None
-          )
+        data <- dataService.propertyData(
+          Seq(EndpointQuery(s"${registeredFunction.namespace}/${registeredFunction.endpoint}", None, None, None)),
+          None, orderingDescending = false, 0, None)
         functionUpdated <- service.get(registeredFunction.configuration.id)
       } yield {
         data.length must be greaterThanOrEqualTo records.length
-        data.forall(
-          _.endpoint == s"${registeredFunction.namespace}/${registeredFunction.endpoint}"
-        ) must be equalTo true
+        data.forall(_.endpoint == s"${registeredFunction.namespace}/${registeredFunction.endpoint}") must be equalTo true
         functionUpdated must beSome
         functionUpdated.get.status.lastExecution must beSome
       }
@@ -264,3 +227,4 @@ class FunctionServiceSpec(implicit ee: ExecutionEnv)
   }
 
 }
+

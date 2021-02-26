@@ -26,12 +26,12 @@ package org.hatdex.hat.api.service.monitoring
 
 import javax.inject.{ Inject, Named }
 
-import scala.concurrent.duration._
-
+import akka.{ Done, NotUsed }
 import akka.actor.{ ActorRef, ActorSystem }
 import akka.stream.scaladsl.{ Sink, Source }
 import akka.stream.{ ActorMaterializer, OverflowStrategy }
-import akka.{ Done, NotUsed }
+
+import scala.concurrent.duration._
 
 trait HatDataEventRouter {
   def init(): Done
@@ -43,7 +43,7 @@ class HatDataEventRouterImpl @Inject() (
     implicit val actorSystem: ActorSystem)
     extends HatDataEventRouter {
 
-  implicit private val materializer: ActorMaterializer = ActorMaterializer()
+  private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   init()
 
@@ -81,7 +81,8 @@ class HatDataEventRouterImpl @Inject() (
   private def buffer(
       target: ActorRef,
       batch: Int = 100,
-      period: FiniteDuration = 60.seconds): ActorRef =
+      period: FiniteDuration = 60.seconds
+    ): ActorRef =
     Source
       .actorRef(bufferSize = 1000, OverflowStrategy.dropNew)
       .groupedWithin(batch, period)

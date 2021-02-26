@@ -27,10 +27,11 @@ package org.hatdex.hat.utils
 import akka.stream.stage.{ GraphStage, GraphStageLogic }
 import akka.stream.{ Attributes, FanInShape2, Inlet, Outlet }
 
-final class AugmentWith[T, U](augmentFunction: (T, U) => Either[T, U]) extends GraphStage[FanInShape2[T, U, T]] {
-  private val left  = Inlet[T]("left")
+final class AugmentWith[T, U](augmentFunction: (T, U) => Either[T, U])
+    extends GraphStage[FanInShape2[T, U, T]] {
+  private val left = Inlet[T]("left")
   private val right = Inlet[U]("right")
-  private val out   = Outlet[T]("out")
+  private val out = Outlet[T]("out")
 
   override val shape = new FanInShape2(left, right, out)
 
@@ -45,7 +46,8 @@ final class AugmentWith[T, U](augmentFunction: (T, U) => Either[T, U]) extends G
 
       def dispatch(
           l: T,
-          r: U): Unit =
+          r: U
+        ): Unit = {
         augmentFunction(l, r).fold(
           augmented => {
             retainedR = r
@@ -57,11 +59,14 @@ final class AugmentWith[T, U](augmentFunction: (T, U) => Either[T, U]) extends G
           }
         )
 
+      }
+
       val dispatchR = dispatch(retainedL, _: U)
       val dispatchL = dispatch(_: T, retainedR)
-      val passL     = () => emit(out, retainedL, () => passAlong(left, out, doPull = true))
-      val readR     = () => read(right)(dispatchR, passL)
-      val readL     = () => read(left)(dispatchL, readR)
+      val passL = () =>
+        emit(out, retainedL, () => { passAlong(left, out, doPull = true) })
+      val readR = () => read(right)(dispatchR, passL)
+      val readL = () => read(left)(dispatchL, readR)
 
       override def preStart(): Unit = {
         // all fan-in stages need to eagerly pull all inputs to get cycles started
@@ -71,7 +76,9 @@ final class AugmentWith[T, U](augmentFunction: (T, U) => Either[T, U]) extends G
             retainedL = l
             readR()
           },
-          () => abortReading(right)
+          () => {
+            abortReading(right)
+          }
         )
       }
     }

@@ -24,10 +24,7 @@
 
 package org.hatdex.hat.api.service.richData
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
-import io.dataswift.models.hat._
+import org.hatdex.hat.api.models._
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -35,19 +32,18 @@ import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
 import play.api.test.PlaySpecification
 
-class DataSentintelSpec(implicit ee: ExecutionEnv)
-    extends PlaySpecification
-    with Mockito
-    with RichDataServiceContext
-    with BeforeEach
-    with BeforeAll {
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+class DataSentintelSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with RichDataServiceContext with BeforeEach with BeforeAll {
 
   val logger = Logger(this.getClass)
 
   sequential
 
-  def beforeAll: Unit =
+  def beforeAll: Unit = {
     Await.result(databaseReady, 60.seconds)
+  }
 
   override def before: Unit = {
     import org.hatdex.hat.dal.Tables._
@@ -62,8 +58,7 @@ class DataSentintelSpec(implicit ee: ExecutionEnv)
       DataBundles.filter(_.bundleId.like("test%")).delete,
       DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
-    )
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
 
     Await.result(hatDatabase.run(action), 60.seconds)
   }
@@ -71,11 +66,11 @@ class DataSentintelSpec(implicit ee: ExecutionEnv)
   "The `ensureUniquenessKey` method" should {
     "Correctly extract item ID from data" in {
       val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
+      val service = application.injector.instanceOf[DataSentintel]
 
-      val data = List(EndpointData("test/test", None, None, None, simpleJson, None),
-                      EndpointData("test/test", None, None, None, simpleJson2, None)
-      )
+      val data = List(
+        EndpointData("test/test", None, None, None, simpleJson, None),
+        EndpointData("test/test", None, None, None, simpleJson2, None))
 
       val result = for {
         saved <- dataService.saveData(owner.userId, data)
@@ -92,17 +87,15 @@ class DataSentintelSpec(implicit ee: ExecutionEnv)
 
     "Delete duplicate records for clashing source IDs, retaining newer record" in {
       val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
+      val service = application.injector.instanceOf[DataSentintel]
 
-      val data = List(EndpointData("test/test", None, None, None, simpleJson, None),
-                      EndpointData("test/test", None, None, None, simpleJson2, None)
-      )
+      val data = List(
+        EndpointData("test/test", None, None, None, simpleJson, None),
+        EndpointData("test/test", None, None, None, simpleJson2, None))
 
       val result = for {
         _ <- dataService.saveData(owner.userId, data)
-        _ <- dataService.saveData(owner.userId,
-                                  List(EndpointData("test/test", None, None, None, simpleJson2Updated, None))
-             )
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson2Updated, None)))
         _ <- service.ensureUniquenessKey("test/test", "date")
         retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
       } yield retrieved
@@ -117,17 +110,15 @@ class DataSentintelSpec(implicit ee: ExecutionEnv)
 
     "Not touch records where extracting ID fails" in {
       val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
+      val service = application.injector.instanceOf[DataSentintel]
 
-      val data = List(EndpointData("test/test", None, None, None, simpleJson, None),
-                      EndpointData("test/test", None, None, None, simpleJson2, None)
-      )
+      val data = List(
+        EndpointData("test/test", None, None, None, simpleJson, None),
+        EndpointData("test/test", None, None, None, simpleJson2, None))
 
       val result = for {
         _ <- dataService.saveData(owner.userId, data)
-        _ <- dataService.saveData(owner.userId,
-                                  List(EndpointData("test/test", None, None, None, simpleJson2Updated, None))
-             )
+        _ <- dataService.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson2Updated, None)))
         _ <- service.ensureUniquenessKey("test/test", "testUniqueID")
         retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
       } yield retrieved
@@ -140,7 +131,7 @@ class DataSentintelSpec(implicit ee: ExecutionEnv)
 
     "Handle records where ID is nested deeply within the object" in {
       val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
+      val service = application.injector.instanceOf[DataSentintel]
 
       val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
 
@@ -157,7 +148,7 @@ class DataSentintelSpec(implicit ee: ExecutionEnv)
 
     "Not update records when key is specified to be within an array" in {
       val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
+      val service = application.injector.instanceOf[DataSentintel]
 
       val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
 
@@ -176,7 +167,7 @@ class DataSentintelSpec(implicit ee: ExecutionEnv)
   "The `ensureUniquenessKey` method" should {
     "Correctly extract ISO8601 timestamp from data" in {
       val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
+      val service = application.injector.instanceOf[DataSentintel]
 
       val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
 
@@ -194,7 +185,7 @@ class DataSentintelSpec(implicit ee: ExecutionEnv)
 
     "Correctly extract unix timestamp in milliseconds from data" in {
       val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
+      val service = application.injector.instanceOf[DataSentintel]
 
       val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
 
@@ -212,7 +203,7 @@ class DataSentintelSpec(implicit ee: ExecutionEnv)
 
     "Correctly extract unix timestamp in miliseconds from data" in {
       val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
+      val service = application.injector.instanceOf[DataSentintel]
 
       val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
 

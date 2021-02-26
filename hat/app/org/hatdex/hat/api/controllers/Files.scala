@@ -25,23 +25,32 @@
 package org.hatdex.hat.api.controllers
 
 import java.util.UUID
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
 
 import com.mohiva.play.silhouette.api.Silhouette
-import io.dataswift.models.hat._
-import io.dataswift.models.hat.applications.HatApplication
-import io.dataswift.models.hat.json.HatJsonFormats
+import javax.inject.Inject
+import org.hatdex.hat.api.json.HatJsonFormats
+import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.models.applications.HatApplication
 import org.hatdex.hat.api.service.applications.ApplicationsService
-import org.hatdex.hat.api.service.{ FileManager, FileMetadataService, UsersService }
+import org.hatdex.hat.api.service.{
+  FileManager,
+  FileMetadataService,
+  UsersService
+}
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
+import org.hatdex.hat.authentication.{
+  ContainsApplicationRole,
+  HatApiAuthEnvironment,
+  HatApiController,
+  WithRole
+}
 import org.hatdex.hat.utils.HatBodyParsers
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
+
+import scala.concurrent.{ ExecutionContext, Future }
 
 class Files @Inject() (
     components: ControllerComponents,
@@ -60,9 +69,9 @@ class Files @Inject() (
   def startUpload: Action[ApiHatFile] =
     SecuredAction(
       WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(
-          ManageFiles("*"),
-          Owner()
-        )
+        ManageFiles("*"),
+        Owner()
+      )
     ).async(parsers.json[ApiHatFile]) { implicit request =>
       val cleanFile = request.body.copy(
         fileId = None,
@@ -75,14 +84,14 @@ class Files @Inject() (
         fileWithId <- fileMetadataService.getUniqueFileId(cleanFile)
         savedFile <- fileMetadataService.save(fileWithId)
         uploadUrl <- fileManager.getUploadUrl(
-                       fileWithId.fileId.get,
-                       fileWithId.contentType
-                     )
+          fileWithId.fileId.get,
+          fileWithId.contentType
+        )
         _ <- fileMetadataService.grantAccess(
-               savedFile,
-               request.identity,
-               content = true
-             )
+          savedFile,
+          request.identity,
+          content = true
+        )
         file <- fileMetadataService.getById(savedFile.fileId.get).map(_.get)
       } yield (file, uploadUrl)
 
@@ -105,20 +114,22 @@ class Files @Inject() (
   def completeUpload(fileId: String): Action[AnyContent] =
     SecuredAction(
       WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(
-          ManageFiles("*"),
-          Owner()
-        )
+        ManageFiles("*"),
+        Owner()
+      )
     ).async { implicit request =>
       request2ApplicationStatus(request) flatMap { maybeAsApplication =>
         fileMetadataService.getById(fileId) flatMap {
-          case Some(file) if fileContentAccessAllowed(file, maybeAsApplication) =>
+          case Some(file)
+              if fileContentAccessAllowed(file, maybeAsApplication) =>
             logger.debug(s"Marking $file complete ")
             val eventuallyCompleted = for {
               fileSize <- fileManager.getFileSize(file.fileId.get)
               completed <- fileMetadataService.save(
-                             file.copy(status = Some(HatFileStatus.Completed(fileSize)))
-                           ) if fileSize > 0
-              _ = completed // Workaround scala/bug#11175 -Ywarn-unused:params false positive
+                file.copy(status = Some(HatFileStatus.Completed(fileSize)))
+              ) if fileSize > 0
+              _ =
+                completed // Workaround scala/bug#11175 -Ywarn-unused:params false positive
             } yield completed
 
             eventuallyCompleted map { completed =>
@@ -152,7 +163,8 @@ class Files @Inject() (
       file: ApiHatFile,
       appStatus: Option[HatApplication]
     )(implicit user: HatUser,
-      authenticator: HatApiAuthEnvironment#A): Boolean =
+      authenticator: HatApiAuthEnvironment#A
+    ): Boolean = {
     appStatus.exists(
       ContainsApplicationRole.isAuthorized(
         user,
@@ -161,10 +173,13 @@ class Files @Inject() (
         ManageFiles("*")
       )
     ) ||
-      WithRole.isAuthorized(user, authenticator, Owner()) ||
-      (file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) &&
-        file.permissions.isDefined &&
-        file.permissions.get.exists(p => p.userId == user.userId && p.contentReadable))
+    WithRole.isAuthorized(user, authenticator, Owner()) ||
+    (file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) &&
+    file.permissions.isDefined &&
+    file.permissions.get.exists(p =>
+      p.userId == user.userId && p.contentReadable
+    ))
+  }
 
   def getDetail(fileId: String): Action[AnyContent] =
     SecuredAction.async { implicit request =>
@@ -233,13 +248,14 @@ class Files @Inject() (
           .map(_.filter(fileAccessAllowed(_, maybeAsApplication)))
           .flatMap { foundFiles =>
             val fileContentsEventual = foundFiles map { file =>
-              if (fileContentAccessAllowed(file, maybeAsApplication))
+              if (fileContentAccessAllowed(file, maybeAsApplication)) {
                 fileManager
                   .getContentUrl(file.fileId.get)
                   .map(url => file.copy(contentUrl = Some(url)))
                   .map(filePermissionsCleaned)
-              else
+              } else {
                 Future.successful(filePermissionsCleaned(file))
+              }
             }
             Future
               .sequence(fileContentsEventual)
@@ -252,7 +268,8 @@ class Files @Inject() (
       file: ApiHatFile,
       appStatus: Option[HatApplication]
     )(implicit user: HatUser,
-      authenticator: HatApiAuthEnvironment#A): Boolean =
+      authenticator: HatApiAuthEnvironment#A
+    ): Boolean = {
     appStatus.exists(
       ContainsApplicationRole.isAuthorized(
         user,
@@ -261,27 +278,33 @@ class Files @Inject() (
         ManageFiles(file.source)
       )
     ) ||
-      WithRole.isAuthorized(user, authenticator, Owner()) ||
-      (file.permissions.isDefined &&
-        file.permissions.get.exists(_.userId == user.userId))
+    WithRole.isAuthorized(user, authenticator, Owner()) ||
+    (file.permissions.isDefined &&
+    file.permissions.get.exists(_.userId == user.userId))
+  }
 
   private def filePermissionsCleaned(
       file: ApiHatFile
     )(implicit user: HatUser,
-      authenticator: HatApiAuthEnvironment#A): ApiHatFile =
-    if (WithRole.isAuthorized(user, authenticator, Owner()))
+      authenticator: HatApiAuthEnvironment#A
+    ): ApiHatFile = {
+    if (WithRole.isAuthorized(user, authenticator, Owner())) {
       file
-    else
+    } else {
       file.copy(permissions = None)
+    }
+  }
 
   def updateFile(fileId: String): Action[ApiHatFile] =
     SecuredAction.async(parsers.json[ApiHatFile]) { implicit request =>
       request2ApplicationStatus(request) flatMap { maybeAsApplication =>
         fileMetadataService.getById(fileId) flatMap {
-          case Some(file) if fileContentAccessAllowed(file, maybeAsApplication) =>
+          case Some(file)
+              if fileContentAccessAllowed(file, maybeAsApplication) =>
             val updatedFile = file.copy(
               name = request.body.name,
-              lastUpdated = request.body.lastUpdated.orElse(Some(DateTime.now())),
+              lastUpdated =
+                request.body.lastUpdated.orElse(Some(DateTime.now())),
               tags = request.body.tags,
               title = request.body.title,
               description = request.body.description
@@ -309,8 +332,8 @@ class Files @Inject() (
           val eventuallyDeleted = for {
             _ <- fileManager.deleteContents(file.fileId.get)
             deleted <- fileMetadataService.save(
-                         file.copy(status = Some(HatFileStatus.Deleted()))
-                       )
+              file.copy(status = Some(HatFileStatus.Deleted()))
+            )
           } yield deleted
           eventuallyDeleted.map(file => Ok(Json.toJson(file)))
         case None =>
@@ -327,7 +350,8 @@ class Files @Inject() (
   def allowAccess(
       fileId: String,
       userId: UUID,
-      content: Boolean): Action[AnyContent] =
+      content: Boolean
+    ): Action[AnyContent] =
     SecuredAction(
       WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))
     ).async { implicit request =>
@@ -354,7 +378,8 @@ class Files @Inject() (
 
   def restrictAccess(
       fileId: String,
-      userId: UUID): Action[AnyContent] =
+      userId: UUID
+    ): Action[AnyContent] =
     SecuredAction(
       WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))
     ).async { implicit request =>
@@ -381,7 +406,8 @@ class Files @Inject() (
 
   def changePublicAccess(
       fileId: String,
-      public: Boolean): Action[AnyContent] =
+      public: Boolean
+    ): Action[AnyContent] =
     SecuredAction(
       WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))
     ).async { implicit request =>
@@ -390,8 +416,8 @@ class Files @Inject() (
           case Some(file) if fileAccessAllowed(file, maybeAsApplication) =>
             val eventuallyGranted = for {
               _ <- fileMetadataService.save(
-                     file.copy(contentPublic = Some(public))
-                   )
+                file.copy(contentPublic = Some(public))
+              )
               updated <- fileMetadataService.getById(fileId).map(_.get)
             } yield updated
             eventuallyGranted.map(f => Ok(Json.toJson(f)))
@@ -409,17 +435,18 @@ class Files @Inject() (
 
   def allowAccessPattern(
       userId: UUID,
-      content: Boolean): Action[ApiHatFile] =
+      content: Boolean
+    ): Action[ApiHatFile] =
     SecuredAction(
       WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))
     ).async(parsers.json[ApiHatFile]) { implicit request =>
       val eventuallyAllowedFiles = for {
         user <- usersService.getUser(userId) if user.isDefined
         _ <- fileMetadataService.grantAccessPattern(
-               request.body,
-               user.get,
-               content
-             )
+          request.body,
+          user.get,
+          content
+        )
         matchingFiles <- fileMetadataService.search(request.body)
       } yield matchingFiles
 

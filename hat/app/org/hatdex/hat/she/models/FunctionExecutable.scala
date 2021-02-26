@@ -24,10 +24,10 @@
 
 package org.hatdex.hat.she.models
 
-import scala.concurrent.Future
-
-import io.dataswift.models.hat.EndpointDataBundle
+import org.hatdex.hat.api.models.EndpointDataBundle
 import org.joda.time.DateTime
+
+import scala.concurrent.Future
 
 trait FunctionExecutable {
   val configuration: FunctionConfiguration
@@ -35,10 +35,12 @@ trait FunctionExecutable {
   val endpoint: String
   def execute(
       configuration: FunctionConfiguration,
-      request: Request): Future[Seq[Response]]
+      request: Request
+    ): Future[Seq[Response]]
   def bundleFilterByDate(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]): Future[EndpointDataBundle] = {
+      untilDate: Option[DateTime]
+    ): Future[EndpointDataBundle] = {
     // Explicitly ignore the parameters - compiler complains about unused parameters
     (fromDate, untilDate)
     Future.successful(configuration.dataBundle)

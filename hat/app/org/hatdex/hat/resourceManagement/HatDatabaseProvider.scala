@@ -26,10 +26,6 @@ package org.hatdex.hat.resourceManagement
 
 import javax.inject.{ Inject, Singleton }
 
-import scala.collection.JavaConverters._
-import scala.concurrent.duration.Duration
-import scala.concurrent.{ ExecutionContext, Future }
-
 import com.typesafe.config.{ Config, ConfigFactory }
 import org.hatdex.hat.dal.HatDbSchemaMigration
 import org.hatdex.hat.resourceManagement.models.HatSignup
@@ -38,36 +34,45 @@ import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
 import play.api.{ Configuration, Logger }
 
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.collection.JavaConverters._
+import scala.concurrent.duration.Duration
+
 trait HatDatabaseProvider {
   protected val configuration: Configuration
 
   def database(hat: String)(implicit ec: ExecutionContext): Future[Database]
 
-  def shutdown(db: Database): Future[Unit] =
+  def shutdown(db: Database): Future[Unit] = {
     // Execution context for the future is defined by specifying the executor during initialisation
-    db.shutdown
 
-  def update(db: Database)(implicit ec: ExecutionContext): Future[Unit] =
+    db.shutdown
+  }
+
+  def update(db: Database)(implicit ec: ExecutionContext): Future[Unit] = {
     new HatDbSchemaMigration(configuration, db, ec).run("hat.schemaMigrations")
+  }
 }
 
 @Singleton
-class HatDatabaseProviderConfig @Inject() (val configuration: Configuration) extends HatDatabaseProvider {
-  def database(hat: String)(implicit ec: ExecutionContext): Future[Database] =
+class HatDatabaseProviderConfig @Inject() (val configuration: Configuration)
+    extends HatDatabaseProvider {
+  def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {
     Future {
       Database.forConfig(
         s"hat.${hat.replace(':', '.')}.database",
         configuration.underlying
       )
     } recoverWith {
-        case e =>
-          Future.failed(
-            new HatServerDiscoveryException(
-              s"Database configuration for $hat incorrect or unavailable",
-              e
-            )
+      case e =>
+        Future.failed(
+          new HatServerDiscoveryException(
+            s"Database configuration for $hat incorrect or unavailable",
+            e
           )
-      }
+        )
+    }
+  }
 }
 
 @Singleton
@@ -79,7 +84,7 @@ class HatDatabaseProviderMilliner @Inject() (
     with MillinerHatSignup {
   val logger: Logger = Logger(this.getClass)
 
-  def database(hat: String)(implicit ec: ExecutionContext): Future[Database] =
+  def database(hat: String)(implicit ec: ExecutionContext): Future[Database] = {
     getHatSignup(hat) map { signup =>
       val config = signupDatabaseConfig(signup)
       //      val databaseUrl = s"jdbc:postgresql://${signup.databaseServer.get.host}:${signup.databaseServer.get.port}/${signup.database.get.name}"
@@ -87,25 +92,26 @@ class HatDatabaseProviderMilliner @Inject() (
       //      Database.forURL(databaseUrl, signup.database.get.name, signup.database.get.password, driver = "org.postgresql.Driver" /*, executor = slickAsyncExecutor*/ )
       Database.forConfig("", config)
     }
+  }
 
   def signupDatabaseConfig(signup: HatSignup): Config = {
     val database = signup.database.get
     val config = Map(
       "dataSourceClass" -> "org.postgresql.ds.PGSimpleDataSource",
       "properties" -> Map[String, String](
-            "user" -> database.name,
-            "password" -> database.password,
-            "databaseName" -> database.name,
-            "portNumber" -> signup.databaseServer.get.port.toString,
-            "serverName" -> signup.databaseServer.get.host
-          ).asJava,
+        "user" -> database.name,
+        "password" -> database.password,
+        "databaseName" -> database.name,
+        "portNumber" -> signup.databaseServer.get.port.toString,
+        "serverName" -> signup.databaseServer.get.host
+      ).asJava,
       "numThreads" -> configuration
-            .get[Int]("resourceManagement.hatDBThreads")
-            .toString,
+        .get[Int]("resourceManagement.hatDBThreads")
+        .toString,
       "idleTimeout" -> configuration
-            .get[Duration]("resourceManagement.hatDBIdleTimeout")
-            .toMillis
-            .toString
+        .get[Duration]("resourceManagement.hatDBIdleTimeout")
+        .toMillis
+        .toString
     ).asJava
 
     ConfigFactory.parseMap(config)

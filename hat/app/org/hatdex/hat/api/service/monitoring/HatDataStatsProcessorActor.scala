@@ -25,17 +25,14 @@
 package org.hatdex.hat.api.service.monitoring
 
 import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-
 import akka.Done
 import akka.actor.Actor
-import io.dataswift.models.hat.{
-  DataDebitEvent => DataDebitAction,
+import org.hatdex.hat.api.models.{
   DataDebitOperation,
   DataStats,
   InboundDataStats,
-  OutboundDataStats
+  OutboundDataStats,
+  DataDebitEvent => DataDebitAction
 }
 import org.hatdex.hat.api.service.StatsReporter
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{
@@ -44,8 +41,14 @@ import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{
   RichDataDebitEvent,
   RichDataRetrievedEvent
 }
-import org.hatdex.hat.resourceManagement.{ HatServer, HatServerDiscoveryException, HatServerProvider }
+import org.hatdex.hat.resourceManagement.{
+  HatServer,
+  HatServerDiscoveryException,
+  HatServerProvider
+}
 import play.api.Logger
+
+import scala.concurrent.{ ExecutionContext, Future }
 
 class HatDataStatsProcessorActor @Inject() (
     processor: HatDataStatsProcessor)
@@ -81,8 +84,9 @@ class HatDataStatsProcessorActor @Inject() (
       }
       .foreach {
         case (hat, hatStats) =>
-          if (hatStats.nonEmpty)
+          if (hatStats.nonEmpty) {
             processor.publishStats(hat, hatStats)
+          }
       }
   }
 
@@ -117,7 +121,7 @@ class HatDataStatsProcessor @Inject() (
     )
   }
 
-  def reportDataDebitEvent(event: RichDataDebitEvent): DataDebitAction =
+  def reportDataDebitEvent(event: RichDataDebitEvent): DataDebitAction = {
     DataDebitAction(
       event.dataDebit,
       event.operation.toString,
@@ -125,8 +129,9 @@ class HatDataStatsProcessor @Inject() (
       event.user,
       event.logEntry
     )
+  }
 
-  def reportDataDebitEvent(event: DataDebitEvent): DataDebitOperation =
+  def reportDataDebitEvent(event: DataDebitEvent): DataDebitOperation = {
     DataDebitOperation(
       event.dataDebit,
       event.operation.toString,
@@ -134,10 +139,12 @@ class HatDataStatsProcessor @Inject() (
       event.user,
       event.logEntry
     )
+  }
 
   def publishStats(
       hat: String,
-      stats: Iterable[DataStats]): Future[Done] = {
+      stats: Iterable[DataStats]
+    ): Future[Done] = {
     logger.debug(s"Publish stats for $hat: $stats")
 
     hatServerProvider.retrieve(hat) flatMap {

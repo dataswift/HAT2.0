@@ -24,13 +24,12 @@
 
 package org.hatdex.hat.utils
 
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-
 import akka.stream.Materializer
+import javax.inject.Inject
 import play.api.Environment
 import play.api.mvc._
+
+import scala.concurrent.{ ExecutionContext, Future }
 
 class TLSFilter @Inject() (
     implicit
@@ -40,24 +39,28 @@ class TLSFilter @Inject() (
     extends Filter {
   def apply(
       nextFilter: RequestHeader => Future[Result]
-    )(requestHeader: RequestHeader): Future[Result] =
+    )(requestHeader: RequestHeader
+    ): Future[Result] = {
     if (
       requestHeader.headers
         .get("X-Forwarded-Proto")
         .getOrElse("http") != "https" && env.mode == play.api.Mode.Prod
-    )
-      if (requestHeader.method == "GET")
+    ) {
+      if (requestHeader.method == "GET") {
         Future.successful(
           Results.MovedPermanently(
             "https://" + requestHeader.host + requestHeader.uri
           )
         )
-      else
+      } else {
         Future.successful(
           Results.BadRequest("This service requires strict transport security")
         )
-    else
+      }
+    } else {
       nextFilter(requestHeader).map(
         _.withHeaders("Strict-Transport-Security" -> "max-age=31536000")
       )
+    }
+  }
 }

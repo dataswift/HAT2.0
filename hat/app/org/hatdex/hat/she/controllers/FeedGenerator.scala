@@ -25,20 +25,24 @@
 package org.hatdex.hat.she.controllers
 
 import javax.inject.Inject
-
-import scala.concurrent.ExecutionContext
-import scala.util.Try
-
 import com.mohiva.play.silhouette.api.Silhouette
-import io.dataswift.models.hat._
-import io.dataswift.models.hat.applications.Version
-import io.dataswift.models.hat.json.{ DataFeedItemJsonProtocol, RichDataJsonFormats }
+import org.hatdex.hat.api.json.{ DataFeedItemJsonProtocol, RichDataJsonFormats }
+import org.hatdex.hat.api.models._
+import org.hatdex.hat.api.models.applications.Version
 import org.hatdex.hat.api.service.applications.ApplicationsService
-import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
+import org.hatdex.hat.authentication.{
+  ContainsApplicationRole,
+  HatApiAuthEnvironment,
+  HatApiController,
+  WithRole
+}
 import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol
 import org.hatdex.hat.she.service._
 import play.api.libs.json.Json
 import play.api.mvc._
+
+import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 class FeedGenerator @Inject() (
     components: ControllerComponents,
@@ -55,30 +59,38 @@ class FeedGenerator @Inject() (
   def getFeed(
       endpoint: String,
       since: Option[Long],
-      until: Option[Long]): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
-      feedGeneratorService
-        .getFeed(endpoint, since, until, appHandlesLocations)
-        .map(items => Ok(Json.toJson(items)))
+      until: Option[Long]
+    ): Action[AnyContent] =
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async {
+      implicit request =>
+        feedGeneratorService
+          .getFeed(endpoint, since, until, appHandlesLocations)
+          .map(items => Ok(Json.toJson(items)))
     }
 
   def fullFeed(
       since: Option[Long],
-      until: Option[Long]): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
-      feedGeneratorService
-        .fullFeed(since, until, appHandlesLocations)
-        .map(items => Ok(Json.toJson(items)))
+      until: Option[Long]
+    ): Action[AnyContent] =
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async {
+      implicit request =>
+        feedGeneratorService
+          .fullFeed(since, until, appHandlesLocations)
+          .map(items => Ok(Json.toJson(items)))
     }
 
   private val locationCompatibleVersion = Version("1.2.2")
-  private val agentAppVersion           = "^([\\w\\s]+)/([\\d\\.]+).*".r
+  private val agentAppVersion = "^([\\w\\s]+)/([\\d\\.]+).*".r
   private def appHandlesLocations(
-    )(implicit requestHeader: RequestHeader): Boolean =
-    requestingAppVersion().forall(app => app._1 != "HAT" || app._2 >= locationCompatibleVersion)
+    )(implicit requestHeader: RequestHeader
+    ): Boolean =
+    requestingAppVersion().forall(app =>
+      app._1 != "HAT" || app._2 >= locationCompatibleVersion
+    )
 
   private def requestingAppVersion(
-    )(implicit requestHeader: RequestHeader): Option[(String, Version)] =
+    )(implicit requestHeader: RequestHeader
+    ): Option[(String, Version)] = {
     requestHeader.headers.get("User-Agent").flatMap {
       _ match {
         case agentAppVersion(app, version) if app.startsWith("HAT Testing") =>
@@ -88,4 +100,5 @@ class FeedGenerator @Inject() (
         case _ => None
       }
     }
+  }
 }

@@ -24,9 +24,6 @@
 package org.hatdex.hat.she.service
 
 import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.she.mappers.{
@@ -40,6 +37,8 @@ import org.hatdex.hat.she.mappers.{
 }
 import org.hatdex.hat.she.models.StaticDataValues
 import play.api.Logger
+
+import scala.concurrent.{ ExecutionContext, Future }
 
 class StaticDataGeneratorService @Inject() (
   )(implicit
@@ -59,7 +58,8 @@ class StaticDataGeneratorService @Inject() (
 
   def getStaticData(
       endpoint: String
-    )(implicit hatServer: HatServer): Future[Seq[StaticDataValues]] = {
+    )(implicit hatServer: HatServer
+    ): Future[Seq[StaticDataValues]] = {
     val mappers = staticDataMappers.find(_._1.startsWith(endpoint))
 
     logger.debug(s"Fetching feed data for ${mappers.map(_._1)}")

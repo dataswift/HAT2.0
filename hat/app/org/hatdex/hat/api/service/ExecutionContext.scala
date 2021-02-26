@@ -34,4 +34,5 @@ class RemoteExecutionContext @Inject() (system: ActorSystem)
     extends CustomExecutionContext(system, "dispatcher.remote-api")
 
 @Singleton
-class DalExecutionContext @Inject() (system: ActorSystem) extends CustomExecutionContext(system, "dispatcher.dal")
+class DalExecutionContext @Inject() (system: ActorSystem)
+    extends CustomExecutionContext(system, "dispatcher.dal")

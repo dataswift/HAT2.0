@@ -84,7 +84,8 @@ trait Tables {
       implicit e0: GR[org.joda.time.LocalDateTime],
       e1: GR[Option[org.joda.time.LocalDateTime]],
       e2: GR[String],
-      e3: GR[Boolean]): GR[ApplicationsRow] =
+      e3: GR[Boolean]
+    ): GR[ApplicationsRow] =
     GR { prs =>
       import prs._
       ApplicationsRow.tupled(
@@ -108,7 +109,8 @@ trait Tables {
   /** Table description of table applications. Objects of this class serve as prototypes for rows in queries. */
   class Applications(
       _tableTag: Tag)
-      extends profile.api.Table[ApplicationsRow](_tableTag, Some("hat"), "applications") {
+      extends profile.api.Table[ApplicationsRow](_tableTag, Some("hat"),
+          "applications") {
     def * =
       (
         dateCreated,
@@ -162,7 +164,8 @@ trait Tables {
             )
           )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column date_created SqlType(timestamp) */
@@ -221,7 +224,8 @@ trait Tables {
   /** GetResult implicit for fetching ApplicationStatusRow objects using plain SQL queries */
   implicit def GetResultApplicationStatusRow(
       implicit e0: GR[String],
-      e1: GR[Boolean]): GR[ApplicationStatusRow] =
+      e1: GR[Boolean]
+    ): GR[ApplicationStatusRow] =
     GR { prs =>
       import prs._
       ApplicationStatusRow.tupled((<<[String], <<[String], <<[Boolean]))
@@ -230,7 +234,8 @@ trait Tables {
   /** Table description of table application_status. Objects of this class serve as prototypes for rows in queries. */
   class ApplicationStatus(
       _tableTag: Tag)
-      extends profile.api.Table[ApplicationStatusRow](_tableTag, Some("hat"), "application_status") {
+      extends profile.api.Table[ApplicationStatusRow](_tableTag, Some("hat"),
+          "application_status") {
     def * =
       (
         id,
@@ -245,7 +250,8 @@ trait Tables {
           import r._;
           _1.map(_ => ApplicationStatusRow.tupled((_1.get, _2.get, _3.get)))
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column id SqlType(varchar), PrimaryKey */
@@ -278,7 +284,8 @@ trait Tables {
   implicit def GetResultBundleContextlessRow(
       implicit e0: GR[Int],
       e1: GR[String],
-      e2: GR[org.joda.time.LocalDateTime]): GR[BundleContextlessRow] =
+      e2: GR[org.joda.time.LocalDateTime]
+    ): GR[BundleContextlessRow] =
     GR { prs =>
       import prs._
       BundleContextlessRow.tupled(
@@ -294,7 +301,8 @@ trait Tables {
   /** Table description of table bundle_contextless. Objects of this class serve as prototypes for rows in queries. */
   class BundleContextless(
       _tableTag: Tag)
-      extends profile.api.Table[BundleContextlessRow](_tableTag, Some("hat"), "bundle_contextless") {
+      extends profile.api.Table[BundleContextlessRow](_tableTag, Some("hat"),
+          "bundle_contextless") {
     def * =
       (
         id,
@@ -313,9 +321,12 @@ trait Tables {
       ).shaped.<>(
         { r =>
           import r._;
-          _1.map(_ => BundleContextlessRow.tupled((_1.get, _2.get, _3.get, _4.get)))
+          _1.map(_ =>
+            BundleContextlessRow.tupled((_1.get, _2.get, _3.get, _4.get))
+          )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
@@ -361,7 +372,8 @@ trait Tables {
   implicit def GetResultBundleContextlessDataSourceDatasetRow(
       implicit e0: GR[Int],
       e1: GR[String],
-      e2: GR[List[Int]]): GR[BundleContextlessDataSourceDatasetRow] =
+      e2: GR[List[Int]]
+    ): GR[BundleContextlessDataSourceDatasetRow] =
     GR { prs =>
       import prs._
       BundleContextlessDataSourceDatasetRow.tupled(
@@ -379,10 +391,12 @@ trait Tables {
     }
 
   /** Table description of table bundle_contextless_data_source_dataset. Objects of this class serve as prototypes for rows in queries. */
-  class BundleContextlessDataSourceDataset(
-      _tableTag: Tag)
-      extends profile.api.Table[BundleContextlessDataSourceDatasetRow](_tableTag, Some("hat"),
-          "bundle_contextless_data_source_dataset") {
+  class BundleContextlessDataSourceDataset(_tableTag: Tag)
+      extends profile.api.Table[BundleContextlessDataSourceDatasetRow](
+        _tableTag,
+        Some("hat"),
+        "bundle_contextless_data_source_dataset"
+      ) {
     def * =
       (
         id,
@@ -415,7 +429,8 @@ trait Tables {
             )
           )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
@@ -466,7 +481,9 @@ trait Tables {
   }
 
   /** Collection-like TableQuery object for table BundleContextlessDataSourceDataset */
-  lazy val BundleContextlessDataSourceDataset = new TableQuery(tag => new BundleContextlessDataSourceDataset(tag))
+  lazy val BundleContextlessDataSourceDataset = new TableQuery(tag =>
+    new BundleContextlessDataSourceDataset(tag)
+  )
 
   /**
     * Entity class storing rows of table DataBundles
@@ -480,7 +497,8 @@ trait Tables {
   /** GetResult implicit for fetching DataBundlesRow objects using plain SQL queries */
   implicit def GetResultDataBundlesRow(
       implicit e0: GR[String],
-      e1: GR[play.api.libs.json.JsValue]): GR[DataBundlesRow] =
+      e1: GR[play.api.libs.json.JsValue]
+    ): GR[DataBundlesRow] =
     GR { prs =>
       import prs._
       DataBundlesRow.tupled((<<[String], <<[play.api.libs.json.JsValue]))
@@ -489,7 +507,8 @@ trait Tables {
   /** Table description of table data_bundles. Objects of this class serve as prototypes for rows in queries. */
   class DataBundles(
       _tableTag: Tag)
-      extends profile.api.Table[DataBundlesRow](_tableTag, Some("hat"), "data_bundles") {
+      extends profile.api.Table[DataBundlesRow](_tableTag, Some("hat"),
+          "data_bundles") {
     def * =
       (bundleId, bundle) <> (DataBundlesRow.tupled, DataBundlesRow.unapply)
 
@@ -499,7 +518,8 @@ trait Tables {
         { r =>
           import r._; _1.map(_ => DataBundlesRow.tupled((_1.get, _2.get)))
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column bundle_id SqlType(varchar), PrimaryKey */
@@ -525,7 +545,8 @@ trait Tables {
   /** GetResult implicit for fetching DataCombinatorsRow objects using plain SQL queries */
   implicit def GetResultDataCombinatorsRow(
       implicit e0: GR[String],
-      e1: GR[play.api.libs.json.JsValue]): GR[DataCombinatorsRow] =
+      e1: GR[play.api.libs.json.JsValue]
+    ): GR[DataCombinatorsRow] =
     GR { prs =>
       import prs._
       DataCombinatorsRow.tupled((<<[String], <<[play.api.libs.json.JsValue]))
@@ -534,7 +555,8 @@ trait Tables {
   /** Table description of table data_combinators. Objects of this class serve as prototypes for rows in queries. */
   class DataCombinators(
       _tableTag: Tag)
-      extends profile.api.Table[DataCombinatorsRow](_tableTag, Some("hat"), "data_combinators") {
+      extends profile.api.Table[DataCombinatorsRow](_tableTag, Some("hat"),
+          "data_combinators") {
     def * =
       (
         combinatorId,
@@ -547,7 +569,8 @@ trait Tables {
         { r =>
           import r._; _1.map(_ => DataCombinatorsRow.tupled((_1.get, _2.get)))
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column combinator_id SqlType(varchar), PrimaryKey */
@@ -585,7 +608,8 @@ trait Tables {
   implicit def GetResultDataDebitRow(
       implicit e0: GR[String],
       e1: GR[org.joda.time.LocalDateTime],
-      e2: GR[Option[String]]): GR[DataDebitRow] =
+      e2: GR[Option[String]]
+    ): GR[DataDebitRow] =
     GR { prs =>
       import prs._
       DataDebitRow.tupled(
@@ -604,7 +628,8 @@ trait Tables {
   /** Table description of table data_debit. Objects of this class serve as prototypes for rows in queries. */
   class DataDebit(
       _tableTag: Tag)
-      extends profile.api.Table[DataDebitRow](_tableTag, Some("hat"), "data_debit") {
+      extends profile.api.Table[DataDebitRow](_tableTag, Some("hat"),
+          "data_debit") {
     def * =
       (
         dataDebitKey,
@@ -635,7 +660,8 @@ trait Tables {
             )
           )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column data_debit_key SqlType(varchar), PrimaryKey */
@@ -694,7 +720,8 @@ trait Tables {
       implicit e0: GR[String],
       e1: GR[org.joda.time.LocalDateTime],
       e2: GR[Boolean],
-      e3: GR[Option[String]]): GR[DataDebitBundleRow] =
+      e3: GR[Option[String]]
+    ): GR[DataDebitBundleRow] =
     GR { prs =>
       import prs._
       DataDebitBundleRow.tupled(
@@ -714,7 +741,8 @@ trait Tables {
   /** Table description of table data_debit_bundle. Objects of this class serve as prototypes for rows in queries. */
   class DataDebitBundle(
       _tableTag: Tag)
-      extends profile.api.Table[DataDebitBundleRow](_tableTag, Some("hat"), "data_debit_bundle") {
+      extends profile.api.Table[DataDebitBundleRow](_tableTag, Some("hat"),
+          "data_debit_bundle") {
     def * =
       (
         dataDebitKey,
@@ -747,7 +775,8 @@ trait Tables {
             )
           )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column data_debit_key SqlType(varchar) */
@@ -827,7 +856,8 @@ trait Tables {
   implicit def GetResultDataDebitContractRow(
       implicit e0: GR[String],
       e1: GR[org.joda.time.LocalDateTime],
-      e2: GR[java.util.UUID]): GR[DataDebitContractRow] =
+      e2: GR[java.util.UUID]
+    ): GR[DataDebitContractRow] =
     GR { prs =>
       import prs._
       DataDebitContractRow.tupled(
@@ -838,7 +868,8 @@ trait Tables {
   /** Table description of table data_debit_contract. Objects of this class serve as prototypes for rows in queries. */
   class DataDebitContract(
       _tableTag: Tag)
-      extends profile.api.Table[DataDebitContractRow](_tableTag, Some("hat"), "data_debit_contract") {
+      extends profile.api.Table[DataDebitContractRow](_tableTag, Some("hat"),
+          "data_debit_contract") {
     def * =
       (
         dataDebitKey,
@@ -854,7 +885,8 @@ trait Tables {
             import r._;
             _1.map(_ => DataDebitContractRow.tupled((_1.get, _2.get, _3.get)))
           },
-          (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+          (_: Any) =>
+            throw new Exception("Inserting into ? projection not supported.")
         )
 
     /** Database column data_debit_key SqlType(varchar), PrimaryKey */
@@ -917,7 +949,8 @@ trait Tables {
       e3: GR[Long],
       e4: GR[Boolean],
       e5: GR[Option[org.joda.time.LocalDateTime]],
-      e6: GR[Option[String]]): GR[DataDebitPermissionsRow] =
+      e6: GR[Option[String]]
+    ): GR[DataDebitPermissionsRow] =
     GR { prs =>
       import prs._
       DataDebitPermissionsRow.tupled(
@@ -941,7 +974,8 @@ trait Tables {
   /** Table description of table data_debit_permissions. Objects of this class serve as prototypes for rows in queries. */
   class DataDebitPermissions(
       _tableTag: Tag)
-      extends profile.api.Table[DataDebitPermissionsRow](_tableTag, Some("hat"), "data_debit_permissions") {
+      extends profile.api.Table[DataDebitPermissionsRow](_tableTag, Some("hat"),
+          "data_debit_permissions") {
     def * =
       (
         permissionsId,
@@ -995,7 +1029,8 @@ trait Tables {
             )
           )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column permissions_id SqlType(serial), AutoInc, PrimaryKey */
@@ -1078,7 +1113,9 @@ trait Tables {
   }
 
   /** Collection-like TableQuery object for table DataDebitPermissions */
-  lazy val DataDebitPermissions = new TableQuery(tag => new DataDebitPermissions(tag))
+  lazy val DataDebitPermissions = new TableQuery(tag =>
+    new DataDebitPermissions(tag)
+  )
 
   /**
     * Entity class storing rows of table DataField
@@ -1102,7 +1139,8 @@ trait Tables {
       implicit e0: GR[Int],
       e1: GR[org.joda.time.LocalDateTime],
       e2: GR[String],
-      e3: GR[Boolean]): GR[DataFieldRow] =
+      e3: GR[Boolean]
+    ): GR[DataFieldRow] =
     GR { prs =>
       import prs._
       DataFieldRow.tupled(
@@ -1120,7 +1158,8 @@ trait Tables {
   /** Table description of table data_field. Objects of this class serve as prototypes for rows in queries. */
   class DataField(
       _tableTag: Tag)
-      extends profile.api.Table[DataFieldRow](_tableTag, Some("hat"), "data_field") {
+      extends profile.api.Table[DataFieldRow](_tableTag, Some("hat"),
+          "data_field") {
     def * =
       (
         id,
@@ -1149,7 +1188,8 @@ trait Tables {
             )
           )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
@@ -1212,7 +1252,8 @@ trait Tables {
       e3: GR[play.api.libs.json.JsValue],
       e4: GR[Array[Byte]],
       e5: GR[Option[org.joda.time.DateTime]],
-      e6: GR[Option[String]]): GR[DataJsonRow] =
+      e6: GR[Option[String]]
+    ): GR[DataJsonRow] =
     GR { prs =>
       import prs._
       DataJsonRow.tupled(
@@ -1232,7 +1273,8 @@ trait Tables {
   /** Table description of table data_json. Objects of this class serve as prototypes for rows in queries. */
   class DataJson(
       _tableTag: Tag)
-      extends profile.api.Table[DataJsonRow](_tableTag, Some("hat"), "data_json") {
+      extends profile.api.Table[DataJsonRow](_tableTag, Some("hat"),
+          "data_json") {
     def * =
       (
         recordId,
@@ -1265,7 +1307,8 @@ trait Tables {
             )
           )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column record_id SqlType(uuid), PrimaryKey */
@@ -1329,7 +1372,8 @@ trait Tables {
 
   /** GetResult implicit for fetching DataJsonGroupRecordsRow objects using plain SQL queries */
   implicit def GetResultDataJsonGroupRecordsRow(
-      implicit e0: GR[java.util.UUID]): GR[DataJsonGroupRecordsRow] =
+      implicit e0: GR[java.util.UUID]
+    ): GR[DataJsonGroupRecordsRow] =
     GR { prs =>
       import prs._
       DataJsonGroupRecordsRow.tupled((<<[java.util.UUID], <<[java.util.UUID]))
@@ -1338,7 +1382,8 @@ trait Tables {
   /** Table description of table data_json_group_records. Objects of this class serve as prototypes for rows in queries. */
   class DataJsonGroupRecords(
       _tableTag: Tag)
-      extends profile.api.Table[DataJsonGroupRecordsRow](_tableTag, Some("hat"), "data_json_group_records") {
+      extends profile.api.Table[DataJsonGroupRecordsRow](_tableTag, Some("hat"),
+          "data_json_group_records") {
     def * =
       (
         groupId,
@@ -1352,7 +1397,8 @@ trait Tables {
           import r._;
           _1.map(_ => DataJsonGroupRecordsRow.tupled((_1.get, _2.get)))
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column group_id SqlType(uuid) */
@@ -1385,7 +1431,9 @@ trait Tables {
   }
 
   /** Collection-like TableQuery object for table DataJsonGroupRecords */
-  lazy val DataJsonGroupRecords = new TableQuery(tag => new DataJsonGroupRecords(tag))
+  lazy val DataJsonGroupRecords = new TableQuery(tag =>
+    new DataJsonGroupRecords(tag)
+  )
 
   /**
     * Entity class storing rows of table DataJsonGroups
@@ -1401,7 +1449,8 @@ trait Tables {
   /** GetResult implicit for fetching DataJsonGroupsRow objects using plain SQL queries */
   implicit def GetResultDataJsonGroupsRow(
       implicit e0: GR[java.util.UUID],
-      e1: GR[org.joda.time.LocalDateTime]): GR[DataJsonGroupsRow] =
+      e1: GR[org.joda.time.LocalDateTime]
+    ): GR[DataJsonGroupsRow] =
     GR { prs =>
       import prs._
       DataJsonGroupsRow.tupled(
@@ -1416,7 +1465,8 @@ trait Tables {
   /** Table description of table data_json_groups. Objects of this class serve as prototypes for rows in queries. */
   class DataJsonGroups(
       _tableTag: Tag)
-      extends profile.api.Table[DataJsonGroupsRow](_tableTag, Some("hat"), "data_json_groups") {
+      extends profile.api.Table[DataJsonGroupsRow](_tableTag, Some("hat"),
+          "data_json_groups") {
     def * =
       (
         groupId,
@@ -1431,7 +1481,8 @@ trait Tables {
           import r._;
           _1.map(_ => DataJsonGroupsRow.tupled((_1.get, _2.get, _3.get)))
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column group_id SqlType(uuid), PrimaryKey */
@@ -1477,7 +1528,8 @@ trait Tables {
       implicit e0: GR[Int],
       e1: GR[org.joda.time.LocalDateTime],
       e2: GR[String],
-      e3: GR[Boolean]): GR[DataRecordRow] =
+      e3: GR[Boolean]
+    ): GR[DataRecordRow] =
     GR { prs =>
       import prs._
       DataRecordRow.tupled(
@@ -1494,7 +1546,8 @@ trait Tables {
   /** Table description of table data_record. Objects of this class serve as prototypes for rows in queries. */
   class DataRecord(
       _tableTag: Tag)
-      extends profile.api.Table[DataRecordRow](_tableTag, Some("hat"), "data_record") {
+      extends profile.api.Table[DataRecordRow](_tableTag, Some("hat"),
+          "data_record") {
     def * =
       (
         id,
@@ -1515,9 +1568,12 @@ trait Tables {
       ).shaped.<>(
         { r =>
           import r._;
-          _1.map(_ => DataRecordRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))
+          _1.map(_ =>
+            DataRecordRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get))
+          )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
@@ -1553,7 +1609,8 @@ trait Tables {
   /** GetResult implicit for fetching DataStatsLogRow objects using plain SQL queries */
   implicit def GetResultDataStatsLogRow(
       implicit e0: GR[Long],
-      e1: GR[play.api.libs.json.JsValue]): GR[DataStatsLogRow] =
+      e1: GR[play.api.libs.json.JsValue]
+    ): GR[DataStatsLogRow] =
     GR { prs =>
       import prs._
       DataStatsLogRow.tupled((<<[Long], <<[play.api.libs.json.JsValue]))
@@ -1562,7 +1619,8 @@ trait Tables {
   /** Table description of table data_stats_log. Objects of this class serve as prototypes for rows in queries. */
   class DataStatsLog(
       _tableTag: Tag)
-      extends profile.api.Table[DataStatsLogRow](_tableTag, Some("hat"), "data_stats_log") {
+      extends profile.api.Table[DataStatsLogRow](_tableTag, Some("hat"),
+          "data_stats_log") {
     def * =
       (statsId, stats) <> (DataStatsLogRow.tupled, DataStatsLogRow.unapply)
 
@@ -1572,7 +1630,8 @@ trait Tables {
         { r =>
           import r._; _1.map(_ => DataStatsLogRow.tupled((_1.get, _2.get)))
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column stats_id SqlType(bigserial), AutoInc, PrimaryKey */
@@ -1608,7 +1667,8 @@ trait Tables {
       implicit e0: GR[Int],
       e1: GR[org.joda.time.LocalDateTime],
       e2: GR[String],
-      e3: GR[Boolean]): GR[DataTableRow] =
+      e3: GR[Boolean]
+    ): GR[DataTableRow] =
     GR { prs =>
       import prs._
       DataTableRow.tupled(
@@ -1626,7 +1686,8 @@ trait Tables {
   /** Table description of table data_table. Objects of this class serve as prototypes for rows in queries. */
   class DataTable(
       _tableTag: Tag)
-      extends profile.api.Table[DataTableRow](_tableTag, Some("hat"), "data_table") {
+      extends profile.api.Table[DataTableRow](_tableTag, Some("hat"),
+          "data_table") {
     def * =
       (
         id,
@@ -1655,7 +1716,8 @@ trait Tables {
             )
           )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
@@ -1704,7 +1766,8 @@ trait Tables {
   /** GetResult implicit for fetching DataTableSizeRow objects using plain SQL queries */
   implicit def GetResultDataTableSizeRow(
       implicit e0: GR[Option[String]],
-      e1: GR[Option[Long]]): GR[DataTableSizeRow] =
+      e1: GR[Option[Long]]
+    ): GR[DataTableSizeRow] =
     GR { prs =>
       import prs._
       DataTableSizeRow.tupled((<<?[String], <<?[Long]))
@@ -1713,7 +1776,8 @@ trait Tables {
   /** Table description of table data_table_size. Objects of this class serve as prototypes for rows in queries. */
   class DataTableSize(
       _tableTag: Tag)
-      extends profile.api.Table[DataTableSizeRow](_tableTag, Some("hat"), "data_table_size") {
+      extends profile.api.Table[DataTableSizeRow](_tableTag, Some("hat"),
+          "data_table_size") {
     def * =
       (
         relation,
@@ -1756,7 +1820,8 @@ trait Tables {
       implicit e0: GR[Int],
       e1: GR[org.joda.time.LocalDateTime],
       e2: GR[String],
-      e3: GR[Boolean]): GR[DataTabletotablecrossrefRow] =
+      e3: GR[Boolean]
+    ): GR[DataTabletotablecrossrefRow] =
     GR { prs =>
       import prs._
       DataTabletotablecrossrefRow.tupled(
@@ -1775,7 +1840,8 @@ trait Tables {
   /** Table description of table data_tabletotablecrossref. Objects of this class serve as prototypes for rows in queries. */
   class DataTabletotablecrossref(
       _tableTag: Tag)
-      extends profile.api.Table[DataTabletotablecrossrefRow](_tableTag, Some("hat"), "data_tabletotablecrossref") {
+      extends profile.api.Table[DataTabletotablecrossrefRow](_tableTag,
+          Some("hat"), "data_tabletotablecrossref") {
     def * =
       (
         id,
@@ -1806,7 +1872,8 @@ trait Tables {
             )
           )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
@@ -1850,7 +1917,9 @@ trait Tables {
   }
 
   /** Collection-like TableQuery object for table DataTabletotablecrossref */
-  lazy val DataTabletotablecrossref = new TableQuery(tag => new DataTabletotablecrossref(tag))
+  lazy val DataTabletotablecrossref = new TableQuery(tag =>
+    new DataTabletotablecrossref(tag)
+  )
 
   /**
     * Entity class storing rows of table DataTableTree
@@ -1881,7 +1950,8 @@ trait Tables {
       e1: GR[Option[org.joda.time.LocalDateTime]],
       e2: GR[Option[String]],
       e3: GR[Option[Boolean]],
-      e4: GR[Option[List[Int]]]): GR[DataTableTreeRow] =
+      e4: GR[Option[List[Int]]]
+    ): GR[DataTableTreeRow] =
     GR { prs =>
       import prs._
       DataTableTreeRow.tupled(
@@ -1902,7 +1972,8 @@ trait Tables {
   /** Table description of table data_table_tree. Objects of this class serve as prototypes for rows in queries. */
   class DataTableTree(
       _tableTag: Tag)
-      extends profile.api.Table[DataTableTreeRow](_tableTag, Some("hat"), "data_table_tree") {
+      extends profile.api.Table[DataTableTreeRow](_tableTag, Some("hat"),
+          "data_table_tree") {
     def * =
       (
         id,
@@ -1985,7 +2056,8 @@ trait Tables {
       implicit e0: GR[Int],
       e1: GR[org.joda.time.LocalDateTime],
       e2: GR[String],
-      e3: GR[Boolean]): GR[DataValueRow] =
+      e3: GR[Boolean]
+    ): GR[DataValueRow] =
     GR { prs =>
       import prs._
       DataValueRow.tupled(
@@ -2004,7 +2076,8 @@ trait Tables {
   /** Table description of table data_value. Objects of this class serve as prototypes for rows in queries. */
   class DataValue(
       _tableTag: Tag)
-      extends profile.api.Table[DataValueRow](_tableTag, Some("hat"), "data_value") {
+      extends profile.api.Table[DataValueRow](_tableTag, Some("hat"),
+          "data_value") {
     def * =
       (
         id,
@@ -2035,7 +2108,8 @@ trait Tables {
             )
           )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
@@ -2115,7 +2189,8 @@ trait Tables {
       e2: GR[Option[List[String]]],
       e3: GR[Option[String]],
       e4: GR[play.api.libs.json.JsValue],
-      e5: GR[Boolean]): GR[HatFileRow] =
+      e5: GR[Boolean]
+    ): GR[HatFileRow] =
     GR { prs =>
       import prs._
       HatFileRow.tupled(
@@ -2138,7 +2213,8 @@ trait Tables {
   /** Table description of table hat_file. Objects of this class serve as prototypes for rows in queries. */
   class HatFile(
       _tableTag: Tag)
-      extends profile.api.Table[HatFileRow](_tableTag, Some("hat"), "hat_file") {
+      extends profile.api.Table[HatFileRow](_tableTag, Some("hat"),
+          "hat_file") {
     def * =
       (
         id,
@@ -2189,7 +2265,8 @@ trait Tables {
             )
           )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column id SqlType(varchar), PrimaryKey */
@@ -2252,7 +2329,8 @@ trait Tables {
   implicit def GetResultHatFileAccessRow(
       implicit e0: GR[String],
       e1: GR[java.util.UUID],
-      e2: GR[Boolean]): GR[HatFileAccessRow] =
+      e2: GR[Boolean]
+    ): GR[HatFileAccessRow] =
     GR { prs =>
       import prs._
       HatFileAccessRow.tupled((<<[String], <<[java.util.UUID], <<[Boolean]))
@@ -2261,7 +2339,8 @@ trait Tables {
   /** Table description of table hat_file_access. Objects of this class serve as prototypes for rows in queries. */
   class HatFileAccess(
       _tableTag: Tag)
-      extends profile.api.Table[HatFileAccessRow](_tableTag, Some("hat"), "hat_file_access") {
+      extends profile.api.Table[HatFileAccessRow](_tableTag, Some("hat"),
+          "hat_file_access") {
     def * =
       (
         fileId,
@@ -2276,7 +2355,8 @@ trait Tables {
           import r._;
           _1.map(_ => HatFileAccessRow.tupled((_1.get, _2.get, _3.get)))
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column file_id SqlType(varchar) */
@@ -2356,7 +2436,8 @@ trait Tables {
       e1: GR[play.api.libs.json.JsValue],
       e2: GR[Option[play.api.libs.json.JsValue]],
       e3: GR[Option[String]],
-      e4: GR[org.joda.time.DateTime]): GR[SheFunctionRow] =
+      e4: GR[org.joda.time.DateTime]
+    ): GR[SheFunctionRow] =
     GR { prs =>
       import prs._
       SheFunctionRow.tupled(
@@ -2385,7 +2466,8 @@ trait Tables {
   /** Table description of table she_function. Objects of this class serve as prototypes for rows in queries. */
   class SheFunction(
       _tableTag: Tag)
-      extends profile.api.Table[SheFunctionRow](_tableTag, Some("hat"), "she_function") {
+      extends profile.api.Table[SheFunctionRow](_tableTag, Some("hat"),
+          "she_function") {
     def * =
       (
         id,
@@ -2454,7 +2536,8 @@ trait Tables {
             )
           )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column id SqlType(varchar), PrimaryKey */
@@ -2548,7 +2631,8 @@ trait Tables {
   implicit def GetResultSheFunctionStatusRow(
       implicit e0: GR[String],
       e1: GR[Boolean],
-      e2: GR[Option[org.joda.time.DateTime]]): GR[SheFunctionStatusRow] =
+      e2: GR[Option[org.joda.time.DateTime]]
+    ): GR[SheFunctionStatusRow] =
     GR { prs =>
       import prs._
       SheFunctionStatusRow.tupled(
@@ -2564,7 +2648,8 @@ trait Tables {
   /** Table description of table she_function_status. Objects of this class serve as prototypes for rows in queries. */
   class SheFunctionStatus(
       _tableTag: Tag)
-      extends profile.api.Table[SheFunctionStatusRow](_tableTag, Some("hat"), "she_function_status") {
+      extends profile.api.Table[SheFunctionStatusRow](_tableTag, Some("hat"),
+          "she_function_status") {
     def * =
       (
         id,
@@ -2581,7 +2666,8 @@ trait Tables {
             import r._;
             _1.map(_ => SheFunctionStatusRow.tupled((_1.get, _2.get, _3, _4)))
           },
-          (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+          (_: Any) =>
+            throw new Exception("Inserting into ? projection not supported.")
         )
 
     /** Database column id SqlType(varchar), PrimaryKey */
@@ -2629,7 +2715,8 @@ trait Tables {
       implicit e0: GR[Int],
       e1: GR[String],
       e2: GR[org.joda.time.LocalDate],
-      e3: GR[org.joda.time.LocalTime]): GR[SystemEventlogRow] =
+      e3: GR[org.joda.time.LocalTime]
+    ): GR[SystemEventlogRow] =
     GR { prs =>
       import prs._
       SystemEventlogRow.tupled(
@@ -2648,7 +2735,8 @@ trait Tables {
   /** Table description of table system_eventlog. Objects of this class serve as prototypes for rows in queries. */
   class SystemEventlog(
       _tableTag: Tag)
-      extends profile.api.Table[SystemEventlogRow](_tableTag, Some("hat"), "system_eventlog") {
+      extends profile.api.Table[SystemEventlogRow](_tableTag, Some("hat"),
+          "system_eventlog") {
     def * =
       (
         id,
@@ -2679,7 +2767,8 @@ trait Tables {
             )
           )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column id SqlType(serial), AutoInc, PrimaryKey */
@@ -2735,7 +2824,8 @@ trait Tables {
       implicit e0: GR[org.joda.time.LocalDateTime],
       e1: GR[java.util.UUID],
       e2: GR[String],
-      e3: GR[Option[String]]): GR[UserAccessLogRow] =
+      e3: GR[Option[String]]
+    ): GR[UserAccessLogRow] =
     GR { prs =>
       import prs._
       UserAccessLogRow.tupled(
@@ -2756,7 +2846,8 @@ trait Tables {
     */
   class UserAccessLog(
       _tableTag: Tag)
-      extends profile.api.Table[UserAccessLogRow](_tableTag, Some("hat"), "user_access_log") {
+      extends profile.api.Table[UserAccessLogRow](_tableTag, Some("hat"),
+          "user_access_log") {
     def * =
       (
         date,
@@ -2779,9 +2870,12 @@ trait Tables {
       ).shaped.<>(
         { r =>
           import r._;
-          _1.map(_ => UserAccessLogRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6)))
+          _1.map(_ =>
+            UserAccessLogRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6))
+          )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column date SqlType(timestamp) */
@@ -2837,7 +2931,8 @@ trait Tables {
   implicit def GetResultUserMailTokensRow(
       implicit e0: GR[String],
       e1: GR[org.joda.time.LocalDateTime],
-      e2: GR[Boolean]): GR[UserMailTokensRow] =
+      e2: GR[Boolean]
+    ): GR[UserMailTokensRow] =
     GR { prs =>
       import prs._
       UserMailTokensRow.tupled(
@@ -2848,7 +2943,8 @@ trait Tables {
   /** Table description of table user_mail_tokens. Objects of this class serve as prototypes for rows in queries. */
   class UserMailTokens(
       _tableTag: Tag)
-      extends profile.api.Table[UserMailTokensRow](_tableTag, Some("hat"), "user_mail_tokens") {
+      extends profile.api.Table[UserMailTokensRow](_tableTag, Some("hat"),
+          "user_mail_tokens") {
     def * =
       (
         id,
@@ -2867,9 +2963,12 @@ trait Tables {
       ).shaped.<>(
         { r =>
           import r._;
-          _1.map(_ => UserMailTokensRow.tupled((_1.get, _2.get, _3.get, _4.get)))
+          _1.map(_ =>
+            UserMailTokensRow.tupled((_1.get, _2.get, _3.get, _4.get))
+          )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column id SqlType(varchar), PrimaryKey */
@@ -2904,7 +3003,8 @@ trait Tables {
   implicit def GetResultUserRoleRow(
       implicit e0: GR[java.util.UUID],
       e1: GR[String],
-      e2: GR[Option[String]]): GR[UserRoleRow] =
+      e2: GR[Option[String]]
+    ): GR[UserRoleRow] =
     GR { prs =>
       import prs._
       UserRoleRow.tupled((<<[java.util.UUID], <<[String], <<?[String]))
@@ -2913,7 +3013,8 @@ trait Tables {
   /** Table description of table user_role. Objects of this class serve as prototypes for rows in queries. */
   class UserRole(
       _tableTag: Tag)
-      extends profile.api.Table[UserRoleRow](_tableTag, Some("hat"), "user_role") {
+      extends profile.api.Table[UserRoleRow](_tableTag, Some("hat"),
+          "user_role") {
     def * = (userId, role, extra) <> (UserRoleRow.tupled, UserRoleRow.unapply)
 
     /** Maps whole row to an option. Useful for outer joins. */
@@ -2922,7 +3023,8 @@ trait Tables {
         { r =>
           import r._; _1.map(_ => UserRoleRow.tupled((_1.get, _2.get, _3)))
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column user_id SqlType(uuid) */
@@ -2963,7 +3065,8 @@ trait Tables {
 
   /** GetResult implicit for fetching UserRoleAvailableRow objects using plain SQL queries */
   implicit def GetResultUserRoleAvailableRow(
-      implicit e0: GR[String]): GR[UserRoleAvailableRow] =
+      implicit e0: GR[String]
+    ): GR[UserRoleAvailableRow] =
     GR { prs =>
       import prs._
       UserRoleAvailableRow(<<[String])
@@ -2972,7 +3075,8 @@ trait Tables {
   /** Table description of table user_role_available. Objects of this class serve as prototypes for rows in queries. */
   class UserRoleAvailable(
       _tableTag: Tag)
-      extends profile.api.Table[UserRoleAvailableRow](_tableTag, Some("hat"), "user_role_available") {
+      extends profile.api.Table[UserRoleAvailableRow](_tableTag, Some("hat"),
+          "user_role_available") {
     def * = name <> (UserRoleAvailableRow, UserRoleAvailableRow.unapply)
 
     /** Maps whole row to an option. Useful for outer joins. */
@@ -2982,7 +3086,8 @@ trait Tables {
         .shaped
         .<>(
           r => r.map(_ => UserRoleAvailableRow(r.get)),
-          (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+          (_: Any) =>
+            throw new Exception("Inserting into ? projection not supported.")
         )
 
     /** Database column name SqlType(varchar), PrimaryKey */
@@ -3017,7 +3122,8 @@ trait Tables {
       e1: GR[org.joda.time.LocalDateTime],
       e2: GR[String],
       e3: GR[Option[String]],
-      e4: GR[Boolean]): GR[UserUserRow] =
+      e4: GR[Boolean]
+    ): GR[UserUserRow] =
     GR { prs =>
       import prs._
       UserUserRow.tupled(
@@ -3036,7 +3142,8 @@ trait Tables {
   /** Table description of table user_user. Objects of this class serve as prototypes for rows in queries. */
   class UserUser(
       _tableTag: Tag)
-      extends profile.api.Table[UserUserRow](_tableTag, Some("hat"), "user_user") {
+      extends profile.api.Table[UserUserRow](_tableTag, Some("hat"),
+          "user_user") {
     def * =
       (
         userId,
@@ -3067,7 +3174,8 @@ trait Tables {
             )
           )
         },
-        (_: Any) => throw new Exception("Inserting into ? projection not supported.")
+        (_: Any) =>
+          throw new Exception("Inserting into ? projection not supported.")
       )
 
     /** Database column user_id SqlType(uuid), PrimaryKey */

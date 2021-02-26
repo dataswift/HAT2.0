@@ -24,8 +24,6 @@
 
 package org.hatdex.hat.resourceManagement
 
-import scala.concurrent.duration._
-
 import com.google.inject.{ AbstractModule, Provides }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.FakeCache
@@ -41,6 +39,8 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.test.{ FakeRequest, PlaySpecification }
 import play.api.{ Application, Logger }
+
+import scala.concurrent.duration._
 
 class HatServiceProviderSpec(implicit ee: ExecutionEnv) extends PlaySpecification with HatServerProviderContext {
 
@@ -61,7 +61,7 @@ class HatServiceProviderSpec(implicit ee: ExecutionEnv) extends PlaySpecificatio
         server.ownerEmail must be equalTo "user@hat.org"
         server.privateKey.getAlgorithm must be equalTo "RSA"
         server.publicKey.getAlgorithm must be equalTo "RSA"
-      //there was one(mockLogger).debug(s"Got back server $server")
+        //there was one(mockLogger).debug(s"Got back server $server")
       } await (1, 30.seconds)
     }
 
@@ -114,8 +114,9 @@ trait HatServerProviderContext extends Scope with Mockito {
     }
 
     @Provides @play.cache.NamedCache("hatserver-cache")
-    def provideHatServerCache(): AsyncCacheApi =
+    def provideHatServerCache(): AsyncCacheApi = {
       new FakeCache()
+    }
   }
 
   lazy val application: Application = new GuiceApplicationBuilder()
@@ -123,3 +124,4 @@ trait HatServerProviderContext extends Scope with Mockito {
     .overrides(new FakeModule)
     .build()
 }
+

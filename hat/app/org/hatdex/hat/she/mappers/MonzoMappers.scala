@@ -2,9 +2,12 @@ package org.hatdex.hat.she.mappers
 
 import java.util.UUID
 
-import scala.util.Try
-
-import io.dataswift.models.hat.applications.{
+import org.hatdex.hat.api.models.{
+  EndpointQuery,
+  EndpointQueryFilter,
+  PropertyQuery
+}
+import org.hatdex.hat.api.models.applications.{
   DataFeedItem,
   DataFeedItemContent,
   DataFeedItemLocation,
@@ -12,21 +15,25 @@ import io.dataswift.models.hat.applications.{
   LocationAddress,
   LocationGeo
 }
-import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, PropertyQuery }
 import org.joda.time.DateTime
 import play.api.libs.json.JsValue
+
+import scala.util.Try
 
 class MonzoTransactionMapper extends DataEndpointMapper {
   def dataQueries(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]): Seq[PropertyQuery] =
+      untilDate: Option[DateTime]
+    ): Seq[PropertyQuery] = {
     Seq(
       PropertyQuery(
         List(
           EndpointQuery(
             "monzo/transactions",
             None,
-            dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("created", None, f))),
+            dateFilter(fromDate, untilDate).map(f =>
+              Seq(EndpointQueryFilter("created", None, f))
+            ),
             None
           )
         ),
@@ -35,6 +42,7 @@ class MonzoTransactionMapper extends DataEndpointMapper {
         None
       )
     )
+  }
 
   private val currencyMap = Map(
     "EUR" -> "\u20AC",
@@ -48,81 +56,88 @@ class MonzoTransactionMapper extends DataEndpointMapper {
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID] = None,
-      tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
+      tailContent: Option[JsValue] = None
+    ): Try[DataFeedItem] = {
     for {
       paymentAmount <- Try((content \ "local_amount").as[Int] / 100.0)
-      paymentCurrency <- Try {
-                           val currencyCode = (content \ "local_currency").as[String]
-                           currencyMap.getOrElse(currencyCode, currencyCode)
-                         }
+      paymentCurrency <- Try({
+        val currencyCode = (content \ "local_currency").as[String]
+        currencyMap.getOrElse(currencyCode, currencyCode)
+      })
       title <- Try(
-                 if (
-                   (content \ "is_load")
-                     .as[Boolean] && (content \ "metadata" \ "p2p_transfer_id")
-                     .asOpt[String]
-                     .isEmpty
-                 )
-                   DataFeedItemTitle(
-                     "You topped up",
-                     Some(s"$paymentCurrency$paymentAmount"),
-                     Some("money")
-                   )
-                 else if ((content \ "metadata" \ "p2p_transfer_id").asOpt[String].nonEmpty)
-                   if ((content \ "originator").as[Boolean])
-                     DataFeedItemTitle(
-                       "You paid a friend",
-                       Some(s"$paymentCurrency${-paymentAmount}"),
-                       Some("money")
-                     )
-                   else
-                     DataFeedItemTitle(
-                       "You received money from a friend",
-                       Some(s"$paymentCurrency$paymentAmount"),
-                       Some("money")
-                     )
-                 else if (
-                   (content \ "metadata" \ "is_reversal")
-                     .asOpt[String]
-                     .contains("true")
-                 )
-                   DataFeedItemTitle(
-                     "Your payment was refunded",
-                     Some(s"$paymentCurrency$paymentAmount"),
-                     Some("money")
-                   )
-                 else if (paymentAmount > 0)
-                   DataFeedItemTitle(
-                     "You received",
-                     Some(s"$paymentCurrency$paymentAmount"),
-                     Some("money")
-                   )
-                 else
-                   DataFeedItemTitle(
-                     "You spent",
-                     Some(s"$paymentCurrency${-paymentAmount}"),
-                     Some("money")
-                   )
-               )
+        if (
+          (content \ "is_load")
+            .as[Boolean] && (content \ "metadata" \ "p2p_transfer_id")
+            .asOpt[String]
+            .isEmpty
+        ) {
+          DataFeedItemTitle(
+            "You topped up",
+            Some(s"$paymentCurrency$paymentAmount"),
+            Some("money")
+          )
+        } else if (
+          (content \ "metadata" \ "p2p_transfer_id").asOpt[String].nonEmpty
+        ) {
+          if ((content \ "originator").as[Boolean]) {
+            DataFeedItemTitle(
+              "You paid a friend",
+              Some(s"$paymentCurrency${-paymentAmount}"),
+              Some("money")
+            )
+          } else {
+            DataFeedItemTitle(
+              "You received money from a friend",
+              Some(s"$paymentCurrency$paymentAmount"),
+              Some("money")
+            )
+          }
+        } else {
+          if (
+            (content \ "metadata" \ "is_reversal")
+              .asOpt[String]
+              .contains("true")
+          ) {
+            DataFeedItemTitle(
+              "Your payment was refunded",
+              Some(s"$paymentCurrency$paymentAmount"),
+              Some("money")
+            )
+          } else if (paymentAmount > 0) {
+            DataFeedItemTitle(
+              "You received",
+              Some(s"$paymentCurrency$paymentAmount"),
+              Some("money")
+            )
+          } else {
+            DataFeedItemTitle(
+              "You spent",
+              Some(s"$paymentCurrency${-paymentAmount}"),
+              Some("money")
+            )
+          }
+        }
+      )
       itemContent <- Try(
-                       DataFeedItemContent(
-                         Option(s"""|${(content \ "counterparty" \ "name")
-                           .asOpt[String]
-                           .orElse((content \ "merchant" \ "name").asOpt[String])
-                           .getOrElse("")}
+        DataFeedItemContent(
+          Option(s"""|${(content \ "counterparty" \ "name")
+            .asOpt[String]
+            .orElse((content \ "merchant" \ "name").asOpt[String])
+            .getOrElse("")}
               |
              |${(content \ "notes").asOpt[String].getOrElse("")}
               |
              |${(content \ "description").asOpt[String].getOrElse("")}
               |
              |${(content \ "merchant" \ "address" \ "short_formatted")
-                           .asOpt[String]
-                           .getOrElse("")}""".stripMargin.replaceAll("\n\n\n", "").trim)
-                           .filter(_.nonEmpty),
-                         None,
-                         None,
-                         None
-                       )
-                     )
+            .asOpt[String]
+            .getOrElse("")}""".stripMargin.replaceAll("\n\n\n", "").trim)
+            .filter(_.nonEmpty),
+          None,
+          None,
+          None
+        )
+      )
       date <- Try((content \ "created").as[DateTime])
       tags <- Try(Seq("transaction", (content \ "category").as[String]))
     } yield {
@@ -149,19 +164,21 @@ class MonzoTransactionMapper extends DataEndpointMapper {
           locationAddress.contains(
             LocationAddress(None, None, None, None, None)
           )
-        )
+        ) {
           None
-        else
+        } else {
           locationAddress
+        }
 
       val location = locationGeo
         .orElse(maybeLocation)
         .map(_ => DataFeedItemLocation(locationGeo, maybeLocation, None))
       val feedItemContent =
-        if (itemContent == DataFeedItemContent(None, None, None, None))
+        if (itemContent == DataFeedItemContent(None, None, None, None)) {
           None
-        else
+        } else {
           Some(itemContent)
+        }
 
       DataFeedItem("monzo", date, tags, Some(title), feedItemContent, location)
     }

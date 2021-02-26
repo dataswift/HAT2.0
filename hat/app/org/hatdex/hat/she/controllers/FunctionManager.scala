@@ -24,21 +24,32 @@
 
 package org.hatdex.hat.she.controllers
 
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
-import io.dataswift.models.hat._
-import io.dataswift.models.hat.json.RichDataJsonFormats
+import javax.inject.Inject
+import org.hatdex.hat.api.json.RichDataJsonFormats
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.applications.ApplicationsService
-import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.she.models.{ FunctionConfiguration, FunctionConfigurationJsonProtocol, FunctionStatus }
-import org.hatdex.hat.she.service.{ FunctionExecutionTriggerHandler, FunctionService }
+import org.hatdex.hat.authentication.{
+  ContainsApplicationRole,
+  HatApiAuthEnvironment,
+  HatApiController,
+  WithRole
+}
+import org.hatdex.hat.she.models.{
+  FunctionConfiguration,
+  FunctionConfigurationJsonProtocol,
+  FunctionStatus
+}
+import org.hatdex.hat.she.service.{
+  FunctionExecutionTriggerHandler,
+  FunctionService
+}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
+
+import scala.concurrent.{ ExecutionContext, Future }
 
 class FunctionManager @Inject() (
     components: ControllerComponents,
@@ -85,19 +96,22 @@ class FunctionManager @Inject() (
     }
 
   def functionEnable(function: String): Action[AnyContent] =
-    SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner())).async { implicit request =>
-      functionSetEnabled(function, enabled = true)
+    SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner())).async {
+      implicit request =>
+        functionSetEnabled(function, enabled = true)
     }
 
   def functionDisable(function: String): Action[AnyContent] =
-    SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner())).async { implicit request =>
-      functionSetEnabled(function, enabled = false)
+    SecuredAction(ContainsApplicationRole(Owner()) || WithRole(Owner())).async {
+      implicit request =>
+        functionSetEnabled(function, enabled = false)
     }
 
   protected def functionSetEnabled(
       function: String,
       enabled: Boolean
-    )(implicit request: SecuredRequest[HatApiAuthEnvironment, AnyContent]): Future[Result] = {
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, AnyContent]
+    ): Future[Result] = {
     logger.debug(s"Enable function $function = $enabled")
     functionService.get(function).flatMap { maybeFunction =>
       maybeFunction.map { function =>
@@ -122,17 +136,19 @@ class FunctionManager @Inject() (
   // TODO: ApplicationManage permission being used to authorise function trigger. Consider updating to tool-specific permissions
   def functionTrigger(
       function: String,
-      useAll: Boolean): Action[AnyContent] =
+      useAll: Boolean
+    ): Action[AnyContent] =
     SecuredAction(
       ContainsApplicationRole(Owner(), ApplicationManage(function)) || WithRole(
-          Owner(),
-          Platform()
-        )
+        Owner(),
+        Platform()
+      )
     ).async { implicit request =>
       logger.debug(s"Trigger function $function")
       functionService.get(function).flatMap { maybeFunction =>
         maybeFunction.map {
-          case c: FunctionConfiguration if c.status.available && c.status.enabled =>
+          case c: FunctionConfiguration
+              if c.status.available && c.status.enabled =>
             functionExecutionDispatcher
               .trigger(request.dynamicEnvironment.domain, c, useAll)(ec)
               .map(_ => Ok(Json.toJson(SuccessResponse("Function Executed"))))

@@ -24,18 +24,18 @@
 
 package org.hatdex.hat.dal
 
-import scala.concurrent.ExecutionContext
-
 import com.typesafe.config.Config
 import org.hatdex.libs.dal.BaseSchemaMigrationImpl
 import play.api.{ Configuration, Logger }
 import slick.driver.JdbcProfile
+
+import scala.concurrent.ExecutionContext
 
 class HatDbSchemaMigration(
     config: Configuration,
     val db: JdbcProfile#Backend#Database,
     implicit val ec: ExecutionContext)
     extends BaseSchemaMigrationImpl {
-  protected val configuration: Config    = config.underlying
+  protected val configuration: Config = config.underlying
   protected val logger: org.slf4j.Logger = Logger(this.getClass).logger
 }

@@ -35,9 +35,6 @@ lazy val hat = project
           Library.Specs2.matcherExtra,
           Library.Specs2.mock,
           Library.HATDeX.hatClient,
-          Library.Backend.logPlay,
-          Library.Backend.dexPlay,
-          Library.Backend.hatPlay,
           Library.HATDeX.dexClient,
           Library.HATDeX.codegen,
           Library.Utils.pegdown,
@@ -157,8 +154,7 @@ inThisBuild(
   List(
     scalaVersion := Versions.scalaVersion,
     semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision,
-    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.4.4"
+    semanticdbVersion := scalafixSemanticdb.revision
   )
 )
 
