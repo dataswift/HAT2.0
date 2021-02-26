@@ -91,25 +91,25 @@ class DataDebitContractServiceSpec
     }
   }
 
-  "The `dataDebit` method" should "Return a data debit by ID" in {
-    val service = application.injector.instanceOf[DataDebitContractService]
-    val saved = for {
-      _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
-      saved <- service.dataDebit("testdd")
-    } yield saved
+  // "The `dataDebit` method" should "Return a data debit by ID" in {
+  //   val service = application.injector.instanceOf[DataDebitContractService]
+  //   val saved = for {
+  //     _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+  //     saved <- service.dataDebit("testdd")
+  //   } yield saved
 
-    saved map { maybeDebit =>
-      maybeDebit must not be empty
-      val debit = maybeDebit.get
-      debit.client.email must equal(owner.email)
-      debit.dataDebitKey must equal("testdd")
-      debit.bundles.length must equal(1)
-      debit.bundles.head.enabled must equal(false)
-    }
-    Await.result(saved, 10.seconds)
-  }
+  //   saved map { maybeDebit =>
+  //     maybeDebit must not be empty
+  //     val debit = maybeDebit.get
+  //     debit.client.email must equal(owner.email)
+  //     debit.dataDebitKey must equal("testdd")
+  //     debit.bundles.length must equal(1)
+  //     debit.bundles.head.enabled must equal(false)
+  //   }
+  //   Await.result(saved, 10.seconds)
+  // }
 
-  it should "Return None when data debit doesn't exist" in {
+  "The `dataDebit` method" should "Return None when data debit doesn't exist" in {
     val service = application.injector.instanceOf[DataDebitContractService]
     val saved = for {
       saved <- service.dataDebit("testdd")
