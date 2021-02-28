@@ -46,9 +46,10 @@ class FileMetadataServiceSpec extends BaseSpec with BeforeAndAfterEach with Befo
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
-    val testFilesQuery = HatFile.filter(_.source.like("test%"))
-
-    val action = DBIO.seq(HatFileAccess.filter(_.fileId in testFilesQuery.map(_.id)).delete, testFilesQuery.delete)
+    val action = DBIO.seq(
+      HatFileAccess.delete,
+      HatFile.delete
+    )
 
     Await.result(db.run(action), 60.seconds)
   }
@@ -169,7 +170,7 @@ class FileMetadataServiceSpec extends BaseSpec with BeforeAndAfterEach with Befo
 
   "The `delete` method" should "Change file status to `Deleted`" in {
     val service = application.injector.instanceOf[FileMetadataService]
-    val file = ApiHatFile(Some("testtestfile.png"),
+    val file = ApiHatFile(Some("testtestfile2.png"),
                           "testFile.png",
                           "test",
                           None,
@@ -184,16 +185,16 @@ class FileMetadataServiceSpec extends BaseSpec with BeforeAndAfterEach with Befo
     )
     val deleted = for {
       _ <- service.save(file)
-      deleted <- service.delete("testtestfile.png")
+      deleted <- service.delete("testtestfile2.png")
     } yield deleted
 
     val r = Await.result(deleted, 10.seconds)
     r.status must equal(Some(HatFileStatus.Deleted()))
   }
 
+  // TODO: Commented in CI
   // it should "Throw error when deleting file that does not exist" in {
   //   val service = application.injector.instanceOf[FileMetadataService]
-
   //   databaseReady.flatMap { _ =>
   //     service.delete("testtestfile.png")
   //   } must throwA[Exception].await(3, 10.seconds)
