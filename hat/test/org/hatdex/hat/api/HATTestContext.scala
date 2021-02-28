@@ -147,8 +147,7 @@ trait HATTestContext extends MockitoSugar {
 
   // Build up the FakeEnvironment for authentication testing
   private val keyUtils = new KeyUtils()
-  // implicit protected def hatDatabase: Database =
-  //   Database.forConfig("", hatConfig.get[Configuration]("database").underlying)
+
   implicit val hatServer: HatServer = HatServer(
     hatAddress,
     "hat",

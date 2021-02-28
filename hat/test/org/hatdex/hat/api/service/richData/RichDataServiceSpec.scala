@@ -33,7 +33,7 @@ import akka.stream.scaladsl.Sink
 import io.dataswift.test.common.{ BaseSpec }
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.models._
-import org.hatdex.hat.dal.Tables.{ DataJson, DataJsonGroups }
+import org.hatdex.hat.dal.Tables._
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import play.api.Logger
 import play.api.libs.json.{ JsObject, JsValue, Json }
@@ -260,16 +260,16 @@ class RichDataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAn
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
-    val endpointRecordsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
-
     val action = DBIO.seq(
-      DataDebitBundle.filter(_.bundleId.like("test%")).delete,
-      DataDebitContract.filter(_.dataDebitKey.like("test%")).delete,
-      DataCombinators.filter(_.combinatorId.like("test%")).delete,
-      DataBundles.filter(_.bundleId.like("test%")).delete,
-      DataJsonGroupRecords.filter(_.recordId in endpointRecordsQuery).delete,
-      DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
+      // TODO: Why do I need to fully qualify this?  I don't know currently.
+      org.hatdex.hat.dal.Tables.SheFunction.delete,
+      DataDebitBundle.delete,
+      DataDebitContract.delete,
+      DataCombinators.delete,
+      DataBundles.delete,
+      DataJsonGroupRecords.delete,
+      DataJsonGroups.delete,
+      DataJson.delete
     )
 
     Await.result(db.run(action), 60.seconds)
