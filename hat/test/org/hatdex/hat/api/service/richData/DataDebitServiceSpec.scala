@@ -51,7 +51,7 @@ class DataDebitServiceSpec
     val endpointRecordsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
 
     val action = DBIO.seq(
-      DataDebitPermissions.filter(_.bundleId.like("test%")).delete,
+      DataDebitPermissions.delete,
       DataDebit.filter(_.dataDebitKey.like("test%")).delete,
       DataCombinators.filter(_.combinatorId.like("test%")).delete,
       DataBundles.filter(_.bundleId.like("test%")).delete,
