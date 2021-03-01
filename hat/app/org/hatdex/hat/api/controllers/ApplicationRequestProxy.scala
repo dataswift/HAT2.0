@@ -31,12 +31,7 @@ import org.hatdex.hat.api.models.applications.HatApplication
 import org.hatdex.hat.api.models.{ ApplicationManage, ErrorMessage, Owner }
 import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.api.service.applications.ApplicationsService
-import org.hatdex.hat.authentication.{
-  ContainsApplicationRole,
-  HatApiAuthEnvironment,
-  HatApiController,
-  WithRole
-}
+import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import play.api.Logger
 import play.api.http.HttpEntity
 import play.api.libs.json.Json
@@ -62,12 +57,11 @@ class ApplicationRequestProxy @Inject() (
   def proxyRequest(
       id: String,
       path: String,
-      method: String = "GET"
-    ): Action[AnyContent] =
+      method: String = "GET"): Action[AnyContent] =
     SecuredAction(
       ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(
-        Owner()
-      )
+          Owner()
+        )
     ).async { implicit request =>
       logger.info(
         s"Proxy $method request for $id to $path with parameters: ${request.queryString}"

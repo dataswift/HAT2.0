@@ -40,7 +40,7 @@ class ActiveHatCounter() {
   // Careful! Mutable state
   private var count: Long = 0
 
-  def get(): Long = count
+  def get(): Long      = count
   def increase(): Unit = this.synchronized(count += 1)
   def decrease(): Unit = this.synchronized(count -= 1)
 }
@@ -57,8 +57,7 @@ class LoggingFilter @Inject() (
 
   def apply(
       nextFilter: RequestHeader => Future[Result]
-    )(requestHeader: RequestHeader
-    ): Future[Result] = {
+    )(requestHeader: RequestHeader): Future[Result] = {
 
     val startTime = System.currentTimeMillis
 
@@ -67,11 +66,11 @@ class LoggingFilter @Inject() (
         case e => errorHandler.onServerError(requestHeader, e)
       })
       .map { result =>
-        val active = hatCounter.get()
+        val active      = hatCounter.get()
         val requestTime = System.currentTimeMillis - startTime
         logger.info(
           s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}:${requestHeader.uri}] " +
-            s"[${result.header.status}] [$requestTime:ms] [hats:$active] ${tokenInfo(requestHeader)}"
+              s"[${result.header.status}] [$requestTime:ms] [hats:$active] ${tokenInfo(requestHeader)}"
         )
 
         result.withHeaders("Request-Time" -> requestTime.toString)
@@ -80,14 +79,14 @@ class LoggingFilter @Inject() (
 
   private val authTokenFieldName: String =
     configuration.get[String]("silhouette.authenticator.fieldName")
-  private def tokenInfo(requestHeader: RequestHeader): String = {
+  private def tokenInfo(requestHeader: RequestHeader): String =
     requestHeader.queryString
       .get(authTokenFieldName)
       .flatMap(_.headOption)
       .orElse(requestHeader.headers.get(authTokenFieldName))
       .flatMap(t =>
-        if (t.isEmpty) { None }
-        else { Some(t) }
+        if (t.isEmpty) None
+        else Some(t)
       )
       .flatMap(t => Try(JWSObject.parse(t)).toOption)
       .map(o => JWTClaimsSet.parse(o.getPayload.toJSONObject))
@@ -96,5 +95,4 @@ class LoggingFilter @Inject() (
           s"${Option(claimSet.getStringClaim("applicationVersion")).getOrElse("_")}]"
       }
       .getOrElse("[unauthenticated@_]")
-  }
 }

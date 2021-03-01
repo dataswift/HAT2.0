@@ -56,8 +56,7 @@ trait MillinerHatSignup {
 
   def getHatSignup(
       hatAddress: String
-    )(implicit ec: ExecutionContext
-    ): Future[HatSignup] = {
+    )(implicit ec: ExecutionContext): Future[HatSignup] =
     // Cache the signup information for subsequent calls (For private/public key and database details)
     cache.getOrElseUpdate[HatSignup](s"configuration:$hatAddress") {
       val request: WSRequest = ws
@@ -91,6 +90,5 @@ trait MillinerHatSignup {
         }
       }
     }
-  }
 
 }
