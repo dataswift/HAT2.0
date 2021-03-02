@@ -87,7 +87,7 @@ object Dependencies {
       val awsJavaSdk               = "com.amazonaws"          % "aws-java-sdk"                    % awsSdkVersion
       val awsJavaS3Sdk             = "com.amazonaws"          % "aws-java-sdk-s3"                 % awsSdkVersion
       val prettyTime               = "org.ocpsoft.prettytime" % "prettytime"                      % "4.0.4.Final"
-      val nbvcxz                   = "me.gosimple"            % "nbvcxz"                          % "1.4.3"
+      val nbvcxz                   = "me.gosimple"            % "nbvcxz"                          % "1.5.0"
       val elasticacheClusterClient = "com.amazonaws"          % "elasticache-java-cluster-client" % "1.1.2"
       val playMemcached            = "com.github.mumoshu"    %% "play2-memcached-play26"          % "0.9.3" exclude ("net.spy", "spymemcached")
       val alpakkaAwsLambda         = "com.lightbend.akka"    %% "akka-stream-alpakka-awslambda"   % "0.20"
