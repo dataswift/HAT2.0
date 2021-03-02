@@ -115,7 +115,7 @@ object Dependencies {
       val scalatest         = "org.scalatest"          %% "scalatest"          % Version.ScalaTest
       val scalatestwordspec = "org.scalatest"          %% "scalatest-wordspec" % Version.ScalaTest
       val scalaplaytest     = "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2"
-      val scalaplaytestmock = "org.scalatestplus"      %% "mockito-3-4"        % "3.2.2.0"
+      val scalaplaytestmock = "org.scalatestplus"      %% "mockito-3-4"        % "3.2.5.0"
     }
 
     object TestContainers {
