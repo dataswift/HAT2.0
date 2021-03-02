@@ -45,7 +45,7 @@ object Dependencies {
 
     object Version {
       val ScalaTest           = "3.2.3"
-      val TestContainersScala = "0.38.8"
+      val TestContainersScala = "0.38.9"
       val DsTestTools         = "0.2.3"
     }
 
