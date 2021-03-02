@@ -37,11 +37,10 @@ class FunctionExecutableRegistry(interfaces: Seq[FunctionExecutable]) {
     * @tparam T The type of the provider.
     * @return Some specific FunctionExecutable or None if no function for the given type could be found.
     */
-  def get[T <: FunctionExecutable: ClassTag]: Option[T] = {
+  def get[T <: FunctionExecutable: ClassTag]: Option[T] =
     interfaces
       .find(p => TypeUtils.isInstance(p, implicitly[ClassTag[T]].runtimeClass))
       .map(_.asInstanceOf[T])
-  }
 
   /**
     * Gets a specific function by its name.
@@ -58,11 +57,8 @@ class FunctionExecutableRegistry(interfaces: Seq[FunctionExecutable]) {
     * @tparam T The type of the provider.
     * @return A list of functions that match a certain type.
     */
-  def getSeq[T <: FunctionExecutable: ClassTag]: Seq[T] = {
+  def getSeq[T <: FunctionExecutable: ClassTag]: Seq[T] =
     interfaces
-      .filter(p =>
-        TypeUtils.isInstance(p, implicitly[ClassTag[T]].runtimeClass)
-      )
+      .filter(p => TypeUtils.isInstance(p, implicitly[ClassTag[T]].runtimeClass))
       .map(_.asInstanceOf[T])
-  }
 }

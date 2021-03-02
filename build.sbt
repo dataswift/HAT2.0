@@ -31,9 +31,6 @@ lazy val hat = project
           Library.Play.Silhouette.silhouette,
           Library.Play.Jwt.atlassianJwtCore,
           Library.Play.Jwt.bouncyCastlePkix,
-          Library.Specs2.core,
-          Library.Specs2.matcherExtra,
-          Library.Specs2.mock,
           Library.HATDeX.hatClient,
           Library.HATDeX.dexClient,
           Library.HATDeX.codegen,
@@ -53,11 +50,16 @@ lazy val hat = project
     libraryDependencies := (buildEnv.value match {
           case BuildEnv.Developement | BuildEnv.Test =>
             libraryDependencies.value ++ Seq(
-                  Library.Play.specs2,
-                  Library.Specs2.core,
-                  Library.Specs2.matcherExtra,
-                  Library.Specs2.mock,
-                  Library.Play.Silhouette.silhouetteTestkit
+                  Library.Play.Silhouette.silhouetteTestkit,
+                  Library.Test.scalatest,
+                  Library.Test.scalatestwordspec,
+                  Library.Test.scalaplaytest,
+                  Library.Test.scalaplaytestmock,
+                  Library.TestContainers.postgresql,
+                  Library.TestContainers.localstack,
+                  Library.TestContainers.scalaTest,
+                  Library.Dataswift.testCommon,
+                  Library.Dataswift.integrationTestCommon
                 )
           case BuildEnv.Stage | BuildEnv.Production =>
             libraryDependencies.value.map(excludeSpecs2)
@@ -154,7 +156,8 @@ inThisBuild(
   List(
     scalaVersion := Versions.scalaVersion,
     semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision
+    semanticdbVersion := scalafixSemanticdb.revision,
+    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.4.4"
   )
 )
 

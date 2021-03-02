@@ -43,12 +43,17 @@ object Dependencies {
 
   object Library {
 
+    object Version {
+      val ScalaTest           = "3.2.3"
+      val TestContainersScala = "0.38.8"
+      val DsTestTools         = "0.2.3"
+    }
+
     object Play {
       val version     = play.core.PlayVersion.current
       val ws          = "com.typesafe.play" %% "play-ws"           % version
       val cache       = "com.typesafe.play" %% "play-cache"        % version
       val test        = "com.typesafe.play" %% "play-test"         % version
-      val specs2      = "com.typesafe.play" %% "play-specs2"       % version
       val jdbc        = "com.typesafe.play" %% "play-jdbc"         % version
       val json        = "com.typesafe.play" %% "play-json"         % "2.6.14"
       val jsonJoda    = "com.typesafe.play" %% "play-json-joda"    % "2.6.14"
@@ -76,13 +81,6 @@ object Dependencies {
       }
     }
 
-    object Specs2 {
-      private val version = "3.9.5"
-      val core            = "org.specs2" %% "specs2-core"          % version
-      val matcherExtra    = "org.specs2" %% "specs2-matcher-extra" % version
-      val mock            = "org.specs2" %% "specs2-mock"          % version
-    }
-
     object Utils {
       private val awsSdkVersion    = "1.11.755"
       val pegdown                  = "org.pegdown"            % "pegdown"                         % "1.6.0"
@@ -90,7 +88,7 @@ object Dependencies {
       val awsJavaS3Sdk             = "com.amazonaws"          % "aws-java-sdk-s3"                 % awsSdkVersion
       val prettyTime               = "org.ocpsoft.prettytime" % "prettytime"                      % "4.0.4.Final"
       val nbvcxz                   = "me.gosimple"            % "nbvcxz"                          % "1.4.3"
-      val elasticacheClusterClient = "com.amazonaws"          % "elasticache-java-cluster-client" % "1.1.1"
+      val elasticacheClusterClient = "com.amazonaws"          % "elasticache-java-cluster-client" % "1.1.2"
       val playMemcached            = "com.github.mumoshu"    %% "play2-memcached-play26"          % "0.9.3" exclude ("net.spy", "spymemcached")
       val alpakkaAwsLambda         = "com.lightbend.akka"    %% "akka-stream-alpakka-awslambda"   % "0.20"
       val apacheCommonLang         = "org.apache.commons"     % "commons-lang3"                   % "3.10"
@@ -113,5 +111,22 @@ object Dependencies {
       val filters = "com.github.stijndehaes" %% "play-prometheus-filters" % "0.4.0"
     }
 
+    object Test {
+      val scalatest         = "org.scalatest"          %% "scalatest"          % Version.ScalaTest
+      val scalatestwordspec = "org.scalatest"          %% "scalatest-wordspec" % Version.ScalaTest
+      val scalaplaytest     = "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2"
+      val scalaplaytestmock = "org.scalatestplus"      %% "mockito-3-4"        % "3.2.2.0"
+    }
+
+    object TestContainers {
+      val scalaTest  = "com.dimafeng" %% "testcontainers-scala-scalatest"  % Version.TestContainersScala
+      val postgresql = "com.dimafeng" %% "testcontainers-scala-postgresql" % Version.TestContainersScala
+      val localstack = "com.dimafeng" %% "testcontainers-scala-localstack" % Version.TestContainersScala
+    }
+
+    object Dataswift {
+      val testCommon            = "io.dataswift" %% "test-common"             % Version.DsTestTools
+      val integrationTestCommon = "io.dataswift" %% "integration-test-common" % Version.DsTestTools
+    }
   }
 }
