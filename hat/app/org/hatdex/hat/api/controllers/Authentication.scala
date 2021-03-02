@@ -497,7 +497,8 @@ class Authentication @Inject() (
                         Done
                     }
 
-                  val fullyQualifiedHatAddress: String = s"https://${hatClaimComplete.hatName}.${hatClaimComplete.hatCluster}"
+                  val fullyQualifiedHatAddress: String =
+                    s"https://${hatClaimComplete.hatName}.${hatClaimComplete.hatCluster}"
                   mailer.emailVerified(token.email, fullyQualifiedHatAddress)
                   result
                 }

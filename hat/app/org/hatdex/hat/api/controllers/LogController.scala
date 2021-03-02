@@ -28,14 +28,13 @@ class LogController @Inject() (
     SecuredAction.async(parsers.json[LogRequest]) { request =>
       val logRequest = request.body
       val hatAddress = request.dynamicEnvironment.domain
-      val appDetails = request.authenticator.customClaims.flatMap {
-        customClaims =>
-          Try(
-            (
-              (customClaims \ "application").as[String],
-              (customClaims \ "applicationVersion").as[String]
-            )
-          ).toOption
+      val appDetails = request.authenticator.customClaims.flatMap { customClaims =>
+        Try(
+          (
+            (customClaims \ "application").as[String],
+            (customClaims \ "applicationVersion").as[String]
+          )
+        ).toOption
       }
 
       logService
