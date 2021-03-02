@@ -1,9 +1,6 @@
 name: Trivy Aqua
 
 on:
-  push:
-    branches:
-      - add-trivy
   workflow_dispatch:
   # Uncomment when PR62 is merged
   # https://github.com/lazy-actions/gitrivy/pull/62
@@ -29,7 +26,7 @@ jobs:
         run: docker pull ${{ env.REGISTRY }}:${{ github.sha }}
 
       - name: Container - Scan
-        uses: wochinge/gitrivy@master
+        uses: lazy-actions/gitrivy@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           image: ${{ env.REGISTRY }}:${{ github.sha }}
