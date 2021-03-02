@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore:
+      - main
+      - dev
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Setup
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+          java-package: jdk
+          architecture: x64
+
+      - name: Init Submodule for schema
+        run: git submodule init
+
+      - name: Update Submodule for schema
+        run: git submodule update
+
+      - name: Compile
+        run: sbt +compile
+
+      - name: Test:Compile
+        run: sbt test:compile
+
+      - name: Test
+        run: sbt +test -Dconfig.file=hat/conf/application.test.conf
+
+      # - name: Coverage - off until we re-add Coverage
+      #   run: sbt "project hat" coverage test -Dconfig.file=hat/conf/application.test.conf
+
+      - name: Build
+        run: sbt docker:stage && docker build hat/target/docker/stage
+   

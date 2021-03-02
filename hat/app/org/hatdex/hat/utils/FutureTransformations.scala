@@ -30,26 +30,23 @@ import scala.util.{ Failure, Success, Try }
 object FutureTransformations {
   def transform[A](
       o: Option[Future[A]]
-    )(implicit ec: ExecutionContext
-    ): Future[Option[A]] =
+    )(implicit ec: ExecutionContext): Future[Option[A]] =
     o.map(f => f.map(Option(_))).getOrElse(Future.successful(None))
 
   def transform[A](o: Option[Future[Option[A]]]): Future[Option[A]] =
     o.getOrElse(Future.successful(None))
 
-  def transform[A](t: Try[A])(implicit ec: ExecutionContext): Future[A] = {
+  def transform[A](t: Try[A])(implicit ec: ExecutionContext): Future[A] =
     Future {
       t
     }.flatMap {
       case Success(s)     => Future.successful(s)
       case Failure(error) => Future.failed(error)
     }
-  }
 
   def futureToFutureTry[T](
       f: Future[T]
-    )(implicit ec: ExecutionContext
-    ): Future[Try[T]] =
+    )(implicit ec: ExecutionContext): Future[Try[T]] =
     f.map(x => Success(x))
       .recover({
         case x => Failure(x)

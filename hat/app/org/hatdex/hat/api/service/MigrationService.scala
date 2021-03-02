@@ -57,8 +57,7 @@ class MigrationService @Inject() (
   protected def convertRecordJson(
       record: ApiDataRecord,
       includeTimestamp: Boolean,
-      liftDataItem: Option[String]
-    ): JsResult[JsObject] = {
+      liftDataItem: Option[String]): JsResult[JsObject] = {
     implicit val localDateTimeWrites =
       HatJsonFormats.DefaultJodaLocalDateTimeWrites
 
@@ -68,16 +67,16 @@ class MigrationService @Inject() (
       __ \ 'data
     }
 
-    val transformation = if (includeTimestamp) {
-      dataPath.json.pick(
-        __.json.update(
-          (__ \ 'lastUpdated).json
-            .put(Json.toJson(record.lastUpdated.getOrElse(LocalDateTime.now())))
+    val transformation =
+      if (includeTimestamp)
+        dataPath.json.pick(
+          __.json.update(
+            (__ \ 'lastUpdated).json
+              .put(Json.toJson(record.lastUpdated.getOrElse(LocalDateTime.now())))
+          )
         )
-      )
-    } else {
-      dataPath.json.pick[JsObject]
-    }
+      else
+        dataPath.json.pick[JsObject]
 
     HatJsonFormats
       .flattenRecordValues(record)
@@ -88,8 +87,7 @@ class MigrationService @Inject() (
       userId: UUID,
       record: ApiDataRecord
     )(implicit db: Database,
-      request: SecuredRequest[HatApiAuthEnvironment, _]
-    ): Future[Int] = {
+      request: SecuredRequest[HatApiAuthEnvironment, _]): Future[Int] =
     record.tables.map { tables =>
       val savedRecords = tables.map { table =>
         convertRecordJson(
@@ -124,7 +122,6 @@ class MigrationService @Inject() (
     } getOrElse {
       Future.successful(0)
     }
-  }
 
   def migrateOldData(
       userId: UUID,
@@ -135,24 +132,20 @@ class MigrationService @Inject() (
       updatedUntil: Option[LocalDateTime],
       includeTimestamp: Boolean
     )(implicit db: Database,
-      request: SecuredRequest[HatApiAuthEnvironment, _]
-    ): Future[Long] = {
+      request: SecuredRequest[HatApiAuthEnvironment, _]): Future[Long] = {
     val parallelMigrations = 10
 
     val eventualCount: Future[Long] = db.run {
       // Get the legacy table ID
       DataTable
-        .filter(t =>
-          t.sourceName === fromSource && t.name === fromTableName && t.deleted === false
-        )
+        .filter(t => t.sourceName === fromSource && t.name === fromTableName && t.deleted === false)
         .result
     } map { tables =>
       tables.map(ModelTranslation.fromDbModel(_, None, None))
     } map (_.head.id.get) flatMap { tableId =>
       val migratedCountSource =
-        getTableValuesStreaming(tableId, updatedSince, updatedUntil) map {
-          record =>
-            convertRecordJson(record, includeTimestamp, Some(fromTableName))
+        getTableValuesStreaming(tableId, updatedSince, updatedUntil) map { record =>
+          convertRecordJson(record, includeTimestamp, Some(fromTableName))
         } via {
           Flow[JsResult[JsObject]].filter(
             _.isSuccess
@@ -160,25 +153,25 @@ class MigrationService @Inject() (
         } via {
           Flow[JsResult[JsObject]].map(_.get) // Unwrap Json Objects
         } via Flow[JsObject].mapAsync(parallelMigrations) { oldJson =>
-          richDataService
-            .saveData(
-              userId,
-              Seq(EndpointData(endpoint, None, None, None, oldJson, None))
-            )
-            .andThen(
-              dataEventDispatcher.dispatchEventDataCreated(
-                s"migrated data to $endpoint"
-              )
-            )
-            .map(_ => 1L)
-            .recover {
-              case e =>
-                logger.debug(
-                  s"Error while migrating data record: ${e.getMessage}"
+              richDataService
+                .saveData(
+                  userId,
+                  Seq(EndpointData(endpoint, None, None, None, oldJson, None))
                 )
-                0L
+                .andThen(
+                  dataEventDispatcher.dispatchEventDataCreated(
+                    s"migrated data to $endpoint"
+                  )
+                )
+                .map(_ => 1L)
+                .recover {
+                  case e =>
+                    logger.debug(
+                      s"Error while migrating data record: ${e.getMessage}"
+                    )
+                    0L
+                }
             }
-        }
 
       val sink = Sink.fold[Long, Long](0)(_ + _)
       val runnable: RunnableGraph[Future[Long]] =
@@ -193,14 +186,11 @@ class MigrationService @Inject() (
       tableId: Int,
       updatedSince: Option[LocalDateTime] = None,
       updatedUntil: Option[LocalDateTime] = None
-    )(implicit db: Database
-    ): Source[ApiDataRecord, NotUsed] = {
+    )(implicit db: Database): Source[ApiDataRecord, NotUsed] = {
     // Get All Data Table trees matching source and name
     val dataTableTreesQuery = for {
       rootTable <- DataTableTree.filter(_.id === tableId)
-      tree <- DataTableTree.filter(t =>
-        t.rootTable === rootTable.id && t.deleted === false
-      )
+      tree <- DataTableTree.filter(t => t.rootTable === rootTable.id && t.deleted === false)
     } yield tree
 
     val eventualTables =
@@ -243,14 +233,10 @@ class MigrationService @Inject() (
       .fromPublisher(result)
       .groupBy(10000, _._1.id)
       .map(Seq(_))
-      .reduce[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]]((l, r) =>
-        l.++(r)
-      )
+      .reduce[Seq[(DataRecordRow, DataFieldRow, DataValueRow)]]((l, r) => l.++(r))
       .mergeSubstreams
       .mapAsync(10) { data =>
-        eventualTables.map(tables =>
-          DataService.restructureTableValuesToRecords(data, tables).head
-        )
+        eventualTables.map(tables => DataService.restructureTableValuesToRecords(data, tables).head)
       }
 
     dataStream

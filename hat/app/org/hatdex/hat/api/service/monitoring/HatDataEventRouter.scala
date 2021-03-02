@@ -43,7 +43,7 @@ class HatDataEventRouterImpl @Inject() (
     implicit val actorSystem: ActorSystem)
     extends HatDataEventRouter {
 
-  private implicit val materializer: ActorMaterializer = ActorMaterializer()
+  implicit private val materializer: ActorMaterializer = ActorMaterializer()
 
   init()
 
@@ -81,8 +81,7 @@ class HatDataEventRouterImpl @Inject() (
   private def buffer(
       target: ActorRef,
       batch: Int = 100,
-      period: FiniteDuration = 60.seconds
-    ): ActorRef =
+      period: FiniteDuration = 60.seconds): ActorRef =
     Source
       .actorRef(bufferSize = 1000, OverflowStrategy.dropNew)
       .groupedWithin(batch, period)
