@@ -38,8 +38,7 @@ import scala.concurrent.Future
   *
   * @param usersService The underlying database User Service implementation
   */
-class AuthUserServiceImpl @Inject() (usersService: UsersService)
-    extends AuthUserService {
+class AuthUserServiceImpl @Inject() (usersService: UsersService) extends AuthUserService {
 
   /**
     * Retrieves a user that matches the specified login info.
@@ -49,10 +48,8 @@ class AuthUserServiceImpl @Inject() (usersService: UsersService)
     */
   def retrieve(
       loginInfo: LoginInfo
-    )(implicit dyn: HatServer
-    ): Future[Option[HatUser]] = {
+    )(implicit dyn: HatServer): Future[Option[HatUser]] =
     usersService.getUser(loginInfo.providerKey)(dyn)
-  }
 
   /**
     * Saves a user.
@@ -81,6 +78,5 @@ class AuthUserServiceImpl @Inject() (usersService: UsersService)
   def link(
       mainUser: HatUser,
       linkedUser: HatUser
-    )(implicit dyn: HatServer
-    ): Future[Unit] = Future.failed(new RuntimeException("Profile linking not implemented"))
+    )(implicit dyn: HatServer): Future[Unit] = Future.failed(new RuntimeException("Profile linking not implemented"))
 }

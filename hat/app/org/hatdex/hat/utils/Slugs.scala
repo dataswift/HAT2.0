@@ -37,19 +37,17 @@ object Slugs {
   def slugifyUnique(
       str: String,
       suffix: Option[String],
-      existing: Seq[String]
-    ): String =
+      existing: Seq[String]): String =
     generateUniqueSlug(slugify(str), suffix, existing)
 
   private def generateUniqueSlug(
       slug: String,
       suffix: Option[String],
-      existingSlugs: Seq[String]
-    ): String = {
+      existingSlugs: Seq[String]): String = {
     val slugSuffix = suffix.getOrElse("")
-    if (!(existingSlugs contains slug + slugSuffix)) {
+    if (!(existingSlugs contains slug + slugSuffix))
       s"$slug$slugSuffix"
-    } else {
+    else {
       val endsWithNumber = s"(.+-)([0-9]+)$slugSuffix".r
       val suffixes = existingSlugs.map {
         case endsWithNumber(_, number) => number.toInt
