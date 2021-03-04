@@ -26,7 +26,6 @@ package org.hatdex.hat.api.service.richData
 
 import javax.inject.Inject
 
-import scala.concurrent.Future
 
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.json.RichDataJsonFormats
@@ -39,6 +38,9 @@ import play.api.libs.json._
 
 class RichBundleService @Inject() (implicit ec: DalExecutionContext) {
   import RichDataJsonFormats._
+import scala.concurrent.Future
+
+class RichBundleService @Inject() (implicit ec: DalExecutionContext) extends RichDataJsonFormats {
 
   val logger: Logger = Logger(this.getClass)
 

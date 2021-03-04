@@ -24,19 +24,20 @@
 
 package org.hatdex.hat.api.service.applications
 
-import scala.concurrent.Future
-
 import akka.Done
 import akka.util.ByteString
 import com.google.inject.AbstractModule
-import io.dataswift.models.hat._
-import io.dataswift.models.hat.applications.ApplicationKind.{ App, Contract }
-import io.dataswift.models.hat.applications._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.HATTestContext
+import org.hatdex.hat.api.models.applications.ApplicationKind.{ App, Contract }
+import org.hatdex.hat.api.models.applications._
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.StatsReporter
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, HatServer }
+import org.mockito.ArgumentMatchers.{ any }
+import org.mockito.invocation.InvocationOnMock
+import org.mockito.stubbing.Answer
 import org.joda.time.{ DateTime, LocalDateTime }
 import org.mockito.Mockito.when
 import org.mockito.invocation.InvocationOnMock
@@ -46,12 +47,17 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.test.FakeRequest
-import play.api.{ Application => PlayApplication, Logger }
+import play.api.{ Logger, Application => PlayApplication }
 import play.core.server.Server
+
+import scala.concurrent.Future
+import org.scalamock.scalatest.MockFactory
+import org.scalatestplus.mockito.MockitoSugar
+//import org.mockito.Mockito._
 
 trait ApplicationsServiceContext extends HATTestContext {
   override lazy val application: PlayApplication = new GuiceApplicationBuilder()
-    .configure(FakeHatConfiguration.config)
+    .configure(conf)
     .overrides(new FakeModule)
     .overrides(new CustomisedFakeModule)
     .build()
@@ -357,19 +363,16 @@ trait ApplicationsServiceContext extends HATTestContext {
     }
 
     val mockStatusChecker = mock[ApplicationStatusCheckService]
-    mockStatusChecker.status(any[ApplicationStatus.Internal], any[String]) returns Future
-      .successful(true)
-    when(mockStatusChecker.status(any[ApplicationStatus.Status], any[String]))
-      .thenAnswer(StatusCheck())
+    when(mockStatusChecker.status(any[ApplicationStatus.Internal], any[String])).thenReturn(Future.successful(true))
+    when(mockStatusChecker.status(any[ApplicationStatus.Status], any[String])).thenAnswer(StatusCheck())
 
     mockStatusChecker
-
   }
 
   lazy val mockStatsReporter = {
     val mockStatsReporter = mock[StatsReporter]
-    mockStatsReporter.registerOwnerConsent(any[String])(any[HatServer]) returns Future
-      .successful(Done)
+    when(mockStatsReporter.registerOwnerConsent(any[String])(any[HatServer])).thenReturn(Future.successful(Done))
+    //(mockStatsReporter.registerOwnerConsent _).expects(any[String]) returns Future.successful(Done)
 
     mockStatsReporter
   }

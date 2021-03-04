@@ -2,9 +2,8 @@ package org.hatdex.hat.she.mappers
 
 import java.util.UUID
 
-import scala.util.Try
-
-import io.dataswift.models.hat.applications.{
+import org.hatdex.hat.api.models.{ EndpointQuery, EndpointQueryFilter, FilterOperator, PropertyQuery }
+import org.hatdex.hat.api.models.applications.{
   DataFeedItem,
   DataFeedItemContent,
   DataFeedItemLocation,
@@ -13,10 +12,11 @@ import io.dataswift.models.hat.applications.{
   LocationAddress,
   LocationGeo
 }
-import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, FilterOperator, PropertyQuery }
 import org.hatdex.hat.she.models.StaticDataValues
 import org.joda.time.DateTime
 import play.api.libs.json.{ __, JsError, JsNumber, JsObject, JsResult, JsSuccess, JsValue, Json }
+
+import scala.util.Try
 
 class InstagramMediaMapper extends DataEndpointMapper {
   override protected val dataDeduplicationField: Option[String] = Some("id")

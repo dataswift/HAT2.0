@@ -24,10 +24,8 @@
 
 package org.hatdex.hat.dal
 
-import scala.annotation.tailrec
-
-import io.dataswift.models.hat.json.HatJsonFormats
-import io.dataswift.models.hat.{
+import org.hatdex.hat.api.json.HatJsonFormats
+import org.hatdex.hat.api.models.{
   DataDebit => ApiDataDebit,
   DataDebitPermissions => ApiDataDebitPermissions,
   UserRole => ApiUserRole,
@@ -36,6 +34,8 @@ import io.dataswift.models.hat.{
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.phata.models.MailTokenUser
+
+import scala.annotation.tailrec
 import org.joda.time.Duration
 
 object ModelTranslation {
@@ -124,7 +124,7 @@ object ModelTranslation {
     )
 
   def fromDbModel(value: DataStatsLogRow): DataStats = {
-    import io.dataswift.models.hat.json.DataStatsFormat.dataStatsFormat
+    import org.hatdex.hat.api.json.DataStatsFormat.dataStatsFormat
     value.stats.as[DataStats]
   }
 
@@ -195,7 +195,7 @@ object ModelTranslation {
     )
 
   def fromDbModel(dataBundleRow: DataBundlesRow): EndpointDataBundle = {
-    import io.dataswift.models.hat.json.RichDataJsonFormats.propertyQueryFormat
+    import org.hatdex.hat.api.json.RichDataJsonFormats.propertyQueryFormat
     EndpointDataBundle(
       dataBundleRow.bundleId,
       dataBundleRow.bundle.as[Map[String, PropertyQuery]]

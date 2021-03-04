@@ -25,10 +25,6 @@
 package org.hatdex.hat.she.controllers
 
 import javax.inject.Inject
-
-import scala.concurrent.ExecutionContext
-import scala.util.Try
-
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.applications.Version
@@ -38,6 +34,9 @@ import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol
 import org.hatdex.hat.she.service._
 import play.api.libs.json.Json
 import play.api.mvc._
+
+import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 class FeedGenerator @Inject() (
     components: ControllerComponents,

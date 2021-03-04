@@ -24,7 +24,7 @@
 
 package org.hatdex.hat.api.service.monitoring
 
-import io.dataswift.models.hat._
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.richData.JsonDataTransformer
 import org.joda.time.DateTime
 import play.api.Logger

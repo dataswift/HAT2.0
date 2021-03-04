@@ -26,11 +26,8 @@ package org.hatdex.hat.api.service.richData
 
 import java.sql.SQLException
 import java.util.UUID
+
 import javax.inject.Inject
-
-import scala.concurrent.Future
-import scala.util.Success
-
 import akka.Done
 import io.dataswift.models.hat._
 import org.hatdex.hat.api.service.{ RemoteExecutionContext, UsersService }
@@ -42,6 +39,9 @@ import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
 import play.api.libs.json._
+
+import scala.concurrent.Future
+import scala.util.Success
 
 class DataDebitService @Inject() (
     usersService: UsersService
@@ -106,6 +106,7 @@ class DataDebitService @Inject() (
             if e.getMessage.contains(
               "duplicate key value violates unique constraint \"data_bundles_pkey\""
             ) =>
+          println(s"Message: ${e.getMessage()}")
           throw RichDataDuplicateBundleException(
             "Data bundle with such ID already exists"
           )

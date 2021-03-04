@@ -26,35 +26,34 @@ package org.hatdex.hat.resourceManagement
 
 import java.util.UUID
 
-import scala.concurrent.duration._
-
 import org.hatdex.hat.resourceManagement.models.{ DatabaseInstance, DatabaseServer, HatKeys, HatSignup }
 import org.joda.time.DateTime
-import play.api.test.PlaySpecification
+import io.dataswift.test.common.BaseSpec
 
-class HatDatabaseProviderSpec extends PlaySpecification with HatServerProviderContext {
-  "The `signupDatabaseConfig` method" should {
-    "Return a parsed database configuration" in {
-      val service = application.injector.instanceOf[HatDatabaseProviderMilliner]
-      val signup = HatSignup(
-        UUID.randomUUID(),
-        "Bob ThePlumber",
-        "bobtheplumber",
-        "bob@theplumber.com",
-        "testing",
-        "testing",
-        true,
-        DateTime.now(),
-        Some(DatabaseInstance(UUID.randomUUID(), "testhatdb1", "testing")),
-        Some(DatabaseServer(0, "localhost", 5432, DateTime.now(), Seq())),
-        Some(HatKeys("", ""))
-      )
+import scala.concurrent.duration._
+import org.hatdex.hat.api.HATTestContext
 
-      val config = service.signupDatabaseConfig(signup)
-      config.getLong("idleTimeout") must be equalTo 30.seconds.toMillis
-      config.getString("properties.user") must be equalTo "testhatdb1"
-      config.getString("properties.databaseName") must be equalTo "testhatdb1"
-      config.getString("properties.portNumber") must be equalTo "5432"
-    }
+class HatDatabaseProviderSpec extends BaseSpec with HATTestContext {
+  "The `signupDatabaseConfig` method" should "Return a parsed database configuration" in {
+    val service = application.injector.instanceOf[HatDatabaseProviderMilliner]
+    val signup = HatSignup(
+      UUID.randomUUID(),
+      "Bob ThePlumber",
+      "bobtheplumber",
+      "bob@theplumber.com",
+      "testing",
+      "testing",
+      true,
+      DateTime.now(),
+      Some(DatabaseInstance(UUID.randomUUID(), "testhatdb1", "testing")),
+      Some(DatabaseServer(0, "localhost", 5432, DateTime.now(), Seq())),
+      Some(HatKeys("", ""))
+    )
+
+    val config = service.signupDatabaseConfig(signup)
+    config.getLong("idleTimeout") must equal(30.seconds.toMillis)
+    config.getString("properties.user") must equal("testhatdb1")
+    config.getString("properties.databaseName") must equal("testhatdb1")
+    config.getString("properties.portNumber") must equal("5432")
   }
 }

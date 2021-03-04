@@ -28,55 +28,54 @@ import java.util.UUID
 
 import akka.stream.Materializer
 import com.google.inject.AbstractModule
-import io.dataswift.models.hat.{ EndpointData, InboundDataStats, Owner }
+import io.dataswift.test.common.BaseSpec
 import net.codingwell.scalaguice.ScalaModule
+import org.hatdex.hat.api.models.{ EndpointData, Owner }
 import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.DataCreatedEvent
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
 import org.joda.time.DateTime
-import org.specs2.mock.Mockito
-import org.specs2.specification.Scope
+import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsValue, Json }
-import play.api.test.PlaySpecification
 import play.api.{ Application, Logger }
 
-class HatDataStatsProcessorSpec extends PlaySpecification with Mockito with HatDataStatsProcessorContext {
+class HatDataStatsProcessorSpec
+    extends BaseSpec
+    with BeforeAndAfter
+    with BeforeAndAfterAll
+    with HatDataStatsProcessorContext {
 
   val logger = Logger(this.getClass)
 
-  sequential
+  "The `computeInboundStats` method" should "Correctly count numbers of values for simple objects" in {
+    import org.hatdex.hat.api.json.DataStatsFormat._
 
-  "The `computeInboundStats` method" should {
-    "Correctly count numbers of values for simple objects" in {
-      val service                 = application.injector.instanceOf[HatDataStatsProcessor]
-      val stats: InboundDataStats = service.computeInboundStats(simpleDataCreatedEvent)
+    val service = application.injector.instanceOf[HatDataStatsProcessor]
+    val stats   = service.computeInboundStats(simpleDataCreatedEvent)
 
-      import io.dataswift.models.hat.json.DataStatsFormat._
-      logger.debug(s"Got back stats: ${Json.prettyPrint(Json.toJson(stats))}")
+    logger.debug(s"Got back stats: ${Json.prettyPrint(Json.toJson(stats))}")
 
-      stats.logEntry must be equalTo "test item"
-      stats.statsType must be equalTo "inbound"
-      stats.stats.length must be equalTo 1
-      val endpointStats = stats.stats.head
-      endpointStats.endpoint must be equalTo "testendpoint"
+    stats.logEntry must equal("test item")
+    stats.statsType must equal("inbound")
+    stats.stats.length must equal(1)
+    val endpointStats = stats.stats.head
+    endpointStats.endpoint must equal("testendpoint")
 
-      endpointStats.propertyStats("field") must equalTo(1)
-      endpointStats.propertyStats("date") must equalTo(1)
-      endpointStats.propertyStats("date_iso") must equalTo(1)
-      endpointStats.propertyStats("anotherField") must equalTo(1)
-      endpointStats.propertyStats("object.objectField") must equalTo(1)
-      endpointStats.propertyStats("object.objectFieldArray[]") must equalTo(3)
-      endpointStats.propertyStats("object.objectFieldObjectArray[].subObjectName") must equalTo(2)
-      endpointStats.propertyStats("object.objectFieldObjectArray[].subObjectName2") must equalTo(2)
-    }
+    endpointStats.propertyStats("field") must equal(1)
+    endpointStats.propertyStats("date") must equal(1)
+    endpointStats.propertyStats("date_iso") must equal(1)
+    endpointStats.propertyStats("anotherField") must equal(1)
+    endpointStats.propertyStats("object.objectField") must equal(1)
+    endpointStats.propertyStats("object.objectFieldArray[]") must equal(3)
+    endpointStats.propertyStats("object.objectFieldObjectArray[].subObjectName") must equal(2)
+    endpointStats.propertyStats("object.objectFieldObjectArray[].subObjectName2") must equal(2)
   }
-
 }
 
-trait HatDataStatsProcessorContext extends Scope {
+trait HatDataStatsProcessorContext {
   import scala.concurrent.ExecutionContext.Implicits.global
   // Setup default users for testing
   val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)

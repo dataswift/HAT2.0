@@ -26,17 +26,12 @@ package org.hatdex.hat.api.service.richData
 
 import java.security.MessageDigest
 import java.util.UUID
-import javax.inject.Inject
-
-import scala.annotation.tailrec
-import scala.collection.immutable.HashMap
-import scala.concurrent.Future
-import scala.util.Success
 
 import akka.stream.SubstreamCancelStrategy
 import akka.stream.scaladsl.Source
 import akka.{ Done, NotUsed }
-import io.dataswift.models.hat._
+import javax.inject.Inject
+import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
@@ -46,6 +41,11 @@ import org.joda.time.{ DateTime, LocalDateTime }
 import org.postgresql.util.PSQLException
 import play.api.Logger
 import play.api.libs.json._
+
+import scala.annotation.tailrec
+import scala.collection.immutable.HashMap
+import scala.concurrent.Future
+import scala.util.Success
 
 class RichDataService @Inject() (implicit ec: DalExecutionContext) {
 

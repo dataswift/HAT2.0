@@ -25,6 +25,12 @@ jobs:
           java-package: jdk
           architecture: x64
 
+      - name: Init Submodule for schema
+        run: git submodule init
+
+      - name: Update Submodule for schema
+        run: git submodule update
+
       - name: Compile
         run: sbt +compile
 

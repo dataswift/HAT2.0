@@ -24,274 +24,267 @@
 
 package org.hatdex.hat.she.controllers
 
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-
 import akka.util
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
-import io.dataswift.models.hat.{ EndpointQuery, ErrorMessage, SuccessResponse }
+import org.hatdex.hat.api.models.{ EndpointQuery, ErrorMessage, SuccessResponse }
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
 import org.hatdex.hat.she.models.FunctionConfiguration
 import org.hatdex.hat.she.service.FunctionService
 import org.joda.time.DateTimeUtils
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.specification.BeforeAfterAll
 import play.api.Logger
 import play.api.mvc.Result
-import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
+import play.api.test.{ FakeRequest }
 
-class FunctionManagerSpec(implicit ee: ExecutionEnv)
-    extends PlaySpecification
-    with DataFeedDirectMapperContext
-    with BeforeAfterAll {
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+import io.dataswift.test.common.BaseSpec
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
+import play.api.test.Helpers
+import play.api.test.Helpers._
 
+class FunctionManagerSpec
+    extends BaseSpec
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with DataFeedDirectMapperContext {
+
+  import scala.concurrent.ExecutionContext.Implicits.global
   val logger = Logger(this.getClass)
 
-  import io.dataswift.models.hat.json.HatJsonFormats.{ errorMessage, successResponse }
+  import org.hatdex.hat.api.json.HatJsonFormats.{ errorMessage, successResponse }
   import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol._
 
-  implicit override def defaultAwaitTimeout: util.Timeout = 60.seconds
+  implicit def defaultAwaitTimeout: util.Timeout = 60.seconds
 
-  def beforeAll: Unit = {
+  override def beforeAll: Unit = {
     DateTimeUtils.setCurrentMillisFixed(1514764800000L)
     Await.result(databaseReady, 60.seconds)
   }
 
-  def afterAll: Unit =
+  override def afterAll: Unit =
     DateTimeUtils.setCurrentMillisSystem()
 
-  sequential
+  "The `functionList` method" should "return status 401 if authenticator but no identity was found" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(LoginInfo("xing", "comedian@watchmen.com"))
 
-  "The `functionList` method" should {
-    "return status 401 if authenticator but no identity was found" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(LoginInfo("xing", "comedian@watchmen.com"))
+    val controller             = application.injector.instanceOf[FunctionManager]
+    val result: Future[Result] = Helpers.call(controller.functionList(), request)
 
-      val controller             = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = Helpers.call(controller.functionList(), request)
-
-      status(result) must equalTo(UNAUTHORIZED)
-    }
-
-    "return status 403 if authenticator and existing identity but wrong role" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(dataDebitUser.loginInfo)
-
-      val controller             = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = Helpers.call(controller.functionList(), request)
-
-      status(result) must equalTo(FORBIDDEN)
-    }
-
-    "return list of all registered or available functions for `owner`" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
-
-      val controller             = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = Helpers.call(controller.functionList(), request)
-
-      status(result) must equalTo(OK)
-      val functions = contentAsJson(result).as[Seq[FunctionConfiguration]]
-      functions.length must be greaterThanOrEqualTo 2
-      val registered = functions.find(_.id == registeredDummyFunctionAvailable.configuration.id).get
-      registered.status.available must be equalTo true
-      registered.status.enabled must be equalTo false
-    }
+    status(result) must equal(UNAUTHORIZED)
   }
 
-  "The `functionGet` method" should {
-    "return a specific requested function if found" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
+  it should "return status 403 if authenticator and existing identity but wrong role" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(dataDebitUser.loginInfo)
 
-      val controller = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] =
-        Helpers.call(controller.functionGet(registeredDummyFunctionAvailable.configuration.id), request)
+    val controller             = application.injector.instanceOf[FunctionManager]
+    val result: Future[Result] = Helpers.call(controller.functionList(), request)
 
-      status(result) must equalTo(OK)
-      val function = contentAsJson(result).as[FunctionConfiguration]
-      function.status.available must be equalTo true
-      function.status.enabled must be equalTo false
-    }
-
-    "return 404 if requested function not found" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
-
-      val controller             = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = Helpers.call(controller.functionGet("random-function"), request)
-
-      status(result) must equalTo(NOT_FOUND)
-      val message = contentAsJson(result).as[ErrorMessage]
-      message.message must be equalTo "Function Not Found"
-    }
+    status(result) must equal(FORBIDDEN)
   }
 
-  "The `functionEnable` method" should {
-    "Enable a specific requested function if found" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
+  it should "return list of all registered or available functions for `owner`" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[FunctionManager]
-      val chained: Future[(Result, Result)] = for {
-        enabled <- Helpers.call(controller.functionEnable("data-feed-direct-mapper"), request)
-        result <- Helpers.call(controller.functionGet("data-feed-direct-mapper"), request)
-      } yield (enabled, result)
+    val controller             = application.injector.instanceOf[FunctionManager]
+    val result: Future[Result] = Helpers.call(controller.functionList(), request)
 
-      val enabled = chained.map(_._1)
-      val result  = chained.map(_._2)
-
-      status(enabled) must equalTo(OK)
-      val fEnabled = contentAsJson(result).as[FunctionConfiguration]
-      fEnabled.id must be equalTo "data-feed-direct-mapper"
-      fEnabled.status.available must be equalTo true
-      fEnabled.status.enabled must be equalTo true
-
-      status(result) must equalTo(OK)
-      val function = contentAsJson(result).as[FunctionConfiguration]
-      function.id must be equalTo "data-feed-direct-mapper"
-      function.status.available must be equalTo true
-      function.status.enabled must be equalTo true
-    }
-
-    "return 404 if requested function not found" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
-
-      val controller             = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = Helpers.call(controller.functionEnable("random-function"), request)
-
-      status(result) must equalTo(NOT_FOUND)
-      val message = contentAsJson(result).as[ErrorMessage]
-      message.message must be equalTo "Function Not Found"
-    }
+    status(result) must equal(OK)
+    val functions = contentAsJson(result).as[Seq[FunctionConfiguration]]
+    functions.length must be > 2
+    val registered = functions.find(_.id == registeredDummyFunctionAvailable.configuration.id).get
+    registered.status.available must equal(true)
+    registered.status.enabled must equal(false)
   }
 
-  "The `functionDisable` method" should {
-    "Disable a specific requested function if found" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
+  "The `functionGet` method" should "return a specific requested function if found" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[FunctionManager]
-      val chained: Future[(Result, Result)] = for {
-        _ <- Helpers.call(controller.functionEnable("data-feed-direct-mapper"), request)
-        disabled <- Helpers.call(controller.functionDisable("data-feed-direct-mapper"), request)
-        result <- Helpers.call(controller.functionGet("data-feed-direct-mapper"), request)
-      } yield (disabled, result)
+    val controller = application.injector.instanceOf[FunctionManager]
+    val result: Future[Result] =
+      Helpers.call(controller.functionGet(registeredDummyFunctionAvailable.configuration.id), request)
 
-      val disabled = chained.map(_._1)
-      val result   = chained.map(_._2)
-
-      status(disabled) must equalTo(OK)
-      val fDisabled = contentAsJson(result).as[FunctionConfiguration]
-      fDisabled.id must be equalTo "data-feed-direct-mapper"
-      fDisabled.status.available must be equalTo true
-      fDisabled.status.enabled must be equalTo false
-
-      status(result) must equalTo(OK)
-      val function = contentAsJson(result).as[FunctionConfiguration]
-      function.id must be equalTo "data-feed-direct-mapper"
-      function.status.available must be equalTo true
-      function.status.enabled must be equalTo false
-    }
+    status(result) must equal(OK)
+    val function = contentAsJson(result).as[FunctionConfiguration]
+    function.status.available must equal(true)
+    function.status.enabled must equal(false)
   }
 
-  "The `functionTrigger` method" should {
-    "Respond with Not Found for a non-existing function" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
+  it should "return 404 if requested function not found" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
 
-      val controller             = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = Helpers.call(controller.functionTrigger("random-function", useAll = false), request)
+    val controller             = application.injector.instanceOf[FunctionManager]
+    val result: Future[Result] = Helpers.call(controller.functionGet("random-function"), request)
 
-      status(result) must equalTo(NOT_FOUND)
-      val message = contentAsJson(result).as[ErrorMessage]
-      message.message must be equalTo "Function Not Found"
-    }
+    status(result) must equal(NOT_FOUND)
+    val message = contentAsJson(result).as[ErrorMessage]
+    message.message must equal("Function Not Found")
+  }
 
-    "Respond with Bad Request for a non-enabled function" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
+  "The `functionEnable` method" should "Enable a specific requested function if found" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] =
-        Helpers.call(controller.functionTrigger(registeredDummyFunctionAvailable.configuration.id, useAll = false),
-                     request
-        )
+    val controller = application.injector.instanceOf[FunctionManager]
+    val chained: Future[(Result, Result)] = for {
+      enabled <- Helpers.call(controller.functionEnable("data-feed-direct-mapper"), request)
+      result <- Helpers.call(controller.functionGet("data-feed-direct-mapper"), request)
+    } yield (enabled, result)
 
-      status(result) must equalTo(BAD_REQUEST)
-      val message = contentAsJson(result).as[ErrorMessage]
-      message.message must be equalTo "Function Not Enabled"
-    }
+    val enabled = chained.map(_._1)
+    val result  = chained.map(_._2)
 
-    "Respond with Bad Request for a non-available function" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
+    status(enabled) must equal(OK)
+    val fEnabled = contentAsJson(result).as[FunctionConfiguration]
+    fEnabled.id must equal("data-feed-direct-mapper")
+    fEnabled.status.available must equal(true)
+    fEnabled.status.enabled must equal(true)
 
-      val service    = application.injector.instanceOf[FunctionService]
-      val controller = application.injector.instanceOf[FunctionManager]
-      val result: Future[Result] = for {
-        _ <- service.save(dummyFunctionConfiguration)
-        result <- Helpers.call(controller.functionTrigger("test-dummy-function", useAll = false), request)
-      } yield result
+    status(result) must equal(OK)
+    val function = contentAsJson(result).as[FunctionConfiguration]
+    function.id must equal("data-feed-direct-mapper")
+    function.status.available must equal(true)
+    function.status.enabled must equal(true)
+  }
 
-      status(result) must equalTo(BAD_REQUEST)
-      val message = contentAsJson(result).as[ErrorMessage]
-      message.message must be equalTo "Function Not Available"
-    }
+  it should "return 404 if requested function not found" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
 
-    "Execute available and enabled function" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
+    val controller             = application.injector.instanceOf[FunctionManager]
+    val result: Future[Result] = Helpers.call(controller.functionEnable("random-function"), request)
 
-      val dataService = application.injector.instanceOf[RichDataService]
-      val controller  = application.injector.instanceOf[FunctionManager]
+    status(result) must equal(NOT_FOUND)
+    val message = contentAsJson(result).as[ErrorMessage]
+    message.message must equal("Function Not Found")
+  }
 
-      val records = Seq(
-        exampleTweetRetweet,
-        exampleTweetMentions,
-        exampleFacebookPhotoPost,
-        exampleFacebookPost,
-        facebookStory,
-        facebookEvent,
-        facebookEvenNoLocation,
-        facebookEvenPartialLocation,
-        fitbitSleepMeasurement,
-        fitbitWeightMeasurement,
-        fitbitActivity,
-        googleCalendarEvent,
-        googleCalendarFullDayEvent
+  "The `functionDisable` method" should "Disable a specific requested function if found" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
+
+    val controller = application.injector.instanceOf[FunctionManager]
+    val chained: Future[(Result, Result)] = for {
+      _ <- Helpers.call(controller.functionEnable("data-feed-direct-mapper"), request)
+      disabled <- Helpers.call(controller.functionDisable("data-feed-direct-mapper"), request)
+      result <- Helpers.call(controller.functionGet("data-feed-direct-mapper"), request)
+    } yield (disabled, result)
+
+    val disabled = chained.map(_._1)
+    val result   = chained.map(_._2)
+
+    status(disabled) must equal(OK)
+    val fDisabled = contentAsJson(result).as[FunctionConfiguration]
+    fDisabled.id must equal("data-feed-direct-mapper")
+    fDisabled.status.available must equal(true)
+    fDisabled.status.enabled must equal(false)
+
+    status(result) must equal(OK)
+    val function = contentAsJson(result).as[FunctionConfiguration]
+    function.id must equal("data-feed-direct-mapper")
+    function.status.available must equal(true)
+    function.status.enabled must equal(false)
+  }
+
+  "The `functionTrigger` method" should "Respond with Not Found for a non-existing function" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
+
+    val controller             = application.injector.instanceOf[FunctionManager]
+    val result: Future[Result] = Helpers.call(controller.functionTrigger("random-function", useAll = false), request)
+
+    status(result) must equal(NOT_FOUND)
+    val message = contentAsJson(result).as[ErrorMessage]
+    message.message must equal("Function Not Found")
+  }
+
+  it should "Respond with Bad Request for a non-enabled function" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
+
+    val controller = application.injector.instanceOf[FunctionManager]
+    val result: Future[Result] =
+      Helpers.call(controller.functionTrigger(registeredDummyFunctionAvailable.configuration.id, useAll = false),
+                   request
       )
 
-      val setup = for {
-        _ <- dataService.saveData(owner.userId, records)
-        function <- Helpers.call(controller.functionEnable("data-feed-direct-mapper"), request)
-      } yield function
+    status(result) must equal(BAD_REQUEST)
+    val message = contentAsJson(result).as[ErrorMessage]
+    message.message must equal("Function Not Enabled")
+  }
 
-      await(setup)(60.seconds)
+  it should "Respond with Bad Request for a non-available function" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
 
-      val result = Helpers.call(controller.functionTrigger("data-feed-direct-mapper", useAll = false), request)
-      status(result) must equalTo(OK)
-      val message = contentAsJson(result).as[SuccessResponse]
-      message.message must be equalTo "Function Executed"
+    val service    = application.injector.instanceOf[FunctionService]
+    val controller = application.injector.instanceOf[FunctionManager]
+    val result: Future[Result] = for {
+      _ <- service.save(dummyFunctionConfiguration)
+      result <- Helpers.call(controller.functionTrigger("test-dummy-function", useAll = false), request)
+    } yield result
 
-      dataService
-        .propertyData(
-          Seq(EndpointQuery(s"${registeredFunction.namespace}/${registeredFunction.endpoint}", None, None, None)),
-          None,
-          orderingDescending = false,
-          0,
-          None
-        )
-        .map { data =>
-          data.length must be greaterThanOrEqualTo records.length
-          data.forall(
-            _.endpoint == s"${registeredFunction.namespace}/${registeredFunction.endpoint}"
-          ) must be equalTo true
-        } await (3, 60.seconds)
-    }
+    status(result) must equal(BAD_REQUEST)
+    val message = contentAsJson(result).as[ErrorMessage]
+    message.message must equal("Function Not Available")
+  }
+
+  it should "Execute available and enabled function" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
+
+    val dataService = application.injector.instanceOf[RichDataService]
+    val controller  = application.injector.instanceOf[FunctionManager]
+
+    val records = Seq(
+      exampleTweetRetweet,
+      exampleTweetMentions,
+      exampleFacebookPhotoPost,
+      exampleFacebookPost,
+      facebookStory,
+      facebookEvent,
+      facebookEvenNoLocation,
+      facebookEvenPartialLocation,
+      fitbitSleepMeasurement,
+      fitbitWeightMeasurement,
+      fitbitActivity,
+      googleCalendarEvent,
+      googleCalendarFullDayEvent
+    )
+
+    val setup = for {
+      _ <- dataService.saveData(owner.userId, records)
+      function <- Helpers.call(controller.functionEnable("data-feed-direct-mapper"), request)
+    } yield function
+
+    await(setup)(60.seconds)
+
+    val result = Helpers.call(controller.functionTrigger("data-feed-direct-mapper", useAll = false), request)
+    status(result) must equal(OK)
+    val message = contentAsJson(result).as[SuccessResponse]
+    message.message must equal("Function Executed")
+
+    dataService
+      .propertyData(
+        Seq(EndpointQuery(s"${registeredFunction.namespace}/${registeredFunction.endpoint}", None, None, None)),
+        None,
+        orderingDescending = false,
+        0,
+        None
+      )
+      .map { data =>
+        data.length must be >= records.length
+        data.forall(
+          _.endpoint == s"${registeredFunction.namespace}/${registeredFunction.endpoint}"
+        ) must equal(true)
+      }
+    //await (3, 60.seconds)
   }
 
 }

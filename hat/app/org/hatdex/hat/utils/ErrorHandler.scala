@@ -27,9 +27,6 @@ package org.hatdex.hat.utils
 import java.sql.SQLTransientConnectionException
 import javax.inject._
 
-import scala.concurrent.Future
-import scala.util.Try
-
 import com.mohiva.play.silhouette.api.actions.{ SecuredErrorHandler, UnsecuredErrorHandler }
 import com.mohiva.play.silhouette.impl.exceptions.{ IdentityNotFoundException, InvalidPasswordException }
 import org.hatdex.hat.resourceManagement.HatServerDiscoveryException
@@ -40,6 +37,9 @@ import play.api.libs.json.Json
 import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.routing.Router
+
+import scala.concurrent.Future
+import scala.util.Try
 
 class ErrorHandler @Inject() (
     env: Environment,
@@ -54,8 +54,7 @@ class ErrorHandler @Inject() (
     with I18nSupport
     with ContentTypes
     with RequestExtractors
-    with Rendering
-    with Logging {
+    with Rendering {
 
   /**
     * Exception handler which chains the exceptions handlers from the sub types.
@@ -168,7 +167,7 @@ class ErrorHandler @Inject() (
       exception
     )
 
-    logger.error(s"Server Error ${usefulException.id}", usefulException)
+    Logger.error(s"Server Error ${usefulException.id}", usefulException)
 
     hatMailer.serverErrorNotify(request, usefulException)
 

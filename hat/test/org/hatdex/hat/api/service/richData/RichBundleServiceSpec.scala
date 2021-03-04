@@ -24,30 +24,26 @@
 
 package org.hatdex.hat.api.service.richData
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
-import io.dataswift.models.hat._
 import org.hatdex.hat.api.HATTestContext
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mock.Mockito
-import org.specs2.specification.{ BeforeAll, BeforeEach }
+import org.hatdex.hat.api.models._
 import play.api.Logger
 import play.api.libs.json.{ JsObject, Json }
-import play.api.test.PlaySpecification
 
-class RichBundleServiceSpec(implicit ee: ExecutionEnv)
-    extends PlaySpecification
-    with Mockito
-    with RichBundleServiceContext
-    with BeforeEach
-    with BeforeAll {
+import scala.concurrent.Await
+import scala.concurrent.duration._
+import io.dataswift.test.common.BaseSpec
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 
+class RichBundleServiceSpec
+    extends BaseSpec
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll
+    with RichBundleServiceContext {
+
+  import scala.concurrent.ExecutionContext.Implicits.global
   val logger = Logger(this.getClass)
 
-  sequential
-
-  def beforeAll: Unit =
+  override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
 
   override def before: Unit = {
@@ -66,156 +62,151 @@ class RichBundleServiceSpec(implicit ee: ExecutionEnv)
       DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
     )
 
-    Await.result(hatDatabase.run(action), 60.seconds)
+    Await.result(db.run(action), 60.seconds)
   }
 
-  "The `saveCombinator` method" should {
-    "Save a combinator" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved   = service.saveCombinator("testCombinator", testEndpointQuery)
-      saved map { _ =>
-        true must beTrue
-      } await (3, 10.seconds)
+  "The `saveCombinator` method" should "Save a combinator" in {
+    val service = application.injector.instanceOf[RichBundleService]
+    val saved   = service.saveCombinator("testCombinator", testEndpointQuery)
+    saved map { _ =>
+      true must equal(true)
     }
-
-    "Update a combinator if one already exists" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = for {
-        _ <- service.saveCombinator("testCombinator", testEndpointQueryUpdated)
-        saved <- service.saveCombinator("testCombinator", testEndpointQueryUpdated)
-      } yield saved
-
-      saved map { _ =>
-        true must beTrue
-      } await (3, 10.seconds)
-    }
+    Await.result(saved, 10.seconds)
   }
 
-  "The `combinator` method" should {
-    "Retrieve a combinator" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = for {
-        _ <- service.saveCombinator("testCombinator", testEndpointQuery)
-        combinator <- service.combinator("testCombinator")
-      } yield combinator
+  it should "Update a combinator if one already exists" in {
+    val service = application.injector.instanceOf[RichBundleService]
+    val saved = for {
+      _ <- service.saveCombinator("testCombinator", testEndpointQueryUpdated)
+      saved <- service.saveCombinator("testCombinator", testEndpointQueryUpdated)
+    } yield saved
 
-      saved map { r =>
-        r must beSome
-        r.get.length must equalTo(2)
-      } await (3, 10.seconds)
+    saved map { _ =>
+      true must equal(true)
     }
-
-    "Return None if combinator doesn't exist" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = for {
-        combinator <- service.combinator("testCombinator")
-      } yield combinator
-
-      saved map { r =>
-        r must beNone
-      } await (3, 10.seconds)
-    }
+    Await.result(saved, 10.seconds)
   }
 
-  "The `combinators` method" should {
-    "List all combinators" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = for {
-        _ <- service.saveCombinator("testCombinator", testEndpointQuery)
-        _ <- service.saveCombinator("testCombinator2", testEndpointQueryUpdated)
-        combinators <- service.combinators()
-      } yield combinators
+  "The `combinator` method" should "Retrieve a combinator" in {
+    val service = application.injector.instanceOf[RichBundleService]
+    val saved = for {
+      _ <- service.saveCombinator("testCombinator", testEndpointQuery)
+      combinator <- service.combinator("testCombinator")
+    } yield combinator
 
-      saved map { r =>
-        r.length must equalTo(2)
-      } await (3, 10.seconds)
+    saved map { r =>
+      r must equal(Some)
+      r.get.length must equal(2)
     }
+    Await.result(saved, 10.seconds)
   }
 
-  "The `deleteCombinator` method" should {
-    "Delete combinator by ID" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = for {
-        _ <- service.saveCombinator("testCombinator", testEndpointQuery)
-        _ <- service.saveCombinator("testCombinator2", testEndpointQueryUpdated)
-        _ <- service.deleteCombinator("testCombinator")
-        combinators <- service.combinators()
-      } yield combinators
+  it should "Return None if combinator doesn't exist" in {
+    val service = application.injector.instanceOf[RichBundleService]
+    val saved = for {
+      combinator <- service.combinator("testCombinator")
+    } yield combinator
 
-      saved map { r =>
-        r.length must equalTo(1)
-        r.head._1 must equalTo("testCombinator2")
-      } await (3, 10.seconds)
+    saved map { r =>
+      r must equal(None)
     }
+    Await.result(saved, 10.seconds)
   }
 
-  "The `saveBundle` method" should {
-    "Save a bundle" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved   = service.saveBundle(testBundle)
-      saved map { _ =>
-        true must beTrue
-      } await (3, 10.seconds)
-    }
+  "The `combinators` method" should "List all combinators" in {
+    val service = application.injector.instanceOf[RichBundleService]
+    val saved = for {
+      _ <- service.saveCombinator("testCombinator", testEndpointQuery)
+      _ <- service.saveCombinator("testCombinator2", testEndpointQueryUpdated)
+      combinators <- service.combinators()
+    } yield combinators
 
-    "Update a bundle if one already exists" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = for {
-        _ <- service.saveBundle(testBundle)
-        saved <- service.saveBundle(testBundle)
-      } yield saved
-
-      saved map { _ =>
-        true must beTrue
-      } await (3, 10.seconds)
+    saved map { r =>
+      r.length must equal(2)
     }
+    Await.result(saved, 10.seconds)
   }
 
-  "The `bundle` method" should {
-    "Retrieve a bundle by ID" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = for {
-        _ <- service.saveBundle(testBundle)
-        combinator <- service.bundle(testBundle.name)
-      } yield combinator
+  "The `deleteCombinator` method" should "Delete combinator by ID" in {
+    val service = application.injector.instanceOf[RichBundleService]
+    val saved = for {
+      _ <- service.saveCombinator("testCombinator", testEndpointQuery)
+      _ <- service.saveCombinator("testCombinator2", testEndpointQueryUpdated)
+      _ <- service.deleteCombinator("testCombinator")
+      combinators <- service.combinators()
+    } yield combinators
 
-      saved map { r =>
-        r must beSome
-        r.get.name must equalTo(testBundle.name)
-      } await (3, 10.seconds)
+    saved map { r =>
+      r.length must equal(1)
+      r.head._1 must equal("testCombinator2")
     }
+    Await.result(saved, 10.seconds)
   }
 
-  "The `bundles` method" should {
-    "Retrieve a list of bundles" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = for {
-        _ <- service.saveBundle(testBundle)
-        _ <- service.saveBundle(testBundle2)
-        combinator <- service.bundles()
-      } yield combinator
-
-      saved map { r =>
-        r.length must be greaterThan 1
-      } await (3, 10.seconds)
+  "The `saveBundle` method" should "Save a bundle" in {
+    val service = application.injector.instanceOf[RichBundleService]
+    val saved   = service.saveBundle(testBundle)
+    saved map { _ =>
+      true must equal(true)
     }
+    Await.result(saved, 10.seconds)
   }
 
-  "The `deleteBundle` method" should {
-    "Delete bundle by ID" in {
-      val service = application.injector.instanceOf[RichBundleService]
-      val saved = for {
-        _ <- service.saveBundle(testBundle)
-        _ <- service.saveBundle(testBundle2)
-        _ <- service.deleteBundle(testBundle.name)
-        combinators <- service.bundles()
-      } yield combinators
+  it should "Update a bundle if one already exists" in {
+    val service = application.injector.instanceOf[RichBundleService]
+    val saved = for {
+      _ <- service.saveBundle(testBundle)
+      saved <- service.saveBundle(testBundle)
+    } yield saved
 
-      saved map { r =>
-        r.find(_.name == testBundle.name) must beNone
-        r.find(_.name == testBundle2.name) must beSome
-      } await (3, 10.seconds)
+    saved map { _ =>
+      true must equal(true)
     }
+    Await.result(saved, 10.seconds)
+  }
+
+  "The `bundle` method" should "Retrieve a bundle by ID" in {
+    val service = application.injector.instanceOf[RichBundleService]
+    val saved = for {
+      _ <- service.saveBundle(testBundle)
+      combinator <- service.bundle(testBundle.name)
+    } yield combinator
+
+    saved map { r =>
+      r must equal(Some)
+      r.get.name must equal(testBundle.name)
+    }
+    Await.result(saved, 10.seconds)
+  }
+
+  "The `bundles` method" should "Retrieve a list of bundles" in {
+    val service = application.injector.instanceOf[RichBundleService]
+    val saved = for {
+      _ <- service.saveBundle(testBundle)
+      _ <- service.saveBundle(testBundle2)
+      combinator <- service.bundles()
+    } yield combinator
+
+    saved map { r =>
+      r.length must be > 1
+    }
+    Await.result(saved, 10.seconds)
+  }
+
+  "The `deleteBundle` method" should "Delete bundle by ID" in {
+    val service = application.injector.instanceOf[RichBundleService]
+    val saved = for {
+      _ <- service.saveBundle(testBundle)
+      _ <- service.saveBundle(testBundle2)
+      _ <- service.deleteBundle(testBundle.name)
+      combinators <- service.bundles()
+    } yield combinators
+
+    saved map { r =>
+      r.find(_.name == testBundle.name) must equal(None)
+      r.find(_.name == testBundle2.name) must equal(Some)
+    }
+    Await.result(saved, 10.seconds)
   }
 
 }
@@ -274,6 +265,38 @@ trait RichBundleServiceContext extends HATTestContext {
                               Some(3)
           ),
       "complex" -> PropertyQuery(List(EndpointQuery("test/anothertest", None, None, None)),
+                                 Some("data.newField"),
+                                 None,
+                                 Some(1)
+          )
+    )
+  )
+
+  val testBundleA = EndpointDataBundle(
+    "testBundleA",
+    Map(
+      "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                              Some("data.newField"),
+                              None,
+                              Some(3)
+          ),
+      "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)),
+                                 Some("data.newField"),
+                                 None,
+                                 Some(1)
+          )
+    )
+  )
+
+  val testBundleB = EndpointDataBundle(
+    "testBundleB",
+    Map(
+      "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
+                              Some("data.newField"),
+                              None,
+                              Some(3)
+          ),
+      "complex" -> PropertyQuery(List(EndpointQuery("test/complex", Some(complexTransformation), None, None)),
                                  Some("data.newField"),
                                  None,
                                  Some(1)

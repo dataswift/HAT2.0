@@ -24,10 +24,7 @@
 
 package org.hatdex.hat.api.service.richData
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
-import io.dataswift.models.hat._
+import org.hatdex.hat.api.models._
 import org.joda.time.DateTime
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.mock.Mockito
@@ -35,21 +32,20 @@ import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
 import play.api.test.PlaySpecification
 
-class DataSentintelSpec(implicit ee: ExecutionEnv)
-    extends PlaySpecification
-    with Mockito
-    with RichDataServiceContext
-    with BeforeEach
-    with BeforeAll {
+import scala.concurrent.Await
+import scala.concurrent.duration._
+import io.dataswift.test.common.BaseSpec
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
+
+class DataSentintelSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with RichDataServiceContext {
 
   val logger = Logger(this.getClass)
+  import scala.concurrent.ExecutionContext.Implicits.global
 
-  sequential
-
-  def beforeAll: Unit =
+  override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
 
-  override def before: Unit = {
+  override def beforeEach: Unit = {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
@@ -65,168 +61,169 @@ class DataSentintelSpec(implicit ee: ExecutionEnv)
       DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
     )
 
-    Await.result(hatDatabase.run(action), 60.seconds)
+    Await.result(db.run(action), 60.seconds)
   }
 
-  "The `ensureUniquenessKey` method" should {
-    "Correctly extract item ID from data" in {
-      val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
+  "The `ensureUniquenessKey` method" should "Correctly extract item ID from data" in {
+    val dataService = application.injector.instanceOf[RichDataService]
+    val service     = application.injector.instanceOf[DataSentintel]
 
-      val data = List(EndpointData("test/test", None, None, None, simpleJson, None),
-                      EndpointData("test/test", None, None, None, simpleJson2, None)
-      )
+    val data = List(EndpointData("test/test", None, None, None, simpleJson, None),
+                    EndpointData("test/test", None, None, None, simpleJson2, None)
+    )
 
-      val result = for {
-        saved <- dataService.saveData(owner.userId, data)
-        _ <- service.ensureUniquenessKey("test/test", "date")
-        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
-      } yield retrieved
+    val result = for {
+      saved <- dataService.saveData(owner.userId, data)
+      _ <- service.ensureUniquenessKey("test/test", "date")
+      retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+    } yield retrieved
 
-      result map { result =>
-        result.length must equalTo(2)
-        result(0).sourceUniqueId must beSome("1492699047")
-        result(1).sourceUniqueId must beSome("1492799048")
-      } await (3, 10.seconds)
+    result map { result =>
+      result.length must equal(2)
+      result(0).sourceUniqueId === "1492699047"
+      result(1).sourceUniqueId === "1492799048"
     }
-
-    "Delete duplicate records for clashing source IDs, retaining newer record" in {
-      val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
-
-      val data = List(EndpointData("test/test", None, None, None, simpleJson, None),
-                      EndpointData("test/test", None, None, None, simpleJson2, None)
-      )
-
-      val result = for {
-        _ <- dataService.saveData(owner.userId, data)
-        _ <- dataService.saveData(owner.userId,
-                                  List(EndpointData("test/test", None, None, None, simpleJson2Updated, None))
-             )
-        _ <- service.ensureUniquenessKey("test/test", "date")
-        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
-      } yield retrieved
-
-      result map { result =>
-        result.length must equalTo(2)
-        result.find(_.sourceUniqueId.contains("1492699047")) must beSome
-        result.find(_.sourceUniqueId.contains("1492799048")) must beSome
-        (result(1).data \ "differentField").as[String] must equalTo("new")
-      } await (3, 10.seconds)
-    }
-
-    "Not touch records where extracting ID fails" in {
-      val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
-
-      val data = List(EndpointData("test/test", None, None, None, simpleJson, None),
-                      EndpointData("test/test", None, None, None, simpleJson2, None)
-      )
-
-      val result = for {
-        _ <- dataService.saveData(owner.userId, data)
-        _ <- dataService.saveData(owner.userId,
-                                  List(EndpointData("test/test", None, None, None, simpleJson2Updated, None))
-             )
-        _ <- service.ensureUniquenessKey("test/test", "testUniqueID")
-        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
-      } yield retrieved
-
-      result map { result =>
-        result.find(_.sourceUniqueId.contains("1234567")) must beSome
-        result.count(r => (r.data \ "date").asOpt[Int].contains(1492799048)) must equalTo(2)
-      } await (3, 10.seconds)
-    }
-
-    "Handle records where ID is nested deeply within the object" in {
-      val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
-
-      val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
-
-      val result = for {
-        _ <- dataService.saveData(owner.userId, data)
-        _ <- service.ensureUniquenessKey("test/test", "object.nestedInfo.deeplyLocatedUniqueId")
-        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
-      } yield retrieved
-
-      result map { result =>
-        result.find(_.sourceUniqueId.contains("7654321")) must beSome
-      } await (3, 10.seconds)
-    }
-
-    "Not update records when key is specified to be within an array" in {
-      val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
-
-      val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
-
-      val result = for {
-        _ <- dataService.saveData(owner.userId, data)
-        _ <- service.ensureUniquenessKey("test/test", "object.objectFieldArray[]")
-        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
-      } yield retrieved
-
-      result map { result =>
-        result.forall(_.sourceUniqueId.isEmpty) must beTrue
-      } await (3, 10.seconds)
-    }
+    Await.result(result, 10.seconds)
   }
 
-  "The `ensureUniquenessKey` method" should {
-    "Correctly extract ISO8601 timestamp from data" in {
-      val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
+  it should "Delete duplicate records for clashing source IDs, retaining newer record" in {
+    val dataService = application.injector.instanceOf[RichDataService]
+    val service     = application.injector.instanceOf[DataSentintel]
 
-      val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
+    val data = List(EndpointData("test/test", None, None, None, simpleJson, None),
+                    EndpointData("test/test", None, None, None, simpleJson2, None)
+    )
 
-      val result = for {
-        _ <- dataService.saveData(owner.userId, data)
-        _ <- service.updateSourceTimestamp("test/test", "date_iso")
-        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
-      } yield retrieved
+    val result = for {
+      _ <- dataService.saveData(owner.userId, data)
+      _ <-
+        dataService.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson2Updated, None)))
+      _ <- service.ensureUniquenessKey("test/test", "date")
+      retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+    } yield retrieved
 
-      result map { result =>
-        result.head.sourceTimestamp must beSome
-        result.head.sourceTimestamp.get.isEqual(DateTime.parse("2017-04-20T14:37:27+00:00")) must beTrue
-      } await (3, 10.seconds)
+    result map { result =>
+      result.length must equal(2)
+      result.find(_.sourceUniqueId.contains("1492699047")) must not be empty
+      result.find(_.sourceUniqueId.contains("1492799048")) must not be empty
+      (result(1).data \ "differentField").as[String] must equal("new")
     }
-
-    "Correctly extract unix timestamp in milliseconds from data" in {
-      val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
-
-      val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
-
-      val result = for {
-        _ <- dataService.saveData(owner.userId, data)
-        _ <- service.updateSourceTimestamp("test/test", "date_ms")
-        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
-      } yield retrieved
-
-      result map { result =>
-        result.head.sourceTimestamp must beSome
-        result.head.sourceTimestamp.get.isEqual(DateTime.parse("2017-04-20T14:37:27+00:00")) must beTrue
-      } await (3, 10.seconds)
-    }
-
-    "Correctly extract unix timestamp in miliseconds from data" in {
-      val dataService = application.injector.instanceOf[RichDataService]
-      val service     = application.injector.instanceOf[DataSentintel]
-
-      val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
-
-      val result = for {
-        _ <- dataService.saveData(owner.userId, data)
-        _ <- service.updateSourceTimestamp("test/test", "date", "'epoch'")
-        retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
-      } yield retrieved
-
-      result map { result =>
-        result.head.sourceTimestamp must beSome
-        result.head.sourceTimestamp.get.isEqual(DateTime.parse("2017-04-20T14:37:27+00:00")) must beTrue
-      } await (3, 10.seconds)
-    }
+    Await.result(result, 10.seconds)
   }
 
+  it should "Not touch records where extracting ID fails" in {
+    val dataService = application.injector.instanceOf[RichDataService]
+    val service     = application.injector.instanceOf[DataSentintel]
+
+    val data = List(EndpointData("test/test", None, None, None, simpleJson, None),
+                    EndpointData("test/test", None, None, None, simpleJson2, None)
+    )
+
+    val result = for {
+      _ <- dataService.saveData(owner.userId, data)
+      _ <-
+        dataService.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson2Updated, None)))
+      _ <- service.ensureUniquenessKey("test/test", "testUniqueID")
+      retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+    } yield retrieved
+
+    result map { result =>
+      result.find(_.sourceUniqueId.contains("1234567")) must not be empty
+      result.count(r => (r.data \ "date").asOpt[Int].contains(1492799048)) must equal(2)
+    }
+    Await.result(result, 10.seconds)
+  }
+
+  it should "Handle records where ID is nested deeply within the object" in {
+    val dataService = application.injector.instanceOf[RichDataService]
+    val service     = application.injector.instanceOf[DataSentintel]
+
+    val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
+
+    val result = for {
+      _ <- dataService.saveData(owner.userId, data)
+      _ <- service.ensureUniquenessKey("test/test", "object.nestedInfo.deeplyLocatedUniqueId")
+      retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+    } yield retrieved
+
+    result map { result =>
+      result.find(_.sourceUniqueId.contains("7654321")) must not be empty
+    }
+    Await.result(result, 10.seconds)
+  }
+
+  it should "Not update records when key is specified to be within an array" in {
+    val dataService = application.injector.instanceOf[RichDataService]
+    val service     = application.injector.instanceOf[DataSentintel]
+
+    val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
+
+    val result = for {
+      _ <- dataService.saveData(owner.userId, data)
+      _ <- service.ensureUniquenessKey("test/test", "object.objectFieldArray[]")
+      retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+    } yield retrieved
+
+    result map { result =>
+      result.forall(_.sourceUniqueId.isEmpty) must equal(true)
+    }
+    Await.result(result, 10.seconds)
+  }
+
+  "The `ensureUniquenessKey` method" should "Correctly extract ISO8601 timestamp from data" in {
+    val dataService = application.injector.instanceOf[RichDataService]
+    val service     = application.injector.instanceOf[DataSentintel]
+
+    val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
+
+    val result = for {
+      _ <- dataService.saveData(owner.userId, data)
+      _ <- service.updateSourceTimestamp("test/test", "date_iso")
+      retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+    } yield retrieved
+
+    result map { result =>
+      result.head.sourceTimestamp must not be empty
+      result.head.sourceTimestamp.get.isEqual(DateTime.parse("2017-04-20T14:37:27+00:00")) must equal(true)
+    }
+    Await.result(result, 10.seconds)
+  }
+
+  it should "Correctly extract unix timestamp in milliseconds from data" in {
+    val dataService = application.injector.instanceOf[RichDataService]
+    val service     = application.injector.instanceOf[DataSentintel]
+
+    val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
+
+    val result = for {
+      _ <- dataService.saveData(owner.userId, data)
+      _ <- service.updateSourceTimestamp("test/test", "date_ms")
+      retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+    } yield retrieved
+
+    result map { result =>
+      result.head.sourceTimestamp must not be empty
+      result.head.sourceTimestamp.get.isEqual(DateTime.parse("2017-04-20T14:37:27+00:00")) must equal(true)
+    }
+    Await.result(result, 10.seconds)
+  }
+
+  it should "Correctly extract unix timestamp in miliseconds from data" in {
+    val dataService = application.injector.instanceOf[RichDataService]
+    val service     = application.injector.instanceOf[DataSentintel]
+
+    val data = List(EndpointData("test/test", None, None, None, simpleJson, None))
+
+    val result = for {
+      _ <- dataService.saveData(owner.userId, data)
+      _ <- service.updateSourceTimestamp("test/test", "date", "'epoch'")
+      retrieved <- dataService.propertyData(List(EndpointQuery("test/test", None, None, None)), None, false, 0, None)
+    } yield retrieved
+
+    result map { result =>
+      result.head.sourceTimestamp must not be empty
+      result.head.sourceTimestamp.get.isEqual(DateTime.parse("2017-04-20T14:37:27+00:00")) must equal(true)
+    }
+    Await.result(result, 10.seconds)
+  }
 }

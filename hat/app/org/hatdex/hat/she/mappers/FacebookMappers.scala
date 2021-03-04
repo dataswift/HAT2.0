@@ -2,9 +2,8 @@ package org.hatdex.hat.she.mappers
 
 import java.util.UUID
 
-import scala.util.{ Failure, Try }
-
-import io.dataswift.models.hat.applications.{
+import org.hatdex.hat.api.models.{ EndpointQuery, EndpointQueryFilter, PropertyQuery }
+import org.hatdex.hat.api.models.applications.{
   DataFeedItem,
   DataFeedItemContent,
   DataFeedItemLocation,
@@ -13,10 +12,11 @@ import io.dataswift.models.hat.applications.{
   LocationAddress,
   LocationGeo
 }
-import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, PropertyQuery }
 import org.hatdex.hat.she.models.StaticDataValues
 import org.joda.time.DateTime
 import play.api.libs.json.{ JsError, JsObject, JsString, JsSuccess, JsValue }
+
+import scala.util.{ Failure, Try }
 
 class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
   def dataQueries(

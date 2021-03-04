@@ -27,9 +27,6 @@ package org.hatdex.hat.api
 import java.io.StringReader
 import java.util.UUID
 
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-
 import akka.Done
 import akka.stream.Materializer
 import com.amazonaws.services.s3.AmazonS3
@@ -38,9 +35,9 @@ import com.google.inject.name.Named
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette, SilhouetteProvider }
 import com.mohiva.play.silhouette.test._
-import io.dataswift.models.hat.{ DataCredit, DataDebitOwner, Owner }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.FakeCache
+import org.hatdex.hat.api.models.{ DataCredit, DataDebitOwner, Owner }
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
@@ -50,34 +47,114 @@ import org.hatdex.hat.phata.models.MailTokenUser
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, LoggingProvider, MockLoggingProvider }
 import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
-import org.specs2.mock.Mockito
-import org.specs2.specification.Scope
 import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
 import play.api.i18n.{ Lang, MessagesApi }
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{ Application, Configuration, Logger }
 import play.cache.NamedCacheImpl
+import com.dimafeng.testcontainers.{ PostgreSQLContainer }
 
-trait HATTestContext extends Scope with Mockito {
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+import org.mockito.ArgumentMatchers.{ any }
+import org.mockito.Mockito._
+import org.scalatest.BeforeAndAfterAll
+
+//import io.dataswift.integrationtest.common.PostgresqlSpec
+import org.scalatestplus.mockito.MockitoSugar
+
+trait HATTestContext extends MockitoSugar {
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  val container = PostgreSQLContainer()
+  container.start()
+  val conf = containerToConfig(container)
+
+  def containerToConfig(c: PostgreSQLContainer): Configuration =
+    Configuration.from(
+      Map(
+        "play.cache.createBoundCaches" -> "false",
+        "resourceManagement.hatDBIdleTimeout" -> "30 seconds",
+        "hat" -> Map(
+              "hat.hubofallthings.net" -> Map(
+                    "ownerEmail" -> "user@hat.org",
+                    "database" -> (
+                          Map(
+                            "dataSourceClass" -> "org.postgresql.ds.PGSimpleDataSource",
+                            "properties" -> (Map("databaseName" -> c.container.getDatabaseName(),
+                                                 "user" -> c.username,
+                                                 "password" -> c.password,
+                                                 "url" -> c.jdbcUrl
+                                )),
+                            "serverName" -> c.container.getHost(),
+                            "numThreads" -> 10,
+                            "connectionPool" -> "disabled"
+                          )
+                        ),
+                    "publicKey" -> """-----BEGIN PUBLIC KEY-----
+          |MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAznT9VIjovMEB/hoZ9j+j
+          |z9G+WWAsfj9IB7mAMQEICoLMWHC1ZnO4nrqTrRiQFKKrWekjhXFRp8jQZmGhv/sw
+          |h5EsIcbRUzNNPSBmiCM0NXHG8wwN8cFigHXLQB0p4ekOWOHpEXfIZkTN5VlpUq1o
+          |PdbgMXRW8NdU+Mwr7qQiUnHxaW0imFiahPs3n5Q3KLt2nWcxlvazeaRDphkEtFTk
+          |JCaFx9TPzd1NSYpBidSMC2cwhVM6utaNk3ZRktCs+y0iFezL606x28P6+VuDkb19
+          |6OxWEvSSxL3+1KQbKi3B9Hg/BNhigGsqQ35GzVPVygT7m90u9nNlxJ7KvfQDQc8t
+          |dQIDAQAB
+          |-----END PUBLIC KEY-----""".stripMargin,
+                    "privateKey" -> """-----BEGIN RSA PRIVATE KEY-----
+          |MIIEowIBAAKCAQEAznT9VIjovMEB/hoZ9j+jz9G+WWAsfj9IB7mAMQEICoLMWHC1
+          |ZnO4nrqTrRiQFKKrWekjhXFRp8jQZmGhv/swh5EsIcbRUzNNPSBmiCM0NXHG8wwN
+          |8cFigHXLQB0p4ekOWOHpEXfIZkTN5VlpUq1oPdbgMXRW8NdU+Mwr7qQiUnHxaW0i
+          |mFiahPs3n5Q3KLt2nWcxlvazeaRDphkEtFTkJCaFx9TPzd1NSYpBidSMC2cwhVM6
+          |utaNk3ZRktCs+y0iFezL606x28P6+VuDkb196OxWEvSSxL3+1KQbKi3B9Hg/BNhi
+          |gGsqQ35GzVPVygT7m90u9nNlxJ7KvfQDQc8tdQIDAQABAoIBAF00Voub1UolbjNb
+          |cD4Jw/fVrjPmJaAHDIskNRmqaAlqvDrvAw3SD1ZlT7b04FLYjzfjdvxOyLjRATg/
+          |OkkT6vhA0yYafjSr8+I1JuSt0+uOxmzCE+eA0OnCg/QZVmedEbORpWkT5P46cKNq
+          |RpCjJWzJfWQGLBvFcqBxeCHfqnkCFESRDG+YTUTzQ3Z4tdvXh/Wn7ZNAsJFaM2+x
+          |krJF7bBas9MJ/A8fumtuickr6DpFB6/nQsKqou3wDsMPN9SeTgXAzvufnssK0bGx
+          |8Z0F7pQUsl7CF2VuSXH2rcmW59JOpqPeZQ1JfrJZRxZ839vY+0BUF+Ti3FVJBb95
+          |aXLqHF8CgYEA+vwJCI6y+W/Cfwu79ssoJB+038sJftqkpKcFCipTsvX26h8o5+Vd
+          |BSvo58cjbXSV6a7PevkQvlgpKPki9SZnE+LoEmq1KbmN6yV0kev4Kzmi7P9Lz1Z8
+          |XRkt5KWQSMn65ZhLRHeomM71TgzDye1QI6rIKp4oumZUrlj8xGPB7VMCgYEA0pUq
+          |DSprxCQajw5WiH9X2sswrzDuK/+YAPZFBcRkK2KS9KGkltqlU9EmfZSX794vqfZw
+          |WBzJMRvxy0tF9QYSFahGivk98dzUUfARx79lIrKDBRVeUuP5LQ762K7BhDanym5a
+          |4YvzRPsJGHUT6Kyn1nsoP/CXqr1fxbv/HaN7WRcCgYEAz+x+O1WklZptobyB4kmZ
+          |npuZx5C39ByEK1emiC5amrbD8F8SD1LnhgJDd8h05Beini5Q+opdwaLdrnD+8eL3
+          |n/Tp12AJZ2CuXrDv6nd3Z6/e9sHk9waqDqJub65tYq/Zp91L9ZO/26AQfrF6fc2Z
+          |B4NTQmM2UH24B5v3A2e1X7sCgYBXnFuMcrO3PNYX4n05+NESZCrzGEZe483XyJ3a
+          |0mRicHZ3dLDHWlwiTQfYg3PbBfOKoM8IuaEy309vpveKA2aOwB3pP9z3vUpQdLLR
+          |Cd4H24ELImLF1bcbefn/IGW+ngac/+CrqdAiSNb15+/Kg9qoL0EFqRFQpc0stRRk
+          |vllZLQKBgEuos9IFTnXvF5+NpwQJ54t4YQW/StgPL7sPVA86irXnuT3VwdVNg2VF
+          |AZa/LU3jAXt2iTziR0LTKueamj/V+YM4qVyc/LhUPvjKlsCjyLBb647p3C/ogYbj
+          |mO9kGhALaD5okBcI/VuAQiFvBXdK0ii/nVcBApXEu47PG4oYUgPI
+          |-----END RSA PRIVATE KEY-----""".stripMargin
+                  )
+            )
+      )
+    )
+
   // Initialize configuration
   val hatAddress            = "hat.hubofallthings.net"
   val hatUrl                = s"http://$hatAddress"
-  private val configuration = Configuration.from(FakeHatConfiguration.config)
+  private val configuration = conf //Configuration.from(FakeHatConfiguration.config)
   private val hatConfig     = configuration.get[Configuration](s"hat.$hatAddress")
+
+  implicit val db: Database = Database.forURL(
+    url = container.jdbcUrl,
+    user = container.username,
+    password = container.password
+  )
 
   // Build up the FakeEnvironment for authentication testing
   private val keyUtils = new KeyUtils()
-  implicit protected def hatDatabase: Database =
-    Database.forConfig("", hatConfig.get[Configuration]("database").underlying)
+
   implicit val hatServer: HatServer = HatServer(
     hatAddress,
     "hat",
     "user@hat.org",
     keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.get[String]("privateKey"))),
     keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))),
-    hatDatabase
+    db
   )
 
   // Setup default users for testing
@@ -118,7 +195,7 @@ trait HATTestContext extends Scope with Mockito {
   )
 
   def databaseReady: Future[Unit] = {
-    val schemaMigration = new HatDbSchemaMigration(configuration, hatDatabase, global)
+    val schemaMigration = new HatDbSchemaMigration(configuration, db, global)
     schemaMigration
       .resetDatabase()
       .flatMap(_ => schemaMigration.run(devHatMigrations))
@@ -132,12 +209,11 @@ trait HATTestContext extends Scope with Mockito {
       }
   }
 
+  val mockLogger            = mock[play.api.Logger]
   val mockMailer: HatMailer = mock[HatMailer]
-  doReturn(Done).when(mockMailer).passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])
+  when(mockMailer.passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])).thenReturn(Done)
 
   val fileManagerS3Mock = FileManagerS3Mock()
-
-  val mockLogger = mock[Logger]
 
   lazy val remoteEC = new RemoteExecutionContext(application.actorSystem)
 

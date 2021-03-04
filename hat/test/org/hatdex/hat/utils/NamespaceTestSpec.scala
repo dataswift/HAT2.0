@@ -1,68 +1,65 @@
 package org.hatdex.hat.utils
-
-import io.dataswift.models.hat.{ NamespaceRead, NamespaceWrite, UserRole }
-import org.hatdex.hat.NamespaceUtils._
-import org.specs2.mock.Mockito
 import play.api.Logger
-import play.api.test.{ PlaySpecification }
 
-class NamespaceTestSpec extends PlaySpecification with Mockito {
+import org.hatdex.hat.api.models.{ NamespaceRead, NamespaceWrite, UserRole }
+import org.hatdex.hat.NamespaceUtils._
+import org.scalatestplus.mockito.MockitoSugar
+import io.dataswift.test.common.BaseSpec
+
+class NamespaceTestSpec extends BaseSpec with MockitoSugar {
 
   val logger = Logger(this.getClass)
-  sequential
 
-  "The Namespace Verification" should {
-    "NamespaceUtils: Allow the correct namespace" in {
-      val namespace              = "correctnamespace"
-      val applicationPermissions = List(NamespaceWrite("correctnamespace"), NamespaceRead("correctnamespace"))
+  "The Namespace Verification" should "NamespaceUtils: Allow the correct namespace" in {
+    val namespace              = "correctnamespace"
+    val applicationPermissions = List(NamespaceWrite("correctnamespace"), NamespaceRead("correctnamespace"))
 
-      val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
-      val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
+    val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
+    val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
 
-      readRoles == writeRoles
-    }
+    readRoles == writeRoles
+  }
 
-    "NamespaceUtils: Disallow the incorrect namespace" in {
-      val namespace              = "incorrectnamespace"
-      val applicationPermissions = List(NamespaceWrite("correctnamespace"), NamespaceRead("correctnamespace"))
+  it should "NamespaceUtils: Disallow the incorrect namespace" in {
+    val namespace              = "incorrectnamespace"
+    val applicationPermissions = List(NamespaceWrite("correctnamespace"), NamespaceRead("correctnamespace"))
 
-      val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
-      val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
+    val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
+    val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
 
-      readRoles == false
-      writeRoles == false
-    }
+    readRoles == false
+    writeRoles == false
+  }
 
-    "NamespaceUtils: Empty App Permission" in {
-      val namespace              = "incorrectnamespace"
-      val applicationPermissions = List.empty
+  it should "NamespaceUtils: Empty App Permission" in {
+    val namespace              = "incorrectnamespace"
+    val applicationPermissions = List.empty
 
-      val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
-      val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
+    val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
+    val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
 
-      readRoles == false
-      writeRoles == false
-    }
+    readRoles == false
+    writeRoles == false
+  }
 
-    "NamespaceUtils: Empty Namespace" in {
-      val namespace              = ""
-      val applicationPermissions = List(NamespaceWrite("correctnamespace"), NamespaceRead("correctnamespace"))
+  it should "NamespaceUtils: Empty Namespace" in {
+    val namespace              = ""
+    val applicationPermissions = List(NamespaceWrite("correctnamespace"), NamespaceRead("correctnamespace"))
 
-      val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
-      val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
+    val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
+    val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
 
-      readRoles == writeRoles
-    }
+    readRoles == writeRoles
+  }
 
-    "NamespaceUtils: Mis-matched types" in {
-      val namespace                             = "correctnamespace"
-      val applicationPermissions: Seq[UserRole] = List(NamespaceWrite("correctnamespace"))
+  it should "NamespaceUtils: Mis-matched types" in {
+    val namespace                             = "correctnamespace"
+    val applicationPermissions: Seq[UserRole] = List(NamespaceWrite("correctnamespace"))
 
-      val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
-      val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
+    val readRoles  = NamespaceUtils.testReadNamespacePermissions(applicationPermissions, namespace)
+    val writeRoles = NamespaceUtils.testWriteNamespacePermissions(applicationPermissions, namespace)
 
-      readRoles == false
-      writeRoles == true
-    }
+    readRoles == false
+    writeRoles == true
   }
 }

@@ -27,108 +27,102 @@ package org.hatdex.hat.api.service.monitoring
 import java.util.UUID
 
 import akka.stream.Materializer
-import io.dataswift.models.hat.{ EndpointData, Owner }
+import io.dataswift.test.common.BaseSpec
+import org.hatdex.hat.api.models.EndpointData
+import org.hatdex.hat.api.models.Owner
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
-import org.specs2.mock.Mockito
-import org.specs2.specification.Scope
+import org.scalatest.BeforeAndAfter
+import org.scalatest.BeforeAndAfterAll
+import play.api.Application
+import play.api.Logger
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{ JsValue, Json }
-import play.api.test.PlaySpecification
-import play.api.{ Application, Logger }
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
 
-class JsonStatsServiceSpec extends PlaySpecification with Mockito with JsonStatsServiceContext {
+class JsonStatsServiceSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with JsonStatsServiceContext {
 
   val logger = Logger(this.getClass)
 
-  sequential
-
-  "The `countJsonPaths` method" should {
-    "Correctly count numbers of values for simple objects" in {
-
-      val result = JsonStatsService.countJsonPaths(simpleJson)
-      result("field") must equalTo(1)
-      result("date") must equalTo(1)
-      result("date_iso") must equalTo(1)
-      result("anotherField") must equalTo(1)
-      result("object.objectField") must equalTo(1)
-      result("object.objectFieldArray[]") must equalTo(3)
-      result("object.objectFieldObjectArray[].subObjectName") must equalTo(2)
-      result("object.objectFieldObjectArray[].subObjectName2") must equalTo(2)
-    }
+  "The `countJsonPaths` method" should "Correctly count numbers of values for simple objects" in {
+    val result = JsonStatsService.countJsonPaths(simpleJson)
+    result("field") must equal(1)
+    result("date") must equal(1)
+    result("date_iso") must equal(1)
+    result("anotherField") must equal(1)
+    result("object.objectField") must equal(1)
+    result("object.objectFieldArray[]") must equal(3)
+    result("object.objectFieldObjectArray[].subObjectName") must equal(2)
+    result("object.objectFieldObjectArray[].subObjectName2") must equal(2)
   }
 
-  "The `countEndpointData` method" should {
-    "Correctly count numbers of values for simple endpoint data objects" in {
+  "The `countEndpointData` method" should "Correctly count numbers of values for simple endpoint data objects" in {
 
-      val counts = JsonStatsService.countEndpointData(EndpointData("test", None, None, None, simpleJson, None))
-      val result = counts("test")
-      result("field") must equalTo(1)
-      result("date") must equalTo(1)
-      result("date_iso") must equalTo(1)
-      result("anotherField") must equalTo(1)
-      result("object.objectField") must equalTo(1)
-      result("object.objectFieldArray[]") must equalTo(3)
-      result("object.objectFieldObjectArray[].subObjectName") must equalTo(2)
-      result("object.objectFieldObjectArray[].subObjectName2") must equalTo(2)
-    }
+    val counts = JsonStatsService.countEndpointData(EndpointData("test", None, None, None, simpleJson, None))
+    val result = counts("test")
+    result("field") must equal(1)
+    result("date") must equal(1)
+    result("date_iso") must equal(1)
+    result("anotherField") must equal(1)
+    result("object.objectField") must equal(1)
+    result("object.objectFieldArray[]") must equal(3)
+    result("object.objectFieldObjectArray[].subObjectName") must equal(2)
+    result("object.objectFieldObjectArray[].subObjectName2") must equal(2)
+  }
 
-    "Correctly count numbers of values for linked endpoint data objects" in {
+  it should "Correctly count numbers of values for linked endpoint data objects" in {
 
-      val counts = JsonStatsService.countEndpointData(
+    val counts = JsonStatsService.countEndpointData(
+      EndpointData("test",
+                   None,
+                   None,
+                   None,
+                   simpleJson,
+                   Some(Seq(EndpointData("test", None, None, None, simpleJson, None)))
+      )
+    )
+    val result = counts("test")
+    result("field") must equal(2)
+    result("date") must equal(2)
+    result("date_iso") must equal(2)
+    result("anotherField") must equal(2)
+    result("object.objectField") must equal(2)
+    result("object.objectFieldArray[]") must equal(6)
+    result("object.objectFieldObjectArray[].subObjectName") must equal(4)
+    result("object.objectFieldObjectArray[].subObjectName2") must equal(4)
+  }
+
+  "The `endpointDataCounts` method" should "correctly combine numbers of values from subsequent EndpointData records" in {
+
+    val counts = JsonStatsService.endpointDataCounts(
+      Seq(
         EndpointData("test",
                      None,
                      None,
                      None,
                      simpleJson,
                      Some(Seq(EndpointData("test", None, None, None, simpleJson, None)))
-        )
+        ),
+        EndpointData("test", None, None, None, simpleJson, None)
       )
-      val result = counts("test")
-      result("field") must equalTo(2)
-      result("date") must equalTo(2)
-      result("date_iso") must equalTo(2)
-      result("anotherField") must equalTo(2)
-      result("object.objectField") must equalTo(2)
-      result("object.objectFieldArray[]") must equalTo(6)
-      result("object.objectFieldObjectArray[].subObjectName") must equalTo(4)
-      result("object.objectFieldObjectArray[].subObjectName2") must equalTo(4)
-    }
-  }
+    )
 
-  "The `endpointDataCounts` method" should {
-    "correctly combine numbers of values from subsequent EndpointData records" in {
+    counts.headOption must not be empty
+    val result = counts.head.propertyStats
 
-      val counts = JsonStatsService.endpointDataCounts(
-        Seq(
-          EndpointData("test",
-                       None,
-                       None,
-                       None,
-                       simpleJson,
-                       Some(Seq(EndpointData("test", None, None, None, simpleJson, None)))
-          ),
-          EndpointData("test", None, None, None, simpleJson, None)
-        )
-      )
-
-      counts.headOption must beSome
-      val result = counts.head.propertyStats
-
-      result("field") must equalTo(3)
-      result("date") must equalTo(3)
-      result("date_iso") must equalTo(3)
-      result("anotherField") must equalTo(3)
-      result("object.objectField") must equalTo(3)
-      result("object.objectFieldArray[]") must equalTo(9)
-      result("object.objectFieldObjectArray[].subObjectName") must equalTo(6)
-      result("object.objectFieldObjectArray[].subObjectName2") must equalTo(6)
-    }
+    result("field") must equal(3)
+    result("date") must equal(3)
+    result("date_iso") must equal(3)
+    result("anotherField") must equal(3)
+    result("object.objectField") must equal(3)
+    result("object.objectFieldArray[]") must equal(9)
+    result("object.objectFieldObjectArray[].subObjectName") must equal(6)
+    result("object.objectFieldObjectArray[].subObjectName2") must equal(6)
   }
 
 }
 
-trait JsonStatsServiceContext extends Scope {
+trait JsonStatsServiceContext {
   // Setup default users for testing
   val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
 
