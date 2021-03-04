@@ -85,4 +85,4 @@ PUT           /contract-data/update/$namespace<[0-9a-z-]+>                      
 
 # Metrics
 # Hide for now
-# GET           /metrics                                                                       com.github.stijndehaes.playprometheusfilters.controllers.PrometheusController.getMetrics
+GET           /metrics                                                                       com.github.stijndehaes.playprometheusfilters.controllers.PrometheusController.getMetrics
