@@ -50,7 +50,9 @@ class Users @Inject() (
     implicit val ec: ExecutionContext,
     implicit val applicationsService: ApplicationsService)
     extends HatApiController(components, silhouette)
-    with HatJsonFormats {
+     {
+
+  import HatJsonFormats._
 
   private val logger = Logger(this.getClass)
 

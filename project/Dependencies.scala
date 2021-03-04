@@ -50,8 +50,8 @@ object Dependencies {
       val test        = "com.typesafe.play" %% "play-test"         % version
       val specs2      = "com.typesafe.play" %% "play-specs2"       % version
       val jdbc        = "com.typesafe.play" %% "play-jdbc"         % version
-      val json        = "com.typesafe.play" %% "play-json"         % "2.6.14"
-      val jsonJoda    = "com.typesafe.play" %% "play-json-joda"    % "2.6.14"
+      val json        = "com.typesafe.play" %% "play-json"         % "2.9.1"
+      val jsonJoda    = "com.typesafe.play" %% "play-json-joda"    % "2.9.1"
       val mailer      = "com.typesafe.play" %% "play-mailer"       % "6.0.1"
       val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
 
@@ -91,7 +91,7 @@ object Dependencies {
       val prettyTime               = "org.ocpsoft.prettytime" % "prettytime"                      % "4.0.4.Final"
       val nbvcxz                   = "me.gosimple"            % "nbvcxz"                          % "1.4.3"
       val elasticacheClusterClient = "com.amazonaws"          % "elasticache-java-cluster-client" % "1.1.1"
-      val playMemcached            = "com.github.mumoshu"    %% "play2-memcached-play26"          % "0.9.3" exclude ("net.spy", "spymemcached")
+      val playMemcached            = "com.github.mumoshu" %% "play2-memcached-play28" % "0.11.0" exclude ("net.spy", "spymemcached")
       val alpakkaAwsLambda         = "com.lightbend.akka"    %% "akka-stream-alpakka-awslambda"   % "0.20"
       val apacheCommonLang         = "org.apache.commons"     % "commons-lang3"                   % "3.10"
     }
@@ -105,8 +105,8 @@ object Dependencies {
     }
 
     object HATDeX {
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "3.0.2"
-      val dexClient = "org.hatdex" %% "dex-client-scala"      % "3.1.1"
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "3.1.2"
+      val dexClient = "org.hatdex" %% "dex-client-scala"      % "3.1.2"
       val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
     }
 

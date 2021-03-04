@@ -42,8 +42,9 @@ import play.api.Logger
 import play.api.libs.json._
 
 class DataDebitContractService @Inject() (
-    implicit val ec: RemoteExecutionContext)
-    extends RichDataJsonFormats {
+    implicit val ec: RemoteExecutionContext) {
+
+  import RichDataJsonFormats._
 
   val logger: Logger = Logger(this.getClass)
 

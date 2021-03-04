@@ -37,7 +37,8 @@ import org.hatdex.libs.dal.HATPostgresProfile.api._
 import play.api.Logger
 import play.api.libs.json._
 
-class RichBundleService @Inject() (implicit ec: DalExecutionContext) extends RichDataJsonFormats {
+class RichBundleService @Inject() (implicit ec: DalExecutionContext)  {
+  import RichDataJsonFormats._
 
   val logger: Logger = Logger(this.getClass)
 

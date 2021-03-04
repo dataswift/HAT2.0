@@ -54,8 +54,9 @@ class SystemStatus @Inject() (
   )(implicit
     val ec: ExecutionContext,
     val applicationsService: ApplicationsService)
-    extends HatApiController(components, silhouette)
-    with HatJsonFormats {
+    extends HatApiController(components, silhouette) {
+
+  import HatJsonFormats._
 
   private val dbStorageAllowance: Long =
     configuration.get[Long]("resourceManagement.hatDBStorageAllowance")

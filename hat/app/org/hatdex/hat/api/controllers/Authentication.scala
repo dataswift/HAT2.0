@@ -73,7 +73,8 @@ class Authentication @Inject() (
     wsClient: WSClient,
     limiter: UserLimiter)
     extends HatApiController(components, silhouette)
-    with HatJsonFormats {
+     {
+       import HatJsonFormats._
 
   private val logger = Logger(this.getClass)
 

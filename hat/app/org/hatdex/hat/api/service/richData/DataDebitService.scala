@@ -46,8 +46,9 @@ import play.api.libs.json._
 
 class DataDebitService @Inject() (
     usersService: UsersService
-  )(implicit val ec: RemoteExecutionContext)
-    extends RichDataJsonFormats {
+  )(implicit val ec: RemoteExecutionContext) {
+
+  import io.dataswift.models.hat.json.RichDataJsonFormats._
 
   val logger: Logger = Logger(this.getClass)
 

@@ -43,8 +43,9 @@ class DataMigration @Inject() (
     migrationService: MigrationService
   )(implicit
     val ec: ExecutionContext)
-    extends HatApiController(components, silhouette)
-    with RichDataJsonFormats {
+    extends HatApiController(components, silhouette) {
+
+  import RichDataJsonFormats._
 
   private val logger = Logger(this.getClass)
 

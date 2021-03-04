@@ -21,8 +21,9 @@ class LogController @Inject() (
     logService: LogService,
     silhouette: Silhouette[HatApiAuthEnvironment]
   )(implicit val ec: RemoteExecutionContext)
-    extends HatApiController(components, silhouette)
-    with HatJsonFormats {
+    extends HatApiController(components, silhouette) {
+
+  import HatJsonFormats._
 
   private val logger = Logger(this.getClass)
 

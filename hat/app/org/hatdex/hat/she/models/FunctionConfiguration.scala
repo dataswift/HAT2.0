@@ -27,11 +27,13 @@ package org.hatdex.hat.she.models
 import java.util.UUID
 
 import io.dataswift.models.hat.applications._
-import io.dataswift.models.hat.json.{ ApplicationJsonProtocol, DataFeedItemJsonProtocol, RichDataJsonFormats }
-import io.dataswift.models.hat.{ EndpointData, EndpointDataBundle, FormattedText }
+import io.dataswift.models.hat.json.LocalDateTimeMarshalling
+import io.dataswift.models.hat.json.RichDataJsonFormats
+import io.dataswift.models.hat.json.{DataFeedItemJsonProtocol, ApplicationJsonProtocol}
+import io.dataswift.models.hat.{EndpointData, EndpointDataBundle, FormattedText}
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.Tables.{ DataBundlesRow, SheFunctionRow, SheFunctionStatusRow }
-import org.joda.time.{ DateTime, Period }
+import org.hatdex.hat.dal.Tables.{SheFunctionRow, DataBundlesRow, SheFunctionStatusRow}
+import org.joda.time.{Period, DateTime}
 import play.api.libs.json._
 
 case class Response(
@@ -154,16 +156,8 @@ object FunctionTrigger {
 }
 
 trait FunctionConfigurationJsonProtocol
-    extends JodaWrites
-    with JodaReads
-    with RichDataJsonFormats
-    with DataFeedItemJsonProtocol {
+    extends DataFeedItemJsonProtocol {
   import FunctionTrigger._
-  import ApplicationJsonProtocol.applicationDeveloperFormat
-  import ApplicationJsonProtocol.applicationGraphicsFormat
-  import ApplicationJsonProtocol.versionFormat
-  import ApplicationJsonProtocol.applicationUpdateNotesFormat
-  import ApplicationJsonProtocol.formattedTextFormat
 
   implicit protected val triggerPeriodicFormat: Format[TriggerPeriodic] =
     Json.format[TriggerPeriodic]

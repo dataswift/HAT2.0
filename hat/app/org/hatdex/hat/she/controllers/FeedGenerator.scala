@@ -28,13 +28,11 @@ import javax.inject.Inject
 
 import scala.concurrent.ExecutionContext
 import scala.util.Try
-
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.applications.Version
-import io.dataswift.models.hat.json.{ DataFeedItemJsonProtocol, RichDataJsonFormats }
 import org.hatdex.hat.api.service.applications.ApplicationsService
-import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
+import org.hatdex.hat.authentication.{HatApiAuthEnvironment, WithRole, HatApiController, ContainsApplicationRole}
 import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol
 import org.hatdex.hat.she.service._
 import play.api.libs.json.Json
@@ -47,10 +45,9 @@ class FeedGenerator @Inject() (
   )(implicit
     val ec: ExecutionContext,
     applicationsService: ApplicationsService)
-    extends HatApiController(components, silhouette)
-    with RichDataJsonFormats
-    with FunctionConfigurationJsonProtocol
-    with DataFeedItemJsonProtocol {
+    extends HatApiController(components, silhouette){
+
+  import FunctionConfigurationJsonProtocol._
 
   def getFeed(
       endpoint: String,

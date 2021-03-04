@@ -26,22 +26,26 @@ package org.hatdex.hat.modules
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
-import scala.concurrent.{ Await, ExecutionContext, Future }
-
-import com.google.inject.{ AbstractModule, Provides }
+import scala.concurrent.{Await, Future, ExecutionContext}
+import com.google.inject.{Provides, AbstractModule}
 import com.typesafe.config.Config
 import io.dataswift.models.hat.applications.Version
 import net.codingwell.scalaguice.ScalaModule
+import org.hatdex.hat.she.models.AwsLambdaExecutor
 import org.hatdex.hat.she.models.LambdaFunctionLoader
-import org.hatdex.hat.she.service.{ FunctionExecutableRegistry, FunctionExecutionTriggerHandler }
+import org.hatdex.hat.she.models.LambdaFunctionLoader
+import org.hatdex.hat.she.service.{FunctionExecutableRegistry, FunctionExecutionTriggerHandler}
 import org.hatdex.hat.utils.FutureTransformations
 import play.api.libs.concurrent.AkkaGuiceSupport
-import play.api.{ ConfigLoader, Configuration, Logger }
+import play.api.{Configuration, Logger, ConfigLoader}
 
 class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   val logger: Logger = Logger(this.getClass)
 
   override def configure(): Unit = {
+    bind[FunctionExecutionTriggerHandler].asEagerSingleton()
+    bind[LambdaFunctionLoader].asEagerSingleton()
+    bind[AwsLambdaExecutor].asEagerSingleton()
     bind[FunctionExecutionTriggerHandler].asEagerSingleton()
     ()
   }
@@ -72,8 +76,7 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
       loader: LambdaFunctionLoader
     )(implicit ec: ExecutionContext): FunctionExecutableRegistry = {
 
-    val includeExperimental: Boolean =
-      config.getOptional[Boolean]("she.beta").getOrElse(false)
+    val includeExperimental: Boolean = config.getOptional[Boolean]("she.beta").getOrElse(false)
 
     val eventuallyFunctionsLoaded = Future.sequence(
       config

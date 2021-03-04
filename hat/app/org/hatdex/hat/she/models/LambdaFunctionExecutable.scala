@@ -57,7 +57,9 @@ class LambdaFunctionExecutable(
   )(config: Configuration,
     lambdaExecutor: AwsLambdaExecutor)
     extends FunctionExecutable {
+
   import FunctionConfigurationJsonProtocol._
+  import io.dataswift.models.hat.json.RichDataJsonFormats.endpointDatabundleFormat
 
   protected val logger: Logger = Logger(this.getClass)
   private val lambdaLogs       = config.get[String]("she.aws.logs")
@@ -74,8 +76,8 @@ class LambdaFunctionExecutable(
         Json
           .toJson(
             Map(
-              "functionConfiguration" -> Json.toJson(configuration),
-              "request" -> Json.toJson(requestData)
+              "functionConfiguration" -> Json.toJson(configuration)(FunctionConfigurationJsonProtocol.functionConfigurationFormat),
+              "request" -> Json.toJson(requestData)(FunctionConfigurationJsonProtocol.requestFormat)
             )
           )
           .toString()

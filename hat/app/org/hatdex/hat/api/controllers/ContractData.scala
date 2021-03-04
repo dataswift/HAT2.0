@@ -84,8 +84,8 @@ class ContractData @Inject() (
     implicit val ec: ExecutionContext,
     implicit val applicationsService: ApplicationsService
   )(wsClient: WSClient)
-    extends HatApiController(components, silhouette)
-    with RichDataJsonFormats {
+    extends HatApiController(components, silhouette) {
+  import RichDataJsonFormats._
 
   private val logger             = loggingProvider.logger(this.getClass)
   private val defaultRecordLimit = 1000

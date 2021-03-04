@@ -52,9 +52,9 @@ class Files @Inject() (
     usersService: UsersService,
     implicit val ec: ExecutionContext,
     implicit val applicationsService: ApplicationsService)
-    extends HatApiController(components, silhouette)
-    with HatJsonFormats {
+    extends HatApiController(components, silhouette) {
 
+  import HatJsonFormats._
   val logger: Logger = Logger(this.getClass)
 
   def startUpload: Action[ApiHatFile] =

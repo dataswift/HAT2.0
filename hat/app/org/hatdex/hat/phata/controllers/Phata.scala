@@ -47,9 +47,11 @@ class Phata @Inject() (
     silhouette: Silhouette[HatApiAuthEnvironment],
     bundleService: RichBundleService,
     dataService: RichDataService)
-    extends HatApiController(components, silhouette)
-    with HatJsonFormats
-    with RichDataJsonFormats {
+    extends HatApiController(components, silhouette){
+
+
+    import HatJsonFormats._
+    import RichDataJsonFormats._
 
   implicit val af: AssetsFinder = assetsFinder.get
 

@@ -50,8 +50,9 @@ class DataDebits @Inject() (
     loggingProvider: LoggingProvider,
     implicit val ec: ExecutionContext,
     implicit val applicationsService: ApplicationsService)
-    extends HatApiController(components, silhouette)
-    with RichDataJsonFormats {
+    extends HatApiController(components, silhouette) {
+
+  import RichDataJsonFormats._
 
   private val logger = loggingProvider.logger(this.getClass)
 
