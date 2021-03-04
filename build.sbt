@@ -88,46 +88,31 @@ lazy val hat = project
     // as Bash is incompatible with Alpine
     javaOptions in Universal ++= Seq(),
     packageName in Docker := "hat",
-    maintainer in Docker := "andrius.aucinas@hatdex.org",
+
     version in Docker := version.value,
-    //dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine",
-    dockerExposedPorts := Seq(9000),
-    //dockerEntrypoint := Seq("bin/hat"),
     // add a flag to not run in prod
     // modify the binary to include "-javaagent:codeguru-profiler-java-agent-standalone-1.1.0.jar="profilingGroupName:HatInDev,heapSummaryEnabled:true"
     dockerCommands := (buildEnv.value match {
           case BuildEnv.Developement | BuildEnv.Test =>
             Seq(
-              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine"),
+              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine"),
               Cmd("WORKDIR", "/opt/docker/bin"),
-              Cmd("RUN", "apk add wget"),
-              Cmd(
-                "RUN",
-                s"wget --no-check-certificate ${codeguruURI}"
-              ),
-              Cmd("WORKDIR", "/opt/docker/"),
-              Cmd("COPY", "opt", "/opt"),
-              Cmd("COPY", "1/opt", "/opt"),
-              Cmd("RUN", "chown -R daemon:daemon /opt/docker"),
-              Cmd("RUN", "chmod -R u=rX,g=rX /opt/docker"),
-              Cmd("RUN", "chmod -R u+x,g+x /opt/docker/bin"),
+              Cmd("CMD", s"./${packageName.value}"),
               Cmd("EXPOSE", "9000"),
+
+              Cmd("RUN", s"apk add --no-cache wget; wget --no-check-certificate ${codeguruURI}"),
+
               Cmd("USER", "daemon"),
-              Cmd("ENTRYPOINT", s"bin/${packageName.value}")
+              Cmd("COPY", "--chown=daemon:daemon", "1/opt", "opt", "/opt/")
             )
           case BuildEnv.Stage | BuildEnv.Production =>
             Seq(
-              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine"),
+              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine"),
               Cmd("WORKDIR", "/opt/docker/bin"),
-              Cmd("WORKDIR", "/opt/docker/"),
-              Cmd("COPY", "opt", "/opt"),
-              Cmd("COPY", "1/opt", "/opt"),
-              Cmd("RUN", "chown -R daemon:daemon /opt/docker"),
-              Cmd("RUN", "chmod -R u=rX,g=rX /opt/docker"),
-              Cmd("RUN", "chmod -R u+x,g+x /opt/docker/bin"),
+              Cmd("CMD", s"./${packageName.value}"),
               Cmd("EXPOSE", "9000"),
               Cmd("USER", "daemon"),
-              Cmd("ENTRYPOINT", s"bin/${packageName.value}")
+              Cmd("COPY", "--chown=daemon:daemon", "1/opt", "opt", "/opt/")
             )
         }),
     javaOptions in Universal ++= (buildEnv.value match {
