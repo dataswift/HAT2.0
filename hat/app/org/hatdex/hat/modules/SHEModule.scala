@@ -24,6 +24,10 @@
 
 package org.hatdex.hat.modules
 
+import scala.collection.JavaConverters._
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, ExecutionContext, Future }
+
 import com.google.inject.{ AbstractModule, Provides }
 import com.typesafe.config.Config
 import io.dataswift.models.hat.applications.Version
@@ -33,10 +37,6 @@ import org.hatdex.hat.she.service.{ FunctionExecutableRegistry, FunctionExecutio
 import org.hatdex.hat.utils.FutureTransformations
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.{ ConfigLoader, Configuration, Logger }
-
-import scala.collection.JavaConverters._
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, ExecutionContext, Future }
 
 class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   val logger: Logger = Logger(this.getClass)

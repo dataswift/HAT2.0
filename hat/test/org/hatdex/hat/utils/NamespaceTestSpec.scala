@@ -1,10 +1,9 @@
 package org.hatdex.hat.utils
-import play.api.Logger
-
-import org.hatdex.hat.api.models.{ NamespaceRead, NamespaceWrite, UserRole }
+import io.dataswift.models.hat.{ NamespaceRead, NamespaceWrite, UserRole }
+import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.NamespaceUtils._
 import org.scalatestplus.mockito.MockitoSugar
-import io.dataswift.test.common.BaseSpec
+import play.api.Logger
 
 class NamespaceTestSpec extends BaseSpec with MockitoSugar {
 
