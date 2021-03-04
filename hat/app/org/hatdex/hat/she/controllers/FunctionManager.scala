@@ -48,11 +48,10 @@ class FunctionManager @Inject() (
   )(implicit
     val ec: ExecutionContext,
     applicationsService: ApplicationsService)
-    extends HatApiController(components, silhouette){
+    extends HatApiController(components, silhouette) {
 
-
- import RichDataJsonFormats._
-    import FunctionConfigurationJsonProtocol._
+  import RichDataJsonFormats._
+  import FunctionConfigurationJsonProtocol._
 
   private val logger = Logger(this.getClass)
 

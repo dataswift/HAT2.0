@@ -76,7 +76,8 @@ class LambdaFunctionExecutable(
         Json
           .toJson(
             Map(
-              "functionConfiguration" -> Json.toJson(configuration)(FunctionConfigurationJsonProtocol.functionConfigurationFormat),
+              "functionConfiguration" -> Json
+                    .toJson(configuration)(FunctionConfigurationJsonProtocol.functionConfigurationFormat),
               "request" -> Json.toJson(requestData)(FunctionConfigurationJsonProtocol.requestFormat)
             )
           )

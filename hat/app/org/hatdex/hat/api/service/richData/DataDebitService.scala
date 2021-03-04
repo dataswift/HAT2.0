@@ -33,7 +33,6 @@ import scala.util.Success
 
 import akka.Done
 import io.dataswift.models.hat._
-import io.dataswift.models.hat.json.RichDataJsonFormats
 import org.hatdex.hat.api.service.{ RemoteExecutionContext, UsersService }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataDebit => DbDataDebit, DataDebitPermissions => DbDataDebitPermissions, _ }

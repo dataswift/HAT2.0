@@ -44,10 +44,7 @@ class StaticDataGenerator @Inject() (
   )(implicit
     val ec: ExecutionContext,
     applicationsService: ApplicationsService)
-    extends HatApiController(components, silhouette){
-
- import RichDataJsonFormats._
-    import FunctionConfigurationJsonProtocol._
+    extends HatApiController(components, silhouette) {
 
   def getStaticData(endpoint: String): Action[AnyContent] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>

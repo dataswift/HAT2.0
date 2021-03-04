@@ -91,9 +91,10 @@ object Dependencies {
       val prettyTime               = "org.ocpsoft.prettytime" % "prettytime"                      % "4.0.4.Final"
       val nbvcxz                   = "me.gosimple"            % "nbvcxz"                          % "1.4.3"
       val elasticacheClusterClient = "com.amazonaws"          % "elasticache-java-cluster-client" % "1.1.1"
-      val playMemcached            = "com.github.mumoshu" %% "play2-memcached-play28" % "0.11.0" exclude ("net.spy", "spymemcached")
-      val alpakkaAwsLambda         = "com.lightbend.akka"    %% "akka-stream-alpakka-awslambda"   % "0.20"
-      val apacheCommonLang         = "org.apache.commons"     % "commons-lang3"                   % "3.10"
+      val playMemcached =
+        "com.github.mumoshu" %% "play2-memcached-play28" % "0.11.0" exclude ("net.spy", "spymemcached")
+      val alpakkaAwsLambda = "com.lightbend.akka" %% "akka-stream-alpakka-awslambda" % "0.20"
+      val apacheCommonLang = "org.apache.commons"  % "commons-lang3"                 % "3.10"
     }
 
     object Backend {

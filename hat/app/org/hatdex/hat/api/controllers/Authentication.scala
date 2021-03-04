@@ -72,9 +72,8 @@ class Authentication @Inject() (
     tokenService: MailTokenService[MailTokenUser],
     wsClient: WSClient,
     limiter: UserLimiter)
-    extends HatApiController(components, silhouette)
-     {
-       import HatJsonFormats._
+    extends HatApiController(components, silhouette) {
+  import HatJsonFormats._
 
   private val logger = Logger(this.getClass)
 

@@ -49,8 +49,7 @@ class Users @Inject() (
     hatBodyParsers: HatBodyParsers,
     implicit val ec: ExecutionContext,
     implicit val applicationsService: ApplicationsService)
-    extends HatApiController(components, silhouette)
-     {
+    extends HatApiController(components, silhouette) {
 
   import HatJsonFormats._
 
