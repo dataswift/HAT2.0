@@ -30,7 +30,7 @@ import io.dataswift.models.hat.EndpointData
 import org.hatdex.hat.api.service.richData.RichDataService
 import play.api.Logger
 import play.api.libs.json.Json
-import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
+import play.api.test.{ FakeRequest }
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

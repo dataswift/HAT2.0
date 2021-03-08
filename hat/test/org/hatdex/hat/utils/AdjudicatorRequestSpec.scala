@@ -29,13 +29,10 @@ import org.hatdex.hat.api.controllers.RichData
 import io.dataswift.models.hat._
 import org.hatdex.hat.api.service.richData.{ DataDebitContractService, RichDataService }
 import org.joda.time.LocalDateTime
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mock.Mockito
-import org.specs2.specification.{ BeforeAll, BeforeEach }
 import play.api.Logger
 import play.api.libs.json.{ JsArray, JsObject, JsValue, Json }
 import play.api.mvc.{ Action, Result, Results }
-import play.api.test.{ FakeRequest, Helpers, PlaySpecification, WsTestClient }
+import play.api.test.{  WsTestClient }
 import play.api.libs.ws.{ WSClient, WSRequest }
 import eu.timepit.refined._
 import eu.timepit.refined.auto._

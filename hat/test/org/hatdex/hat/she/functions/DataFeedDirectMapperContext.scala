@@ -27,7 +27,6 @@ package org.hatdex.hat.she.functions
 import io.dataswift.models.hat.json.RichDataJsonFormats
 import io.dataswift.models.hat.EndpointData
 import org.hatdex.hat.she.service.FunctionServiceContext
-import org.specs2.specification.Scope
 import play.api.libs.json.{ Format, Json }
 
 trait DataFeedDirectMapperContext extends FunctionServiceContext {

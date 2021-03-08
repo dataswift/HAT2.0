@@ -29,7 +29,7 @@ import org.hatdex.hat.api.HATTestContext
 import io.dataswift.models.hat.json.HatJsonFormats
 import io.dataswift.models.hat.{ HatStatus, StatusKind }
 import play.api.Logger
-import play.api.test.{ FakeRequest, PlaySpecification }
+import play.api.test.{ FakeRequest }
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

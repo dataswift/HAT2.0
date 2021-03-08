@@ -42,7 +42,7 @@ import play.api.Logger
 import play.api.i18n.{ Lang, Messages, MessagesApi }
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Result
-import play.api.test.{ FakeHeaders, FakeRequest, Helpers, PlaySpecification }
+import play.api.test.{ FakeHeaders, FakeRequest, Helpers}
 import play.mvc.Http.{ HeaderNames, MimeTypes }
 
 import scala.concurrent.duration._
