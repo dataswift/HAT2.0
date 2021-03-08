@@ -44,7 +44,7 @@ object Dependencies {
   object Library {
 
     object Version {
-      val ScalaTest           = "3.2.3"
+      val ScalaTest           = "3.2.6"
       val TestContainersScala = "0.38.8"
       val DsTestTools         = "0.2.3"
     }
