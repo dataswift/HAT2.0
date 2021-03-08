@@ -28,8 +28,8 @@ import java.util.UUID
 
 import akka.NotUsed
 import akka.stream.scaladsl.Source
-import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.models.applications._
+import io.dataswift.models.hat._
+import io.dataswift.models.hat.applications._
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.SourceMergeSorter

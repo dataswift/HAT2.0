@@ -28,8 +28,8 @@ import java.util.UUID
 
 import akka.stream.Materializer
 import io.dataswift.test.common.BaseSpec
-import org.hatdex.hat.api.models.EndpointData
-import org.hatdex.hat.api.models.Owner
+import io.dataswift.models.hat.EndpointData
+import io.dataswift.models.hat.Owner
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.FakeHatConfiguration
 import org.scalatest.BeforeAndAfter

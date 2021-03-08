@@ -29,9 +29,9 @@ import akka.util.ByteString
 import com.google.inject.AbstractModule
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models.applications.ApplicationKind.{ App, Contract }
-import org.hatdex.hat.api.models.applications._
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat.applications.ApplicationKind.{ App, Contract }
+import io.dataswift.models.hat.applications._
+import io.dataswift.models.hat._
 import org.hatdex.hat.api.service.StatsReporter
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, HatServer }

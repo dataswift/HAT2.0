@@ -36,9 +36,9 @@ import com.amazonaws.client.builder.ExecutorFactory
 import com.amazonaws.services.lambda.model.{ InvokeRequest, InvokeResult }
 import com.amazonaws.services.lambda.{ AWSLambdaAsync, AWSLambdaAsyncClientBuilder }
 import javax.inject.Inject
-import org.hatdex.dex.apiV2.services.Errors.{ ApiException, DataFormatException }
-import org.hatdex.hat.api.models.EndpointDataBundle
-import org.hatdex.hat.api.models.applications.Version
+import org.hatdex.dex.apiV2.Errors.{ ApiException, DataFormatException }
+import io.dataswift.models.hat.EndpointDataBundle
+import io.dataswift.models.hat.applications.Version
 import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.utils.ExecutorServiceWrapper
 import org.joda.time.DateTime

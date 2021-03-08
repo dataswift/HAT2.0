@@ -31,14 +31,14 @@ import com.mohiva.play.silhouette.api.Silhouette
 import dev.profunktor.auth.jwt.JwtSecretKey
 import io.dataswift.adjudicator.Types.ContractId
 import javax.inject.Inject
-import org.hatdex.hat.api.models.applications.{
+import io.dataswift.models.hat.applications.{
   Application,
   ApplicationKind,
   ApplicationStatus,
   HatApplication,
   Version
 }
-import org.hatdex.hat.api.models.{ AccessToken, EndpointQuery }
+import io.dataswift.models.hat.{ AccessToken, EndpointQuery }
 import org.hatdex.hat.api.service.applications.ApplicationExceptions.{
   HatApplicationDependencyException,
   HatApplicationSetupException

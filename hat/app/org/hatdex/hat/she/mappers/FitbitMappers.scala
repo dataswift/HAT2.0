@@ -2,8 +2,8 @@ package org.hatdex.hat.she.mappers
 
 import java.util.UUID
 
-import org.hatdex.hat.api.models.{ EndpointQuery, EndpointQueryFilter, PropertyQuery }
-import org.hatdex.hat.api.models.applications.{ DataFeedItem, DataFeedItemContent, DataFeedItemTitle }
+import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, PropertyQuery }
+import io.dataswift.models.hat.applications.{ DataFeedItem, DataFeedItemContent, DataFeedItemTitle }
 import org.hatdex.hat.she.models.StaticDataValues
 import org.joda.time.DateTime
 import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter }

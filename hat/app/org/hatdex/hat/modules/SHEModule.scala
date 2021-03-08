@@ -27,7 +27,7 @@ package org.hatdex.hat.modules
 import com.google.inject.{ AbstractModule, Provides }
 import com.typesafe.config.Config
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.models.applications.Version
+import io.dataswift.models.hat.applications.Version
 import org.hatdex.hat.she.models.LambdaFunctionLoader
 import org.hatdex.hat.she.service.{ FunctionExecutableRegistry, FunctionExecutionTriggerHandler }
 import org.hatdex.hat.utils.FutureTransformations

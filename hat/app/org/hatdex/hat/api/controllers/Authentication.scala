@@ -35,9 +35,10 @@ import com.mohiva.play.silhouette.api.util.{ Credentials, PasswordHasherRegistry
 import com.mohiva.play.silhouette.api.{ LoginEvent, Silhouette }
 import com.mohiva.play.silhouette.impl.exceptions.{ IdentityNotFoundException, InvalidPasswordException }
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.models.applications.ApplicationSetup
+
+import io.dataswift.models.hat.json.HatJsonFormats
+import io.dataswift.models.hat._
+import io.dataswift.models.hat.applications.ApplicationSetup
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.{ HatServicesService, LogService, MailTokenService, UsersService }
 import org.hatdex.hat.authentication._

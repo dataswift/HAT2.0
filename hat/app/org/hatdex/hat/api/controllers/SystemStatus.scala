@@ -26,8 +26,8 @@ package org.hatdex.hat.api.controllers
 
 import javax.inject.Inject
 import com.mohiva.play.silhouette.api.Silhouette
-import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat.json.HatJsonFormats
+import io.dataswift.models.hat._
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.{ SystemStatusService, UsersService }
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }

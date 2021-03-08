@@ -26,7 +26,7 @@ package org.hatdex.hat.phata.controllers
 
 import com.mohiva.play.silhouette.test._
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models.EndpointData
+import io.dataswift.models.hat.EndpointData
 import org.hatdex.hat.api.service.richData.RichDataService
 import play.api.Logger
 import play.api.libs.json.Json
@@ -46,7 +46,7 @@ class PhataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll 
   import scala.concurrent.ExecutionContext.Implicits.global
   val logger = Logger(this.getClass)
 
-  import org.hatdex.hat.api.json.RichDataJsonFormats._
+  import io.dataswift.models.hat.json.RichDataJsonFormats._
 
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)

@@ -26,8 +26,8 @@ package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.test._
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ HatStatus, StatusKind }
+import io.dataswift.models.hat.json.HatJsonFormats
+import io.dataswift.models.hat.{ HatStatus, StatusKind }
 import play.api.Logger
 import play.api.test.{ FakeRequest, PlaySpecification }
 

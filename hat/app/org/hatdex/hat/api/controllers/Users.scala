@@ -28,8 +28,8 @@ import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Silhouette
-import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ Owner, Platform, _ }
+import io.dataswift.models.hat.json.HatJsonFormats
+import io.dataswift.models.hat.{ Owner, Platform, _ }
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.models.HatUser

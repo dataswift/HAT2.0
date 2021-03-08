@@ -27,7 +27,7 @@ package org.hatdex.hat.api.service
 import java.util.UUID
 
 import javax.inject.Inject
-import org.hatdex.hat.api.models.{ UserRole, _ }
+import io.dataswift.models.hat.{ UserRole, _ }
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ UserRole => UserRoleDb, _ }

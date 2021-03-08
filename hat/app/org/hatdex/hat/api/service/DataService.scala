@@ -23,7 +23,7 @@
  */
 package org.hatdex.hat.api.service
 
-import org.hatdex.hat.api.models.{ ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue }
+import io.dataswift.models.hat.{ ApiDataField, ApiDataRecord, ApiDataTable, ApiDataValue }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.libs.dal.HATPostgresProfile.api._

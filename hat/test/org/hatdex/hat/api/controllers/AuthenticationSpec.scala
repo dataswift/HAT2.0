@@ -32,7 +32,7 @@ import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, J
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.test._
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models.DataDebitOwner
+import io.dataswift.models.hat.DataDebitOwner
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, ApiValidationRequest, MailTokenUser }

@@ -24,7 +24,7 @@
 
 package org.hatdex.hat.api.service
 
-import org.hatdex.hat.api.models.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus }
+import io.dataswift.models.hat.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus }
 import play.api.Logger
 
 import scala.concurrent.Await

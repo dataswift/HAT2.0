@@ -27,7 +27,7 @@ package org.hatdex.hat.api.service.monitoring
 import javax.inject.Inject
 import akka.Done
 import akka.actor.Actor
-import org.hatdex.hat.api.models.{
+import io.dataswift.models.hat.{
   DataDebitOperation,
   DataStats,
   InboundDataStats,

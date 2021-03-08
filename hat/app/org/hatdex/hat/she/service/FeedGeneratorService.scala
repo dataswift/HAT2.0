@@ -29,8 +29,8 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream._
 import akka.stream.scaladsl.{ Sink, Source }
-import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.models.applications.{ DataFeedItem, DataFeedItemLocation, LocationGeo }
+import io.dataswift.models.hat._
+import io.dataswift.models.hat.applications.{ DataFeedItem, DataFeedItemLocation, LocationGeo }
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.she.mappers._

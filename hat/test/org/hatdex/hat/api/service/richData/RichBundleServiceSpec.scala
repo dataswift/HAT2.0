@@ -25,7 +25,7 @@
 package org.hatdex.hat.api.service.richData
 
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat._
 import play.api.Logger
 import play.api.libs.json.{ JsObject, Json }
 

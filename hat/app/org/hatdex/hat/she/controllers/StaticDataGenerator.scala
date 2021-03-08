@@ -25,8 +25,8 @@ package org.hatdex.hat.she.controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-import org.hatdex.hat.api.json.RichDataJsonFormats
-import org.hatdex.hat.api.models.Owner
+import io.dataswift.models.hat.json.RichDataJsonFormats
+import io.dataswift.models.hat.Owner
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol

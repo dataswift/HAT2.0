@@ -24,7 +24,7 @@
 
 package org.hatdex.hat.she.service
 
-import org.hatdex.hat.api.models.EndpointQuery
+import io.dataswift.models.hat.EndpointQuery
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
 import org.joda.time.DateTimeUtils

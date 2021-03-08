@@ -27,7 +27,7 @@ package org.hatdex.hat.she.controllers
 import akka.util
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
-import org.hatdex.hat.api.models.{ EndpointQuery, ErrorMessage, SuccessResponse }
+import io.dataswift.models.hat.{ EndpointQuery, ErrorMessage, SuccessResponse }
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
 import org.hatdex.hat.she.models.FunctionConfiguration
@@ -53,7 +53,7 @@ class FunctionManagerSpec
   import scala.concurrent.ExecutionContext.Implicits.global
   val logger = Logger(this.getClass)
 
-  import org.hatdex.hat.api.json.HatJsonFormats.{ errorMessage, successResponse }
+  import io.dataswift.models.hat.json.HatJsonFormats.{ errorMessage, successResponse }
   import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol._
 
   implicit def defaultAwaitTimeout: util.Timeout = 60.seconds

@@ -26,8 +26,8 @@ package org.hatdex.hat.api.service.applications
 
 import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
 import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, JWTRS256AuthenticatorSettings }
-import org.hatdex.hat.api.models.EndpointData
-import org.hatdex.hat.api.models.applications.{ ApplicationStatus, HatApplication, Version }
+import io.dataswift.models.hat.EndpointData
+import io.dataswift.models.hat.applications.{ ApplicationStatus, HatApplication, Version }
 import org.hatdex.hat.api.service.applications.ApplicationExceptions.{
   HatApplicationDependencyException,
   HatApplicationSetupException

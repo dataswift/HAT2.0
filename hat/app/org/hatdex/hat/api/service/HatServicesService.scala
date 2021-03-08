@@ -27,7 +27,7 @@ import javax.inject.Inject
 
 import akka.http.scaladsl.model.Uri
 import com.mohiva.play.silhouette.api.Silhouette
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat._
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.Tables._

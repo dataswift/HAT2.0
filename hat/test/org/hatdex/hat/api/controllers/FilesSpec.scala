@@ -27,7 +27,7 @@ package org.hatdex.hat.api.controllers
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat._
 import org.hatdex.hat.api.service._
 import play.api.Logger
 import play.api.libs.json.Json
@@ -46,7 +46,7 @@ class FilesSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll 
 
   val logger = Logger(this.getClass)
 
-  import org.hatdex.hat.api.json.HatJsonFormats._
+  import io.dataswift.models.hat.json.HatJsonFormats._
 
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)

@@ -2,8 +2,8 @@ package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat.json.HatJsonFormats
+import io.dataswift.models.hat._
 import org.hatdex.hat.api.service.{ LogService, RemoteExecutionContext }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.utils.HatBodyParsers
@@ -22,6 +22,7 @@ class LogController @Inject() (
     extends HatApiController(components, silhouette)
     with HatJsonFormats {
 
+  import io.dataswift.models.hat.json.LogRequestFormats._
   private val logger = Logger(this.getClass)
 
   def logFrontendAction(): Action[LogRequest] =
