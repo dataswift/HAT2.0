@@ -94,14 +94,14 @@ object Dependencies {
       val apacheCommonLang         = "org.apache.commons"     % "commons-lang3"                   % "3.10"
     }
 
-
+    
     object Backend {
       private val version =
-        "2.0.4"
-      val logPlay = "io.dataswift" %% "log-play" % version intransitive()
-      val hatPlay = "io.dataswift" %% "hat-play" % version intransitive()
+        "2.1.1+1-542a1268"
+      val logPlay = "io.dataswift" %% "log-play" % version
+      val hatPlay = "io.dataswift" %% "hat-play" % version
       val hatModels = "io.dataswift" %% "hat" % version
-      val dexPlay = "io.dataswift" %% "dex-play" % version intransitive()
+      val dexPlay = "io.dataswift" %% "dex-play" % version
       val dexModels = "io.dataswift" %% "dex" % version
     }
 
