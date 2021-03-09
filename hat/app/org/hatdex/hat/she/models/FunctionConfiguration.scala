@@ -26,8 +26,13 @@ package org.hatdex.hat.she.models
 
 import java.util.UUID
 
-import io.dataswift.models.hat.json.{ ApplicationJsonProtocol, DataFeedItemJsonProtocol, RichDataJsonFormats }
 import io.dataswift.models.hat.applications._
+import io.dataswift.models.hat.json.{
+  ApplicationJsonProtocol,
+  DataFeedItemJsonProtocol,
+  LocalDateTimeMarshalling,
+  RichDataJsonFormats
+}
 import io.dataswift.models.hat.{ EndpointData, EndpointDataBundle, FormattedText }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataBundlesRow, SheFunctionRow, SheFunctionStatusRow }
@@ -153,11 +158,9 @@ object FunctionTrigger {
 
 }
 
-trait FunctionConfigurationJsonProtocol
-    extends JodaWrites
-    with JodaReads
-    with RichDataJsonFormats
-    with DataFeedItemJsonProtocol {
+trait FunctionConfigurationJsonProtocol extends JodaWrites with JodaReads with LocalDateTimeMarshalling {
+  import RichDataJsonFormats._
+  import DataFeedItemJsonProtocol._
   import FunctionTrigger._
   import ApplicationJsonProtocol.applicationDeveloperFormat
   import ApplicationJsonProtocol.applicationGraphicsFormat

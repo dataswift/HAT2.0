@@ -24,14 +24,14 @@
 
 package org.hatdex.hat.api.service.richData
 
-import io.dataswift.models.hat._
-import org.joda.time.LocalDateTime
-import play.api.Logger
-
 import scala.concurrent.Await
 import scala.concurrent.duration._
+
+import io.dataswift.models.hat._
 import io.dataswift.test.common.BaseSpec
+import org.joda.time.LocalDateTime
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
+import play.api.Logger
 
 class DataDebitContractServiceSpec
     extends BaseSpec

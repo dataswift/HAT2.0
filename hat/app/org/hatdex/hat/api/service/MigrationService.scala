@@ -25,12 +25,14 @@
 package org.hatdex.hat.api.service
 
 import java.util.UUID
+import javax.inject.Inject
+
+import scala.concurrent.Future
 
 import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.{ Flow, Keep, RunnableGraph, Sink, Source }
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
-import javax.inject.Inject
 import io.dataswift.models.hat.json.HatJsonFormats
 import io.dataswift.models.hat.{ ApiDataRecord, _ }
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
@@ -42,8 +44,6 @@ import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
 import play.api.libs.json._
-
-import scala.concurrent.Future
 
 class MigrationService @Inject() (
     richDataService: RichDataService,

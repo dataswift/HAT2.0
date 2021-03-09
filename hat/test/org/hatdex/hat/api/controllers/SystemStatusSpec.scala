@@ -24,27 +24,26 @@
 
 package org.hatdex.hat.api.controllers
 
-import com.mohiva.play.silhouette.test._
-import org.hatdex.hat.api.HATTestContext
-import io.dataswift.models.hat.json.HatJsonFormats
-import io.dataswift.models.hat.{ HatStatus, StatusKind }
-import play.api.Logger
-import play.api.test.{ FakeRequest }
-
 import scala.concurrent.Await
 import scala.concurrent.duration._
+
+import com.mohiva.play.silhouette.test._
+import io.dataswift.models.hat.json.HatJsonFormats
+import io.dataswift.models.hat.{ HatStatus, StatusKind }
 import io.dataswift.test.common.BaseSpec
+import org.hatdex.hat.api.HATTestContext
 import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
-import play.api.test.Helpers
+import play.api.Logger
+import play.api.test.{ FakeRequest }
 import play.api.test.Helpers._
 
 class SystemStatusSpec
     extends BaseSpec
     with BeforeAndAfter
     with BeforeAndAfterAll
-    with HatJsonFormats
     with HATTestContext {
 
+  import HatJsonFormats._
   import scala.concurrent.ExecutionContext.Implicits.global
   val logger = Logger(this.getClass)
 

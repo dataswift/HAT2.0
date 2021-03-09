@@ -26,6 +26,8 @@ package org.hatdex.hat.api.service.monitoring
 
 import javax.inject.Inject
 
+import scala.util.{ Success, Try }
+
 import akka.actor.ActorRef
 import akka.event.{ EventBus, SubchannelClassification }
 import akka.util.Subclassification
@@ -38,8 +40,6 @@ import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement.HatServer
 import org.joda.time.DateTime
 import play.api.Logger
-
-import scala.util.{ Success, Try }
 
 /**
   * Publishes the payload of the MsgEnvelope when the topic of the

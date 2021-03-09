@@ -24,22 +24,21 @@
 
 package org.hatdex.hat.api.controllers
 
-import com.mohiva.play.silhouette.test._
-import org.hatdex.hat.api.service.applications.ApplicationsServiceContext
-import io.dataswift.models.hat.json.ApplicationJsonProtocol
-import io.dataswift.models.hat.applications.{ Application, HatApplication }
-import io.dataswift.models.hat.{ AccessToken, ErrorMessage }
-import org.hatdex.hat.authentication.HatApiAuthEnvironment
-import play.api.libs.json.{ JsObject, JsString }
-import play.api.Logger
-import play.api.test.{ FakeRequest }
-
 import scala.concurrent.Await
 import scala.concurrent.duration._
+
+import com.mohiva.play.silhouette.test._
+import io.dataswift.models.hat.applications.{ Application, HatApplication }
+import io.dataswift.models.hat.json.ApplicationJsonProtocol
+import io.dataswift.models.hat.{ AccessToken, ErrorMessage }
 import io.dataswift.test.common.BaseSpec
+import org.hatdex.hat.api.service.applications.ApplicationsServiceContext
+import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
-import play.api.test.Helpers
+import play.api.Logger
+import play.api.libs.json.{ JsObject, JsString }
 import play.api.test.Helpers._
+import play.api.test.{FakeRequest, Helpers}
 
 class ApplicationsSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with ApplicationsServiceContext {
 

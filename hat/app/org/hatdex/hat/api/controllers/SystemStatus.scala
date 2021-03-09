@@ -25,21 +25,22 @@
 package org.hatdex.hat.api.controllers
 
 import javax.inject.Inject
+
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success }
+
 import com.mohiva.play.silhouette.api.Silhouette
-import io.dataswift.models.hat.json.HatJsonFormats
 import io.dataswift.models.hat._
+import io.dataswift.models.hat.json.HatJsonFormats
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.{ SystemStatusService, UsersService }
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.ocpsoft.prettytime.PrettyTime
-import play.api.{ Configuration, Logger }
 import play.api.cache.{ AsyncCacheApi, Cached }
 import play.api.libs.json._
 import play.api.mvc._
-
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Failure, Success }
+import play.api.{ Configuration, Logger }
 
 class SystemStatus @Inject() (
     components: ControllerComponents,
@@ -53,8 +54,8 @@ class SystemStatus @Inject() (
   )(implicit
     val ec: ExecutionContext,
     val applicationsService: ApplicationsService)
-    extends HatApiController(components, silhouette)
-    with HatJsonFormats {
+    extends HatApiController(components, silhouette) {
+  import HatJsonFormats._
 
   private val dbStorageAllowance: Long =
     configuration.get[Long]("resourceManagement.hatDBStorageAllowance")

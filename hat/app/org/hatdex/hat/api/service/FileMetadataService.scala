@@ -26,6 +26,9 @@ package org.hatdex.hat.api.service
 
 import javax.inject.Inject
 
+import scala.concurrent.Future
+import scala.util.{ Failure, Success }
+
 import io.dataswift.models.hat.json.HatJsonFormats
 import io.dataswift.models.hat.{ ApiHatFile, HatFileStatus }
 import org.hatdex.hat.authentication.models.HatUser
@@ -36,9 +39,6 @@ import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
 import play.api.libs.json.Json
-
-import scala.concurrent.Future
-import scala.util.{ Failure, Success }
 
 class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
   val logger: Logger = Logger(this.getClass)
@@ -176,7 +176,6 @@ class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
   }
 
   def delete(fileId: String)(implicit db: Database): Future[ApiHatFile] = {
-    import HatJsonFormats._
     val query = for {
       _ <- HatFile
              .filter(_.id === fileId)

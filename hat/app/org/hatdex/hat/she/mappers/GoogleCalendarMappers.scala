@@ -2,7 +2,8 @@ package org.hatdex.hat.she.mappers
 
 import java.util.UUID
 
-import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, FilterOperator, PropertyQuery }
+import scala.util.Try
+
 import io.dataswift.models.hat.applications.{
   DataFeedItem,
   DataFeedItemContent,
@@ -10,10 +11,9 @@ import io.dataswift.models.hat.applications.{
   DataFeedItemTitle,
   LocationAddress
 }
+import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, FilterOperator, PropertyQuery }
 import org.joda.time.{ DateTime, DateTimeZone }
 import play.api.libs.json.{ JsValue, Json }
-
-import scala.util.Try
 
 class GoogleCalendarMapper extends DataEndpointMapper {
   override protected val dataDeduplicationField: Option[String] = Some("id")

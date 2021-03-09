@@ -24,10 +24,13 @@
 
 package org.hatdex.hat.api.controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-import io.dataswift.models.hat.json.ApplicationJsonProtocol
+
+import scala.concurrent.Future
+
+import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat.applications.HatApplication
+import io.dataswift.models.hat.json.ApplicationJsonProtocol
 import io.dataswift.models.hat.{ ApplicationManage, ErrorMessage, Owner }
 import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.api.service.applications.ApplicationsService
@@ -38,8 +41,6 @@ import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
 
-import scala.concurrent.Future
-
 class ApplicationRequestProxy @Inject() (
     components: ControllerComponents,
     silhouette: Silhouette[HatApiAuthEnvironment],
@@ -47,9 +48,7 @@ class ApplicationRequestProxy @Inject() (
   )(implicit
     val ec: RemoteExecutionContext,
     applicationsService: ApplicationsService)
-    extends HatApiController(components, silhouette)
-    with ApplicationJsonProtocol {
-
+    extends HatApiController(components, silhouette) {
   import io.dataswift.models.hat.json.HatJsonFormats.errorMessage
 
   val logger = Logger(this.getClass)

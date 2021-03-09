@@ -24,17 +24,16 @@
 
 package org.hatdex.hat.she.functions
 
-import io.dataswift.models.hat.FilterOperator.Between
-import org.hatdex.hat.she.mappers._
-import org.joda.time.{ DateTime, DateTimeUtils }
-import play.api.Logger
-
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import io.dataswift.test.common.BaseSpec
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
-import scala.util.Success
 import scala.util.Failure
+
+import io.dataswift.models.hat.FilterOperator.Between
+import io.dataswift.test.common.BaseSpec
+import org.hatdex.hat.she.mappers._
+import org.joda.time.{ DateTime, DateTimeUtils }
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
+import play.api.Logger
 
 class DataFeedDirectMapperSpec
     extends BaseSpec
@@ -42,7 +41,6 @@ class DataFeedDirectMapperSpec
     with BeforeAndAfterAll
     with DataFeedDirectMapperContext {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
   val logger = Logger(this.getClass)
 
   override def beforeAll: Unit = {

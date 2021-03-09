@@ -24,10 +24,13 @@
 
 package org.hatdex.hat.api.controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-import io.dataswift.models.hat.json.ApplicationJsonProtocol
+
+import scala.concurrent.{ ExecutionContext, Future }
+
+import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat._
+import io.dataswift.models.hat.json.ApplicationJsonProtocol
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.richData.RichDataDuplicateBundleException
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
@@ -35,17 +38,14 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
 
-import scala.concurrent.{ ExecutionContext, Future }
-
 class Applications @Inject() (
     components: ControllerComponents,
     silhouette: Silhouette[HatApiAuthEnvironment]
   )(implicit
     val ec: ExecutionContext,
     applicationsService: ApplicationsService)
-    extends HatApiController(components, silhouette)
-    with ApplicationJsonProtocol {
-
+    extends HatApiController(components, silhouette) {
+  import ApplicationJsonProtocol._
   import io.dataswift.models.hat.json.HatJsonFormats.{ accessTokenFormat, errorMessage }
 
   val logger: Logger = Logger(this.getClass)

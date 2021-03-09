@@ -24,6 +24,8 @@
 
 package org.hatdex.hat.authentication
 
+import scala.concurrent.{ ExecutionContext, Future }
+
 import com.mohiva.play.silhouette.api.Authorization
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
 import io.dataswift.models.hat.applications.HatApplication
@@ -32,8 +34,6 @@ import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.resourceManagement.HatServer
 import play.api.mvc.Request
-
-import scala.concurrent.{ ExecutionContext, Future }
 
 object WithTokenParameters {
   def roleMatchesToken(

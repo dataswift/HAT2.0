@@ -24,13 +24,12 @@
 
 package org.hatdex.hat.api.service
 
+import scala.concurrent.duration._
+
 import com.amazonaws.auth.{ AWSStaticCredentialsProvider, BasicAWSCredentials }
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
 import org.scalatestplus.mockito._
-import org.mockito.Mockito.when
-
-import scala.concurrent.duration._
 
 case class FileManagerS3Mock() extends MockitoSugar {
   // TOOD: Move this to localstack test container

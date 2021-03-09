@@ -14,6 +14,7 @@ lazy val hat = project
   .enablePlugins(SbtWeb, SbtSassify, SbtGzip, SbtDigest)
   .enablePlugins(BasicSettings)
   .settings(
+    dependencyOverrides := Library.overrides,
     libraryDependencies ++= Seq(
           Library.Play.ws,
           filters,

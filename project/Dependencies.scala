@@ -41,6 +41,7 @@ object Dependencies {
     "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com"
   )
 
+
   object Library {
 
     object Version {
@@ -97,12 +98,12 @@ object Dependencies {
     
     object Backend {
       private val version =
-        "2.1.1+1-542a1268"
-      val logPlay = "io.dataswift" %% "log-play" % version
-      val hatPlay = "io.dataswift" %% "hat-play" % version
-      val hatModels = "io.dataswift" %% "hat" % version
-      val dexPlay = "io.dataswift" %% "dex-play" % version
-      val dexModels = "io.dataswift" %% "dex" % version
+        "2.1.1+4-f6c88a1c"
+      val logPlay = "io.dataswift-play2625" %% "log-play" % version
+      val hatPlay = "io.dataswift-play2625" %% "hat-play" % version
+      val hatModels = "io.dataswift-play2625" %% "hat" % version
+      val dexPlay = "io.dataswift-play2625" %% "dex-play" % version
+      val dexModels = "io.dataswift-play2625" %% "dex" % version
     }
 
     object HATDeX {
@@ -139,5 +140,16 @@ object Dependencies {
       val testCommon            = "io.dataswift" %% "test-common"             % Version.DsTestTools
       val integrationTestCommon = "io.dataswift" %% "integration-test-common" % Version.DsTestTools
     }
+    val overrides = Seq(
+      "com.typesafe.play"      %% "play"                    % Play.version,
+      "com.typesafe.play"      %% "play-server"             % Play.version,
+      "com.typesafe.play"      %% "play-ahc-ws"             % Play.version,
+      "com.typesafe.play"      %% "play-akka-http-server"   % Play.version,
+      "com.typesafe.play"      %% "filters-helpers"         % Play.version,
+      Library.Play.cache,
+      Library.Play.ws,
+      Library.Play.json,
+      Library.Play.jsonJoda
+  )
   }
 }
