@@ -97,13 +97,12 @@ object Dependencies {
 
     
     object Backend {
-      private val version =
-        "2.1.1+4-f6c88a1c"
-      val logPlay = "io.dataswift-play2625" %% "log-play" % version
-      val hatPlay = "io.dataswift-play2625" %% "hat-play" % version
-      val hatModels = "io.dataswift-play2625" %% "hat" % version
-      val dexPlay = "io.dataswift-play2625" %% "dex-play" % version
-      val dexModels = "io.dataswift-play2625" %% "dex" % version
+      private val version = "2.1.1_play2.6.25"
+      val logPlay = "io.dataswift" %% "log-play" % version
+      val hatPlay = "io.dataswift" %% "hat-play" % version
+      val hatModels = "io.dataswift" %% "hat" % version
+      val dexPlay = "io.dataswift" %% "dex-play" % version
+      val dexModels = "io.dataswift" %% "dex" % version
     }
 
     object HATDeX {
