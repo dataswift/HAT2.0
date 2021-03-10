@@ -24,18 +24,14 @@
 
 package org.hatdex.hat.utils
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.{ Inject, Singleton }
 
-import scala.concurrent.{Future, ExecutionContext}
-import scala.util.Try
+import scala.concurrent.ExecutionContext
+
 import akka.stream.Materializer
-import com.nimbusds.jose.JWSObject
-import com.nimbusds.jwt.JWTClaimsSet
 import io.dataswift.log.Component
 import io.dataswift.log.play.Slf4jLoggingFilter
-import play.api.http.HttpErrorHandler
-import play.api.mvc.{Filter, Result, RequestHeader}
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 
 @Singleton
 class ActiveHatCounter() {
@@ -47,8 +43,8 @@ class ActiveHatCounter() {
   def decrease(): Unit = this.synchronized(count -= 1)
 }
 
-class LoggingFilter @Inject() (configuration: Configuration,
-                               implicit override val mat: Materializer,
-                               implicit override val ec: ExecutionContext)
-  extends Slf4jLoggingFilter(configuration, Component.Hat)
-
+class LoggingFilter @Inject() (
+    configuration: Configuration,
+    implicit override val mat: Materializer,
+    implicit override val ec: ExecutionContext)
+    extends Slf4jLoggingFilter(configuration, Component.Hat)
