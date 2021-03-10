@@ -98,7 +98,7 @@ lazy val hat = project
     dockerCommands := (buildEnv.value match {
           case BuildEnv.Developement | BuildEnv.Test =>
             Seq(
-              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine"),
+              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine"),
               Cmd("WORKDIR", "/opt/docker/bin"),
               Cmd("RUN", "apk add wget"),
               Cmd(
