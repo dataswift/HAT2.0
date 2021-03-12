@@ -14,6 +14,7 @@ lazy val hat = project
   .enablePlugins(SbtWeb, SbtSassify, SbtGzip, SbtDigest)
   .enablePlugins(BasicSettings)
   .settings(
+    dependencyOverrides := Library.overrides,
     libraryDependencies ++= Seq(
           Library.Play.ws,
           filters,
@@ -25,6 +26,11 @@ lazy val hat = project
           Library.Play.playGuard,
           Library.Play.json,
           Library.Play.jsonJoda,
+          Library.Backend.logPlay,
+          Library.Backend.dexPlay,
+          Library.Backend.hatPlay,
+          Library.Backend.dexModels,
+          Library.Backend.hatModels,
           Library.Play.Silhouette.passwordBcrypt,
           Library.Play.Silhouette.persistence,
           Library.Play.Silhouette.cryptoJca,

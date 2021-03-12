@@ -24,28 +24,22 @@
 
 package org.hatdex.hat.api.service.applications
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+import akka.Done
 import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
 import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, JWTRS256AuthenticatorSettings }
-import org.hatdex.hat.api.models.EndpointData
-import org.hatdex.hat.api.models.applications.{ ApplicationStatus, HatApplication, Version }
-import org.hatdex.hat.api.service.applications.ApplicationExceptions.{
-  HatApplicationDependencyException,
-  HatApplicationSetupException
-}
+import io.dataswift.models.hat.EndpointData
+import io.dataswift.models.hat.applications.{ ApplicationStatus, HatApplication, Version }
+import io.dataswift.test.common.BaseSpec
+import org.hatdex.hat.api.service.applications.ApplicationExceptions.HatApplicationSetupException
 import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataService }
-import org.hatdex.hat.utils.AdjudicatorRequestTypes.JoinContractRequestFailure.ServiceRespondedWithFailure
 import org.joda.time.DateTime
+import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
-import akka.Done
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
-import io.dataswift.test.common.BaseSpec
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
-import play.api.test.Helpers
-import play.api.test.Helpers._
 
 class ApplicationsServiceSpec
     extends BaseSpec

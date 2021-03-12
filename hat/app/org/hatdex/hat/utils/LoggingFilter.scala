@@ -25,15 +25,13 @@
 package org.hatdex.hat.utils
 
 import javax.inject.{ Inject, Singleton }
-import akka.stream.Materializer
-import com.nimbusds.jose.JWSObject
-import com.nimbusds.jwt.JWTClaimsSet
-import play.api.http.HttpErrorHandler
-import play.api.mvc.{ Filter, RequestHeader, Result }
-import play.api.{ Configuration, Logger }
 
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.Try
+import scala.concurrent.ExecutionContext
+
+import akka.stream.Materializer
+import io.dataswift.log.Component
+import io.dataswift.log.play.Slf4jLoggingFilter
+import play.api.Configuration
 
 @Singleton
 class ActiveHatCounter() {
@@ -46,53 +44,7 @@ class ActiveHatCounter() {
 }
 
 class LoggingFilter @Inject() (
-    errorHandler: HttpErrorHandler,
     configuration: Configuration,
-    hatCounter: ActiveHatCounter
-  )(implicit
-    ec: ExecutionContext,
-    val mat: Materializer)
-    extends Filter {
-  private val logger = Logger("api")
-
-  def apply(
-      nextFilter: RequestHeader => Future[Result]
-    )(requestHeader: RequestHeader): Future[Result] = {
-
-    val startTime = System.currentTimeMillis
-
-    nextFilter(requestHeader)
-      .recoverWith({
-        case e => errorHandler.onServerError(requestHeader, e)
-      })
-      .map { result =>
-        val active      = hatCounter.get()
-        val requestTime = System.currentTimeMillis - startTime
-        logger.info(
-          s"[${requestHeader.remoteAddress}] [${requestHeader.method}:${requestHeader.host}:${requestHeader.uri}] " +
-              s"[${result.header.status}] [$requestTime:ms] [hats:$active] ${tokenInfo(requestHeader)}"
-        )
-
-        result.withHeaders("Request-Time" -> requestTime.toString)
-      }
-  }
-
-  private val authTokenFieldName: String =
-    configuration.get[String]("silhouette.authenticator.fieldName")
-  private def tokenInfo(requestHeader: RequestHeader): String =
-    requestHeader.queryString
-      .get(authTokenFieldName)
-      .flatMap(_.headOption)
-      .orElse(requestHeader.headers.get(authTokenFieldName))
-      .flatMap(t =>
-        if (t.isEmpty) None
-        else Some(t)
-      )
-      .flatMap(t => Try(JWSObject.parse(t)).toOption)
-      .map(o => JWTClaimsSet.parse(o.getPayload.toJSONObject))
-      .map { claimSet =>
-        s"[${Option(claimSet.getStringClaim("application")).getOrElse("api")}@" +
-          s"${Option(claimSet.getStringClaim("applicationVersion")).getOrElse("_")}]"
-      }
-      .getOrElse("[unauthenticated@_]")
-}
+    implicit override val mat: Materializer,
+    implicit override val ec: ExecutionContext)
+    extends Slf4jLoggingFilter(configuration, Component.Hat)
