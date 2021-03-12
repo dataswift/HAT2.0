@@ -30,7 +30,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.{ Assets, AssetsFinder, AssetsFinderProvider }
 import io.dataswift.models.hat.EndpointDataBundle
-import io.dataswift.models.hat.json.{ HatJsonFormats, RichDataJsonFormats }
+import io.dataswift.models.hat.json.RichDataJsonFormats
 import org.hatdex.hat.api.service.richData.{ RichBundleService, RichDataService }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import play.api.cache.{ Cached, CachedBuilder }

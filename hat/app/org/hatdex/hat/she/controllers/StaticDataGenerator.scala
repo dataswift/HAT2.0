@@ -29,10 +29,8 @@ import scala.concurrent.ExecutionContext
 
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat.Owner
-import io.dataswift.models.hat.json.RichDataJsonFormats
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol
 import org.hatdex.hat.she.service.StaticDataGeneratorService
 import play.api.libs.json.Json
 import play.api.mvc._

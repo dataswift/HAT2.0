@@ -30,7 +30,6 @@ import scala.concurrent.Future
 
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat.applications.HatApplication
-import io.dataswift.models.hat.json.ApplicationJsonProtocol
 import io.dataswift.models.hat.{ ApplicationManage, ErrorMessage, Owner }
 import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.api.service.applications.ApplicationsService

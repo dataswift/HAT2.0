@@ -32,10 +32,9 @@ import scala.util.Try
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.applications.{ DataFeedItem, Version }
-import io.dataswift.models.hat.json.{ DataFeedItemJsonProtocol, RichDataJsonFormats }
+import io.dataswift.models.hat.json.DataFeedItemJsonProtocol
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol
 import org.hatdex.hat.she.service._
 import play.api.libs.json.Json
 import play.api.mvc._
