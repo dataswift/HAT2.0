@@ -24,18 +24,11 @@
 
 package org.hatdex.hat.api
 
-import java.io.StringReader
-import java.util.UUID
-
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-
 import akka.Done
 import akka.stream.Materializer
 import com.amazonaws.services.s3.AmazonS3
 import com.atlassian.jwt.core.keys.KeyUtils
-import com.dimafeng.testcontainers.{ PostgreSQLContainer }
-import com.google.inject.name.Named
+import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette, SilhouetteProvider }
 import com.mohiva.play.silhouette.test._
@@ -51,15 +44,20 @@ import org.hatdex.hat.phata.models.MailTokenUser
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, LoggingProvider, MockLoggingProvider }
 import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
-import org.mockito.ArgumentMatchers.{ any }
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
 import play.api.i18n.{ Lang, MessagesApi }
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.{Application, Configuration}
+import play.api.{ Application, Configuration }
 import play.cache.NamedCacheImpl
+
+import java.io.StringReader
+import java.util.UUID
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
 
 trait HATTestContext extends MockitoSugar {
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -232,10 +230,6 @@ trait HATTestContext extends MockitoSugar {
     }
 
     @Provides
-    def provideCookieAuthenticatorService(): AwsS3Configuration =
-      fileManagerS3Mock.s3Configuration
-
-    @Provides @Named("s3client-file-manager")
     def provides3Client(): AmazonS3 =
       fileManagerS3Mock.mockS3client
 

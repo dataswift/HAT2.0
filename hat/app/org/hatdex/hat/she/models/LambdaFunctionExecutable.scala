@@ -24,17 +24,12 @@
 
 package org.hatdex.hat.she.models
 
-import java.util.concurrent.ExecutorService
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-
 import akka.actor.ActorSystem
 import akka.stream.alpakka.awslambda.scaladsl.AwsLambdaFlow
 import akka.stream.scaladsl.{ Sink, Source }
 import akka.stream.{ ActorMaterializer, Materializer }
 import akka.util.ByteString
-import com.amazonaws.auth.{ AWSStaticCredentialsProvider, BasicAWSCredentials }
+import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper
 import com.amazonaws.client.builder.ExecutorFactory
 import com.amazonaws.services.lambda.model.{ InvokeRequest, InvokeResult }
 import com.amazonaws.services.lambda.{ AWSLambdaAsync, AWSLambdaAsyncClientBuilder }
@@ -47,6 +42,10 @@ import org.joda.time.DateTime
 import play.api.libs.json.{ Format, Json }
 import play.api.{ Configuration, Logger }
 
+import java.util.concurrent.ExecutorService
+import javax.inject.Inject
+import scala.concurrent.{ ExecutionContext, Future }
+
 class LambdaFunctionExecutable(
     id: String,
     version: Version,
@@ -57,8 +56,8 @@ class LambdaFunctionExecutable(
   )(config: Configuration,
     lambdaExecutor: AwsLambdaExecutor)
     extends FunctionExecutable {
-  import io.dataswift.models.hat.json.RichDataJsonFormats._
   import FunctionConfigurationJsonProtocol._
+  import io.dataswift.models.hat.json.RichDataJsonFormats._
 
   protected val logger: Logger = Logger(this.getClass)
   private val lambdaLogs       = config.get[String]("she.aws.logs")
@@ -155,18 +154,11 @@ class AwsLambdaExecutor @Inject() (
 
   implicit private val materializer: Materializer = ActorMaterializer()
 
-  private val credentials = new AWSStaticCredentialsProvider(
-    new BasicAWSCredentials(
-      configuration.get[String]("she.aws.accessKey"),
-      configuration.get[String]("she.aws.secretKey")
-    )
-  )
-
   private val lambdaClient: AWSLambdaAsync =
     AWSLambdaAsyncClientBuilder
       .standard()
       .withRegion(configuration.get[String]("she.aws.region"))
-      .withCredentials(credentials)
+      .withCredentials(new EC2ContainerCredentialsProviderWrapper)
       .withExecutorFactory(new StaticExecutorFactory(ec))
       .build()
 
