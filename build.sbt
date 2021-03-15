@@ -4,6 +4,9 @@ import Dependencies.Versions
 import sbt.Keys._
 import com.typesafe.sbt.packager.docker._
 
+val codeguruURI =
+  "https://repo1.maven.org/maven2/software/amazon/codeguruprofiler/codeguru-profiler-java-agent-standalone/1.1.0/codeguru-profiler-java-agent-standalone-1.1.0.jar"
+
 // the application
 lazy val hat = project
   .in(file("hat"))
@@ -11,6 +14,7 @@ lazy val hat = project
   .enablePlugins(SbtWeb, SbtSassify, SbtGzip, SbtDigest)
   .enablePlugins(BasicSettings)
   .settings(
+    dependencyOverrides := Library.overrides,
     libraryDependencies ++= Seq(
           Library.Play.ws,
           filters,
@@ -22,15 +26,17 @@ lazy val hat = project
           Library.Play.playGuard,
           Library.Play.json,
           Library.Play.jsonJoda,
+          Library.Backend.logPlay,
+          Library.Backend.dexPlay,
+          Library.Backend.hatPlay,
+          Library.Backend.dexModels,
+          Library.Backend.hatModels,
           Library.Play.Silhouette.passwordBcrypt,
           Library.Play.Silhouette.persistence,
           Library.Play.Silhouette.cryptoJca,
           Library.Play.Silhouette.silhouette,
           Library.Play.Jwt.atlassianJwtCore,
           Library.Play.Jwt.bouncyCastlePkix,
-          Library.Specs2.core,
-          Library.Specs2.matcherExtra,
-          Library.Specs2.mock,
           Library.HATDeX.hatClient,
           Library.HATDeX.dexClient,
           Library.HATDeX.codegen,
@@ -44,16 +50,22 @@ lazy val hat = project
           Library.scalaGuice,
           Library.circeConfig,
           Library.ContractLibrary.adjudicator,
-          Library.Utils.apacheCommonLang
+          Library.Utils.apacheCommonLang,
+          Library.Prometheus.filters
         ),
     libraryDependencies := (buildEnv.value match {
           case BuildEnv.Developement | BuildEnv.Test =>
             libraryDependencies.value ++ Seq(
-                  Library.Play.specs2,
-                  Library.Specs2.core,
-                  Library.Specs2.matcherExtra,
-                  Library.Specs2.mock,
-                  Library.Play.Silhouette.silhouetteTestkit
+                  Library.Play.Silhouette.silhouetteTestkit,
+                  Library.Test.scalatest,
+                  Library.Test.scalatestwordspec,
+                  Library.Test.scalaplaytest,
+                  Library.Test.scalaplaytestmock,
+                  Library.TestContainers.postgresql,
+                  Library.TestContainers.localstack,
+                  Library.TestContainers.scalaTest,
+                  Library.Dataswift.testCommon,
+                  Library.Dataswift.integrationTestCommon
                 )
           case BuildEnv.Stage | BuildEnv.Production =>
             libraryDependencies.value.map(excludeSpecs2)
@@ -82,11 +94,42 @@ lazy val hat = project
     // as Bash is incompatible with Alpine
     javaOptions in Universal ++= Seq(),
     packageName in Docker := "hat",
-    maintainer in Docker := "andrius.aucinas@hatdex.org",
+
     version in Docker := version.value,
-    dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine",
-    dockerExposedPorts := Seq(9000),
-    dockerEntrypoint := Seq("bin/hat")
+    // add a flag to not run in prod
+    // modify the binary to include "-javaagent:codeguru-profiler-java-agent-standalone-1.1.0.jar="profilingGroupName:HatInDev,heapSummaryEnabled:true"
+    dockerCommands := (buildEnv.value match {
+          case BuildEnv.Developement | BuildEnv.Test =>
+            Seq(
+              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine"),
+              Cmd("WORKDIR", "/opt/docker/bin"),
+              Cmd("CMD", s"./${packageName.value}"),
+              Cmd("EXPOSE", "9000"),
+
+              Cmd("RUN", s"apk add --no-cache wget; wget --no-check-certificate ${codeguruURI}"),
+
+              Cmd("USER", "daemon"),
+              Cmd("COPY", "--chown=daemon:daemon", "1/opt", "opt", "/opt/")
+            )
+          case BuildEnv.Stage | BuildEnv.Production =>
+            Seq(
+              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine"),
+              Cmd("WORKDIR", "/opt/docker/bin"),
+              Cmd("CMD", s"./${packageName.value}"),
+              Cmd("EXPOSE", "9000"),
+              Cmd("USER", "daemon"),
+              Cmd("COPY", "--chown=daemon:daemon", "1/opt", "opt", "/opt/")
+            )
+        }),
+    javaOptions in Universal ++= (buildEnv.value match {
+          case BuildEnv.Developement | BuildEnv.Test =>
+            Seq(
+              "-javaagent:/opt/docker/bin/codeguru-profiler-java-agent-standalone-1.1.0.jar=\"profilingGroupName:HatInDev,heapSummaryEnabled:true\""
+            )
+          case BuildEnv.Stage | BuildEnv.Production =>
+            Seq(
+            )
+        })
   )
   .enablePlugins(SlickCodeGeneratorPlugin)
   .settings(
@@ -104,7 +147,8 @@ inThisBuild(
   List(
     scalaVersion := Versions.scalaVersion,
     semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision
+    semanticdbVersion := scalafixSemanticdb.revision,
+    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.4.4"
   )
 )
 

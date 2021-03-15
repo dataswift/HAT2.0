@@ -24,42 +24,36 @@
 
 package org.hatdex.hat.utils
 
-import akka.actor.Scheduler
-import akka.pattern.after
-
 import scala.concurrent.duration._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Random
+
+import akka.actor.Scheduler
+import akka.pattern.after
 
 object FutureRetries {
   def retry[T](
       f: => Future[T],
       delays: List[FiniteDuration]
     )(implicit ec: ExecutionContext,
-      s: Scheduler
-    ): Future[T] = {
+      s: Scheduler): Future[T] =
     f recoverWith {
-      case _ if delays.nonEmpty => after(delays.head, s)(retry(f, delays.tail))
-    }
-  }
+        case _ if delays.nonEmpty => after(delays.head, s)(retry(f, delays.tail))
+      }
 
   def withDefault(
       delays: List[FiniteDuration],
       retries: Int,
-      default: FiniteDuration
-    ): List[FiniteDuration] = {
-    if (delays.length > retries) {
+      default: FiniteDuration): List[FiniteDuration] =
+    if (delays.length > retries)
       delays take retries
-    } else {
+    else
       delays ++ List.fill(retries - delays.length)(default)
-    }
-  }
 
   def withJitter(
       delays: List[FiniteDuration],
       maxJitter: Double,
-      minJitter: Double
-    ): List[FiniteDuration] = {
+      minJitter: Double): List[FiniteDuration] =
     delays.map { delay =>
       val jitter =
         delay * (minJitter + (maxJitter - minJitter) * Random.nextDouble)
@@ -68,10 +62,9 @@ object FutureRetries {
         case _                 => delay
       }
     }
-  }
 
   val fibonacci: Stream[FiniteDuration] =
     0.seconds #:: 1.seconds #:: (fibonacci zip fibonacci.tail).map { t =>
-      t._1 + t._2
-    }
+          t._1 + t._2
+        }
 }

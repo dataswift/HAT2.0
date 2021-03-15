@@ -25,6 +25,9 @@
 package org.hatdex.hat.utils
 
 import javax.inject.Inject
+
+import scala.concurrent.{ ExecutionContext, Future }
+
 import akka.Done
 import akka.actor.ActorSystem
 import org.hatdex.hat.api.service.RemoteExecutionContext
@@ -35,8 +38,6 @@ import play.api.libs.mailer.{ Email, MailerClient }
 import play.api.mvc.RequestHeader
 import play.api.{ Configuration, UsefulException }
 import play.twirl.api.Html
-
-import scala.concurrent.{ ExecutionContext, Future }
 
 trait Mailer {
   protected val configuration: Configuration
@@ -88,8 +89,6 @@ trait HatMailer extends Mailer {
       exception: Throwable
     )(implicit m: Messages): Done
 
-  // add MessagesApi implicitly
-  // remove Messages
   def passwordReset(
       email: String,
       resetLink: String
@@ -97,18 +96,22 @@ trait HatMailer extends Mailer {
       lang: Lang,
       server: HatServer): Done
 
-  // add MessagesApi implicitly
-  // remove Messages
   def passwordChanged(
       email: String
     )(implicit m: MessagesApi,
       lang: Lang,
       server: HatServer): Done
 
-  // no changes
   def verifyEmail(
       email: String,
       verificationLink: String
+    )(implicit m: MessagesApi,
+      lang: Lang,
+      server: HatServer): Done
+
+  def emailVerified(
+      email: String,
+      loginLink: String
     )(implicit m: MessagesApi,
       lang: Lang,
       server: HatServer): Done
@@ -150,10 +153,6 @@ class HatMailerImpl @Inject() (
     Done
   }
 
-  // add MessagesApi implicitly
-  // remove Messages
-  // change the txt and html email templates
-  // emailAuthPasswordChange {txt|html}
   def passwordReset(
       email: String,
       resetLink: String
@@ -169,10 +168,6 @@ class HatMailerImpl @Inject() (
     Done
   }
 
-  // add implicit MessagesApi
-  // remove Messages
-  // change txt and html to
-  // emailAuthPasswordChanged.scala.{txt|html}
   def passwordChanged(
       email: String
     )(implicit messages: MessagesApi,
@@ -187,9 +182,6 @@ class HatMailerImpl @Inject() (
     Done
   }
 
-  // change txt and html to
-  // emailAuthVerifyEmail.scala.{txt|html}
-  // data is ok
   def verifyEmail(
       email: String,
       verificationLink: String
@@ -197,12 +189,27 @@ class HatMailerImpl @Inject() (
       lang: Lang,
       server: HatServer): Done = {
     sendEmail(email)(
-      from = "pda@hubofallthings.net",
+      from = emailFrom,
       subject = messages("email.dataswift.auth.subject.verifyEmail"),
       bodyHtml = views.html.mails.emailAuthVerifyEmail(email, verificationLink),
       bodyText = views.txt.mails
         .emailAuthVerifyEmail(email, verificationLink)
         .toString()
+    )
+    Done
+  }
+
+  def emailVerified(
+      email: String,
+      loginLink: String
+    )(implicit messages: MessagesApi,
+      lang: Lang,
+      server: HatServer): Done = {
+    sendEmail(email)(
+      from = emailFrom,
+      subject = messages("email.dataswift.auth.subject.verifyEmail"),
+      bodyHtml = views.html.mails.emailHatClaimed(email, loginLink),
+      bodyText = views.txt.mails.emailHatClaimed(email, loginLink).toString()
     )
     Done
   }

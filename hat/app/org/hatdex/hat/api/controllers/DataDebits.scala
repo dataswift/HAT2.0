@@ -25,24 +25,20 @@
 package org.hatdex.hat.api.controllers
 
 import javax.inject.Inject
+
+import scala.concurrent.{ ExecutionContext, Future }
+
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
-import org.hatdex.hat.api.json.RichDataJsonFormats
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat._
+import io.dataswift.models.hat.json.RichDataJsonFormats
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData._
-import org.hatdex.hat.authentication.{
-  ContainsApplicationRole,
-  HatApiAuthEnvironment,
-  HatApiController,
-  WithRole
-}
+import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider }
 import play.api.libs.json.Json
 import play.api.mvc._
-
-import scala.concurrent.{ ExecutionContext, Future }
 
 class DataDebits @Inject() (
     components: ControllerComponents,
@@ -54,8 +50,8 @@ class DataDebits @Inject() (
     loggingProvider: LoggingProvider,
     implicit val ec: ExecutionContext,
     implicit val applicationsService: ApplicationsService)
-    extends HatApiController(components, silhouette)
-    with RichDataJsonFormats {
+    extends HatApiController(components, silhouette) {
+  import RichDataJsonFormats._
 
   private val logger = loggingProvider.logger(this.getClass)
 
@@ -86,9 +82,9 @@ class DataDebits @Inject() (
   def updateDataDebit(dataDebitId: String): Action[DataDebitSetupRequest] =
     SecuredAction(
       WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(
-        Owner(),
-        DataDebitOwner(dataDebitId)
-      )
+          Owner(),
+          DataDebitOwner(dataDebitId)
+        )
     ).async(parsers.json[DataDebitSetupRequest]) { implicit request =>
       dataDebitService
         .updateDataDebitPermissions(
@@ -111,9 +107,9 @@ class DataDebits @Inject() (
   def getDataDebit(dataDebitId: String): Action[AnyContent] =
     SecuredAction(
       WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(
-        Owner(),
-        DataDebitOwner(dataDebitId)
-      )
+          Owner(),
+          DataDebitOwner(dataDebitId)
+        )
     ).async { implicit request =>
       logger.warn("Running new controller")
       dataDebitService
@@ -128,38 +124,36 @@ class DataDebits @Inject() (
   def getDataDebitValues(dataDebitId: String): Action[AnyContent] =
     SecuredAction(
       WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(
-        Owner(),
-        DataDebitOwner(dataDebitId)
-      )
+          Owner(),
+          DataDebitOwner(dataDebitId)
+        )
     ).async { implicit request =>
       dataDebitService
         .dataDebit(dataDebitId)
         .flatMap {
           case Some(debit) if debit.active =>
             logger.debug("Got Data Debit, fetching data")
-            val eventualData = debit.activePermissions.get.conditions map {
-              bundleConditions =>
-                logger.debug("Getting data for conditions")
-                dataService.bundleData(bundleConditions).flatMap {
-                  conditionValues =>
-                    val conditionFulfillment: Map[String, Boolean] =
-                      conditionValues.map(c => (c._1, c._2.nonEmpty))
+            val eventualData = debit.activePermissions.get.conditions map { bundleConditions =>
+              logger.debug("Getting data for conditions")
+              dataService.bundleData(bundleConditions).flatMap { conditionValues =>
+                val conditionFulfillment: Map[String, Boolean] =
+                  conditionValues.map(c => (c._1, c._2.nonEmpty))
 
-                    if (conditionFulfillment.forall(_._2)) {
-                      logger
-                        .debug(s"Data Debit $dataDebitId conditions satisfied")
-                      dataService
-                        .bundleData(debit.activePermissions.get.bundle)
-                        .map(DataDebitData(Some(conditionFulfillment), _))
-                    } else {
-                      logger.debug(
-                        s"Data Debit $dataDebitId conditions not satisfied: $conditionFulfillment"
-                      )
-                      Future.successful(
-                        DataDebitData(Some(conditionFulfillment), Map())
-                      )
-                    }
+                if (conditionFulfillment.forall(_._2)) {
+                  logger
+                    .debug(s"Data Debit $dataDebitId conditions satisfied")
+                  dataService
+                    .bundleData(debit.activePermissions.get.bundle)
+                    .map(DataDebitData(Some(conditionFulfillment), _))
+                } else {
+                  logger.debug(
+                    s"Data Debit $dataDebitId conditions not satisfied: $conditionFulfillment"
+                  )
+                  Future.successful(
+                    DataDebitData(Some(conditionFulfillment), Map())
+                  )
                 }
+              }
 
             } getOrElse {
               logger.debug(s"Data Debit $dataDebitId without conditions")
@@ -190,23 +184,20 @@ class DataDebits @Inject() (
     }
 
   def listDataDebits(): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async {
-      implicit request =>
-        dataDebitService.all map { debits =>
-          Ok(Json.toJson(debits))
-        }
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+      dataDebitService.all map { debits =>
+        Ok(Json.toJson(debits))
+      }
     }
 
   def enableDataDebitNewest(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async {
-      implicit request =>
-        enableDataDebit(dataDebitId)
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+      enableDataDebit(dataDebitId)
     }
 
   protected def enableDataDebit(
       dataDebitId: String
-    )(implicit request: SecuredRequest[HatApiAuthEnvironment, AnyContent]
-    ): Future[Result] = {
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, AnyContent]): Future[Result] = {
     val enabled = for {
       _ <- dataDebitService.dataDebitEnableNewestPermissions(dataDebitId)
       debit <- dataDebitService.dataDebit(dataDebitId)
@@ -226,25 +217,23 @@ class DataDebits @Inject() (
 
   def disableDataDebit(
       dataDebitId: String,
-      atPeriodEnd: Boolean
-    ): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async {
-      implicit request =>
-        val disabled = for {
-          _ <- dataDebitService.dataDebitDisable(dataDebitId, atPeriodEnd)
-          debit <- dataDebitService.dataDebit(dataDebitId)
-        } yield debit
+      atPeriodEnd: Boolean): Action[AnyContent] =
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
+      val disabled = for {
+        _ <- dataDebitService.dataDebitDisable(dataDebitId, atPeriodEnd)
+        debit <- dataDebitService.dataDebit(dataDebitId)
+      } yield debit
 
-        disabled
-          .andThen(
-            dataEventDispatcher.dispatchEventMaybeDataDebit(
-              DataDebitOperations.Disable()
-            )
+      disabled
+        .andThen(
+          dataEventDispatcher.dispatchEventMaybeDataDebit(
+            DataDebitOperations.Disable()
           )
-          .map {
-            case Some(debit) => Ok(Json.toJson(debit))
-            case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
-          }
+        )
+        .map {
+          case Some(debit) => Ok(Json.toJson(debit))
+          case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
+        }
     }
 
   private object Errors {
@@ -261,8 +250,7 @@ class DataDebits @Inject() (
       )
     def dataDebitBundleMalformed(
         id: String,
-        err: Throwable
-      ): ErrorMessage =
+        err: Throwable): ErrorMessage =
       ErrorMessage(
         "Data Debit Bundle malformed",
         s"Data Debit $id active bundle malformed: ${err.getMessage}"

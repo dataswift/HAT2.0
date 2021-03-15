@@ -26,20 +26,20 @@ package org.hatdex.hat.api.service.monitoring
 
 import javax.inject.Inject
 
+import scala.util.{ Success, Try }
+
 import akka.actor.ActorRef
 import akka.event.{ EventBus, SubchannelClassification }
 import akka.util.Subclassification
 import com.google.inject.Singleton
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat._
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.resourceManagement.HatServer
 import org.joda.time.DateTime
 import play.api.Logger
-
-import scala.util.{ Success, Try }
 
 /**
   * Publishes the payload of the MsgEnvelope when the topic of the
@@ -49,28 +49,25 @@ import scala.util.{ Success, Try }
 class HatDataEventBus extends EventBus with SubchannelClassification {
   import HatDataEventBus._
 
-  type Event = HatDataEvent
+  type Event      = HatDataEvent
   type Classifier = Class[_ <: HatDataEvent]
   type Subscriber = ActorRef
 
   protected def compareSubscribers(
       a: Subscriber,
-      b: Subscriber
-    ): Int = a compareTo b
+      b: Subscriber): Int = a compareTo b
 
   /**
     * The logic to form sub-class hierarchy
     */
-  override protected implicit val subclassification: Subclassification[Classifier] =
+  implicit override protected val subclassification: Subclassification[Classifier] =
     new Subclassification[Classifier] {
       def isEqual(
           x: Classifier,
-          y: Classifier
-        ): Boolean = x == y
+          y: Classifier): Boolean = x == y
       def isSubclass(
           x: Classifier,
-          y: Classifier
-        ): Boolean = y.isAssignableFrom(x)
+          y: Classifier): Boolean = y.isAssignableFrom(x)
     }
 
   /**
@@ -81,8 +78,7 @@ class HatDataEventBus extends EventBus with SubchannelClassification {
     */
   override protected def publish(
       event: Event,
-      subscriber: Subscriber
-    ): Unit = subscriber ! event
+      subscriber: Subscriber): Unit = subscriber ! event
 
   /**
     * Returns the Classifier associated with the given Event.
@@ -101,8 +97,7 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
 
   def dispatchEventDataCreated(
       message: String
-    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]
-    ): PartialFunction[Try[Seq[EndpointData]], Unit] = {
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[Seq[EndpointData]], Unit] = {
     case Success(saved) if saved.nonEmpty =>
       logger.debug(s"Dispatch data created event: $message")
       dataEventBus.publish(
@@ -118,8 +113,7 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
 
   def dispatchEventDataDebit(
       operation: DataDebitOperations.DataDebitOperation
-    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]
-    ): PartialFunction[Try[_], Unit] = {
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[_], Unit] = {
     case Success(saved: RichDataDebit) =>
       dataEventBus.publish(
         HatDataEventBus.RichDataDebitEvent(
@@ -146,8 +140,7 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
 
   def dispatchEventMaybeDataDebit(
       operation: DataDebitOperations.DataDebitOperation
-    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]
-    ): PartialFunction[Try[Option[_]], Unit] = {
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[Option[_]], Unit] = {
     case Success(Some(saved: RichDataDebit)) =>
       dataEventBus.publish(
         HatDataEventBus.RichDataDebitEvent(
@@ -174,8 +167,7 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
 
   def dispatchEventDataDebitValues(
       debit: RichDataDebit
-    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]
-    ): PartialFunction[Try[RichDataDebitData], Unit] = {
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[RichDataDebitData], Unit] = {
     case Success(data) =>
       dataEventBus.publish(
         HatDataEventBus.RichDataRetrievedEvent(
@@ -191,8 +183,7 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
 
   def dispatchEventDataDebitValues(
       debit: DataDebit
-    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]
-    ): PartialFunction[Try[DataDebitData], Unit] = {
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[DataDebitData], Unit] = {
     case Success(data) =>
       dataEventBus.publish(
         HatDataEventBus.DataRetrievedEvent(

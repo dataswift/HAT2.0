@@ -41,14 +41,20 @@ object Dependencies {
     "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com"
   )
 
+
   object Library {
+
+    object Version {
+      val ScalaTest           = "3.2.3"
+      val TestContainersScala = "0.38.8"
+      val DsTestTools         = "0.2.3"
+    }
 
     object Play {
       val version     = play.core.PlayVersion.current
       val ws          = "com.typesafe.play" %% "play-ws"           % version
       val cache       = "com.typesafe.play" %% "play-cache"        % version
       val test        = "com.typesafe.play" %% "play-test"         % version
-      val specs2      = "com.typesafe.play" %% "play-specs2"       % version
       val jdbc        = "com.typesafe.play" %% "play-jdbc"         % version
       val json        = "com.typesafe.play" %% "play-json"         % "2.6.14"
       val jsonJoda    = "com.typesafe.play" %% "play-json-joda"    % "2.6.14"
@@ -76,13 +82,6 @@ object Dependencies {
       }
     }
 
-    object Specs2 {
-      private val version = "3.9.5"
-      val core            = "org.specs2" %% "specs2-core"          % version
-      val matcherExtra    = "org.specs2" %% "specs2-matcher-extra" % version
-      val mock            = "org.specs2" %% "specs2-mock"          % version
-    }
-
     object Utils {
       private val awsSdkVersion    = "1.11.755"
       val pegdown                  = "org.pegdown"            % "pegdown"                         % "1.6.0"
@@ -96,9 +95,19 @@ object Dependencies {
       val apacheCommonLang         = "org.apache.commons"     % "commons-lang3"                   % "3.10"
     }
 
+    
+    object Backend {
+      private val version = "2.1.1_play2.6.25"
+      val logPlay = "io.dataswift" %% "log-play" % version
+      val hatPlay = "io.dataswift" %% "hat-play" % version
+      val hatModels = "io.dataswift" %% "hat" % version
+      val dexPlay = "io.dataswift" %% "dex-play" % version
+      val dexModels = "io.dataswift" %% "dex" % version
+    }
+
     object HATDeX {
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.6.16"
-      val dexClient = "org.hatdex" %% "dex-client-scala"      % "2.6.10"
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "3.1.2" intransitive()
+      val dexClient = "org.hatdex" %% "dex-client-scala"      % "3.1.2" intransitive()
       val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
     }
 
@@ -109,5 +118,37 @@ object Dependencies {
       val adjudicator = "io.dataswift" %% "adjudicatorlib" % Versions.adjudicator
     }
 
+    object Prometheus {
+      val filters = "com.github.stijndehaes" %% "play-prometheus-filters" % "0.4.0"
+    }
+
+    object Test {
+      val scalatest         = "org.scalatest"          %% "scalatest"          % Version.ScalaTest
+      val scalatestwordspec = "org.scalatest"          %% "scalatest-wordspec" % Version.ScalaTest
+      val scalaplaytest     = "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2"
+      val scalaplaytestmock = "org.scalatestplus"      %% "mockito-3-4"        % "3.2.2.0"
+    }
+
+    object TestContainers {
+      val scalaTest  = "com.dimafeng" %% "testcontainers-scala-scalatest"  % Version.TestContainersScala
+      val postgresql = "com.dimafeng" %% "testcontainers-scala-postgresql" % Version.TestContainersScala
+      val localstack = "com.dimafeng" %% "testcontainers-scala-localstack" % Version.TestContainersScala
+    }
+
+    object Dataswift {
+      val testCommon            = "io.dataswift" %% "test-common"             % Version.DsTestTools
+      val integrationTestCommon = "io.dataswift" %% "integration-test-common" % Version.DsTestTools
+    }
+    val overrides = Seq(
+      "com.typesafe.play"      %% "play"                    % Play.version,
+      "com.typesafe.play"      %% "play-server"             % Play.version,
+      "com.typesafe.play"      %% "play-ahc-ws"             % Play.version,
+      "com.typesafe.play"      %% "play-akka-http-server"   % Play.version,
+      "com.typesafe.play"      %% "filters-helpers"         % Play.version,
+      Library.Play.cache,
+      Library.Play.ws,
+      Library.Play.json,
+      Library.Play.jsonJoda
+  )
   }
 }
