@@ -24,21 +24,17 @@
 
 package org.hatdex.hat.api.service
 
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.model.ObjectMetadata
-import org.scalamock.scalatest.MockFactory
+import com.amazonaws.auth.{ AWSStaticCredentialsProvider, BasicAWSCredentials }
+import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
 
-case class FileManagerS3Mock() extends MockFactory {
+class FileManagerS3Mock {
   // TOOD: Move this to localstack test container
-  val mockS3client: AmazonS3 = stub[AmazonS3]
+  private val awsCreds = new BasicAWSCredentials("testAwsAccessKey", "testAwsSecret")
+  val mockS3client: AmazonS3 =
+    AmazonS3ClientBuilder
+      .standard()
+      .withRegion("eu-west-1")
+      .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+      .build()
 
-  private val s3ObjectMetadata = new ObjectMetadata()
-  s3ObjectMetadata.setContentLength(123456L)
-
-  // TODO: Fails in CI due to AWS Creds
-  (mockS3client
-    .getObjectMetadata(_: String, _: String))
-    .when("hat-storage-test", "hat.hubofallthings.net/testFile")
-    .returning(s3ObjectMetadata)
-//  when(mockS3client.deleteObject("hat-storage-test", "hat.hubofallthings.net/deleteFile")).thenReturn(None)
 }

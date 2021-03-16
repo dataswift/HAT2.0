@@ -150,6 +150,8 @@ class AwsLambdaExecutor @Inject() (
     val actorSystem: ActorSystem,
     ec: RemoteExecutionContext) {
 
+  private val mock = configuration.get[Boolean]("she.aws.mock")
+
   protected val logger: Logger = Logger(this.getClass)
 
   implicit private val materializer: Materializer = ActorMaterializer()
@@ -165,31 +167,33 @@ class AwsLambdaExecutor @Inject() (
   def execute[T](
       request: InvokeRequest
     )(implicit jsonFormatter: Format[T]): Future[T] =
-    Source
-      .single(request)
-      .via(AwsLambdaFlow(1)(lambdaClient))
-      .runWith(Sink.head)
-      .map {
-        case r: InvokeResult if r.getStatusCode == 200 =>
-          logger.debug(s"""Function responded with:
+    if (mock) Future.successful(null.asInstanceOf[T])
+    else
+      Source
+        .single(request)
+        .via(AwsLambdaFlow(1)(lambdaClient))
+        .runWith(Sink.head)
+        .map {
+          case r: InvokeResult if r.getStatusCode == 200 =>
+            logger.debug(s"""Function responded with:
                | Status: ${r.getStatusCode}
                | Body: ${ByteString(r.getPayload).utf8String}
                | Logs: ${Option(r.getLogResult).map(l => ByteString(java.util.Base64.getDecoder.decode(l)).utf8String)}
             """.stripMargin)
-          val jsResponse =
-            Json.parse(r.getPayload.array()).validate[T] recover {
-                case e =>
-                  val message = s"Error parsing lambda response: $e"
-                  logger.error(message)
-                  throw DataFormatException(message)
-              }
-          jsResponse.get
-        case r =>
-          val message =
-            s"Retrieving SHE function configuration failed: $r, ${ByteString(r.getPayload).utf8String}"
-          logger.error(message)
-          throw new ApiException(message)
-      }
+            val jsResponse =
+              Json.parse(r.getPayload.array()).validate[T] recover {
+                  case e =>
+                    val message = s"Error parsing lambda response: $e"
+                    logger.error(message)
+                    throw DataFormatException(message)
+                }
+            jsResponse.get
+          case r =>
+            val message =
+              s"Retrieving SHE function configuration failed: $r, ${ByteString(r.getPayload).utf8String}"
+            logger.error(message)
+            throw new ApiException(message)
+        }
 }
 
 class StaticExecutorFactory(val ec: ExecutionContext) extends ExecutorFactory {

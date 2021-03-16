@@ -208,7 +208,7 @@ trait HATTestContext extends MockitoSugar {
   val mockMailer: HatMailer = mock[HatMailer]
   when(mockMailer.passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])).thenReturn(Done)
 
-  val fileManagerS3Mock = FileManagerS3Mock()
+  val fileManagerS3Mock: FileManagerS3Mock = new FileManagerS3Mock
 
   lazy val remoteEC = new RemoteExecutionContext(application.actorSystem)
 
