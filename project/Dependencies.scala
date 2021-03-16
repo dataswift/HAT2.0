@@ -104,7 +104,7 @@ object Dependencies {
     object HATDeX {
       val hatClient = "org.hatdex" %% "hat-client-scala-play" % "3.1.2" intransitive ()
       val dexClient = "org.hatdex" %% "dex-client-scala"      % "3.1.2" intransitive ()
-      val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
+      val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.1.2"
     }
 
     val scalaGuice  = "net.codingwell" %% "scala-guice"  % "4.2.6"
