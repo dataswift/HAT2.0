@@ -82,7 +82,7 @@ object Dependencies {
     }
 
     object Utils {
-      private val awsSdkVersion    = "1.11.755"
+      private val awsSdkVersion    = "1.11.976"
       val pegdown                  = "org.pegdown"            % "pegdown"                         % "1.6.0"
       val awsJavaSdk               = "com.amazonaws"          % "aws-java-sdk"                    % awsSdkVersion
       val awsJavaS3Sdk             = "com.amazonaws"          % "aws-java-sdk-s3"                 % awsSdkVersion
