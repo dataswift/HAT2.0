@@ -1,3 +1,4 @@
+# Run trivy and upload result to Github code scanner which will result in alerts being generated
 name: Trivy
 
 on:
