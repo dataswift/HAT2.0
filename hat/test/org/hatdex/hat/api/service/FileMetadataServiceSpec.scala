@@ -24,17 +24,16 @@
 
 package org.hatdex.hat.api.service
 
+import io.dataswift.models.hat.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus }
+import io.dataswift.test.common.BaseSpec
+import org.hatdex.hat.api.HATTestContext
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-import io.dataswift.models.hat.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus }
-import io.dataswift.test.common.BaseSpec
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
-import play.api.Logger
-
-class FileMetadataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with FileManagerContext {
+class FileMetadataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with HATTestContext {
   import scala.concurrent.ExecutionContext.Implicits.global
-  val logger = Logger(this.getClass)
 
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)

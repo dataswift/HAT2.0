@@ -26,30 +26,30 @@ package org.hatdex.hat.api.service
 
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
-
 import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
+import org.scalatest.time.{ Millis, Second, Span }
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
-import play.api.Logger
 
-class FileManagerS3Spec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with FileManagerContext {
+class FileManagerS3Spec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with HATTestContext {
 
-  val logger = Logger(this.getClass)
+  implicit val defaultPatience: PatienceConfig =
+    PatienceConfig(timeout = Span(1, Second), interval = Span(50, Millis))
+
+  private val expectedUrlPrefix = "https://s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile"
 
   "The `getUploadUrl` method" should "return a signed url for a provided key" in {
     val fileManager            = application.injector.instanceOf[FileManager]
     val result: Future[String] = fileManager.getUploadUrl("testFile", None)
 
-    val r = Await.result(result, 10.seconds)
-    r must startWith("https://hat-storage-test.s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile")
+    result.futureValue must startWith(expectedUrlPrefix)
   }
 
   "The `getContentUrl` method" should "return a signed url for a provided key" in {
     val fileManager            = application.injector.instanceOf[FileManager]
     val result: Future[String] = fileManager.getContentUrl("testFile")
 
-    val r = Await.result(result, 10.seconds)
-    r must startWith("https://hat-storage-test.s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile")
+    result.futureValue must startWith(expectedUrlPrefix)
   }
 
   "The `deleteContents` method" should "return quietly when deleting any file" in {
@@ -57,19 +57,15 @@ class FileManagerS3Spec extends BaseSpec with BeforeAndAfterEach with BeforeAndA
 
     try fileManager.deleteContents("deleteFile")
     catch {
-      case (e: Exception) => fail()
+      case e: Exception => fail(e)
     }
-    true
-
-    //there was one(mockS3client).deleteObject("hat-storage-test", "hat.hubofallthings.net/deleteFile")
   }
 
   "The `getFileSize` method" should "return 0 for files that do not exist" in {
     val fileManager          = application.injector.instanceOf[FileManager]
     val result: Future[Long] = fileManager.getFileSize("nonExistentFile")
 
-    val r = Await.result(result, 10.seconds)
-    r must equal(0L)
+    result.futureValue mustBe 0L
   }
 
   it should "extract file size for files that do exist" in {
@@ -82,8 +78,4 @@ class FileManagerS3Spec extends BaseSpec with BeforeAndAfterEach with BeforeAndA
     //r must equal(123456L)
     //there was one(mockS3client).getObjectMetadata("hat-storage-test", "hat.hubofallthings.net/testFile")
   }
-}
-
-trait FileManagerContext extends HATTestContext {
-  val mockS3client = fileManagerS3Mock.mockS3client
 }
