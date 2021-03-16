@@ -38,9 +38,6 @@ class FileMetadataServiceSpec extends BaseSpec with BeforeAndAfterEach with Befo
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
 
-  override protected def afterAll(): Unit =
-    container.stop
-
   override def beforeEach: Unit = {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
@@ -50,7 +47,7 @@ class FileMetadataServiceSpec extends BaseSpec with BeforeAndAfterEach with Befo
       HatFile.delete
     )
 
-    Await.result(db.run(action), 60.seconds)
+    Await.result(db.run(action.transactionally), 60.seconds)
   }
 
   "The `getUniqueFileId` method" should "return a ApiHatFile with fileId appended" in {

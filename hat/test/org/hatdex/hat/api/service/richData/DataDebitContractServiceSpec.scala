@@ -24,14 +24,13 @@
 
 package org.hatdex.hat.api.service.richData
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import io.dataswift.models.hat._
 import io.dataswift.test.common.BaseSpec
 import org.joda.time.LocalDateTime
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
-import play.api.Logger
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class DataDebitContractServiceSpec
     extends BaseSpec
@@ -40,7 +39,6 @@ class DataDebitContractServiceSpec
     with DataDebitContractServiceContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  val logger = Logger(this.getClass)
 
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
@@ -61,7 +59,7 @@ class DataDebitContractServiceSpec
       DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
     )
 
-    Await.result(db.run(action), 60.seconds)
+    Await.result(db.run(action.transactionally), 60.seconds)
   }
 
   "The `createDataDebit` method" should "Save a data debit" in {

@@ -46,6 +46,7 @@ import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, LoggingProvider, MockLogg
 import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
+import org.scalatest.{ BeforeAndAfterAll, Suite }
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
@@ -59,12 +60,16 @@ import java.util.UUID
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
-trait HATTestContext extends MockitoSugar {
+trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   val container = PostgreSQLContainer()
   container.start()
   val conf = containerToConfig(container)
+
+  override protected def afterAll(): Unit =
+    try container.stop()
+    finally super.afterAll()
 
   def containerToConfig(c: PostgreSQLContainer): Configuration =
     Configuration.from(

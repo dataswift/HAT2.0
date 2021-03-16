@@ -56,7 +56,7 @@ class FilesSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll 
       HatFile.delete
     )
 
-    Await.result(db.run(action), 60.seconds)
+    Await.result(db.run(action.transactionally), 60.seconds)
   }
 
   "The `startUpload` method" should "return status 401 if authenticator but no identity was found" in {
