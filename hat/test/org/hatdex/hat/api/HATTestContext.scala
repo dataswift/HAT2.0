@@ -210,6 +210,8 @@ trait HATTestContext extends MockitoSugar {
 
   val fileManagerS3Mock: FileManagerS3Mock = new FileManagerS3Mock
 
+  val expectedS3UrlPrefix = "https://s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile"
+
   lazy val remoteEC = new RemoteExecutionContext(application.actorSystem)
 
   /**

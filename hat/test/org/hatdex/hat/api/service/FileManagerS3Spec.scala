@@ -36,20 +36,18 @@ class FileManagerS3Spec extends BaseSpec with BeforeAndAfterEach with BeforeAndA
   implicit val defaultPatience: PatienceConfig =
     PatienceConfig(timeout = Span(1, Second), interval = Span(50, Millis))
 
-  private val expectedUrlPrefix = "https://s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile"
-
   "The `getUploadUrl` method" should "return a signed url for a provided key" in {
     val fileManager            = application.injector.instanceOf[FileManager]
     val result: Future[String] = fileManager.getUploadUrl("testFile", None)
 
-    result.futureValue must startWith(expectedUrlPrefix)
+    result.futureValue must startWith(expectedS3UrlPrefix)
   }
 
   "The `getContentUrl` method" should "return a signed url for a provided key" in {
     val fileManager            = application.injector.instanceOf[FileManager]
     val result: Future[String] = fileManager.getContentUrl("testFile")
 
-    result.futureValue must startWith(expectedUrlPrefix)
+    result.futureValue must startWith(expectedS3UrlPrefix)
   }
 
   "The `deleteContents` method" should "return quietly when deleting any file" in {
@@ -68,14 +66,4 @@ class FileManagerS3Spec extends BaseSpec with BeforeAndAfterEach with BeforeAndA
     result.futureValue mustBe 0L
   }
 
-  it should "extract file size for files that do exist" in {
-    val fileManager          = application.injector.instanceOf[FileManager]
-    val result: Future[Long] = fileManager.getFileSize("testFile")
-
-    val r = Await.result(result, 10.seconds)
-
-    // TODO: Failing in CI due to S3 credential issues.
-    //r must equal(123456L)
-    //there was one(mockS3client).getObjectMetadata("hat-storage-test", "hat.hubofallthings.net/testFile")
-  }
 }
