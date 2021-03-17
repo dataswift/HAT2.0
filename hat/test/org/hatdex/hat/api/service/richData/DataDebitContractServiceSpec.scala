@@ -44,25 +44,6 @@ class DataDebitContractServiceSpec
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
 
-  override def beforeEach: Unit = {
-    import org.hatdex.hat.dal.Tables._
-    import org.hatdex.libs.dal.HATPostgresProfile.api._
-
-    val endpointRecordsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
-
-    val action = DBIO.seq(
-      DataDebitBundle.filter(_.bundleId.like("test%")).delete,
-      DataDebitContract.filter(_.dataDebitKey.like("test%")).delete,
-      DataCombinators.filter(_.combinatorId.like("test%")).delete,
-      DataBundles.filter(_.bundleId.like("test%")).delete,
-      DataJsonGroupRecords.filter(_.recordId in endpointRecordsQuery).delete,
-      DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
-    )
-
-    Await.result(db.run(action.transactionally), 60.seconds)
-  }
-
   "The `createDataDebit` method" should "Save a data debit" in {
     val service = application.injector.instanceOf[DataDebitContractService]
     val saved   = service.createDataDebit("testddnew", testDataDebitRequest(), owner.userId)
