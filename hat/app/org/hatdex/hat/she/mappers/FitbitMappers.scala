@@ -2,22 +2,14 @@ package org.hatdex.hat.she.mappers
 
 import java.util.UUID
 
-import org.hatdex.hat.api.models.{
-  EndpointQuery,
-  EndpointQueryFilter,
-  PropertyQuery
-}
-import org.hatdex.hat.api.models.applications.{
-  DataFeedItem,
-  DataFeedItemContent,
-  DataFeedItemTitle
-}
+import scala.util.{ Failure, Try }
+
+import io.dataswift.models.hat.applications.{ DataFeedItem, DataFeedItemContent, DataFeedItemTitle }
+import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, PropertyQuery }
 import org.hatdex.hat.she.models.StaticDataValues
 import org.joda.time.DateTime
 import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter }
 import play.api.libs.json.{ JsError, JsString, JsSuccess, JsValue, Reads }
-
-import scala.util.{ Failure, Try }
 
 class FitbitWeightMapper extends DataEndpointMapper {
   override val dateTimeFormat: DateTimeFormatter =
@@ -25,17 +17,14 @@ class FitbitWeightMapper extends DataEndpointMapper {
 
   def dataQueries(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]
-    ): Seq[PropertyQuery] = {
+      untilDate: Option[DateTime]): Seq[PropertyQuery] =
     Seq(
       PropertyQuery(
         List(
           EndpointQuery(
             "fitbit/weight",
             None,
-            dateFilter(fromDate, untilDate).map(f =>
-              Seq(EndpointQueryFilter("date", None, f))
-            ),
+            dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("date", None, f))),
             None
           )
         ),
@@ -44,14 +33,12 @@ class FitbitWeightMapper extends DataEndpointMapper {
         None
       )
     )
-  }
 
   def mapDataRecord(
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID] = None,
-      tailContent: Option[JsValue] = None
-    ): Try[DataFeedItem] = {
+      tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val title = DataFeedItemTitle(
       "You added a new weight measurement",
       None,
@@ -73,10 +60,10 @@ class FitbitWeightMapper extends DataEndpointMapper {
 
     for {
       date <- Try(
-        JsString(
-          s"${(content \ "date").as[String]}T${(content \ "time").as[String]}"
-        ).as[DateTime]
-      )
+                JsString(
+                  s"${(content \ "date").as[String]}T${(content \ "time").as[String]}"
+                ).as[DateTime]
+              )
     } yield DataFeedItem(
       "fitbit",
       date,
@@ -91,17 +78,14 @@ class FitbitWeightMapper extends DataEndpointMapper {
 class FitbitActivityMapper extends DataEndpointMapper {
   def dataQueries(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]
-    ): Seq[PropertyQuery] = {
+      untilDate: Option[DateTime]): Seq[PropertyQuery] =
     Seq(
       PropertyQuery(
         List(
           EndpointQuery(
             "fitbit/activity",
             None,
-            dateFilter(fromDate, untilDate).map(f =>
-              Seq(EndpointQueryFilter("originalStartTime", None, f))
-            ),
+            dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("originalStartTime", None, f))),
             None
           )
         ),
@@ -110,14 +94,12 @@ class FitbitActivityMapper extends DataEndpointMapper {
         None
       )
     )
-  }
 
   def mapDataRecord(
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID] = None,
-      tailContent: Option[JsValue] = None
-    ): Try[DataFeedItem] = {
+      tailContent: Option[JsValue] = None): Try[DataFeedItem] =
     for {
       date <- Try((content \ "originalStartTime").as[DateTime])
     } yield {
@@ -144,7 +126,6 @@ class FitbitActivityMapper extends DataEndpointMapper {
         None
       )
     }
-  }
 }
 
 class FitbitActivityDaySummaryMapper extends DataEndpointMapper {
@@ -152,17 +133,14 @@ class FitbitActivityDaySummaryMapper extends DataEndpointMapper {
     DateTimeFormat.forPattern("yyyy-MM-dd")
   def dataQueries(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]
-    ): Seq[PropertyQuery] = {
+      untilDate: Option[DateTime]): Seq[PropertyQuery] =
     Seq(
       PropertyQuery(
         List(
           EndpointQuery(
             "fitbit/activity/day/summary",
             None,
-            dateFilter(fromDate, untilDate).map(f =>
-              Seq(EndpointQueryFilter("dateCreated", None, f))
-            ),
+            dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("dateCreated", None, f))),
             None
           )
         ),
@@ -171,23 +149,21 @@ class FitbitActivityDaySummaryMapper extends DataEndpointMapper {
         None
       )
     )
-  }
 
   def mapDataRecord(
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID] = None,
-      tailContent: Option[JsValue] = None
-    ): Try[DataFeedItem] = {
+      tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val fitbitSummary = for {
       count <- Try((content \ "steps").as[Int]) if count > 0
       date <- Try((content \ "dateCreated").as[DateTime])
     } yield {
-      val adjustedDate = if (date.getSecondOfDay == 0) {
-        date.secondOfDay().withMaximumValue()
-      } else {
-        date
-      }
+      val adjustedDate =
+        if (date.getSecondOfDay == 0)
+          date.secondOfDay().withMaximumValue()
+        else
+          date
       val title =
         DataFeedItemTitle(s"You walked $count steps", None, Some("fitness"))
       DataFeedItem(
@@ -210,17 +186,14 @@ class FitbitActivityDaySummaryMapper extends DataEndpointMapper {
 class FitbitSleepMapper extends DataEndpointMapper {
   def dataQueries(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]
-    ): Seq[PropertyQuery] = {
+      untilDate: Option[DateTime]): Seq[PropertyQuery] =
     Seq(
       PropertyQuery(
         List(
           EndpointQuery(
             "fitbit/sleep",
             None,
-            dateFilter(fromDate, untilDate).map(f =>
-              Seq(EndpointQueryFilter("endTime", None, f))
-            ),
+            dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("endTime", None, f))),
             None
           )
         ),
@@ -229,27 +202,24 @@ class FitbitSleepMapper extends DataEndpointMapper {
         None
       )
     )
-  }
 
   def fitbitDateCorrector(date: String): String = {
     val zonedDatePattern =
       """.*(z|Z|\+\d{2})(:?\d{2})?$""".r // does the string end with ISO8601 timezone indicator
-    if (zonedDatePattern.findFirstIn(date).isDefined) {
+    if (zonedDatePattern.findFirstIn(date).isDefined)
       date
-    } else {
+    else
       date + "+0000"
-    }
   }
 
-  override implicit val DefaultJodaDateTimeReads: Reads[DateTime] =
+  implicit override val DefaultJodaDateTimeReads: Reads[DateTime] =
     jodaDateReads("", fitbitDateCorrector)
 
   def mapDataRecord(
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID] = None,
-      tailContent: Option[JsValue] = None
-    ): Try[DataFeedItem] = {
+      tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val title = DataFeedItemTitle("You woke up!", None, Some("sleep"))
 
     val timeInBed = (content \ "timeInBed")
@@ -259,11 +229,11 @@ class FitbitSleepMapper extends DataEndpointMapper {
       .asOpt[Int]
       .map(asleep =>
         s"You slept for ${asleep / 60} hours and ${asleep % 60} minutes" +
-          (content \ "minutesAwake")
-            .asOpt[Int]
-            .map(t => s" and were awake for $t minutes")
-            .getOrElse("") +
-          "."
+            (content \ "minutesAwake")
+              .asOpt[Int]
+              .map(t => s" and were awake for $t minutes")
+              .getOrElse("") +
+            "."
       )
     val efficiency = (content \ "efficiency")
       .asOpt[Int]
@@ -278,33 +248,28 @@ class FitbitSleepMapper extends DataEndpointMapper {
 
     for {
       date <- Try((content \ "endTime").as[DateTime])
-    } yield {
-      DataFeedItem(
-        "fitbit",
-        date,
-        Seq("fitness", "sleep"),
-        Some(title),
-        Some(itemContent),
-        None
-      )
-    }
+    } yield DataFeedItem(
+      "fitbit",
+      date,
+      Seq("fitness", "sleep"),
+      Some(title),
+      Some(itemContent),
+      None
+    )
   }
 }
 
 class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
   def dataQueries(
       fromDate: Option[DateTime],
-      untilDate: Option[DateTime]
-    ): Seq[PropertyQuery] = {
+      untilDate: Option[DateTime]): Seq[PropertyQuery] =
     Seq(
       PropertyQuery(
         List(
           EndpointQuery(
             "fitbit/profile",
             None,
-            dateFilter(fromDate, untilDate).map(f =>
-              Seq(EndpointQueryFilter("dateCreated", None, f))
-            ),
+            dateFilter(fromDate, untilDate).map(f => Seq(EndpointQueryFilter("dateCreated", None, f))),
             None
           )
         ),
@@ -313,40 +278,35 @@ class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
         None
       )
     )
-  }
 
   def mapDataRecord(
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID] = None,
-      tailContent: Option[JsValue] = None
-    ): Try[DataFeedItem] = {
+      tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
     val comparison =
       compare(content, tailContent).filter(
         _._1 == false
       ) // remove all fields that have the same values pre/current
-    if (comparison.isEmpty) {
+    if (comparison.isEmpty)
       Failure(new RuntimeException("Comparision Failure. Data the same"))
-    } else {
+    else
       for {
         title <- Try(
-          DataFeedItemTitle("Your Fitbit Data has changed.", None, None)
-        )
+                   DataFeedItemTitle("Your Fitbit Data has changed.", None, None)
+                 )
         itemContent <- {
           val contentText = comparison.map(item => s"${item._2}\n").mkString
           Try(DataFeedItemContent(Some(contentText), None, None, None))
         }
-      } yield {
-        DataFeedItem(
-          "fitbit",
-          (tailContent.getOrElse(content) \ "dateCreated").as[DateTime],
-          Seq("profile"),
-          Some(title),
-          Some(itemContent),
-          None
-        )
-      }
-    }
+      } yield DataFeedItem(
+        "fitbit",
+        (tailContent.getOrElse(content) \ "dateCreated").as[DateTime],
+        Seq("profile"),
+        Some(title),
+        Some(itemContent),
+        None
+      )
   }
 
   /**
@@ -356,11 +316,10 @@ class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
     */
   def compare(
       content: JsValue,
-      tailContent: Option[JsValue]
-    ): Seq[(Boolean, String)] = {
+      tailContent: Option[JsValue]): Seq[(Boolean, String)] =
     if (tailContent.isEmpty)
       Seq()
-    else {
+    else
       // Note: we are comparing in descending order. Reverse content <-> tailContent if ascending
       Seq(
         compareString(tailContent.get, content, "fullName", "Name"),
@@ -374,12 +333,10 @@ class FitbitProfileMapper extends DataEndpointMapper with FeedItemComparator {
         // compareString(tailContent.get, content, "timezone", "Time Zone"))
         compareString(content, tailContent.get, "timezone", "Time Zone")
       )
-    }
-  }
 }
 
 class FitbitProfileStaticDataMapper extends StaticDataEndpointMapper {
-  def dataQueries(): Seq[PropertyQuery] = {
+  def dataQueries(): Seq[PropertyQuery] =
     Seq(
       PropertyQuery(
         List(EndpointQuery("fitbit/profile", None, None, None)),
@@ -388,13 +345,11 @@ class FitbitProfileStaticDataMapper extends StaticDataEndpointMapper {
         Some(1)
       )
     )
-  }
 
   def mapDataRecord(
       recordId: UUID,
       content: JsValue,
-      endpoint: String
-    ): Seq[StaticDataValues] = {
+      endpoint: String): Seq[StaticDataValues] = {
     val eventualData = content.validate[Map[String, JsValue]]
     eventualData match {
       case JsSuccess(value, _) =>

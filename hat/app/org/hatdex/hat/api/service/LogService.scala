@@ -25,13 +25,13 @@
 package org.hatdex.hat.api.service
 
 import java.util.UUID
-
-import akka.Done
 import javax.inject.Inject
-import org.hatdex.hat.api.models.LogRequest
-import play.api.Logger
 
 import scala.concurrent.Future
+
+import akka.Done
+import io.dataswift.models.hat.LogRequest
+import play.api.Logger
 
 class LogService @Inject() (implicit val ec: DalExecutionContext) {
   val logger: Logger = Logger(this.getClass)
@@ -39,8 +39,7 @@ class LogService @Inject() (implicit val ec: DalExecutionContext) {
   def logAction(
       hat: String,
       logDetails: LogRequest,
-      applicationDetails: Option[(String, String)]
-    ): Future[Done] = {
+      applicationDetails: Option[(String, String)]): Future[Done] =
     Future {
       val logId = UUID.randomUUID()
       val applicationVersion =
@@ -52,5 +51,4 @@ class LogService @Inject() (implicit val ec: DalExecutionContext) {
 
       Done
     }
-  }
 }

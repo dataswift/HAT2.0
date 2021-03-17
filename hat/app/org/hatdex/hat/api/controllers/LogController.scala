@@ -1,9 +1,12 @@
 package org.hatdex.hat.api.controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models._
+
+import scala.util.Try
+
+import com.mohiva.play.silhouette.api.Silhouette
+import io.dataswift.models.hat._
+import io.dataswift.models.hat.json.HatJsonFormats
 import org.hatdex.hat.api.service.{ LogService, RemoteExecutionContext }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.utils.HatBodyParsers
@@ -11,16 +14,15 @@ import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{ Action, ControllerComponents }
 
-import scala.util.Try
-
 class LogController @Inject() (
     components: ControllerComponents,
     parsers: HatBodyParsers,
     logService: LogService,
     silhouette: Silhouette[HatApiAuthEnvironment]
   )(implicit val ec: RemoteExecutionContext)
-    extends HatApiController(components, silhouette)
-    with HatJsonFormats {
+    extends HatApiController(components, silhouette) {
+  import HatJsonFormats._
+  import io.dataswift.models.hat.json.LogRequestFormats._
 
   private val logger = Logger(this.getClass)
 
@@ -28,14 +30,13 @@ class LogController @Inject() (
     SecuredAction.async(parsers.json[LogRequest]) { request =>
       val logRequest = request.body
       val hatAddress = request.dynamicEnvironment.domain
-      val appDetails = request.authenticator.customClaims.flatMap {
-        customClaims =>
-          Try(
-            (
-              (customClaims \ "application").as[String],
-              (customClaims \ "applicationVersion").as[String]
-            )
-          ).toOption
+      val appDetails = request.authenticator.customClaims.flatMap { customClaims =>
+        Try(
+          (
+            (customClaims \ "application").as[String],
+            (customClaims \ "applicationVersion").as[String]
+          )
+        ).toOption
       }
 
       logService
