@@ -120,7 +120,7 @@ object Dependencies {
 
     object ScalaTest {
       val scalaplaytest     = "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2"   % Test
-      val scalaplaytestmock = "org.scalatestplus"      %% "mockito-3-4"        % "3.2.2.0" % Test
+      val scalaplaytestmock = "org.scalatestplus"      %% "mockito-3-4"        % "3.2.6.0" % Test
     }
 
     object Dataswift {
