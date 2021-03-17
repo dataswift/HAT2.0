@@ -24,9 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
 import io.dataswift.models.hat._
@@ -34,18 +31,18 @@ import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.service._
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
-import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
 
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+
 class FilesSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with FilesContext {
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  val logger = Logger(this.getClass)
-
   import io.dataswift.models.hat.json.HatJsonFormats._
+
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
@@ -59,7 +56,7 @@ class FilesSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll 
       HatFile.delete
     )
 
-    Await.result(db.run(action), 60.seconds)
+    Await.result(db.run(action.transactionally), 60.seconds)
   }
 
   "The `startUpload` method" should "return status 401 if authenticator but no identity was found" in {
@@ -288,14 +285,7 @@ class FilesSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll 
       result <- controller.getContent(hatFileSimpleCompletePublic.fileId.get).apply(request)
     } yield result
 
-    result map { response =>
-      logger.debug(s"GET content response:  $response")
-    }
-
-    redirectLocation(result) must not be empty
-    redirectLocation(result).get must startWith(
-      "https://hat-storage-test.s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile"
-    )
+    redirectLocation(result).value must startWith(expectedS3UrlPrefix)
   }
 
   it should "Redirect to file url for permitted files files" in {
@@ -311,10 +301,7 @@ class FilesSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll 
       result <- controller.getContent(hatFileSimpleComplete.fileId.get).apply(request)
     } yield result
 
-    redirectLocation(result) must not be empty
-    redirectLocation(result).get must startWith(
-      "https://hat-storage-test.s3.eu-west-1.amazonaws.com/hat.hubofallthings.net/testFile"
-    )
+    redirectLocation(result).value must startWith(expectedS3UrlPrefix)
   }
 
   "The `changePublicAccess` method" should "Let `owner` user make file publicly accessible" in {

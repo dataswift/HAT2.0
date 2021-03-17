@@ -24,18 +24,16 @@
 
 package org.hatdex.hat.api.service.richData
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import io.dataswift.models.hat._
 import io.dataswift.test.common.BaseSpec
 import org.joda.time.DateTime
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
-import play.api.Logger
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class DataSentintelSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with RichDataServiceContext {
 
-  val logger = Logger(this.getClass)
   import scala.concurrent.ExecutionContext.Implicits.global
 
   override def beforeAll: Unit =
@@ -57,7 +55,7 @@ class DataSentintelSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndA
       DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
     )
 
-    Await.result(db.run(action), 60.seconds)
+    Await.result(db.run(action.transactionally), 60.seconds)
   }
 
   "The `ensureUniquenessKey` method" should "Correctly extract item ID from data" in {
