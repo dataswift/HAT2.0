@@ -16,7 +16,7 @@ addSbtPlugin("com.typesafe.play" % "sbt-plugin"          % "2.6.25")
 
 // Code Quality
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")
-addSbtPlugin("org.scoverage" % "sbt-coveralls" % "1.2.6")
+addSbtPlugin("org.scoverage" % "sbt-coveralls" % "1.2.7")
 
 // web plugins
 addSbtPlugin("com.typesafe.sbt" % "sbt-web"     % "1.4.3")
