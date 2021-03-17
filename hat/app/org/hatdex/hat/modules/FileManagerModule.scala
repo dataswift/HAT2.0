@@ -24,14 +24,15 @@
 
 package org.hatdex.hat.modules
 
-import com.amazonaws.auth.{ AWSStaticCredentialsProvider, BasicAWSCredentials }
+import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper
 import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
-import com.google.inject.name.Named
 import com.google.inject.{ AbstractModule, Provides }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.service.{ AwsS3Configuration, FileManager, FileManagerS3 }
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
+
+import javax.inject.{ Singleton => JSingleton }
 
 class FileManagerModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
@@ -40,24 +41,18 @@ class FileManagerModule extends AbstractModule with ScalaModule with AkkaGuiceSu
     ()
   }
 
-  @Provides
-  def provideCookieAuthenticatorService(
-      configuration: Configuration): AwsS3Configuration = {
+  @Provides @JSingleton
+  def provideAwsS3Configuration(configuration: Configuration): AwsS3Configuration = {
     import AwsS3Configuration.configLoader
     configuration.get[AwsS3Configuration]("storage.s3Configuration")
   }
 
-  @Provides @Named("s3client-file-manager")
-  def provides3Client(configuration: AwsS3Configuration): AmazonS3 = {
-    val awsCreds: BasicAWSCredentials = new BasicAWSCredentials(
-      configuration.accessKeyId,
-      configuration.secretKey
-    )
+  @Provides @JSingleton
+  def provideS3Client(configuration: AwsS3Configuration): AmazonS3 =
     AmazonS3ClientBuilder
       .standard()
       .withRegion(configuration.region)
-      .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+      .withCredentials(new EC2ContainerCredentialsProviderWrapper)
       .build()
-  }
 
 }

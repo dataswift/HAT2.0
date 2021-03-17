@@ -73,7 +73,7 @@ class RichDataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterA
       // DataJson.delete
     )
 
-    Await.result(db.run(action), 60.seconds)
+    Await.result(db.run(action.transactionally), 60.seconds)
   }
 
   "The Saving and Reading data" should "must be equivalent" in {
