@@ -56,7 +56,7 @@ object Dependencies {
       val test     = "com.typesafe.play" %% "play-test"      % version
       val jdbc     = "com.typesafe.play" %% "play-jdbc"      % version
       val json     = "com.typesafe.play" %% "play-json"      % "2.6.14"
-      val jsonJoda = "com.typesafe.play" %% "play-json-joda" % "2.6.14"
+      val jsonJoda = "com.typesafe.play" %% "play-json-joda" % "2.9.2"
 
       val htmlCompressor = "com.mohiva"          %% "play-html-compressor" % "0.6.3"
       val playGuard      = "com.digitaltangible" %% "play-guard"           % "2.2.0"
