@@ -11,7 +11,7 @@ resolvers ++= Seq(
 
 libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
 
-addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.7.1")
+addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.7.6")
 addSbtPlugin("com.typesafe.play" % "sbt-plugin"          % "2.6.25")
 
 // Code Quality
