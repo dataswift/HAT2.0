@@ -7,7 +7,7 @@ import play.api.Logger
 
 class NamespaceTestSpec extends BaseSpec with MockitoSugar {
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   "The Namespace Verification" should "NamespaceUtils: Allow the correct namespace" in {
     val namespace              = "correctnamespace"

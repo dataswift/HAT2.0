@@ -24,6 +24,12 @@
 
 package org.hatdex.hat.api
 
+import java.io.StringReader
+import java.util.UUID
+
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+
 import akka.Done
 import akka.stream.Materializer
 import com.amazonaws.services.s3.AmazonS3
@@ -52,20 +58,15 @@ import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
 import play.api.i18n.{ Lang, MessagesApi }
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.{ Application, Configuration }
+import play.api.{Application, Configuration, Logger}
 import play.cache.NamedCacheImpl
-
-import java.io.StringReader
-import java.util.UUID
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
 
 trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  val container = PostgreSQLContainer()
+  val container: PostgreSQLContainer = PostgreSQLContainer()
   container.start()
-  val conf = containerToConfig(container)
+  val conf: Configuration = containerToConfig(container)
 
   override protected def afterAll(): Unit =
     try container.stop()
@@ -135,7 +136,7 @@ trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
 
   // Initialize configuration
   val hatAddress            = "hat.hubofallthings.net"
-  val hatUrl                = s"http://$hatAddress"
+  val hatUrl: String                = s"http://$hatAddress"
   private val configuration = conf //Configuration.from(FakeHatConfiguration.config)
   private val hatConfig     = configuration.get[Configuration](s"hat.$hatAddress")
 
@@ -158,14 +159,14 @@ trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
   )
 
   // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(),
+  val owner: HatUser = HatUser(UUID.randomUUID(),
                       "hatuser",
                       Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."),
                       "hatuser",
                       Seq(Owner()),
                       enabled = true
   )
-  val dataDebitUser = HatUser(
+  val dataDebitUser: HatUser = HatUser(
     UUID.randomUUID(),
     "dataDebitUser",
     Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."),
@@ -173,7 +174,7 @@ trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
     Seq(DataDebitOwner("")),
     enabled = true
   )
-  val dataCreditUser = HatUser(
+  val dataCreditUser: HatUser = HatUser(
     UUID.randomUUID(),
     "dataCreditUser",
     Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."),
@@ -187,7 +188,7 @@ trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
   )
 
   // Helpers to (re-)initialize the test database and await for it to be ready
-  val devHatMigrations = Seq(
+  val devHatMigrations: Seq[String] = Seq(
     "evolutions/hat-database-schema/11_hat.sql",
     "evolutions/hat-database-schema/12_hatEvolutions.sql",
     "evolutions/hat-database-schema/13_liveEvolutions.sql",
@@ -209,7 +210,7 @@ trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
       }
   }
 
-  val mockLogger            = mock[play.api.Logger]
+  val mockLogger: Logger            = mock[play.api.Logger]
   val mockMailer: HatMailer = mock[HatMailer]
   when(mockMailer.passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])).thenReturn(Done)
 

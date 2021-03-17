@@ -36,13 +36,13 @@ import play.api.test.{  WsTestClient }
 
 class AdjudicatorRequestSpec extends BaseSpec with AdjudicatorContext {
 
-  val logger                                         = Logger(this.getClass)
+  val logger: Logger                                         = Logger(this.getClass)
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
   //** Adjudicator
   val adjudicatorAddress  = "localhost:9002"
   val adjudicatorScheme   = "http://"
-  val adjudicatorEndpoint = s"${adjudicatorScheme}${adjudicatorAddress}"
+  val adjudicatorEndpoint: String = s"${adjudicatorScheme}${adjudicatorAddress}"
 
   val hatName: HatName       = HatName("hatName")
   val contractId: ContractId = ContractId(UUID.fromString("21a3eed7-5d32-46ba-a884-1fdaf7259739"))
@@ -111,10 +111,10 @@ trait AdjudicatorContext extends MockitoSugar {
   import org.hatdex.hat.utils.AdjudicatorRequestTypes._
   import org.mockito.Mockito._
 
-  val fakeContractUUID = java.util.UUID.randomUUID()
-  val fakePublicKey    = "publicKey".getBytes()
+  val fakeContractUUID: UUID = java.util.UUID.randomUUID()
+  val fakePublicKey: Array[Byte]    = "publicKey".getBytes()
 
-  val mockAdjudicatorClient = mock[AdjudicatorRequest]
+  val mockAdjudicatorClient: AdjudicatorRequest = mock[AdjudicatorRequest]
 
   // Mocked JoinContract
   when(

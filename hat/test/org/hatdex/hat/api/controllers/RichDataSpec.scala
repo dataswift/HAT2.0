@@ -44,7 +44,7 @@ class RichDataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterA
   import scala.concurrent.ExecutionContext.Implicits.global
   import io.dataswift.models.hat.json.RichDataJsonFormats._
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
@@ -544,7 +544,7 @@ class RichDataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterA
 }
 
 trait RichDataContext extends HATTestContext {
-  val nestedJson = Json.parse("""{"nested_data": {"nested": "{{sltoken}}", "value": true, "id": 33 }}""")
+  val nestedJson: JsValue = Json.parse("""{"nested_data": {"nested": "{{sltoken}}", "value": true, "id": 33 }}""")
 
   val simpleJson: JsValue = Json.parse("""
       | {
@@ -648,15 +648,15 @@ trait RichDataContext extends HATTestContext {
     """.stripMargin)
     .as[JsObject]
 
-  val testEndpointQuery = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+  val testEndpointQuery: Seq[EndpointQuery] = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
                               EndpointQuery("test/complex", Some(complexTransformation), None, None)
   )
 
-  val testEndpointQueryUpdated = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+  val testEndpointQueryUpdated: Seq[EndpointQuery] = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
                                      EndpointQuery("test/anothertest", None, None, None)
   )
 
-  val testBundle = EndpointDataBundle(
+  val testBundle: EndpointDataBundle = EndpointDataBundle(
     "testBundle",
     Map(
       "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
@@ -672,7 +672,7 @@ trait RichDataContext extends HATTestContext {
     )
   )
 
-  val failingCondition = EndpointDataBundle(
+  val failingCondition: EndpointDataBundle = EndpointDataBundle(
     "testfailCondition",
     Map(
       "test" -> PropertyQuery(
@@ -697,7 +697,7 @@ trait RichDataContext extends HATTestContext {
     )
   )
 
-  val matchingCondition = EndpointDataBundle(
+  val matchingCondition: EndpointDataBundle = EndpointDataBundle(
     "testfailCondition",
     Map(
       "test" -> PropertyQuery(
@@ -722,7 +722,7 @@ trait RichDataContext extends HATTestContext {
     )
   )
 
-  val testBundle2 = EndpointDataBundle(
+  val testBundle2: EndpointDataBundle = EndpointDataBundle(
     "testBundle2",
     Map(
       "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
@@ -738,20 +738,20 @@ trait RichDataContext extends HATTestContext {
     )
   )
 
-  val testDataDebitRequest =
+  val testDataDebitRequest: DataDebitRequest =
     DataDebitRequest(testBundle, None, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
 
-  val testDataDebitRequestUpdate =
+  val testDataDebitRequestUpdate: DataDebitRequest =
     DataDebitRequest(testBundle2, None, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
 
-  val ddRequestionConditionsFailed = DataDebitRequest(testBundle,
+  val ddRequestionConditionsFailed: DataDebitRequest = DataDebitRequest(testBundle,
                                                       Some(failingCondition),
                                                       LocalDateTime.now(),
                                                       LocalDateTime.now().plusDays(3),
                                                       rolling = false
   )
 
-  val ddRequestionConditionsFulfilled = DataDebitRequest(testBundle,
+  val ddRequestionConditionsFulfilled: DataDebitRequest = DataDebitRequest(testBundle,
                                                          Some(matchingCondition),
                                                          LocalDateTime.now(),
                                                          LocalDateTime.now().plusDays(3),

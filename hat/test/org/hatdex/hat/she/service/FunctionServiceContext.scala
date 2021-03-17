@@ -58,7 +58,7 @@ trait FunctionServiceContext extends HATTestContext {
     .overrides(new CustomisedFakeModule)
     .build()
 
-  val dummyFunctionConfiguration = FunctionConfiguration(
+  val dummyFunctionConfiguration: FunctionConfiguration = FunctionConfiguration(
     "test-dummy-function",
     FunctionInfo(
       Version("1.0.0"),
@@ -80,13 +80,13 @@ trait FunctionServiceContext extends HATTestContext {
     dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper", Map()),
     status = FunctionStatus(available = false, enabled = false, lastExecution = None, executionStarted = None))
 
-  val dummyFunctionConfigurationAvailable = dummyFunctionConfiguration.copy(
+  val dummyFunctionConfigurationAvailable: FunctionConfiguration = dummyFunctionConfiguration.copy(
     id = "test-dummy-function-available",
     info = dummyFunctionConfiguration.info.copy(name = "test-dummy-function-available"),
     dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper-vailable", Map()),
     status = dummyFunctionConfiguration.status.copy(available = true))
 
-  val dummyFunctionConfigurationUpdated = dummyFunctionConfiguration.copy(
+  val dummyFunctionConfigurationUpdated: FunctionConfiguration = dummyFunctionConfiguration.copy(
     id = "test-dummy-function",
     info = dummyFunctionConfiguration.info.copy(name = "test-dummy-function", headline = "Updated Function"),
     dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper", Map()),
@@ -97,7 +97,7 @@ trait FunctionServiceContext extends HATTestContext {
   //    dataBundle = EndpointDataBundle("test-data-feed-dummy-mapper", Map()),
   //    None, None, None)
 
-  val unavailableFunctionConfiguration = dummyFunctionConfiguration.copy(
+  val unavailableFunctionConfiguration: FunctionConfiguration = dummyFunctionConfiguration.copy(
     id = "test-test-unavailable-function",
     info = dummyFunctionConfiguration.info.copy(name = "test-test-unavailable-function", headline = "Unavailable Function"),
     dataBundle = EndpointDataBundle("test-unavailable-function-bundler", Map()),
@@ -108,7 +108,8 @@ trait FunctionServiceContext extends HATTestContext {
   //    dataBundle = EndpointDataBundle("test-unavailable-function-bundler", Map()),
   //    None, None, None)
 
-  val registeredFunction = new FunctionExecutable {
+  val registeredFunction: registeredFunction = new registeredFunction
+  class registeredFunction extends FunctionExecutable {
     val configuration: FunctionConfiguration = dummyFunctionConfiguration.copy(
       id = "data-feed-direct-mapper",
       info = dummyFunctionConfiguration.info.copy(name = "data-feed-direct-mapper", headline = "Dummy Function"),

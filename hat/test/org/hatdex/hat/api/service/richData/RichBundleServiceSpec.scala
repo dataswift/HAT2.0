@@ -41,7 +41,7 @@ class RichBundleServiceSpec
     with RichBundleServiceContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
@@ -232,15 +232,15 @@ trait RichBundleServiceContext extends HATTestContext {
     """.stripMargin)
     .as[JsObject]
 
-  val testEndpointQuery = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+  val testEndpointQuery: Seq[EndpointQuery] = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
                               EndpointQuery("test/complex", Some(complexTransformation), None, None)
   )
 
-  val testEndpointQueryUpdated = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
+  val testEndpointQueryUpdated: Seq[EndpointQuery] = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
                                      EndpointQuery("test/anothertest", None, None, None)
   )
 
-  val testBundle = EndpointDataBundle(
+  val testBundle: EndpointDataBundle = EndpointDataBundle(
     "testBundle",
     Map(
       "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
@@ -256,7 +256,7 @@ trait RichBundleServiceContext extends HATTestContext {
     )
   )
 
-  val testBundle2 = EndpointDataBundle(
+  val testBundle2: EndpointDataBundle = EndpointDataBundle(
     "testBundle2",
     Map(
       "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
@@ -272,7 +272,7 @@ trait RichBundleServiceContext extends HATTestContext {
     )
   )
 
-  val testBundleA = EndpointDataBundle(
+  val testBundleA: EndpointDataBundle = EndpointDataBundle(
     "testBundleA",
     Map(
       "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
@@ -288,7 +288,7 @@ trait RichBundleServiceContext extends HATTestContext {
     )
   )
 
-  val testBundleB = EndpointDataBundle(
+  val testBundleB: EndpointDataBundle = EndpointDataBundle(
     "testBundleB",
     Map(
       "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
@@ -304,7 +304,7 @@ trait RichBundleServiceContext extends HATTestContext {
     )
   )
 
-  val conditionsBundle = EndpointDataBundle(
+  val conditionsBundle: EndpointDataBundle = EndpointDataBundle(
     "testConditionsBundle",
     Map(
       "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),
@@ -320,7 +320,7 @@ trait RichBundleServiceContext extends HATTestContext {
     )
   )
 
-  val conditionsBundle2 = EndpointDataBundle(
+  val conditionsBundle2: EndpointDataBundle = EndpointDataBundle(
     "testConditionsBundle2",
     Map(
       "test" -> PropertyQuery(List(EndpointQuery("test/test", Some(simpleTransformation), None, None)),

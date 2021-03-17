@@ -39,7 +39,7 @@ class EndpointSubscriberServiceSpec
     with BeforeAndAfterAll
     with EndpointSubscriberServiceContext {
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   "The `matchesBundle` method" should "Trigger when endpoint query with no filters matches" in {
     val query = EndpointDataBundle(
@@ -264,7 +264,7 @@ class EndpointSubscriberServiceSpec
 
 trait EndpointSubscriberServiceContext { //extends HATTestContext {
   // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
+  val owner: HatUser = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
 
   val simpleJson: JsValue = Json.parse("""
       | {
@@ -293,5 +293,5 @@ trait EndpointSubscriberServiceContext { //extends HATTestContext {
       | }
     """.stripMargin)
 
-  val simpleEndpointData = EndpointData("test/test", Some(UUID.randomUUID()), None, None, simpleJson, None)
+  val simpleEndpointData: EndpointData = EndpointData("test/test", Some(UUID.randomUUID()), None, None, simpleJson, None)
 }

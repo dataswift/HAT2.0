@@ -38,7 +38,7 @@ import play.api.{ Application, Logger }
 
 class JsonStatsServiceSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with JsonStatsServiceContext {
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   "The `countJsonPaths` method" should "Correctly count numbers of values for simple objects" in {
     val result = JsonStatsService.countJsonPaths(simpleJson)
@@ -120,7 +120,7 @@ class JsonStatsServiceSpec extends BaseSpec with BeforeAndAfter with BeforeAndAf
 
 trait JsonStatsServiceContext {
   // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
+  val owner: HatUser = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
 
   lazy val application: Application = new GuiceApplicationBuilder()
     .configure(FakeHatConfiguration.config)

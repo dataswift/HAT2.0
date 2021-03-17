@@ -24,6 +24,11 @@
 
 package org.hatdex.hat.she.models
 
+import java.util.concurrent.ExecutorService
+import javax.inject.Inject
+
+import scala.concurrent.{ ExecutionContext, Future }
+
 import akka.actor.ActorSystem
 import akka.stream.alpakka.awslambda.scaladsl.AwsLambdaFlow
 import akka.stream.scaladsl.{ Sink, Source }
@@ -41,10 +46,6 @@ import org.hatdex.hat.utils.ExecutorServiceWrapper
 import org.joda.time.DateTime
 import play.api.libs.json.{ Format, Json }
 import play.api.{ Configuration, Logger }
-
-import java.util.concurrent.ExecutorService
-import javax.inject.Inject
-import scala.concurrent.{ ExecutionContext, Future }
 
 class LambdaFunctionExecutable(
     id: String,

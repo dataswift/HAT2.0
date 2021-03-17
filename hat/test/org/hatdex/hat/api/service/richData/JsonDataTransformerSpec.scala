@@ -31,7 +31,7 @@ import play.api.libs.json.{ JsValue, Json, _ }
 
 class JsonDataTransformerSpec extends BaseSpec {
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   "JSON mappers" should "remap from simple fields to flat json" in new JsonDataTransformerContext {
     val transformation: JsObject = Json

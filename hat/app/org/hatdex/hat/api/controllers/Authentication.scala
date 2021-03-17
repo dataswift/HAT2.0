@@ -97,38 +97,38 @@ class Authentication @Inject() (
       body: String) =
     Unauthorized(Json.toJson(ErrorMessage(s"${title}", s"${body}")))
 
-  val noUserMatchingToken =
+  val noUserMatchingToken: Result =
     unauthorizedMessage("Password reset unauthorized", "No user matching token")
 
-  val onlyHatOwnerCanReset =
+  val onlyHatOwnerCanReset: Result =
     unauthorizedMessage("Password reset unauthorized", "Only HAT owner can reset their password")
 
-  val expiredToken =
+  val expiredToken: Result =
     unauthorizedMessage("Invalid Token", "Token expired or invalid")
 
-  val invalidToken =
+  val invalidToken: Result =
     unauthorizedMessage("Invalid Token", "Token does not exist")
 
-  val noClaimNoMatchingToken =
+  val noClaimNoMatchingToken: Result =
     unauthorizedMessage("HAT claim unauthorized", "No user matching token")
 
-  val noUserOrPass =
+  val noUserOrPass: Result =
     unauthorizedMessage("Credentials required", "No username or password provided to retrieve token")
 
-  val emailVerificationFailed =
+  val emailVerificationFailed: Result =
     BadRequest(Json.toJson(ErrorMessage("Bad Request", "HAT email verification failed")))
 
-  val iSEClaimFailed =
+  val iSEClaimFailed: Result =
     InternalServerError(
       Json.toJson(ErrorMessage("Internal Server Error", "Failed to initialize HAT email verification process"))
     )
 
   // * Ok Responses *
   private def okMessage(body: String) = Ok(Json.toJson(SuccessResponse(s"${body}")))
-  val hatIsAlreadyClaimed =
+  val hatIsAlreadyClaimed: Result =
     okMessage("The email associated with this HAT has already been verified.")
 
-  val resendVerificationEmail =
+  val resendVerificationEmail: Result =
     okMessage(
       "If the email you have entered is correct and your HAT is not validated, you will receive an email with a link to validate your HAT."
     )

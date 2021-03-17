@@ -48,7 +48,7 @@ class HatDataStatsProcessorSpec
     with BeforeAndAfterAll
     with HatDataStatsProcessorContext {
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   "The `computeInboundStats` method" should "Correctly count numbers of values for simple objects" in {
     import io.dataswift.models.hat.json.DataStatsFormat._
@@ -78,7 +78,7 @@ class HatDataStatsProcessorSpec
 trait HatDataStatsProcessorContext {
   import scala.concurrent.ExecutionContext.Implicits.global
   // Setup default users for testing
-  val owner = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
+  val owner: HatUser = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
 
   class ExtrasModule extends AbstractModule with ScalaModule {
     override def configure(): Unit =
@@ -109,7 +109,7 @@ trait HatDataStatsProcessorContext {
       | }
     """.stripMargin)
 
-  val simpleDataCreatedEvent = DataCreatedEvent(
+  val simpleDataCreatedEvent: DataCreatedEvent = DataCreatedEvent(
     "testhat.hubofallthings.net",
     ModelTranslation.fromInternalModel(owner).clean,
     DateTime.now(),

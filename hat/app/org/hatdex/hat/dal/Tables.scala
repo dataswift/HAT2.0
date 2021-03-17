@@ -1,5 +1,7 @@
 package org.hatdex.hat.dal
 // AUTO-GENERATED Slick data model
+import slick.lifted.{ ForeignKeyQuery, Index, PrimaryKey }
+
 /** Stand-alone Slick data model for immediate use */
 object Tables extends {
   val profile = org.hatdex.libs.dal.HATPostgresProfile
@@ -443,7 +445,7 @@ trait Tables {
     val fieldIds: Rep[List[Int]] = column[List[Int]]("field_ids")
 
     /** Foreign key referencing BundleContextless (database name bundle_contextless_data_source_dataset_bundle_id_fkey) */
-    lazy val bundleContextlessFk = foreignKey(
+    lazy val bundleContextlessFk: ForeignKeyQuery[BundleContextless, BundleContextlessRow] = foreignKey(
       "bundle_contextless_data_source_dataset_bundle_id_fkey",
       bundleId,
       BundleContextless
@@ -454,7 +456,7 @@ trait Tables {
     )
 
     /** Foreign key referencing DataTable (database name bundle_contextless_data_source_dataset_dataset_table_id_fkey) */
-    lazy val dataTableFk = foreignKey(
+    lazy val dataTableFk: ForeignKeyQuery[DataTable, DataTableRow] = foreignKey(
       "bundle_contextless_data_source_dataset_dataset_table_id_fkey",
       datasetTableId,
       DataTable
@@ -779,10 +781,10 @@ trait Tables {
       column[Option[String]]("conditions", O.Default(None))
 
     /** Primary key of DataDebitBundle (database name data_debit_bundle_pkey) */
-    val pk = primaryKey("data_debit_bundle_pkey", (dataDebitKey, bundleId))
+    val pk: PrimaryKey = primaryKey("data_debit_bundle_pkey", (dataDebitKey, bundleId))
 
     /** Foreign key referencing DataBundles (database name data_debit_bundle_bundle_id_fkey) */
-    lazy val dataBundlesFk1 =
+    lazy val dataBundlesFk1: ForeignKeyQuery[DataBundles, DataBundlesRow] =
       foreignKey("data_debit_bundle_bundle_id_fkey", bundleId, DataBundles)(
         r => r.bundleId,
         onUpdate = ForeignKeyAction.NoAction,
@@ -790,7 +792,7 @@ trait Tables {
       )
 
     /** Foreign key referencing DataBundles (database name data_debit_bundle_conditions_fkey) */
-    lazy val dataBundlesFk2 =
+    lazy val dataBundlesFk2: ForeignKeyQuery[DataBundles, DataBundlesRow] =
       foreignKey("data_debit_bundle_conditions_fkey", conditions, DataBundles)(
         r => Rep.Some(r.bundleId),
         onUpdate = ForeignKeyAction.NoAction,
@@ -798,7 +800,7 @@ trait Tables {
       )
 
     /** Foreign key referencing DataDebitContract (database name data_debit_bundle_data_debit_key_fkey) */
-    lazy val dataDebitContractFk = foreignKey(
+    lazy val dataDebitContractFk: ForeignKeyQuery[DataDebitContract, DataDebitContractRow] = foreignKey(
       "data_debit_bundle_data_debit_key_fkey",
       dataDebitKey,
       DataDebitContract
@@ -869,7 +871,7 @@ trait Tables {
     val clientId: Rep[java.util.UUID] = column[java.util.UUID]("client_id")
 
     /** Foreign key referencing UserUser (database name data_debit_contract_client_id_fkey) */
-    lazy val userUserFk =
+    lazy val userUserFk: ForeignKeyQuery[UserUser, UserUserRow] =
       foreignKey("data_debit_contract_client_id_fkey", clientId, UserUser)(
         r => r.userId,
         onUpdate = ForeignKeyAction.NoAction,
@@ -1044,7 +1046,7 @@ trait Tables {
     val accepted: Rep[Boolean] = column[Boolean]("accepted")
 
     /** Foreign key referencing DataBundles (database name data_debit_permissions_bundle_id_fkey) */
-    lazy val dataBundlesFk1 = foreignKey(
+    lazy val dataBundlesFk1: ForeignKeyQuery[DataBundles, DataBundlesRow] = foreignKey(
       "data_debit_permissions_bundle_id_fkey",
       bundleId,
       DataBundles
@@ -1055,7 +1057,7 @@ trait Tables {
     )
 
     /** Foreign key referencing DataBundles (database name data_debit_permissions_conditions_fkey) */
-    lazy val dataBundlesFk2 = foreignKey(
+    lazy val dataBundlesFk2: ForeignKeyQuery[DataBundles, DataBundlesRow] = foreignKey(
       "data_debit_permissions_conditions_fkey",
       conditions,
       DataBundles
@@ -1066,7 +1068,7 @@ trait Tables {
     )
 
     /** Foreign key referencing DataDebit (database name data_debit_permissions_data_debit_key_fkey) */
-    lazy val dataDebitFk = foreignKey(
+    lazy val dataDebitFk: ForeignKeyQuery[DataDebit, DataDebitRow] = foreignKey(
       "data_debit_permissions_data_debit_key_fkey",
       dataDebitKey,
       DataDebit
@@ -1173,7 +1175,7 @@ trait Tables {
     val deleted: Rep[Boolean] = column[Boolean]("deleted", O.Default(false))
 
     /** Foreign key referencing DataTable (database name data_table_fk) */
-    lazy val dataTableFk = foreignKey("data_table_fk", tableIdFk, DataTable)(
+    lazy val dataTableFk: ForeignKeyQuery[DataTable, DataTableRow] = foreignKey("data_table_fk", tableIdFk, DataTable)(
       r => r.id,
       onUpdate = ForeignKeyAction.NoAction,
       onDelete = ForeignKeyAction.NoAction
@@ -1301,17 +1303,17 @@ trait Tables {
       column[Option[String]]("source_unique_id", O.Default(None))
 
     /** Foreign key referencing UserUser (database name data_json_owner_fkey) */
-    lazy val userUserFk = foreignKey("data_json_owner_fkey", owner, UserUser)(
+    lazy val userUserFk: ForeignKeyQuery[UserUser, UserUserRow] = foreignKey("data_json_owner_fkey", owner, UserUser)(
       r => r.userId,
       onUpdate = ForeignKeyAction.NoAction,
       onDelete = ForeignKeyAction.NoAction
     )
 
     /** Uniqueness Index over (hash) (database name data_json_hash_key) */
-    val index1 = index("data_json_hash_key", hash, unique = true)
+    val index1: Index = index("data_json_hash_key", hash, unique = true)
 
     /** Uniqueness Index over (source,sourceUniqueId) (database name data_json_source_unique) */
-    val index2 =
+    val index2: Index =
       index("data_json_source_unique", (source, sourceUniqueId), unique = true)
   }
 
@@ -1362,10 +1364,10 @@ trait Tables {
     val recordId: Rep[java.util.UUID] = column[java.util.UUID]("record_id")
 
     /** Primary key of DataJsonGroupRecords (database name data_json_group_records_pkey) */
-    val pk = primaryKey("data_json_group_records_pkey", (groupId, recordId))
+    val pk: PrimaryKey = primaryKey("data_json_group_records_pkey", (groupId, recordId))
 
     /** Foreign key referencing DataJson (database name data_json_group_records_record_id_fkey) */
-    lazy val dataJsonFk =
+    lazy val dataJsonFk: ForeignKeyQuery[DataJson, DataJsonRow] =
       foreignKey("data_json_group_records_record_id_fkey", recordId, DataJson)(
         r => r.recordId,
         onUpdate = ForeignKeyAction.NoAction,
@@ -1373,7 +1375,7 @@ trait Tables {
       )
 
     /** Foreign key referencing DataJsonGroups (database name data_json_group_records_group_id_fkey) */
-    lazy val dataJsonGroupsFk = foreignKey(
+    lazy val dataJsonGroupsFk: ForeignKeyQuery[DataJsonGroups, DataJsonGroupsRow] = foreignKey(
       "data_json_group_records_group_id_fkey",
       groupId,
       DataJsonGroups
@@ -1446,7 +1448,7 @@ trait Tables {
       column[org.joda.time.LocalDateTime]("date")
 
     /** Foreign key referencing UserUser (database name data_json_groups_owner_fkey) */
-    lazy val userUserFk =
+    lazy val userUserFk: ForeignKeyQuery[UserUser, UserUserRow] =
       foreignKey("data_json_groups_owner_fkey", owner, UserUser)(
         r => r.userId,
         onUpdate = ForeignKeyAction.NoAction,
@@ -1679,14 +1681,14 @@ trait Tables {
     val deleted: Rep[Boolean] = column[Boolean]("deleted", O.Default(false))
 
     /** Index over (name) (database name data_table_name) */
-    val index1 = index("data_table_name", name)
+    val index1: Index = index("data_table_name", name)
 
     /** Uniqueness Index over (name,sourceName) (database name data_table_name_source) */
-    val index2 =
+    val index2: Index =
       index("data_table_name_source", (name, sourceName), unique = true)
 
     /** Index over (sourceName) (database name data_table_source_name) */
-    val index3 = index("data_table_source_name", sourceName)
+    val index3: Index = index("data_table_source_name", sourceName)
   }
 
   /** Collection-like TableQuery object for table DataTable */
@@ -1833,7 +1835,7 @@ trait Tables {
     val deleted: Rep[Boolean] = column[Boolean]("deleted", O.Default(false))
 
     /** Foreign key referencing DataTable (database name data_table_data_tabletotablecrossref_fk) */
-    lazy val dataTableFk1 =
+    lazy val dataTableFk1: ForeignKeyQuery[DataTable, DataTableRow] =
       foreignKey("data_table_data_tabletotablecrossref_fk", table2, DataTable)(
         r => r.id,
         onUpdate = ForeignKeyAction.NoAction,
@@ -1841,7 +1843,7 @@ trait Tables {
       )
 
     /** Foreign key referencing DataTable (database name data_table_data_tabletotablecrossref_fk1) */
-    lazy val dataTableFk2 =
+    lazy val dataTableFk2: ForeignKeyQuery[DataTable, DataTableRow] =
       foreignKey("data_table_data_tabletotablecrossref_fk1", table1, DataTable)(
         r => r.id,
         onUpdate = ForeignKeyAction.NoAction,
@@ -2062,7 +2064,7 @@ trait Tables {
     val deleted: Rep[Boolean] = column[Boolean]("deleted", O.Default(false))
 
     /** Foreign key referencing DataField (database name data_field_data_value_fk) */
-    lazy val dataFieldFk =
+    lazy val dataFieldFk: ForeignKeyQuery[DataField, DataFieldRow] =
       foreignKey("data_field_data_value_fk", fieldId, DataField)(
         r => r.id,
         onUpdate = ForeignKeyAction.NoAction,
@@ -2070,7 +2072,7 @@ trait Tables {
       )
 
     /** Foreign key referencing DataRecord (database name data_record_data_value_fk) */
-    lazy val dataRecordFk =
+    lazy val dataRecordFk: ForeignKeyQuery[DataRecord, DataRecordRow] =
       foreignKey("data_record_data_value_fk", recordId, DataRecord)(
         r => r.id,
         onUpdate = ForeignKeyAction.NoAction,
@@ -2289,10 +2291,10 @@ trait Tables {
     val content: Rep[Boolean] = column[Boolean]("content", O.Default(false))
 
     /** Primary key of HatFileAccess (database name hat_file_access_pkey) */
-    val pk = primaryKey("hat_file_access_pkey", (fileId, userId))
+    val pk: PrimaryKey = primaryKey("hat_file_access_pkey", (fileId, userId))
 
     /** Foreign key referencing HatFile (database name hat_file_access_file_id_fkey) */
-    lazy val hatFileFk =
+    lazy val hatFileFk: ForeignKeyQuery[HatFile, HatFileRow] =
       foreignKey("hat_file_access_file_id_fkey", fileId, HatFile)(
         r => r.id,
         onUpdate = ForeignKeyAction.NoAction,
@@ -2300,7 +2302,7 @@ trait Tables {
       )
 
     /** Foreign key referencing UserUser (database name hat_file_access_user_id_fkey) */
-    lazy val userUserFk =
+    lazy val userUserFk: ForeignKeyQuery[UserUser, UserUserRow] =
       foreignKey("hat_file_access_user_id_fkey", userId, UserUser)(
         r => r.userId,
         onUpdate = ForeignKeyAction.NoAction,
@@ -2520,7 +2522,7 @@ trait Tables {
       column[String]("developer_support_email")
 
     /** Foreign key referencing DataBundles (database name she_function_bundle_id_fkey) */
-    lazy val dataBundlesFk =
+    lazy val dataBundlesFk: ForeignKeyQuery[DataBundles, DataBundlesRow] =
       foreignKey("she_function_bundle_id_fkey", bundleId, DataBundles)(
         r => r.bundleId,
         onUpdate = ForeignKeyAction.NoAction,
@@ -2809,7 +2811,7 @@ trait Tables {
       column[Option[String]]("application_resource", O.Default(None))
 
     /** Foreign key referencing UserUser (database name user_access_log_user_id_fkey) */
-    lazy val userUserFk =
+    lazy val userUserFk: ForeignKeyQuery[UserUser, UserUserRow] =
       foreignKey("user_access_log_user_id_fkey", userId, UserUser)(
         r => r.userId,
         onUpdate = ForeignKeyAction.NoAction,
@@ -2936,7 +2938,7 @@ trait Tables {
       column[Option[String]]("extra", O.Default(None))
 
     /** Foreign key referencing UserRoleAvailable (database name user_role_role_fkey) */
-    lazy val userRoleAvailableFk =
+    lazy val userRoleAvailableFk: ForeignKeyQuery[UserRoleAvailable, UserRoleAvailableRow] =
       foreignKey("user_role_role_fkey", role, UserRoleAvailable)(
         r => r.name,
         onUpdate = ForeignKeyAction.NoAction,
@@ -2944,7 +2946,7 @@ trait Tables {
       )
 
     /** Foreign key referencing UserUser (database name user_role_user_id_fkey) */
-    lazy val userUserFk =
+    lazy val userUserFk: ForeignKeyQuery[UserUser, UserUserRow] =
       foreignKey("user_role_user_id_fkey", userId, UserUser)(
         r => r.userId,
         onUpdate = ForeignKeyAction.NoAction,

@@ -38,7 +38,7 @@ import play.api.test.{FakeRequest, Helpers}
 class ContractDataSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with ContractDataContext {
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)

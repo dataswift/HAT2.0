@@ -50,7 +50,7 @@ class ApplicationRequestProxy @Inject() (
     extends HatApiController(components, silhouette) {
   import io.dataswift.models.hat.json.HatJsonFormats.errorMessage
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   def proxyRequest(
       id: String,
