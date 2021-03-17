@@ -29,6 +29,7 @@ import io.dataswift.test.common.BaseSpec
 import org.joda.time.LocalDateTime
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
@@ -64,7 +65,7 @@ class DataDebitContractServiceSpec
 
   "The `createDataDebit` method" should "Save a data debit" in {
     val service = application.injector.instanceOf[DataDebitContractService]
-    val saved   = service.createDataDebit("testddnew", testDataDebitRequest, owner.userId)
+    val saved   = service.createDataDebit("testddnew", testDataDebitRequest(), owner.userId)
     saved map { debit =>
       debit.client.email must equal(owner.email)
       debit.dataDebitKey must equal("testddnew")
@@ -78,8 +79,8 @@ class DataDebitContractServiceSpec
   it should "Throw an error when a duplicate data debit is getting saved" in {
     val service = application.injector.instanceOf[DataDebitContractService]
     try for {
-      _ <- service.createDataDebit("testddup", testDataDebitRequest, owner.userId)
-      saved <- service.createDataDebit("testddup", testDataDebitRequest, owner.userId)
+      _ <- service.createDataDebit("testddup", testDataDebitRequest(), owner.userId)
+      saved <- service.createDataDebit("testddup", testDataDebitRequest(), owner.userId)
     } yield saved
     catch {
       case (e: Exception) =>
@@ -92,7 +93,7 @@ class DataDebitContractServiceSpec
   // "The `dataDebit` method" should "Return a data debit by ID" in {
   //   val service = application.injector.instanceOf[DataDebitContractService]
   //   val saved = for {
-  //     _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+  //     _ <- service.createDataDebit("testdd", testDataDebitRequest(), owner.userId)
   //     saved <- service.dataDebit("testdd")
   //   } yield saved
 
@@ -122,7 +123,7 @@ class DataDebitContractServiceSpec
   "The `dataDebitEnable` method" should "Enable an existing data debit" in {
     val service = application.injector.instanceOf[DataDebitContractService]
     val saved = for {
-      _ <- service.createDataDebit("testdd1", testDataDebitRequest, owner.userId)
+      _ <- service.createDataDebit("testdd1", testDataDebitRequest(), owner.userId)
       _ <- service.dataDebitEnableBundle("testdd1", None)
       saved <- service.dataDebit("testdd1")
     } yield saved
@@ -142,8 +143,8 @@ class DataDebitContractServiceSpec
   it should "Enable a data debit after a few iterations of bundle adjustments" in {
     val service = application.injector.instanceOf[DataDebitContractService]
     val saved = for {
-      _ <- service.createDataDebit("testdd2", testDataDebitRequest, owner.userId)
-      _ <- service.updateDataDebitBundle("testdd2", testDataDebitRequestUpdate, owner.userId)
+      _ <- service.createDataDebit("testdd2", testDataDebitRequest(), owner.userId)
+      _ <- service.updateDataDebitBundle("testdd2", testDataDebitRequestUpdate(), owner.userId)
       _ <- service.dataDebitEnableBundle("testdd2", Some(testDataDebitRequestUpdate.bundle.name))
       saved <- service.dataDebit("testdd2")
     } yield saved
@@ -165,9 +166,9 @@ class DataDebitContractServiceSpec
     val service = application.injector.instanceOf[DataDebitContractService]
 
     val saved = for {
-      _ <- service.createDataDebit("testdd3", testDataDebitRequest, owner.userId)
+      _ <- service.createDataDebit("testdd3", testDataDebitRequest(), owner.userId)
       _ <- service.dataDebitEnableBundle("testdd3", Some(testDataDebitRequest.bundle.name))
-      _ <- service.updateDataDebitBundle("testdd3", testDataDebitRequestUpdate, owner.userId)
+      _ <- service.updateDataDebitBundle("testdd3", testDataDebitRequestUpdate(), owner.userId)
       _ <- service.dataDebitEnableBundle("testdd3", Some(testDataDebitRequestUpdate.bundle.name))
       _ <- service.dataDebitDisable("testdd3")
       saved <- service.dataDebit("testdd3")
@@ -185,8 +186,8 @@ class DataDebitContractServiceSpec
   "The `updateDataDebitBundle` method" should "Update a data debit by inserting an additional bundle" in {
     val service = application.injector.instanceOf[DataDebitContractService]
     val saved = for {
-      saved <- service.createDataDebit("testdd4", testDataDebitRequest, owner.userId)
-      updated <- service.updateDataDebitBundle("testdd4", testDataDebitRequestUpdate, owner.userId)
+      saved <- service.createDataDebit("testdd4", testDataDebitRequest(), owner.userId)
+      updated <- service.updateDataDebitBundle("testdd4", testDataDebitRequestUpdate(), owner.userId)
     } yield updated
 
     saved map { debit =>
@@ -202,17 +203,15 @@ class DataDebitContractServiceSpec
   }
 
   it should "Throw an error when updating with an existing bundle" in {
-    val service = application.injector.instanceOf[DataDebitContractService]
+    val service  = application.injector.instanceOf[DataDebitContractService]
+    val request1 = testDataDebitRequest()
     try for {
-      saved <- service.createDataDebit("testdd5", testDataDebitRequest, owner.userId)
-      updated <- service.updateDataDebitBundle("testdd5",
-                                               testDataDebitRequestUpdate.copy(bundle = testDataDebitRequest.bundle),
-                                               owner.userId
-                 )
+      _ <- service.createDataDebit("testdd5", request1, owner.userId)
+      updated <- service.updateDataDebitBundle("testdd5", request1, owner.userId)
     } yield updated
     catch {
-      case (rdde: RichDataDuplicateBundleException) =>
-        true
+      case _: RichDataDuplicateBundleException =>
+      // OK
       case _: Throwable =>
         fail()
     }
@@ -222,8 +221,8 @@ class DataDebitContractServiceSpec
     val service = application.injector.instanceOf[DataDebitContractService]
 
     val saved = for {
-      _ <- service.createDataDebit("testdd6", testDataDebitRequest, owner.userId)
-      _ <- service.createDataDebit("testdd7", testDataDebitRequestUpdate, owner.userId)
+      _ <- service.createDataDebit("testdd6", testDataDebitRequest(), owner.userId)
+      _ <- service.createDataDebit("testdd7", testDataDebitRequestUpdate(), owner.userId)
       saved <- service.all()
     } yield saved
 
@@ -235,8 +234,16 @@ class DataDebitContractServiceSpec
 }
 
 trait DataDebitContractServiceContext extends RichBundleServiceContext {
-  val testDataDebitRequest =
-    DataDebitRequest(testBundle, None, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
-  val testDataDebitRequestUpdate =
-    DataDebitRequest(testBundle2, None, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
+
+  private val uniqueSuffix = new AtomicInteger
+
+  def testDataDebitRequest(): DataDebitRequest = {
+    val bundle = testBundle.copy(name = s"${testBundle.name}-${uniqueSuffix.incrementAndGet()}")
+    DataDebitRequest(bundle, None, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
+  }
+
+  def testDataDebitRequestUpdate(): DataDebitRequest = {
+    val bundle = testBundle2.copy(name = s"${testBundle2.name}-${uniqueSuffix.incrementAndGet()}")
+    DataDebitRequest(bundle, None, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
+  }
 }
