@@ -24,14 +24,13 @@
 
 package org.hatdex.hat.she.functions
 
-import org.hatdex.hat.api.json.RichDataJsonFormats
-import org.hatdex.hat.api.models.EndpointData
+import io.dataswift.models.hat.EndpointData
+import io.dataswift.models.hat.json.RichDataJsonFormats
 import org.hatdex.hat.she.service.FunctionServiceContext
-import org.specs2.specification.Scope
 import play.api.libs.json.{ Format, Json }
 
-trait DataFeedDirectMapperContext extends Scope with FunctionServiceContext {
-  private implicit val endpointDataFormat: Format[EndpointData] = RichDataJsonFormats.endpointDataFormat
+trait DataFeedDirectMapperContext extends FunctionServiceContext {
+  implicit private val endpointDataFormat: Format[EndpointData] = RichDataJsonFormats.endpointDataFormat
 
   private val exampleTweetRetweetText =
     """

@@ -24,9 +24,9 @@
 
 package org.hatdex.hat.api.service.applications
 
-import org.hatdex.hat.api.models.applications.Application
-
 import scala.concurrent.{ ExecutionContext, Future }
+
+import io.dataswift.models.hat.applications.Application
 
 class TestApplicationProvider(apps: Seq[Application])(implicit ec: ExecutionContext) extends TrustedApplicationProvider {
   def application(id: String): Future[Option[Application]] = {

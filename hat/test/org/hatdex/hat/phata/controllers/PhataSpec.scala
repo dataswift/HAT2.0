@@ -24,31 +24,29 @@
 
 package org.hatdex.hat.phata.controllers
 
-import com.mohiva.play.silhouette.test._
-import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models.EndpointData
-import org.hatdex.hat.api.service.richData.RichDataService
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mock.Mockito
-import org.specs2.specification.{ BeforeAll, BeforeEach }
-import play.api.Logger
-import play.api.libs.json.Json
-import play.api.test.{ FakeRequest, Helpers, PlaySpecification }
-
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class PhataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with Context with BeforeEach with BeforeAll {
+import com.mohiva.play.silhouette.test._
+import io.dataswift.models.hat.EndpointData
+import io.dataswift.test.common.BaseSpec
+import org.hatdex.hat.api.HATTestContext
+import org.hatdex.hat.api.service.richData.RichDataService
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
+import play.api.Logger
+import play.api.libs.json.Json
+import play.api.test.Helpers._
+import play.api.test.{FakeRequest, Helpers}
 
+class PhataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with PhataContext {
+
+  import scala.concurrent.ExecutionContext.Implicits.global
   val logger = Logger(this.getClass)
 
-  import org.hatdex.hat.api.json.RichDataJsonFormats._
+  import io.dataswift.models.hat.json.RichDataJsonFormats._
 
-  sequential
-
-  def beforeAll: Unit = {
+  override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
-  }
 
   override def before: Unit = {
     import org.hatdex.hat.dal.Tables._
@@ -63,68 +61,65 @@ class PhataSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockit
       DataBundles.filter(_.bundleId.like("test%")).delete,
       DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete)
+      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
+    )
 
-    Await.result(hatDatabase.run(action), 60.seconds)
+    Await.result(db.run(action), 60.seconds)
   }
 
-  "The `profile` method" should {
-    "Return bundle data with profile information" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
+  "The `profile` method" should "Return bundle data with profile information" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[Phata]
-      val dataService = application.injector.instanceOf[RichDataService]
+    val controller  = application.injector.instanceOf[Phata]
+    val dataService = application.injector.instanceOf[RichDataService]
 
-      val data = List(
-        EndpointData("rumpel/notablesv1", None, None, None, samplePublicNotable, None),
-        EndpointData("rumpel/notablesv1", None, None, None, samplePrivateNotable, None),
-        EndpointData("rumpel/notablesv1", None, None, None, sampleSocialNotable, None))
+    val data = List(
+      EndpointData("rumpel/notablesv1", None, None, None, samplePublicNotable, None),
+      EndpointData("rumpel/notablesv1", None, None, None, samplePrivateNotable, None),
+      EndpointData("rumpel/notablesv1", None, None, None, sampleSocialNotable, None)
+    )
 
-      val result = for {
-        _ <- dataService.saveData(owner.userId, data)
-        response <- Helpers.call(controller.profile, request)
-      } yield response
+    val result = for {
+      _ <- dataService.saveData(owner.userId, data)
+      response <- Helpers.call(controller.profile, request)
+    } yield response
 
-      status(result) must equalTo(OK)
-      val phataData = contentAsJson(result).as[Map[String, Seq[EndpointData]]]
+    status(result) must equal(OK)
+    val phataData = contentAsJson(result).as[Map[String, Seq[EndpointData]]]
 
-      phataData.get("notables") must beSome
-      phataData("notables").length must be equalTo (1)
-
-    }
+    phataData.get("notables") must not be empty
+    phataData("notables").length must equal(1)
   }
 
-  //  "The `launcher` method" should {
-  //    "return status 401 if authenticator but no identity was found" in new Context {
-  //      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-  //        .withAuthenticator(LoginInfo("xing", "comedian@watchmen.com"))
-  //
-  //      val controller = application.injector.instanceOf[Phata]
-  //      val result: Future[Result] = databaseReady.flatMap(_ => controller.launcher().apply(request))
-  //
-  //      status(result) must equalTo(UNAUTHORIZED)
-  //    }
-  //
-  //    "return OK if authenticator for matching identity" in new Context {
-  //      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-  //        .withAuthenticator(owner.loginInfo)
-  //
-  //      val controller = application.injector.instanceOf[Phata]
-  //      val result: Future[Result] = databaseReady.flatMap(_ => controller.launcher().apply(request))
-  //
-  //      status(result) must equalTo(OK)
-  //      contentAsString(result) must contain("MarketSquare")
-  //      contentAsString(result) must contain("Rumpel")
-  //    }
-  //  }
+  // the launcher function was removed from Phata.
+  // TODO: rewrite
+  // "The `launcher` method" should "return status 401 if authenticator but no identity was found" in new PhataContext {
+  //   val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+  //     .withAuthenticator(LoginInfo("xing", "comedian@watchmen.com"))
 
+  //   val controller = application.injector.instanceOf[Phata]
+  //   val result     = Helpers.call(controller.profile, request)
+
+  //   status(result) must equal(UNAUTHORIZED)
+  // }
+
+  // it should "return OK if authenticator for matching identity" in new PhataContext {
+  //   val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+  //     .withAuthenticator(owner.loginInfo)
+
+  //   val controller = application.injector.instanceOf[Phata]
+  //   val result     = Helpers.call(controller.profile, request)
+
+  //   status(result) must equal(OK)
+  //   //contentAsString(result) must contain("MarketSquare")
+  //   //contentAsString(result) must contain("Rumpel")
+  // }
 }
 
-trait Context extends HATTestContext {
+trait PhataContext extends HATTestContext {
 
-  val samplePublicNotable = Json.parse(
-    """
+  val samplePublicNotable = Json.parse("""
       |{
       |    "kind": "note",
       |    "author":
@@ -140,8 +135,7 @@ trait Context extends HATTestContext {
       |}
     """.stripMargin)
 
-  val samplePrivateNotable = Json.parse(
-    """
+  val samplePrivateNotable = Json.parse("""
       |{
       |    "kind": "note",
       |    "author":
@@ -157,8 +151,7 @@ trait Context extends HATTestContext {
       |}
     """.stripMargin)
 
-  val sampleSocialNotable = Json.parse(
-    """
+  val sampleSocialNotable = Json.parse("""
       |{
       |    "kind": "note",
       |    "author":

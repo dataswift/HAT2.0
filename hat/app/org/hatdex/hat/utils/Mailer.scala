@@ -24,28 +24,51 @@
 
 package org.hatdex.hat.utils
 
-import javax.inject.Inject
 import akka.Done
 import akka.actor.ActorSystem
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailService
+import com.amazonaws.services.simpleemail.model._
 import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.phata.views
 import org.hatdex.hat.resourceManagement.HatServer
 import play.api.i18n.{ Lang, Messages, MessagesApi }
-import play.api.libs.mailer.{ Email, MailerClient }
 import play.api.mvc.RequestHeader
-import play.api.{ Configuration, UsefulException }
-import play.twirl.api.Html
+import play.api.{ Configuration, Logger, UsefulException }
 
+import java.nio.charset.StandardCharsets
+import javax.inject.Inject
+import scala.collection.JavaConverters._
 import scala.concurrent.{ ExecutionContext, Future }
 
 trait Mailer {
   protected val configuration: Configuration
   protected val system: ActorSystem
-  protected val mailerClient: MailerClient
+  protected val mailerClient: AmazonSimpleEmailService
 
-  import scala.language.implicitConversions
+  private val logger = Logger(getClass)
 
-  implicit def html2String(html: Html): String = html.toString
+  val emailFrom: String = configuration.get[String]("mailer.from")
+  val mock: Boolean     = configuration.get[Boolean]("mailer.mock")
+
+  def sendEmail(
+      recipients: String*
+    )(from: String,
+      subject: String,
+      bodyHtml: String,
+      bodyText: String
+    )(implicit
+      ec: ExecutionContext): Future[Done] =
+    if (!mock) {
+      val message = new Message(content(subject), new Body(content(bodyText)).withHtml(content(bodyHtml)))
+      val request = new SendEmailRequest(from, new Destination(recipients.asJava), message)
+      Future(mailerClient.sendEmail(request)).map(_ => Done)
+    } else {
+      logger.info(s"mocking enabled, not sending email about '$subject' to ${recipients.mkString(", ")}")
+      Future.successful(Done)
+    }
+
+  private def content(s: String): Content =
+    new Content(s).withCharset(StandardCharsets.UTF_8.name())
 
   def serverErrorNotify(
       request: RequestHeader,
@@ -57,19 +80,6 @@ trait Mailer {
       exception: Throwable
     )(implicit m: Messages): Done
 
-  def sendEmail(
-      recipients: String*
-    )(from: String,
-      subject: String,
-      bodyHtml: String,
-      bodyText: String
-    )(implicit ec: ExecutionContext): Future[Done] =
-    Future(
-      mailerClient.send(
-        Email(subject, from, recipients, Some(bodyText), Some(bodyHtml))
-      )
-    )
-      .map(_ => Done)
 }
 
 case class ApplicationMailDetails(
@@ -88,8 +98,6 @@ trait HatMailer extends Mailer {
       exception: Throwable
     )(implicit m: Messages): Done
 
-  // add MessagesApi implicitly
-  // remove Messages
   def passwordReset(
       email: String,
       resetLink: String
@@ -97,18 +105,22 @@ trait HatMailer extends Mailer {
       lang: Lang,
       server: HatServer): Done
 
-  // add MessagesApi implicitly
-  // remove Messages
   def passwordChanged(
       email: String
     )(implicit m: MessagesApi,
       lang: Lang,
       server: HatServer): Done
 
-  // no changes
   def verifyEmail(
       email: String,
       verificationLink: String
+    )(implicit m: MessagesApi,
+      lang: Lang,
+      server: HatServer): Done
+
+  def emailVerified(
+      email: String,
+      loginLink: String
     )(implicit m: MessagesApi,
       lang: Lang,
       server: HatServer): Done
@@ -117,10 +129,9 @@ trait HatMailer extends Mailer {
 class HatMailerImpl @Inject() (
     val configuration: Configuration,
     val system: ActorSystem,
-    val mailerClient: MailerClient
+    val mailerClient: AmazonSimpleEmailService
   )(implicit ec: RemoteExecutionContext)
     extends HatMailer {
-  private val emailFrom   = configuration.get[String]("play.mailer.from")
   private val adminEmails = configuration.get[Seq[String]]("exchange.admin")
 
   def serverErrorNotify(
@@ -130,7 +141,7 @@ class HatMailerImpl @Inject() (
     sendEmail(adminEmails: _*)(
       from = emailFrom,
       subject = s"HAT server ${request.host} error #${exception.id}",
-      bodyHtml = views.html.mails.emailServerError(request, exception),
+      bodyHtml = views.html.mails.emailServerError(request, exception).toString(),
       bodyText = views.html.mails.emailServerError(request, exception).toString()
     )
     Done
@@ -144,16 +155,12 @@ class HatMailerImpl @Inject() (
       from = emailFrom,
       subject =
         s"HAT server ${request.host} error: ${exception.getMessage} for ${request.path + request.rawQueryString}",
-      bodyHtml = views.html.mails.emailServerThrowable(request, exception),
+      bodyHtml = views.html.mails.emailServerThrowable(request, exception).toString(),
       bodyText = views.html.mails.emailServerThrowable(request, exception).toString()
     )
     Done
   }
 
-  // add MessagesApi implicitly
-  // remove Messages
-  // change the txt and html email templates
-  // emailAuthPasswordChange {txt|html}
   def passwordReset(
       email: String,
       resetLink: String
@@ -163,16 +170,12 @@ class HatMailerImpl @Inject() (
     sendEmail(email)(
       from = emailFrom,
       subject = messages("email.dataswift.auth.subject.resetPassword"),
-      bodyHtml = views.html.mails.emailAuthResetPassword(email, resetLink),
+      bodyHtml = views.html.mails.emailAuthResetPassword(email, resetLink).toString(),
       bodyText = views.txt.mails.emailAuthResetPassword(email, resetLink).toString()
     )
     Done
   }
 
-  // add implicit MessagesApi
-  // remove Messages
-  // change txt and html to
-  // emailAuthPasswordChanged.scala.{txt|html}
   def passwordChanged(
       email: String
     )(implicit messages: MessagesApi,
@@ -181,15 +184,12 @@ class HatMailerImpl @Inject() (
     sendEmail(email)(
       from = emailFrom,
       subject = messages("email.dataswift.auth.subject.passwordChanged"),
-      bodyHtml = views.html.mails.emailAuthPasswordChanged(),
+      bodyHtml = views.html.mails.emailAuthPasswordChanged().toString(),
       bodyText = views.txt.mails.emailAuthPasswordChanged().toString()
     )
     Done
   }
 
-  // change txt and html to
-  // emailAuthVerifyEmail.scala.{txt|html}
-  // data is ok
   def verifyEmail(
       email: String,
       verificationLink: String
@@ -197,12 +197,27 @@ class HatMailerImpl @Inject() (
       lang: Lang,
       server: HatServer): Done = {
     sendEmail(email)(
-      from = "pda@hubofallthings.net",
+      from = emailFrom,
       subject = messages("email.dataswift.auth.subject.verifyEmail"),
-      bodyHtml = views.html.mails.emailAuthVerifyEmail(email, verificationLink),
+      bodyHtml = views.html.mails.emailAuthVerifyEmail(email, verificationLink).toString(),
       bodyText = views.txt.mails
         .emailAuthVerifyEmail(email, verificationLink)
         .toString()
+    )
+    Done
+  }
+
+  def emailVerified(
+      email: String,
+      loginLink: String
+    )(implicit messages: MessagesApi,
+      lang: Lang,
+      server: HatServer): Done = {
+    sendEmail(email)(
+      from = emailFrom,
+      subject = messages("email.dataswift.auth.subject.verifyEmail"),
+      bodyHtml = views.html.mails.emailHatClaimed(email, loginLink).toString(),
+      bodyText = views.txt.mails.emailHatClaimed(email, loginLink).toString()
     )
     Done
   }

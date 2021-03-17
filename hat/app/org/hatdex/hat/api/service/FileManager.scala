@@ -24,18 +24,13 @@
 
 package org.hatdex.hat.api.service
 
-import javax.inject.Inject
-
 import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.model.{
-  GeneratePresignedUrlRequest,
-  SSEAlgorithm
-}
-import com.google.inject.name.Named
+import com.amazonaws.services.s3.model.{ GeneratePresignedUrlRequest, SSEAlgorithm }
 import com.typesafe.config.Config
 import org.hatdex.hat.resourceManagement.HatServer
 import play.api.{ ConfigLoader, Logger }
 
+import javax.inject.Inject
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
@@ -43,23 +38,18 @@ trait FileManager {
   def getUploadUrl(
       filename: String,
       maybeContentType: Option[String]
-    )(implicit hatServer: HatServer
-    ): Future[String]
+    )(implicit hatServer: HatServer): Future[String]
   def getContentUrl(
       filename: String
-    )(implicit hatServer: HatServer
-    ): Future[String]
+    )(implicit hatServer: HatServer): Future[String]
   def getFileSize(fileName: String)(implicit hatServer: HatServer): Future[Long]
   def deleteContents(
       filename: String
-    )(implicit hatServer: HatServer
-    ): Future[Unit]
+    )(implicit hatServer: HatServer): Future[Unit]
 }
 
 case class AwsS3Configuration(
     bucketName: String,
-    accessKeyId: String,
-    secretKey: String,
     region: String,
     signedUrlExpiry: FiniteDuration)
 
@@ -68,16 +58,12 @@ object AwsS3Configuration {
     new ConfigLoader[AwsS3Configuration] {
       def load(
           rootConfig: Config,
-          path: String
-        ): AwsS3Configuration = {
+          path: String): AwsS3Configuration = {
         val config = rootConfig.getConfig(path)
         AwsS3Configuration(
           bucketName = config.getString("bucketName"),
-          accessKeyId = config.getString("accessKeyId"),
-          secretKey = config.getString("secretKey"),
           region = config.getString("region"),
-          signedUrlExpiry =
-            ConfigLoader.finiteDurationLoader.load(config, "signedUrlExpiry")
+          signedUrlExpiry = ConfigLoader.finiteDurationLoader.load(config, "signedUrlExpiry")
         )
       }
     }
@@ -85,18 +71,17 @@ object AwsS3Configuration {
 
 class FileManagerS3 @Inject() (
     awsS3Configuration: AwsS3Configuration,
-    @Named("s3client-file-manager") s3client: AmazonS3
+    s3client: AmazonS3
   )(implicit ec: RemoteExecutionContext)
     extends FileManager {
 
-  private val logger = Logger(this.getClass)
+  private val logger     = Logger(this.getClass)
   private val bucketName = awsS3Configuration.bucketName
 
   def getUploadUrl(
       fileName: String,
       maybeContentType: Option[String]
-    )(implicit hatServer: HatServer
-    ): Future[String] = {
+    )(implicit hatServer: HatServer): Future[String] = {
     val expiration = org.joda.time.DateTime
       .now()
       .plus(awsS3Configuration.signedUrlExpiry.toMillis)
@@ -124,8 +109,7 @@ class FileManagerS3 @Inject() (
 
   def getContentUrl(
       fileName: String
-    )(implicit hatServer: HatServer
-    ): Future[String] = {
+    )(implicit hatServer: HatServer): Future[String] = {
     val expiration = org.joda.time.DateTime
       .now()
       .plus(awsS3Configuration.signedUrlExpiry.toMillis)
@@ -143,22 +127,19 @@ class FileManagerS3 @Inject() (
 
   def getFileSize(
       fileName: String
-    )(implicit hatServer: HatServer
-    ): Future[Long] = {
+    )(implicit hatServer: HatServer): Future[Long] = {
     logger.debug(
       s"Getting file size for $bucketName ${hatServer.domain}/$fileName"
     )
     Future(
       s3client.getObjectMetadata(bucketName, s"${hatServer.domain}/$fileName")
     )
-      .map { metadata => Option(metadata.getContentLength).getOrElse(0L) }
+      .map(metadata => Option(metadata.getContentLength).getOrElse(0L))
       .recover { case _ => 0L }
   }
 
   def deleteContents(
       fileName: String
-    )(implicit hatServer: HatServer
-    ): Future[Unit] = {
+    )(implicit hatServer: HatServer): Future[Unit] =
     Future(s3client.deleteObject(bucketName, s"${hatServer.domain}/$fileName"))
-  }
 }

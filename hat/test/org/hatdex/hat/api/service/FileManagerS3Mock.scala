@@ -25,22 +25,16 @@
 package org.hatdex.hat.api.service
 
 import com.amazonaws.auth.{ AWSStaticCredentialsProvider, BasicAWSCredentials }
-import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
-import org.specs2.mock.Mockito
 
-import scala.concurrent.duration._
+class FileManagerS3Mock {
+  // TOOD: Move this to localstack test container
+  private val awsCreds = new BasicAWSCredentials("testAwsAccessKey", "testAwsSecret")
+  val mockS3client: AmazonS3 =
+    AmazonS3ClientBuilder
+      .standard()
+      .withRegion("eu-west-1")
+      .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+      .build()
 
-case class FileManagerS3Mock() extends Mockito {
-  val s3Configuration = AwsS3Configuration("hat-storage-test", "testAwsAccessKey", "testAwsSecret", "eu-west-1", 5.minutes)
-  private val awsCreds: BasicAWSCredentials = new BasicAWSCredentials(s3Configuration.accessKeyId, s3Configuration.secretKey)
-  val mockS3client: AmazonS3 = spy(AmazonS3ClientBuilder.standard()
-    .withRegion("eu-west-1")
-    .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-    .build())
-
-  private val s3ObjectMetadata = new ObjectMetadata()
-  s3ObjectMetadata.setContentLength(123456L)
-  doReturn(s3ObjectMetadata).when(mockS3client).getObjectMetadata("hat-storage-test", "hat.hubofallthings.net/testFile")
-  doNothing.when(mockS3client).deleteObject("hat-storage-test", "hat.hubofallthings.net/deleteFile")
 }

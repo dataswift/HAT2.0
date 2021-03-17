@@ -43,17 +43,20 @@ object Dependencies {
 
   object Library {
 
+    object Version {
+      val ScalaTest           = "3.2.3"
+      val TestContainersScala = "0.38.8"
+      val DsTestTools         = "0.2.3"
+    }
+
     object Play {
-      val version     = play.core.PlayVersion.current
-      val ws          = "com.typesafe.play" %% "play-ws"           % version
-      val cache       = "com.typesafe.play" %% "play-cache"        % version
-      val test        = "com.typesafe.play" %% "play-test"         % version
-      val specs2      = "com.typesafe.play" %% "play-specs2"       % version
-      val jdbc        = "com.typesafe.play" %% "play-jdbc"         % version
-      val json        = "com.typesafe.play" %% "play-json"         % "2.6.14"
-      val jsonJoda    = "com.typesafe.play" %% "play-json-joda"    % "2.6.14"
-      val mailer      = "com.typesafe.play" %% "play-mailer"       % "6.0.1"
-      val mailerGuice = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
+      val version  = play.core.PlayVersion.current
+      val ws       = "com.typesafe.play" %% "play-ws"        % version
+      val cache    = "com.typesafe.play" %% "play-cache"     % version
+      val test     = "com.typesafe.play" %% "play-test"      % version
+      val jdbc     = "com.typesafe.play" %% "play-jdbc"      % version
+      val json     = "com.typesafe.play" %% "play-json"      % "2.6.14"
+      val jsonJoda = "com.typesafe.play" %% "play-json-joda" % "2.6.14"
 
       val htmlCompressor = "com.mohiva"          %% "play-html-compressor" % "0.6.3"
       val playGuard      = "com.digitaltangible" %% "play-guard"           % "2.2.0"
@@ -72,34 +75,36 @@ object Dependencies {
         val persistence       = "com.mohiva" %% "play-silhouette-persistence"     % version
         val cryptoJca         = "com.mohiva" %% "play-silhouette-crypto-jca"      % version
         val silhouette        = "com.mohiva" %% "play-silhouette"                 % version
-        val silhouetteTestkit = "com.mohiva" %% "play-silhouette-testkit"         % version % "test"
+        val silhouetteTestkit = "com.mohiva" %% "play-silhouette-testkit"         % version % Test
       }
     }
 
-    object Specs2 {
-      private val version = "3.9.5"
-      val core            = "org.specs2" %% "specs2-core"          % version
-      val matcherExtra    = "org.specs2" %% "specs2-matcher-extra" % version
-      val mock            = "org.specs2" %% "specs2-mock"          % version
-    }
-
     object Utils {
-      private val awsSdkVersion    = "1.11.755"
+      private val awsSdkVersion    = "1.11.971"
       val pegdown                  = "org.pegdown"            % "pegdown"                         % "1.6.0"
-      val awsJavaSdk               = "com.amazonaws"          % "aws-java-sdk"                    % awsSdkVersion
       val awsJavaS3Sdk             = "com.amazonaws"          % "aws-java-sdk-s3"                 % awsSdkVersion
-      val prettyTime               = "org.ocpsoft.prettytime" % "prettytime"                      % "4.0.6.Final"
+      val awsJavaSesSdk            = "com.amazonaws"          % "aws-java-sdk-ses"                % awsSdkVersion
+      val prettyTime               = "org.ocpsoft.prettytime" % "prettytime"                      % "4.0.4.Final"
       val nbvcxz                   = "me.gosimple"            % "nbvcxz"                          % "1.4.3"
-      val elasticacheClusterClient = "com.amazonaws"          % "elasticache-java-cluster-client" % "1.1.1"
+      val elasticacheClusterClient = "com.amazonaws"          % "elasticache-java-cluster-client" % "1.1.2"
       val playMemcached            = "com.github.mumoshu"    %% "play2-memcached-play26"          % "0.9.3" exclude ("net.spy", "spymemcached")
       val alpakkaAwsLambda         = "com.lightbend.akka"    %% "akka-stream-alpakka-awslambda"   % "0.20"
       val apacheCommonLang         = "org.apache.commons"     % "commons-lang3"                   % "3.10"
     }
 
+    object Backend {
+      private val version = "2.1.2_play2.6.25"
+      val logPlay         = "io.dataswift" %% "log-play" % version
+      val hatPlay         = "io.dataswift" %% "hat-play" % version
+      val hatModels       = "io.dataswift" %% "hat"      % version
+      val dexPlay         = "io.dataswift" %% "dex-play" % version
+      val dexModels       = "io.dataswift" %% "dex"      % version
+    }
+
     object HATDeX {
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "2.6.16"
-      val dexClient = "org.hatdex" %% "dex-client-scala"      % "2.6.10"
-      val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.0.9"
+      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "3.1.2" intransitive ()
+      val dexClient = "org.hatdex" %% "dex-client-scala"      % "3.1.2" intransitive ()
+      val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.1.2"
     }
 
     val scalaGuice  = "net.codingwell" %% "scala-guice"  % "4.2.6"
@@ -109,5 +114,29 @@ object Dependencies {
       val adjudicator = "io.dataswift" %% "adjudicatorlib" % Versions.adjudicator
     }
 
+    object Prometheus {
+      val filters = "com.github.stijndehaes" %% "play-prometheus-filters" % "0.4.0"
+    }
+
+    object ScalaTest {
+      val scalaplaytest     = "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2"   % Test
+      val scalaplaytestmock = "org.scalatestplus"      %% "mockito-3-4"        % "3.2.2.0" % Test
+    }
+
+    object Dataswift {
+      val testCommon            = "io.dataswift" %% "test-common"             % Version.DsTestTools % Test
+      val integrationTestCommon = "io.dataswift" %% "integration-test-common" % Version.DsTestTools % Test
+    }
+    val overrides = Seq(
+      "com.typesafe.play" %% "play"                  % Play.version,
+      "com.typesafe.play" %% "play-server"           % Play.version,
+      "com.typesafe.play" %% "play-ahc-ws"           % Play.version,
+      "com.typesafe.play" %% "play-akka-http-server" % Play.version,
+      "com.typesafe.play" %% "filters-helpers"       % Play.version,
+      Library.Play.cache,
+      Library.Play.ws,
+      Library.Play.json,
+      Library.Play.jsonJoda
+    )
   }
 }

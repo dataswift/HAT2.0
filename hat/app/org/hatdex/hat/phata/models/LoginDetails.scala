@@ -24,11 +24,11 @@
 
 package org.hatdex.hat.phata.models
 
+import scala.collection.JavaConverters._
+
 import me.gosimple.nbvcxz._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{ JsError, _ }
-
-import scala.collection.JavaConverters._
 
 case class ApiPasswordChange(
     newPassword: String,
@@ -48,17 +48,16 @@ object ApiPasswordChange {
 
   private def passwordGuessesToScore(guesses: BigDecimal) = {
     val DELTA = 5
-    if (guesses < 1e3 + DELTA) {
+    if (guesses < 1e3 + DELTA)
       0
-    } else if (guesses < 1e6 + DELTA) {
+    else if (guesses < 1e6 + DELTA)
       1
-    } else if (guesses < 1e8 + DELTA) {
+    else if (guesses < 1e8 + DELTA)
       2
-    } else if (guesses < 1e10 + DELTA) {
+    else if (guesses < 1e10 + DELTA)
       3
-    } else {
+    else
       4
-    }
   }
 
   def passwordStrength(implicit reads: Reads[String]): Reads[String] =
@@ -67,22 +66,21 @@ object ApiPasswordChange {
         .reads(js)
         .flatMap { a =>
           val estimate = nbvcxz.estimate(a)
-          if (passwordGuessesToScore(estimate.getGuesses) >= 2) {
+          if (passwordGuessesToScore(estimate.getGuesses) >= 2)
             JsSuccess(a)
-          } else {
+          else
             JsError(
               JsonValidationError(
                 "Minimum password requirement strength not met",
                 estimate.getFeedback.getSuggestion.asScala.toList: _*
               )
             )
-          }
         }
     }
 
   implicit val passwordChangeApiReads: Reads[ApiPasswordChange] =
     ((JsPath \ "newPassword").read[String](passwordStrength) and
-      (JsPath \ "password").readNullable[String])(ApiPasswordChange.apply _)
+        (JsPath \ "password").readNullable[String])(ApiPasswordChange.apply _)
   implicit val passwordChangeApiWrites: Writes[ApiPasswordChange] =
     Json.format[ApiPasswordChange]
 }
@@ -98,7 +96,9 @@ object ApiPasswordResetRequest {
   implicit val passwordResetApiWrites: Writes[ApiPasswordResetRequest] =
     Json.format[ApiPasswordResetRequest]
 }
-case class ApiValidationRequest(email: String, applicationId: String)
+case class ApiValidationRequest(
+    email: String,
+    applicationId: String)
 
 object ApiValidationRequest {
   implicit val passwordValidationApiReads: Reads[ApiValidationRequest] =
