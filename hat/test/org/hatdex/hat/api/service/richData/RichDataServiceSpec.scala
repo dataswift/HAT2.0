@@ -24,19 +24,18 @@
 
 package org.hatdex.hat.api.service.richData
 
-import java.util.UUID
-
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-
 import akka.stream.scaladsl.Sink
-import io.dataswift.test.common.{ BaseSpec }
+import io.dataswift.models.hat._
+import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models._
 import org.hatdex.hat.dal.Tables._
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import play.api.Logger
 import play.api.libs.json.{ JsObject, JsValue, Json }
+
+import java.util.UUID
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
 
 class RichDataStreamingServiceSpec
     extends BaseSpec
@@ -45,7 +44,6 @@ class RichDataStreamingServiceSpec
     with RichDataServiceContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  val logger = Logger(this.getClass)
 
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
@@ -68,7 +66,7 @@ class RichDataStreamingServiceSpec
       DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
     )
 
-    Await.result(db.run(action), 60.seconds)
+    Await.result(db.run(action.transactionally), 60.seconds)
   }
 
   "The `propertyDataStreaming` method" should "Find test endpoint values and map them to expected json output" in {
@@ -272,7 +270,7 @@ class RichDataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAn
       DataJson.delete
     )
 
-    Await.result(db.run(action), 60.seconds)
+    Await.result(db.run(action.transactionally), 60.seconds)
   }
 
   "The `saveData` method" should "Save a single JSON datapoint and add ID" in {

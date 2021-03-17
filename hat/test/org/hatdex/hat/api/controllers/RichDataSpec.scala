@@ -24,26 +24,25 @@
 
 package org.hatdex.hat.api.controllers
 
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+
 import com.mohiva.play.silhouette.test._
+import io.dataswift.models.hat._
+import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.richData.{ DataDebitContractService, RichDataService }
 import org.joda.time.LocalDateTime
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import play.api.Logger
 import play.api.libs.json.{ JsArray, JsObject, JsValue, Json }
 import play.api.mvc.Result
-import play.api.test.{ FakeRequest, Helpers }
-
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-import io.dataswift.test.common.BaseSpec
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
-import play.api.test.Helpers
 import play.api.test.Helpers._
+import play.api.test.{ FakeRequest, Helpers }
 
 class RichDataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with RichDataContext {
   import scala.concurrent.ExecutionContext.Implicits.global
-  import org.hatdex.hat.api.json.RichDataJsonFormats._
+  import io.dataswift.models.hat.json.RichDataJsonFormats._
 
   val logger = Logger(this.getClass)
 
@@ -74,7 +73,7 @@ class RichDataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterA
       // DataJson.delete
     )
 
-    Await.result(db.run(action), 60.seconds)
+    Await.result(db.run(action.transactionally), 60.seconds)
   }
 
   "The Saving and Reading data" should "must be equivalent" in {

@@ -23,18 +23,17 @@
  */
 package org.hatdex.hat.she.controllers
 
-import com.mohiva.play.silhouette.api.Silhouette
 import javax.inject.Inject
-import org.hatdex.hat.api.json.RichDataJsonFormats
-import org.hatdex.hat.api.models.Owner
+
+import scala.concurrent.ExecutionContext
+
+import com.mohiva.play.silhouette.api.Silhouette
+import io.dataswift.models.hat.Owner
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
-import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol
 import org.hatdex.hat.she.service.StaticDataGeneratorService
 import play.api.libs.json.Json
 import play.api.mvc._
-
-import scala.concurrent.ExecutionContext
 
 class StaticDataGenerator @Inject() (
     components: ControllerComponents,
@@ -43,9 +42,7 @@ class StaticDataGenerator @Inject() (
   )(implicit
     val ec: ExecutionContext,
     applicationsService: ApplicationsService)
-    extends HatApiController(components, silhouette)
-    with RichDataJsonFormats
-    with FunctionConfigurationJsonProtocol {
+    extends HatApiController(components, silhouette) {
 
   def getStaticData(endpoint: String): Action[AnyContent] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>

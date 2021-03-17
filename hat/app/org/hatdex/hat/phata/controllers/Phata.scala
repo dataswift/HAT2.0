@@ -23,21 +23,20 @@
  */
 package org.hatdex.hat.phata.controllers
 
+import javax.inject.Inject
+
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.{ Assets, AssetsFinder, AssetsFinderProvider }
-import javax.inject.Inject
-import org.hatdex.hat.api.json.{ HatJsonFormats, RichDataJsonFormats }
-import org.hatdex.hat.api.models.EndpointDataBundle
+import io.dataswift.models.hat.EndpointDataBundle
+import io.dataswift.models.hat.json.RichDataJsonFormats
 import org.hatdex.hat.api.service.richData.{ RichBundleService, RichDataService }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
-import org.hatdex.hat.phata.{ views => phataViews }
 import play.api.cache.{ Cached, CachedBuilder }
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class Phata @Inject() (
     components: ControllerComponents,
@@ -48,9 +47,8 @@ class Phata @Inject() (
     silhouette: Silhouette[HatApiAuthEnvironment],
     bundleService: RichBundleService,
     dataService: RichDataService)
-    extends HatApiController(components, silhouette)
-    with HatJsonFormats
-    with RichDataJsonFormats {
+    extends HatApiController(components, silhouette) {
+  import RichDataJsonFormats._
 
   implicit val af: AssetsFinder = assetsFinder.get
 

@@ -27,9 +27,11 @@ package org.hatdex.hat.api.controllers
 import java.util.UUID
 import javax.inject.Inject
 
+import scala.concurrent.{ ExecutionContext, Future }
+
 import com.mohiva.play.silhouette.api.Silhouette
-import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ Owner, Platform, _ }
+import io.dataswift.models.hat.json.HatJsonFormats
+import io.dataswift.models.hat.{ Owner, Platform, _ }
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.models.HatUser
@@ -40,8 +42,6 @@ import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
 
-import scala.concurrent.{ ExecutionContext, Future }
-
 class Users @Inject() (
     components: ControllerComponents,
     silhouette: Silhouette[HatApiAuthEnvironment],
@@ -49,8 +49,8 @@ class Users @Inject() (
     hatBodyParsers: HatBodyParsers,
     implicit val ec: ExecutionContext,
     implicit val applicationsService: ApplicationsService)
-    extends HatApiController(components, silhouette)
-    with HatJsonFormats {
+    extends HatApiController(components, silhouette) {
+  import HatJsonFormats._
 
   private val logger = Logger(this.getClass)
 
