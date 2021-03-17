@@ -24,6 +24,8 @@
 
 package org.hatdex.hat.modules
 
+import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper
+import com.amazonaws.services.simpleemail.{ AmazonSimpleEmailService, AmazonSimpleEmailServiceClientBuilder }
 import com.google.inject.name.Named
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api._
@@ -33,7 +35,7 @@ import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services._
 import com.mohiva.play.silhouette.api.util._
 import com.mohiva.play.silhouette.crypto.{ JcaCrypter, JcaCrypterSettings, JcaSigner, JcaSignerSettings }
-import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, _ }
+import com.mohiva.play.silhouette.impl.authenticators._
 import com.mohiva.play.silhouette.impl.providers._
 import com.mohiva.play.silhouette.impl.util._
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
@@ -50,6 +52,7 @@ import play.api.http.HttpErrorHandler
 import play.api.libs.ws.WSClient
 import play.api.{ ConfigLoader, Configuration }
 
+import javax.inject.{ Singleton => JSingleton }
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 
@@ -224,6 +227,15 @@ class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteCo
       passwordHasherRegistry: PasswordHasherRegistry
     )(implicit ec: ExecutionContext): CredentialsProvider[HatServer] =
     new CredentialsProvider(authInfoRepository, passwordHasherRegistry)
+
+  @Provides @JSingleton
+  def provideMailClient(config: Configuration): AmazonSimpleEmailService =
+    AmazonSimpleEmailServiceClientBuilder
+      .standard()
+      .withRegion(config.get[String]("mailer.awsRegion"))
+      .withCredentials(new EC2ContainerCredentialsProviderWrapper)
+      .build()
+
 }
 
 trait SilhouetteConfigLoaders {

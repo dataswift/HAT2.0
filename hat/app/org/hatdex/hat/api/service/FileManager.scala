@@ -24,15 +24,13 @@
 
 package org.hatdex.hat.api.service
 
-import javax.inject.Inject
-
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.{ GeneratePresignedUrlRequest, SSEAlgorithm }
-import com.google.inject.name.Named
 import com.typesafe.config.Config
 import org.hatdex.hat.resourceManagement.HatServer
 import play.api.{ ConfigLoader, Logger }
 
+import javax.inject.Inject
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
@@ -52,8 +50,6 @@ trait FileManager {
 
 case class AwsS3Configuration(
     bucketName: String,
-    accessKeyId: String,
-    secretKey: String,
     region: String,
     signedUrlExpiry: FiniteDuration)
 
@@ -66,8 +62,6 @@ object AwsS3Configuration {
         val config = rootConfig.getConfig(path)
         AwsS3Configuration(
           bucketName = config.getString("bucketName"),
-          accessKeyId = config.getString("accessKeyId"),
-          secretKey = config.getString("secretKey"),
           region = config.getString("region"),
           signedUrlExpiry = ConfigLoader.finiteDurationLoader.load(config, "signedUrlExpiry")
         )
@@ -77,7 +71,7 @@ object AwsS3Configuration {
 
 class FileManagerS3 @Inject() (
     awsS3Configuration: AwsS3Configuration,
-    @Named("s3client-file-manager") s3client: AmazonS3
+    s3client: AmazonS3
   )(implicit ec: RemoteExecutionContext)
     extends FileManager {
 

@@ -14,17 +14,21 @@ lazy val hat = project
   .enablePlugins(SbtWeb, SbtSassify, SbtGzip, SbtDigest)
   .enablePlugins(BasicSettings)
   .settings(
+    dependencyOverrides := Library.overrides,
     libraryDependencies ++= Seq(
           Library.Play.ws,
           filters,
           ehcache,
           Library.Play.cache,
           Library.Play.test,
-          Library.Play.mailer,
-          Library.Play.mailerGuice,
           Library.Play.playGuard,
           Library.Play.json,
           Library.Play.jsonJoda,
+          Library.Backend.logPlay,
+          Library.Backend.dexPlay,
+          Library.Backend.hatPlay,
+          Library.Backend.dexModels,
+          Library.Backend.hatModels,
           Library.Play.Silhouette.passwordBcrypt,
           Library.Play.Silhouette.persistence,
           Library.Play.Silhouette.cryptoJca,
@@ -36,6 +40,7 @@ lazy val hat = project
           Library.HATDeX.codegen,
           Library.Utils.pegdown,
           Library.Utils.awsJavaS3Sdk,
+          Library.Utils.awsJavaSesSdk,
           Library.Utils.prettyTime,
           Library.Utils.nbvcxz,
           Library.Utils.playMemcached,
@@ -51,14 +56,8 @@ lazy val hat = project
           case BuildEnv.Developement | BuildEnv.Test =>
             libraryDependencies.value ++ Seq(
                   Library.Play.Silhouette.silhouetteTestkit,
-                  Library.Test.scalatest,
-                  Library.Test.scalatestwordspec,
-                  Library.Test.scalaplaytest,
-                  Library.Test.scalaplaytestmock,
-                  Library.TestContainers.postgresql,
-                  Library.TestContainers.localstack,
-                  Library.TestContainers.scalaTest,
-                  Library.Dataswift.testCommon,
+                  Library.ScalaTest.scalaplaytest,
+                  Library.ScalaTest.scalaplaytestmock,
                   Library.Dataswift.integrationTestCommon
                 )
           case BuildEnv.Stage | BuildEnv.Production =>
@@ -88,11 +87,8 @@ lazy val hat = project
     // as Bash is incompatible with Alpine
     javaOptions in Universal ++= Seq(),
     packageName in Docker := "hat",
-    maintainer in Docker := "andrius.aucinas@hatdex.org",
+
     version in Docker := version.value,
-    //dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine",
-    dockerExposedPorts := Seq(9000),
-    //dockerEntrypoint := Seq("bin/hat"),
     // add a flag to not run in prod
     // modify the binary to include "-javaagent:codeguru-profiler-java-agent-standalone-1.1.0.jar="profilingGroupName:HatInDev,heapSummaryEnabled:true"
     dockerCommands := (buildEnv.value match {
@@ -100,34 +96,22 @@ lazy val hat = project
             Seq(
               Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine"),
               Cmd("WORKDIR", "/opt/docker/bin"),
-              Cmd("RUN", "apk add wget"),
-              Cmd(
-                "RUN",
-                s"wget --no-check-certificate ${codeguruURI}"
-              ),
-              Cmd("WORKDIR", "/opt/docker/"),
-              Cmd("COPY", "opt", "/opt"),
-              Cmd("COPY", "1/opt", "/opt"),
-              Cmd("RUN", "chown -R daemon:daemon /opt/docker"),
-              Cmd("RUN", "chmod -R u=rX,g=rX /opt/docker"),
-              Cmd("RUN", "chmod -R u+x,g+x /opt/docker/bin"),
+              Cmd("CMD", s"./${packageName.value}"),
               Cmd("EXPOSE", "9000"),
+
+              Cmd("RUN", s"apk add --no-cache wget; wget --no-check-certificate ${codeguruURI}"),
+
               Cmd("USER", "daemon"),
-              Cmd("ENTRYPOINT", s"bin/${packageName.value}")
+              Cmd("COPY", "--chown=daemon:daemon", "1/opt", "opt", "/opt/")
             )
           case BuildEnv.Stage | BuildEnv.Production =>
             Seq(
-              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine"),
+              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine"),
               Cmd("WORKDIR", "/opt/docker/bin"),
-              Cmd("WORKDIR", "/opt/docker/"),
-              Cmd("COPY", "opt", "/opt"),
-              Cmd("COPY", "1/opt", "/opt"),
-              Cmd("RUN", "chown -R daemon:daemon /opt/docker"),
-              Cmd("RUN", "chmod -R u=rX,g=rX /opt/docker"),
-              Cmd("RUN", "chmod -R u+x,g+x /opt/docker/bin"),
+              Cmd("CMD", s"./${packageName.value}"),
               Cmd("EXPOSE", "9000"),
               Cmd("USER", "daemon"),
-              Cmd("ENTRYPOINT", s"bin/${packageName.value}")
+              Cmd("COPY", "--chown=daemon:daemon", "1/opt", "opt", "/opt/")
             )
         }),
     javaOptions in Universal ++= (buildEnv.value match {
