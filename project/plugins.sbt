@@ -22,7 +22,7 @@ addSbtPlugin("org.scoverage" % "sbt-coveralls" % "1.2.6")
 addSbtPlugin("com.typesafe.sbt" % "sbt-web"     % "1.4.3")
 addSbtPlugin("com.typesafe.sbt" % "sbt-digest"  % "1.1.4")
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip"    % "1.0.2")
-addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.12")
+addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.13")
 
 addSbtPlugin("org.hatdex" % "sbt-slick-postgres-generator" % "0.0.11")
 
