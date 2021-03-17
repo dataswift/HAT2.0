@@ -21,8 +21,6 @@ lazy val hat = project
           ehcache,
           Library.Play.cache,
           Library.Play.test,
-          Library.Play.mailer,
-          Library.Play.mailerGuice,
           Library.Play.playGuard,
           Library.Play.json,
           Library.Play.jsonJoda,
@@ -42,6 +40,7 @@ lazy val hat = project
           Library.HATDeX.codegen,
           Library.Utils.pegdown,
           Library.Utils.awsJavaS3Sdk,
+          Library.Utils.awsJavaSesSdk,
           Library.Utils.prettyTime,
           Library.Utils.nbvcxz,
           Library.Utils.playMemcached,
@@ -57,14 +56,8 @@ lazy val hat = project
           case BuildEnv.Developement | BuildEnv.Test =>
             libraryDependencies.value ++ Seq(
                   Library.Play.Silhouette.silhouetteTestkit,
-                  Library.Test.scalatest,
-                  Library.Test.scalatestwordspec,
-                  Library.Test.scalaplaytest,
-                  Library.Test.scalaplaytestmock,
-                  Library.TestContainers.postgresql,
-                  Library.TestContainers.localstack,
-                  Library.TestContainers.scalaTest,
-                  Library.Dataswift.testCommon,
+                  Library.ScalaTest.scalaplaytest,
+                  Library.ScalaTest.scalaplaytestmock,
                   Library.Dataswift.integrationTestCommon
                 )
           case BuildEnv.Stage | BuildEnv.Production =>
