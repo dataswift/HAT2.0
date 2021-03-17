@@ -84,7 +84,7 @@ object Dependencies {
       val pegdown                  = "org.pegdown"            % "pegdown"                         % "1.6.0"
       val awsJavaS3Sdk             = "com.amazonaws"          % "aws-java-sdk-s3"                 % awsSdkVersion
       val awsJavaSesSdk            = "com.amazonaws"          % "aws-java-sdk-ses"                % awsSdkVersion
-      val prettyTime               = "org.ocpsoft.prettytime" % "prettytime"                      % "4.0.4.Final"
+      val prettyTime               = "org.ocpsoft.prettytime" % "prettytime"                      % "4.0.6.Final"
       val nbvcxz                   = "me.gosimple"            % "nbvcxz"                          % "1.4.3"
       val elasticacheClusterClient = "com.amazonaws"          % "elasticache-java-cluster-client" % "1.1.2"
       val playMemcached            = "com.github.mumoshu"    %% "play2-memcached-play26"          % "0.9.3" exclude ("net.spy", "spymemcached")
