@@ -19,7 +19,7 @@ addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.1")
 addSbtPlugin("org.scoverage" % "sbt-coveralls" % "1.2.6")
 
 // web plugins
-addSbtPlugin("com.typesafe.sbt" % "sbt-web"     % "1.4.3")
+addSbtPlugin("com.typesafe.sbt" % "sbt-web"     % "1.4.4")
 addSbtPlugin("com.typesafe.sbt" % "sbt-digest"  % "1.1.4")
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip"    % "1.0.2")
 addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.12")
