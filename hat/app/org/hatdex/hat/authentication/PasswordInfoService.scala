@@ -26,6 +26,8 @@ package org.hatdex.hat.authentication
 
 import javax.inject.Inject
 
+import scala.concurrent.Future
+
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
@@ -33,8 +35,6 @@ import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.resourceManagement.HatServer
 import play.api.Logger
-
-import scala.concurrent.Future
 
 class PasswordInfoService @Inject() (
     userService: AuthUserServiceImpl
@@ -46,15 +46,12 @@ class PasswordInfoService @Inject() (
   def add(
       loginInfo: LoginInfo,
       authInfo: PasswordInfo
-    )(implicit hat: HatServer
-    ): Future[PasswordInfo] = {
+    )(implicit hat: HatServer): Future[PasswordInfo] =
     update(loginInfo, authInfo)
-  }
 
   def find(
       loginInfo: LoginInfo
-    )(implicit hat: HatServer
-    ): Future[Option[PasswordInfo]] = {
+    )(implicit hat: HatServer): Future[Option[PasswordInfo]] =
     userService.retrieve(loginInfo).map {
       case Some(user) if user.pass.isDefined =>
         Some(PasswordInfo(BCryptPasswordHasher.ID, user.pass.get, salt = None))
@@ -62,7 +59,6 @@ class PasswordInfoService @Inject() (
         logger.info("No such user")
         None
     }
-  }
 
   def remove(loginInfo: LoginInfo)(implicit hat: HatServer): Future[Unit] =
     userService.remove(loginInfo)
@@ -70,8 +66,7 @@ class PasswordInfoService @Inject() (
   def save(
       loginInfo: LoginInfo,
       authInfo: PasswordInfo
-    )(implicit hat: HatServer
-    ): Future[PasswordInfo] =
+    )(implicit hat: HatServer): Future[PasswordInfo] =
     find(loginInfo).flatMap {
       case Some(_) => update(loginInfo, authInfo)
       case None    => add(loginInfo, authInfo)
@@ -80,8 +75,7 @@ class PasswordInfoService @Inject() (
   def update(
       loginInfo: LoginInfo,
       authInfo: PasswordInfo
-    )(implicit hat: HatServer
-    ): Future[PasswordInfo] =
+    )(implicit hat: HatServer): Future[PasswordInfo] =
     userService.retrieve(loginInfo).map {
       case Some(user) =>
         userService.save(user.copy(pass = Some(authInfo.password)))

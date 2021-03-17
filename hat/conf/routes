@@ -27,6 +27,9 @@ POST        /control/v2/auth/claim                               org.hatdex.hat.
 POST        /control/v2/auth/request-verification                org.hatdex.hat.api.controllers.Authentication.handleVerificationRequest(lang: Option[String])
 POST        /control/v2/auth/claim/complete/:verificationToken   org.hatdex.hat.api.controllers.Authentication.handleVerification(verificationToken: String)
 
+# Metrics
+GET         /metrics                                             com.github.stijndehaes.playprometheusfilters.controllers.PrometheusController.getMetrics
+
 ->          /api/v2                                              v20.Routes
 ->          /api/v2.0                                            v20.Routes
 ->          /api/v2.6                                            v26.Routes

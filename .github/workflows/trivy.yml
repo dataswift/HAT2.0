@@ -1,0 +1,77 @@
+# Run trivy creating a github issue for any issues
+# For each github issue create a Jira Ticket linking to the issue
+name: Trivy Jira
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * MON'
+
+env:
+  REGISTRY: dataswift/hat
+
+  jobs:
+    trivy-scan:
+      name: Scan
+      runs-on: ubuntu-latest
+      timeout-minutes: 20
+      steps:
+
+jobs:
+  trivy-scan:
+    name: Trivy Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Container - Login
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_DATASWIFT_USER }}
+          password: ${{ secrets.DOCKERHUB_DATASWIFT_PASS }}
+
+      - name: Container - Pull
+        run: docker pull ${{ env.ECR_REGISTRY }}:${{ github.sha }}
+
+      - name: Container - Scan - create git issue
+        uses: dataswift/gha-trivy@main
+        id: trivy
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          image: ${{ env.ECR_REGISTRY }}:${{ github.sha }}
+          issue: 'true'
+          issue_label: trivy, vulnerability, security
+          issue_title: Trivy generated Security Alert
+
+      - name: Jira Login
+        if: steps.trivy.outputs.issue_number != ''
+        uses: atlassian/gajira-login@master
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
+      - name: Create Jira ticket from Issue
+        id: jira
+        if: steps.trivy.outputs.issue_number != ''
+        uses: atlassian/gajira-create@master
+        with:
+          project: ${{ secrets.JIRA_TRIVY_PROJECT }}
+          issuetype: ${{ secrets.JIRA_TRIVY_ISSUE_TYPE }}
+          summary: Trivy has detected a vulnerability with a Docker container
+          description: ${{steps.trivy.outputs.html_url}}
+
+      - name: Container - Scan - Save Result
+        if: steps.trivy.outputs.issue_number != ''
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "${{ env.REGISTRY }}:${{ github.sha }}"
+          format: "template"
+          template: "@/contrib/sarif.tpl"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
+
+      - name: Upload scan results
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: "trivy-results.sarif"
+

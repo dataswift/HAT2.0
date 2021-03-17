@@ -25,16 +25,17 @@
 package org.hatdex.hat.she.service
 
 import javax.inject.Inject
+
+import scala.concurrent.duration._
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Success, Try }
+
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream._
 import akka.stream.scaladsl.{ Sink, Source }
-import org.hatdex.hat.api.models._
-import org.hatdex.hat.api.models.applications.{
-  DataFeedItem,
-  DataFeedItemLocation,
-  LocationGeo
-}
+import io.dataswift.models.hat._
+import io.dataswift.models.hat.applications.{ DataFeedItem, DataFeedItemLocation, LocationGeo }
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.she.mappers._
@@ -43,18 +44,14 @@ import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.JsNumber
 
-import scala.concurrent.duration._
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Success, Try }
-
 class FeedGeneratorService @Inject() (
   )(implicit
     richDataService: RichDataService,
     val actorSystem: ActorSystem,
     val ec: ExecutionContext) {
 
-  private val logger = Logger(this.getClass)
-  protected implicit val materializer: ActorMaterializer = ActorMaterializer()
+  private val logger                                     = Logger(this.getClass)
+  implicit protected val materializer: ActorMaterializer = ActorMaterializer()
 
   private val dataMappers: Seq[(String, DataEndpointMapper)] = Seq(
     "facebook/profile" -> new FacebookProfileMapper(),
@@ -89,11 +86,10 @@ class FeedGeneratorService @Inject() (
       since: Option[Long],
       until: Option[Long],
       mergeLocations: Boolean = false
-    )(implicit hatServer: HatServer
-    ): Future[Seq[DataFeedItem]] = {
-    if (endpoint.startsWith("she")) {
+    )(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
+    if (endpoint.startsWith("she"))
       insights(since, until, Some(endpoint)).runWith(Sink.seq)
-    } else {
+    else
       feedForMappers(
         dataMappers.filter(_._1.startsWith(endpoint)),
         since,
@@ -101,15 +97,12 @@ class FeedGeneratorService @Inject() (
         mergeLocations,
         includeInsights = false
       )
-    }
-  }
 
   def fullFeed(
       since: Option[Long],
       until: Option[Long],
       mergeLocations: Boolean = false
-    )(implicit hatServer: HatServer
-    ): Future[Seq[DataFeedItem]] =
+    )(implicit hatServer: HatServer): Future[Seq[DataFeedItem]] =
     feedForMappers(
       dataMappers,
       since,
@@ -122,8 +115,7 @@ class FeedGeneratorService @Inject() (
       since: Option[Long],
       until: Option[Long],
       endpoint: Option[String]
-    )(implicit hatServer: HatServer
-    ): Source[DataFeedItem, NotUsed] = {
+    )(implicit hatServer: HatServer): Source[DataFeedItem, NotUsed] = {
     val now = DateTime.now()
     val sinceTime = since
       .map(t => new DateTime(t * 1000L))
@@ -143,7 +135,7 @@ class FeedGeneratorService @Inject() (
       .mergeWithSorter(sources)
   }
 
-  private val defaultTimeBack = 180.days
+  private val defaultTimeBack    = 180.days
   private val defaultTimeForward = 30.days
   protected def feedForMappers(
       mappers: Seq[(String, DataEndpointMapper)],
@@ -152,8 +144,7 @@ class FeedGeneratorService @Inject() (
       mergeLocations: Boolean,
       includeInsights: Boolean
     )(implicit
-      hatServer: HatServer
-    ): Future[Seq[DataFeedItem]] = {
+      hatServer: HatServer): Future[Seq[DataFeedItem]] = {
     logger.debug(s"Fetching feed data for ${mappers.unzip._1}")
     val now = DateTime.now()
     val sinceTime = since
@@ -176,16 +167,15 @@ class FeedGeneratorService @Inject() (
         locations.sliding(2, 1),
         locationAugmentFunction
       )
-    } else {
+    } else
       sortedSources
-    }
 
-    val outputStream = if (includeInsights) {
-      new SourceMergeSorter()
-        .mergeWithSorter(Seq(geotaggedStream, insights(since, until, None)))
-    } else {
-      geotaggedStream
-    }
+    val outputStream =
+      if (includeInsights)
+        new SourceMergeSorter()
+          .mergeWithSorter(Seq(geotaggedStream, insights(since, until, None)))
+      else
+        geotaggedStream
 
     outputStream
       .runWith(Sink.seq)
@@ -194,8 +184,7 @@ class FeedGeneratorService @Inject() (
   def locationStream(
       since: Long,
       until: Long
-    )(implicit hatServer: HatServer
-    ): Source[(DateTime, LocationGeo), NotUsed] = {
+    )(implicit hatServer: HatServer): Source[(DateTime, LocationGeo), NotUsed] = {
     val endpoint = "rumpel/locations/ios"
     val endpointQuery = EndpointQuery(
       endpoint,
@@ -234,9 +223,9 @@ class FeedGeneratorService @Inject() (
           new DateTime(
             (d.data \ "dateCreated").as[Long] * 1000L
           ) -> LocationGeo(
-            (d.data \ "longitude").as[Double],
-            (d.data \ "latitude").as[Double]
-          )
+                (d.data \ "longitude").as[Double],
+                (d.data \ "latitude").as[Double]
+              )
         )
       )
       .collect({
@@ -244,33 +233,28 @@ class FeedGeneratorService @Inject() (
       })
   }
 
-  protected implicit def dataFeedItemOrdering: Ordering[DataFeedItem] =
+  implicit protected def dataFeedItemOrdering: Ordering[DataFeedItem] =
     Ordering.fromLessThan(_.date isAfter _.date)
 
   private def locationAugmentFunction(
       feedItem: DataFeedItem,
-      locations: Seq[(DateTime, LocationGeo)]
-    ): Either[DataFeedItem, Seq[(DateTime, LocationGeo)]] = {
+      locations: Seq[(DateTime, LocationGeo)]): Either[DataFeedItem, Seq[(DateTime, LocationGeo)]] =
     //    logger.debug(s"Dispatching event for $feedItem with $locations")
-    if (feedItem.location.isDefined) {
+    if (feedItem.location.isDefined)
       //      logger.debug("Location defined, skip")
       Left(feedItem)
-    } else {
-      val feedItemInstance = feedItem.date.getMillis
+    else {
+      val feedItemInstance      = feedItem.date.getMillis
       val startLocationInstance = locations.head._1.getMillis
-      val endLocationInstance = locations.last._1.getMillis
-      if (
-        feedItemInstance < startLocationInstance && feedItemInstance > endLocationInstance
-      ) {
+      val endLocationInstance   = locations.last._1.getMillis
+      if (feedItemInstance < startLocationInstance && feedItemInstance > endLocationInstance) {
         val closest = interpolateLocation(
           feedItemInstance,
           (startLocationInstance, locations.head._2),
           (endLocationInstance, locations.last._2)
         )
         Left(
-          feedItem.copy(location =
-            closest.map(l => DataFeedItemLocation(Some(l), None, None))
-          )
+          feedItem.copy(location = closest.map(l => DataFeedItemLocation(Some(l), None, None)))
         )
       } else if (feedItemInstance > startLocationInstance) {
         val closest = interpolateLocation(
@@ -279,25 +263,20 @@ class FeedGeneratorService @Inject() (
           (endLocationInstance, locations.last._2)
         )
         Left(
-          feedItem.copy(location =
-            closest.map(l => DataFeedItemLocation(Some(l), None, None))
-          )
+          feedItem.copy(location = closest.map(l => DataFeedItemLocation(Some(l), None, None)))
         )
-      } else {
+      } else
         //        logger.debug(s"Item older than location, find new location")
         Right(locations)
-      }
     }
-  }
 
   private def interpolateLocation(
       anchorInstance: Long,
       startItem: (Long, LocationGeo),
-      endItem: (Long, LocationGeo)
-    ): Option[LocationGeo] = {
+      endItem: (Long, LocationGeo)): Option[LocationGeo] = {
     val timeDiffStart = Math.abs(anchorInstance - startItem._1)
-    val timeDiffEnd = Math.abs(anchorInstance - endItem._1)
-    val timeBound = 7.hours.toMillis
+    val timeDiffEnd   = Math.abs(anchorInstance - endItem._1)
+    val timeBound     = 7.hours.toMillis
     if (timeDiffStart < timeBound || timeDiffEnd < timeBound) { // if either location is sufficiently close
       val ratio =
         timeDiffStart.toDouble / (timeDiffStart + timeDiffEnd).toDouble
@@ -307,9 +286,8 @@ class FeedGeneratorService @Inject() (
           startItem._2.latitude * (1 - ratio) + endItem._2.latitude * ratio
         )
       )
-    } else {
+    } else
       None
-    }
   }
 
 }
