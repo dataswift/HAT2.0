@@ -30,14 +30,14 @@ jobs:
           password: ${{ secrets.DOCKERHUB_DATASWIFT_PASS }}
 
       - name: Container - Pull
-        run: docker pull ${{ env.ECR_REGISTRY }}:${{ github.sha }}
+        run: docker pull ${{ env.REGISTRY }}:${{ github.sha }}
 
       - name: Container - Scan - create git issue
         uses: dataswift/gha-trivy@main
         id: trivy
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          image: ${{ env.ECR_REGISTRY }}:${{ github.sha }}
+          image: ${{ env.REGISTRY }}:${{ github.sha }}
           issue: 'true'
           issue_label: trivy, vulnerability, security
           issue_title: Trivy generated Security Alert
