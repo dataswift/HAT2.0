@@ -66,25 +66,25 @@ trait Tables {
     *  @param namespace Database column namespace SqlType(varchar), Default()
     */
   case class ApplicationsRow(
-                              dateCreated: org.joda.time.LocalDateTime,
-                              dateSetup: Option[org.joda.time.LocalDateTime] = None,
-                              title: String,
-                              description: String,
-                              logoUrl: String,
-                              url: String,
-                              authUrl: String,
-                              browser: Boolean,
-                              category: String,
-                              setup: Boolean,
-                              loginAvailable: Boolean,
-                              namespace: String = "")
+      dateCreated: org.joda.time.LocalDateTime,
+      dateSetup: Option[org.joda.time.LocalDateTime] = None,
+      title: String,
+      description: String,
+      logoUrl: String,
+      url: String,
+      authUrl: String,
+      browser: Boolean,
+      category: String,
+      setup: Boolean,
+      loginAvailable: Boolean,
+      namespace: String = "")
 
   /** GetResult implicit for fetching ApplicationsRow objects using plain SQL queries */
   implicit def GetResultApplicationsRow(
-                                         implicit e0: GR[org.joda.time.LocalDateTime],
-                                         e1: GR[Option[org.joda.time.LocalDateTime]],
-                                         e2: GR[String],
-                                         e3: GR[Boolean]): GR[ApplicationsRow] =
+      implicit e0: GR[org.joda.time.LocalDateTime],
+      e1: GR[Option[org.joda.time.LocalDateTime]],
+      e2: GR[String],
+      e3: GR[Boolean]): GR[ApplicationsRow] =
     GR { prs =>
       import prs._
       ApplicationsRow.tupled(
@@ -107,8 +107,8 @@ trait Tables {
 
   /** Table description of table applications. Objects of this class serve as prototypes for rows in queries. */
   class Applications(
-                      _tableTag: Tag)
-    extends profile.api.Table[ApplicationsRow](_tableTag, Some("hat"), "applications") {
+      _tableTag: Tag)
+      extends profile.api.Table[ApplicationsRow](_tableTag, Some("hat"), "applications") {
     def * =
       (
         dateCreated,
@@ -140,7 +140,7 @@ trait Tables {
         Rep.Some(setup),
         Rep.Some(loginAvailable),
         Rep.Some(namespace)
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ =>
@@ -214,14 +214,14 @@ trait Tables {
     *  @param enabled Database column enabled SqlType(bool)
     */
   case class ApplicationStatusRow(
-                                   id: String,
-                                   version: String,
-                                   enabled: Boolean)
+      id: String,
+      version: String,
+      enabled: Boolean)
 
   /** GetResult implicit for fetching ApplicationStatusRow objects using plain SQL queries */
   implicit def GetResultApplicationStatusRow(
-                                              implicit e0: GR[String],
-                                              e1: GR[Boolean]): GR[ApplicationStatusRow] =
+      implicit e0: GR[String],
+      e1: GR[Boolean]): GR[ApplicationStatusRow] =
     GR { prs =>
       import prs._
       ApplicationStatusRow.tupled((<<[String], <<[String], <<[Boolean]))
@@ -229,8 +229,8 @@ trait Tables {
 
   /** Table description of table application_status. Objects of this class serve as prototypes for rows in queries. */
   class ApplicationStatus(
-                           _tableTag: Tag)
-    extends profile.api.Table[ApplicationStatusRow](_tableTag, Some("hat"), "application_status") {
+      _tableTag: Tag)
+      extends profile.api.Table[ApplicationStatusRow](_tableTag, Some("hat"), "application_status") {
     def * =
       (
         id,
@@ -269,16 +269,16 @@ trait Tables {
     *  @param lastUpdated Database column last_updated SqlType(timestamp)
     */
   case class BundleContextlessRow(
-                                   id: Int,
-                                   name: String,
-                                   dateCreated: org.joda.time.LocalDateTime,
-                                   lastUpdated: org.joda.time.LocalDateTime)
+      id: Int,
+      name: String,
+      dateCreated: org.joda.time.LocalDateTime,
+      lastUpdated: org.joda.time.LocalDateTime)
 
   /** GetResult implicit for fetching BundleContextlessRow objects using plain SQL queries */
   implicit def GetResultBundleContextlessRow(
-                                              implicit e0: GR[Int],
-                                              e1: GR[String],
-                                              e2: GR[org.joda.time.LocalDateTime]): GR[BundleContextlessRow] =
+      implicit e0: GR[Int],
+      e1: GR[String],
+      e2: GR[org.joda.time.LocalDateTime]): GR[BundleContextlessRow] =
     GR { prs =>
       import prs._
       BundleContextlessRow.tupled(
@@ -293,8 +293,8 @@ trait Tables {
 
   /** Table description of table bundle_contextless. Objects of this class serve as prototypes for rows in queries. */
   class BundleContextless(
-                           _tableTag: Tag)
-    extends profile.api.Table[BundleContextlessRow](_tableTag, Some("hat"), "bundle_contextless") {
+      _tableTag: Tag)
+      extends profile.api.Table[BundleContextlessRow](_tableTag, Some("hat"), "bundle_contextless") {
     def * =
       (
         id,
@@ -310,7 +310,7 @@ trait Tables {
         Rep.Some(name),
         Rep.Some(dateCreated),
         Rep.Some(lastUpdated)
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ => BundleContextlessRow.tupled((_1.get, _2.get, _3.get, _4.get)))
@@ -348,20 +348,20 @@ trait Tables {
     *  @param fieldIds Database column field_ids SqlType(_int4)
     */
   case class BundleContextlessDataSourceDatasetRow(
-                                                    id: Int,
-                                                    bundleId: Int,
-                                                    sourceName: String,
-                                                    datasetName: String,
-                                                    datasetTableId: Int,
-                                                    description: String,
-                                                    fieldStructure: String,
-                                                    fieldIds: List[Int])
+      id: Int,
+      bundleId: Int,
+      sourceName: String,
+      datasetName: String,
+      datasetTableId: Int,
+      description: String,
+      fieldStructure: String,
+      fieldIds: List[Int])
 
   /** GetResult implicit for fetching BundleContextlessDataSourceDatasetRow objects using plain SQL queries */
   implicit def GetResultBundleContextlessDataSourceDatasetRow(
-                                                               implicit e0: GR[Int],
-                                                               e1: GR[String],
-                                                               e2: GR[List[Int]]): GR[BundleContextlessDataSourceDatasetRow] =
+      implicit e0: GR[Int],
+      e1: GR[String],
+      e2: GR[List[Int]]): GR[BundleContextlessDataSourceDatasetRow] =
     GR { prs =>
       import prs._
       BundleContextlessDataSourceDatasetRow.tupled(
@@ -380,9 +380,9 @@ trait Tables {
 
   /** Table description of table bundle_contextless_data_source_dataset. Objects of this class serve as prototypes for rows in queries. */
   class BundleContextlessDataSourceDataset(
-                                            _tableTag: Tag)
-    extends profile.api.Table[BundleContextlessDataSourceDatasetRow](_tableTag, Some("hat"),
-      "bundle_contextless_data_source_dataset") {
+      _tableTag: Tag)
+      extends profile.api.Table[BundleContextlessDataSourceDatasetRow](_tableTag, Some("hat"),
+          "bundle_contextless_data_source_dataset") {
     def * =
       (
         id,
@@ -406,7 +406,7 @@ trait Tables {
         Rep.Some(description),
         Rep.Some(fieldStructure),
         Rep.Some(fieldIds)
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ =>
@@ -474,13 +474,13 @@ trait Tables {
     *  @param bundle Database column bundle SqlType(jsonb)
     */
   case class DataBundlesRow(
-                             bundleId: String,
-                             bundle: play.api.libs.json.JsValue)
+      bundleId: String,
+      bundle: play.api.libs.json.JsValue)
 
   /** GetResult implicit for fetching DataBundlesRow objects using plain SQL queries */
   implicit def GetResultDataBundlesRow(
-                                        implicit e0: GR[String],
-                                        e1: GR[play.api.libs.json.JsValue]): GR[DataBundlesRow] =
+      implicit e0: GR[String],
+      e1: GR[play.api.libs.json.JsValue]): GR[DataBundlesRow] =
     GR { prs =>
       import prs._
       DataBundlesRow.tupled((<<[String], <<[play.api.libs.json.JsValue]))
@@ -488,8 +488,8 @@ trait Tables {
 
   /** Table description of table data_bundles. Objects of this class serve as prototypes for rows in queries. */
   class DataBundles(
-                     _tableTag: Tag)
-    extends profile.api.Table[DataBundlesRow](_tableTag, Some("hat"), "data_bundles") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataBundlesRow](_tableTag, Some("hat"), "data_bundles") {
     def * =
       (bundleId, bundle) <> (DataBundlesRow.tupled, DataBundlesRow.unapply)
 
@@ -519,13 +519,13 @@ trait Tables {
     *  @param combinator Database column combinator SqlType(jsonb)
     */
   case class DataCombinatorsRow(
-                                 combinatorId: String,
-                                 combinator: play.api.libs.json.JsValue)
+      combinatorId: String,
+      combinator: play.api.libs.json.JsValue)
 
   /** GetResult implicit for fetching DataCombinatorsRow objects using plain SQL queries */
   implicit def GetResultDataCombinatorsRow(
-                                            implicit e0: GR[String],
-                                            e1: GR[play.api.libs.json.JsValue]): GR[DataCombinatorsRow] =
+      implicit e0: GR[String],
+      e1: GR[play.api.libs.json.JsValue]): GR[DataCombinatorsRow] =
     GR { prs =>
       import prs._
       DataCombinatorsRow.tupled((<<[String], <<[play.api.libs.json.JsValue]))
@@ -533,8 +533,8 @@ trait Tables {
 
   /** Table description of table data_combinators. Objects of this class serve as prototypes for rows in queries. */
   class DataCombinators(
-                         _tableTag: Tag)
-    extends profile.api.Table[DataCombinatorsRow](_tableTag, Some("hat"), "data_combinators") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataCombinatorsRow](_tableTag, Some("hat"), "data_combinators") {
     def * =
       (
         combinatorId,
@@ -573,19 +573,19 @@ trait Tables {
     *  @param requestDescription Database column request_description SqlType(varchar), Default(None)
     */
   case class DataDebitRow(
-                           dataDebitKey: String,
-                           dateCreated: org.joda.time.LocalDateTime,
-                           requestClientName: String,
-                           requestClientUrl: String,
-                           requestClientLogoUrl: String,
-                           requestApplicationId: Option[String] = None,
-                           requestDescription: Option[String] = None)
+      dataDebitKey: String,
+      dateCreated: org.joda.time.LocalDateTime,
+      requestClientName: String,
+      requestClientUrl: String,
+      requestClientLogoUrl: String,
+      requestApplicationId: Option[String] = None,
+      requestDescription: Option[String] = None)
 
   /** GetResult implicit for fetching DataDebitRow objects using plain SQL queries */
   implicit def GetResultDataDebitRow(
-                                      implicit e0: GR[String],
-                                      e1: GR[org.joda.time.LocalDateTime],
-                                      e2: GR[Option[String]]): GR[DataDebitRow] =
+      implicit e0: GR[String],
+      e1: GR[org.joda.time.LocalDateTime],
+      e2: GR[Option[String]]): GR[DataDebitRow] =
     GR { prs =>
       import prs._
       DataDebitRow.tupled(
@@ -603,8 +603,8 @@ trait Tables {
 
   /** Table description of table data_debit. Objects of this class serve as prototypes for rows in queries. */
   class DataDebit(
-                   _tableTag: Tag)
-    extends profile.api.Table[DataDebitRow](_tableTag, Some("hat"), "data_debit") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataDebitRow](_tableTag, Some("hat"), "data_debit") {
     def * =
       (
         dataDebitKey,
@@ -626,7 +626,7 @@ trait Tables {
         Rep.Some(requestClientLogoUrl),
         requestApplicationId,
         requestDescription
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ =>
@@ -680,21 +680,21 @@ trait Tables {
     *  @param conditions Database column conditions SqlType(varchar), Default(None)
     */
   case class DataDebitBundleRow(
-                                 dataDebitKey: String,
-                                 bundleId: String,
-                                 dateCreated: org.joda.time.LocalDateTime,
-                                 startDate: org.joda.time.LocalDateTime,
-                                 endDate: org.joda.time.LocalDateTime,
-                                 rolling: Boolean,
-                                 enabled: Boolean,
-                                 conditions: Option[String] = None)
+      dataDebitKey: String,
+      bundleId: String,
+      dateCreated: org.joda.time.LocalDateTime,
+      startDate: org.joda.time.LocalDateTime,
+      endDate: org.joda.time.LocalDateTime,
+      rolling: Boolean,
+      enabled: Boolean,
+      conditions: Option[String] = None)
 
   /** GetResult implicit for fetching DataDebitBundleRow objects using plain SQL queries */
   implicit def GetResultDataDebitBundleRow(
-                                            implicit e0: GR[String],
-                                            e1: GR[org.joda.time.LocalDateTime],
-                                            e2: GR[Boolean],
-                                            e3: GR[Option[String]]): GR[DataDebitBundleRow] =
+      implicit e0: GR[String],
+      e1: GR[org.joda.time.LocalDateTime],
+      e2: GR[Boolean],
+      e3: GR[Option[String]]): GR[DataDebitBundleRow] =
     GR { prs =>
       import prs._
       DataDebitBundleRow.tupled(
@@ -713,8 +713,8 @@ trait Tables {
 
   /** Table description of table data_debit_bundle. Objects of this class serve as prototypes for rows in queries. */
   class DataDebitBundle(
-                         _tableTag: Tag)
-    extends profile.api.Table[DataDebitBundleRow](_tableTag, Some("hat"), "data_debit_bundle") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataDebitBundleRow](_tableTag, Some("hat"), "data_debit_bundle") {
     def * =
       (
         dataDebitKey,
@@ -738,7 +738,7 @@ trait Tables {
         Rep.Some(rolling),
         Rep.Some(enabled),
         conditions
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ =>
@@ -819,15 +819,15 @@ trait Tables {
     *  @param clientId Database column client_id SqlType(uuid)
     */
   case class DataDebitContractRow(
-                                   dataDebitKey: String,
-                                   dateCreated: org.joda.time.LocalDateTime,
-                                   clientId: java.util.UUID)
+      dataDebitKey: String,
+      dateCreated: org.joda.time.LocalDateTime,
+      clientId: java.util.UUID)
 
   /** GetResult implicit for fetching DataDebitContractRow objects using plain SQL queries */
   implicit def GetResultDataDebitContractRow(
-                                              implicit e0: GR[String],
-                                              e1: GR[org.joda.time.LocalDateTime],
-                                              e2: GR[java.util.UUID]): GR[DataDebitContractRow] =
+      implicit e0: GR[String],
+      e1: GR[org.joda.time.LocalDateTime],
+      e2: GR[java.util.UUID]): GR[DataDebitContractRow] =
     GR { prs =>
       import prs._
       DataDebitContractRow.tupled(
@@ -837,8 +837,8 @@ trait Tables {
 
   /** Table description of table data_debit_contract. Objects of this class serve as prototypes for rows in queries. */
   class DataDebitContract(
-                           _tableTag: Tag)
-    extends profile.api.Table[DataDebitContractRow](_tableTag, Some("hat"), "data_debit_contract") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataDebitContractRow](_tableTag, Some("hat"), "data_debit_contract") {
     def * =
       (
         dataDebitKey,
@@ -896,28 +896,28 @@ trait Tables {
     *  @param accepted Database column accepted SqlType(bool)
     */
   case class DataDebitPermissionsRow(
-                                      permissionsId: Int,
-                                      dataDebitKey: String,
-                                      dateCreated: org.joda.time.LocalDateTime,
-                                      purpose: String,
-                                      start: org.joda.time.LocalDateTime,
-                                      period: Long,
-                                      cancelAtPeriodEnd: Boolean,
-                                      canceledAt: Option[org.joda.time.LocalDateTime] = None,
-                                      termsUrl: String,
-                                      bundleId: String,
-                                      conditions: Option[String] = None,
-                                      accepted: Boolean)
+      permissionsId: Int,
+      dataDebitKey: String,
+      dateCreated: org.joda.time.LocalDateTime,
+      purpose: String,
+      start: org.joda.time.LocalDateTime,
+      period: Long,
+      cancelAtPeriodEnd: Boolean,
+      canceledAt: Option[org.joda.time.LocalDateTime] = None,
+      termsUrl: String,
+      bundleId: String,
+      conditions: Option[String] = None,
+      accepted: Boolean)
 
   /** GetResult implicit for fetching DataDebitPermissionsRow objects using plain SQL queries */
   implicit def GetResultDataDebitPermissionsRow(
-                                                 implicit e0: GR[Int],
-                                                 e1: GR[String],
-                                                 e2: GR[org.joda.time.LocalDateTime],
-                                                 e3: GR[Long],
-                                                 e4: GR[Boolean],
-                                                 e5: GR[Option[org.joda.time.LocalDateTime]],
-                                                 e6: GR[Option[String]]): GR[DataDebitPermissionsRow] =
+      implicit e0: GR[Int],
+      e1: GR[String],
+      e2: GR[org.joda.time.LocalDateTime],
+      e3: GR[Long],
+      e4: GR[Boolean],
+      e5: GR[Option[org.joda.time.LocalDateTime]],
+      e6: GR[Option[String]]): GR[DataDebitPermissionsRow] =
     GR { prs =>
       import prs._
       DataDebitPermissionsRow.tupled(
@@ -940,8 +940,8 @@ trait Tables {
 
   /** Table description of table data_debit_permissions. Objects of this class serve as prototypes for rows in queries. */
   class DataDebitPermissions(
-                              _tableTag: Tag)
-    extends profile.api.Table[DataDebitPermissionsRow](_tableTag, Some("hat"), "data_debit_permissions") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataDebitPermissionsRow](_tableTag, Some("hat"), "data_debit_permissions") {
     def * =
       (
         permissionsId,
@@ -973,7 +973,7 @@ trait Tables {
         Rep.Some(bundleId),
         conditions,
         Rep.Some(accepted)
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ =>
@@ -1090,19 +1090,19 @@ trait Tables {
     *  @param deleted Database column deleted SqlType(bool), Default(false)
     */
   case class DataFieldRow(
-                           id: Int,
-                           dateCreated: org.joda.time.LocalDateTime,
-                           lastUpdated: org.joda.time.LocalDateTime,
-                           name: String,
-                           tableIdFk: Int,
-                           deleted: Boolean = false)
+      id: Int,
+      dateCreated: org.joda.time.LocalDateTime,
+      lastUpdated: org.joda.time.LocalDateTime,
+      name: String,
+      tableIdFk: Int,
+      deleted: Boolean = false)
 
   /** GetResult implicit for fetching DataFieldRow objects using plain SQL queries */
   implicit def GetResultDataFieldRow(
-                                      implicit e0: GR[Int],
-                                      e1: GR[org.joda.time.LocalDateTime],
-                                      e2: GR[String],
-                                      e3: GR[Boolean]): GR[DataFieldRow] =
+      implicit e0: GR[Int],
+      e1: GR[org.joda.time.LocalDateTime],
+      e2: GR[String],
+      e3: GR[Boolean]): GR[DataFieldRow] =
     GR { prs =>
       import prs._
       DataFieldRow.tupled(
@@ -1119,8 +1119,8 @@ trait Tables {
 
   /** Table description of table data_field. Objects of this class serve as prototypes for rows in queries. */
   class DataField(
-                   _tableTag: Tag)
-    extends profile.api.Table[DataFieldRow](_tableTag, Some("hat"), "data_field") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataFieldRow](_tableTag, Some("hat"), "data_field") {
     def * =
       (
         id,
@@ -1140,7 +1140,7 @@ trait Tables {
         Rep.Some(name),
         Rep.Some(tableIdFk),
         Rep.Some(deleted)
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ =>
@@ -1195,24 +1195,24 @@ trait Tables {
     *  @param sourceUniqueId Database column source_unique_id SqlType(varchar), Default(None)
     */
   case class DataJsonRow(
-                          recordId: java.util.UUID,
-                          source: String,
-                          owner: java.util.UUID,
-                          date: org.joda.time.LocalDateTime,
-                          data: play.api.libs.json.JsValue,
-                          hash: Array[Byte],
-                          sourceTimestamp: Option[org.joda.time.DateTime] = None,
-                          sourceUniqueId: Option[String] = None)
+      recordId: java.util.UUID,
+      source: String,
+      owner: java.util.UUID,
+      date: org.joda.time.LocalDateTime,
+      data: play.api.libs.json.JsValue,
+      hash: Array[Byte],
+      sourceTimestamp: Option[org.joda.time.DateTime] = None,
+      sourceUniqueId: Option[String] = None)
 
   /** GetResult implicit for fetching DataJsonRow objects using plain SQL queries */
   implicit def GetResultDataJsonRow(
-                                     implicit e0: GR[java.util.UUID],
-                                     e1: GR[String],
-                                     e2: GR[org.joda.time.LocalDateTime],
-                                     e3: GR[play.api.libs.json.JsValue],
-                                     e4: GR[Array[Byte]],
-                                     e5: GR[Option[org.joda.time.DateTime]],
-                                     e6: GR[Option[String]]): GR[DataJsonRow] =
+      implicit e0: GR[java.util.UUID],
+      e1: GR[String],
+      e2: GR[org.joda.time.LocalDateTime],
+      e3: GR[play.api.libs.json.JsValue],
+      e4: GR[Array[Byte]],
+      e5: GR[Option[org.joda.time.DateTime]],
+      e6: GR[Option[String]]): GR[DataJsonRow] =
     GR { prs =>
       import prs._
       DataJsonRow.tupled(
@@ -1231,8 +1231,8 @@ trait Tables {
 
   /** Table description of table data_json. Objects of this class serve as prototypes for rows in queries. */
   class DataJson(
-                  _tableTag: Tag)
-    extends profile.api.Table[DataJsonRow](_tableTag, Some("hat"), "data_json") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataJsonRow](_tableTag, Some("hat"), "data_json") {
     def * =
       (
         recordId,
@@ -1256,7 +1256,7 @@ trait Tables {
         Rep.Some(hash),
         sourceTimestamp,
         sourceUniqueId
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ =>
@@ -1324,12 +1324,12 @@ trait Tables {
     *  @param recordId Database column record_id SqlType(uuid)
     */
   case class DataJsonGroupRecordsRow(
-                                      groupId: java.util.UUID,
-                                      recordId: java.util.UUID)
+      groupId: java.util.UUID,
+      recordId: java.util.UUID)
 
   /** GetResult implicit for fetching DataJsonGroupRecordsRow objects using plain SQL queries */
   implicit def GetResultDataJsonGroupRecordsRow(
-                                                 implicit e0: GR[java.util.UUID]): GR[DataJsonGroupRecordsRow] =
+      implicit e0: GR[java.util.UUID]): GR[DataJsonGroupRecordsRow] =
     GR { prs =>
       import prs._
       DataJsonGroupRecordsRow.tupled((<<[java.util.UUID], <<[java.util.UUID]))
@@ -1337,8 +1337,8 @@ trait Tables {
 
   /** Table description of table data_json_group_records. Objects of this class serve as prototypes for rows in queries. */
   class DataJsonGroupRecords(
-                              _tableTag: Tag)
-    extends profile.api.Table[DataJsonGroupRecordsRow](_tableTag, Some("hat"), "data_json_group_records") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataJsonGroupRecordsRow](_tableTag, Some("hat"), "data_json_group_records") {
     def * =
       (
         groupId,
@@ -1394,14 +1394,14 @@ trait Tables {
     *  @param date Database column date SqlType(timestamp)
     */
   case class DataJsonGroupsRow(
-                                groupId: java.util.UUID,
-                                owner: java.util.UUID,
-                                date: org.joda.time.LocalDateTime)
+      groupId: java.util.UUID,
+      owner: java.util.UUID,
+      date: org.joda.time.LocalDateTime)
 
   /** GetResult implicit for fetching DataJsonGroupsRow objects using plain SQL queries */
   implicit def GetResultDataJsonGroupsRow(
-                                           implicit e0: GR[java.util.UUID],
-                                           e1: GR[org.joda.time.LocalDateTime]): GR[DataJsonGroupsRow] =
+      implicit e0: GR[java.util.UUID],
+      e1: GR[org.joda.time.LocalDateTime]): GR[DataJsonGroupsRow] =
     GR { prs =>
       import prs._
       DataJsonGroupsRow.tupled(
@@ -1415,8 +1415,8 @@ trait Tables {
 
   /** Table description of table data_json_groups. Objects of this class serve as prototypes for rows in queries. */
   class DataJsonGroups(
-                        _tableTag: Tag)
-    extends profile.api.Table[DataJsonGroupsRow](_tableTag, Some("hat"), "data_json_groups") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataJsonGroupsRow](_tableTag, Some("hat"), "data_json_groups") {
     def * =
       (
         groupId,
@@ -1466,18 +1466,18 @@ trait Tables {
     *  @param deleted Database column deleted SqlType(bool), Default(false)
     */
   case class DataRecordRow(
-                            id: Int,
-                            dateCreated: org.joda.time.LocalDateTime,
-                            lastUpdated: org.joda.time.LocalDateTime,
-                            name: String,
-                            deleted: Boolean = false)
+      id: Int,
+      dateCreated: org.joda.time.LocalDateTime,
+      lastUpdated: org.joda.time.LocalDateTime,
+      name: String,
+      deleted: Boolean = false)
 
   /** GetResult implicit for fetching DataRecordRow objects using plain SQL queries */
   implicit def GetResultDataRecordRow(
-                                       implicit e0: GR[Int],
-                                       e1: GR[org.joda.time.LocalDateTime],
-                                       e2: GR[String],
-                                       e3: GR[Boolean]): GR[DataRecordRow] =
+      implicit e0: GR[Int],
+      e1: GR[org.joda.time.LocalDateTime],
+      e2: GR[String],
+      e3: GR[Boolean]): GR[DataRecordRow] =
     GR { prs =>
       import prs._
       DataRecordRow.tupled(
@@ -1493,8 +1493,8 @@ trait Tables {
 
   /** Table description of table data_record. Objects of this class serve as prototypes for rows in queries. */
   class DataRecord(
-                    _tableTag: Tag)
-    extends profile.api.Table[DataRecordRow](_tableTag, Some("hat"), "data_record") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataRecordRow](_tableTag, Some("hat"), "data_record") {
     def * =
       (
         id,
@@ -1512,7 +1512,7 @@ trait Tables {
         Rep.Some(lastUpdated),
         Rep.Some(name),
         Rep.Some(deleted)
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ => DataRecordRow.tupled((_1.get, _2.get, _3.get, _4.get, _5.get)))
@@ -1547,13 +1547,13 @@ trait Tables {
     *  @param stats Database column stats SqlType(jsonb)
     */
   case class DataStatsLogRow(
-                              statsId: Long,
-                              stats: play.api.libs.json.JsValue)
+      statsId: Long,
+      stats: play.api.libs.json.JsValue)
 
   /** GetResult implicit for fetching DataStatsLogRow objects using plain SQL queries */
   implicit def GetResultDataStatsLogRow(
-                                         implicit e0: GR[Long],
-                                         e1: GR[play.api.libs.json.JsValue]): GR[DataStatsLogRow] =
+      implicit e0: GR[Long],
+      e1: GR[play.api.libs.json.JsValue]): GR[DataStatsLogRow] =
     GR { prs =>
       import prs._
       DataStatsLogRow.tupled((<<[Long], <<[play.api.libs.json.JsValue]))
@@ -1561,8 +1561,8 @@ trait Tables {
 
   /** Table description of table data_stats_log. Objects of this class serve as prototypes for rows in queries. */
   class DataStatsLog(
-                      _tableTag: Tag)
-    extends profile.api.Table[DataStatsLogRow](_tableTag, Some("hat"), "data_stats_log") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataStatsLogRow](_tableTag, Some("hat"), "data_stats_log") {
     def * =
       (statsId, stats) <> (DataStatsLogRow.tupled, DataStatsLogRow.unapply)
 
@@ -1596,19 +1596,19 @@ trait Tables {
     *  @param deleted Database column deleted SqlType(bool), Default(false)
     */
   case class DataTableRow(
-                           id: Int,
-                           dateCreated: org.joda.time.LocalDateTime,
-                           lastUpdated: org.joda.time.LocalDateTime,
-                           name: String,
-                           sourceName: String,
-                           deleted: Boolean = false)
+      id: Int,
+      dateCreated: org.joda.time.LocalDateTime,
+      lastUpdated: org.joda.time.LocalDateTime,
+      name: String,
+      sourceName: String,
+      deleted: Boolean = false)
 
   /** GetResult implicit for fetching DataTableRow objects using plain SQL queries */
   implicit def GetResultDataTableRow(
-                                      implicit e0: GR[Int],
-                                      e1: GR[org.joda.time.LocalDateTime],
-                                      e2: GR[String],
-                                      e3: GR[Boolean]): GR[DataTableRow] =
+      implicit e0: GR[Int],
+      e1: GR[org.joda.time.LocalDateTime],
+      e2: GR[String],
+      e3: GR[Boolean]): GR[DataTableRow] =
     GR { prs =>
       import prs._
       DataTableRow.tupled(
@@ -1625,8 +1625,8 @@ trait Tables {
 
   /** Table description of table data_table. Objects of this class serve as prototypes for rows in queries. */
   class DataTable(
-                   _tableTag: Tag)
-    extends profile.api.Table[DataTableRow](_tableTag, Some("hat"), "data_table") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataTableRow](_tableTag, Some("hat"), "data_table") {
     def * =
       (
         id,
@@ -1646,7 +1646,7 @@ trait Tables {
         Rep.Some(name),
         Rep.Some(sourceName),
         Rep.Some(deleted)
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ =>
@@ -1698,13 +1698,13 @@ trait Tables {
     *  @param totalSize Database column total_size SqlType(int8), Default(None)
     */
   case class DataTableSizeRow(
-                               relation: Option[String] = None,
-                               totalSize: Option[Long] = None)
+      relation: Option[String] = None,
+      totalSize: Option[Long] = None)
 
   /** GetResult implicit for fetching DataTableSizeRow objects using plain SQL queries */
   implicit def GetResultDataTableSizeRow(
-                                          implicit e0: GR[Option[String]],
-                                          e1: GR[Option[Long]]): GR[DataTableSizeRow] =
+      implicit e0: GR[Option[String]],
+      e1: GR[Option[Long]]): GR[DataTableSizeRow] =
     GR { prs =>
       import prs._
       DataTableSizeRow.tupled((<<?[String], <<?[Long]))
@@ -1712,8 +1712,8 @@ trait Tables {
 
   /** Table description of table data_table_size. Objects of this class serve as prototypes for rows in queries. */
   class DataTableSize(
-                       _tableTag: Tag)
-    extends profile.api.Table[DataTableSizeRow](_tableTag, Some("hat"), "data_table_size") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataTableSizeRow](_tableTag, Some("hat"), "data_table_size") {
     def * =
       (
         relation,
@@ -1743,20 +1743,20 @@ trait Tables {
     *  @param deleted Database column deleted SqlType(bool), Default(false)
     */
   case class DataTabletotablecrossrefRow(
-                                          id: Int,
-                                          dateCreated: org.joda.time.LocalDateTime,
-                                          lastUpdated: org.joda.time.LocalDateTime,
-                                          relationshipType: String,
-                                          table1: Int,
-                                          table2: Int,
-                                          deleted: Boolean = false)
+      id: Int,
+      dateCreated: org.joda.time.LocalDateTime,
+      lastUpdated: org.joda.time.LocalDateTime,
+      relationshipType: String,
+      table1: Int,
+      table2: Int,
+      deleted: Boolean = false)
 
   /** GetResult implicit for fetching DataTabletotablecrossrefRow objects using plain SQL queries */
   implicit def GetResultDataTabletotablecrossrefRow(
-                                                     implicit e0: GR[Int],
-                                                     e1: GR[org.joda.time.LocalDateTime],
-                                                     e2: GR[String],
-                                                     e3: GR[Boolean]): GR[DataTabletotablecrossrefRow] =
+      implicit e0: GR[Int],
+      e1: GR[org.joda.time.LocalDateTime],
+      e2: GR[String],
+      e3: GR[Boolean]): GR[DataTabletotablecrossrefRow] =
     GR { prs =>
       import prs._
       DataTabletotablecrossrefRow.tupled(
@@ -1774,8 +1774,8 @@ trait Tables {
 
   /** Table description of table data_tabletotablecrossref. Objects of this class serve as prototypes for rows in queries. */
   class DataTabletotablecrossref(
-                                  _tableTag: Tag)
-    extends profile.api.Table[DataTabletotablecrossrefRow](_tableTag, Some("hat"), "data_tabletotablecrossref") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataTabletotablecrossrefRow](_tableTag, Some("hat"), "data_tabletotablecrossref") {
     def * =
       (
         id,
@@ -1797,7 +1797,7 @@ trait Tables {
         Rep.Some(table1),
         Rep.Some(table2),
         Rep.Some(deleted)
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ =>
@@ -1865,23 +1865,23 @@ trait Tables {
     *  @param rootTable Database column root_table SqlType(int4), Default(None)
     */
   case class DataTableTreeRow(
-                               id: Option[Int] = None,
-                               dateCreated: Option[org.joda.time.LocalDateTime] = None,
-                               lastUpdated: Option[org.joda.time.LocalDateTime] = None,
-                               name: Option[String] = None,
-                               sourceName: Option[String] = None,
-                               deleted: Option[Boolean] = None,
-                               table1: Option[Int] = None,
-                               path: Option[List[Int]] = None,
-                               rootTable: Option[Int] = None)
+      id: Option[Int] = None,
+      dateCreated: Option[org.joda.time.LocalDateTime] = None,
+      lastUpdated: Option[org.joda.time.LocalDateTime] = None,
+      name: Option[String] = None,
+      sourceName: Option[String] = None,
+      deleted: Option[Boolean] = None,
+      table1: Option[Int] = None,
+      path: Option[List[Int]] = None,
+      rootTable: Option[Int] = None)
 
   /** GetResult implicit for fetching DataTableTreeRow objects using plain SQL queries */
   implicit def GetResultDataTableTreeRow(
-                                          implicit e0: GR[Option[Int]],
-                                          e1: GR[Option[org.joda.time.LocalDateTime]],
-                                          e2: GR[Option[String]],
-                                          e3: GR[Option[Boolean]],
-                                          e4: GR[Option[List[Int]]]): GR[DataTableTreeRow] =
+      implicit e0: GR[Option[Int]],
+      e1: GR[Option[org.joda.time.LocalDateTime]],
+      e2: GR[Option[String]],
+      e3: GR[Option[Boolean]],
+      e4: GR[Option[List[Int]]]): GR[DataTableTreeRow] =
     GR { prs =>
       import prs._
       DataTableTreeRow.tupled(
@@ -1901,8 +1901,8 @@ trait Tables {
 
   /** Table description of table data_table_tree. Objects of this class serve as prototypes for rows in queries. */
   class DataTableTree(
-                       _tableTag: Tag)
-    extends profile.api.Table[DataTableTreeRow](_tableTag, Some("hat"), "data_table_tree") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataTableTreeRow](_tableTag, Some("hat"), "data_table_tree") {
     def * =
       (
         id,
@@ -1972,20 +1972,20 @@ trait Tables {
     *  @param deleted Database column deleted SqlType(bool), Default(false)
     */
   case class DataValueRow(
-                           id: Int,
-                           dateCreated: org.joda.time.LocalDateTime,
-                           lastUpdated: org.joda.time.LocalDateTime,
-                           value: String,
-                           fieldId: Int,
-                           recordId: Int,
-                           deleted: Boolean = false)
+      id: Int,
+      dateCreated: org.joda.time.LocalDateTime,
+      lastUpdated: org.joda.time.LocalDateTime,
+      value: String,
+      fieldId: Int,
+      recordId: Int,
+      deleted: Boolean = false)
 
   /** GetResult implicit for fetching DataValueRow objects using plain SQL queries */
   implicit def GetResultDataValueRow(
-                                      implicit e0: GR[Int],
-                                      e1: GR[org.joda.time.LocalDateTime],
-                                      e2: GR[String],
-                                      e3: GR[Boolean]): GR[DataValueRow] =
+      implicit e0: GR[Int],
+      e1: GR[org.joda.time.LocalDateTime],
+      e2: GR[String],
+      e3: GR[Boolean]): GR[DataValueRow] =
     GR { prs =>
       import prs._
       DataValueRow.tupled(
@@ -2003,8 +2003,8 @@ trait Tables {
 
   /** Table description of table data_value. Objects of this class serve as prototypes for rows in queries. */
   class DataValue(
-                   _tableTag: Tag)
-    extends profile.api.Table[DataValueRow](_tableTag, Some("hat"), "data_value") {
+      _tableTag: Tag)
+      extends profile.api.Table[DataValueRow](_tableTag, Some("hat"), "data_value") {
     def * =
       (
         id,
@@ -2026,7 +2026,7 @@ trait Tables {
         Rep.Some(fieldId),
         Rep.Some(recordId),
         Rep.Some(deleted)
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ =>
@@ -2096,26 +2096,26 @@ trait Tables {
     *  @param contentPublic Database column content_public SqlType(bool), Default(false)
     */
   case class HatFileRow(
-                         id: String,
-                         name: String,
-                         source: String,
-                         dateCreated: org.joda.time.LocalDateTime,
-                         lastUpdated: org.joda.time.LocalDateTime,
-                         tags: Option[List[String]] = None,
-                         title: Option[String] = None,
-                         description: Option[String] = None,
-                         sourceUrl: Option[String] = None,
-                         status: play.api.libs.json.JsValue,
-                         contentPublic: Boolean = false)
+      id: String,
+      name: String,
+      source: String,
+      dateCreated: org.joda.time.LocalDateTime,
+      lastUpdated: org.joda.time.LocalDateTime,
+      tags: Option[List[String]] = None,
+      title: Option[String] = None,
+      description: Option[String] = None,
+      sourceUrl: Option[String] = None,
+      status: play.api.libs.json.JsValue,
+      contentPublic: Boolean = false)
 
   /** GetResult implicit for fetching HatFileRow objects using plain SQL queries */
   implicit def GetResultHatFileRow(
-                                    implicit e0: GR[String],
-                                    e1: GR[org.joda.time.LocalDateTime],
-                                    e2: GR[Option[List[String]]],
-                                    e3: GR[Option[String]],
-                                    e4: GR[play.api.libs.json.JsValue],
-                                    e5: GR[Boolean]): GR[HatFileRow] =
+      implicit e0: GR[String],
+      e1: GR[org.joda.time.LocalDateTime],
+      e2: GR[Option[List[String]]],
+      e3: GR[Option[String]],
+      e4: GR[play.api.libs.json.JsValue],
+      e5: GR[Boolean]): GR[HatFileRow] =
     GR { prs =>
       import prs._
       HatFileRow.tupled(
@@ -2137,8 +2137,8 @@ trait Tables {
 
   /** Table description of table hat_file. Objects of this class serve as prototypes for rows in queries. */
   class HatFile(
-                 _tableTag: Tag)
-    extends profile.api.Table[HatFileRow](_tableTag, Some("hat"), "hat_file") {
+      _tableTag: Tag)
+      extends profile.api.Table[HatFileRow](_tableTag, Some("hat"), "hat_file") {
     def * =
       (
         id,
@@ -2168,7 +2168,7 @@ trait Tables {
         sourceUrl,
         Rep.Some(status),
         Rep.Some(contentPublic)
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ =>
@@ -2244,15 +2244,15 @@ trait Tables {
     *  @param content Database column content SqlType(bool), Default(false)
     */
   case class HatFileAccessRow(
-                               fileId: String,
-                               userId: java.util.UUID,
-                               content: Boolean = false)
+      fileId: String,
+      userId: java.util.UUID,
+      content: Boolean = false)
 
   /** GetResult implicit for fetching HatFileAccessRow objects using plain SQL queries */
   implicit def GetResultHatFileAccessRow(
-                                          implicit e0: GR[String],
-                                          e1: GR[java.util.UUID],
-                                          e2: GR[Boolean]): GR[HatFileAccessRow] =
+      implicit e0: GR[String],
+      e1: GR[java.util.UUID],
+      e2: GR[Boolean]): GR[HatFileAccessRow] =
     GR { prs =>
       import prs._
       HatFileAccessRow.tupled((<<[String], <<[java.util.UUID], <<[Boolean]))
@@ -2260,8 +2260,8 @@ trait Tables {
 
   /** Table description of table hat_file_access. Objects of this class serve as prototypes for rows in queries. */
   class HatFileAccess(
-                       _tableTag: Tag)
-    extends profile.api.Table[HatFileAccessRow](_tableTag, Some("hat"), "hat_file_access") {
+      _tableTag: Tag)
+      extends profile.api.Table[HatFileAccessRow](_tableTag, Some("hat"), "hat_file_access") {
     def * =
       (
         fileId,
@@ -2332,31 +2332,31 @@ trait Tables {
     *  @param developerSupportEmail Database column developer_support_email SqlType(varchar)
     */
   case class SheFunctionRow(
-                             id: String,
-                             description: play.api.libs.json.JsValue,
-                             trigger: play.api.libs.json.JsValue,
-                             bundleId: String,
-                             headline: String,
-                             dataPreview: Option[play.api.libs.json.JsValue] = None,
-                             dataPreviewEndpoint: Option[String] = None,
-                             graphics: play.api.libs.json.JsValue,
-                             name: String,
-                             version: String,
-                             termsUrl: String,
-                             developerId: String,
-                             developerName: String,
-                             developerUrl: String,
-                             developerCountry: Option[String] = None,
-                             versionReleaseDate: org.joda.time.DateTime,
-                             developerSupportEmail: String)
+      id: String,
+      description: play.api.libs.json.JsValue,
+      trigger: play.api.libs.json.JsValue,
+      bundleId: String,
+      headline: String,
+      dataPreview: Option[play.api.libs.json.JsValue] = None,
+      dataPreviewEndpoint: Option[String] = None,
+      graphics: play.api.libs.json.JsValue,
+      name: String,
+      version: String,
+      termsUrl: String,
+      developerId: String,
+      developerName: String,
+      developerUrl: String,
+      developerCountry: Option[String] = None,
+      versionReleaseDate: org.joda.time.DateTime,
+      developerSupportEmail: String)
 
   /** GetResult implicit for fetching SheFunctionRow objects using plain SQL queries */
   implicit def GetResultSheFunctionRow(
-                                        implicit e0: GR[String],
-                                        e1: GR[play.api.libs.json.JsValue],
-                                        e2: GR[Option[play.api.libs.json.JsValue]],
-                                        e3: GR[Option[String]],
-                                        e4: GR[org.joda.time.DateTime]): GR[SheFunctionRow] =
+      implicit e0: GR[String],
+      e1: GR[play.api.libs.json.JsValue],
+      e2: GR[Option[play.api.libs.json.JsValue]],
+      e3: GR[Option[String]],
+      e4: GR[org.joda.time.DateTime]): GR[SheFunctionRow] =
     GR { prs =>
       import prs._
       SheFunctionRow.tupled(
@@ -2384,8 +2384,8 @@ trait Tables {
 
   /** Table description of table she_function. Objects of this class serve as prototypes for rows in queries. */
   class SheFunction(
-                     _tableTag: Tag)
-    extends profile.api.Table[SheFunctionRow](_tableTag, Some("hat"), "she_function") {
+      _tableTag: Tag)
+      extends profile.api.Table[SheFunctionRow](_tableTag, Some("hat"), "she_function") {
     def * =
       (
         id,
@@ -2427,7 +2427,7 @@ trait Tables {
         developerCountry,
         Rep.Some(versionReleaseDate),
         Rep.Some(developerSupportEmail)
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ =>
@@ -2539,16 +2539,16 @@ trait Tables {
     *  @param executionStarted Database column execution_started SqlType(timestamptz), Default(None)
     */
   case class SheFunctionStatusRow(
-                                   id: String,
-                                   enabled: Boolean,
-                                   lastExecution: Option[org.joda.time.DateTime] = None,
-                                   executionStarted: Option[org.joda.time.DateTime] = None)
+      id: String,
+      enabled: Boolean,
+      lastExecution: Option[org.joda.time.DateTime] = None,
+      executionStarted: Option[org.joda.time.DateTime] = None)
 
   /** GetResult implicit for fetching SheFunctionStatusRow objects using plain SQL queries */
   implicit def GetResultSheFunctionStatusRow(
-                                              implicit e0: GR[String],
-                                              e1: GR[Boolean],
-                                              e2: GR[Option[org.joda.time.DateTime]]): GR[SheFunctionStatusRow] =
+      implicit e0: GR[String],
+      e1: GR[Boolean],
+      e2: GR[Option[org.joda.time.DateTime]]): GR[SheFunctionStatusRow] =
     GR { prs =>
       import prs._
       SheFunctionStatusRow.tupled(
@@ -2563,8 +2563,8 @@ trait Tables {
 
   /** Table description of table she_function_status. Objects of this class serve as prototypes for rows in queries. */
   class SheFunctionStatus(
-                           _tableTag: Tag)
-    extends profile.api.Table[SheFunctionStatusRow](_tableTag, Some("hat"), "she_function_status") {
+      _tableTag: Tag)
+      extends profile.api.Table[SheFunctionStatusRow](_tableTag, Some("hat"), "she_function_status") {
     def * =
       (
         id,
@@ -2616,20 +2616,20 @@ trait Tables {
     *  @param result Database column result SqlType(varchar), Length(45,true)
     */
   case class SystemEventlogRow(
-                                id: Int,
-                                eventType: String,
-                                date: org.joda.time.LocalDate,
-                                time: org.joda.time.LocalTime,
-                                creator: String,
-                                command: String,
-                                result: String)
+      id: Int,
+      eventType: String,
+      date: org.joda.time.LocalDate,
+      time: org.joda.time.LocalTime,
+      creator: String,
+      command: String,
+      result: String)
 
   /** GetResult implicit for fetching SystemEventlogRow objects using plain SQL queries */
   implicit def GetResultSystemEventlogRow(
-                                           implicit e0: GR[Int],
-                                           e1: GR[String],
-                                           e2: GR[org.joda.time.LocalDate],
-                                           e3: GR[org.joda.time.LocalTime]): GR[SystemEventlogRow] =
+      implicit e0: GR[Int],
+      e1: GR[String],
+      e2: GR[org.joda.time.LocalDate],
+      e3: GR[org.joda.time.LocalTime]): GR[SystemEventlogRow] =
     GR { prs =>
       import prs._
       SystemEventlogRow.tupled(
@@ -2647,8 +2647,8 @@ trait Tables {
 
   /** Table description of table system_eventlog. Objects of this class serve as prototypes for rows in queries. */
   class SystemEventlog(
-                        _tableTag: Tag)
-    extends profile.api.Table[SystemEventlogRow](_tableTag, Some("hat"), "system_eventlog") {
+      _tableTag: Tag)
+      extends profile.api.Table[SystemEventlogRow](_tableTag, Some("hat"), "system_eventlog") {
     def * =
       (
         id,
@@ -2670,7 +2670,7 @@ trait Tables {
         Rep.Some(creator),
         Rep.Some(command),
         Rep.Some(result)
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ =>
@@ -2723,19 +2723,19 @@ trait Tables {
     *  @param applicationResource Database column application_resource SqlType(varchar), Default(None)
     */
   case class UserAccessLogRow(
-                               date: org.joda.time.LocalDateTime,
-                               userId: java.util.UUID,
-                               `type`: String,
-                               scope: String,
-                               applicationName: Option[String] = None,
-                               applicationResource: Option[String] = None)
+      date: org.joda.time.LocalDateTime,
+      userId: java.util.UUID,
+      `type`: String,
+      scope: String,
+      applicationName: Option[String] = None,
+      applicationResource: Option[String] = None)
 
   /** GetResult implicit for fetching UserAccessLogRow objects using plain SQL queries */
   implicit def GetResultUserAccessLogRow(
-                                          implicit e0: GR[org.joda.time.LocalDateTime],
-                                          e1: GR[java.util.UUID],
-                                          e2: GR[String],
-                                          e3: GR[Option[String]]): GR[UserAccessLogRow] =
+      implicit e0: GR[org.joda.time.LocalDateTime],
+      e1: GR[java.util.UUID],
+      e2: GR[String],
+      e3: GR[Option[String]]): GR[UserAccessLogRow] =
     GR { prs =>
       import prs._
       UserAccessLogRow.tupled(
@@ -2755,8 +2755,8 @@ trait Tables {
     *  NOTE: The following names collided with Scala keywords and were escaped: type
     */
   class UserAccessLog(
-                       _tableTag: Tag)
-    extends profile.api.Table[UserAccessLogRow](_tableTag, Some("hat"), "user_access_log") {
+      _tableTag: Tag)
+      extends profile.api.Table[UserAccessLogRow](_tableTag, Some("hat"), "user_access_log") {
     def * =
       (
         date,
@@ -2776,7 +2776,7 @@ trait Tables {
         Rep.Some(scope),
         applicationName,
         applicationResource
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ => UserAccessLogRow.tupled((_1.get, _2.get, _3.get, _4.get, _5, _6)))
@@ -2828,16 +2828,16 @@ trait Tables {
     *  @param isSignup Database column is_signup SqlType(bool)
     */
   case class UserMailTokensRow(
-                                id: String,
-                                email: String,
-                                expirationTime: org.joda.time.LocalDateTime,
-                                isSignup: Boolean)
+      id: String,
+      email: String,
+      expirationTime: org.joda.time.LocalDateTime,
+      isSignup: Boolean)
 
   /** GetResult implicit for fetching UserMailTokensRow objects using plain SQL queries */
   implicit def GetResultUserMailTokensRow(
-                                           implicit e0: GR[String],
-                                           e1: GR[org.joda.time.LocalDateTime],
-                                           e2: GR[Boolean]): GR[UserMailTokensRow] =
+      implicit e0: GR[String],
+      e1: GR[org.joda.time.LocalDateTime],
+      e2: GR[Boolean]): GR[UserMailTokensRow] =
     GR { prs =>
       import prs._
       UserMailTokensRow.tupled(
@@ -2847,8 +2847,8 @@ trait Tables {
 
   /** Table description of table user_mail_tokens. Objects of this class serve as prototypes for rows in queries. */
   class UserMailTokens(
-                        _tableTag: Tag)
-    extends profile.api.Table[UserMailTokensRow](_tableTag, Some("hat"), "user_mail_tokens") {
+      _tableTag: Tag)
+      extends profile.api.Table[UserMailTokensRow](_tableTag, Some("hat"), "user_mail_tokens") {
     def * =
       (
         id,
@@ -2864,7 +2864,7 @@ trait Tables {
         Rep.Some(email),
         Rep.Some(expirationTime),
         Rep.Some(isSignup)
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ => UserMailTokensRow.tupled((_1.get, _2.get, _3.get, _4.get)))
@@ -2896,15 +2896,15 @@ trait Tables {
     *  @param extra Database column extra SqlType(varchar), Default(None)
     */
   case class UserRoleRow(
-                          userId: java.util.UUID,
-                          role: String,
-                          extra: Option[String] = None)
+      userId: java.util.UUID,
+      role: String,
+      extra: Option[String] = None)
 
   /** GetResult implicit for fetching UserRoleRow objects using plain SQL queries */
   implicit def GetResultUserRoleRow(
-                                     implicit e0: GR[java.util.UUID],
-                                     e1: GR[String],
-                                     e2: GR[Option[String]]): GR[UserRoleRow] =
+      implicit e0: GR[java.util.UUID],
+      e1: GR[String],
+      e2: GR[Option[String]]): GR[UserRoleRow] =
     GR { prs =>
       import prs._
       UserRoleRow.tupled((<<[java.util.UUID], <<[String], <<?[String]))
@@ -2912,8 +2912,8 @@ trait Tables {
 
   /** Table description of table user_role. Objects of this class serve as prototypes for rows in queries. */
   class UserRole(
-                  _tableTag: Tag)
-    extends profile.api.Table[UserRoleRow](_tableTag, Some("hat"), "user_role") {
+      _tableTag: Tag)
+      extends profile.api.Table[UserRoleRow](_tableTag, Some("hat"), "user_role") {
     def * = (userId, role, extra) <> (UserRoleRow.tupled, UserRoleRow.unapply)
 
     /** Maps whole row to an option. Useful for outer joins. */
@@ -2963,7 +2963,7 @@ trait Tables {
 
   /** GetResult implicit for fetching UserRoleAvailableRow objects using plain SQL queries */
   implicit def GetResultUserRoleAvailableRow(
-                                              implicit e0: GR[String]): GR[UserRoleAvailableRow] =
+      implicit e0: GR[String]): GR[UserRoleAvailableRow] =
     GR { prs =>
       import prs._
       UserRoleAvailableRow(<<[String])
@@ -2971,8 +2971,8 @@ trait Tables {
 
   /** Table description of table user_role_available. Objects of this class serve as prototypes for rows in queries. */
   class UserRoleAvailable(
-                           _tableTag: Tag)
-    extends profile.api.Table[UserRoleAvailableRow](_tableTag, Some("hat"), "user_role_available") {
+      _tableTag: Tag)
+      extends profile.api.Table[UserRoleAvailableRow](_tableTag, Some("hat"), "user_role_available") {
     def * = name <> (UserRoleAvailableRow, UserRoleAvailableRow.unapply)
 
     /** Maps whole row to an option. Useful for outer joins. */
@@ -3003,21 +3003,21 @@ trait Tables {
     *  @param enabled Database column enabled SqlType(bool), Default(false)
     */
   case class UserUserRow(
-                          userId: java.util.UUID,
-                          dateCreated: org.joda.time.LocalDateTime,
-                          lastUpdated: org.joda.time.LocalDateTime,
-                          email: String,
-                          pass: Option[String] = None,
-                          name: String,
-                          enabled: Boolean = false)
+      userId: java.util.UUID,
+      dateCreated: org.joda.time.LocalDateTime,
+      lastUpdated: org.joda.time.LocalDateTime,
+      email: String,
+      pass: Option[String] = None,
+      name: String,
+      enabled: Boolean = false)
 
   /** GetResult implicit for fetching UserUserRow objects using plain SQL queries */
   implicit def GetResultUserUserRow(
-                                     implicit e0: GR[java.util.UUID],
-                                     e1: GR[org.joda.time.LocalDateTime],
-                                     e2: GR[String],
-                                     e3: GR[Option[String]],
-                                     e4: GR[Boolean]): GR[UserUserRow] =
+      implicit e0: GR[java.util.UUID],
+      e1: GR[org.joda.time.LocalDateTime],
+      e2: GR[String],
+      e3: GR[Option[String]],
+      e4: GR[Boolean]): GR[UserUserRow] =
     GR { prs =>
       import prs._
       UserUserRow.tupled(
@@ -3035,8 +3035,8 @@ trait Tables {
 
   /** Table description of table user_user. Objects of this class serve as prototypes for rows in queries. */
   class UserUser(
-                  _tableTag: Tag)
-    extends profile.api.Table[UserUserRow](_tableTag, Some("hat"), "user_user") {
+      _tableTag: Tag)
+      extends profile.api.Table[UserUserRow](_tableTag, Some("hat"), "user_user") {
     def * =
       (
         userId,
@@ -3058,7 +3058,7 @@ trait Tables {
         pass,
         Rep.Some(name),
         Rep.Some(enabled)
-        ).shaped.<>(
+      ).shaped.<>(
         { r =>
           import r._;
           _1.map(_ =>
