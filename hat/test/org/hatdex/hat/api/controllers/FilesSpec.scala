@@ -24,6 +24,9 @@
 
 package org.hatdex.hat.api.controllers
 
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
 import io.dataswift.models.hat._
@@ -35,9 +38,6 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
-
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
 
 class FilesSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with FilesContext {
   import io.dataswift.models.hat.json.HatJsonFormats._
@@ -353,57 +353,57 @@ class FilesSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll 
 }
 
 trait FilesContext extends HATTestContext {
-  val hatFileSimple = ApiHatFile(Some("testFile"),
-                                 "testFile",
-                                 "test",
-                                 None,
-                                 None,
-                                 None,
-                                 None,
-                                 None,
-                                 None,
-                                 Some(HatFileStatus.New()),
-                                 None,
-                                 None
+  val hatFileSimple: ApiHatFile = ApiHatFile(Some("testFile"),
+                                             "testFile",
+                                             "test",
+                                             None,
+                                             None,
+                                             None,
+                                             None,
+                                             None,
+                                             None,
+                                             Some(HatFileStatus.New()),
+                                             None,
+                                             None
   )
-  val hatFileSimpleComplete = ApiHatFile(Some("testFile"),
-                                         "testFile",
-                                         "test",
-                                         None,
-                                         None,
-                                         None,
-                                         None,
-                                         None,
-                                         None,
-                                         Some(HatFileStatus.Completed(123456L)),
-                                         None,
-                                         None
+  val hatFileSimpleComplete: ApiHatFile = ApiHatFile(Some("testFile"),
+                                                     "testFile",
+                                                     "test",
+                                                     None,
+                                                     None,
+                                                     None,
+                                                     None,
+                                                     None,
+                                                     None,
+                                                     Some(HatFileStatus.Completed(123456L)),
+                                                     None,
+                                                     None
   )
-  val hatFileSimpleCompletePublic = ApiHatFile(Some("testFile"),
-                                               "testFile",
-                                               "test",
-                                               None,
-                                               None,
-                                               None,
-                                               None,
-                                               None,
-                                               None,
-                                               Some(HatFileStatus.Completed(123456L)),
-                                               None,
-                                               None,
-                                               Some(true)
+  val hatFileSimpleCompletePublic: ApiHatFile = ApiHatFile(Some("testFile"),
+                                                           "testFile",
+                                                           "test",
+                                                           None,
+                                                           None,
+                                                           None,
+                                                           None,
+                                                           None,
+                                                           None,
+                                                           Some(HatFileStatus.Completed(123456L)),
+                                                           None,
+                                                           None,
+                                                           Some(true)
   )
-  val hatFileSimplePng = ApiHatFile(Some("testtestFile.png"),
-                                    "testFile.png",
-                                    "test",
-                                    None,
-                                    None,
-                                    None,
-                                    None,
-                                    None,
-                                    None,
-                                    Some(HatFileStatus.New()),
-                                    None,
-                                    None
+  val hatFileSimplePng: ApiHatFile = ApiHatFile(Some("testtestFile.png"),
+                                                "testFile.png",
+                                                "test",
+                                                None,
+                                                None,
+                                                None,
+                                                None,
+                                                None,
+                                                None,
+                                                Some(HatFileStatus.New()),
+                                                None,
+                                                None
   )
 }

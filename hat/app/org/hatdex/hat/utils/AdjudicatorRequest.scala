@@ -57,7 +57,7 @@ class AdjudicatorRequest(
     ws: WSClient) {
   import AdjudicatorRequestTypes._
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   private val hatClaimBuiler: JwtClaimBuilder[HatClaim] = HatClaim.builder
 

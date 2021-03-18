@@ -38,16 +38,16 @@ import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import play.api.Logger
 import play.api.libs.json.{ JsObject, JsString }
 import play.api.test.Helpers._
-import play.api.test.{FakeRequest, Helpers}
+import play.api.test.{ FakeRequest, Helpers }
 
 class ApplicationsSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with ApplicationsServiceContext {
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
-  override def beforeAll() =
+  override def beforeAll(): Unit =
     Await.result(databaseReady, 60.seconds)
 
-  override def before() = {
+  override def before(): Unit = {
     import org.hatdex.hat.dal.Tables
     import org.hatdex.libs.dal.HATPostgresProfile.api._
     val action = DBIO.seq(Tables.ApplicationStatus.delete)

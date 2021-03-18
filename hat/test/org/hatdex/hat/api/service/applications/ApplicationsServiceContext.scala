@@ -73,7 +73,7 @@ trait ApplicationsServiceContext extends HATTestContext {
 
   val contractKind: ApplicationKind.Kind = Contract("https://dataswift.io")
 
-  val description = FormattedText(
+  val description: FormattedText = FormattedText(
     text =
       "\n Anything you write online is your data – searches, social media posts, comments and notes.\n\n Start your notes here on Notables, where they will be stored completely privately in your HAT.\n\n Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.\n\n Add images or pin locations as reminders of where you were or what you saw.\n          ",
     markdown = Some(
@@ -103,7 +103,7 @@ trait ApplicationsServiceContext extends HATTestContext {
     )
   )
 
-  val graphics = ApplicationGraphics(
+  val graphics: ApplicationGraphics = ApplicationGraphics(
     banner = Drawable(normal = "", small = None, large = None, xlarge = None),
     logo = Drawable(
       normal =
@@ -162,7 +162,7 @@ trait ApplicationsServiceContext extends HATTestContext {
     callbackUrl = None
   )
 
-  val developer = ApplicationDeveloper(
+  val developer: ApplicationDeveloper = ApplicationDeveloper(
     id = "dex",
     name = "HATDeX",
     url = "https://hatdex.org",
@@ -178,7 +178,7 @@ trait ApplicationsServiceContext extends HATTestContext {
     )
   )
 
-  val dataRetrieved = EndpointDataBundle(
+  val dataRetrieved: EndpointDataBundle = EndpointDataBundle(
     name = "notablesapp",
     bundle = Map(
       "profile" -> PropertyQuery(
@@ -208,7 +208,7 @@ trait ApplicationsServiceContext extends HATTestContext {
     )
   )
 
-  val dataRequired = DataDebitRequest(
+  val dataRequired: DataDebitRequest = DataDebitRequest(
     bundle = dataRetrieved,
     conditions = None,
     startDate = LocalDateTime.parse("2018-02-15T03:52:38"),
@@ -216,7 +216,7 @@ trait ApplicationsServiceContext extends HATTestContext {
     rolling = true
   )
 
-  val permissions = ApplicationPermissions(
+  val permissions: ApplicationPermissions = ApplicationPermissions(
     rolesGranted = List(
       UserRole.userRoleDeserialize("namespacewrite", Some("rumpel")),
       UserRole.userRoleDeserialize("namespaceread", Some("rumpel")),
@@ -226,7 +226,7 @@ trait ApplicationsServiceContext extends HATTestContext {
     dataRequired = Some(dataRequired)
   )
 
-  val setup = ApplicationSetup.External(
+  val setup: ApplicationSetup.External = ApplicationSetup.External(
     url = None,
     iosUrl = Some("notablesapp://notablesapphost"),
     androidUrl = None,
@@ -238,7 +238,7 @@ trait ApplicationsServiceContext extends HATTestContext {
     dependencies = None
   )
 
-  val status = ApplicationStatus.Internal(
+  val status: ApplicationStatus.Internal = ApplicationStatus.Internal(
     compatibility = Version(1, 0, 0),
     dataPreviewEndpoint = None,
     staticDataPreviewEndpoint = None,
@@ -312,15 +312,16 @@ trait ApplicationsServiceContext extends HATTestContext {
       dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(name = "notables-external-failing"))
     )
   )
-  val notablesAppDebitlessWithPlugDependency = notablesAppDebitless.copy(
+  val notablesAppDebitlessWithPlugDependency: Application = notablesAppDebitless.copy(
     id = "notables-plug-dependency",
     dependencies = Some(ApplicationDependencies(List("plug-app").toArray, List().toArray, List().toArray))
   )
-  val notablesAppDebitlessWithInvalidDependency = notablesAppDebitless.copy(
+  val notablesAppDebitlessWithInvalidDependency: Application = notablesAppDebitless.copy(
     id = "notables-invalid-dependency",
     dependencies = Some(ApplicationDependencies(List("invalid-id").toArray, List().toArray, List().toArray))
   )
-  val plugApp = notablesAppDebitless.copy(id = "plug-app", kind = ApplicationKind.DataPlug("http://dataplug.hat.org"))
+  val plugApp: Application =
+    notablesAppDebitless.copy(id = "plug-app", kind = ApplicationKind.DataPlug("http://dataplug.hat.org"))
 
   def withMockWsClient[T](block: WSClient => T): T =
     Server.withRouterFromComponents() { components =>
@@ -342,7 +343,7 @@ trait ApplicationsServiceContext extends HATTestContext {
       }
     }
 
-  lazy val mockStatusChecker = {
+  lazy val mockStatusChecker: ApplicationStatusCheckService = {
 
     case class StatusCheck() extends Answer[Future[Boolean]] {
       override def answer(invocation: InvocationOnMock) = {
@@ -365,7 +366,7 @@ trait ApplicationsServiceContext extends HATTestContext {
     mockStatusChecker
   }
 
-  lazy val mockStatsReporter = {
+  lazy val mockStatsReporter: StatsReporter = {
     val mockStatsReporter = mock[StatsReporter]
     when(mockStatsReporter.registerOwnerConsent(any[String])(any[HatServer])).thenReturn(Future.successful(Done))
     //(mockStatsReporter.registerOwnerConsent _).expects(any[String]) returns Future.successful(Done)

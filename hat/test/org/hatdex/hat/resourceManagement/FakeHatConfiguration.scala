@@ -25,7 +25,7 @@
 package org.hatdex.hat.resourceManagement
 
 object FakeHatConfiguration {
-  def config =
+  def config: Map[String, Object] =
     Map(
       "play.cache.createBoundCaches" -> "false",
       "resourceManagement.hatDBIdleTimeout" -> "30 seconds",

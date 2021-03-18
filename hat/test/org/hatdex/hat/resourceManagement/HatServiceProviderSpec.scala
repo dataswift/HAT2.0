@@ -36,7 +36,7 @@ import play.api.test.FakeRequest
 class HatServiceProviderSpec extends BaseSpec with HATTestContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   "The `retrieve` method" should "Return HAT Server configuration for registered address" in {
     val request = FakeRequest("GET", "http://hat.hubofallthings.net")
