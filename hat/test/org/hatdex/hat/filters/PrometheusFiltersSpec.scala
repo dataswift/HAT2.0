@@ -13,15 +13,15 @@ import io.dataswift.test.common.BaseSpec
 import io.prometheus.client.CollectorRegistry
 import play.api.libs.typedmap.TypedMap
 import play.api.mvc._
-import play.api.routing.{HandlerDef, Router}
+import play.api.routing.{ HandlerDef, Router }
 import play.api.test.Helpers._
 import play.api.test._
 
 class PrometheusFiltersSpec extends BaseSpec {
 
-  implicit val ec: ExecutionContextExecutor = scala.concurrent.ExecutionContext.global
-  implicit val system: ActorSystem          = ActorSystem()
-  implicit val materializer                 = ActorMaterializer()
+  implicit val ec: ExecutionContextExecutor    = scala.concurrent.ExecutionContext.global
+  implicit val system: ActorSystem             = ActorSystem()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   "LatencyFilter" should "Measure the latency" in {
     // I needed to have an independnt collector per test, otherwise they complain about having duplicate labels.
@@ -97,12 +97,12 @@ class PrometheusFiltersSpec extends BaseSpec {
 }
 
 class MockController @Inject() (cc: ControllerComponents) extends AbstractController(cc) {
-  def ok =
+  def ok: Action[AnyContent] =
     Action {
       Ok("ok")
     }
 
-  def error =
+  def error: Action[AnyContent] =
     Action {
       NotFound("error")
     }

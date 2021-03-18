@@ -24,6 +24,11 @@
 
 package org.hatdex.hat.api.service.richData
 
+import java.util.UUID
+
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+
 import akka.stream.scaladsl.Sink
 import io.dataswift.models.hat._
 import io.dataswift.test.common.BaseSpec
@@ -32,10 +37,6 @@ import org.hatdex.hat.dal.Tables._
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import play.api.Logger
 import play.api.libs.json.{ JsObject, JsValue, Json }
-
-import java.util.UUID
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
 
 class RichDataStreamingServiceSpec
     extends BaseSpec
@@ -249,7 +250,7 @@ class RichDataStreamingServiceSpec
 class RichDataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with RichDataServiceContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
@@ -1019,7 +1020,7 @@ trait RichDataServiceContext extends HATTestContext {
       | }
     """.stripMargin)
 
-  val simpleJson2Updated = Json.parse("""
+  val simpleJson2Updated: JsValue = Json.parse("""
       | {
       |   "field": "value2",
       |   "date": 1492799048,
@@ -1097,13 +1098,13 @@ trait RichDataServiceContext extends HATTestContext {
     """.stripMargin)
     .as[JsObject]
 
-  val sampleData = List(
+  val sampleData: List[EndpointData] = List(
     EndpointData("test/test", None, None, None, simpleJson, None),
     EndpointData("test/test", None, None, None, simpleJson2, None),
     EndpointData("test/complex", None, None, None, complexJson, None)
   )
 
-  val linkedSampleData = List(
+  val linkedSampleData: List[EndpointData] = List(
     EndpointData(
       "test/test",
       None,

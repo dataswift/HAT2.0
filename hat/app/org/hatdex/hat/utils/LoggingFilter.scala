@@ -27,11 +27,16 @@ package org.hatdex.hat.utils
 import javax.inject.{ Inject, Singleton }
 
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 import akka.stream.Materializer
+import com.nimbusds.jose.JWSObject
+import com.nimbusds.jwt.JWTClaimsSet
 import io.dataswift.log.Component
 import io.dataswift.log.play.Slf4jLoggingFilter
 import play.api.Configuration
+import play.api.libs.json.{ JsValue, Json }
+import play.api.mvc.RequestHeader
 
 @Singleton
 class ActiveHatCounter() {
@@ -47,4 +52,40 @@ class LoggingFilter @Inject() (
     configuration: Configuration,
     implicit override val mat: Materializer,
     implicit override val ec: ExecutionContext)
-    extends Slf4jLoggingFilter(configuration, Component.Hat)
+    extends Slf4jLoggingFilter(configuration, Component.Hat) {
+
+  private val authTokenFieldName: String =
+    configuration.get[String]("silhouette.authenticator.fieldName")
+
+  override val body: Some[RequestHeader => JsValue] = Some((requestHeader: RequestHeader) =>
+    Json.parse(
+      requestHeader.queryString
+        .get(authTokenFieldName)
+        .flatMap(_.headOption)
+        .orElse(requestHeader.headers.get(authTokenFieldName))
+        .flatMap(t =>
+          if (t.isEmpty) None
+          else Some(t)
+        )
+        .flatMap(t => Try(JWSObject.parse(t)).toOption)
+        .map(o => JWTClaimsSet.parse(o.getPayload.toJSONObject))
+        .map { claimSet =>
+          s"""
+        {
+          "request":{
+            "pda": "${requestHeader.host}",
+            "uri":"${requestHeader.uri}"
+            "application":{
+              "id":"${Option(claimSet.getStringClaim("application")).getOrElse("api")}"
+              "version":"${Option(claimSet.getStringClaim("applicationVersion")).getOrElse("_")}"
+            }
+           }
+        }
+        """
+        }
+        .getOrElse("""{"request":"unauthorized"}""")
+    )
+  )
+}
+
+object LoggingFilter {}

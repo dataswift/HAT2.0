@@ -34,14 +34,14 @@ import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import play.api.Logger
-import play.api.libs.json.Json
+import play.api.libs.json.{ JsValue, Json }
 import play.api.test.Helpers._
-import play.api.test.{FakeRequest, Helpers}
+import play.api.test.{ FakeRequest, Helpers }
 
 class PhataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with PhataContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   import io.dataswift.models.hat.json.RichDataJsonFormats._
 
@@ -119,7 +119,7 @@ class PhataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll 
 
 trait PhataContext extends HATTestContext {
 
-  val samplePublicNotable = Json.parse("""
+  val samplePublicNotable: JsValue = Json.parse("""
       |{
       |    "kind": "note",
       |    "author":
@@ -135,7 +135,7 @@ trait PhataContext extends HATTestContext {
       |}
     """.stripMargin)
 
-  val samplePrivateNotable = Json.parse("""
+  val samplePrivateNotable: JsValue = Json.parse("""
       |{
       |    "kind": "note",
       |    "author":
@@ -151,7 +151,7 @@ trait PhataContext extends HATTestContext {
       |}
     """.stripMargin)
 
-  val sampleSocialNotable = Json.parse("""
+  val sampleSocialNotable: JsValue = Json.parse("""
       |{
       |    "kind": "note",
       |    "author":

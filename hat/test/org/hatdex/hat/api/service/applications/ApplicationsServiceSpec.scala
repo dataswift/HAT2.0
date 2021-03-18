@@ -48,7 +48,7 @@ class ApplicationsServiceSpec
     with ApplicationsServiceContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
@@ -125,11 +125,9 @@ class ApplicationsServiceSpec
     val service = application.injector.instanceOf[ApplicationsService]
     val result = for {
       app <- service.applicationStatus(notablesApp.id)
-    } yield {
-      app must not be empty
-      // TODO: Failing in CI
-      //app.get.active must equal(false)
-    }
+    } yield app must not be empty
+    // TODO: Failing in CI
+    //app.get.active must equal(false)
     Await.result(result, 20.seconds)
   }
 
@@ -338,7 +336,7 @@ class ApplicationsServiceSpec
     val result = for {
       token <- service.applicationToken(owner, notablesApp)
     } yield {
-      token.accessToken must not equal("")
+      token.accessToken.isBlank must be(false)
       val encoder      = new Base64AuthenticatorEncoder()
       val settings     = JWTRS256AuthenticatorSettings("X-Auth-Token", None, "hat.org", Some(3.days), 3.days)
       val unserialized = JWTRS256Authenticator.unserialize(token.accessToken, encoder, settings)
@@ -346,9 +344,11 @@ class ApplicationsServiceSpec
       // TODO: How do I match this?
       //unserialized must beSuccessfulTry
       (unserialized.get.customClaims.get \ "application").get must equal(JsString(notablesApp.id))
-      (unserialized.get.customClaims.get \ "applicationVersion").get must equal(JsString(
-        notablesApp.info.version.toString
-      ))
+      (unserialized.get.customClaims.get \ "applicationVersion").get must equal(
+        JsString(
+          notablesApp.info.version.toString
+        )
+      )
     }
 
     Await.result(result, 10.seconds)
@@ -356,66 +356,61 @@ class ApplicationsServiceSpec
   }
 
   "The `ApplicationStatusCheckService` `status` method" should "Return `true` for internal status checks" in {
-      withMockWsClient { client =>
-        val service = new ApplicationStatusCheckService(client)(remoteEC)
-        val result = service
-          .status(ApplicationStatus
-                    .Internal(Version("1.0.0"), None, None, None, DateTime.now()),
-                  "token"
-          )
-          .map { result =>
-            result must equal(true)
-          }
-          Await.result(result, 10.seconds)
-      }
-    }
-    
-
-    it should "Return `true` for external check with matching status" in {
-      withMockWsClient { client =>
-        val service = new ApplicationStatusCheckService(client)(remoteEC)
-        val result = service
-          .status(ApplicationStatus.External(Version("1.0.0"), "/status", 200, None, None, None, DateTime.now()),
-                  "token"
-          )
-          .map { result =>
-            result must equal(true)
-          }
-          Await.result(result, 10.seconds)
-      }
-    }
-
-   it should  "Return `false` for external check with non-matching status" in {
-      withMockWsClient { client =>
-        val service = new ApplicationStatusCheckService(client)(remoteEC)
-        val result = service
-          .status(ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None, None, None, DateTime.now()),
-                  "token"
-          )
-          .map { result =>
-            result must equal(false)
-          }
-          Await.result(result, 10.seconds)
-      }
-    }
-
-    "JoinContract" should "not run unless the application template is a Contract" in {
-      val service = application.injector.instanceOf[ApplicationsService]
-
-      val result = for {
-        _ <- service.joinContract(fakeContract, "hatName")
-        notablesApp <- service.joinContract(notablesApp, "hatName")
-      } yield {
-        notablesApp must equal(Done)
-        //contractApp must beLeft(ServiceRespondedWithFailure("The Adjudicator Service responded with an error: Internal Server Error"))
-      }
+    withMockWsClient { client =>
+      val service = new ApplicationStatusCheckService(client)(remoteEC)
+      val result = service
+        .status(ApplicationStatus
+                  .Internal(Version("1.0.0"), None, None, None, DateTime.now()),
+                "token"
+        )
+        .map { result =>
+          result must equal(true)
+        }
       Await.result(result, 10.seconds)
     }
+  }
+
+  it should "Return `true` for external check with matching status" in {
+    withMockWsClient { client =>
+      val service = new ApplicationStatusCheckService(client)(remoteEC)
+      val result = service
+        .status(ApplicationStatus.External(Version("1.0.0"), "/status", 200, None, None, None, DateTime.now()), "token")
+        .map { result =>
+          result must equal(true)
+        }
+      Await.result(result, 10.seconds)
+    }
+  }
+
+  it should "Return `false` for external check with non-matching status" in {
+    withMockWsClient { client =>
+      val service = new ApplicationStatusCheckService(client)(remoteEC)
+      val result = service
+        .status(ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None, None, None, DateTime.now()),
+                "token"
+        )
+        .map { result =>
+          result must equal(false)
+        }
+      Await.result(result, 10.seconds)
+    }
+  }
+
+  "JoinContract" should "not run unless the application template is a Contract" in {
+    val service = application.injector.instanceOf[ApplicationsService]
+
+    val result = for {
+      _ <- service.joinContract(fakeContract, "hatName")
+      notablesApp <- service.joinContract(notablesApp, "hatName")
+    } yield notablesApp must equal(Done)
+    //contractApp must beLeft(ServiceRespondedWithFailure("The Adjudicator Service responded with an error: Internal Server Error"))
+    Await.result(result, 10.seconds)
+  }
 
   // Commented until I figure out how to Mock it.
   //    "Adding a Contract should succeed" in {
   //      val service = application.injector.instanceOf[ApplicationsService]
-  
+
   //      val result = for {
   //        _ <- service.setup(
   //          HatApplication(
@@ -433,8 +428,7 @@ class ApplicationsServiceSpec
   //        setupApp must not be empty
   //        setupApp.get.setup must beTrue
   //      }
-  
+
   //      result await (1, 20.seconds)
   //    }
-  }
-  
+}

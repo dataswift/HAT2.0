@@ -42,7 +42,7 @@ class FunctionServiceSpec
     with DataFeedDirectMapperContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   override def beforeAll: Unit = {
     DateTimeUtils.setCurrentMillisFixed(1514764800000L)
