@@ -84,9 +84,9 @@ class DataFeedDirectMapperSpec
     val transformed = mapper.mapDataRecord(googleCalendarEvent.recordId.get, googleCalendarEvent.data).get
     transformed.source must equal("google")
     transformed.types must contain("event")
-    transformed.title.value.text must contain("MadHATTERs Tea Party: The Boston Party")
-    transformed.title.value.subtitle.value must contain("12 December 18:30 - 22:30 America/New_York")
-    transformed.content.value.text.value must contain("personal data, user accounts, security and value")
+    transformed.title.value.text must include("MadHATTERs Tea Party: The Boston Party")
+    transformed.title.value.subtitle.value must include("12 December 18:30 - 22:30 America/New_York")
+    transformed.content.value.text.value must include("personal data, user accounts, security and value")
   }
 
   it should "remove html tags from google calendar event description" in {
