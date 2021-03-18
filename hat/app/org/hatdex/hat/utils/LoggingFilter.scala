@@ -76,7 +76,7 @@ class LoggingFilter @Inject() (
             "pda": "${requestHeader.host}",
             "uri":"${requestHeader.uri}",
             "application":{
-              "id":"${Option(claimSet.getStringClaim("application")).getOrElse("api")}"
+              "id":"${Option(claimSet.getStringClaim("application")).getOrElse("api")}",
               "version":"${Option(claimSet.getStringClaim("applicationVersion")).getOrElse("_")}"
             }
            }
