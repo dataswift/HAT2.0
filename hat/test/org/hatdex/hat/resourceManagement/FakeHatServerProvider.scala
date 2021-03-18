@@ -29,10 +29,8 @@ import scala.concurrent.Future
 import play.api.mvc.Request
 
 class FakeHatServerProvider(fakeHatServer: HatServer) extends HatServerProvider {
-  def retrieve[B](request: Request[B]): Future[Option[HatServer]] = {
+  def retrieve[B](request: Request[B]): Future[Option[HatServer]] =
     Future.successful(Some(fakeHatServer))
-  }
-  def retrieve(hatAddress: String): Future[Option[HatServer]] = {
+  def retrieve(hatAddress: String): Future[Option[HatServer]] =
     Future.successful(Some(fakeHatServer))
-  }
 }

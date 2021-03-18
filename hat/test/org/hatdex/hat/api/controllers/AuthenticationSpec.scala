@@ -45,14 +45,14 @@ import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Result
 import play.api.test.Helpers._
-import play.api.test.{ FakeHeaders, FakeRequest, Helpers}
+import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
 import play.mvc.Http.{ HeaderNames, MimeTypes }
 
 class AuthenticationSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with AuthenticationContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
@@ -332,14 +332,16 @@ class AuthenticationSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfte
 }
 
 trait AuthenticationContext extends HATTestContext {
-  val passwordChangeIncorrect = ApiPasswordChange("some-passwords-are-better-than-others", Some("wrongOldPassword"))
-  val passwordChangeSimple    = ApiPasswordChange("simple", Some("pa55w0rd"))
-  val passwordChangeStrong    = ApiPasswordChange("some-passwords-are-better-than-others", Some("pa55w0rd"))
-  val passwordResetStrong     = ApiPasswordChange("some-passwords-are-better-than-others", None)
+  val passwordChangeIncorrect: ApiPasswordChange =
+    ApiPasswordChange("some-passwords-are-better-than-others", Some("wrongOldPassword"))
+  val passwordChangeSimple: ApiPasswordChange = ApiPasswordChange("simple", Some("pa55w0rd"))
+  val passwordChangeStrong: ApiPasswordChange =
+    ApiPasswordChange("some-passwords-are-better-than-others", Some("pa55w0rd"))
+  val passwordResetStrong: ApiPasswordChange = ApiPasswordChange("some-passwords-are-better-than-others", None)
 
-  val passwordForgottenIncorrect = ApiPasswordResetRequest("email@example.com")
-  val passwordForgottenOwner     = ApiPasswordResetRequest("user@hat.org")
+  val passwordForgottenIncorrect: ApiPasswordResetRequest = ApiPasswordResetRequest("email@example.com")
+  val passwordForgottenOwner: ApiPasswordResetRequest     = ApiPasswordResetRequest("user@hat.org")
 
-  val passwordValidationIncorrect = ApiValidationRequest("email@example.com", "appId")
-  val passwordValidationOwner     = ApiValidationRequest("user@hat.org", "appId")
+  val passwordValidationIncorrect: ApiValidationRequest = ApiValidationRequest("email@example.com", "appId")
+  val passwordValidationOwner: ApiValidationRequest     = ApiValidationRequest("user@hat.org", "appId")
 }

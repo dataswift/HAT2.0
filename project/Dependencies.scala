@@ -93,7 +93,7 @@ object Dependencies {
     }
 
     object Backend {
-      private val version = "2.1.2_play2.6.25"
+      private val version = "2.1.3_play2.6.25"
       val logPlay         = "io.dataswift" %% "log-play" % version
       val hatPlay         = "io.dataswift" %% "hat-play" % version
       val hatModels       = "io.dataswift" %% "hat"      % version

@@ -37,15 +37,11 @@ import play.api.Logger
 import play.api.test.{ FakeRequest }
 import play.api.test.Helpers._
 
-class SystemStatusSpec
-    extends BaseSpec
-    with BeforeAndAfter
-    with BeforeAndAfterAll
-    with HATTestContext {
+class SystemStatusSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with HATTestContext {
 
   import HatJsonFormats._
   import scala.concurrent.ExecutionContext.Implicits.global
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)

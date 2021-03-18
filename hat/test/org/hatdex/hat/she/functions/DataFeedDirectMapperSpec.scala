@@ -41,7 +41,7 @@ class DataFeedDirectMapperSpec
     with BeforeAndAfterAll
     with DataFeedDirectMapperContext {
 
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   override def beforeAll: Unit = {
     DateTimeUtils.setCurrentMillisFixed(1514764800000L)
@@ -84,22 +84,22 @@ class DataFeedDirectMapperSpec
     val transformed = mapper.mapDataRecord(googleCalendarEvent.recordId.get, googleCalendarEvent.data).get
     transformed.source must equal("google")
     transformed.types must contain("event")
-    transformed.title.get.text.contains("MadHATTERs Tea Party: The Boston Party")
-    transformed.title.get.subtitle.get contains("12 December 18:30 - 22:30 America/New_York")
-    transformed.content.get.text.get contains("personal data, user accounts, security and value")
+    transformed.title.value.text must include("MadHATTERs Tea Party: The Boston Party")
+    transformed.title.value.subtitle.value must include("12 December 18:30 - 22:30 America/New_York")
+    transformed.content.value.text.value must include("personal data, user accounts, security and value")
   }
 
   it should "remove html tags from google calendar event description" in {
     val mapper      = new GoogleCalendarMapper()
     val transformed = mapper.mapDataRecord(googleCalendarEventHtml.recordId.get, googleCalendarEventHtml.data).get
-    transformed.source must equal("google")
+    transformed.source must be("google")
     transformed.types must contain("event")
-    transformed.title.get.text.contains("MadHATTERs Tea Party: The Boston Party")
-    transformed.title.get.subtitle.get.contains("12 December 18:30 - 22:30 America/New_York")
-    transformed.content.get.text.get.contains("BD call")
-    !transformed.content.get.text.get.contains("<br>")
-    !transformed.content.get.text.get.contains("&nbsp;")
-    !transformed.content.get.text.get.contains("</a>")
+    transformed.title.value.text must include("MadHATTERs Tea Party: The Boston Party")
+    transformed.title.value.subtitle.value must include("12 December 18:30 - 22:30 America/New_York")
+    transformed.content.value.text.value must include("BD call")
+    transformed.content.value.text.value must not(include("<br>"))
+    transformed.content.value.text.value must not(include("&nbsp;"))
+    transformed.content.value.text.value must not(include("</a>"))
   }
 
   it should "translate google calendar full-day event" in {
@@ -108,7 +108,7 @@ class DataFeedDirectMapperSpec
       mapper.mapDataRecord(googleCalendarFullDayEvent.recordId.get, googleCalendarFullDayEvent.data).get
     transformed.source must equal("google")
     transformed.types must contain("event")
-    transformed.content.get.text must equal(None)
+    transformed.content.value.text must be(None)
   }
 
   // TODO: updated tweet with retweet structure
@@ -117,12 +117,12 @@ class DataFeedDirectMapperSpec
     val transformed = mapper.mapDataRecord(exampleTweetRetweet.recordId.get, exampleTweetRetweet.data).get
     transformed.source must equal("twitter")
     transformed.types must contain("post")
-    transformed.title.get.text.contains("You retweeted")
-    transformed.content.get.text.get.contains("RT @jupenur: Oh shit Adobe https://t.co/7rDL3LWVVz")
+    transformed.title.value.text must include("You retweeted")
+    transformed.content.value.text.value must include("RT @jupenur: Oh shit Adobe https://t.co/7rDL3LWVVz")
 
-    transformed.location.get.geo.get.longitude must equal(-75.14310264)
-    transformed.location.get.address.get.country.get must equal("United States")
-    transformed.location.get.address.get.city.get must equal("Washington")
+    transformed.location.value.geo.get.longitude must equal(-75.14310264)
+    transformed.location.value.address.get.country.get must equal("United States")
+    transformed.location.value.address.get.city.get must equal("Washington")
   }
 
   // TODO: update tweet with reply structure
@@ -130,25 +130,25 @@ class DataFeedDirectMapperSpec
     val mapper      = new TwitterFeedMapper()
     val transformed = mapper.mapDataRecord(exampleTweetMentions.recordId.get, exampleTweetMentions.data).get
     transformed.source must equal("twitter")
-    transformed.title.get.text.contains("You replied to @drgeep")
+    transformed.title.value.text must include("You replied to @drgeep")
   }
 
   it should "translate minimal tweet structure correctly" in {
     val mapper      = new TwitterFeedMapper()
     val transformed = mapper.mapDataRecord(exampleTweetMinimalFields.recordId.get, exampleTweetMinimalFields.data).get
     transformed.source must equal("twitter")
-    transformed.content.get.text.get.contains("Tweet from Portugal.")
+    transformed.content.value.text.value must be("Tweet from Portugal.")
   }
 
   "The `InstagramMediaMapper` class" should "translate single image posts using v1 API" in {
     val mapper      = new InstagramMediaMapper()
     val transformed = mapper.mapDataRecord(exampleInstagramImagev1.recordId.get, exampleInstagramImagev1.data).get
     transformed.source must equal("instagram")
-    transformed.title.get.text.contains("You posted")
-    transformed.title.get.action.get must equal("image")
-    transformed.content.get.text.get.contains("Saturday breakfast magic")
-    transformed.content.get.media.get.length must equal(1)
-    transformed.content.get.media.get.head.url.get must startWith("https://scontent.cdninstagram.com/vp")
+    transformed.title.value.text must include("You posted")
+    transformed.title.value.action.value must equal("image")
+    transformed.content.value.text.value must include("Saturday breakfast magic")
+    transformed.content.value.media.value.length must equal(1)
+    transformed.content.value.media.value.head.url.value must startWith("https://scontent.cdninstagram.com/vp")
   }
 
   it should "translate multiple image carousel posts using v1 API" in {
@@ -156,22 +156,22 @@ class DataFeedDirectMapperSpec
     val transformed =
       mapper.mapDataRecord(exampleMultipleInstagramImages.recordId.get, exampleMultipleInstagramImages.data).get
     transformed.source must equal("instagram")
-    transformed.title.get.text.contains("You posted")
-    transformed.title.get.action.get must equal("carousel")
-    transformed.content.get.text.get.contains("The beauty of Richmond park...")
-    transformed.content.get.media.get.length must equal(3)
-    transformed.content.get.media.get.head.url.get must startWith("https://scontent.cdninstagram.com/vp")
+    transformed.title.value.text must include("You posted")
+    transformed.title.value.action.value must equal("carousel")
+    transformed.content.value.text.value must include("The beauty of Richmond park...")
+    transformed.content.value.media.value.length must equal(3)
+    transformed.content.value.media.value.head.url.value must startWith("https://scontent.cdninstagram.com/vp")
   }
 
   it should "translate single image posts using v2 API" in {
     val mapper      = new InstagramMediaMapper()
     val transformed = mapper.mapDataRecord(exampleInstagramImagev2.recordId.get, exampleInstagramImagev2.data).get
     transformed.source must equal("instagram")
-    transformed.title.get.text.contains("You posted")
-    transformed.title.get.action.get must equal("image")
-    transformed.content.get.text.get.contains("Saturday breakfast magic")
-    transformed.content.get.media.get.length must equal(1)
-    transformed.content.get.media.get.head.url.get must startWith("https://scontent.xx.fbcdn.net/v/")
+    transformed.title.value.text must include("You posted")
+    transformed.title.value.action.value must equal("image")
+    transformed.content.value.text.value must include("Saturday breakfast magic")
+    transformed.content.value.media.value.length must equal(1)
+    transformed.content.value.media.value.head.url.value must startWith("https://scontent.xx.fbcdn.net/v/")
   }
 
   it should "create data queries using correct unix timestamp format" in {
@@ -180,13 +180,13 @@ class DataFeedDirectMapperSpec
     val untilDate = fromDate.plusDays(1)
 
     val propertyQuery = mapper.dataQueries(Some(fromDate), Some(untilDate))
-    propertyQuery.head.orderBy.get must equal("ds_created_time")
+    propertyQuery.head.orderBy.value must equal("ds_created_time")
     propertyQuery.head.endpoints.head.endpoint must equal("instagram/feed")
-    propertyQuery.head.endpoints.head.filters.get.head.operator
+    propertyQuery.head.endpoints.head.filters.value.head.operator
       .asInstanceOf[Between]
       .lower
       .as[String] must equal("1525165200")
-    propertyQuery.head.endpoints.head.filters.get.head.operator
+    propertyQuery.head.endpoints.head.filters.value.head.operator
       .asInstanceOf[Between]
       .upper
       .as[String] must equal("1525251600")
@@ -194,119 +194,119 @@ class DataFeedDirectMapperSpec
 
   "The `mapFacebookPost` method" should "translate facebook photo posts" in {
     val mapper      = new FacebookFeedMapper()
-    val transformed = mapper.mapDataRecord(exampleFacebookPhotoPost.recordId.get, exampleFacebookPhotoPost.data).get
+    val transformed = mapper.mapDataRecord(exampleFacebookPhotoPost.recordId.value, exampleFacebookPhotoPost.data).get
 
     transformed.source must equal("facebook")
-    transformed.title.get.text must equal("You posted a photo")
-    //transformed.content.get.media.get.head.url.get must be startingWith "https://scontent.xx.fbcdn.net"
+    transformed.title.value.text must equal("You posted a photo")
+    //transformed.content.value.media.value.head.url.value must be startingWith "https://scontent.xx.fbcdn.net"
   }
 
   it should "translate facebook replies" in {
     val mapper      = new FacebookFeedMapper()
-    val transformed = mapper.mapDataRecord(exampleFacebookPost.recordId.get, exampleFacebookPost.data).get
+    val transformed = mapper.mapDataRecord(exampleFacebookPost.recordId.value, exampleFacebookPost.data).get
     transformed.source must equal("facebook")
-    transformed.title.get.text must equal("You posted")
-    //transformed.content.get.text.get must be startingWith "jetlag wouldn't be so bad if not for  Aileen signing (whistling?) out the window overnight..."
+    transformed.title.value.text must equal("You posted")
+    //transformed.content.value.text.value must be startingWith "jetlag wouldn't be so bad if not for  Aileen signing (whistling?) out the window overnight..."
   }
 
   it should "translate facebook stories" in {
     val mapper      = new FacebookFeedMapper()
-    val transformed = mapper.mapDataRecord(facebookStory.recordId.get, facebookStory.data).get
+    val transformed = mapper.mapDataRecord(facebookStory.recordId.value, facebookStory.data).get
     transformed.source must equal("facebook")
-    transformed.title.get.text must equal("You shared a story")
-    //transformed.content.get.text.get must be startingWith "Guilty. Though works for startups too."
-    transformed.content.get.text.get.contains("http://phdcomics.com/comics.php?f=1969")
+    transformed.title.value.text must equal("You shared a story")
+    //transformed.content.value.text.value must be startingWith "Guilty. Though works for startups too."
+    transformed.content.value.text.value must include("http://phdcomics.com/comics.php?f=1969")
   }
 
   "The `mapFacebookEvent` method" should "translate facebook events with location" in {
     val mapper      = new FacebookEventMapper()
-    val transformed = mapper.mapDataRecord(facebookEvent.recordId.get, facebookEvent.data).get
+    val transformed = mapper.mapDataRecord(facebookEvent.recordId.value, facebookEvent.data).get
 
     transformed.source must equal("facebook")
     transformed.types must contain("event")
-    transformed.title.get.text must equal("You are attending an event")
-    transformed.content.get.text.get.contains("We're going somewhere new")
-    transformed.location.get.address.get.city.get must equal("Singapore")
-    transformed.location.get.address.get.name.get must equal("Carlton Hotel Singapore")
+    transformed.title.value.text must equal("You are attending an event")
+    transformed.content.value.text.value must include("We're going somewhere new")
+    transformed.location.value.address.value.city.value must equal("Singapore")
+    transformed.location.value.address.value.name.value must equal("Carlton Hotel Singapore")
   }
 
   it should "translate facebook events without location" in {
     val mapper      = new FacebookEventMapper()
-    val transformed = mapper.mapDataRecord(facebookEvenNoLocation.recordId.get, facebookEvenNoLocation.data).get
+    val transformed = mapper.mapDataRecord(facebookEvenNoLocation.recordId.value, facebookEvenNoLocation.data).get
 
     transformed.source must equal("facebook")
     transformed.types must contain("event")
-    transformed.title.get.text must equal("You are attending an event")
-    transformed.content.get.text.get.contains("privacy, security, access rights, regulation")
+    transformed.title.value.text must equal("You are attending an event")
+    transformed.content.value.text.value must include("privacy, security, access rights, regulation")
     transformed.location must equal(None)
   }
 
   it should "translate facebook events with incomplete location" in {
     val mapper = new FacebookEventMapper()
     val transformed =
-      mapper.mapDataRecord(facebookEvenPartialLocation.recordId.get, facebookEvenPartialLocation.data).get
+      mapper.mapDataRecord(facebookEvenPartialLocation.recordId.value, facebookEvenPartialLocation.data).get
 
     transformed.source must equal("facebook")
     transformed.types must contain("event")
-    transformed.title.get.text must equal("You are attending an event")
-    transformed.content.get.text.get.contains("privacy, security, access rights, regulation")
+    transformed.title.value.text must equal("You are attending an event")
+    transformed.content.value.text.value must include("privacy, security, access rights, regulation")
     transformed.location must equal(None)
   }
 
   "The `mapFitbitWeight` method" should "translate fitbit weight" in {
     val mapper      = new FitbitWeightMapper()
-    val transformed = mapper.mapDataRecord(fitbitWeightMeasurement.recordId.get, fitbitWeightMeasurement.data).get
+    val transformed = mapper.mapDataRecord(fitbitWeightMeasurement.recordId.value, fitbitWeightMeasurement.data).get
 
     transformed.source must equal("fitbit")
     transformed.types must contain("fitness")
     transformed.types must contain("weight")
-    transformed.title.get.text must equal("You added a new weight measurement")
-    transformed.content.get.text.get.contains("94.8")
-    transformed.content.get.text.get.contains("25.46")
-    transformed.content.get.text.get.contains("21.5")
+    transformed.title.value.text must equal("You added a new weight measurement")
+    transformed.content.value.text.value must include("94.8")
+    transformed.content.value.text.value must include("25.46")
+    transformed.content.value.text.value must include("21.5")
   }
 
   "The `mapFitbitSleep` method" should "translate fitbit sleep" in {
     val mapper      = new FitbitSleepMapper()
-    val transformed = mapper.mapDataRecord(fitbitSleepMeasurement.recordId.get, fitbitSleepMeasurement.data).get
+    val transformed = mapper.mapDataRecord(fitbitSleepMeasurement.recordId.value, fitbitSleepMeasurement.data).get
 
     transformed.source must equal("fitbit")
     transformed.types must contain("fitness")
-    transformed.types must contain ("sleep")
-    transformed.title.get.text.contains("You woke up")
-    transformed.content.get.text.get.contains("You spent 8 hours and 4 minutes in bed.")
-    transformed.content.get.text.get.contains("You slept for 7 hours and 20 minutes ")
-    transformed.content.get.text.get.contains("and were awake for 44 minutes")
+    transformed.types must contain("sleep")
+    transformed.title.value.text must include("You woke up")
+    transformed.content.value.text.value must include("You spent 8 hours and 4 minutes in bed.")
+    transformed.content.value.text.value must include("You slept for 7 hours and 20 minutes ")
+    transformed.content.value.text.value must include("and were awake for 44 minutes")
   }
 
   "The `mapFitbitActivity` method" should "translate fitbit activity" in {
     val mapper      = new FitbitActivityMapper()
-    val transformed = mapper.mapDataRecord(fitbitActivity.recordId.get, fitbitActivity.data).get
+    val transformed = mapper.mapDataRecord(fitbitActivity.recordId.value, fitbitActivity.data).get
 
     transformed.source must equal("fitbit")
     transformed.types must contain("fitness")
-    transformed.title.get.text.contains("You logged Fitbit activity")
-    transformed.content.get.text.get.contains("Activity: Walk")
-    transformed.content.get.text.get.contains("Duration: 17 minutes")
-    transformed.content.get.text.get.contains("Average heart rate: 94")
-    transformed.content.get.text.get.contains("Calories burned: 126")
+    transformed.title.value.text must include("You logged Fitbit activity")
+    transformed.content.value.text.value must include("Activity: Walk")
+    transformed.content.value.text.value must include("Duration: 17 minutes")
+    transformed.content.value.text.value must include("Average heart rate: 94")
+    transformed.content.value.text.value must include("Calories burned: 126")
   }
 
   "The `mapFitbitDaySummarySteps` method" should "not generate a feed item for days with 0 steps recorded" in {
     val mapper      = new FitbitActivityDaySummaryMapper()
-    val transformed = mapper.mapDataRecord(fitbitDayEmptySummary.recordId.get, fitbitDayEmptySummary.data)
+    val transformed = mapper.mapDataRecord(fitbitDayEmptySummary.recordId.value, fitbitDayEmptySummary.data)
     transformed match {
       case Failure(_) => true
-      case _ => fail() 
+      case _          => fail()
     }
   }
 
   it should "translate fitbit day summary to steps" in {
     val mapper      = new FitbitActivityDaySummaryMapper()
-    val transformed = mapper.mapDataRecord(fitbitDaySummary.recordId.get, fitbitDaySummary.data).get
+    val transformed = mapper.mapDataRecord(fitbitDaySummary.recordId.value, fitbitDaySummary.data).get
     transformed.source must equal("fitbit")
     transformed.types must contain("fitness")
-    transformed.title.get.text.contains("You walked 12135 steps")
+    transformed.title.value.text  must include("You walked 12135 steps")
     transformed.content must equal(None)
   }
 }

@@ -41,7 +41,7 @@ import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import play.api.Logger
 import play.api.mvc.Result
 import play.api.test.Helpers._
-import play.api.test.{FakeRequest, Helpers}
+import play.api.test.{ FakeRequest, Helpers }
 
 class FunctionManagerSpec
     extends BaseSpec
@@ -50,7 +50,7 @@ class FunctionManagerSpec
     with DataFeedDirectMapperContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  val logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   import io.dataswift.models.hat.json.HatJsonFormats.{ errorMessage, successResponse }
   import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol._
