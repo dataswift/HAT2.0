@@ -150,4 +150,8 @@ unmanagedSources.in(Compile, scalafix) :=
   unmanagedSources
     .in(Compile)
     .value
-    .filterNot(file => file.getName == "Tables.scala")
+    .filterNot(
+      _.getAbsolutePath.contains(
+        "dal/Tables.scala"
+      )
+    )
