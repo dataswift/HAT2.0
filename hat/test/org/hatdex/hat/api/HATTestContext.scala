@@ -58,7 +58,7 @@ import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
 import play.api.i18n.{ Lang, MessagesApi }
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.{Application, Configuration, Logger}
+import play.api.{ Application, Configuration, Logger }
 import play.cache.NamedCacheImpl
 
 trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
@@ -136,7 +136,7 @@ trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
 
   // Initialize configuration
   val hatAddress            = "hat.hubofallthings.net"
-  val hatUrl: String                = s"http://$hatAddress"
+  val hatUrl: String        = s"http://$hatAddress"
   private val configuration = conf //Configuration.from(FakeHatConfiguration.config)
   private val hatConfig     = configuration.get[Configuration](s"hat.$hatAddress")
 
@@ -160,11 +160,11 @@ trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
 
   // Setup default users for testing
   val owner: HatUser = HatUser(UUID.randomUUID(),
-                      "hatuser",
-                      Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."),
-                      "hatuser",
-                      Seq(Owner()),
-                      enabled = true
+                               "hatuser",
+                               Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."),
+                               "hatuser",
+                               Seq(Owner()),
+                               enabled = true
   )
   val dataDebitUser: HatUser = HatUser(
     UUID.randomUUID(),
@@ -210,7 +210,7 @@ trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
       }
   }
 
-  val mockLogger: Logger            = mock[play.api.Logger]
+  val mockLogger: Logger    = mock[play.api.Logger]
   val mockMailer: HatMailer = mock[HatMailer]
   when(mockMailer.passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])).thenReturn(Done)
 

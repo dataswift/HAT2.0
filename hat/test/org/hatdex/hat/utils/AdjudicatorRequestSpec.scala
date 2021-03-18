@@ -32,16 +32,16 @@ import io.dataswift.adjudicator.Types.{ ContractId, HatName }
 import io.dataswift.test.common.BaseSpec
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Logger
-import play.api.test.{  WsTestClient }
+import play.api.test.{ WsTestClient }
 
 class AdjudicatorRequestSpec extends BaseSpec with AdjudicatorContext {
 
-  val logger: Logger                                         = Logger(this.getClass)
+  val logger: Logger                                 = Logger(this.getClass)
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
   //** Adjudicator
-  val adjudicatorAddress  = "localhost:9002"
-  val adjudicatorScheme   = "http://"
+  val adjudicatorAddress          = "localhost:9002"
+  val adjudicatorScheme           = "http://"
   val adjudicatorEndpoint: String = s"${adjudicatorScheme}${adjudicatorAddress}"
 
   val hatName: HatName       = HatName("hatName")
@@ -111,8 +111,8 @@ trait AdjudicatorContext extends MockitoSugar {
   import org.hatdex.hat.utils.AdjudicatorRequestTypes._
   import org.mockito.Mockito._
 
-  val fakeContractUUID: UUID = java.util.UUID.randomUUID()
-  val fakePublicKey: Array[Byte]    = "publicKey".getBytes()
+  val fakeContractUUID: UUID     = java.util.UUID.randomUUID()
+  val fakePublicKey: Array[Byte] = "publicKey".getBytes()
 
   val mockAdjudicatorClient: AdjudicatorRequest = mock[AdjudicatorRequest]
 

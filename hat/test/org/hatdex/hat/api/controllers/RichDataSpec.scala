@@ -649,11 +649,12 @@ trait RichDataContext extends HATTestContext {
     .as[JsObject]
 
   val testEndpointQuery: Seq[EndpointQuery] = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
-                              EndpointQuery("test/complex", Some(complexTransformation), None, None)
+                                                  EndpointQuery("test/complex", Some(complexTransformation), None, None)
   )
 
-  val testEndpointQueryUpdated: Seq[EndpointQuery] = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
-                                     EndpointQuery("test/anothertest", None, None, None)
+  val testEndpointQueryUpdated: Seq[EndpointQuery] = Seq(
+    EndpointQuery("test/test", Some(simpleTransformation), None, None),
+    EndpointQuery("test/anothertest", None, None, None)
   )
 
   val testBundle: EndpointDataBundle = EndpointDataBundle(
@@ -745,16 +746,16 @@ trait RichDataContext extends HATTestContext {
     DataDebitRequest(testBundle2, None, LocalDateTime.now(), LocalDateTime.now().plusDays(3), rolling = false)
 
   val ddRequestionConditionsFailed: DataDebitRequest = DataDebitRequest(testBundle,
-                                                      Some(failingCondition),
-                                                      LocalDateTime.now(),
-                                                      LocalDateTime.now().plusDays(3),
-                                                      rolling = false
+                                                                        Some(failingCondition),
+                                                                        LocalDateTime.now(),
+                                                                        LocalDateTime.now().plusDays(3),
+                                                                        rolling = false
   )
 
   val ddRequestionConditionsFulfilled: DataDebitRequest = DataDebitRequest(testBundle,
-                                                         Some(matchingCondition),
-                                                         LocalDateTime.now(),
-                                                         LocalDateTime.now().plusDays(3),
-                                                         rolling = false
+                                                                           Some(matchingCondition),
+                                                                           LocalDateTime.now(),
+                                                                           LocalDateTime.now().plusDays(3),
+                                                                           rolling = false
   )
 }

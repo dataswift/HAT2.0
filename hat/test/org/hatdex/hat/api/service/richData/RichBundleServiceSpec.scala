@@ -233,11 +233,12 @@ trait RichBundleServiceContext extends HATTestContext {
     .as[JsObject]
 
   val testEndpointQuery: Seq[EndpointQuery] = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
-                              EndpointQuery("test/complex", Some(complexTransformation), None, None)
+                                                  EndpointQuery("test/complex", Some(complexTransformation), None, None)
   )
 
-  val testEndpointQueryUpdated: Seq[EndpointQuery] = Seq(EndpointQuery("test/test", Some(simpleTransformation), None, None),
-                                     EndpointQuery("test/anothertest", None, None, None)
+  val testEndpointQueryUpdated: Seq[EndpointQuery] = Seq(
+    EndpointQuery("test/test", Some(simpleTransformation), None, None),
+    EndpointQuery("test/anothertest", None, None, None)
   )
 
   val testBundle: EndpointDataBundle = EndpointDataBundle(

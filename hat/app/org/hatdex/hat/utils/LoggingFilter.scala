@@ -70,7 +70,7 @@ class LoggingFilter @Inject() (
         .flatMap(t => Try(JWSObject.parse(t)).toOption)
         .map(o => JWTClaimsSet.parse(o.getPayload.toJSONObject))
         .map { claimSet =>
-        s"""
+          s"""
         {
           "request":{
             "pda": "${requestHeader.host}",

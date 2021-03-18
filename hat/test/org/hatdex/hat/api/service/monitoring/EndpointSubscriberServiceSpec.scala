@@ -29,9 +29,9 @@ import java.util.UUID
 import io.dataswift.models.hat._
 import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.authentication.models.HatUser
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
+import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import play.api.Logger
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{ JsValue, Json }
 
 class EndpointSubscriberServiceSpec
     extends BaseSpec
@@ -293,5 +293,6 @@ trait EndpointSubscriberServiceContext { //extends HATTestContext {
       | }
     """.stripMargin)
 
-  val simpleEndpointData: EndpointData = EndpointData("test/test", Some(UUID.randomUUID()), None, None, simpleJson, None)
+  val simpleEndpointData: EndpointData =
+    EndpointData("test/test", Some(UUID.randomUUID()), None, None, simpleJson, None)
 }

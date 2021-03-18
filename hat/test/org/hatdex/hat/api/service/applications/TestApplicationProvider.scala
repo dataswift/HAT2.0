@@ -28,10 +28,10 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 import io.dataswift.models.hat.applications.Application
 
-class TestApplicationProvider(apps: Seq[Application])(implicit ec: ExecutionContext) extends TrustedApplicationProvider {
-  def application(id: String): Future[Option[Application]] = {
+class TestApplicationProvider(apps: Seq[Application])(implicit ec: ExecutionContext)
+    extends TrustedApplicationProvider {
+  def application(id: String): Future[Option[Application]] =
     applications.map(_.find(_.id == id))
-  }
 
   def applications: Future[Seq[Application]] = Future.successful(apps)
 }

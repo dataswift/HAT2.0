@@ -38,7 +38,7 @@ import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import play.api.Logger
 import play.api.libs.json.{ JsObject, JsString }
 import play.api.test.Helpers._
-import play.api.test.{FakeRequest, Helpers}
+import play.api.test.{ FakeRequest, Helpers }
 
 class ApplicationsSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with ApplicationsServiceContext {
 

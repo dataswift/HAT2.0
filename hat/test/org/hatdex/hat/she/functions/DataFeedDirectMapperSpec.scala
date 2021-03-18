@@ -84,9 +84,9 @@ class DataFeedDirectMapperSpec
     val transformed = mapper.mapDataRecord(googleCalendarEvent.recordId.get, googleCalendarEvent.data).get
     transformed.source must equal("google")
     transformed.types must contain("event")
-    transformed.title.get.text.contains("MadHATTERs Tea Party: The Boston Party")
-    transformed.title.get.subtitle.get contains("12 December 18:30 - 22:30 America/New_York")
-    transformed.content.get.text.get contains("personal data, user accounts, security and value")
+    transformed.title.get.text must contain("MadHATTERs Tea Party: The Boston Party")
+    transformed.title.get.subtitle.get must contain("12 December 18:30 - 22:30 America/New_York")
+    transformed.content.get.text.get must contain("personal data, user accounts, security and value")
   }
 
   it should "remove html tags from google calendar event description" in {
@@ -94,12 +94,12 @@ class DataFeedDirectMapperSpec
     val transformed = mapper.mapDataRecord(googleCalendarEventHtml.recordId.get, googleCalendarEventHtml.data).get
     transformed.source must equal("google")
     transformed.types must contain("event")
-    transformed.title.get.text.contains("MadHATTERs Tea Party: The Boston Party")
-    transformed.title.get.subtitle.get.contains("12 December 18:30 - 22:30 America/New_York")
-    transformed.content.get.text.get.contains("BD call")
-    !transformed.content.get.text.get.contains("<br>")
-    !transformed.content.get.text.get.contains("&nbsp;")
-    !transformed.content.get.text.get.contains("</a>")
+    transformed.title.get.text must contain("MadHATTERs Tea Party: The Boston Party")
+    transformed.title.get.subtitle.value must contain("12 December 18:30 - 22:30 America/New_York")
+    transformed.content.get.text.value must contain("BD call")
+    transformed.content.get.text.value must not(contain("<br>"))
+    transformed.content.get.text.value must not(contain("&nbsp;"))
+    transformed.content.get.text.value must not(contain("</a>"))
   }
 
   it should "translate google calendar full-day event" in {
@@ -117,8 +117,8 @@ class DataFeedDirectMapperSpec
     val transformed = mapper.mapDataRecord(exampleTweetRetweet.recordId.get, exampleTweetRetweet.data).get
     transformed.source must equal("twitter")
     transformed.types must contain("post")
-    transformed.title.get.text.contains("You retweeted")
-    transformed.content.get.text.get.contains("RT @jupenur: Oh shit Adobe https://t.co/7rDL3LWVVz")
+    transformed.title.value.text must contain("You retweeted")
+    transformed.content.get.text.value must contain("RT @jupenur: Oh shit Adobe https://t.co/7rDL3LWVVz")
 
     transformed.location.get.geo.get.longitude must equal(-75.14310264)
     transformed.location.get.address.get.country.get must equal("United States")
@@ -272,7 +272,7 @@ class DataFeedDirectMapperSpec
 
     transformed.source must equal("fitbit")
     transformed.types must contain("fitness")
-    transformed.types must contain ("sleep")
+    transformed.types must contain("sleep")
     transformed.title.get.text.contains("You woke up")
     transformed.content.get.text.get.contains("You spent 8 hours and 4 minutes in bed.")
     transformed.content.get.text.get.contains("You slept for 7 hours and 20 minutes ")
@@ -297,7 +297,7 @@ class DataFeedDirectMapperSpec
     val transformed = mapper.mapDataRecord(fitbitDayEmptySummary.recordId.get, fitbitDayEmptySummary.data)
     transformed match {
       case Failure(_) => true
-      case _ => fail() 
+      case _          => fail()
     }
   }
 
