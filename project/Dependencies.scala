@@ -27,7 +27,7 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val crossScala   = Seq("2.12.11")
+    val crossScala   = Seq("2.12.13")
     val scalaVersion = crossScala.head
     val adjudicator  = "0.1.0-SNAPSHOT"
   }
@@ -44,8 +44,8 @@ object Dependencies {
   object Library {
 
     object Version {
-      val ScalaTest           = "3.2.3"
-      val TestContainersScala = "0.38.8"
+      val ScalaTest           = "3.2.6"
+      val TestContainersScala = "0.38.9"
       val DsTestTools         = "0.2.3"
     }
 
@@ -62,10 +62,10 @@ object Dependencies {
       val playGuard      = "com.digitaltangible" %% "play-guard"           % "2.2.0"
 
       object Jwt {
-        private val bouncyCastleVersion = "1.60"
+        private val bouncyCastleVersion = "1.68"
         val bouncyCastle                = "org.bouncycastle"  % "bcprov-jdk15on" % bouncyCastleVersion
         val bouncyCastlePkix            = "org.bouncycastle"  % "bcpkix-jdk15on" % bouncyCastleVersion
-        val atlassianJwtVersion         = "2.0.5"
+        val atlassianJwtVersion         = "2.1.0"
         val atlassianJwtCore            = "com.atlassian.jwt" % "jwt-core"       % atlassianJwtVersion
       }
 
@@ -84,12 +84,12 @@ object Dependencies {
       val pegdown                  = "org.pegdown"            % "pegdown"                         % "1.6.0"
       val awsJavaS3Sdk             = "com.amazonaws"          % "aws-java-sdk-s3"                 % awsSdkVersion
       val awsJavaSesSdk            = "com.amazonaws"          % "aws-java-sdk-ses"                % awsSdkVersion
-      val prettyTime               = "org.ocpsoft.prettytime" % "prettytime"                      % "4.0.4.Final"
-      val nbvcxz                   = "me.gosimple"            % "nbvcxz"                          % "1.4.3"
+      val prettyTime               = "org.ocpsoft.prettytime" % "prettytime"                      % "4.0.6.Final"
+      val nbvcxz                   = "me.gosimple"            % "nbvcxz"                          % "1.5.0"
       val elasticacheClusterClient = "com.amazonaws"          % "elasticache-java-cluster-client" % "1.1.2"
       val playMemcached            = "com.github.mumoshu"    %% "play2-memcached-play26"          % "0.9.3" exclude ("net.spy", "spymemcached")
       val alpakkaAwsLambda         = "com.lightbend.akka"    %% "akka-stream-alpakka-awslambda"   % "0.20"
-      val apacheCommonLang         = "org.apache.commons"     % "commons-lang3"                   % "3.10"
+      val apacheCommonLang         = "org.apache.commons"     % "commons-lang3"                   % "3.12.0"
     }
 
     object Backend {
@@ -107,8 +107,9 @@ object Dependencies {
       val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.1.2"
     }
 
-    val scalaGuice  = "net.codingwell" %% "scala-guice"  % "4.2.6"
-    val circeConfig = "io.circe"       %% "circe-config" % "0.8.0"
+    val scalaGuice  = "net.codingwell"     %% "scala-guice"  % "4.2.11"
+    val circeConfig = "io.circe"           %% "circe-config" % "0.8.0"
+    val janino      = "org.codehaus.janino" % "janino"       % "3.1.3"
 
     object ContractLibrary {
       val adjudicator = "io.dataswift" %% "adjudicatorlib" % Versions.adjudicator
@@ -121,6 +122,7 @@ object Dependencies {
     object ScalaTest {
       val scalaplaytest     = "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3"   % Test
       val scalaplaytestmock = "org.scalatestplus"      %% "mockito-3-4"        % "3.2.6.0" % Test
+      val mockitoCore       = "org.mockito"             % "mockito-core"       % "3.3.3"   % Test
     }
 
     object Dataswift {

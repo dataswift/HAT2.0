@@ -50,7 +50,8 @@ lazy val hat = project
           Library.circeConfig,
           Library.ContractLibrary.adjudicator,
           Library.Utils.apacheCommonLang,
-          Library.Prometheus.filters
+          Library.Prometheus.filters,
+          Library.janino
         ),
     libraryDependencies := (buildEnv.value match {
           case BuildEnv.Developement | BuildEnv.Test =>
@@ -58,13 +59,12 @@ lazy val hat = project
                   Library.Play.Silhouette.silhouetteTestkit,
                   Library.ScalaTest.scalaplaytest,
                   Library.ScalaTest.scalaplaytestmock,
-                  Library.Dataswift.integrationTestCommon
+                  Library.Dataswift.integrationTestCommon,
+                  Library.ScalaTest.mockitoCore
                 )
           case BuildEnv.Stage | BuildEnv.Production =>
             libraryDependencies.value.map(excludeSpecs2)
         }),
-    libraryDependencies += "org.codehaus.janino" % "janino"       % "3.1.3",
-    libraryDependencies += "org.mockito"         % "mockito-core" % "3.3.3" % Test,
     pipelineStages in Assets := Seq(digest),
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     aggregate in update := false,
