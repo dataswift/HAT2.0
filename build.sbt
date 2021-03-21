@@ -63,7 +63,7 @@ lazy val hat = project
           case BuildEnv.Stage | BuildEnv.Production =>
             libraryDependencies.value.map(excludeSpecs2)
         }),
-    libraryDependencies += "org.codehaus.janino" % "janino"       % "3.1.2",
+    libraryDependencies += "org.codehaus.janino" % "janino"       % "3.1.3",
     libraryDependencies += "org.mockito"         % "mockito-core" % "3.3.3" % Test,
     pipelineStages in Assets := Seq(digest),
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
@@ -158,6 +158,6 @@ inThisBuild(
     scalaVersion := Versions.scalaVersion,
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
-    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.4.4"
+    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"
   )
 )

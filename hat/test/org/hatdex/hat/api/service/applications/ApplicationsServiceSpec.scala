@@ -336,7 +336,7 @@ class ApplicationsServiceSpec
     val result = for {
       token <- service.applicationToken(owner, notablesApp)
     } yield {
-      token.accessToken.isBlank must be(false)
+      token.accessToken.lastOption must not be None
       val encoder      = new Base64AuthenticatorEncoder()
       val settings     = JWTRS256AuthenticatorSettings("X-Auth-Token", None, "hat.org", Some(3.days), 3.days)
       val unserialized = JWTRS256Authenticator.unserialize(token.accessToken, encoder, settings)

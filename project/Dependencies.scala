@@ -80,7 +80,7 @@ object Dependencies {
     }
 
     object Utils {
-      private val awsSdkVersion    = "1.11.971"
+      private val awsSdkVersion    = "1.11.979"
       val pegdown                  = "org.pegdown"            % "pegdown"                         % "1.6.0"
       val awsJavaS3Sdk             = "com.amazonaws"          % "aws-java-sdk-s3"                 % awsSdkVersion
       val awsJavaSesSdk            = "com.amazonaws"          % "aws-java-sdk-ses"                % awsSdkVersion
@@ -115,12 +115,12 @@ object Dependencies {
     }
 
     object Prometheus {
-      val filters = "com.github.stijndehaes" %% "play-prometheus-filters" % "0.4.0"
+      val filters = "com.github.stijndehaes" %% "play-prometheus-filters" % "0.5.0"
     }
 
     object ScalaTest {
-      val scalaplaytest     = "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2"   % Test
-      val scalaplaytestmock = "org.scalatestplus"      %% "mockito-3-4"        % "3.2.2.0" % Test
+      val scalaplaytest     = "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3"   % Test
+      val scalaplaytestmock = "org.scalatestplus"      %% "mockito-3-4"        % "3.2.6.0" % Test
     }
 
     object Dataswift {
