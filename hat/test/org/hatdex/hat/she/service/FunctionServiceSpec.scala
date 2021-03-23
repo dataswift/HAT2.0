@@ -24,9 +24,6 @@
 
 package org.hatdex.hat.she.service
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import io.dataswift.models.hat.EndpointQuery
 import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.service.richData.RichDataService
@@ -34,6 +31,9 @@ import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
 import org.joda.time.DateTimeUtils
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import play.api.Logger
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class FunctionServiceSpec
     extends BaseSpec

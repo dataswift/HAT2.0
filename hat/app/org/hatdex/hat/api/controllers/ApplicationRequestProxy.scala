@@ -24,10 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import javax.inject.Inject
-
-import scala.concurrent.Future
-
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat.applications.HatApplication
 import io.dataswift.models.hat.{ ApplicationManage, ErrorMessage, Owner }
@@ -39,6 +35,9 @@ import play.api.http.HttpEntity
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
+
+import javax.inject.Inject
+import scala.concurrent.Future
 
 class ApplicationRequestProxy @Inject() (
     components: ControllerComponents,

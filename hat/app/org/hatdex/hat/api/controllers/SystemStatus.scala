@@ -24,11 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Failure, Success }
-
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.json.HatJsonFormats
@@ -41,6 +36,10 @@ import play.api.cache.{ AsyncCacheApi, Cached }
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
+
+import javax.inject.Inject
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success }
 
 class SystemStatus @Inject() (
     components: ControllerComponents,

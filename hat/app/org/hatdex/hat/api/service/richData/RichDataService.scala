@@ -24,31 +24,27 @@
 
 package org.hatdex.hat.api.service.richData
 
+import akka.stream.SubstreamCancelStrategy
+import akka.stream.scaladsl.Source
+import akka.{ Done, NotUsed }
+import io.dataswift.models.hat._
+import org.hatdex.hat.api.service.DalExecutionContext
+import org.hatdex.hat.dal.ModelTranslation
+import org.hatdex.hat.dal.Tables._
+import org.hatdex.hat.utils.Utils
+import org.hatdex.libs.dal.HATPostgresProfile.api._
+import org.joda.time.{ DateTime, LocalDateTime }
+import org.postgresql.util.PSQLException
+import play.api.Logger
+import play.api.libs.json._
+
 import java.security.MessageDigest
 import java.util.UUID
-
 import javax.inject.Inject
-
 import scala.annotation.tailrec
 import scala.collection.immutable.HashMap
 import scala.concurrent.Future
 import scala.util.Success
-import akka.stream.SubstreamCancelStrategy
-import akka.stream.scaladsl.Source
-import akka.{Done, NotUsed}
-import io.dataswift.models.hat._
-import org.hatdex.hat
-import org.hatdex.hat.api.service.DalExecutionContext
-import org.hatdex.hat.dal
-import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.Tables
-import org.hatdex.hat.dal.Tables._
-import org.hatdex.hat.utils.Utils
-import org.hatdex.libs.dal.HATPostgresProfile.api._
-import org.joda.time.{LocalDateTime, DateTime}
-import org.postgresql.util.PSQLException
-import play.api.Logger
-import play.api.libs.json._
 
 class RichDataService @Inject() (implicit ec: DalExecutionContext) {
 
@@ -260,26 +256,22 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
     }
   }
 
-  def getRecord(userId: UUID,
-                recordId: UUID)(implicit db: Database): Future[EndpointData] = {
-
-    (db.run{
-      DataJson
-        .filter(r => r.recordId === recordId && r.owner === userId)
-        .result
-      } recover {
-      case e: NoSuchElementException =>
-        throw RichDataMissingException("Records missing for updating", e)
-      })
-      .map{ records =>
-        if (records.length == 1) {
+  def getRecord(
+      userId: UUID,
+      recordId: UUID
+    )(implicit db: Database): Future[EndpointData] =
+    (db
+      .run(
+        DataJson
+          .filter(r => r.recordId === recordId && r.owner === userId)
+          .result
+      ))
+      .map { records =>
+        if (records.length == 1)
           ModelTranslation.fromDbModel(records.head)
-        } else {
-          throw new RichDataServiceException("Multiple records found for a single ID")
-        }
+        else
+          throw RichDataMissingException("No single record found for provided ID")
       }
-
-  }
 
   def updateRecords(
       userId: UUID,

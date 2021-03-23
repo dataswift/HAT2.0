@@ -24,12 +24,6 @@
 
 package org.hatdex.hat.api.service
 
-import java.util.UUID
-import javax.inject.Inject
-
-import scala.concurrent.Future
-import scala.util.Success
-
 import io.dataswift.models.hat.{ UserRole, _ }
 import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.ModelTranslation
@@ -39,6 +33,11 @@ import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
 import play.api.cache.AsyncCacheApi
+
+import java.util.UUID
+import javax.inject.Inject
+import scala.concurrent.Future
+import scala.util.Success
 
 class UsersService @Inject() (
     cache: AsyncCacheApi

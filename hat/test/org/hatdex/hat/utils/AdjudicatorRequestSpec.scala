@@ -22,17 +22,16 @@
 
 package org.hatdex.hat.utils
 
-import java.util.UUID
-
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, ExecutionContext, Future }
-
 import eu.timepit.refined.auto._
 import io.dataswift.adjudicator.Types.{ ContractId, HatName }
 import io.dataswift.test.common.BaseSpec
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Logger
 import play.api.test.{ WsTestClient }
+
+import java.util.UUID
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, ExecutionContext, Future }
 
 class AdjudicatorRequestSpec extends BaseSpec with AdjudicatorContext {
 

@@ -24,12 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import java.net.{ URLDecoder, URLEncoder }
-import javax.inject.Inject
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
 import akka.Done
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.{ Credentials, PasswordHasherRegistry }
@@ -53,6 +47,11 @@ import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.{ Action, _ }
 import play.api.{ Configuration, Logger }
+
+import java.net.{ URLDecoder, URLEncoder }
+import javax.inject.Inject
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class Authentication @Inject() (
     components: ControllerComponents,

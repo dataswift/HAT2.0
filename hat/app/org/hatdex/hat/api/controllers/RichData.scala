@@ -24,12 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import java.util.UUID
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.control.NonFatal
-
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import eu.timepit.refined.auto._
@@ -49,6 +43,11 @@ import play.api.libs.json.Reads._
 import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.libs.ws.WSClient
 import play.api.mvc._
+
+import java.util.UUID
+import javax.inject.Inject
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.control.NonFatal
 
 class RichData @Inject() (
     components: ControllerComponents,
@@ -209,14 +208,15 @@ class RichData @Inject() (
     } getOrElse Set()
 
   // Extract to namespace library
-  private def authorizeEndpointDataRead(namespace:String,
-                                          appStatus: Option[HatApplication]
-                                        )(implicit
-                                          user: HatUser,
-                                          authenticator: HatApiAuthEnvironment#A): Boolean = {
+  private def authorizeEndpointDataRead(
+      namespace: String,
+      appStatus: Option[HatApplication]
+    )(implicit
+      user: HatUser,
+      authenticator: HatApiAuthEnvironment#A): Boolean = {
 
     val role = NamespaceWrite(namespace)
-    WithRole.isAuthorized(user, authenticator,role) || appStatus.exists(
+    WithRole.isAuthorized(user, authenticator, role) || appStatus.exists(
       ContainsApplicationRole.isAuthorized(user, _, authenticator, role)
     )
   }
@@ -351,33 +351,35 @@ class RichData @Inject() (
       }
     }
 
-  def getRecord(namespace: String, recordId:UUID) =
+  def getRecord(
+      namespace: String,
+      recordId: UUID): Action[AnyContent] =
     SecuredAction(
-    WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(
-      NamespaceWrite("*"),
-      Owner()
+      WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(
+          NamespaceWrite("*"),
+          Owner()
+        )
     )
-  )
-    .async{ implicit request =>
-      request2ApplicationStatus(request).flatMap { maybeAppStatus =>
-        if (authorizeEndpointDataRead(namespace, maybeAppStatus))
-          dataService.getRecord(
-            request.identity.userId,
-            recordId
-          ) map { saved =>
-            Ok(Json.toJson(saved))
-          } recover {
-            case RichDataMissingException(message, _) =>
-              BadRequest(Json.toJson(Errors.dataMissing(message)))
-          }
-        else
-          Future.failed(
-            RichDataPermissionsException(
-              "No rights to Get some or all of the data requested"
+      .async { implicit request =>
+        request2ApplicationStatus(request).flatMap { maybeAppStatus =>
+          if (authorizeEndpointDataRead(namespace, maybeAppStatus))
+            dataService.getRecord(
+              request.identity.userId,
+              recordId
+            ) map { saved =>
+              Ok(Json.toJson(saved))
+            } recover {
+              case RichDataMissingException(message, _) =>
+                BadRequest(Json.toJson(Errors.dataMissing(message)))
+            }
+          else
+            Future.failed(
+              RichDataPermissionsException(
+                "No rights to Get some or all of the data requested"
+              )
             )
-          )
+        }
       }
-    }
 
   def updateRecords(): Action[Seq[EndpointData]] =
     SecuredAction(
@@ -678,7 +680,7 @@ class RichData @Inject() (
       ErrorMessage("Bundle Not Found", s"Bundle $bundleId not found")
 
     def dataMissing(message: String): ErrorMessage =
-      ErrorMessage("Data Missing", s"Could not find records: $message")
+      ErrorMessage("Data Missing", s"Could not find unique record: $message")
     def dataUpdateMissing(message: String): ErrorMessage =
       ErrorMessage("Data Missing", s"Could not update records: $message")
     def dataDeleteMissing(message: String): ErrorMessage =

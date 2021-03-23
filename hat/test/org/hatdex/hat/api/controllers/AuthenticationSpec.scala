@@ -24,11 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import java.util.UUID
-
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
 import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, JWTRS256AuthenticatorSettings }
@@ -47,6 +42,10 @@ import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
 import play.mvc.Http.{ HeaderNames, MimeTypes }
+
+import java.util.UUID
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
 
 class AuthenticationSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with AuthenticationContext {
 

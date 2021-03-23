@@ -24,11 +24,6 @@
 
 package org.hatdex.hat.modules
 
-import javax.inject.{ Singleton => JSingleton }
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
-
 import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper
 import com.amazonaws.services.simpleemail.{ AmazonSimpleEmailService, AmazonSimpleEmailServiceClientBuilder }
 import com.google.inject.name.Named
@@ -56,6 +51,10 @@ import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, HatMailerImpl }
 import play.api.http.HttpErrorHandler
 import play.api.libs.ws.WSClient
 import play.api.{ ConfigLoader, Configuration }
+
+import javax.inject.{ Singleton => JSingleton }
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * The Guice module which wires all Silhouette dependencies.

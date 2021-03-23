@@ -24,9 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
 import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
@@ -34,6 +31,9 @@ import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class ContractDataSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with ContractDataContext {
   import scala.concurrent.ExecutionContext.Implicits.global

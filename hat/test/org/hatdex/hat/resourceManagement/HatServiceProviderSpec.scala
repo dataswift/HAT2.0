@@ -24,14 +24,14 @@
 
 package org.hatdex.hat.resourceManagement
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
 import org.mockito.{ Mockito => MockitoMockito }
 import play.api.Logger
 import play.api.test.FakeRequest
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class HatServiceProviderSpec extends BaseSpec with HATTestContext {
 

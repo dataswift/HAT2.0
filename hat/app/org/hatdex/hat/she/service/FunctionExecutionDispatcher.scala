@@ -24,11 +24,6 @@
 
 package org.hatdex.hat.she.service
 
-import javax.inject.Inject
-
-import scala.concurrent.duration.{ FiniteDuration }
-import scala.concurrent.{ ExecutionContext, Future }
-
 import akka.actor.{ Actor, ActorRef, ActorSystem, Props }
 import akka.stream.scaladsl.{ Flow, Sink, Source }
 import akka.stream.{ ActorMaterializer, OverflowStrategy }
@@ -39,6 +34,10 @@ import org.hatdex.hat.resourceManagement.{ HatServerDiscoveryException, HatServe
 import org.hatdex.hat.she.models._
 import org.joda.time.DateTime
 import play.api.{ Configuration, Logger }
+
+import javax.inject.Inject
+import scala.concurrent.duration.{ FiniteDuration }
+import scala.concurrent.{ ExecutionContext, Future }
 
 class FunctionTriggerLogger extends Actor {
   private val logger: Logger = Logger(this.getClass)

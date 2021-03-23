@@ -24,9 +24,6 @@
 
 package org.hatdex.hat.she.controllers
 
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-
 import akka.util
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
@@ -42,6 +39,9 @@ import play.api.Logger
 import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
+
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
 
 class FunctionManagerSpec
     extends BaseSpec

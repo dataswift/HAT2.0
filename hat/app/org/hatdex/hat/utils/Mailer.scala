@@ -24,12 +24,6 @@
 
 package org.hatdex.hat.utils
 
-import java.nio.charset.StandardCharsets
-import javax.inject.Inject
-
-import scala.collection.JavaConverters._
-import scala.concurrent.{ ExecutionContext, Future }
-
 import akka.Done
 import akka.actor.ActorSystem
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailService
@@ -40,6 +34,11 @@ import org.hatdex.hat.resourceManagement.HatServer
 import play.api.i18n.{ Lang, Messages, MessagesApi }
 import play.api.mvc.RequestHeader
 import play.api.{ Configuration, Logger, UsefulException }
+
+import java.nio.charset.StandardCharsets
+import javax.inject.Inject
+import scala.collection.JavaConverters._
+import scala.concurrent.{ ExecutionContext, Future }
 
 trait Mailer {
   protected val configuration: Configuration

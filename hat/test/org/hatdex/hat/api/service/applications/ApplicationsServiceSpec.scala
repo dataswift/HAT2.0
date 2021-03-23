@@ -24,9 +24,6 @@
 
 package org.hatdex.hat.api.service.applications
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import akka.Done
 import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
 import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, JWTRS256AuthenticatorSettings }
@@ -40,6 +37,9 @@ import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class ApplicationsServiceSpec
     extends BaseSpec

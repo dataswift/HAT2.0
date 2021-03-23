@@ -24,9 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
 import io.dataswift.models.hat._
@@ -38,6 +35,9 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
+
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
 
 class FilesSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with FilesContext {
   import io.dataswift.models.hat.json.HatJsonFormats._

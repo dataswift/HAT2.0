@@ -23,10 +23,6 @@
  */
 package org.hatdex.hat.she.controllers
 
-import javax.inject.Inject
-
-import scala.concurrent.ExecutionContext
-
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat.Owner
 import org.hatdex.hat.api.service.applications.ApplicationsService
@@ -34,6 +30,9 @@ import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnviro
 import org.hatdex.hat.she.service.StaticDataGeneratorService
 import play.api.libs.json.Json
 import play.api.mvc._
+
+import javax.inject.Inject
+import scala.concurrent.ExecutionContext
 
 class StaticDataGenerator @Inject() (
     components: ControllerComponents,

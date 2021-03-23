@@ -24,9 +24,6 @@
 
 package org.hatdex.hat.phata.controllers
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import com.mohiva.play.silhouette.test._
 import io.dataswift.models.hat.EndpointData
 import io.dataswift.test.common.BaseSpec
@@ -37,6 +34,9 @@ import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class PhataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with PhataContext {
 

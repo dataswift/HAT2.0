@@ -1,9 +1,5 @@
 package org.hatdex.hat.she.mappers
 
-import java.util.UUID
-
-import scala.util.{ Failure, Try }
-
 import io.dataswift.models.hat.applications.{
   DataFeedItem,
   DataFeedItemContent,
@@ -16,6 +12,9 @@ import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, PropertyQue
 import org.hatdex.hat.she.models.StaticDataValues
 import org.joda.time.DateTime
 import play.api.libs.json.{ JsNull, JsObject, JsValue }
+
+import java.util.UUID
+import scala.util.{ Failure, Try }
 
 class TwitterProfileMapper extends DataEndpointMapper with FeedItemComparator {
   def dataQueries(

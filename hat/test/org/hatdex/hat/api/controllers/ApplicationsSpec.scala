@@ -24,9 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import com.mohiva.play.silhouette.test._
 import io.dataswift.models.hat.applications.{ Application, HatApplication }
 import io.dataswift.models.hat.json.ApplicationJsonProtocol
@@ -39,6 +36,9 @@ import play.api.Logger
 import play.api.libs.json.{ JsObject, JsString }
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 class ApplicationsSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with ApplicationsServiceContext {
 

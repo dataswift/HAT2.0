@@ -3,10 +3,6 @@ package com.github.stijndehaes.playprometheusfilters.filters
 
 /* Test cases based on the archived project: https://github.com/stijndehaes/play-prometheus-filters */
 
-import javax.inject.Inject
-
-import scala.concurrent.ExecutionContextExecutor
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import io.dataswift.test.common.BaseSpec
@@ -16,6 +12,9 @@ import play.api.mvc._
 import play.api.routing.{ HandlerDef, Router }
 import play.api.test.Helpers._
 import play.api.test._
+
+import javax.inject.Inject
+import scala.concurrent.ExecutionContextExecutor
 
 class PrometheusFiltersSpec extends BaseSpec {
 

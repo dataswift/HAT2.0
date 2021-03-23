@@ -23,13 +23,6 @@
  */
 package org.hatdex.hat.api.service.applications
 
-import java.util.UUID
-import javax.inject.Inject
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import scala.util.Success
-
 import akka.Done
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
@@ -57,6 +50,12 @@ import play.api.libs.json.{ JsObject, JsString }
 import play.api.libs.ws.WSClient
 import play.api.mvc.RequestHeader
 import play.api.{ Configuration, Logger }
+
+import java.util.UUID
+import javax.inject.Inject
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.Success
 
 class ApplicationStatusCheckService @Inject() (
     wsClient: WSClient

@@ -24,12 +24,6 @@
 
 package org.hatdex.hat.api
 
-import java.io.StringReader
-import java.util.UUID
-
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-
 import akka.Done
 import akka.stream.Materializer
 import com.amazonaws.services.s3.AmazonS3
@@ -60,6 +54,11 @@ import play.api.i18n.{ Lang, MessagesApi }
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{ Application, Configuration, Logger }
 import play.cache.NamedCacheImpl
+
+import java.io.StringReader
+import java.util.UUID
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
 
 trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
   import scala.concurrent.ExecutionContext.Implicits.global

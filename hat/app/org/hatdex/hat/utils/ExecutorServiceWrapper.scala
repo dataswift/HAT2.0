@@ -30,7 +30,6 @@ package org.hatdex.hat.utils
 
 import java.util.concurrent.{ Callable, CancellationException, ExecutorService, Future => JavaFuture, TimeUnit }
 import java.{ util => jutil }
-
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success }

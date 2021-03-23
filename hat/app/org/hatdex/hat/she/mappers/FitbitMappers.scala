@@ -1,15 +1,14 @@
 package org.hatdex.hat.she.mappers
 
-import java.util.UUID
-
-import scala.util.{ Failure, Try }
-
 import io.dataswift.models.hat.applications.{ DataFeedItem, DataFeedItemContent, DataFeedItemTitle }
 import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, PropertyQuery }
 import org.hatdex.hat.she.models.StaticDataValues
 import org.joda.time.DateTime
 import org.joda.time.format.{ DateTimeFormat, DateTimeFormatter }
 import play.api.libs.json.{ JsError, JsString, JsSuccess, JsValue, Reads }
+
+import java.util.UUID
+import scala.util.{ Failure, Try }
 
 class FitbitWeightMapper extends DataEndpointMapper {
   override val dateTimeFormat: DateTimeFormatter =

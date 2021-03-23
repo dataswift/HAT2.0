@@ -24,12 +24,6 @@
 
 package org.hatdex.hat.utils
 
-import java.sql.SQLTransientConnectionException
-import javax.inject._
-
-import scala.concurrent.Future
-import scala.util.Try
-
 import com.mohiva.play.silhouette.api.actions.{ SecuredErrorHandler, UnsecuredErrorHandler }
 import com.mohiva.play.silhouette.impl.exceptions.{ IdentityNotFoundException, InvalidPasswordException }
 import org.hatdex.hat.resourceManagement.HatServerDiscoveryException
@@ -40,6 +34,11 @@ import play.api.libs.json.Json
 import play.api.mvc.Results._
 import play.api.mvc._
 import play.api.routing.Router
+
+import java.sql.SQLTransientConnectionException
+import javax.inject._
+import scala.concurrent.Future
+import scala.util.Try
 
 class ErrorHandler @Inject() (
     env: Environment,

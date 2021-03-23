@@ -24,12 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import java.util.UUID
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Failure, Success }
-
 import com.mohiva.play.silhouette.api.Silhouette
 import dev.profunktor.auth.jwt.JwtSecretKey
 import eu.timepit.refined._
@@ -58,6 +52,11 @@ import play.api.libs.json.Reads._
 import play.api.libs.json.{ JsArray, JsValue, Json, Reads }
 import play.api.libs.ws.WSClient
 import play.api.mvc._
+
+import java.util.UUID
+import javax.inject.Inject
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success }
 
 sealed trait RequestValidationFailure
 object RequestValidationFailure {

@@ -24,8 +24,6 @@
 
 package org.hatdex.hat.api.service.applications
 
-import scala.concurrent.Future
-
 import akka.Done
 import akka.util.ByteString
 import com.google.inject.AbstractModule
@@ -49,6 +47,8 @@ import play.api.libs.ws.WSClient
 import play.api.test.FakeRequest
 import play.api.{ Application => PlayApplication, Logger }
 import play.core.server.Server
+
+import scala.concurrent.Future
 //import org.mockito.Mockito._
 
 trait ApplicationsServiceContext extends HATTestContext {
