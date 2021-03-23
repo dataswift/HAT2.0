@@ -209,6 +209,18 @@ class RichData @Inject() (
     } getOrElse Set()
 
   // Extract to namespace library
+  private def authorizeEndpointDataRead(namespace:String,
+                                          appStatus: Option[HatApplication]
+                                        )(implicit
+                                          user: HatUser,
+                                          authenticator: HatApiAuthEnvironment#A): Boolean = {
+
+    val role = NamespaceWrite(namespace)
+    WithRole.isAuthorized(user, authenticator,role) || appStatus.exists(
+      ContainsApplicationRole.isAuthorized(user, _, authenticator, role)
+    )
+  }
+
   private def authorizeEndpointDataWrite(
       data: Seq[EndpointData],
       appStatus: Option[HatApplication]
@@ -336,6 +348,34 @@ class RichData @Inject() (
     ).async { implicit request =>
       dataService.listEndpoints() map { endpoints =>
         Ok(Json.toJson(endpoints))
+      }
+    }
+
+  def getRecord(namespace: String, recordId:UUID) =
+    SecuredAction(
+    WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(
+      NamespaceWrite("*"),
+      Owner()
+    )
+  )
+    .async{ implicit request =>
+      request2ApplicationStatus(request).flatMap { maybeAppStatus =>
+        if (authorizeEndpointDataRead(namespace, maybeAppStatus))
+          dataService.getRecord(
+            request.identity.userId,
+            recordId
+          ) map { saved =>
+            Ok(Json.toJson(saved))
+          } recover {
+            case RichDataMissingException(message, _) =>
+              BadRequest(Json.toJson(Errors.dataMissing(message)))
+          }
+        else
+          Future.failed(
+            RichDataPermissionsException(
+              "No rights to Get some or all of the data requested"
+            )
+          )
       }
     }
 
@@ -637,6 +677,8 @@ class RichData @Inject() (
     def bundleNotFound(bundleId: String): ErrorMessage =
       ErrorMessage("Bundle Not Found", s"Bundle $bundleId not found")
 
+    def dataMissing(message: String): ErrorMessage =
+      ErrorMessage("Data Missing", s"Could not find records: $message")
     def dataUpdateMissing(message: String): ErrorMessage =
       ErrorMessage("Data Missing", s"Could not update records: $message")
     def dataDeleteMissing(message: String): ErrorMessage =
