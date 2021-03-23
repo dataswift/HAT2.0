@@ -29,6 +29,7 @@ GET           /data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>               
 POST          /data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                            org.hatdex.hat.api.controllers.RichData.saveEndpointData(namespace, endpoint, skipErrors: Option[Boolean])
 DELETE        /data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                            org.hatdex.hat.api.controllers.RichData.deleteEndpointData(namespace, endpoint)
 PUT           /data                                                                          org.hatdex.hat.api.controllers.RichData.updateRecords()
+GET           /data/$namespace<[0-9a-z-]+>/:recordId                                         org.hatdex.hat.api.controllers.RichData.getRecord(namespace, recordId:java.util.UUID)
 DELETE        /data                                                                          org.hatdex.hat.api.controllers.RichData.deleteDataRecords(records: Seq[java.util.UUID])
 GET           /data/sources                                                                  org.hatdex.hat.api.controllers.RichData.listEndpoints
 POST          /data-link                                                                     org.hatdex.hat.api.controllers.RichData.linkDataRecords(records: Seq[java.util.UUID])
