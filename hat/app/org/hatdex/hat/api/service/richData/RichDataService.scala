@@ -260,12 +260,12 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
       userId: UUID,
       recordId: UUID
     )(implicit db: Database): Future[EndpointData] =
-    (db
+    db
       .run(
         DataJson
           .filter(r => r.recordId === recordId && r.owner === userId)
           .result
-      ))
+      )
       .map { records =>
         if (records.length == 1)
           ModelTranslation.fromDbModel(records.head)

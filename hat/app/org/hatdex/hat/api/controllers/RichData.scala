@@ -215,7 +215,7 @@ class RichData @Inject() (
       user: HatUser,
       authenticator: HatApiAuthEnvironment#A): Boolean = {
 
-    val role = NamespaceWrite(namespace)
+    val role = NamespaceRead(namespace)
     WithRole.isAuthorized(user, authenticator, role) || appStatus.exists(
       ContainsApplicationRole.isAuthorized(user, _, authenticator, role)
     )
