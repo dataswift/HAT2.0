@@ -122,10 +122,10 @@ class ApplicationsService @Inject() (
     )(implicit hat: HatServer,
       user: HatUser,
       requestHeader: RequestHeader): Future[Option[HatApplication]] = {
-    val eventuallyCleanedCache = if (bustCache) {
-      cache.remove(s"apps:${hat.domain}")
-      cache.remove(appCacheKey(id))
-    } else Future.successful(Done)
+    val eventuallyCleanedCache =
+      if (bustCache)
+        Future.sequence(List(cache.remove(s"apps:${hat.domain}"), cache.remove(appCacheKey(id))))
+      else Future.successful(Nil)
     for {
       _ <- eventuallyCleanedCache
       application <- cache

@@ -25,10 +25,8 @@
 package org.hatdex.hat.api.controllers
 
 import javax.inject.Inject
-
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
-
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.json.HatJsonFormats
@@ -36,6 +34,7 @@ import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.{ SystemStatusService, UsersService }
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
+import org.hatdex.libs.dal.HATPostgresProfile
 import org.ocpsoft.prettytime.PrettyTime
 import play.api.cache.{ AsyncCacheApi, Cached }
 import play.api.libs.json._
@@ -72,9 +71,9 @@ class SystemStatus @Inject() (
 
   def update(): EssentialAction =
     indefiniteSuccessCaching {
-      UserAwareAction.async { implicit request =>
-        logger.debug(s"Updating HAT ${request.dynamicEnvironment.id}")
-        hatDatabaseProvider.update(request.dynamicEnvironment.db) map { _ =>
+      UserAwareAction.async { request =>
+        logger.debug(s"Updating HAT ${request.server.domain}")
+        hatDatabaseProvider.update(request.server.db) map { _ =>
           Ok(Json.toJson(SuccessResponse("Database updated")))
         }
       }
@@ -86,11 +85,12 @@ class SystemStatus @Inject() (
           Owner(),
           Platform()
         )
-    ).async { implicit request =>
+    ).andThen(SecuredServerAction).async { request =>
+      implicit val db: HATPostgresProfile.api.Database = request.server.db
       val eventualStatus = for {
         dbsize <- systemStatusService.tableSizeTotal
         fileSize <- systemStatusService.fileStorageTotal
-        maybePreviousLogin <- usersService.previousLogin(request.identity)
+        maybePreviousLogin <- usersService.previousLogin(request.identity)(request.server)
       } yield {
         val dbsa =
           SystemStatusService.humanReadableByteCount(dbStorageAllowance)
@@ -115,7 +115,7 @@ class SystemStatus @Inject() (
         login :: List(
           HatStatus(
             "Owner Email",
-            StatusKind.Text(request.dynamicEnvironment.ownerEmail, None)
+            StatusKind.Text(request.server.ownerEmail, None)
           ),
           HatStatus(
             "Database Storage",
@@ -158,7 +158,7 @@ class SystemStatus @Inject() (
         case Some(authToken) if authToken == hatSharedSecret =>
           val response = Ok(Json.toJson(SuccessResponse("beforeDestroy DONE")))
 
-          val hatAddress         = request.dynamicEnvironment.domain
+          val hatAddress         = request.server.domain
           val clearApps          = cache.remove(s"apps:$hatAddress")
           val clearConfiguration = cache.remove(s"configuration:$hatAddress")
           val clearServer        = cache.remove(s"server:$hatAddress")

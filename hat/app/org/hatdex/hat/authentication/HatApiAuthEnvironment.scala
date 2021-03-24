@@ -25,7 +25,7 @@
 package org.hatdex.hat.authentication
 
 import com.mohiva.play.silhouette.api.Env
-import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
+import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
 import org.hatdex.hat.resourceManagement.HatServer
 
 trait HatAuthEnvironment extends Env {
@@ -34,5 +34,5 @@ trait HatAuthEnvironment extends Env {
 }
 
 trait HatApiAuthEnvironment extends HatAuthEnvironment {
-  type A = JWTRS256Authenticator
+  type A = JWTAuthenticator
 }

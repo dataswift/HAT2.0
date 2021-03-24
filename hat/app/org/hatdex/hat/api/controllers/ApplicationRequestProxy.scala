@@ -24,10 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import javax.inject.Inject
-
-import scala.concurrent.Future
-
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat.applications.HatApplication
 import io.dataswift.models.hat.{ ApplicationManage, ErrorMessage, Owner }
@@ -39,6 +35,9 @@ import play.api.http.HttpEntity
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.{ Action, AnyContent, ControllerComponents }
+
+import javax.inject.Inject
+import scala.concurrent.Future
 
 class ApplicationRequestProxy @Inject() (
     components: ControllerComponents,
@@ -60,15 +59,15 @@ class ApplicationRequestProxy @Inject() (
       ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(
           Owner()
         )
-    ).async { implicit request =>
+    ).andThen(SecuredServerAction).async { (request: EnvironmentalServerSecuredRequest[AnyContent]) =>
       logger.info(
         s"Proxy $method request for $id to $path with parameters: ${request.queryString}"
       )
-      applicationsService.applicationStatus(id).flatMap { maybeStatus =>
+      applicationsService.applicationStatus(id)(request.server, request.identity, request).flatMap { maybeStatus =>
         maybeStatus map {
           case HatApplication(app, _, true, _, _, _, _) =>
             applicationsService
-              .applicationToken(request.identity, app)
+              .applicationToken(request.identity, app)(request.server, request)
               .flatMap { token =>
                 val baseRequest = wsClient
                   .url(s"${app.kind.url}/$path")

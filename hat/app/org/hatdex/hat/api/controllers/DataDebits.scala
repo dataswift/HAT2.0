@@ -24,12 +24,7 @@
 
 package org.hatdex.hat.api.controllers
 
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-
 import com.mohiva.play.silhouette.api.Silhouette
-import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.json.RichDataJsonFormats
 import org.hatdex.hat.api.service.applications.ApplicationsService
@@ -37,8 +32,12 @@ import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider }
+import org.hatdex.libs.dal.HATPostgresProfile
 import play.api.libs.json.Json
 import play.api.mvc._
+
+import javax.inject.Inject
+import scala.concurrent.{ ExecutionContext, Future }
 
 class DataDebits @Inject() (
     components: ControllerComponents,
@@ -62,13 +61,12 @@ class DataDebits @Inject() (
         DataDebitOwner(""),
         Platform()
       ) || ContainsApplicationRole(Owner(), DataDebitOwner(""), Platform())
-    ).async(parsers.json[DataDebitSetupRequest]) { implicit request =>
+    ).andThen(SecuredServerAction).async(parsers.json[DataDebitSetupRequest]) { request =>
       dataDebitService
-        .createDataDebit(dataDebitId, request.body, request.identity.userId)
+        .createDataDebit(dataDebitId, request.body, request.identity.userId)(request.server)
         .andThen(
-          dataEventDispatcher.dispatchEventDataDebit(
-            DataDebitOperations.Create()
-          )
+          dataEventDispatcher
+            .dispatchEventDataDebit(DataDebitOperations.Create(), request.identity, request.server.domain)
         )
         .map(debit => Created(Json.toJson(debit)))
         .recover {
@@ -85,17 +83,16 @@ class DataDebits @Inject() (
           Owner(),
           DataDebitOwner(dataDebitId)
         )
-    ).async(parsers.json[DataDebitSetupRequest]) { implicit request =>
+    ).andThen(SecuredServerAction).async(parsers.json[DataDebitSetupRequest]) { implicit request =>
       dataDebitService
         .updateDataDebitPermissions(
           dataDebitId,
           request.body,
           request.identity.userId
-        )
+        )(request.server)
         .andThen(
-          dataEventDispatcher.dispatchEventDataDebit(
-            DataDebitOperations.Change()
-          )
+          dataEventDispatcher
+            .dispatchEventDataDebit(DataDebitOperations.Change(), request.identity, request.server.domain)
         )
         .map(debit => Ok(Json.toJson(debit)))
         .recover {
@@ -110,10 +107,10 @@ class DataDebits @Inject() (
           Owner(),
           DataDebitOwner(dataDebitId)
         )
-    ).async { implicit request =>
+    ).andThen(SecuredServerAction).async { request =>
       logger.warn("Running new controller")
       dataDebitService
-        .dataDebit(dataDebitId)
+        .dataDebit(dataDebitId)(request.server.db)
         .map {
           case Some(debit) => Ok(Json.toJson(debit))
           case None =>
@@ -127,7 +124,8 @@ class DataDebits @Inject() (
           Owner(),
           DataDebitOwner(dataDebitId)
         )
-    ).async { implicit request =>
+    ).andThen(SecuredServerAction).async { request =>
+      implicit val db: HATPostgresProfile.api.Database = request.server.db
       dataDebitService
         .dataDebit(dataDebitId)
         .flatMap {
@@ -163,7 +161,7 @@ class DataDebits @Inject() (
             }
 
             eventualData
-              .andThen(dataEventDispatcher.dispatchEventDataDebitValues(debit))
+              .andThen(dataEventDispatcher.dispatchEventDataDebitValues(debit, request.identity, request.server.domain))
               .map(d => Ok(Json.toJson(d)))
 
           case Some(_) =>
@@ -184,30 +182,29 @@ class DataDebits @Inject() (
     }
 
   def listDataDebits(): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
-      dataDebitService.all map { debits =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).andThen(SecuredServerAction).async { request =>
+      dataDebitService.all()(request.server) map { debits =>
         Ok(Json.toJson(debits))
       }
     }
 
   def enableDataDebitNewest(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
-      enableDataDebit(dataDebitId)
-    }
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner()))
+      .andThen(SecuredServerAction)
+      .async(enableDataDebit(dataDebitId, _))
 
   protected def enableDataDebit(
-      dataDebitId: String
-    )(implicit request: SecuredRequest[HatApiAuthEnvironment, AnyContent]): Future[Result] = {
+      dataDebitId: String,
+      request: EnvironmentalServerSecuredRequest[AnyContent]): Future[Result] = {
     val enabled = for {
-      _ <- dataDebitService.dataDebitEnableNewestPermissions(dataDebitId)
-      debit <- dataDebitService.dataDebit(dataDebitId)
+      _ <- dataDebitService.dataDebitEnableNewestPermissions(dataDebitId)(request.server)
+      debit <- dataDebitService.dataDebit(dataDebitId)(request.server.db)
     } yield debit
 
     enabled
       .andThen(
-        dataEventDispatcher.dispatchEventMaybeDataDebit(
-          DataDebitOperations.Enable()
-        )
+        dataEventDispatcher
+          .dispatchEventMaybeDataDebit(DataDebitOperations.Enable(), request.identity, request.server.domain)
       )
       .map {
         case Some(debit) => Ok(Json.toJson(debit))
@@ -218,23 +215,24 @@ class DataDebits @Inject() (
   def disableDataDebit(
       dataDebitId: String,
       atPeriodEnd: Boolean): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
-      val disabled = for {
-        _ <- dataDebitService.dataDebitDisable(dataDebitId, atPeriodEnd)
-        debit <- dataDebitService.dataDebit(dataDebitId)
-      } yield debit
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner()))
+      .andThen(SecuredServerAction)
+      .async { request =>
+        val disabled = for {
+          _ <- dataDebitService.dataDebitDisable(dataDebitId, atPeriodEnd)(request.server)
+          debit <- dataDebitService.dataDebit(dataDebitId)(request.server.db)
+        } yield debit
 
-      disabled
-        .andThen(
-          dataEventDispatcher.dispatchEventMaybeDataDebit(
-            DataDebitOperations.Disable()
+        disabled
+          .andThen(
+            dataEventDispatcher
+              .dispatchEventMaybeDataDebit(DataDebitOperations.Disable(), request.identity, request.server.domain)
           )
-        )
-        .map {
-          case Some(debit) => Ok(Json.toJson(debit))
-          case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
-        }
-    }
+          .map {
+            case Some(debit) => Ok(Json.toJson(debit))
+            case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
+          }
+      }
 
   private object Errors {
     def dataDebitDoesNotExist: ErrorMessage =

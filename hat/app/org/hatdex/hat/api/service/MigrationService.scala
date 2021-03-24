@@ -26,9 +26,7 @@ package org.hatdex.hat.api.service
 
 import java.util.UUID
 import javax.inject.Inject
-
 import scala.concurrent.Future
-
 import akka.NotUsed
 import akka.stream.Materializer
 import akka.stream.scaladsl.{ Flow, Keep, RunnableGraph, Sink, Source }
@@ -37,9 +35,10 @@ import io.dataswift.models.hat.json.HatJsonFormats
 import io.dataswift.models.hat.{ ApiDataRecord, _ }
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData.RichDataService
-import org.hatdex.hat.authentication.HatApiAuthEnvironment
+import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, ServerSecuredRequest }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
+import org.hatdex.libs.dal.HATPostgresProfile
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
 import play.api.Logger
@@ -83,58 +82,16 @@ class MigrationService @Inject() (
       .transform(transformation)
   }
 
-  def migrateOldDataRecord(
-      userId: UUID,
-      record: ApiDataRecord
-    )(implicit db: Database,
-      request: SecuredRequest[HatApiAuthEnvironment, _]): Future[Int] =
-    record.tables.map { tables =>
-      val savedRecords = tables.map { table =>
-        convertRecordJson(
-          record,
-          includeTimestamp = true,
-          Some(table.name)
-        ) map { data =>
-          richDataService
-            .saveData(
-              userId,
-              Seq(
-                EndpointData(
-                  s"${table.source}/${table.name}",
-                  None,
-                  None,
-                  None,
-                  data,
-                  None
-                )
-              )
-            )
-            .andThen(
-              dataEventDispatcher.dispatchEventDataCreated(
-                s"migrated record for ${table.source}/${table.name}"
-              )
-            )
-            .map(_ => 1)
-        } getOrElse Future.successful(0)
-      }
-
-      Future.sequence(savedRecords).map(_.sum)
-    } getOrElse {
-      Future.successful(0)
-    }
-
   def migrateOldData(
-      userId: UUID,
       endpoint: String,
       fromTableName: String,
       fromSource: String,
       updatedSince: Option[LocalDateTime],
       updatedUntil: Option[LocalDateTime],
       includeTimestamp: Boolean
-    )(implicit db: Database,
-      request: SecuredRequest[HatApiAuthEnvironment, _]): Future[Long] = {
-    val parallelMigrations = 10
-
+    )(request: ServerSecuredRequest[HatApiAuthEnvironment, _]): Future[Long] = {
+    val parallelMigrations                           = 10
+    implicit val db: HATPostgresProfile.api.Database = request.server.db
     val eventualCount: Future[Long] = db.run {
       // Get the legacy table ID
       DataTable
@@ -155,12 +112,13 @@ class MigrationService @Inject() (
         } via Flow[JsObject].mapAsync(parallelMigrations) { oldJson =>
               richDataService
                 .saveData(
-                  userId,
+                  request.identity.userId,
                   Seq(EndpointData(endpoint, None, None, None, oldJson, None))
                 )
                 .andThen(
-                  dataEventDispatcher.dispatchEventDataCreated(
-                    s"migrated data to $endpoint"
+                  dataEventDispatcher.dispatchEventDataCreated(s"migrated data to $endpoint",
+                                                               request.identity,
+                                                               request.server.domain
                   )
                 )
                 .map(_ => 1L)

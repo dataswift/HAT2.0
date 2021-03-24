@@ -1,8 +1,6 @@
 import Dependencies.Library
-import Dependencies.Versions
-
-import sbt.Keys._
 import com.typesafe.sbt.packager.docker._
+import sbt.Keys._
 
 val codeguruURI =
   "https://repo1.maven.org/maven2/software/amazon/codeguruprofiler/codeguru-profiler-java-agent-standalone/1.1.0/codeguru-profiler-java-agent-standalone-1.1.0.jar"
@@ -20,15 +18,12 @@ lazy val hat = project
           filters,
           ehcache,
           Library.Play.cache,
-          Library.Play.test,
           Library.Play.playGuard,
           Library.Play.json,
           Library.Play.jsonJoda,
           Library.Backend.logPlay,
           Library.Backend.dexPlay,
           Library.Backend.hatPlay,
-          Library.Backend.dexModels,
-          Library.Backend.hatModels,
           Library.Play.Silhouette.passwordBcrypt,
           Library.Play.Silhouette.persistence,
           Library.Play.Silhouette.cryptoJca,
@@ -38,13 +33,12 @@ lazy val hat = project
           Library.HATDeX.hatClient,
           Library.HATDeX.dexClient,
           Library.HATDeX.codegen,
-          Library.Utils.pegdown,
+//          Library.Utils.pegdown,
           Library.Utils.awsJavaS3Sdk,
           Library.Utils.awsJavaSesSdk,
           Library.Utils.prettyTime,
           Library.Utils.nbvcxz,
-          Library.Utils.playMemcached,
-          Library.Utils.elasticacheClusterClient,
+//          Library.Utils.playMemcached,
           Library.Utils.alpakkaAwsLambda,
           Library.scalaGuice,
           Library.circeConfig,
@@ -56,20 +50,21 @@ lazy val hat = project
     libraryDependencies := (buildEnv.value match {
           case BuildEnv.Developement | BuildEnv.Test =>
             libraryDependencies.value ++ Seq(
+                  Library.Play.test,
                   Library.Play.Silhouette.silhouetteTestkit,
-                  Library.ScalaTest.scalaplaytest,
+//                  Library.ScalaTest.scalaplaytest,
                   Library.ScalaTest.scalaplaytestmock,
                   Library.Dataswift.integrationTestCommon,
                   Library.ScalaTest.mockitoCore
                 )
           case BuildEnv.Stage | BuildEnv.Production =>
-            libraryDependencies.value.map(excludeSpecs2)
+            libraryDependencies.value
         }),
     pipelineStages in Assets := Seq(digest),
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     aggregate in update := false,
     cancelable in Global := false, // Workaround sbt/bug#4822 Unable to Ctrl-C out of 'run' in a Play app
-    testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "exclude", "REMOTE"),
+//    testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "exclude", "REMOTE"),
     TwirlKeys.templateImports := Seq(),
     play.sbt.routes.RoutesKeys.routesImport := Seq.empty,
     routesGenerator := InjectedRoutesGenerator,
@@ -155,7 +150,7 @@ lazy val hat = project
 // Enable the semantic DB for scalafix
 inThisBuild(
   List(
-    scalaVersion := Versions.scalaVersion,
+    scalaVersion := "2.13.5",
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"

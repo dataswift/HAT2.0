@@ -26,10 +26,9 @@ package org.hatdex.hat.api.controllers
 
 import java.util.UUID
 import javax.inject.Inject
-
 import scala.concurrent.{ ExecutionContext, Future }
-
 import com.mohiva.play.silhouette.api.Silhouette
+import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.applications.HatApplication
 import io.dataswift.models.hat.json.HatJsonFormats
@@ -38,6 +37,8 @@ import org.hatdex.hat.api.service.{ FileManager, FileMetadataService, UsersServi
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.utils.HatBodyParsers
+import org.hatdex.libs.dal
+import org.hatdex.libs.dal.HATPostgresProfile
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Json
@@ -49,9 +50,9 @@ class Files @Inject() (
     silhouette: Silhouette[HatApiAuthEnvironment],
     fileMetadataService: FileMetadataService,
     fileManager: FileManager,
-    usersService: UsersService,
-    implicit val ec: ExecutionContext,
-    implicit val applicationsService: ApplicationsService)
+    usersService: UsersService
+  )(implicit ec: ExecutionContext,
+    applicationsService: ApplicationsService)
     extends HatApiController(components, silhouette) {
   import HatJsonFormats._
 
@@ -63,7 +64,8 @@ class Files @Inject() (
           ManageFiles("*"),
           Owner()
         )
-    ).async(parsers.json[ApiHatFile]) { implicit request =>
+    ).andThen(SecuredServerAction).async(parsers.json[ApiHatFile]) { request =>
+      implicit val db: HATPostgresProfile.api.Database = request.server.db
       val cleanFile = request.body.copy(
         fileId = None,
         status = Some(HatFileStatus.New()),
@@ -77,7 +79,7 @@ class Files @Inject() (
         uploadUrl <- fileManager.getUploadUrl(
                        fileWithId.fileId.get,
                        fileWithId.contentType
-                     )
+                     )(request.server)
         _ <- fileMetadataService.grantAccess(
                savedFile,
                request.identity,
@@ -108,17 +110,17 @@ class Files @Inject() (
           ManageFiles("*"),
           Owner()
         )
-    ).async { implicit request =>
-      request2ApplicationStatus(request) flatMap { maybeAsApplication =>
-        fileMetadataService.getById(fileId) flatMap {
-          case Some(file) if fileContentAccessAllowed(file, maybeAsApplication) =>
+    ).andThen(SecuredServerAction).async { request =>
+      securedRequest2ApplicationStatus(request) flatMap { maybeAsApplication =>
+        fileMetadataService.getById(fileId)(request.server.db) flatMap {
+          case Some(file)
+              if fileContentAccessAllowed(file, maybeAsApplication)(request.identity, request.wrapped.authenticator) =>
             logger.debug(s"Marking $file complete ")
             val eventuallyCompleted = for {
-              fileSize <- fileManager.getFileSize(file.fileId.get)
+              fileSize <- fileManager.getFileSize(file.fileId.get)(request.server)
               completed <- fileMetadataService.save(
                              file.copy(status = Some(HatFileStatus.Completed(fileSize)))
-                           ) if fileSize > 0
-              _ = completed // Workaround scala/bug#11175 -Ywarn-unused:params false positive
+                           )(request.server.db) if fileSize > 0
             } yield completed
 
             eventuallyCompleted map { completed =>
@@ -167,15 +169,17 @@ class Files @Inject() (
         file.permissions.get.exists(p => p.userId == user.userId && p.contentReadable))
 
   def getDetail(fileId: String): Action[AnyContent] =
-    SecuredAction.async { implicit request =>
+    SecuredAction.andThen(SecuredServerAction).async { request =>
+      implicit val user: HatUser                   = request.identity
+      implicit val authenticator: JWTAuthenticator = request.wrapped.authenticator
       val fileWithApp = for {
-        metadata <- fileMetadataService.getById(fileId)
-        app <- request2ApplicationStatus(request)
+        metadata <- fileMetadataService.getById(fileId)(request.server.db)
+        app <- securedRequest2ApplicationStatus(request)
       } yield (metadata, app)
       fileWithApp flatMap {
         case (Some(file), app) if fileContentAccessAllowed(file, app) =>
           fileManager
-            .getContentUrl(file.fileId.get)
+            .getContentUrl(file.fileId.get)(request.server)
             .map(url => file.copy(contentUrl = Some(url)))
             .map(filePermissionsCleaned)
             .map(file => Ok(Json.toJson(file)))
@@ -204,21 +208,20 @@ class Files @Inject() (
     }
 
   def getContent(fileId: String): Action[AnyContent] =
-    UserAwareAction.async { implicit request =>
+    UserAwareAction.async { request =>
       val fileWithApp = for {
-        metadata <- fileMetadataService.getById(fileId)
-        app <- request2ApplicationStatus(request)
-      } yield (metadata, request.identity, request.authenticator, app)
+        metadata <- fileMetadataService.getById(fileId)(request.server.db)
+        app <- userAwareRequest2ApplicationStatus(request)
+      } yield (metadata, request.identity, request.wrapped.authenticator, app)
 
       fileWithApp flatMap {
         case (Some(file), _, _, _) if file.contentPublic.contains(true) =>
           fileManager
-            .getContentUrl(file.fileId.get)
+            .getContentUrl(file.fileId.get)(request.server)
             .map(url => Redirect(url))
-        case (Some(file), Some(user), Some(authenticator), app)
-            if fileContentAccessAllowed(file, app)(user, authenticator) =>
+        case (Some(file), user, Some(authenticator), app) if fileContentAccessAllowed(file, app)(user, authenticator) =>
           fileManager
-            .getContentUrl(file.fileId.get)
+            .getContentUrl(file.fileId.get)(request.server)
             .map(url => Redirect(url))
         case _ =>
           Future.successful(NotFound(""))
@@ -226,16 +229,18 @@ class Files @Inject() (
     }
 
   def listFiles(): Action[ApiHatFile] =
-    SecuredAction.async(parsers.json[ApiHatFile]) { implicit request =>
-      request2ApplicationStatus(request) flatMap { maybeAsApplication =>
+    SecuredAction.andThen(SecuredServerAction).async(parsers.json[ApiHatFile]) { request =>
+      securedRequest2ApplicationStatus(request) flatMap { maybeAsApplication =>
+        implicit val user: HatUser                   = request.identity
+        implicit val authenticator: JWTAuthenticator = request.wrapped.authenticator
         fileMetadataService
-          .search(request.body)
+          .search(request.body)(request.server.db)
           .map(_.filter(fileAccessAllowed(_, maybeAsApplication)))
           .flatMap { foundFiles =>
             val fileContentsEventual = foundFiles map { file =>
               if (fileContentAccessAllowed(file, maybeAsApplication))
                 fileManager
-                  .getContentUrl(file.fileId.get)
+                  .getContentUrl(file.fileId.get)(request.server)
                   .map(url => file.copy(contentUrl = Some(url)))
                   .map(filePermissionsCleaned)
               else
@@ -275,10 +280,11 @@ class Files @Inject() (
       file.copy(permissions = None)
 
   def updateFile(fileId: String): Action[ApiHatFile] =
-    SecuredAction.async(parsers.json[ApiHatFile]) { implicit request =>
-      request2ApplicationStatus(request) flatMap { maybeAsApplication =>
-        fileMetadataService.getById(fileId) flatMap {
-          case Some(file) if fileContentAccessAllowed(file, maybeAsApplication) =>
+    SecuredAction.andThen(SecuredServerAction).async(parsers.json[ApiHatFile]) { request =>
+      securedRequest2ApplicationStatus(request) flatMap { maybeAsApplication =>
+        fileMetadataService.getById(fileId)(request.server.db) flatMap {
+          case Some(file)
+              if fileContentAccessAllowed(file, maybeAsApplication)(request.identity, request.wrapped.authenticator) =>
             val updatedFile = file.copy(
               name = request.body.name,
               lastUpdated = request.body.lastUpdated.orElse(Some(DateTime.now())),
@@ -287,7 +293,7 @@ class Files @Inject() (
               description = request.body.description
             )
 
-            fileMetadataService.save(updatedFile).map(f => Ok(Json.toJson(f)))
+            fileMetadataService.save(updatedFile)(request.server.db).map(f => Ok(Json.toJson(f)))
           case _ =>
             Future.successful(
               NotFound(
@@ -303,14 +309,14 @@ class Files @Inject() (
   def deleteFile(fileId: String): Action[AnyContent] =
     SecuredAction(
       WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))
-    ).async { implicit request =>
-      fileMetadataService.getById(fileId) flatMap {
+    ).andThen(SecuredServerAction).async { request =>
+      fileMetadataService.getById(fileId)(request.server.db) flatMap {
         case Some(file) =>
           val eventuallyDeleted = for {
-            _ <- fileManager.deleteContents(file.fileId.get)
+            _ <- fileManager.deleteContents(file.fileId.get)(request.server)
             deleted <- fileMetadataService.save(
                          file.copy(status = Some(HatFileStatus.Deleted()))
-                       )
+                       )(request.server.db)
           } yield deleted
           eventuallyDeleted.map(file => Ok(Json.toJson(file)))
         case None =>
@@ -330,12 +336,14 @@ class Files @Inject() (
       content: Boolean): Action[AnyContent] =
     SecuredAction(
       WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))
-    ).async { implicit request =>
-      request2ApplicationStatus(request) flatMap { maybeAsApplication =>
+    ).andThen(SecuredServerAction).async { request =>
+      securedRequest2ApplicationStatus(request) flatMap { maybeAsApplication =>
+        implicit val db: HATPostgresProfile.api.Database = request.server.db
         fileMetadataService.getById(fileId) flatMap {
-          case Some(file) if fileAccessAllowed(file, maybeAsApplication) =>
+          case Some(file)
+              if fileAccessAllowed(file, maybeAsApplication)(request.identity, request.wrapped.authenticator) =>
             val eventuallyGranted = for {
-              user <- usersService.getUser(userId) if user.isDefined
+              user <- usersService.getUser(userId)(request.server) if user.isDefined
               _ <- fileMetadataService.grantAccess(file, user.get, content)
               updated <- fileMetadataService.getById(fileId).map(_.get)
             } yield updated
@@ -357,12 +365,14 @@ class Files @Inject() (
       userId: UUID): Action[AnyContent] =
     SecuredAction(
       WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))
-    ).async { implicit request =>
-      request2ApplicationStatus(request) flatMap { maybeAsApplication =>
+    ).andThen(SecuredServerAction).async { request =>
+      securedRequest2ApplicationStatus(request) flatMap { maybeAsApplication =>
+        implicit val db: HATPostgresProfile.api.Database = request.server.db
         fileMetadataService.getById(fileId) flatMap {
-          case Some(file) if fileAccessAllowed(file, maybeAsApplication) =>
+          case Some(file)
+              if fileAccessAllowed(file, maybeAsApplication)(request.identity, request.wrapped.authenticator) =>
             val eventuallyGranted = for {
-              user <- usersService.getUser(userId) if user.isDefined
+              user <- usersService.getUser(userId)(request.server) if user.isDefined
               _ <- fileMetadataService.restrictAccess(file, user.get)
               updated <- fileMetadataService.getById(fileId).map(_.get)
             } yield updated
@@ -384,10 +394,12 @@ class Files @Inject() (
       public: Boolean): Action[AnyContent] =
     SecuredAction(
       WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))
-    ).async { implicit request =>
-      request2ApplicationStatus(request) flatMap { maybeAsApplication =>
+    ).andThen(SecuredServerAction).async { request =>
+      securedRequest2ApplicationStatus(request) flatMap { maybeAsApplication =>
+        implicit val db: HATPostgresProfile.api.Database = request.server.db
         fileMetadataService.getById(fileId) flatMap {
-          case Some(file) if fileAccessAllowed(file, maybeAsApplication) =>
+          case Some(file)
+              if fileAccessAllowed(file, maybeAsApplication)(request.identity, request.wrapped.authenticator) =>
             val eventuallyGranted = for {
               _ <- fileMetadataService.save(
                      file.copy(contentPublic = Some(public))
@@ -412,9 +424,10 @@ class Files @Inject() (
       content: Boolean): Action[ApiHatFile] =
     SecuredAction(
       WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))
-    ).async(parsers.json[ApiHatFile]) { implicit request =>
+    ).andThen(SecuredServerAction).async(parsers.json[ApiHatFile]) { request =>
+      implicit val db: HATPostgresProfile.api.Database = request.server.db
       val eventuallyAllowedFiles = for {
-        user <- usersService.getUser(userId) if user.isDefined
+        user <- usersService.getUser(userId)(request.server) if user.isDefined
         _ <- fileMetadataService.grantAccessPattern(
                request.body,
                user.get,
@@ -445,9 +458,10 @@ class Files @Inject() (
   def restrictAccessPattern(userId: UUID): Action[ApiHatFile] =
     SecuredAction(
       WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))
-    ).async(parsers.json[ApiHatFile]) { implicit request =>
+    ).andThen(SecuredServerAction).async(parsers.json[ApiHatFile]) { request =>
+      implicit val db: HATPostgresProfile.api.Database = request.server.db
       val eventuallyAllowedFiles = for {
-        user <- usersService.getUser(userId) if user.isDefined
+        user <- usersService.getUser(userId)(request.server) if user.isDefined
         _ <- fileMetadataService.restrictAccessPattern(request.body, user.get)
         matchingFiles <- fileMetadataService.search(request.body)
       } yield matchingFiles

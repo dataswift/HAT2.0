@@ -24,31 +24,32 @@
 
 package org.hatdex.hat.api.controllers
 
-import java.util.UUID
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.control.NonFatal
-
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
-import eu.timepit.refined.auto._
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.applications.HatApplication
 import io.dataswift.models.hat.json.RichDataJsonFormats
-import org.hatdex.hat.api.service.UsersService
-import org.hatdex.hat.api.service.applications.{ ApplicationsService, TrustedApplicationProvider }
+import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData.{ RichDataServiceException, _ }
 import org.hatdex.hat.authentication.models._
-import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
+import org.hatdex.hat.authentication.{
+  ContainsApplicationRole,
+  HatApiAuthEnvironment,
+  HatApiController,
+  ServerSecuredRequest,
+  WithRole
+}
 import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider }
 import org.hatdex.libs.dal.HATPostgresProfile
-import play.api.Configuration
 import play.api.libs.json.Reads._
 import play.api.libs.json.{ JsArray, JsValue, Json }
-import play.api.libs.ws.WSClient
 import play.api.mvc._
+
+import java.util.UUID
+import javax.inject.Inject
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.control.NonFatal
 
 class RichData @Inject() (
     components: ControllerComponents,
@@ -58,13 +59,9 @@ class RichData @Inject() (
     dataService: RichDataService,
     bundleService: RichBundleService,
     dataDebitService: DataDebitContractService,
-    loggingProvider: LoggingProvider,
-    configuration: Configuration,
-    usersService: UsersService,
-    trustedApplicationProvider: TrustedApplicationProvider,
-    implicit val ec: ExecutionContext,
-    implicit val applicationsService: ApplicationsService
-  )(wsClient: WSClient)
+    loggingProvider: LoggingProvider
+  )(implicit ec: ExecutionContext,
+    applicationsService: ApplicationsService)
     extends HatApiController(components, silhouette) {
 
   import RichDataJsonFormats._
@@ -95,8 +92,8 @@ class RichData @Inject() (
           Owner(),
           NamespaceRead(namespace)
         )
-    ).async { implicit request =>
-      makeData(namespace, endpoint, orderBy, ordering, skip, take)
+    ).andThen(SecuredServerAction).async { request =>
+      makeData(namespace, endpoint, orderBy, ordering, skip, take)(request.server.db)
     }
 
   def saveEndpointData(
@@ -107,8 +104,8 @@ class RichData @Inject() (
       WithRole(NamespaceWrite(namespace)) || ContainsApplicationRole(
           NamespaceWrite(namespace)
         )
-    )
-      .async(parsers.json[JsValue]) { implicit request =>
+    ).andThen(SecuredServerAction)
+      .async(parsers.json[JsValue]) { request =>
         val dataEndpoint = s"$namespace/$endpoint"
         val response = request.body match {
           case array: JsArray =>
@@ -119,12 +116,12 @@ class RichData @Inject() (
             dataService
               .saveData(
                 request.identity.userId,
-                values,
+                values.toSeq,
                 skipErrors.getOrElse(false)
-              )
+              )(request.server.db)
               .andThen(
                 dataEventDispatcher
-                  .dispatchEventDataCreated(s"saved batch for $dataEndpoint")
+                  .dispatchEventDataCreated(s"saved batch for $dataEndpoint", request.identity, request.server.domain)
               )
               .map(saved => Created(Json.toJson(saved)))
 
@@ -133,10 +130,10 @@ class RichData @Inject() (
             val values =
               Seq(EndpointData(dataEndpoint, None, None, None, value, None))
             dataService
-              .saveData(request.identity.userId, values)
+              .saveData(request.identity.userId, values)(request.server.db)
               .andThen(
                 dataEventDispatcher
-                  .dispatchEventDataCreated(s"saved data for $dataEndpoint")
+                  .dispatchEventDataCreated(s"saved data for $dataEndpoint", request.identity, request.server.domain)
               )
               .map(saved => Created(Json.toJson(saved.head)))
         }
@@ -156,9 +153,9 @@ class RichData @Inject() (
       WithRole(NamespaceWrite(namespace)) || ContainsApplicationRole(
           NamespaceWrite(namespace)
         )
-    ).async { implicit request =>
+    ).andThen(SecuredServerAction).async { request =>
       val dataEndpoint = s"$namespace/$endpoint"
-      dataService.deleteEndpoint(dataEndpoint) map { _ =>
+      dataService.deleteEndpoint(dataEndpoint)(request.server.db) map { _ =>
         Ok(Json.toJson(SuccessResponse(s"All records deleted")))
       }
     }
@@ -169,15 +166,15 @@ class RichData @Inject() (
           NamespaceWrite("*"),
           Owner()
         )
-    )
-      .async(parsers.json[Seq[EndpointData]]) { implicit request =>
-        val response = request2ApplicationStatus(request).flatMap { maybeAppStatus =>
-          if (authorizeEndpointDataWrite(request.body, maybeAppStatus))
+    ).andThen(SecuredServerAction)
+      .async(parsers.json[Seq[EndpointData]]) { request =>
+        val response = securedRequest2ApplicationStatus(request).flatMap { maybeAppStatus =>
+          if (authorizeEndpointDataWrite(request.body, maybeAppStatus)(request.identity, request.wrapped.authenticator))
             dataService
-              .saveData(request.identity.userId, request.body)
+              .saveData(request.identity.userId, request.body)(request.server.db)
               .andThen(
                 dataEventDispatcher
-                  .dispatchEventDataCreated(s"saved batch data")
+                  .dispatchEventDataCreated("saved batch data", request.identity, request.server.domain)
               )
               .map(d => Created(Json.toJson(d)))
           else
@@ -227,8 +224,9 @@ class RichData @Inject() (
 
   def registerCombinator(combinator: String): Action[Seq[EndpointQuery]] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner()))
-      .async(parsers.json[Seq[EndpointQuery]]) { implicit request =>
-        bundleService.saveCombinator(combinator, request.body) map { _ =>
+      .andThen(SecuredServerAction)
+      .async(parsers.json[Seq[EndpointQuery]]) { request =>
+        bundleService.saveCombinator(combinator, request.body)(request.server.db) map { _ =>
           Created(
             Json.toJson(SuccessResponse(s"Combinator $combinator registered"))
           )
@@ -241,25 +239,28 @@ class RichData @Inject() (
       ordering: Option[String],
       skip: Option[Int],
       take: Option[Int]): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
-      val result = for {
-        query <- bundleService.combinator(combinator).map(_.get)
-        data <- dataService.propertyData(
-                  query,
-                  orderBy,
-                  ordering.contains("descending"),
-                  skip.getOrElse(0),
-                  take.orElse(Some(defaultRecordLimit))
-                )
-      } yield data
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner()))
+      .andThen(SecuredServerAction)
+      .async { request =>
+        implicit val db: HATPostgresProfile.api.Database = request.server.db
+        val result = for {
+          query <- bundleService.combinator(combinator).map(_.get)
+          data <- dataService.propertyData(
+                    query,
+                    orderBy,
+                    ordering.contains("descending"),
+                    skip.getOrElse(0),
+                    take.orElse(Some(defaultRecordLimit))
+                  )
+        } yield data
 
-      result map { d =>
-        Ok(Json.toJson(d))
-      } recover {
-        case NonFatal(_) =>
-          NotFound(Json.toJson(Errors.dataCombinatorNotFound(combinator)))
+        result map { d =>
+          Ok(Json.toJson(d))
+        } recover {
+          case NonFatal(_) =>
+            NotFound(Json.toJson(Errors.dataCombinatorNotFound(combinator)))
+        }
       }
-    }
 
   def linkDataRecords(records: Seq[UUID]): Action[AnyContent] =
     SecuredAction(
@@ -267,14 +268,17 @@ class RichData @Inject() (
           NamespaceWrite("*"),
           Owner()
         )
-    ).async { implicit request =>
-      dataService.saveRecordGroup(request.identity.userId, records) map { _ =>
-        Created(Json.toJson(SuccessResponse(s"Grouping registered")))
-      } recover {
-        case RichDataMissingException(message, _) =>
-          BadRequest(Json.toJson(Errors.dataLinkMissing(message)))
+    )
+      .andThen(SecuredServerAction)
+      .async { request =>
+        implicit val db: HATPostgresProfile.api.Database = request.server.db
+        dataService.saveRecordGroup(request.identity.userId, records) map { _ =>
+          Created(Json.toJson(SuccessResponse(s"Grouping registered")))
+        } recover {
+          case RichDataMissingException(message, _) =>
+            BadRequest(Json.toJson(Errors.dataLinkMissing(message)))
+        }
       }
-    }
 
   def deleteDataRecords(records: Seq[UUID]): Action[AnyContent] =
     SecuredAction(
@@ -282,49 +286,52 @@ class RichData @Inject() (
           NamespaceWrite("*"),
           Owner()
         )
-    ).async { implicit request =>
-      val eventualPermissionContext = for {
-        maybeAppStatus <- request2ApplicationStatus(request)
-        recordNamespaces <- dataService.uniqueRecordNamespaces(records)
-      } yield (maybeAppStatus, recordNamespaces)
+    )
+      .andThen(SecuredServerAction)
+      .async { request =>
+        implicit val db: HATPostgresProfile.api.Database = request.server.db
+        val eventualPermissionContext = for {
+          maybeAppStatus <- securedRequest2ApplicationStatus(request)
+          recordNamespaces <- dataService.uniqueRecordNamespaces(records)
+        } yield (maybeAppStatus, recordNamespaces)
 
-      eventualPermissionContext flatMap {
-        case (Some(appStatus), requiredNamespaces)
-            if requiredNamespaces.forall(n =>
-              ContainsApplicationRole
-                .isAuthorized(
-                  request.identity,
-                  appStatus,
-                  request.authenticator,
-                  NamespaceWrite(n)
-                )
-            ) =>
-          dataService.deleteRecords(request.identity.userId, records) map { _ =>
-            Ok(Json.toJson(SuccessResponse(s"All records deleted")))
-          } recover {
-              case RichDataMissingException(message, _) =>
-                BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
-            }
-        case (Some(_), _) =>
-          Future.successful(
-            Forbidden(
-              Json.toJson(
-                Errors.forbidden(
-                  "Permissions to modify records in some of the namespaces missing"
+        eventualPermissionContext flatMap {
+          case (Some(appStatus), requiredNamespaces)
+              if requiredNamespaces.forall(n =>
+                ContainsApplicationRole
+                  .isAuthorized(
+                    request.identity,
+                    appStatus,
+                    request.wrapped.authenticator,
+                    NamespaceWrite(n)
+                  )
+              ) =>
+            dataService.deleteRecords(request.identity.userId, records) map { _ =>
+              Ok(Json.toJson(SuccessResponse(s"All records deleted")))
+            } recover {
+                case RichDataMissingException(message, _) =>
+                  BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
+              }
+          case (Some(_), _) =>
+            Future.successful(
+              Forbidden(
+                Json.toJson(
+                  Errors.forbidden(
+                    "Permissions to modify records in some of the namespaces missing"
+                  )
                 )
               )
             )
-          )
-        // TODO: remove after non-application tokens are phased out
-        case (None, _) =>
-          dataService.deleteRecords(request.identity.userId, records) map { _ =>
-            Ok(Json.toJson(SuccessResponse(s"All records deleted")))
-          } recover {
-              case RichDataMissingException(message, _) =>
-                BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
-            }
+          // TODO: remove after non-application tokens are phased out
+          case (None, _) =>
+            dataService.deleteRecords(request.identity.userId, records) map { _ =>
+              Ok(Json.toJson(SuccessResponse(s"All records deleted")))
+            } recover {
+                case RichDataMissingException(message, _) =>
+                  BadRequest(Json.toJson(Errors.dataDeleteMissing(message)))
+              }
+        }
       }
-    }
 
   def listEndpoints: Action[AnyContent] =
     SecuredAction(
@@ -333,11 +340,13 @@ class RichData @Inject() (
           Platform(),
           NamespaceWrite("*")
         )
-    ).async { implicit request =>
-      dataService.listEndpoints() map { endpoints =>
-        Ok(Json.toJson(endpoints))
+    )
+      .andThen(SecuredServerAction)
+      .async { request =>
+        dataService.listEndpoints()(request.server.db) map { endpoints =>
+          Ok(Json.toJson(endpoints))
+        }
       }
-    }
 
   def updateRecords(): Action[Seq[EndpointData]] =
     SecuredAction(
@@ -345,14 +354,14 @@ class RichData @Inject() (
           NamespaceWrite("*"),
           Owner()
         )
-    )
-      .async(parsers.json[Seq[EndpointData]]) { implicit request =>
-        request2ApplicationStatus(request).flatMap { maybeAppStatus =>
-          if (authorizeEndpointDataWrite(request.body, maybeAppStatus))
+    ).andThen(SecuredServerAction)
+      .async(parsers.json[Seq[EndpointData]]) { request =>
+        securedRequest2ApplicationStatus(request).flatMap { maybeAppStatus =>
+          if (authorizeEndpointDataWrite(request.body, maybeAppStatus)(request.identity, request.wrapped.authenticator))
             dataService.updateRecords(
               request.identity.userId,
               request.body
-            ) map { saved =>
+            )(request.server.db) map { saved =>
               Created(Json.toJson(saved))
             } recover {
               case RichDataMissingException(message, _) =>
@@ -369,9 +378,10 @@ class RichData @Inject() (
 
   def registerBundle(bundleId: String): Action[Map[String, PropertyQuery]] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner()))
-      .async(parsers.json[Map[String, PropertyQuery]]) { implicit request =>
+      .andThen(SecuredServerAction)
+      .async(parsers.json[Map[String, PropertyQuery]]) { request =>
         bundleService
-          .saveBundle(EndpointDataBundle(bundleId, request.body))
+          .saveBundle(EndpointDataBundle(bundleId, request.body))(request.server.db)
           .map { _ =>
             Created(
               Json.toJson(SuccessResponse(s"Bundle $bundleId registered"))
@@ -380,33 +390,36 @@ class RichData @Inject() (
       }
 
   def fetchBundle(bundleId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
-      val result = for {
-        bundle <- bundleService.bundle(bundleId).map(_.get)
-        data <- dataService.bundleData(bundle)
-      } yield data
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner()))
+      .andThen(SecuredServerAction)
+      .async { request =>
+        implicit val db: HATPostgresProfile.api.Database = request.server.db
+        val result = for {
+          bundle <- bundleService.bundle(bundleId).map(_.get)
+          data <- dataService.bundleData(bundle)
+        } yield data
 
-      result map { d =>
-        Ok(Json.toJson(d))
-      } recover {
-        case NonFatal(_) =>
-          NotFound(Json.toJson(Errors.bundleNotFound(bundleId)))
+        result map { d =>
+          Ok(Json.toJson(d))
+        } recover {
+          case NonFatal(_) =>
+            NotFound(Json.toJson(Errors.bundleNotFound(bundleId)))
+        }
       }
-    }
 
   def bundleStructure(bundleId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
-      val result = for {
-        bundle <- bundleService.bundle(bundleId).map(_.get)
-      } yield bundle
-
-      result map { d =>
-        Ok(Json.toJson(d))
-      } recover {
-        case NonFatal(_) =>
-          NotFound(Json.toJson(Errors.bundleNotFound(bundleId)))
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner()))
+      .andThen(SecuredServerAction)
+      .async { request =>
+        implicit val db: HATPostgresProfile.api.Database = request.server.db
+        val result = for {
+          bundle <- bundleService.bundle(bundleId).map(_.get)
+        } yield Ok(Json.toJson(bundle))
+        result recover {
+          case NonFatal(_) =>
+            NotFound(Json.toJson(Errors.bundleNotFound(bundleId)))
+        }
       }
-    }
 
   def registerDataDebit(dataDebitId: String): Action[DataDebitRequest] =
     SecuredAction(
@@ -415,21 +428,23 @@ class RichData @Inject() (
         DataDebitOwner(""),
         Platform()
       ) || ContainsApplicationRole(Owner(), DataDebitOwner(""), Platform())
-    ).async(parsers.json[DataDebitRequest]) { implicit request =>
-      dataDebitService
-        .createDataDebit(dataDebitId, request.body, request.identity.userId)
-        .andThen(
-          dataEventDispatcher
-            .dispatchEventDataDebit(DataDebitOperations.Create())
-        )
-        .map(debit => Created(Json.toJson(debit)))
-        .recover {
-          case err: RichDataDuplicateBundleException =>
-            BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
-          case err: RichDataDuplicateDebitException =>
-            BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
-        }
-    }
+    ).andThen(SecuredServerAction)
+      .async(parsers.json[DataDebitRequest]) { request =>
+        implicit val db: HATPostgresProfile.api.Database = request.server.db
+        dataDebitService
+          .createDataDebit(dataDebitId, request.body, request.identity.userId)
+          .andThen(
+            dataEventDispatcher
+              .dispatchEventDataDebit(DataDebitOperations.Create(), request.identity, request.server.domain)
+          )
+          .map(debit => Created(Json.toJson(debit)))
+          .recover {
+            case err: RichDataDuplicateBundleException =>
+              BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
+            case err: RichDataDuplicateDebitException =>
+              BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
+          }
+      }
 
   def updateDataDebit(dataDebitId: String): Action[DataDebitRequest] =
     SecuredAction(
@@ -437,23 +452,25 @@ class RichData @Inject() (
           Owner(),
           DataDebitOwner(dataDebitId)
         )
-    ).async(parsers.json[DataDebitRequest]) { implicit request =>
-      dataDebitService
-        .updateDataDebitBundle(
-          dataDebitId,
-          request.body,
-          request.identity.userId
-        )
-        .andThen(
-          dataEventDispatcher
-            .dispatchEventDataDebit(DataDebitOperations.Change())
-        )
-        .map(debit => Ok(Json.toJson(debit)))
-        .recover {
-          case err: RichDataServiceException =>
-            BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
-        }
-    }
+    ).andThen(SecuredServerAction)
+      .async(parsers.json[DataDebitRequest]) { request =>
+        implicit val db: HATPostgresProfile.api.Database = request.server.db
+        dataDebitService
+          .updateDataDebitBundle(
+            dataDebitId,
+            request.body,
+            request.identity.userId
+          )
+          .andThen(
+            dataEventDispatcher
+              .dispatchEventDataDebit(DataDebitOperations.Change(), request.identity, request.server.domain)
+          )
+          .map(debit => Ok(Json.toJson(debit)))
+          .recover {
+            case err: RichDataServiceException =>
+              BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
+          }
+      }
 
   def getDataDebit(dataDebitId: String): Action[AnyContent] =
     SecuredAction(
@@ -461,15 +478,17 @@ class RichData @Inject() (
           Owner(),
           DataDebitOwner(dataDebitId)
         )
-    ).async { implicit request =>
-      dataDebitService
-        .dataDebit(dataDebitId)
-        .map {
-          case Some(debit) => Ok(Json.toJson(debit))
-          case None =>
-            NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId)))
-        }
-    }
+    ).andThen(SecuredServerAction)
+      .async { request =>
+        implicit val db: HATPostgresProfile.api.Database = request.server.db
+        dataDebitService
+          .dataDebit(dataDebitId)
+          .map {
+            case Some(debit) => Ok(Json.toJson(debit))
+            case None =>
+              NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId)))
+          }
+      }
 
   def getDataDebitValues(dataDebitId: String): Action[AnyContent] =
     SecuredAction(
@@ -477,68 +496,72 @@ class RichData @Inject() (
           Owner(),
           DataDebitOwner(dataDebitId)
         )
-    ).async { implicit request =>
-      dataDebitService
-        .dataDebit(dataDebitId)
-        .flatMap {
-          case Some(debit) if debit.activeBundle.isDefined =>
-            logger.debug("Got Data Debit, fetching data")
-            val eventualData = debit.activeBundle.get.conditions map { bundleConditions =>
-              logger.debug("Getting data for conditions")
-              dataService.bundleData(bundleConditions).flatMap { conditionValues =>
-                val conditionFulfillment: Map[String, Boolean] =
-                  conditionValues map {
-                      case (condition, values) =>
-                        (condition, values.nonEmpty)
-                    }
+    ).andThen(SecuredServerAction)
+      .async { request =>
+        implicit val db: HATPostgresProfile.api.Database = request.server.db
+        dataDebitService
+          .dataDebit(dataDebitId)
+          .flatMap {
+            case Some(debit) if debit.activeBundle.isDefined =>
+              logger.debug("Got Data Debit, fetching data")
+              val eventualData = debit.activeBundle.get.conditions map { bundleConditions =>
+                logger.debug("Getting data for conditions")
+                dataService.bundleData(bundleConditions).flatMap { conditionValues =>
+                  val conditionFulfillment: Map[String, Boolean] =
+                    conditionValues map {
+                        case (condition, values) =>
+                          (condition, values.nonEmpty)
+                      }
 
-                if (conditionFulfillment.forall(_._2)) {
-                  logger
-                    .debug(s"Data Debit $dataDebitId conditions satisfied")
-                  dataService
-                    .bundleData(debit.activeBundle.get.bundle)
-                    .map(RichDataDebitData(Some(conditionFulfillment), _))
-                } else {
-                  logger.debug(
-                    s"Data Debit $dataDebitId conditions not satisfied: $conditionFulfillment"
-                  )
-                  Future.successful(
-                    RichDataDebitData(Some(conditionFulfillment), Map())
-                  )
+                  if (conditionFulfillment.forall(_._2)) {
+                    logger
+                      .debug(s"Data Debit $dataDebitId conditions satisfied")
+                    dataService
+                      .bundleData(debit.activeBundle.get.bundle)
+                      .map(RichDataDebitData(Some(conditionFulfillment), _))
+                  } else {
+                    logger.debug(
+                      s"Data Debit $dataDebitId conditions not satisfied: $conditionFulfillment"
+                    )
+                    Future.successful(
+                      RichDataDebitData(Some(conditionFulfillment), Map())
+                    )
+                  }
                 }
+
+              } getOrElse {
+                logger.debug(s"Data Debit $dataDebitId without conditions")
+                dataService
+                  .bundleData(debit.activeBundle.get.bundle)
+                  .map(RichDataDebitData(None, _))
               }
 
-            } getOrElse {
-              logger.debug(s"Data Debit $dataDebitId without conditions")
-              dataService
-                .bundleData(debit.activeBundle.get.bundle)
-                .map(RichDataDebitData(None, _))
-            }
+              eventualData
+                .andThen(
+                  dataEventDispatcher.dispatchEventDataDebitValues(debit, request.identity, request.server.domain)
+                )
+                .map(d => Ok(Json.toJson(d)))
 
-            eventualData
-              .andThen(dataEventDispatcher.dispatchEventDataDebitValues(debit))
-              .map(d => Ok(Json.toJson(d)))
-
-          case Some(_) =>
-            Future.successful(
-              BadRequest(Json.toJson(Errors.dataDebitNotEnabled(dataDebitId)))
-            )
-          case None =>
-            Future.successful(
-              NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId)))
-            )
-        }
-        .recover {
-          case err: RichDataBundleFormatException =>
-            BadRequest(
-              Json.toJson(Errors.dataDebitBundleMalformed(dataDebitId, err))
-            )
-        }
-    }
+            case Some(_) =>
+              Future.successful(
+                BadRequest(Json.toJson(Errors.dataDebitNotEnabled(dataDebitId)))
+              )
+            case None =>
+              Future.successful(
+                NotFound(Json.toJson(Errors.dataDebitNotFound(dataDebitId)))
+              )
+          }
+          .recover {
+            case err: RichDataBundleFormatException =>
+              BadRequest(
+                Json.toJson(Errors.dataDebitBundleMalformed(dataDebitId, err))
+              )
+          }
+      }
 
   def listDataDebits(): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
-      dataDebitService.all map { debits =>
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).andThen(SecuredServerAction).async { request =>
+      dataDebitService.all()(request.server.db) map { debits =>
         Ok(Json.toJson(debits))
       }
     }
@@ -546,19 +569,20 @@ class RichData @Inject() (
   def enableDataDebitBundle(
       dataDebitId: String,
       bundleId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
-      enableDataDebit(dataDebitId, Some(bundleId))
-    }
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner()))
+      .andThen(SecuredServerAction)
+      .async(enableDataDebit(dataDebitId, Some(bundleId), _))
 
   def enableDataDebitNewest(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
-      enableDataDebit(dataDebitId, None)
-    }
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner()))
+      .andThen(SecuredServerAction)
+      .async(enableDataDebit(dataDebitId, None, _))
 
   protected def enableDataDebit(
       dataDebitId: String,
-      bundleId: Option[String]
-    )(implicit request: SecuredRequest[HatApiAuthEnvironment, AnyContent]): Future[Result] = {
+      bundleId: Option[String],
+      request: ServerSecuredRequest[HatApiAuthEnvironment, AnyContent]): Future[Result] = {
+    implicit val db: HATPostgresProfile.api.Database = request.server.db
     val enabled = for {
       _ <- dataDebitService.dataDebitEnableBundle(dataDebitId, bundleId)
       debit <- dataDebitService.dataDebit(dataDebitId)
@@ -567,7 +591,7 @@ class RichData @Inject() (
     enabled
       .andThen(
         dataEventDispatcher
-          .dispatchEventMaybeDataDebit(DataDebitOperations.Enable())
+          .dispatchEventMaybeDataDebit(DataDebitOperations.Enable(), request.identity, request.server.domain)
       )
       .map {
         case Some(debit) => Ok(Json.toJson(debit))
@@ -576,22 +600,25 @@ class RichData @Inject() (
   }
 
   def disableDataDebit(dataDebitId: String): Action[AnyContent] =
-    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
-      val disabled = for {
-        _ <- dataDebitService.dataDebitDisable(dataDebitId)
-        debit <- dataDebitService.dataDebit(dataDebitId)
-      } yield debit
+    SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner()))
+      .andThen(SecuredServerAction)
+      .async { request =>
+        implicit val db: HATPostgresProfile.api.Database = request.server.db
+        val disabled = for {
+          _ <- dataDebitService.dataDebitDisable(dataDebitId)
+          debit <- dataDebitService.dataDebit(dataDebitId)
+        } yield debit
 
-      disabled
-        .andThen(
-          dataEventDispatcher
-            .dispatchEventMaybeDataDebit(DataDebitOperations.Disable())
-        )
-        .map {
-          case Some(debit) => Ok(Json.toJson(debit))
-          case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
-        }
-    }
+        disabled
+          .andThen(
+            dataEventDispatcher
+              .dispatchEventMaybeDataDebit(DataDebitOperations.Disable(), request.identity, request.server.domain)
+          )
+          .map {
+            case Some(debit) => Ok(Json.toJson(debit))
+            case None        => BadRequest(Json.toJson(Errors.dataDebitDoesNotExist))
+          }
+      }
 
   private def makeData(
       namespace: String,
