@@ -60,6 +60,11 @@ jobs:
       - name: Container Registry - Push
         run: docker push ${{ env.REPOSITORY }}:${{ github.sha }}
 
-      - name: Container Registry - Logout
-        if: always()
-        run: docker logout
+      - name: Invoke deployment
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Deploy
+          ref: refs/heads/main
+          repo: dataswift/deployments
+          token: ${{ secrets.BOT_GITHUB_TOKEN }}
+          inputs: '{ "service": "hat", "environment": "sandbox", "version": "${{ env.REPOSITORY }}:${{ github.sha }}" }'

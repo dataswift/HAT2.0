@@ -68,4 +68,4 @@ jobs:
           ref: refs/heads/main
           repo: dataswift/deployments
           token: ${{ secrets.BOT_GITHUB_TOKEN }}
-          inputs: '{ "service": "hat", "version": "${{ env.REPOSITORY }}:${{ github.sha }}" }'
+          inputs: '{ "service": "hat", "environment": "dev", "version": "${{ env.REPOSITORY }}:${{ github.sha }}" }'
