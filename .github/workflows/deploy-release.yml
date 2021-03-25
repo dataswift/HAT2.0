@@ -22,7 +22,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup 
+      - name: Setup
         uses: actions/setup-java@v1
         with:
           java-version: 11
@@ -31,8 +31,8 @@ jobs:
 
       - name: Frontend
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOYER_MASTER_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYER_MASTER_SECRET_ACCESS_KEY }}
         run: |
           cd ./hat/app/org/hatdex/hat/phata/assets/
           aws s3 cp s3://${{ env.RUMPEL_BUCKET }}/${{ env.RUMPEL }} rumpel --recursive --region eu-west-1
@@ -57,12 +57,21 @@ jobs:
           username: ${{ secrets.DOCKERHUB_DATASWIFT_USER }}
           password: ${{ secrets.DOCKERHUB_DATASWIFT_PASS }}
 
-      - name: Container Registry - Tag
-        run: docker tag ${{ env.REPOSITORY }}:${{ github.sha }} ${{ env.REPOSITORY }}:$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g") 
-        
-      - name: Container Registry - Push
-        run: docker push ${{ env.REPOSITORY }}:$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g") 
+      - name: Get the tag
+        id: git
+        run: echo ::set-output name=TAG::$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g")
 
-      - name: Container Registry - Logout
-        if: always()
-        run: docker logout
+      - name: Container Registry - Tag
+        run: docker tag ${{ env.REPOSITORY }}:${{ github.sha }} ${{ env.REPOSITORY }}:${{ steps.git.outputs.TAG }}
+
+      - name: Container Registry - Push
+        run: docker push ${{ env.REPOSITORY }}:${{ steps.git.outputs.TAG }}
+
+      - name: Invoke deployment
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Deploy
+          ref: refs/heads/main
+          repo: dataswift/deployments
+          token: ${{ secrets.BOT_GITHUB_TOKEN }}
+          inputs: '{ "service": "hat", "environment": "production", "version": "${{ env.REPOSITORY }}:${{ steps.git.outputs.TAG }}" }'
