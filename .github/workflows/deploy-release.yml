@@ -57,11 +57,15 @@ jobs:
           username: ${{ secrets.DOCKERHUB_DATASWIFT_USER }}
           password: ${{ secrets.DOCKERHUB_DATASWIFT_PASS }}
 
+      - name: Get the tag
+        id: git
+        run: echo ::set-output name=TAG::$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g")
+
       - name: Container Registry - Tag
-        run: docker tag ${{ env.REPOSITORY }}:${{ github.sha }} ${{ env.REPOSITORY }}:$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g")
+        run: docker tag ${{ env.REPOSITORY }}:${{ github.sha }} ${{ env.REPOSITORY }}:${{ steps.git.outputs.TAG }}
 
       - name: Container Registry - Push
-        run: docker push ${{ env.REPOSITORY }}:$(echo $GITHUB_REF | sed -e "s/refs\/tags\///g")
+        run: docker push ${{ env.REPOSITORY }}:${{ steps.git.outputs.TAG }}
 
       - name: Invoke deployment
         uses: benc-uk/workflow-dispatch@v1
@@ -70,4 +74,4 @@ jobs:
           ref: refs/heads/main
           repo: dataswift/deployments
           token: ${{ secrets.BOT_GITHUB_TOKEN }}
-          inputs: '{ "service": "hat", "environment": "production", "version": "${{ env.REPOSITORY }}:${{ github.sha }}" }'
+          inputs: '{ "service": "hat", "environment": "production", "version": "${{ env.REPOSITORY }}:${{ steps.git.outputs.TAG }}" }'
