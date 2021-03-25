@@ -65,6 +65,7 @@ jobs:
         uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: Deploy
-          repo: dataswift/.github
+          ref: refs/heads/main
+          repo: dataswift/deployments
           token: ${{ secrets.BOT_GITHUB_TOKEN }}
           inputs: '{ "service": "hat", "version": "${{ env.REPOSITORY }}:${{ github.sha }}" }'
