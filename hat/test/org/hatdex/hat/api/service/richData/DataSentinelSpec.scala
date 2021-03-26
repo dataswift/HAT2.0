@@ -32,7 +32,7 @@ import io.dataswift.test.common.BaseSpec
 import org.joda.time.DateTime
 import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 
-class DataSentintelSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with RichDataServiceContext {
+class DataSentinelSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with RichDataServiceContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -43,16 +43,16 @@ class DataSentintelSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndA
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
-    val endpointRecrodsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
+    val endpointRecordsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
 
     val action = DBIO.seq(
       DataDebitBundle.filter(_.bundleId.like("test%")).delete,
       DataDebitContract.filter(_.dataDebitKey.like("test%")).delete,
       DataCombinators.filter(_.combinatorId.like("test%")).delete,
       DataBundles.filter(_.bundleId.like("test%")).delete,
-      DataJsonGroupRecords.filter(_.recordId in endpointRecrodsQuery).delete,
+      DataJsonGroupRecords.filter(_.recordId in endpointRecordsQuery).delete,
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
-      DataJson.filter(r => r.recordId in endpointRecrodsQuery).delete
+      DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
     )
 
     Await.result(db.run(action.transactionally), 60.seconds)
