@@ -93,17 +93,12 @@ object Dependencies {
     }
 
     object Backend {
-      private val version = "2.1.3_play2.6.25"
+      private val version = "2.2.1_play2625"
       val logPlay         = "io.dataswift" %% "log-play" % version
-      val hatPlay         = "io.dataswift" %% "hat-play" % version
-      val hatModels       = "io.dataswift" %% "hat"      % version
-      val dexPlay         = "io.dataswift" %% "dex-play" % version
-      val dexModels       = "io.dataswift" %% "dex"      % version
     }
 
     object HATDeX {
-      val hatClient = "org.hatdex" %% "hat-client-scala-play" % "3.1.2" intransitive ()
-      val dexClient = "org.hatdex" %% "dex-client-scala"      % "3.1.2" intransitive ()
+      val dexClient = "org.hatdex" %% "dex-client-scala"      % "3.2.0_play26"
       val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.1.2"
     }
 
