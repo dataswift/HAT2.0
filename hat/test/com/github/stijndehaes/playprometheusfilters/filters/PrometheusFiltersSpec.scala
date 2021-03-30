@@ -3,19 +3,19 @@ package com.github.stijndehaes.playprometheusfilters.filters
 
 /* Test cases based on the archived project: https://github.com/stijndehaes/play-prometheus-filters */
 
-import javax.inject.Inject
-
-import scala.concurrent.ExecutionContextExecutor
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import io.dataswift.test.common.BaseSpec
 import io.prometheus.client.CollectorRegistry
+import play.api.Configuration
 import play.api.libs.typedmap.TypedMap
 import play.api.mvc._
 import play.api.routing.{ HandlerDef, Router }
 import play.api.test.Helpers._
 import play.api.test._
+
+import javax.inject.Inject
+import scala.concurrent.ExecutionContextExecutor
 
 class PrometheusFiltersSpec extends BaseSpec {
 
@@ -23,17 +23,18 @@ class PrometheusFiltersSpec extends BaseSpec {
   implicit val system: ActorSystem             = ActorSystem()
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
+  private val noExclusionsConfig = Configuration("play-prometheus-filters.exclude.paths" -> Nil)
+
   "LatencyFilter" should "Measure the latency" in {
     // I needed to have an independnt collector per test, otherwise they complain about having duplicate labels.
     val registryOne = new CollectorRegistry(true)
-    val promFilter  = new LatencyFilter(registryOne)
+    val promFilter  = new LatencyFilter(registryOne, noExclusionsConfig)
     val fakeRequest = FakeRequest()
     val action      = new MockController(stubControllerComponents()).ok
 
     await(promFilter(action)(fakeRequest).run())
 
-    //val metrics = promFilter.metrics(0).metric.collect()
-    val metrics = promFilter.requestLatency.collect()
+    val metrics = promFilter.metrics.head.metric.collect()
     metrics must have size 1
     val samples     = metrics.get(0).samples
     val countSample = samples.get(samples.size() - 2)
@@ -52,7 +53,8 @@ class PrometheusFiltersSpec extends BaseSpec {
 
     // I needed to have an independnt collector per test, otherwise they complain about having duplicate labels.
     val registryTwo = new CollectorRegistry(true)
-    val promFilter  = new StatusAndRouteLatencyFilter(registryTwo)
+    val promFilter =
+      new StatusAndRouteLatencyFilter(registryTwo, noExclusionsConfig)
     val fakeRequest = FakeRequest().withAttrs(
       TypedMap(
         Router.Attrs.HandlerDef -> HandlerDef(null, null, "promController", "test", null, "GET", "/path", null, null)
@@ -64,7 +66,7 @@ class PrometheusFiltersSpec extends BaseSpec {
 
     await(promFilter(action)(fakeRequest).run())
 
-    val metrics = promFilter.requestLatency.collect()
+    val metrics = promFilter.metrics.head.metric.collect()
     metrics must have size 1
     val samples = metrics.get(0).samples
 
@@ -81,13 +83,13 @@ class PrometheusFiltersSpec extends BaseSpec {
   "StatusCounterFilter" should "Count the requests with status" in {
     // I needed to have an independnt collector per test, otherwise they complain about having duplicate labels.
     val registryThree = new CollectorRegistry(true)
-    val promFilter    = new StatusCounterFilter(registryThree)
+    val promFilter    = new StatusCounterFilter(registryThree, noExclusionsConfig)
     val fakeRequest   = FakeRequest()
     val action        = new MockController(stubControllerComponents()).ok
 
     await(promFilter(action)(fakeRequest).run())
 
-    val metrics = promFilter.requestCounter.collect()
+    val metrics = promFilter.metrics.head.metric.collect()
     metrics must have size 1
     val samples = metrics.get(0).samples
     samples.get(0).value mustBe 1.0
