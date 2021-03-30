@@ -51,9 +51,10 @@ import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.AdjudicatorRequestTypes._
 import org.hatdex.hat.utils.{ AdjudicatorRequest, HatBodyParsers, LoggingProvider }
-import org.hatdex.libs.dal.HATPostgresProfile.api.Database
+import org.hatdex.libs.dal.HATPostgresProfile
 import pdi.jwt.JwtClaim
 import play.api.Configuration
+import play.api.libs.json.Reads._
 import play.api.libs.json.{ JsArray, JsValue, Json, Reads }
 import play.api.libs.ws.WSClient
 import play.api.mvc._
@@ -72,10 +73,7 @@ class ContractData @Inject() (
     components: ControllerComponents,
     parsers: HatBodyParsers,
     silhouette: Silhouette[HatApiAuthEnvironment],
-    dataEventDispatcher: HatDataEventDispatcher,
     dataService: RichDataService,
-    bundleService: RichBundleService,
-    dataDebitService: DataDebitContractService,
     loggingProvider: LoggingProvider,
     configuration: Configuration,
     usersService: UsersService,
@@ -163,7 +161,7 @@ class ContractData @Inject() (
       namespace: String,
       endpoint: String,
       skipErrors: Option[Boolean]
-    )(implicit db: Database): Future[Result] =
+    )(implicit hatServer: HatServer): Future[Result] =
     contractDataCreate.body match {
       // Missing Json Body, do nothing, return error
       case None =>
@@ -196,7 +194,7 @@ class ContractData @Inject() (
       hatUser: HatUser,
       contractDataUpdate: ContractDataUpdateRequest,
       namespace: String
-    )(implicit db: Database): Future[Result] =
+    )(implicit hatServer: HatServer): Future[Result] =
     contractDataUpdate.body.length match {
       // Missing Json Body, do nothing, return error
       case 0 =>
@@ -225,21 +223,23 @@ class ContractData @Inject() (
       ordering: Option[String],
       skip: Option[Int],
       take: Option[Int]): Action[ContractDataReadRequest] =
-    UserAwareAction.async(parsers.json[ContractDataReadRequest]) { request =>
+    UserAwareAction.async(parsers.json[ContractDataReadRequest]) { implicit request =>
       val contractDataRead      = request.body
       val maybeContractDataInfo = refineContractDataReadRequest(contractDataRead)
       maybeContractDataInfo match {
         case Some(contractDataInfo) =>
-          contractValid(contractDataInfo, namespace)(request.server).flatMap {
-            case (Some(_), Right(RequestVerified(_))) =>
-              makeData(namespace, endpoint, orderBy, ordering, skip, take)(request.server.db)
-            case (_, Left(x)) => handleFailedRequestAssessment(x)
-            case (None, Right(_)) =>
-              logger.warn(s"ReadContract: Hat not found for:  ${contractDataRead}")
-              handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
-            case (_, _) =>
-              logger.warn(s"ReadContract: Fallback Error case for: ${contractDataRead}")
-              handleFailedRequestAssessment(GeneralError)
+          contractValid(contractDataInfo, namespace).flatMap { contractOk =>
+            contractOk match {
+              case (Some(_hatUser @ _), Right(RequestVerified(_ns @ _))) =>
+                makeData(namespace, endpoint, orderBy, ordering, skip, take)
+              case (_, Left(x)) => handleFailedRequestAssessment(x)
+              case (None, Right(_)) =>
+                logger.warn(s"ReadContract: Hat not found for:  ${contractDataRead}")
+                handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
+              case (_, _) =>
+                logger.warn(s"ReadContract: Fallback Error case for: ${contractDataRead}")
+                handleFailedRequestAssessment(GeneralError)
+            }
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
       }
@@ -249,42 +249,46 @@ class ContractData @Inject() (
       namespace: String,
       endpoint: String,
       skipErrors: Option[Boolean]): Action[ContractDataCreateRequest] =
-    UserAwareAction.async(parsers.json[ContractDataCreateRequest]) { request =>
+    UserAwareAction.async(parsers.json[ContractDataCreateRequest]) { implicit request =>
       val contractDataCreate    = request.body
       val maybeContractDataInfo = refineContractDataCreateRequest(contractDataCreate)
       maybeContractDataInfo match {
         case Some(contractDataInfo) =>
-          contractValid(contractDataInfo, namespace)(request.server).flatMap {
-            case (Some(hatUser), Right(RequestVerified(_))) =>
-              handleCreateContractData(hatUser, contractDataCreate, namespace, endpoint, skipErrors)(request.server.db)
-            case (_, Left(x)) => handleFailedRequestAssessment(x)
-            case (None, Right(_)) =>
-              logger.warn(s"CreateContract: Hat not found for:  ${contractDataCreate}")
-              handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
-            case (_, _) =>
-              logger.warn(s"CreateContract: Fallback Error case for: ${contractDataCreate}")
-              handleFailedRequestAssessment(GeneralError)
+          contractValid(contractDataInfo, namespace).flatMap { contractOk =>
+            contractOk match {
+              case (Some(hatUser), Right(RequestVerified(_ns))) =>
+                handleCreateContractData(hatUser, contractDataCreate, namespace, endpoint, skipErrors)
+              case (_, Left(x)) => handleFailedRequestAssessment(x)
+              case (None, Right(_)) =>
+                logger.warn(s"CreateContract: Hat not found for:  ${contractDataCreate}")
+                handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
+              case (_, _) =>
+                logger.warn(s"CreateContract: Fallback Error case for: ${contractDataCreate}")
+                handleFailedRequestAssessment(GeneralError)
+            }
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
       }
     }
 
   def updateContractData(namespace: String): Action[ContractDataUpdateRequest] =
-    UserAwareAction.async(parsers.json[ContractDataUpdateRequest]) { request =>
+    UserAwareAction.async(parsers.json[ContractDataUpdateRequest]) { implicit request =>
       val contractDataUpdate    = request.body
       val maybeContractDataInfo = refineContractDataUpdateRequest(contractDataUpdate)
       maybeContractDataInfo match {
         case Some(contractDataInfo) =>
-          contractValid(contractDataInfo, namespace)(request.server).flatMap {
-            case (Some(hatUser), Right(RequestVerified(ns))) =>
-              handleUpdateContractData(hatUser, contractDataUpdate, ns)(request.server.db)
-            case (_, Left(x)) => handleFailedRequestAssessment(x)
-            case (None, Right(_)) =>
-              logger.warn(s"UpdateContract: Hat not found for:  ${contractDataUpdate}")
-              handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
-            case (_, _) =>
-              logger.warn(s"UpdateContract: Fallback Error case for:  ${contractDataUpdate}")
-              handleFailedRequestAssessment(GeneralError)
+          contractValid(contractDataInfo, namespace).flatMap { contractOk =>
+            contractOk match {
+              case (Some(hatUser), Right(RequestVerified(ns))) =>
+                handleUpdateContractData(hatUser, contractDataUpdate, ns)
+              case (_, Left(x)) => handleFailedRequestAssessment(x)
+              case (None, Right(_)) =>
+                logger.warn(s"UpdateContract: Hat not found for:  ${contractDataUpdate}")
+                handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
+              case (_, _) =>
+                logger.warn(s"UpdateContract: Fallback Error case for:  ${contractDataUpdate}")
+                handleFailedRequestAssessment(GeneralError)
+            }
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
       }
@@ -297,7 +301,7 @@ class ContractData @Inject() (
       ordering: Option[String],
       skip: Option[Int],
       take: Option[Int]
-    )(implicit db: Database): Future[Result] = {
+    )(implicit db: HATPostgresProfile.api.Database): Future[Result] = {
     val dataEndpoint = s"$namespace/$endpoint"
     val query =
       Seq(EndpointQuery(dataEndpoint, None, None, None))
@@ -353,7 +357,7 @@ class ContractData @Inject() (
       array: JsArray,
       dataEndpoint: String,
       skipErrors: Option[Boolean]
-    )(implicit db: Database): Future[Result] = {
+    )(implicit hatServer: HatServer): Future[Result] = {
     val values =
       array.value.map(EndpointData(dataEndpoint, None, None, None, _, None))
     logger.info(s"handleJsArray: Values: ${values}")
@@ -366,7 +370,7 @@ class ContractData @Inject() (
       userId: UUID,
       value: JsValue,
       dataEndpoint: String
-    )(implicit db: Database): Future[Result] = {
+    )(implicit hatServer: HatServer): Future[Result] = {
     val values = Seq(EndpointData(dataEndpoint, None, None, None, value, None))
     logger.info(s"handleJsArray: Values: ${values}")
     dataService

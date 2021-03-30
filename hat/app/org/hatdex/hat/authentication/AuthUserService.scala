@@ -34,7 +34,17 @@ import org.hatdex.hat.resourceManagement.HatServer
 /**
   * Handles actions to users.
   */
-trait AuthUserService extends IdentityService[HatUser] {
+trait AuthUserService extends IdentityService[HatUser, HatServer] {
+
+  /**
+    * Retrieves a user that matches the specified ID.
+    *
+    * @param id The ID to retrieve a user.
+    * @return The retrieved user or None if no user could be retrieved for the given ID.
+    */
+  def retrieve(
+      loginInfo: LoginInfo
+    )(implicit dyn: HatServer): Future[Option[HatUser]]
 
   /**
     * Saves a user.

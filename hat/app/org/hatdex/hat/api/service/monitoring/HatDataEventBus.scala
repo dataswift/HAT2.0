@@ -96,15 +96,14 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
   protected val logger: Logger = Logger(this.getClass)
 
   def dispatchEventDataCreated(
-      message: String,
-      user: HatUser,
-      domain: String): PartialFunction[Try[Seq[EndpointData]], Unit] = {
+      message: String
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[Seq[EndpointData]], Unit] = {
     case Success(saved) if saved.nonEmpty =>
       logger.debug(s"Dispatch data created event: $message")
       dataEventBus.publish(
         HatDataEventBus.DataCreatedEvent(
-          domain,
-          user.clean,
+          request.dynamicEnvironment.domain,
+          request.identity.clean,
           DateTime.now(),
           message,
           saved
@@ -113,14 +112,13 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
   }
 
   def dispatchEventDataDebit(
-      operation: DataDebitOperations.DataDebitOperation,
-      user: HatUser,
-      domain: String): PartialFunction[Try[_], Unit] = {
+      operation: DataDebitOperations.DataDebitOperation
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[_], Unit] = {
     case Success(saved: RichDataDebit) =>
       dataEventBus.publish(
         HatDataEventBus.RichDataDebitEvent(
-          domain,
-          user.clean,
+          request.dynamicEnvironment.domain,
+          request.identity.clean,
           DateTime.now(),
           operation.toString,
           saved,
@@ -130,8 +128,8 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
     case Success(saved: DataDebit) =>
       dataEventBus.publish(
         HatDataEventBus.DataDebitEvent(
-          domain,
-          user.clean,
+          request.dynamicEnvironment.domain,
+          request.identity.clean,
           DateTime.now(),
           operation.toString,
           saved,
@@ -141,14 +139,13 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
   }
 
   def dispatchEventMaybeDataDebit(
-      operation: DataDebitOperations.DataDebitOperation,
-      user: HatUser,
-      domain: String): PartialFunction[Try[Option[_]], Unit] = {
+      operation: DataDebitOperations.DataDebitOperation
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[Option[_]], Unit] = {
     case Success(Some(saved: RichDataDebit)) =>
       dataEventBus.publish(
         HatDataEventBus.RichDataDebitEvent(
-          domain,
-          user.clean,
+          request.dynamicEnvironment.domain,
+          request.identity.clean,
           DateTime.now(),
           operation.toString,
           saved,
@@ -158,8 +155,8 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
     case Success(Some(saved: DataDebit)) =>
       dataEventBus.publish(
         HatDataEventBus.DataDebitEvent(
-          domain,
-          user.clean,
+          request.dynamicEnvironment.domain,
+          request.identity.clean,
           DateTime.now(),
           operation.toString,
           saved,
@@ -169,14 +166,13 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
   }
 
   def dispatchEventDataDebitValues(
-      debit: RichDataDebit,
-      user: HatUser,
-      domain: String): PartialFunction[Try[RichDataDebitData], Unit] = {
+      debit: RichDataDebit
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[RichDataDebitData], Unit] = {
     case Success(data) =>
       dataEventBus.publish(
         HatDataEventBus.RichDataRetrievedEvent(
-          domain,
-          user.clean,
+          request.dynamicEnvironment.domain,
+          request.identity.clean,
           DateTime.now(),
           DataDebitOperations.GetValues().toString,
           debit,
@@ -186,14 +182,13 @@ class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
   }
 
   def dispatchEventDataDebitValues(
-      debit: DataDebit,
-      user: HatUser,
-      domain: String): PartialFunction[Try[DataDebitData], Unit] = {
+      debit: DataDebit
+    )(implicit request: SecuredRequest[HatApiAuthEnvironment, _]): PartialFunction[Try[DataDebitData], Unit] = {
     case Success(data) =>
       dataEventBus.publish(
         HatDataEventBus.DataRetrievedEvent(
-          domain,
-          user.clean,
+          request.dynamicEnvironment.domain,
+          request.identity.clean,
           DateTime.now(),
           DataDebitOperations.GetValues().toString,
           debit,

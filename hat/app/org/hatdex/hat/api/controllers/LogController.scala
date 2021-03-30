@@ -27,10 +27,10 @@ class LogController @Inject() (
   private val logger = Logger(this.getClass)
 
   def logFrontendAction(): Action[LogRequest] =
-    SecuredAction.andThen(SecuredServerAction).async(parsers.json[LogRequest]) { request =>
+    SecuredAction.async(parsers.json[LogRequest]) { request =>
       val logRequest = request.body
-      val hatAddress = request.server.domain
-      val appDetails = request.wrapped.authenticator.customClaims.flatMap { customClaims =>
+      val hatAddress = request.dynamicEnvironment.domain
+      val appDetails = request.authenticator.customClaims.flatMap { customClaims =>
         Try(
           (
             (customClaims \ "application").as[String],

@@ -63,7 +63,7 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
             config.getBoolean("experimental")
           )
         }
-      }
+      }.toSeq
     }
 
   @Provides

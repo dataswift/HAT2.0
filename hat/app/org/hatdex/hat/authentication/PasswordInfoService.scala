@@ -37,11 +37,11 @@ import org.hatdex.hat.resourceManagement.HatServer
 import play.api.Logger
 
 class PasswordInfoService @Inject() (
-    userService: AuthUserService
+    userService: AuthUserServiceImpl
   )(implicit ec: DalExecutionContext)
-    extends DelegableAuthInfoDAO[PasswordInfo] {
+    extends DelegableAuthInfoDAO[PasswordInfo, HatServer] {
 
-  private val logger: Logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
   def add(
       loginInfo: LoginInfo,

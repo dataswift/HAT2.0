@@ -24,14 +24,16 @@
 package org.hatdex.hat.api.service
 
 import javax.inject.{ Inject, Singleton }
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Failure
+
 import akka.Done
 import akka.actor.{ ActorSystem, Scheduler }
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
-import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
+import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
 import io.dataswift.models.hat.{ DataStats, Platform }
 import org.hatdex.dex.apiV2.DexClient
 import org.hatdex.hat.authentication.models.HatUser
@@ -51,7 +53,10 @@ class StatsReporter @Inject() (
     configuration: Configuration,
     system: ActorSystem,
     usersService: UsersService,
-    authenticatorService: AuthenticatorService[JWTAuthenticator]) {
+    authenticatorService: AuthenticatorService[
+      JWTRS256Authenticator,
+      HatServer
+    ]) {
 
   val logger: Logger = Logger(this.getClass)
 

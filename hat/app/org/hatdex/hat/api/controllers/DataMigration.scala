@@ -54,16 +54,19 @@ class DataMigration @Inject() (
       toNamespace: String,
       toEndpoint: String,
       includeTimestamp: Boolean): Action[AnyContent] =
-    SecuredAction(WithRole(Owner())).andThen(SecuredServerAction).async { request =>
-      logger.info(s"Migrate data from $fromSource:$fromTableName to $toNamespace/$toEndpoint")
+    SecuredAction(WithRole(Owner())).async { implicit request =>
+      logger.info(
+        s"Migrate data from $fromSource:$fromTableName to $toNamespace/$toEndpoint"
+      )
       val eventualCount = migrationService.migrateOldData(
+        request.identity.userId,
         s"$toNamespace/$toEndpoint",
         fromTableName,
         fromSource,
         None,
         None,
         includeTimestamp
-      )(request)
+      )
 
       eventualCount map { count =>
         Ok(Json.toJson(SuccessResponse(s"Migrated $count records")))

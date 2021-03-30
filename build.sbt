@@ -12,7 +12,6 @@ lazy val hat = project
   .enablePlugins(SbtWeb, SbtSassify, SbtGzip, SbtDigest)
   .enablePlugins(BasicSettings)
   .settings(
-    dependencyOverrides := Library.overrides,
     libraryDependencies ++= Seq(
           Library.Play.ws,
           filters,
@@ -21,6 +20,7 @@ lazy val hat = project
           Library.Play.playGuard,
           Library.Play.json,
           Library.Play.jsonJoda,
+          Library.Play.test,
           Library.Play.Silhouette.passwordBcrypt,
           Library.Play.Silhouette.persistence,
           Library.Play.Silhouette.cryptoJca,
@@ -36,6 +36,7 @@ lazy val hat = project
           Library.Utils.prettyTime,
           Library.Utils.nbvcxz,
           Library.Utils.alpakkaAwsLambda,
+          Library.Utils.playMemcached % Runtime,
           Library.scalaGuice,
           Library.circeConfig,
           Library.ContractLibrary.adjudicator,
@@ -46,7 +47,6 @@ lazy val hat = project
     libraryDependencies := (buildEnv.value match {
           case BuildEnv.Developement | BuildEnv.Test =>
             libraryDependencies.value ++ Seq(
-                  Library.Play.test,
                   Library.Play.Silhouette.silhouetteTestkit,
                   Library.ScalaTest.scalaplaytestmock,
                   Library.Dataswift.integrationTestCommon,
@@ -55,6 +55,7 @@ lazy val hat = project
           case BuildEnv.Stage | BuildEnv.Production =>
             libraryDependencies.value
         }),
+    parallelExecution in Test := false,
     pipelineStages in Assets := Seq(digest),
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     aggregate in update := false,

@@ -24,6 +24,10 @@
 
 package org.hatdex.hat.api.controllers
 
+import javax.inject.Inject
+
+import scala.concurrent.{ ExecutionContext, Future }
+
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.json.ApplicationJsonProtocol
@@ -33,9 +37,6 @@ import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnviro
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
-
-import javax.inject.Inject
-import scala.concurrent.{ ExecutionContext, Future }
 
 class Applications @Inject() (
     components: ControllerComponents,
@@ -71,18 +72,19 @@ class Applications @Inject() (
   def applications(): Action[AnyContent] =
     SecuredAction(
       ContainsApplicationRole(Owner(), ApplicationList()) || WithRole(Owner())
-    ).andThen(SecuredServerAction).async { implicit request =>
+    ).async { implicit request =>
       for {
-        apps <- applicationsService.applicationStatus()(request.server, request.identity, request)
+        apps <- applicationsService.applicationStatus()
         filterApps <- ContainsApplicationRole(ApplicationList()).isAuthorized(
                         request.identity,
-                        request.wrapped.authenticator
+                        request.authenticator,
+                        request.dynamicEnvironment
                       )
-        maybeApp <- request.wrapped.authenticator.customClaims
+        maybeApp <- request.authenticator.customClaims
                       .flatMap(customClaims => (customClaims \ "application").asOpt[String])
                       .map(app =>
                         applicationsService.applicationStatus(app)(
-                          request.server,
+                          request.dynamicEnvironment,
                           request.identity,
                           request
                         )
@@ -111,23 +113,22 @@ class Applications @Inject() (
       ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(
           Owner()
         )
-    ).andThen(SecuredServerAction).async { implicit request =>
+    ).async { implicit request =>
       val bustCache = request.headers.get("Cache-Control").contains("no-cache")
       logger.info(s"Getting app $id status (bust cache: $bustCache)")
-      applicationsService.applicationStatus(id, bustCache)(request.server, request.identity, request).map {
-        maybeStatus =>
-          maybeStatus map { status =>
-            Ok(Json.toJson(status))
-          } getOrElse {
-            NotFound(
-              Json.toJson(
-                ErrorMessage(
-                  "Application not Found",
-                  s"Application $id does not appear to be a valid application registered with the DEX"
-                )
+      applicationsService.applicationStatus(id, bustCache).map { maybeStatus =>
+        maybeStatus map { status =>
+          Ok(Json.toJson(status))
+        } getOrElse {
+          NotFound(
+            Json.toJson(
+              ErrorMessage(
+                "Application not Found",
+                s"Application $id does not appear to be a valid application registered with the DEX"
               )
             )
-          }
+          )
+        }
       }
 
     }
@@ -137,16 +138,16 @@ class Applications @Inject() (
       ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(
           Owner()
         )
-    ).andThen(SecuredServerAction).async { implicit request =>
-      applicationsService.applicationStatus(id)(request.server, request.identity, request).flatMap { maybeStatus =>
+    ).async { implicit request =>
+      applicationsService.applicationStatus(id).flatMap { maybeStatus =>
         maybeStatus map { status =>
           applicationsService
-            .setup(status)(request.server, request.identity, request)
+            .setup(status)
             .map(s => Ok(Json.toJson(s)))
             .recover {
               case e: RichDataDuplicateBundleException =>
                 logger.error(
-                  s"[${request.server.domain}] Error setting up application - duplicate bundle: ${e.getMessage}"
+                  s"[${request.dynamicEnvironment.domain}] Error setting up application - duplicate bundle: ${e.getMessage}"
                 )
                 InternalServerError(
                   Json.toJson(
@@ -178,11 +179,11 @@ class Applications @Inject() (
       ContainsApplicationRole(Owner(), ApplicationManage(id)) || WithRole(
           Owner()
         )
-    ).andThen(SecuredServerAction).async { implicit request =>
-      applicationsService.applicationStatus(id)(request.server, request.identity, request).flatMap { maybeStatus =>
+    ).async { implicit request =>
+      applicationsService.applicationStatus(id).flatMap { maybeStatus =>
         maybeStatus map { status =>
           applicationsService
-            .disable(status)(request.server, request.identity, request)
+            .disable(status)
             .map(s => Ok(Json.toJson(s)))
         } getOrElse {
           Future.successful(
@@ -202,15 +203,15 @@ class Applications @Inject() (
   def applicationToken(id: String): Action[AnyContent] =
     SecuredAction(
       ContainsApplicationRole(RetrieveApplicationToken(id)) || WithRole(Owner())
-    ).andThen(SecuredServerAction).async { implicit request =>
+    ).async { implicit request =>
       applicationsService
-        .applicationStatus(id)(request.server, request.identity, request)
+        .applicationStatus(id)
         .flatMap { maybeStatus =>
           maybeStatus map { status =>
             applicationsService.applicationToken(
               request.identity,
               status.application
-            )(request.server, request) map { token =>
+            ) map { token =>
               Ok(Json.toJson(token))
             }
           } getOrElse {

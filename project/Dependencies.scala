@@ -29,7 +29,7 @@ object Dependencies {
   private object Version {
     val Play: String          = play.core.PlayVersion.current
     val PlayJson              = "2.9.2"
-    val Silhouette            = "7.0.0"
+    val Silhouette            = "5.2.0"
     val AtlassianJwt          = "3.2.0"
     val AwsSdk                = "1.11.979"
     val AlpakkaAwsLambda      = "1.1.2"
@@ -39,10 +39,11 @@ object Dependencies {
     val PlayGuard             = "2.5.0"
     val PrettyTime            = "5.0.0.Final"
     val Nbvcxz                = "1.5.0"
+    val PlayMemcached         = "0.11.0"
 
     val Adjudicator = "0.1.0-SNAPSHOT"
-    val DexClient   = "3.2.0"
-    val DsBackend   = "2.1.1"
+    val DexClient   = "3.2.1"
+    val DsBackend   = "2.2.1"
     val DsTestTools = "0.2.3"
   }
 
@@ -59,7 +60,7 @@ object Dependencies {
     object Play {
       val ws        = "com.typesafe.play"   %% "play-ws"        % Version.Play
       val cache     = "com.typesafe.play"   %% "play-cache"     % Version.Play
-      val test      = "com.typesafe.play"   %% "play-test"      % Version.Play % Test
+      val test      = "com.typesafe.play"   %% "play-test"      % Version.Play
       val jdbc      = "com.typesafe.play"   %% "play-jdbc"      % Version.Play
       val json      = "com.typesafe.play"   %% "play-json"      % Version.PlayJson
       val jsonJoda  = "com.typesafe.play"   %% "play-json-joda" % Version.PlayJson
@@ -72,11 +73,11 @@ object Dependencies {
       }
 
       object Silhouette {
-        val passwordBcrypt    = "com.mohiva" %% "play-silhouette-password-bcrypt" % Version.Silhouette
-        val persistence       = "com.mohiva" %% "play-silhouette-persistence"     % Version.Silhouette
-        val cryptoJca         = "com.mohiva" %% "play-silhouette-crypto-jca"      % Version.Silhouette
-        val silhouette        = "com.mohiva" %% "play-silhouette"                 % Version.Silhouette
-        val silhouetteTestkit = "com.mohiva" %% "play-silhouette-testkit"         % Version.Silhouette % Test
+        val passwordBcrypt    = "com.mohiva" %% "dataswift-play-silhouette-password-bcrypt" % Version.Silhouette
+        val persistence       = "com.mohiva" %% "dataswift-play-silhouette-persistence"     % Version.Silhouette
+        val cryptoJca         = "com.mohiva" %% "dataswift-play-silhouette-crypto-jca"      % Version.Silhouette
+        val silhouette        = "com.mohiva" %% "dataswift-play-silhouette"                 % Version.Silhouette
+        val silhouetteTestkit = "com.mohiva" %% "dataswift-play-silhouette-testkit"         % Version.Silhouette % Test
       }
     }
 
@@ -88,6 +89,7 @@ object Dependencies {
       val nbvcxz           = "me.gosimple"            % "nbvcxz"                        % Version.Nbvcxz
       val alpakkaAwsLambda = "com.lightbend.akka"    %% "akka-stream-alpakka-awslambda" % Version.AlpakkaAwsLambda
       val apacheCommonLang = "org.apache.commons"     % "commons-lang3"                 % Version.CommonsLang3
+      val playMemcached    = "com.github.mumoshu"    %% "play2-memcached-play28"        % Version.PlayMemcached
     }
 
     object Backend {
@@ -120,17 +122,5 @@ object Dependencies {
       val testCommon            = "io.dataswift" %% "test-common"             % Version.DsTestTools % Test
       val integrationTestCommon = "io.dataswift" %% "integration-test-common" % Version.DsTestTools % Test
     }
-
-    val overrides = Seq(
-//      "com.typesafe.play" %% "play"                  % Play.version,
-//      "com.typesafe.play" %% "play-server"           % Play.version,
-//      "com.typesafe.play" %% "play-ahc-ws"           % Play.version,
-//      "com.typesafe.play" %% "play-akka-http-server" % Play.version,
-//      "com.typesafe.play" %% "filters-helpers"       % Play.version,
-//      Library.Play.cache,
-//      Library.Play.ws,
-//      Library.Play.json,
-//      Library.Play.jsonJoda
-    )
   }
 }

@@ -26,6 +26,7 @@ package org.hatdex.hat.resourceManagement
 
 import java.security.interfaces.{ RSAPrivateKey, RSAPublicKey }
 
+import com.mohiva.play.silhouette.api.DynamicSecureEnvironment
 import org.hatdex.libs.dal.HATPostgresProfile.api.Database
 
 case class HatServer(
@@ -35,3 +36,6 @@ case class HatServer(
     privateKey: RSAPrivateKey,
     publicKey: RSAPublicKey,
     db: Database)
+    extends DynamicSecureEnvironment {
+  def id = domain
+}

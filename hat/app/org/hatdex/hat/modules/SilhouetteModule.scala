@@ -24,9 +24,6 @@
 
 package org.hatdex.hat.modules
 
-import javax.inject.{ Singleton => JSingleton }
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
 import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper
 import com.amazonaws.services.simpleemail.{ AmazonSimpleEmailService, AmazonSimpleEmailServiceClientBuilder }
 import com.google.inject.name.Named
@@ -49,11 +46,15 @@ import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.service.{ MailTokenService, MailTokenUserService }
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models.MailTokenUser
-import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider, HatServerProviderImpl }
+import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, HatMailerImpl }
 import play.api.http.HttpErrorHandler
 import play.api.libs.ws.WSClient
 import play.api.{ ConfigLoader, Configuration }
+
+import javax.inject.{ Singleton => JSingleton }
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * The Guice module which wires all Silhouette dependencies.
@@ -64,7 +65,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteCo
     * Configures the module.
     */
   override def configure(): Unit = {
-    bind[HatServerProviderImpl].to[HatServerProvider]
+    bind[DynamicEnvironmentProviderService[HatServer]].to[HatServerProvider]
 
     bind[Silhouette[HatApiAuthEnvironment]]
       .to[SilhouetteProvider[HatApiAuthEnvironment]]
@@ -113,13 +114,20 @@ class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteCo
   @Provides
   def provideEnvironment(
       userService: AuthUserService,
-      authenticatorService: AuthenticatorService[JWTAuthenticator],
+      authenticatorService: AuthenticatorService[
+        JWTRS256Authenticator,
+        HatServer
+      ],
+      dynamicEnvironmentProviderService: DynamicEnvironmentProviderService[
+        HatServer
+      ],
       eventBus: EventBus
     )(implicit ec: ExecutionContext): Environment[HatApiAuthEnvironment] =
     Environment[HatApiAuthEnvironment](
       userService,
       authenticatorService,
       Seq(),
+      dynamicEnvironmentProviderService,
       eventBus
     )
 
