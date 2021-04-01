@@ -114,7 +114,7 @@ object Dependencies {
     }
 
     object ScalaTest {
-      val scalaplaytestmock = "org.scalatestplus" %% "mockito-3-4"  % "3.2.6.0" % Test
+      val scalaplaytestmock = "org.scalatestplus" %% "mockito-3-4"  % "3.2.7.0" % Test
       val mockitoCore       = "org.mockito"        % "mockito-core" % "3.4.6"   % Test
     }
 
