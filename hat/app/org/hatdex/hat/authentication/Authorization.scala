@@ -24,31 +24,28 @@
 
 package org.hatdex.hat.authentication
 
+import scala.concurrent.{ ExecutionContext, Future }
+
 import com.mohiva.play.silhouette.api.Authorization
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
-import org.hatdex.hat.api.models.applications.HatApplication
-import org.hatdex.hat.api.models.{ Owner, RetrieveApplicationToken, UserRole }
+import io.dataswift.models.hat.applications.HatApplication
+import io.dataswift.models.hat.{ Owner, RetrieveApplicationToken, UserRole }
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.resourceManagement.HatServer
 import play.api.mvc.Request
 
-import scala.concurrent.{ ExecutionContext, Future }
-
 object WithTokenParameters {
   def roleMatchesToken(
       user: HatUser,
-      authenticator: JWTRS256Authenticator
-    ): Boolean = {
+      authenticator: JWTRS256Authenticator): Boolean =
     authenticator.customClaims.flatMap { claims =>
-      (claims \ "accessScope").validate[String].asOpt.map(_.toLowerCase).map {
-        scope =>
-          user.roles.map(_.title.toLowerCase).contains(scope)
+      (claims \ "accessScope").validate[String].asOpt.map(_.toLowerCase).map { scope =>
+        user.roles.map(_.title.toLowerCase).contains(scope)
       }
     } getOrElse {
       true
     }
-  }
 }
 
 /**
@@ -56,14 +53,12 @@ object WithTokenParameters {
   * Master service is always allowed.
   * Ex: WithService("serviceA", "serviceB") => only users with services "serviceA" OR "serviceB" (or "master") are allowed.
   */
-case class WithRole(anyOf: UserRole*)
-    extends Authorization[HatUser, JWTRS256Authenticator, HatServer] {
+case class WithRole(anyOf: UserRole*) extends Authorization[HatUser, JWTRS256Authenticator, HatServer] {
   def isAuthorized[B](
       user: HatUser,
       authenticator: JWTRS256Authenticator,
       hat: HatServer
-    )(implicit r: Request[B]
-    ): Future[Boolean] = {
+    )(implicit r: Request[B]): Future[Boolean] = {
     authenticator.customClaims.map(_ \ "application")
     Future.successful {
       WithRole.isAuthorized(user, authenticator, anyOf: _*)
@@ -75,14 +70,12 @@ object WithRole {
   def isAuthorized(
       user: HatUser,
       authenticator: JWTRS256Authenticator,
-      anyOf: UserRole*
-    ): Boolean = {
+      anyOf: UserRole*): Boolean =
     WithTokenParameters.roleMatchesToken(user, authenticator) &&
-    authenticator.customClaims.forall(
-      !_.keys.contains("application")
-    ) && // must NOT contain application claim
-    (anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner()))
-  }
+      authenticator.customClaims.forall(
+        !_.keys.contains("application")
+      ) && // must NOT contain application claim
+      (anyOf.intersect(user.roles).nonEmpty || user.roles.contains(Owner()))
 }
 
 /**
@@ -90,34 +83,29 @@ object WithRole {
   * Master service is always allowed.
   * Ex: Restrict("serviceA", "serviceB") => only users with services "serviceA" AND "serviceB" (or "master") are allowed.
   */
-case class WithRoles(allOf: UserRole*)
-    extends Authorization[HatUser, JWTRS256Authenticator, HatServer] {
+case class WithRoles(allOf: UserRole*) extends Authorization[HatUser, JWTRS256Authenticator, HatServer] {
   def isAuthorized[B](
       user: HatUser,
       authenticator: JWTRS256Authenticator,
       hat: HatServer
-    )(implicit r: Request[B]
-    ): Future[Boolean] = {
+    )(implicit r: Request[B]): Future[Boolean] =
     Future.successful {
       WithRoles.isAuthorized(user, authenticator, allOf: _*)
     }
-  }
 }
 
 object WithRoles {
   def isAuthorized(
       user: HatUser,
       authenticator: JWTRS256Authenticator,
-      allOf: UserRole*
-    ): Boolean = {
+      allOf: UserRole*): Boolean =
     WithTokenParameters.roleMatchesToken(user, authenticator) &&
-    authenticator.customClaims.forall(
-      !_.keys.contains("application")
-    ) && // must NOT contain application claim
-    (allOf.intersect(user.roles).length == allOf.length || user.roles.contains(
-      Owner()
-    ))
-  }
+      authenticator.customClaims.forall(
+        !_.keys.contains("application")
+      ) && // must NOT contain application claim
+      (allOf.intersect(user.roles).length == allOf.length || user.roles.contains(
+          Owner()
+        ))
 }
 
 case class ContainsApplicationRole(
@@ -130,8 +118,7 @@ case class ContainsApplicationRole(
       user: HatUser,
       authenticator: JWTRS256Authenticator,
       hat: HatServer
-    )(implicit r: Request[B]
-    ): Future[Boolean] = {
+    )(implicit r: Request[B]): Future[Boolean] = {
     val containsApplicationClaim = authenticator.customClaims.exists(
       _.keys.contains("application")
     ) // MUST contain application claim
@@ -166,16 +153,15 @@ object ContainsApplicationRole {
       user: HatUser,
       appStatus: HatApplication,
       authenticator: JWTRS256Authenticator,
-      anyOf: UserRole*
-    ): Boolean = {
+      anyOf: UserRole*): Boolean = {
     val containsApplicationClaim = authenticator.customClaims.forall(
       _.keys.contains("application")
-    ) // must NOT contain application claim
+    ) // is None OR contains an application claim
     val appStatusOk =
       (appStatus.enabled && appStatus.application.permissions.rolesGranted
-        .exists(role =>
-          anyOf.exists(req => roleSatisfiesRequirement(role, req))
-        )) || // App has been granted a specific role
+          .exists(role =>
+            anyOf.exists(req => roleSatisfiesRequirement(role, req))
+          )) || // App has been granted a specific role
         (appStatus.application.permissions.rolesGranted
           .contains(Owner()) && // Or is an owner app
           anyOf.exists(r =>
@@ -189,8 +175,7 @@ object ContainsApplicationRole {
 
   def roleSatisfiesRequirement(
       role: UserRole,
-      requirement: UserRole
-    ): Boolean =
+      requirement: UserRole): Boolean =
     role.getClass == requirement.getClass &&
       role.title == requirement.title &&
       (role.extra == requirement.extra || requirement.extra.contains("*"))

@@ -1,8 +1,9 @@
 import Dependencies.Library
-import Dependencies.Versions
-
-import sbt.Keys._
 import com.typesafe.sbt.packager.docker._
+import sbt.Keys._
+
+val codeguruURI =
+  "https://repo1.maven.org/maven2/software/amazon/codeguruprofiler/codeguru-profiler-java-agent-standalone/1.1.0/codeguru-profiler-java-agent-standalone-1.1.0.jar"
 
 // the application
 lazy val hat = project
@@ -16,55 +17,49 @@ lazy val hat = project
           filters,
           ehcache,
           Library.Play.cache,
-          Library.Play.test,
-          Library.Play.mailer,
-          Library.Play.mailerGuice,
           Library.Play.playGuard,
           Library.Play.json,
           Library.Play.jsonJoda,
+          Library.Play.test,
           Library.Play.Silhouette.passwordBcrypt,
           Library.Play.Silhouette.persistence,
           Library.Play.Silhouette.cryptoJca,
           Library.Play.Silhouette.silhouette,
           Library.Play.Jwt.atlassianJwtCore,
           Library.Play.Jwt.bouncyCastlePkix,
-          Library.Specs2.core,
-          Library.Specs2.matcherExtra,
-          Library.Specs2.mock,
-          Library.HATDeX.hatClient,
+          Library.Backend.logPlay,
           Library.HATDeX.dexClient,
           Library.HATDeX.codegen,
-          Library.Utils.pegdown,
           Library.Utils.awsJavaS3Sdk,
+          Library.Utils.awsJavaSesSdk,
+          Library.Utils.awsJavaLambdaSdk,
           Library.Utils.prettyTime,
           Library.Utils.nbvcxz,
-          Library.Utils.playMemcached,
-          Library.Utils.elasticacheClusterClient,
           Library.Utils.alpakkaAwsLambda,
+          Library.Utils.playMemcached % Runtime,
           Library.scalaGuice,
           Library.circeConfig,
           Library.ContractLibrary.adjudicator,
-          Library.Utils.apacheCommonLang
+          Library.Utils.apacheCommonLang,
+          Library.Prometheus.filters,
+          Library.janino
         ),
     libraryDependencies := (buildEnv.value match {
           case BuildEnv.Developement | BuildEnv.Test =>
             libraryDependencies.value ++ Seq(
-                  Library.Play.specs2,
-                  Library.Specs2.core,
-                  Library.Specs2.matcherExtra,
-                  Library.Specs2.mock,
-                  Library.Play.Silhouette.silhouetteTestkit
+                  Library.Play.Silhouette.silhouetteTestkit,
+                  Library.ScalaTest.scalaplaytestmock,
+                  Library.Dataswift.integrationTestCommon,
+                  Library.ScalaTest.mockitoCore
                 )
           case BuildEnv.Stage | BuildEnv.Production =>
-            libraryDependencies.value.map(excludeSpecs2)
+            libraryDependencies.value
         }),
-    libraryDependencies += "org.codehaus.janino" % "janino"       % "3.1.2",
-    libraryDependencies += "org.mockito"         % "mockito-core" % "3.3.3" % Test,
+    parallelExecution in Test := false,
     pipelineStages in Assets := Seq(digest),
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     aggregate in update := false,
     cancelable in Global := false, // Workaround sbt/bug#4822 Unable to Ctrl-C out of 'run' in a Play app
-    testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "exclude", "REMOTE"),
     TwirlKeys.templateImports := Seq(),
     play.sbt.routes.RoutesKeys.routesImport := Seq.empty,
     routesGenerator := InjectedRoutesGenerator,
@@ -82,11 +77,39 @@ lazy val hat = project
     // as Bash is incompatible with Alpine
     javaOptions in Universal ++= Seq(),
     packageName in Docker := "hat",
-    maintainer in Docker := "andrius.aucinas@hatdex.org",
     version in Docker := version.value,
-    dockerBaseImage := "adoptopenjdk/openjdk11:jre-11.0.7_10-alpine",
-    dockerExposedPorts := Seq(9000),
-    dockerEntrypoint := Seq("bin/hat")
+    // add a flag to not run in prod
+    // modify the binary to include "-javaagent:codeguru-profiler-java-agent-standalone-1.1.0.jar="profilingGroupName:HatInDev,heapSummaryEnabled:true"
+    dockerCommands := (buildEnv.value match {
+          case BuildEnv.Developement | BuildEnv.Test =>
+            Seq(
+              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine"),
+              Cmd("WORKDIR", "/opt/docker/bin"),
+              Cmd("CMD", s"./${packageName.value}"),
+              Cmd("EXPOSE", "9000"),
+              Cmd("RUN", s"apk add --no-cache wget; wget --no-check-certificate ${codeguruURI}"),
+              Cmd("USER", "daemon"),
+              Cmd("COPY", "--chown=daemon:daemon", "1/opt", "opt", "/opt/")
+            )
+          case BuildEnv.Stage | BuildEnv.Production =>
+            Seq(
+              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine"),
+              Cmd("WORKDIR", "/opt/docker/bin"),
+              Cmd("CMD", s"./${packageName.value}"),
+              Cmd("EXPOSE", "9000"),
+              Cmd("USER", "daemon"),
+              Cmd("COPY", "--chown=daemon:daemon", "1/opt", "opt", "/opt/")
+            )
+        }),
+    javaOptions in Universal ++= (buildEnv.value match {
+          case BuildEnv.Developement | BuildEnv.Test =>
+            Seq(
+              "-javaagent:/opt/docker/bin/codeguru-profiler-java-agent-standalone-1.1.0.jar=\"profilingGroupName:HatInDev,heapSummaryEnabled:true\""
+            )
+          case BuildEnv.Stage | BuildEnv.Production =>
+            Seq(
+            )
+        })
   )
   .enablePlugins(SlickCodeGeneratorPlugin)
   .settings(
@@ -98,19 +121,33 @@ lazy val hat = project
     codegenConfig in gentables := "dev.conf",
     codegenEvolutions in gentables := "devhatMigrations"
   )
+  .settings(
+    // Omit Tables.scala for scalafix, since it is autogenerated
+    unmanagedSources.in(Compile, scalafix) := unmanagedSources
+          .in(Compile)
+          .value
+          .filterNot(
+            _.getAbsolutePath.contains(
+              "dal/Tables.scala"
+            )
+          ),
+    // Omit Tables.scala for scalafmt, since it is autogenerated
+    unmanagedSources.in(Compile, scalafmt) := unmanagedSources
+          .in(Compile)
+          .value
+          .filterNot(
+            _.getAbsolutePath.contains(
+              "dal/Tables.scala"
+            )
+          )
+  )
 
 // Enable the semantic DB for scalafix
 inThisBuild(
   List(
-    scalaVersion := Versions.scalaVersion,
+    scalaVersion := "2.13.5",
     semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision
+    semanticdbVersion := scalafixSemanticdb.revision,
+    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"
   )
 )
-
-// Omit Tables.scala for scalafix, since it is autogenerated
-unmanagedSources.in(Compile, scalafix) :=
-  unmanagedSources
-    .in(Compile)
-    .value
-    .filterNot(file => file.getName == "Tables.scala")

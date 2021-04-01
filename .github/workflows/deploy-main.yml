@@ -1,0 +1,70 @@
+name: Deploy Main
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  RUMPEL: live
+  RUMPEL_ALT: latest
+  RUMPEL_BUCKET: dswift-hat-sandbox-frontend-build-artifacts
+  REPOSITORY: dataswift/hat
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Setup
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+          java-package: jdk
+          architecture: x64
+
+      - name: Frontend
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOYER_SANDBOX_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYER_SANDBOX_SECRET_ACCESS_KEY }}
+        run: |
+          cd ./hat/app/org/hatdex/hat/phata/assets/
+          aws s3 cp s3://${{ env.RUMPEL_BUCKET }}/${{ env.RUMPEL }} rumpel --recursive --region eu-west-1
+          aws s3 cp s3://${{ env.RUMPEL_BUCKET }}/${{ env.RUMPEL_ALT }} alt-rumpel --recursive --region eu-west-1
+          cp rumpel/*.js* js/
+          cp rumpel/*.css stylesheets/
+          gzip --keep --force js/*.bundle.js
+          cp -r rumpel/assets/* .
+          cp -r alt-rumpel/* .
+          rm -r rumpel
+          rm -r alt-rumpel
+          cd -
+
+      - name: Build
+        run: |
+          sbt -Denv=prod -Dhttp.port=8080 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null docker:stage
+          docker build -t ${{ env.REPOSITORY }}:${{ github.sha }} hat/target/docker/stage
+
+      - name: Container Registry - Login
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_DATASWIFT_USER }}
+          password: ${{ secrets.DOCKERHUB_DATASWIFT_PASS }}
+
+      - name: Container Registry - Push
+        run: docker push ${{ env.REPOSITORY }}:${{ github.sha }}
+
+      - name: Invoke deployment
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Deploy
+          ref: refs/heads/main
+          repo: dataswift/deployments
+          token: ${{ secrets.BOT_GITHUB_TOKEN }}
+          inputs: '{ "service": "hat", "environment": "sandbox", "version": "${{ env.REPOSITORY }}:${{ github.sha }}" }'

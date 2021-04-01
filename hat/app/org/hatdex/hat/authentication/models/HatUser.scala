@@ -27,7 +27,7 @@ package org.hatdex.hat.authentication.models
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
-import org.hatdex.hat.api.models._
+import io.dataswift.models.hat._
 import org.hatdex.hat.resourceManagement.HatServer
 
 case class HatUser(
@@ -41,25 +41,22 @@ case class HatUser(
   def loginInfo(implicit hatServer: HatServer): LoginInfo =
     LoginInfo(hatServer.domain, email)
 
-  def withRoles(roles: UserRole*): HatUser = {
+  def withRoles(roles: UserRole*): HatUser =
     this.copy(roles = (this.roles.toSet ++ roles.toSet).toSeq)
-  }
 
-  def withoutRoles(roles: UserRole*): HatUser = {
+  def withoutRoles(roles: UserRole*): HatUser =
     this.copy(roles = (this.roles.toSet -- roles.toSet).toSeq)
-  }
 
   lazy val primaryRole: UserRole = {
-    if (roles.contains(Owner())) {
+    if (roles.contains(Owner()))
       Owner()
-    } else if (roles.contains(Platform())) {
+    else if (roles.contains(Platform()))
       Platform()
-    } else if (roles.contains(DataCredit(""))) {
+    else if (roles.contains(DataCredit("")))
       DataCredit("")
-    } else if (roles.contains(DataDebitOwner(""))) {
+    else if (roles.contains(DataDebitOwner("")))
       DataDebitOwner("")
-    } else {
+    else
       Validate()
-    }
   }
 }

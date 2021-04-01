@@ -1,0 +1,29 @@
+@import play.api.i18n.{ Lang, MessagesApi }
+
+@(email: String, loginLink: String)(implicit messagesApi: MessagesApi, language: Lang)
+
+@messagesApi("email.dataswift.auth.welcome.to.dataswift")
+
+@messagesApi("email.dataswift.auth.hi")
+
+@email
+
+@messagesApi("email.dataswift.auth.completed.successfully")
+
+@messagesApi("email.dataswift.auth.login.to.your.account")
+
+@loginLink
+
+@messagesApi("email.dataswift.auth.login")
+
+@messagesApi("email.dataswift.auth.issued.by")
+
+====================
+
+@messagesApi("email.dataswift.auth.footer.copyrights")
+
+@messagesApi("email.dataswift.auth.footer.authorised.by")
+
+@messagesApi"email.dataswift.auth.footer.hat.community.foundation")
+
+@messagesApi("email.dataswift.auth.footer.financial.conduct.authority")

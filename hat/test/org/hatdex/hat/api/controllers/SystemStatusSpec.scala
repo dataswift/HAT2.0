@@ -24,86 +24,82 @@
 
 package org.hatdex.hat.api.controllers
 
-import com.mohiva.play.silhouette.test._
-import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.json.HatJsonFormats
-import org.hatdex.hat.api.models.{ HatStatus, StatusKind }
-import org.specs2.concurrent.ExecutionEnv
-import org.specs2.mock.Mockito
-import org.specs2.specification.BeforeAll
-import play.api.Logger
-import play.api.test.{ FakeRequest, PlaySpecification }
-
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class SystemStatusSpec(implicit ee: ExecutionEnv) extends PlaySpecification with Mockito with HATTestContext with BeforeAll with HatJsonFormats {
+import com.mohiva.play.silhouette.test._
+import io.dataswift.models.hat.json.HatJsonFormats
+import io.dataswift.models.hat.{ HatStatus, StatusKind }
+import io.dataswift.test.common.BaseSpec
+import org.hatdex.hat.api.HATTestContext
+import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
+import play.api.Logger
+import play.api.test.{ FakeRequest }
+import play.api.test.Helpers._
 
-  val logger = Logger(this.getClass)
+class SystemStatusSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with HATTestContext {
 
-  sequential
+  import HatJsonFormats._
+  import scala.concurrent.ExecutionContext.Implicits.global
+  val logger: Logger = Logger(this.getClass)
 
-  def beforeAll: Unit = {
+  override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
+
+  "The `update` method" should "Return success response after updating HAT database" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+
+    val controller = application.injector.instanceOf[SystemStatus]
+    val result     = controller.update().apply(request)
+
+    status(result) must equal(OK)
+    (contentAsJson(result) \ "message").as[String] must equal("Database updated")
   }
 
-  "The `update` method" should {
-    "Return success response after updating HAT database" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+  "The `status` method" should "Return current utilisation" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
 
-      val controller = application.injector.instanceOf[SystemStatus]
-      val result = controller.update().apply(request)
+    val controller = application.injector.instanceOf[SystemStatus]
+    val result     = controller.status().apply(request)
 
-      status(result) must equalTo(OK)
-      (contentAsJson(result) \ "message").as[String] must be equalTo "Database updated"
-    }
+    status(result) must equal(OK)
+    val stats = contentAsJson(result).as[List[HatStatus]]
+
+    stats.length must be > 0
+    stats.find(_.title == "Previous Login").get.kind must equal(StatusKind.Text("Never", None))
+    stats.find(_.title == "Owner Email").get.kind must equal(StatusKind.Text("user@hat.org", None))
+    stats.find(_.title == "Database Storage").get.kind mustBe a[StatusKind.Numeric]
+    stats.find(_.title == "File Storage").get.kind mustBe a[StatusKind.Numeric]
+    stats.find(_.title == "Database Storage Used").get.kind mustBe a[StatusKind.Numeric]
+    stats.find(_.title == "File Storage Used").get.kind mustBe a[StatusKind.Numeric]
+    stats.find(_.title == "Database Storage Used Share").get.kind mustBe a[StatusKind.Numeric]
+    stats.find(_.title == "File Storage Used Share").get.kind mustBe a[StatusKind.Numeric]
   }
 
-  "The `status` method" should {
-    "Return current utilisation" in {
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
+  it should "Return last login information when present" in {
+    val authRequest = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withHeaders("username" -> "hatuser", "password" -> "pa55w0rd")
 
-      val controller = application.injector.instanceOf[SystemStatus]
-      val result = controller.status().apply(request)
+    val authController = application.injector.instanceOf[Authentication]
 
-      status(result) must equalTo(OK)
-      val stats = contentAsJson(result).as[List[HatStatus]]
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
 
-      stats.length must be greaterThan 0
-      stats.find(_.title == "Previous Login").get.kind must be equalTo StatusKind.Text("Never", None)
-      stats.find(_.title == "Owner Email").get.kind must be equalTo StatusKind.Text("user@hat.org", None)
-      stats.find(_.title == "Database Storage").get.kind must haveClass[StatusKind.Numeric]
-      stats.find(_.title == "File Storage").get.kind must haveClass[StatusKind.Numeric]
-      stats.find(_.title == "Database Storage Used").get.kind must haveClass[StatusKind.Numeric]
-      stats.find(_.title == "File Storage Used").get.kind must haveClass[StatusKind.Numeric]
-      stats.find(_.title == "Database Storage Used Share").get.kind must haveClass[StatusKind.Numeric]
-      stats.find(_.title == "File Storage Used Share").get.kind must haveClass[StatusKind.Numeric]
-    }
+    val controller = application.injector.instanceOf[SystemStatus]
 
-    "Return last login information when present" in {
-      val authRequest = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withHeaders("username" -> "hatuser", "password" -> "pa55w0rd")
+    val result = for {
+      _ <- authController.accessToken().apply(authRequest)
+      // login twice - the second login is considered "current", not previous
+      _ <- authController.accessToken().apply(authRequest)
+      r <- controller.status().apply(request)
+    } yield r
 
-      val authController = application.injector.instanceOf[Authentication]
+    status(result) must equal(OK)
+    val stats = contentAsJson(result).as[List[HatStatus]]
 
-      val request = FakeRequest("GET", "http://hat.hubofallthings.net")
-        .withAuthenticator(owner.loginInfo)
-
-      val controller = application.injector.instanceOf[SystemStatus]
-
-      val result = for {
-        _ <- authController.accessToken().apply(authRequest)
-        // login twice - the second login is considered "current", not previous
-        _ <- authController.accessToken().apply(authRequest)
-        r <- controller.status().apply(request)
-      } yield r
-
-      status(result) must equalTo(OK)
-      val stats = contentAsJson(result).as[List[HatStatus]]
-
-      stats.length must be greaterThan 0
-      stats.find(_.title == "Previous Login").get.kind must be equalTo StatusKind.Text("moments ago", None)
-    }
+    stats.length must be > 0
+    stats.find(_.title == "Previous Login").get.kind must equal(StatusKind.Text("moments ago", None))
   }
+
 }

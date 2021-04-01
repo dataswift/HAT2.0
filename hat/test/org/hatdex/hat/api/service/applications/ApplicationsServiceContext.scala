@@ -24,18 +24,21 @@
 
 package org.hatdex.hat.api.service.applications
 
+import scala.concurrent.Future
+
 import akka.Done
 import akka.util.ByteString
 import com.google.inject.AbstractModule
+import io.dataswift.models.hat._
+import io.dataswift.models.hat.applications.ApplicationKind.{ App, Contract }
+import io.dataswift.models.hat.applications._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.api.models.applications.ApplicationKind.{ App, Contract }
-import org.hatdex.hat.api.models.applications._
-import org.hatdex.hat.api.models._
 import org.hatdex.hat.api.service.StatsReporter
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, HatServer }
+import org.hatdex.hat.resourceManagement.HatServer
 import org.joda.time.{ DateTime, LocalDateTime }
+import org.mockito.ArgumentMatchers.{ any }
 import org.mockito.Mockito.when
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -44,14 +47,13 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.test.FakeRequest
-import play.api.{ Logger, Application => PlayApplication }
+import play.api.{ Application => PlayApplication, Logger }
 import play.core.server.Server
-
-import scala.concurrent.Future
+//import org.mockito.Mockito._
 
 trait ApplicationsServiceContext extends HATTestContext {
   override lazy val application: PlayApplication = new GuiceApplicationBuilder()
-    .configure(FakeHatConfiguration.config)
+    .configure(conf)
     .overrides(new FakeModule)
     .overrides(new CustomisedFakeModule)
     .build()
@@ -66,74 +68,80 @@ trait ApplicationsServiceContext extends HATTestContext {
   val kind: ApplicationKind.Kind = App(
     url = "https://itunes.apple.com/gb/app/notables/id1338778866?mt=8",
     iosUrl = Some("https://itunes.apple.com/gb/app/notables/id1338778866?mt=8"),
-    androidUrl = None)
+    androidUrl = None
+  )
 
   val contractKind: ApplicationKind.Kind = Contract("https://dataswift.io")
 
-  val description = FormattedText(
+  val description: FormattedText = FormattedText(
     text =
       "\n Anything you write online is your data – searches, social media posts, comments and notes.\n\n Start your notes here on Notables, where they will be stored completely privately in your HAT.\n\n Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.\n\n Add images or pin locations as reminders of where you were or what you saw.\n          ",
     markdown = Some(
-      "\n Anything you write online is your data – searches, social media posts, comments and notes.\n\n Start your notes here on Notables, where they will be stored completely privately in your HAT.\n\n Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.\n\n Add images or pin locations as reminders of where you were or what you saw.\n          "),
+      "\n Anything you write online is your data – searches, social media posts, comments and notes.\n\n Start your notes here on Notables, where they will be stored completely privately in your HAT.\n\n Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.\n\n Add images or pin locations as reminders of where you were or what you saw.\n          "
+    ),
     html = Some(
-      "\n <p>Anything you write online is your data – searches, social media posts, comments and notes.</p>\n\n <p>Start your notes here on Notables, where they will be stored completely privately in your HAT.</p>\n\n <p>Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.</p>\n\n <p>Add images or pin locations as reminders of where you were or what you saw.</p>\n          "))
+      "\n <p>Anything you write online is your data – searches, social media posts, comments and notes.</p>\n\n <p>Start your notes here on Notables, where they will be stored completely privately in your HAT.</p>\n\n <p>Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.</p>\n\n <p>Add images or pin locations as reminders of where you were or what you saw.</p>\n          "
+    )
+  )
 
   val dataPreview: Seq[DataFeedItem] = List(
     DataFeedItem(
       source = "notables",
       date = DateTime.parse("2018-02-15T03:52:37.000Z"),
       types = List("note"),
-      title = Some(
-        DataFeedItemTitle(
-          text = "leila.hubat.net",
-          subtitle = None,
-          action = Some("private"))),
-      content = Some(
-        DataFeedItemContent(text = Some("Notes are live!"), None, None, None)),
-      location = None),
+      title = Some(DataFeedItemTitle(text = "leila.hubat.net", subtitle = None, action = Some("private"))),
+      content = Some(DataFeedItemContent(text = Some("Notes are live!"), None, None, None)),
+      location = None
+    ),
     DataFeedItem(
       source = "notables",
       date = DateTime.parse("2018-02-15T03:52:37.317Z"),
       types = List("note"),
-      title = Some(
-        DataFeedItemTitle(
-          text = "leila.hubat.net",
-          subtitle = None,
-          action = Some("private"))),
-      content = Some(
-        DataFeedItemContent(text = Some("And I love 'em!"), None, None, None)),
-      location = None))
+      title = Some(DataFeedItemTitle(text = "leila.hubat.net", subtitle = None, action = Some("private"))),
+      content = Some(DataFeedItemContent(text = Some("And I love 'em!"), None, None, None)),
+      location = None
+    )
+  )
 
-  val graphics = ApplicationGraphics(
+  val graphics: ApplicationGraphics = ApplicationGraphics(
     banner = Drawable(normal = "", small = None, large = None, xlarge = None),
     logo = Drawable(
       normal =
         "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss.png",
       small = None,
       large = None,
-      xlarge = None),
+      xlarge = None
+    ),
     screenshots = List(
       Drawable(
         normal =
           "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss.jpg",
         large = Some(
-          "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-5.jpg"),
+          "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-5.jpg"
+        ),
         small = None,
-        xlarge = None),
+        xlarge = None
+      ),
       Drawable(
         normal =
           "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-2.jpg",
         large = Some(
-          "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-6.jpg"),
+          "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-6.jpg"
+        ),
         small = None,
-        xlarge = None),
+        xlarge = None
+      ),
       Drawable(
         normal =
           "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-3.jpg",
         large = Some(
-          "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-7.jpg"),
+          "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss-7.jpg"
+        ),
         small = None,
-        xlarge = None)))
+        xlarge = None
+      )
+    )
+  )
 
   val appInfo: ApplicationInfo = ApplicationInfo(
     version = Version(1, 0, 0),
@@ -145,16 +153,16 @@ trait ApplicationsServiceContext extends HATTestContext {
     hmiDescription = None,
     termsUrl = "https://example.com/terms",
     privacyPolicyUrl = None,
-    dataUsePurpose =
-      "Data Will be processed by Notables for the following purpose...",
+    dataUsePurpose = "Data Will be processed by Notables for the following purpose...",
     supportContact = "contact@hatdex.org",
     rating = None,
     dataPreview = dataPreview,
     graphics: ApplicationGraphics,
     primaryColor = None,
-    callbackUrl = None)
+    callbackUrl = None
+  )
 
-  val developer = ApplicationDeveloper(
+  val developer: ApplicationDeveloper = ApplicationDeveloper(
     id = "dex",
     name = "HATDeX",
     url = "https://hatdex.org",
@@ -165,47 +173,60 @@ trait ApplicationsServiceContext extends HATTestContext {
           "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss.png",
         small = None,
         large = None,
-        xlarge = None)))
+        xlarge = None
+      )
+    )
+  )
 
-  val dataRetrieved = EndpointDataBundle(
+  val dataRetrieved: EndpointDataBundle = EndpointDataBundle(
     name = "notablesapp",
     bundle = Map(
       "profile" -> PropertyQuery(
-        endpoints = List(
-          EndpointQuery(
-            endpoint = "rumpel/notablesv1",
-            mapping = Some(Json.parse("""{
+            endpoints = List(
+              EndpointQuery(
+                endpoint = "rumpel/notablesv1",
+                mapping = Some(Json.parse("""{
             |                                        "name": "personal.preferredName",
             |                                        "nick": "personal.nickName",
             |                                        "photo_url": "photo.avatar"
             |                                    }""".stripMargin)),
-            filters = Some(
-              List(
-                EndpointQueryFilter(
-                  field = "shared",
-                  transformation = None,
-                  operator = FilterOperator.Contains(Json.parse("true"))))),
-            links = None)),
-        orderBy = Some("updated_time"),
-        ordering = Some("descending"),
-        limit = Some(1))))
+                filters = Some(
+                  List(
+                    EndpointQueryFilter(field = "shared",
+                                        transformation = None,
+                                        operator = FilterOperator.Contains(Json.parse("true"))
+                    )
+                  )
+                ),
+                links = None
+              )
+            ),
+            orderBy = Some("updated_time"),
+            ordering = Some("descending"),
+            limit = Some(1)
+          )
+    )
+  )
 
-  val dataRequired = DataDebitRequest(
+  val dataRequired: DataDebitRequest = DataDebitRequest(
     bundle = dataRetrieved,
     conditions = None,
     startDate = LocalDateTime.parse("2018-02-15T03:52:38"),
     endDate = LocalDateTime.parse("2019-02-15T03:52:38"),
-    rolling = true)
+    rolling = true
+  )
 
-  val permissions = ApplicationPermissions(
+  val permissions: ApplicationPermissions = ApplicationPermissions(
     rolesGranted = List(
       UserRole.userRoleDeserialize("namespacewrite", Some("rumpel")),
       UserRole.userRoleDeserialize("namespaceread", Some("rumpel")),
-      UserRole.userRoleDeserialize("datadebit", Some("app-notables"))),
+      UserRole.userRoleDeserialize("datadebit", Some("app-notables"))
+    ),
     dataRetrieved = Some(dataRetrieved),
-    dataRequired = Some(dataRequired))
+    dataRequired = Some(dataRequired)
+  )
 
-  val setup = ApplicationSetup.External(
+  val setup: ApplicationSetup.External = ApplicationSetup.External(
     url = None,
     iosUrl = Some("notablesapp://notablesapphost"),
     androidUrl = None,
@@ -214,25 +235,27 @@ trait ApplicationsServiceContext extends HATTestContext {
     deauthorizeCallbackUrl = None,
     onboarding = None,
     preferences = None,
-    dependencies = None)
+    dependencies = None
+  )
 
-  val status = ApplicationStatus.Internal(
+  val status: ApplicationStatus.Internal = ApplicationStatus.Internal(
     compatibility = Version(1, 0, 0),
     dataPreviewEndpoint = None,
     staticDataPreviewEndpoint = None,
     recentDataCheckEndpoint = Some("/rumpel/notablesv1"),
-    versionReleaseDate = DateTime.parse("2018-07-24T12:00:00"))
+    versionReleaseDate = DateTime.parse("2018-07-24T12:00:00")
+  )
 
   val notablesApp: Application =
-    Application(
-      id = "notables",
-      kind = kind,
-      info = appInfo,
-      developer = developer,
-      permissions = permissions,
-      dependencies = None,
-      setup = setup,
-      status = status)
+    Application(id = "notables",
+                kind = kind,
+                info = appInfo,
+                developer = developer,
+                permissions = permissions,
+                dependencies = None,
+                setup = setup,
+                status = status
+    )
 
   val fakeContract: Application =
     Application(
@@ -243,79 +266,74 @@ trait ApplicationsServiceContext extends HATTestContext {
       permissions = permissions,
       dependencies = None,
       setup = setup,
-      status = status)
+      status = status
+    )
 
-  val notablesAppDebitless: Application = notablesApp.copy(
-    id = "notables-debitless",
-    permissions = notablesApp.permissions.copy(dataRetrieved = None))
+  val notablesAppDebitless: Application =
+    notablesApp.copy(id = "notables-debitless", permissions = notablesApp.permissions.copy(dataRetrieved = None))
   val notablesAppMissing: Application = notablesAppDebitless.copy(
     id = "notables-missing",
     permissions = notablesApp.permissions.copy(
       dataRetrieved = Some(
         notablesApp.permissions.dataRetrieved.get
-          .copy(name = "notables-missing-bundle"))))
+          .copy(name = "notables-missing-bundle")
+      )
+    )
+  )
   val notablesAppIncompatible: Application = notablesApp.copy(
     id = "notables-incompatible",
     permissions = notablesApp.permissions.copy(
       dataRetrieved = Some(
         notablesApp.permissions.dataRetrieved.get
-          .copy(name = "notables-incompatible-bundle"))))
+          .copy(name = "notables-incompatible-bundle")
+      )
+    )
+  )
   val notablesAppIncompatibleUpdated: Application =
-    notablesAppIncompatible.copy(
-      info = notablesApp.info.copy(version = Version("1.1.0")),
-      status = ApplicationStatus
-        .Internal(Version("1.1.0"), None, None, None, DateTime.now()))
+    notablesAppIncompatible.copy(info = notablesApp.info.copy(version = Version("1.1.0")),
+                                 status = ApplicationStatus
+                                   .Internal(Version("1.1.0"), None, None, None, DateTime.now())
+    )
 
   val notablesAppExternal: Application = notablesApp.copy(
     id = "notables-external",
-    status = ApplicationStatus.External(
-      Version("1.0.0"),
-      "/status",
-      200,
-      None,
-      None,
-      None,
-      DateTime.now()),
+    status = ApplicationStatus.External(Version("1.0.0"), "/status", 200, None, None, None, DateTime.now()),
     permissions = notablesApp.permissions.copy(
       dataRetrieved = Some(
         notablesApp.permissions.dataRetrieved.get
-          .copy(name = "notables-external"))))
+          .copy(name = "notables-external")
+      )
+    )
+  )
   val notablesAppExternalFailing: Application = notablesApp.copy(
     id = "notables-external-failing",
-    status = ApplicationStatus.External(
-      Version("1.0.0"),
-      "/failing",
-      200,
-      None,
-      None,
-      None,
-      DateTime.now()),
+    status = ApplicationStatus.External(Version("1.0.0"), "/failing", 200, None, None, None, DateTime.now()),
     permissions = notablesApp.permissions.copy(
-      dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(
-        name = "notables-external-failing"))))
-  val notablesAppDebitlessWithPlugDependency = notablesAppDebitless.copy(
+      dataRetrieved = Some(notablesApp.permissions.dataRetrieved.get.copy(name = "notables-external-failing"))
+    )
+  )
+  val notablesAppDebitlessWithPlugDependency: Application = notablesAppDebitless.copy(
     id = "notables-plug-dependency",
-    dependencies = Some(ApplicationDependencies(List("plug-app").toArray, List().toArray, List().toArray)))
-  val notablesAppDebitlessWithInvalidDependency = notablesAppDebitless.copy(
+    dependencies = Some(ApplicationDependencies(List("plug-app").toArray, List().toArray, List().toArray))
+  )
+  val notablesAppDebitlessWithInvalidDependency: Application = notablesAppDebitless.copy(
     id = "notables-invalid-dependency",
-    dependencies = Some(ApplicationDependencies(List("invalid-id").toArray, List().toArray, List().toArray)))
-  val plugApp = notablesAppDebitless.copy(
-    id = "plug-app",
-    kind = ApplicationKind.DataPlug("http://dataplug.hat.org"))
+    dependencies = Some(ApplicationDependencies(List("invalid-id").toArray, List().toArray, List().toArray))
+  )
+  val plugApp: Application =
+    notablesAppDebitless.copy(id = "plug-app", kind = ApplicationKind.DataPlug("http://dataplug.hat.org"))
 
-  def withMockWsClient[T](block: WSClient => T): T = {
+  def withMockWsClient[T](block: WSClient => T): T =
     Server.withRouterFromComponents() { components =>
       import components.{ defaultActionBuilder => Action }
       {
         case GET(p"/status") =>
           Action {
-            Results.Ok.sendEntity(
-              HttpEntity.Strict(ByteString("OK"), Some("text/plain")))
+            Results.Ok.sendEntity(HttpEntity.Strict(ByteString("OK"), Some("text/plain")))
           }
         case GET(p"/failing") =>
           Action {
-            Results.Forbidden.sendEntity(
-              HttpEntity.Strict(ByteString("FORBIDDEN"), Some("text/plain")))
+            Results.Forbidden.sendEntity(HttpEntity.Strict(ByteString("FORBIDDEN"), Some("text/plain")))
           }
       }
     } { implicit port =>
@@ -324,9 +342,8 @@ trait ApplicationsServiceContext extends HATTestContext {
         block(client)
       }
     }
-  }
 
-  lazy val mockStatusChecker = {
+  lazy val mockStatusChecker: ApplicationStatusCheckService = {
 
     case class StatusCheck() extends Answer[Future[Boolean]] {
       override def answer(invocation: InvocationOnMock) = {
@@ -343,30 +360,36 @@ trait ApplicationsServiceContext extends HATTestContext {
     }
 
     val mockStatusChecker = mock[ApplicationStatusCheckService]
-    mockStatusChecker.status(any[ApplicationStatus.Internal], any[String]) returns Future
-      .successful(true)
-    when(mockStatusChecker.status(any[ApplicationStatus.Status], any[String]))
-      .thenAnswer(StatusCheck())
+    when(mockStatusChecker.status(any[ApplicationStatus.Internal], any[String])).thenReturn(Future.successful(true))
+    when(mockStatusChecker.status(any[ApplicationStatus.Status], any[String])).thenAnswer(StatusCheck())
 
     mockStatusChecker
-
   }
 
-  lazy val mockStatsReporter = {
+  lazy val mockStatsReporter: StatsReporter = {
     val mockStatsReporter = mock[StatsReporter]
-    mockStatsReporter.registerOwnerConsent(any[String])(any[HatServer]) returns Future
-      .successful(Done)
+    when(mockStatsReporter.registerOwnerConsent(any[String])(any[HatServer])).thenReturn(Future.successful(Done))
+    //(mockStatsReporter.registerOwnerConsent _).expects(any[String]) returns Future.successful(Done)
 
     mockStatsReporter
   }
 
   class CustomisedFakeModule extends AbstractModule with ScalaModule {
     override def configure(): Unit = {
-      bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(
-        Seq(notablesApp, notablesAppDebitless, notablesAppIncompatibleUpdated,
-          notablesAppExternal, notablesAppExternalFailing,
-          notablesAppDebitlessWithPlugDependency, notablesAppDebitlessWithInvalidDependency,
-          plugApp)))
+      bind[TrustedApplicationProvider].toInstance(
+        new TestApplicationProvider(
+          Seq(
+            notablesApp,
+            notablesAppDebitless,
+            notablesAppIncompatibleUpdated,
+            notablesAppExternal,
+            notablesAppExternalFailing,
+            notablesAppDebitlessWithPlugDependency,
+            notablesAppDebitlessWithInvalidDependency,
+            plugApp
+          )
+        )
+      )
 
       bind[ApplicationStatusCheckService].toInstance(mockStatusChecker)
       bind[StatsReporter].toInstance(mockStatsReporter)

@@ -25,20 +25,22 @@
 package org.hatdex.hat.resourceManagement
 
 object FakeHatConfiguration {
-  def config = Map(
-    "play.cache.createBoundCaches" -> "false",
-    "resourceManagement.hatDBIdleTimeout" -> "30 seconds",
-    "hat" -> Map(
-      "hat.hubofallthings.net" -> Map(
-        "ownerEmail" -> "user@hat.org",
-        "database" -> Map(
-          "dataSourceClass" -> "org.postgresql.ds.PGSimpleDataSource",
-          "connectionPool" -> "disabled",
-          "properties" -> Map(
-            "databaseName" -> "testhatdb1",
-            "user" -> "testhatdb1",
-            "password" -> "testing")),
-        "publicKey" -> """-----BEGIN PUBLIC KEY-----
+  def config: Map[String, Object] =
+    Map(
+      "play.cache.createBoundCaches" -> "false",
+      "resourceManagement.hatDBIdleTimeout" -> "30 seconds",
+      "hat" -> Map(
+            "hat.hubofallthings.net" -> Map(
+                  "ownerEmail" -> "user@hat.org",
+                  "database" -> Map(
+                        "dataSourceClass" -> "org.postgresql.ds.PGSimpleDataSource",
+                        "connectionPool" -> "disabled",
+                        "properties" -> Map("databaseName" -> "testhatdb1",
+                                            "user" -> "testhatdb1",
+                                            "password" -> "pa55w0rd"
+                            )
+                      ),
+                  "publicKey" -> """-----BEGIN PUBLIC KEY-----
           |MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAznT9VIjovMEB/hoZ9j+j
           |z9G+WWAsfj9IB7mAMQEICoLMWHC1ZnO4nrqTrRiQFKKrWekjhXFRp8jQZmGhv/sw
           |h5EsIcbRUzNNPSBmiCM0NXHG8wwN8cFigHXLQB0p4ekOWOHpEXfIZkTN5VlpUq1o
@@ -47,7 +49,7 @@ object FakeHatConfiguration {
           |6OxWEvSSxL3+1KQbKi3B9Hg/BNhigGsqQ35GzVPVygT7m90u9nNlxJ7KvfQDQc8t
           |dQIDAQAB
           |-----END PUBLIC KEY-----""".stripMargin,
-        "privateKey" -> """-----BEGIN RSA PRIVATE KEY-----
+                  "privateKey" -> """-----BEGIN RSA PRIVATE KEY-----
           |MIIEowIBAAKCAQEAznT9VIjovMEB/hoZ9j+jz9G+WWAsfj9IB7mAMQEICoLMWHC1
           |ZnO4nrqTrRiQFKKrWekjhXFRp8jQZmGhv/swh5EsIcbRUzNNPSBmiCM0NXHG8wwN
           |8cFigHXLQB0p4ekOWOHpEXfIZkTN5VlpUq1oPdbgMXRW8NdU+Mwr7qQiUnHxaW0i
@@ -73,5 +75,8 @@ object FakeHatConfiguration {
           |vllZLQKBgEuos9IFTnXvF5+NpwQJ54t4YQW/StgPL7sPVA86irXnuT3VwdVNg2VF
           |AZa/LU3jAXt2iTziR0LTKueamj/V+YM4qVyc/LhUPvjKlsCjyLBb647p3C/ogYbj
           |mO9kGhALaD5okBcI/VuAQiFvBXdK0ii/nVcBApXEu47PG4oYUgPI
-          |-----END RSA PRIVATE KEY-----""".stripMargin)))
+          |-----END RSA PRIVATE KEY-----""".stripMargin
+                )
+          )
+    )
 }

@@ -26,23 +26,16 @@ package org.hatdex.hat.she.models
 
 import java.util.UUID
 
-import org.hatdex.hat.api.json.{
+import io.dataswift.models.hat.applications._
+import io.dataswift.models.hat.json.{
   ApplicationJsonProtocol,
   DataFeedItemJsonProtocol,
+  LocalDateTimeMarshalling,
   RichDataJsonFormats
 }
-import org.hatdex.hat.api.models.applications._
-import org.hatdex.hat.api.models.{
-  EndpointData,
-  EndpointDataBundle,
-  FormattedText
-}
+import io.dataswift.models.hat.{ EndpointData, EndpointDataBundle, FormattedText }
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.dal.Tables.{
-  DataBundlesRow,
-  SheFunctionRow,
-  SheFunctionStatusRow
-}
+import org.hatdex.hat.dal.Tables.{ DataBundlesRow, SheFunctionRow, SheFunctionStatusRow }
 import org.joda.time.{ DateTime, Period }
 import play.api.libs.json._
 
@@ -82,7 +75,7 @@ case class FunctionConfiguration(
     trigger: FunctionTrigger.Trigger,
     dataBundle: EndpointDataBundle,
     status: FunctionStatus) {
-  def update(other: FunctionConfiguration): FunctionConfiguration = {
+  def update(other: FunctionConfiguration): FunctionConfiguration =
     FunctionConfiguration(
       this.id,
       other.info,
@@ -96,7 +89,6 @@ case class FunctionConfiguration(
         this.status.executionStarted.orElse(other.status.executionStarted)
       )
     )
-  }
 }
 
 object FunctionConfiguration {
@@ -104,8 +96,7 @@ object FunctionConfiguration {
       function: SheFunctionRow,
       functionStatus: Option[SheFunctionStatusRow],
       bundle: DataBundlesRow,
-      available: Boolean = false
-    ): FunctionConfiguration = {
+      available: Boolean = false): FunctionConfiguration = {
     import DataFeedItemJsonProtocol.feedItemFormat
     import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol._
     import org.hatdex.hat.she.models.FunctionTrigger.Trigger
@@ -167,11 +158,9 @@ object FunctionTrigger {
 
 }
 
-trait FunctionConfigurationJsonProtocol
-    extends JodaWrites
-    with JodaReads
-    with RichDataJsonFormats
-    with DataFeedItemJsonProtocol {
+trait FunctionConfigurationJsonProtocol extends JodaWrites with JodaReads with LocalDateTimeMarshalling {
+  import RichDataJsonFormats._
+  import DataFeedItemJsonProtocol._
   import FunctionTrigger._
   import ApplicationJsonProtocol.applicationDeveloperFormat
   import ApplicationJsonProtocol.applicationGraphicsFormat
@@ -179,7 +168,7 @@ trait FunctionConfigurationJsonProtocol
   import ApplicationJsonProtocol.applicationUpdateNotesFormat
   import ApplicationJsonProtocol.formattedTextFormat
 
-  protected implicit val triggerPeriodicFormat: Format[TriggerPeriodic] =
+  implicit protected val triggerPeriodicFormat: Format[TriggerPeriodic] =
     Json.format[TriggerPeriodic]
 
   implicit val triggerFormat: Format[Trigger] = new Format[Trigger] {
@@ -212,8 +201,7 @@ trait FunctionConfigurationJsonProtocol
   implicit val functionConfigurationFormat: Format[FunctionConfiguration] =
     Json.format[FunctionConfiguration]
   implicit val responseFormat: Format[Response] = Json.format[Response]
-  implicit val requestFormat: Format[Request] = Json.format[Request]
+  implicit val requestFormat: Format[Request]   = Json.format[Request]
 }
 
-object FunctionConfigurationJsonProtocol
-    extends FunctionConfigurationJsonProtocol
+object FunctionConfigurationJsonProtocol extends FunctionConfigurationJsonProtocol
