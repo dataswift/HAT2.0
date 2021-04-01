@@ -43,7 +43,9 @@ class FakeCache extends AsyncCacheApi {
       key: String,
       value: Any,
       expiration: Duration): Future[Done] =
-    Future(store = store + (key -> value)).map(_ => Done)
+    Future {
+      store = store + (key -> value)
+    }.map(_ => Done)
 
   override def get[T](key: String)(implicit evidence$2: ClassTag[T]): Future[Option[T]] =
     Future(store.get(key).asInstanceOf[Option[T]])
@@ -54,11 +56,13 @@ class FakeCache extends AsyncCacheApi {
     )(orElse: => Future[A]
     )(implicit evidence$1: ClassTag[A]): Future[A] =
     Future(store.get(key).asInstanceOf[Option[A]])
-      .flatMap(_.map(Future.successful(_)).getOrElse(orElse))
+      .flatMap(_.map(Future.successful).getOrElse(orElse))
 
   override def remove(key: String): Future[Done] =
-    Future(store = store - key).map(_ => Done)
+    Future { store = store - key }
+      .map(_ => Done)
 
   override def removeAll(): Future[Done] =
-    Future(store = Map[String, Any]()).map(_ => Done)
+    Future { store = Map[String, Any]() }
+      .map(_ => Done)
 }
