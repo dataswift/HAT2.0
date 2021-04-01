@@ -358,7 +358,7 @@ class FitbitProfileStaticDataMapper extends StaticDataEndpointMapper {
         Seq(
           StaticDataValues(
             lastPartOfEndpointString,
-            value.filterKeys(key => key != "features" && key != "topBadges")
+            value.view.filterKeys(key => key != "features" && key != "topBadges").toMap
           )
         )
       case e: JsError =>

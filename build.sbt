@@ -1,8 +1,6 @@
 import Dependencies.Library
-import Dependencies.Versions
-
-import sbt.Keys._
 import com.typesafe.sbt.packager.docker._
+import sbt.Keys._
 
 val codeguruURI =
   "https://repo1.maven.org/maven2/software/amazon/codeguruprofiler/codeguru-profiler-java-agent-standalone/1.1.0/codeguru-profiler-java-agent-standalone-1.1.0.jar"
@@ -14,62 +12,54 @@ lazy val hat = project
   .enablePlugins(SbtWeb, SbtSassify, SbtGzip, SbtDigest)
   .enablePlugins(BasicSettings)
   .settings(
-    dependencyOverrides := Library.overrides,
     libraryDependencies ++= Seq(
           Library.Play.ws,
           filters,
           ehcache,
           Library.Play.cache,
-          Library.Play.test,
           Library.Play.playGuard,
           Library.Play.json,
           Library.Play.jsonJoda,
-          Library.Backend.logPlay,
-          Library.Backend.dexPlay,
-          Library.Backend.hatPlay,
-          Library.Backend.dexModels,
-          Library.Backend.hatModels,
+          Library.Play.test,
           Library.Play.Silhouette.passwordBcrypt,
           Library.Play.Silhouette.persistence,
           Library.Play.Silhouette.cryptoJca,
           Library.Play.Silhouette.silhouette,
           Library.Play.Jwt.atlassianJwtCore,
           Library.Play.Jwt.bouncyCastlePkix,
-          Library.HATDeX.hatClient,
+          Library.Backend.logPlay,
           Library.HATDeX.dexClient,
           Library.HATDeX.codegen,
-          Library.Utils.pegdown,
           Library.Utils.awsJavaS3Sdk,
           Library.Utils.awsJavaSesSdk,
+          Library.Utils.awsJavaLambdaSdk,
           Library.Utils.prettyTime,
           Library.Utils.nbvcxz,
-          Library.Utils.playMemcached,
-          Library.Utils.elasticacheClusterClient,
           Library.Utils.alpakkaAwsLambda,
+          Library.Utils.playMemcached % Runtime,
           Library.scalaGuice,
           Library.circeConfig,
           Library.ContractLibrary.adjudicator,
           Library.Utils.apacheCommonLang,
-          Library.Prometheus.filters
+          Library.Prometheus.filters,
+          Library.janino
         ),
     libraryDependencies := (buildEnv.value match {
           case BuildEnv.Developement | BuildEnv.Test =>
             libraryDependencies.value ++ Seq(
                   Library.Play.Silhouette.silhouetteTestkit,
-                  Library.ScalaTest.scalaplaytest,
                   Library.ScalaTest.scalaplaytestmock,
-                  Library.Dataswift.integrationTestCommon
+                  Library.Dataswift.integrationTestCommon,
+                  Library.ScalaTest.mockitoCore
                 )
           case BuildEnv.Stage | BuildEnv.Production =>
-            libraryDependencies.value.map(excludeSpecs2)
+            libraryDependencies.value
         }),
-    libraryDependencies += "org.codehaus.janino" % "janino"       % "3.1.2",
-    libraryDependencies += "org.mockito"         % "mockito-core" % "3.3.3" % Test,
+    parallelExecution in Test := false,
     pipelineStages in Assets := Seq(digest),
     sourceDirectory in Assets := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     aggregate in update := false,
     cancelable in Global := false, // Workaround sbt/bug#4822 Unable to Ctrl-C out of 'run' in a Play app
-    testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "exclude", "REMOTE"),
     TwirlKeys.templateImports := Seq(),
     play.sbt.routes.RoutesKeys.routesImport := Seq.empty,
     routesGenerator := InjectedRoutesGenerator,
@@ -155,9 +145,9 @@ lazy val hat = project
 // Enable the semantic DB for scalafix
 inThisBuild(
   List(
-    scalaVersion := Versions.scalaVersion,
+    scalaVersion := "2.13.5",
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
-    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.4.4"
+    scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"
   )
 )
