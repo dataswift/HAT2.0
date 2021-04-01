@@ -1,9 +1,8 @@
-package org.hatdex.hat.filters
+package com.github.stijndehaes.playprometheusfilters.filters
+
+import play.api.http.DefaultHttpFilters
 
 import javax.inject.Inject
-
-import com.github.stijndehaes.playprometheusfilters.filters.{ StatusAndRouteLatencyFilter, StatusCounterFilter }
-import play.api.http.DefaultHttpFilters
 
 class PrometheusFilters @Inject() (
     statusCounterFilter: StatusCounterFilter,

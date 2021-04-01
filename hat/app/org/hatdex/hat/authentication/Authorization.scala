@@ -156,7 +156,7 @@ object ContainsApplicationRole {
       anyOf: UserRole*): Boolean = {
     val containsApplicationClaim = authenticator.customClaims.forall(
       _.keys.contains("application")
-    ) // must NOT contain application claim
+    ) // is None OR contains an application claim
     val appStatusOk =
       (appStatus.enabled && appStatus.application.permissions.rolesGranted
           .exists(role =>

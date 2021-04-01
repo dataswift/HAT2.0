@@ -37,7 +37,7 @@ import com.atlassian.jwt.core.keys.KeyUtils
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette, SilhouetteProvider }
-import com.mohiva.play.silhouette.test._
+import com.mohiva.play.silhouette.test.FakeEnvironment
 import io.dataswift.models.hat.{ DataCredit, DataDebitOwner, Owner }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.FakeCache
