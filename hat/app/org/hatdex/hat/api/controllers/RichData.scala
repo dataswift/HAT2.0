@@ -26,19 +26,16 @@ package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
-import eu.timepit.refined.auto._
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.applications.HatApplication
 import io.dataswift.models.hat.json.RichDataJsonFormats
-import org.hatdex.hat.api.service.UsersService
-import org.hatdex.hat.api.service.applications.{ ApplicationsService, TrustedApplicationProvider }
+import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
-import org.hatdex.hat.api.service.richData.{ RichDataServiceException, _ }
+import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider }
 import org.hatdex.libs.dal.HATPostgresProfile
-import play.api.Configuration
 import play.api.libs.json.Reads._
 import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.libs.ws.WSClient
@@ -58,9 +55,6 @@ class RichData @Inject() (
     bundleService: RichBundleService,
     dataDebitService: DataDebitContractService,
     loggingProvider: LoggingProvider,
-    configuration: Configuration,
-    usersService: UsersService,
-    trustedApplicationProvider: TrustedApplicationProvider,
     implicit val ec: ExecutionContext,
     implicit val applicationsService: ApplicationsService
   )(wsClient: WSClient)
@@ -118,7 +112,7 @@ class RichData @Inject() (
             dataService
               .saveData(
                 request.identity.userId,
-                values,
+                values.toSeq,
                 skipErrors.getOrElse(false)
               )
               .andThen(
@@ -492,6 +486,8 @@ class RichData @Inject() (
         )
         .map(debit => Ok(Json.toJson(debit)))
         .recover {
+          case nse: NoSuchElementException =>
+            BadRequest(Json.toJson(Errors.dataDebitMalformed(nse)))
           case err: RichDataServiceException =>
             BadRequest(Json.toJson(Errors.dataDebitMalformed(err)))
         }

@@ -28,7 +28,7 @@ import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import dev.profunktor.auth.jwt.JwtSecretKey
 import io.dataswift.adjudicator.Types.ContractId
-import io.dataswift.models.hat.applications.{ Application, ApplicationKind, ApplicationStatus, HatApplication, Version }
+import io.dataswift.models.hat.applications._
 import io.dataswift.models.hat.{ AccessToken, EndpointQuery }
 import org.hatdex.hat.api.service.applications.ApplicationExceptions.{
   HatApplicationDependencyException,
@@ -130,11 +130,10 @@ class ApplicationsService @Inject() (
       application <- cache
                        .get[HatApplication](appCacheKey(id))
                        .flatMap {
-                         case Some(application) => Future.successful(Some(application))
-                         case None =>
-                           cache.remove(
-                             s"apps:${hat.domain}"
-                           ) // if any item has expired, the aggregated statuses must be refreshed
+                         case app @ Some(_) => Future.successful(app)
+                         case None          =>
+                           // if any item has expired, the aggregated statuses must be refreshed
+                           cache.remove(s"apps:${hat.domain}")
                            for {
                              maybeApp <- trustedApplicationProvider.application(id)
                              setup <- applicationSetupStatus(id)(hat.db)

@@ -1,18 +1,7 @@
-logLevel := Level.Warn
+resolvers += "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com"
 
-// Typesafe Resolvers
-resolvers += Resolver.typesafeRepo("releases")
-
-// S3 based SBT resolver
-resolvers ++= Seq(
-  "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com",
-  "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com"
-)
-
-libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
-
-addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.7.6")
-addSbtPlugin("com.typesafe.play" % "sbt-plugin"          % "2.6.25")
+addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.8.1")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin"          % "2.8.7")
 
 // Code Quality
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.1")
@@ -24,7 +13,7 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-digest"  % "1.1.4")
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip"    % "1.0.2")
 addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.13")
 
-addSbtPlugin("org.hatdex" % "sbt-slick-postgres-generator" % "0.0.11")
+addSbtPlugin("org.hatdex" % "sbt-slick-postgres-generator" % "0.1.2")
 
 // run "sbt dependencyUpdates" to check maven for updates or "sbt ";dependencyUpdates; reload plugins; dependencyUpdates" for sbt plugins
 addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.5.2")

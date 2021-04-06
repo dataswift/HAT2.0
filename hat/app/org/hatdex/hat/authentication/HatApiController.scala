@@ -134,13 +134,15 @@ class UserLimiter @Inject() (
       rateLimiter: RateLimiter
     )(reject: R[_] => Result,
       requestKeyExtractor: R[_] => K): RateLimitActionFilter[R] with ActionFunction[R, R] =
-    new RateLimitActionFilter[R](rateLimiter)(reject, requestKeyExtractor) with ActionFunction[R, R]
+    new RateLimitActionFilter[R](rateLimiter, requestKeyExtractor, reject.andThen(Future.successful))
+      with ActionFunction[R, R]
 
   def createSecured[T <: HatAuthEnvironment, R[_] <: SecuredRequest[T, _], K](
       rateLimiter: RateLimiter
     )(reject: R[_] => Result,
       requestKeyExtractor: R[_] => K): RateLimitActionFilter[R] with ActionFunction[R, R] =
-    new RateLimitActionFilter[R](rateLimiter)(reject, requestKeyExtractor) with ActionFunction[R, R]
+    new RateLimitActionFilter[R](rateLimiter, requestKeyExtractor, reject.andThen(Future.successful))
+      with ActionFunction[R, R]
 
   type Secured[B]   = SecuredRequest[HatApiAuthEnvironment, B]
   type UserAware[B] = UserAwareRequest[HatApiAuthEnvironment, B]

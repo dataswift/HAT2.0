@@ -72,10 +72,7 @@ class ContractData @Inject() (
     components: ControllerComponents,
     parsers: HatBodyParsers,
     silhouette: Silhouette[HatApiAuthEnvironment],
-    dataEventDispatcher: HatDataEventDispatcher,
     dataService: RichDataService,
-    bundleService: RichBundleService,
-    dataDebitService: DataDebitContractService,
     loggingProvider: LoggingProvider,
     configuration: Configuration,
     usersService: UsersService,
@@ -364,7 +361,7 @@ class ContractData @Inject() (
       array.value.map(EndpointData(dataEndpoint, None, None, None, _, None))
     logger.info(s"handleJsArray: Values: ${values}")
     dataService
-      .saveData(userId, values, skipErrors.getOrElse(false))
+      .saveData(userId, values.toSeq, skipErrors.getOrElse(false))
       .map(saved => Created(Json.toJson(saved)))
   }
 

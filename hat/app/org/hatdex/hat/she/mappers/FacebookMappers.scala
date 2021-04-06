@@ -414,9 +414,7 @@ class FacebookProfileStaticDataMapper extends StaticDataEndpointMapper {
       case JsSuccess(value, _) =>
         val lastPartOfEndpointString = endpoint.split("/").last
         if (endpoint.contains("likes")) {
-
-          val numberOfPagesLiked =
-            value.filterKeys(key => key == "number_of_pages_liked")
+          val numberOfPagesLiked = value.view.filterKeys(key => key == "number_of_pages_liked").toMap
           if (numberOfPagesLiked.isEmpty)
             Seq()
           else
@@ -430,7 +428,7 @@ class FacebookProfileStaticDataMapper extends StaticDataEndpointMapper {
           Seq(
             StaticDataValues(
               lastPartOfEndpointString,
-              updatedValue.filterKeys(key => key != "friends" && key != "languages")
+              updatedValue.view.filterKeys(key => key != "friends" && key != "languages").toMap
             )
           )
         }

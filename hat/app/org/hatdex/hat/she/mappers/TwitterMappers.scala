@@ -229,7 +229,7 @@ class TwitterProfileStaticDataMapper extends StaticDataEndpointMapper {
         Seq(
           StaticDataValues(
             lastPartOfEndpointString,
-            user.filterKeys(key => key != "entities")
+            user.view.filterKeys(key => key != "entities").toMap
           )
         )
       case _ => Seq()

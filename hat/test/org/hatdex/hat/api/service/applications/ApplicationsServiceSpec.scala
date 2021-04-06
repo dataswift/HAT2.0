@@ -50,23 +50,18 @@ class ApplicationsServiceSpec
   import scala.concurrent.ExecutionContext.Implicits.global
   val logger: Logger = Logger(this.getClass)
 
-  override def beforeAll: Unit =
+  override def beforeAll: Unit = {
     Await.result(databaseReady, 60.seconds)
-
-  override def before: Unit = {
+    val cache = application.injector.instanceOf[AsyncCacheApi]
+    cache.removeAll()
     import org.hatdex.hat.dal.Tables
     import org.hatdex.libs.dal.HATPostgresProfile.api._
-
     val action = DBIO.seq(
       Tables.DataDebitPermissions.delete,
       Tables.DataBundles.filter(_.bundleId like "notables%").delete,
       Tables.DataDebit.delete,
       Tables.ApplicationStatus.delete
     )
-
-    val cache = application.injector.instanceOf[AsyncCacheApi]
-    cache.removeAll()
-
     Await.result(db.run(action), 60.seconds)
   }
 
