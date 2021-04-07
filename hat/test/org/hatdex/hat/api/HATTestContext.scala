@@ -32,6 +32,7 @@ import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette, SilhouetteProvider }
 import com.mohiva.play.silhouette.test.FakeEnvironment
+import io.dataswift.integrationtest.common.PostgresqlSpec
 import io.dataswift.models.hat.{ DataCredit, DataDebitOwner, Owner }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.FakeCache
@@ -46,7 +47,7 @@ import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, LoggingProvider, MockLogg
 import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
-import org.scalatest.{ BeforeAndAfterAll, Suite }
+import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
@@ -57,19 +58,16 @@ import play.cache.NamedCacheImpl
 
 import java.io.StringReader
 import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
-trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
-  import scala.concurrent.ExecutionContext.Implicits.global
+trait HATTestContext extends PostgresqlSpec with MockitoSugar with BeforeAndAfter with BeforeAndAfterAll {
 
-  val container: PostgreSQLContainer = PostgreSQLContainer()
-  container.start()
-  val conf: Configuration = containerToConfig(container)
+  lazy val conf: Configuration = containerToConfig(postgresqlContainer)
 
-  override protected def afterAll(): Unit =
-    try container.stop()
-    finally super.afterAll()
+  override def afterStart(): Unit =
+    Await.result(databaseReady(), 60.seconds)
 
   def containerToConfig(c: PostgreSQLContainer): Configuration =
     Configuration.from(
@@ -134,28 +132,29 @@ trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
     )
 
   // Initialize configuration
-  val hatAddress            = "hat.hubofallthings.net"
-  val hatUrl: String        = s"http://$hatAddress"
-  private val configuration = conf //Configuration.from(FakeHatConfiguration.config)
-  private val hatConfig     = configuration.get[Configuration](s"hat.$hatAddress")
+  val hatAddress     = "hat.hubofallthings.net"
+  val hatUrl: String = s"http://$hatAddress"
 
-  implicit val db: Database = Database.forURL(
-    url = container.jdbcUrl,
-    user = container.username,
-    password = container.password
+  implicit lazy val db: Database = Database.forURL(
+    url = postgresqlContainer.jdbcUrl,
+    user = postgresqlContainer.username,
+    password = postgresqlContainer.password
   )
 
   // Build up the FakeEnvironment for authentication testing
   private val keyUtils = new KeyUtils()
 
-  implicit val hatServer: HatServer = HatServer(
-    hatAddress,
-    "hat",
-    "user@hat.org",
-    keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.get[String]("privateKey"))),
-    keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))),
-    db
-  )
+  implicit lazy val hatServer: HatServer = {
+    val hatConfig = conf.get[Configuration](s"hat.$hatAddress")
+    HatServer(
+      hatAddress,
+      "hat",
+      "user@hat.org",
+      keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.get[String]("privateKey"))),
+      keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))),
+      db
+    )
+  }
 
   // Setup default users for testing
   val owner: HatUser = HatUser(UUID.randomUUID(),
@@ -181,7 +180,7 @@ trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
     Seq(DataCredit(""), DataCredit("namespace")),
     enabled = true
   )
-  implicit val environment: Environment[HatApiAuthEnvironment] = FakeEnvironment[HatApiAuthEnvironment](
+  implicit lazy val environment: Environment[HatApiAuthEnvironment] = FakeEnvironment[HatApiAuthEnvironment](
     Seq(owner.loginInfo -> owner, dataDebitUser.loginInfo -> dataDebitUser, dataCreditUser.loginInfo -> dataCreditUser),
     hatServer
   )
@@ -194,8 +193,8 @@ trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
     "evolutions/hat-database-schema/14_newHat.sql"
   )
 
-  def databaseReady: Future[Unit] = {
-    val schemaMigration = new HatDbSchemaMigration(configuration, db, global)
+  def databaseReady(): Future[Unit] = {
+    val schemaMigration = new HatDbSchemaMigration(conf, db, global)
     schemaMigration
       .resetDatabase()
       .flatMap(_ => schemaMigration.run(devHatMigrations))
@@ -209,8 +208,8 @@ trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
       }
   }
 
-  val mockLogger: Logger    = mock[play.api.Logger]
-  val mockMailer: HatMailer = mock[HatMailer]
+  val mockLogger: Logger    = MockitoSugar.mock[play.api.Logger]
+  val mockMailer: HatMailer = MockitoSugar.mock[HatMailer]
   when(mockMailer.passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])).thenReturn(Done)
 
   val fileManagerS3Mock: FileManagerS3Mock = new FileManagerS3Mock
@@ -255,6 +254,4 @@ trait HATTestContext extends Suite with MockitoSugar with BeforeAndAfterAll {
 
   implicit lazy val materializer: Materializer = application.materializer
 
-  def before(): Unit =
-    Await.result(databaseReady, 60.seconds)
 }

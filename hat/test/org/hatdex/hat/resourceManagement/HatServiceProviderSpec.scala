@@ -33,7 +33,7 @@ import play.api.test.FakeRequest
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class HatServiceProviderSpec extends BaseSpec with HATTestContext {
+class HatServiceProviderSpec extends HATTestContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
   val logger: Logger = Logger(this.getClass)
@@ -91,7 +91,7 @@ class HatServiceProviderSpec extends BaseSpec with HATTestContext {
 // I believe this is no longer required.
 // trait HatServerProviderContext {
 //   import scala.concurrent.ExecutionContext.Implicits.global
-//   //val mockLogger = mock[Logger]
+//   //val mockLogger = MockitoSugar.mock[Logger]
 
 //   class FakeModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 //     override def configure(): Unit = {

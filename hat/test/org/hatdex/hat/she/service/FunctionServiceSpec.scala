@@ -25,34 +25,26 @@
 package org.hatdex.hat.she.service
 
 import io.dataswift.models.hat.EndpointQuery
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
 import org.joda.time.DateTimeUtils
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import play.api.Logger
 
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class FunctionServiceSpec
-    extends BaseSpec
-    with BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with DataFeedDirectMapperContext {
+class FunctionServiceSpec extends DataFeedDirectMapperContext {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
   val logger: Logger = Logger(this.getClass)
 
-  override def beforeAll: Unit = {
+  override def beforeAll: Unit =
     DateTimeUtils.setCurrentMillisFixed(1514764800000L)
-    Await.result(databaseReady, 60.seconds)
-  }
 
   override def afterAll: Unit =
     DateTimeUtils.setCurrentMillisSystem()
 
-  override def before(): Unit = {
+  before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 

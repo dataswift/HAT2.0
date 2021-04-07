@@ -32,17 +32,9 @@ import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
-class DataDebitContractServiceSpec
-    extends BaseSpec
-    with BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with DataDebitContractServiceContext {
-
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
+class DataDebitContractServiceSpec extends DataDebitContractServiceContext {
 
   "The `createDataDebit` method" should "Save a data debit" in {
     val service = application.injector.instanceOf[DataDebitContractService]
@@ -214,7 +206,7 @@ class DataDebitContractServiceSpec
   }
 }
 
-trait DataDebitContractServiceContext extends RichBundleServiceContext {
+class DataDebitContractServiceContext extends RichBundleServiceContext {
 
   private val uniqueSuffix = new AtomicInteger
 

@@ -24,7 +24,6 @@
 
 package org.hatdex.hat.resourceManagement
 
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.resourceManagement.models.{ DatabaseInstance, DatabaseServer, HatKeys, HatSignup }
 import org.joda.time.DateTime
@@ -32,7 +31,7 @@ import org.joda.time.DateTime
 import java.util.UUID
 import scala.concurrent.duration._
 
-class HatDatabaseProviderSpec extends BaseSpec with HATTestContext {
+class HatDatabaseProviderSpec extends HATTestContext {
   "The `signupDatabaseConfig` method" should "Return a parsed database configuration" in {
     val service = application.injector.instanceOf[HatDatabaseProviderMilliner]
     val signup = HatSignup(

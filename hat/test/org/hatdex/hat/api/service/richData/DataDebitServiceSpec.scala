@@ -25,26 +25,16 @@
 package org.hatdex.hat.api.service.richData
 
 import io.dataswift.models.hat._
-import io.dataswift.test.common.BaseSpec
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class DataDebitServiceSpec
-    extends BaseSpec
-    with BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with DataDebitServiceSpecContext {
-
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
+class DataDebitServiceSpec extends DataDebitServiceSpecContext {
 
   private var n = 1
 
-  override def beforeEach: Unit = {
+  before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
@@ -58,6 +48,7 @@ class DataDebitServiceSpec
     printPermissions("before")
 
     val action = DBIO.seq(
+      DataDebitPermissions.delete,
       DataDebit.filter(_.dataDebitKey.like("test%")).delete,
       DataCombinators.filter(_.combinatorId.like("test%")).delete,
       DataBundles.filter(_.bundleId.like("test%")).delete,
@@ -66,7 +57,6 @@ class DataDebitServiceSpec
       DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
     )
 
-    Await.result(db.run(DataDebitPermissions.delete.transactionally), 60.seconds)
     Await.result(db.run(action.transactionally), 60.seconds)
 
     printPermissions("after")
@@ -332,7 +322,7 @@ class DataDebitServiceSpec
   }
 }
 
-trait DataDebitServiceSpecContext extends RichBundleServiceContext {
+class DataDebitServiceSpecContext extends RichBundleServiceContext {
   val testDataDebitRequest: DataDebitSetupRequest = DataDebitSetupRequest(
     "testdd",
     "purpose of the data use",

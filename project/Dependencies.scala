@@ -119,7 +119,6 @@ object Dependencies {
     }
 
     object Dataswift {
-      val testCommon            = "io.dataswift" %% "test-common"             % Version.DsTestTools % Test
       val integrationTestCommon = "io.dataswift" %% "integration-test-common" % Version.DsTestTools % Test
     }
   }

@@ -30,12 +30,10 @@ import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, J
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.test._
 import io.dataswift.models.hat.DataDebitOwner
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, ApiValidationRequest, MailTokenUser }
 import org.joda.time.DateTime
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Result
@@ -44,17 +42,13 @@ import play.api.test.{ FakeHeaders, FakeRequest, Helpers }
 import play.mvc.Http.{ HeaderNames, MimeTypes }
 
 import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
-class AuthenticationSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with AuthenticationContext {
-
-  import scala.concurrent.ExecutionContext.Implicits.global
+class AuthenticationSpec extends AuthenticationContext {
 
   val logger: Logger = Logger(this.getClass)
-
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
 
   "The `publicKey` method" should "Return public key of the HAT" in {
     val request = FakeRequest("GET", "http://hat.hubofallthings.net")
@@ -330,7 +324,7 @@ class AuthenticationSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfte
   }
 }
 
-trait AuthenticationContext extends HATTestContext {
+class AuthenticationContext extends HATTestContext {
   val passwordChangeIncorrect: ApiPasswordChange =
     ApiPasswordChange("some-passwords-are-better-than-others", Some("wrongOldPassword"))
   val passwordChangeSimple: ApiPasswordChange = ApiPasswordChange("simple", Some("pa55w0rd"))

@@ -40,16 +40,13 @@ import play.api.test.{ FakeRequest, Helpers }
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
-class RichDataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with RichDataContext {
+class RichDataSpec extends RichDataContext {
   import scala.concurrent.ExecutionContext.Implicits.global
   import io.dataswift.models.hat.json.RichDataJsonFormats._
 
   val logger: Logger = Logger(this.getClass)
 
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
-
-  override def beforeEach: Unit = {
+  before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
@@ -543,7 +540,7 @@ class RichDataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterA
   }
 }
 
-trait RichDataContext extends HATTestContext {
+class RichDataContext extends HATTestContext {
   val nestedJson: JsValue = Json.parse("""{"nested_data": {"nested": "{{sltoken}}", "value": true, "id": 33 }}""")
 
   val simpleJson: JsValue = Json.parse("""

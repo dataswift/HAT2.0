@@ -25,20 +25,15 @@
 package org.hatdex.hat.api.service
 
 import io.dataswift.models.hat.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus }
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class FileMetadataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with HATTestContext {
-  import scala.concurrent.ExecutionContext.Implicits.global
+class FileMetadataServiceSpec extends HATTestContext {
 
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
-
-  override def beforeEach: Unit = {
+  before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 

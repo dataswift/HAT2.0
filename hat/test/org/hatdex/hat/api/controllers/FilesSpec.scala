@@ -39,15 +39,12 @@ import play.api.test.{ FakeRequest, Helpers }
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
-class FilesSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with FilesContext {
+class FilesSpec extends FilesContext {
   import io.dataswift.models.hat.json.HatJsonFormats._
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
-
-  override def beforeEach: Unit = {
+  before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
@@ -352,7 +349,7 @@ class FilesSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll 
   }
 }
 
-trait FilesContext extends HATTestContext {
+class FilesContext extends HATTestContext {
   val hatFileSimple: ApiHatFile = ApiHatFile(Some("testFile"),
                                              "testFile",
                                              "test",

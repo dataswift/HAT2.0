@@ -40,14 +40,11 @@ import play.api.test.{ FakeRequest, Helpers }
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class ApplicationsSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with ApplicationsServiceContext {
+class ApplicationsSpec extends ApplicationsServiceContext {
 
   val logger: Logger = Logger(this.getClass)
 
-  override def beforeAll(): Unit =
-    Await.result(databaseReady, 60.seconds)
-
-  override def before(): Unit = {
+  before {
     import org.hatdex.hat.dal.Tables
     import org.hatdex.libs.dal.HATPostgresProfile.api._
     val action = DBIO.seq(Tables.ApplicationStatus.delete)

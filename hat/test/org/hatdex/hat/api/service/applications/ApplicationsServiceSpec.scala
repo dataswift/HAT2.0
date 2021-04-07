@@ -41,17 +41,12 @@ import play.api.libs.json._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class ApplicationsServiceSpec
-    extends BaseSpec
-    with BeforeAndAfter
-    with BeforeAndAfterAll
-    with ApplicationsServiceContext {
+class ApplicationsServiceSpec extends ApplicationsServiceContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
   val logger: Logger = Logger(this.getClass)
 
   override def beforeAll: Unit = {
-    Await.result(databaseReady, 60.seconds)
     val cache = application.injector.instanceOf[AsyncCacheApi]
     cache.removeAll()
     import org.hatdex.hat.dal.Tables

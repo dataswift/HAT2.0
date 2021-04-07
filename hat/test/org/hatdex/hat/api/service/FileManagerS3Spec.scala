@@ -24,14 +24,12 @@
 
 package org.hatdex.hat.api.service
 
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
 import org.scalatest.time.{ Millis, Second, Span }
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 
 import scala.concurrent.Future
 
-class FileManagerS3Spec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with HATTestContext {
+class FileManagerS3Spec extends HATTestContext {
 
   implicit val defaultPatience: PatienceConfig =
     PatienceConfig(timeout = Span(1, Second), interval = Span(50, Millis))

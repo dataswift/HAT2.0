@@ -27,24 +27,17 @@ package org.hatdex.hat.api.controllers
 import com.mohiva.play.silhouette.test._
 import io.dataswift.models.hat.json.HatJsonFormats
 import io.dataswift.models.hat.{ HatStatus, StatusKind }
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import play.api.Logger
-import play.api.test.{ FakeRequest }
+import play.api.test.FakeRequest
 import play.api.test.Helpers._
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
-class SystemStatusSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with HATTestContext {
+class SystemStatusSpec extends HATTestContext {
 
   import HatJsonFormats._
-  import scala.concurrent.ExecutionContext.Implicits.global
   val logger: Logger = Logger(this.getClass)
-
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
 
   "The `update` method" should "Return success response after updating HAT database" in {
     val request = FakeRequest("GET", "http://hat.hubofallthings.net")

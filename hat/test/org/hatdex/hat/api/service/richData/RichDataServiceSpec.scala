@@ -26,31 +26,18 @@ package org.hatdex.hat.api.service.richData
 
 import akka.stream.scaladsl.Sink
 import io.dataswift.models.hat._
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.dal.Tables._
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
-import play.api.Logger
 import play.api.libs.json.{ JsObject, JsValue, Json }
 
 import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
-import scala.concurrent.ExecutionContext.Implicits.global
 
-class RichDataStreamingServiceSpec
-    extends BaseSpec
-    with BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with RichDataServiceContext {
+class RichDataStreamingServiceSpec extends RichDataServiceContext {
 
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
-
-  override protected def afterAll(): Unit = container.close()
-
-  override def beforeEach: Unit = {
-    import org.hatdex.hat.dal.Tables._
+  before {
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
     val endpointRecrodsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
@@ -245,12 +232,9 @@ class RichDataStreamingServiceSpec
   }
 }
 
-class RichDataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with RichDataServiceContext {
+class RichDataServiceSpec extends RichDataServiceContext {
 
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
-
-  override def beforeEach: Unit = {
+  before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
@@ -988,7 +972,7 @@ class RichDataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAn
   }
 }
 
-trait RichDataServiceContext extends HATTestContext {
+class RichDataServiceContext extends HATTestContext {
   val simpleJson: JsValue = Json.parse("""
       | {
       |   "field": "value",

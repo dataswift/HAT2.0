@@ -113,7 +113,7 @@ trait AdjudicatorContext extends MockitoSugar {
   val fakeContractUUID: UUID     = java.util.UUID.randomUUID()
   val fakePublicKey: Array[Byte] = "publicKey".getBytes()
 
-  val mockAdjudicatorClient: AdjudicatorRequest = mock[AdjudicatorRequest]
+  val mockAdjudicatorClient: AdjudicatorRequest = MockitoSugar.mock[AdjudicatorRequest]
 
   // Mocked JoinContract
   when(
