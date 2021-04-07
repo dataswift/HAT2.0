@@ -25,12 +25,15 @@
 package org.hatdex.hat.api.service.richData
 
 import io.dataswift.models.hat._
+import play.api.Logging
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class DataDebitServiceSpec extends DataDebitServiceSpecContext {
+class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
+
+  private var iteration = 1
 
   before {
     import org.hatdex.hat.dal.Tables._
@@ -44,8 +47,10 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext {
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
       DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
     )
-    Await.result(db.run(DataDebitPermissions.delete.transactionally), 60.seconds)
+    val permissionsDeleted = Await.result(db.run(DataDebitPermissions.delete.transactionally), 60.seconds)
+    logger.info(s"deleted $permissionsDeleted rows from table data_debit_permissions (iteration $iteration)")
     Await.result(db.run(action.transactionally), 60.seconds)
+    iteration += 1
   }
 
   "The `createDataDebit` method" should "Save a data debit" in {
