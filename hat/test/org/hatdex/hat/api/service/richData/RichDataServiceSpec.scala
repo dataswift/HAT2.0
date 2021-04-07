@@ -36,14 +36,13 @@ import play.api.libs.json.{ JsObject, JsValue, Json }
 import java.util.UUID
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class RichDataStreamingServiceSpec
     extends BaseSpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with RichDataServiceContext {
-
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
@@ -248,9 +247,6 @@ class RichDataStreamingServiceSpec
 
 class RichDataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with RichDataServiceContext {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-  val logger: Logger = Logger(this.getClass)
-
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
 
@@ -259,8 +255,7 @@ class RichDataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAn
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
     val action = DBIO.seq(
-      // TODO: Why do I need to fully qualify this?  I don't know currently.
-      org.hatdex.hat.dal.Tables.SheFunction.delete,
+      SheFunction.delete,
       DataDebitBundle.delete,
       DataDebitContract.delete,
       DataCombinators.delete,
@@ -331,6 +326,30 @@ class RichDataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAn
       (record.head.links.get.head.data \ "field").as[String] must equal("value2")
     }
     Await.result(saved, 10.seconds)
+  }
+
+  "The `getRecord` method" should "look up a single JSON data point by primary key" in {
+    val service      = application.injector.instanceOf[RichDataService]
+    val endpointData = sampleData.head
+
+    val result: Future[(Seq[EndpointData], EndpointData)] = for {
+      saved <- service.saveData(owner.userId, List(endpointData))
+      lookedUp <- service.getRecord(owner.userId, saved.head.recordId.value)
+    } yield saved -> lookedUp
+    val (saved, lookedUp) = Await.result(result, 10.seconds)
+
+    lookedUp.recordId mustBe Some(saved.head.recordId.value)
+    lookedUp.data mustBe endpointData.data
+    lookedUp.endpoint mustBe endpointData.endpoint
+  }
+
+  it should "throw an RichDataMissingException for an unknown record id" in {
+    val service   = application.injector.instanceOf[RichDataService]
+    val unknownId = UUID.fromString("00000000-1111-0000-1111-000000000000")
+
+    intercept[RichDataMissingException](
+      Await.result(service.getRecord(owner.userId, unknownId), 10.seconds)
+    )
   }
 
   "The `propertyData` method" should "Find test endpoint values and map them to expected json output" in {

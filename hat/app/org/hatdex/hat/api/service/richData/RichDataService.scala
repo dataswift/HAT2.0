@@ -266,11 +266,9 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
           .filter(r => r.recordId === recordId && r.owner === userId)
           .result
       )
-      .map { records =>
-        if (records.length == 1)
-          ModelTranslation.fromDbModel(records.head)
-        else
-          throw RichDataMissingException("No single record found for provided ID")
+      .map {
+        case Seq(record) => ModelTranslation.fromDbModel(record)
+        case _           => throw RichDataMissingException("No single record found for provided ID")
       }
 
   def updateRecords(
