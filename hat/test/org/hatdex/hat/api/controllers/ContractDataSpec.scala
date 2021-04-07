@@ -50,8 +50,8 @@ class ContractDataSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterA
     val controller = application.injector.instanceOf[ContractData]
 
     val response = for {
-      _ <- Helpers.call(controller.createContractData("samplecontract", "testendpoint", None), request)
-      r <- Helpers.call(controller.readContractData("samplecontract", "testendpoint", None, None, None, None), request)
+      _ <- Helpers.call(controller.createData("samplecontract", "testendpoint", None), request)
+      r <- Helpers.call(controller.readData("samplecontract", "testendpoint", None, None, None, None), request)
     } yield r
 
     val res = Await.result(response, 5.seconds)
@@ -65,7 +65,7 @@ class ContractDataSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterA
     val controller = application.injector.instanceOf[ContractData]
 
     val response =
-      Helpers.call(controller.readContractData("samplecontract", "testendpoint", None, None, None, None), request)
+      Helpers.call(controller.readData("samplecontract", "testendpoint", None, None, None, None), request)
 
     val res = Await.result(response, 5.seconds)
     res.header.status must equal(400)
@@ -78,7 +78,7 @@ class ContractDataSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterA
     val controller = application.injector.instanceOf[ContractData]
 
     val response =
-      Helpers.call(controller.readContractData("samplecontract", "testendpoint", None, None, None, None), request)
+      Helpers.call(controller.readData("samplecontract", "testendpoint", None, None, None, None), request)
 
     val res = Await.result(response, 5.seconds)
     res.header.status must equal(400)

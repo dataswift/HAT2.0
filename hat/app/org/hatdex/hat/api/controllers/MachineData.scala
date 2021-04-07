@@ -29,6 +29,7 @@ import javax.inject.Inject
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
+import scala.concurrent.duration._
 
 import com.mohiva.play.silhouette.api.Silhouette
 import dev.profunktor.auth.jwt.JwtSecretKey
@@ -36,7 +37,7 @@ import eu.timepit.refined._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.collection.NonEmpty
 import io.dataswift.adjudicator.ShortLivedTokenOps
-import io.dataswift.adjudicator.Types.{ ContractId, HatName, ShortLivedToken }
+import io.dataswift.adjudicator.Types.{ DeviceId, HatName, ShortLivedToken }
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.applications.Application
 import io.dataswift.models.hat.json.RichDataJsonFormats
@@ -49,8 +50,8 @@ import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.resourceManagement.HatServer
-import org.hatdex.hat.utils.AdjudicatorRequestTypes._
-import org.hatdex.hat.utils.{ AdjudicatorRequest, HatBodyParsers, LoggingProvider }
+import org.hatdex.hat.utils.AuthServiceRequestTypes._
+import org.hatdex.hat.utils.{ AuthServiceRequest, HatBodyParsers, LoggingProvider }
 import org.hatdex.libs.dal.HATPostgresProfile
 import pdi.jwt.JwtClaim
 import play.api.Configuration
@@ -58,18 +59,10 @@ import play.api.libs.json.Reads._
 import play.api.libs.json.{ JsArray, JsValue, Json, Reads }
 import play.api.libs.ws.WSClient
 import play.api.mvc._
+import play.api.libs.json.JsResult
+import scala.concurrent.Await
 
-sealed trait RequestValidationFailure
-object RequestValidationFailure {
-  final case class HatNotFound(hatName: String) extends RequestValidationFailure
-  final case class MissingHatName(hatName: String) extends RequestValidationFailure
-  final case class InaccessibleNamespace(namespace: String) extends RequestValidationFailure
-  final case class InvalidShortLivedToken(contractId: String) extends RequestValidationFailure
-  final case object GeneralError extends RequestValidationFailure
-}
-final case class RequestVerified(namespace: String) extends AnyVal
-
-class ContractData @Inject() (
+class MachineData @Inject() (
     components: ControllerComponents,
     parsers: HatBodyParsers,
     silhouette: Silhouette[HatApiAuthEnvironment],
@@ -87,92 +80,99 @@ class ContractData @Inject() (
   private val logger             = loggingProvider.logger(this.getClass)
   private val defaultRecordLimit = 1000
 
-  // Adjudicator
-  private val adjudicatorAddress =
-    configuration.underlying.getString("adjudicator.address")
-  private val adjudicatorScheme =
-    configuration.underlying.getString("adjudicator.scheme")
-  private val adjudicatorEndpoint =
-    s"${adjudicatorScheme}${adjudicatorAddress}"
-  private val adjudicatorSharedSecret =
-    configuration.underlying.getString("adjudicator.sharedSecret")
-  private val adjudicatorClient = new AdjudicatorRequest(
-    adjudicatorEndpoint,
-    JwtSecretKey(adjudicatorSharedSecret),
+  // AuthService
+  private val authServiceAddress =
+    configuration.underlying.getString("authservice.address")
+  private val authServiceScheme =
+    configuration.underlying.getString("authservice.scheme")
+  private val authServiceEndpoint =
+    s"${authServiceScheme}${authServiceAddress}"
+  private val authServiceSharedSecret =
+    configuration.underlying.getString("authservice.sharedSecret")
+  private val authServiceClient = new AuthServiceRequest(
+    authServiceEndpoint,
+    JwtSecretKey(authServiceSharedSecret),
     wsClient
   )
 
   // Types
-  case class ContractDataInfoRefined(
+  // the device id is encoded in the accesstoken
+  case class DeviceDataInfoRefined(
       token: ShortLivedToken,
       hatName: HatName,
-      contractId: ContractId)
+      deviceId: DeviceId)
 
-  case class ContractDataReadRequest(
+  case class DeviceDataReadRequest(
       token: String,
       hatName: String,
-      contractId: String)
-  implicit val contractDataReadRequestReads: Reads[ContractDataReadRequest] = Json.reads[ContractDataReadRequest]
+      deviceId: String)
+  implicit val deviceDataReadRequestReads: Reads[DeviceDataReadRequest] = Json.reads[DeviceDataReadRequest]
 
-  case class ContractDataCreateRequest(
+  case class DeviceDataCreateRequest(
       token: String,
       hatName: String,
-      contractId: String,
+      deviceId: String,
       body: Option[JsValue])
-  implicit val contractDataCreateRequestReads: Reads[ContractDataCreateRequest] = Json.reads[ContractDataCreateRequest]
+  implicit val deviceDataCreateRequestReads: Reads[DeviceDataCreateRequest] = Json.reads[DeviceDataCreateRequest]
 
-  case class ContractDataUpdateRequest(
+  case class DeviceDataUpdateRequest(
       token: String,
       hatName: String,
-      contractId: String,
+      deviceId: String,
       body: Seq[EndpointData])
-  implicit val contractDataUpdateRequestReads: Reads[ContractDataUpdateRequest] = Json.reads[ContractDataUpdateRequest]
+  implicit val machineDataUpdateRequestReads: Reads[DeviceDataUpdateRequest] = Json.reads[DeviceDataUpdateRequest]
+
+  case class SLTokenBody(
+      iss: String,
+      exp: Long,
+      deviceId: String)
+  implicit val sltokenBodyReads: Reads[SLTokenBody] = Json.reads[SLTokenBody]
 
   // Errors
-  sealed abstract class ContractVerificationFailure
-  object ContractVerificationFailure {
-    final case class ServiceRespondedWithFailure(failureDescription: String) extends ContractVerificationFailure
-    final case class InvalidTokenFailure(failureDescription: String) extends ContractVerificationFailure
-    final case class InvalidContractDataRequestFailure(
+  sealed abstract class DeviceVerificationFailure
+  object DeviceVerificationFailure {
+    final case class ServiceRespondedWithFailure(failureDescription: String) extends DeviceVerificationFailure
+    final case class InvalidTokenFailure(failureDescription: String) extends DeviceVerificationFailure
+    final case class InvalidDeviceDataRequestFailure(
         failureDescription: String)
-        extends ContractVerificationFailure
+        extends DeviceVerificationFailure
   }
-  sealed abstract class ContractVerificationSuccess
-  object ContractVerificationSuccess {
-    final case class JwtClaimVerified(jwtClaim: JwtClaim) extends ContractVerificationSuccess
+  sealed abstract class DeviceVerificationSuccess
+  object DeviceVerificationSuccess {
+    final case class JwtClaimVerified(jwtClaim: JwtClaim) extends DeviceVerificationSuccess
   }
 
   // -- Error Handler
   def handleFailedRequestAssessment(failure: RequestValidationFailure): Future[Result] =
     failure match {
-      case HatNotFound(hatName)               => Future.successful(BadRequest(s"HatName not found: ${hatName}"))
-      case MissingHatName(hatName)            => Future.successful(BadRequest(s"Missing HatName: ${hatName}"))
-      case InaccessibleNamespace(namespace)   => Future.successful(BadRequest(s"Namespace Inaccessible: ${namespace}"))
-      case InvalidShortLivedToken(contractId) => Future.successful(BadRequest(s"Invalid Token: ${contractId}"))
-      case GeneralError                       => Future.successful(BadRequest("Unknown Error"))
+      case HatNotFound(hatName)             => Future.successful(BadRequest(s"HatName not found: ${hatName}"))
+      case MissingHatName(hatName)          => Future.successful(BadRequest(s"Missing HatName: ${hatName}"))
+      case InaccessibleNamespace(namespace) => Future.successful(BadRequest(s"Namespace Inaccessible: ${namespace}"))
+      case InvalidShortLivedToken(deviceId) => Future.successful(BadRequest(s"Invalid Token: ${deviceId}"))
+      case GeneralError                     => Future.successful(BadRequest("Unknown Error"))
     }
 
   // -- Operations
 
   // -- Create
-  def handleCreateContractData(
+  def handleCreateDeviceData(
       hatUser: HatUser,
-      contractDataCreate: ContractDataCreateRequest,
+      machineDataCreate: DeviceDataCreateRequest,
       namespace: String,
       endpoint: String,
       skipErrors: Option[Boolean]
     )(implicit hatServer: HatServer): Future[Result] =
-    contractDataCreate.body match {
+    machineDataCreate.body match {
       // Missing Json Body, do nothing, return error
       case None =>
-        logger.error(s"saveContractData included no json body - ns:${namespace} - endpoint:${endpoint}")
+        logger.error(s"saveDeviceData included no json body - ns:${namespace} - endpoint:${endpoint}")
         Future.successful(NotFound)
       // There is a Json body, process either an JsArray or a JsValue
       case Some(jsBody) =>
         val dataEndpoint = s"$namespace/$endpoint"
         jsBody match {
           case array: JsArray =>
-            logger.info(s"saveContractData.body is JsArray: ${contractDataCreate.body}")
+            logger.info(s"saveDeviceData.body is JsArray: ${machineDataCreate.body}")
             handleJsArray(
               hatUser.userId,
               array,
@@ -180,7 +180,7 @@ class ContractData @Inject() (
               skipErrors
             )
           case value: JsValue =>
-            logger.info(s"saveContractData.body is JsValue: ${contractDataCreate.body}")
+            logger.info(s"saveDeviceData.body is JsValue: ${machineDataCreate.body}")
             handleJsValue(
               hatUser.userId,
               value,
@@ -190,19 +190,19 @@ class ContractData @Inject() (
     }
 
   // -- Update
-  def handleUpdateContractData(
+  def handleUpdateDeviceData(
       hatUser: HatUser,
-      contractDataUpdate: ContractDataUpdateRequest,
+      machineDataUpdate: DeviceDataUpdateRequest,
       namespace: String
     )(implicit hatServer: HatServer): Future[Result] =
-    contractDataUpdate.body.length match {
+    machineDataUpdate.body.length match {
       // Missing Json Body, do nothing, return error
       case 0 =>
-        logger.error(s"updateContractData included no json body - ns:${namespace}")
+        logger.error(s"updateDeviceData included no json body - ns:${namespace}")
         Future.successful(NotFound)
       // There is a Json body, process either an JsArray or a JsValue
       case _ =>
-        val dataSeq = contractDataUpdate.body.map(item => item.copy(endpoint = s"${namespace}/${item.endpoint}"))
+        val dataSeq = machineDataUpdate.body.map(item => item.copy(endpoint = s"${namespace}/${item.endpoint}"))
         dataService.updateRecords(
           hatUser.userId,
           dataSeq
@@ -216,81 +216,115 @@ class ContractData @Inject() (
 
   // --- API Handlers ---
 
-  def readData(
-      namespace: String,
+  def getData(
       endpoint: String,
       orderBy: Option[String],
       ordering: Option[String],
       skip: Option[Int],
-      take: Option[Int]): Action[ContractDataReadRequest] =
-    UserAwareAction.async(parsers.json[ContractDataReadRequest]) { implicit request =>
-      val contractDataRead      = request.body
-      val maybeContractDataInfo = refineContractDataReadRequest(contractDataRead)
-      maybeContractDataInfo match {
-        case Some(contractDataInfo) =>
-          contractValid(contractDataInfo, namespace).flatMap { contractOk =>
-            contractOk match {
+      take: Option[Int]): Action[DeviceDataReadRequest] =
+    UserAwareAction.async(parsers.json[DeviceDataReadRequest]) { implicit request =>
+      val deviceDataRead      = request.body
+      val maybeDeviceDataInfo = refineDeviceDataReadRequest(deviceDataRead)
+      maybeDeviceDataInfo match {
+        case Some(deviceDataInfo) =>
+          deviceValid(deviceDataInfo, "NAMESPACE").flatMap { deviceOk =>
+            deviceOk match {
               case (Some(_hatUser @ _), Right(RequestVerified(_ns @ _))) =>
-                makeData(namespace, endpoint, orderBy, ordering, skip, take)
+                makeData("NAMESPACE", endpoint, orderBy, ordering, skip, take)
               case (_, Left(x)) => handleFailedRequestAssessment(x)
               case (None, Right(_)) =>
-                logger.warn(s"ReadContract: Hat not found for:  ${contractDataRead}")
-                handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
+                logger.warn(s"ReadDevice: Hat not found for:  ${deviceDataRead}")
+                handleFailedRequestAssessment(HatNotFound(deviceDataInfo.hatName.toString))
               case (_, _) =>
-                logger.warn(s"ReadContract: Fallback Error case for: ${contractDataRead}")
+                logger.warn(s"ReadDevice: Fallback Error case for: ${deviceDataRead}")
                 handleFailedRequestAssessment(GeneralError)
             }
           }
-        case None => Future.successful(BadRequest("Missing Contract Details."))
+        case None => Future.successful(BadRequest("Missing Device Details."))
       }
     }
 
   def createData(
-      namespace: String,
       endpoint: String,
-      skipErrors: Option[Boolean]): Action[ContractDataCreateRequest] =
-    UserAwareAction.async(parsers.json[ContractDataCreateRequest]) { implicit request =>
-      val contractDataCreate    = request.body
-      val maybeContractDataInfo = refineContractDataCreateRequest(contractDataCreate)
-      maybeContractDataInfo match {
-        case Some(contractDataInfo) =>
-          contractValid(contractDataInfo, namespace).flatMap { contractOk =>
-            contractOk match {
-              case (Some(hatUser), Right(RequestVerified(_ns))) =>
-                handleCreateContractData(hatUser, contractDataCreate, namespace, endpoint, skipErrors)
-              case (_, Left(x)) => handleFailedRequestAssessment(x)
-              case (None, Right(_)) =>
-                logger.warn(s"CreateContract: Hat not found for:  ${contractDataCreate}")
-                handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
-              case (_, _) =>
-                logger.warn(s"CreateContract: Fallback Error case for: ${contractDataCreate}")
-                handleFailedRequestAssessment(GeneralError)
-            }
+      skipErrors: Option[Boolean]): Action[DeviceDataCreateRequest] =
+    UserAwareAction.async(parsers.json[DeviceDataCreateRequest]) { implicit request =>
+      val deviceDataCreate = request.body
+      val xAuthToken       = request.headers.get("X-Auth-Token")
+      val hatName          = "bobtheplumber"
+      val hatUserE         = usersService.getUser(hatName)
+      val hatUser          = Await.result(hatUserE, 30.seconds).get
+
+      xAuthToken match {
+        case Some(bearerToken) =>
+          // Fragile
+          val tokenOnly = bearerToken.split(" ")(1).trim
+          println(s"token only     : ${tokenOnly}")
+          val tokenBody = ShortLivedTokenOps.getBody(tokenOnly).getOrElse("")
+          println(s"token body     : ${tokenBody}")
+
+          val tokenBodyJson: Option[SLTokenBody] = Json.parse(tokenBody).validate[SLTokenBody].asOpt
+          println(s"token body json: ${tokenBodyJson}")
+
+          tokenBodyJson match {
+            case Some(sltokenBody) =>
+              val d = refineDeviceInfo(tokenOnly, hatName, sltokenBody.deviceId)
+              d match {
+                case Some(dd) =>
+                  verifyDevice(dd).flatMap { r1 =>
+                    handleCreateDeviceData(hatUser, deviceDataCreate, sltokenBody.deviceId, endpoint, skipErrors)
+                  }
+                case None =>
+                  println("fail")
+              }
+            case None =>
           }
-        case None => Future.successful(BadRequest("Missing Contract Details."))
+
+        case None =>
+          println("fail")
       }
+
+      Future.successful(BadRequest("Testint"))
+    // val deviceDataCreate    = request.body
+    // val maybeDeviceDataInfo = refineDeviceDataCreateRequest(deviceDataCreate)
+    // maybeDeviceDataInfo match {
+    //   case Some(deviceDataInfo) =>
+    //     deviceValid(deviceDataInfo, "NAMESPACE").flatMap { deviceOk =>
+    //       deviceOk match {
+    //         case (Some(hatUser), Right(RequestVerified(_ns))) =>
+    //           handleCreateDeviceData(hatUser, deviceDataCreate, "NAMESPACE", endpoint, skipErrors)
+    //         case (_, Left(x)) => handleFailedRequestAssessment(x)
+    //         case (None, Right(_)) =>
+    //           logger.warn(s"CreateDevice: Hat not found for:  ${deviceDataCreate}")
+    //           handleFailedRequestAssessment(HatNotFound(deviceDataInfo.hatName.toString))
+    //         case (_, _) =>
+    //           logger.warn(s"CreateDevice: Fallback Error case for: ${deviceDataCreate}")
+    //           handleFailedRequestAssessment(GeneralError)
+    //       }
+    //     }
+    //   case None => Future.successful(BadRequest("Missing Device Details."))
+    // }
     }
 
-  def updateData(namespace: String): Action[ContractDataUpdateRequest] =
-    UserAwareAction.async(parsers.json[ContractDataUpdateRequest]) { implicit request =>
-      val contractDataUpdate    = request.body
-      val maybeContractDataInfo = refineContractDataUpdateRequest(contractDataUpdate)
-      maybeContractDataInfo match {
-        case Some(contractDataInfo) =>
-          contractValid(contractDataInfo, namespace).flatMap { contractOk =>
-            contractOk match {
+  def updateData: Action[DeviceDataUpdateRequest] =
+    UserAwareAction.async(parsers.json[DeviceDataUpdateRequest]) { implicit request =>
+      val deviceDataUpdate    = request.body
+      val maybeDeviceDataInfo = refineDeviceDataUpdateRequest(deviceDataUpdate)
+      maybeDeviceDataInfo match {
+        case Some(deviceDataInfo) =>
+          deviceValid(deviceDataInfo, "NAMESPACE").flatMap { deviceOk =>
+            deviceOk match {
               case (Some(hatUser), Right(RequestVerified(ns))) =>
-                handleUpdateContractData(hatUser, contractDataUpdate, ns)
+                handleUpdateDeviceData(hatUser, deviceDataUpdate, ns)
               case (_, Left(x)) => handleFailedRequestAssessment(x)
               case (None, Right(_)) =>
-                logger.warn(s"UpdateContract: Hat not found for:  ${contractDataUpdate}")
-                handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
+                logger.warn(s"UpdateDevice: Hat not found for:  ${deviceDataUpdate}")
+                handleFailedRequestAssessment(HatNotFound(deviceDataInfo.hatName.toString))
               case (_, _) =>
-                logger.warn(s"UpdateContract: Fallback Error case for:  ${contractDataUpdate}")
+                logger.warn(s"UpdateDevice: Fallback Error case for:  ${deviceDataUpdate}")
                 handleFailedRequestAssessment(GeneralError)
             }
           }
-        case None => Future.successful(BadRequest("Missing Contract Details."))
+        case None => Future.successful(BadRequest("Missing Device Details."))
       }
     }
 
@@ -315,41 +349,41 @@ class ContractData @Inject() (
     data.map(d => Ok(Json.toJson(d)))
   }
 
-  trait ContractRequest {
-    def refineContract: ContractDataInfoRefined
+  trait DeviceRequest {
+    def refineDevice: DeviceDataInfoRefined
   }
 
-  def refineContractInfo(
+  def refineDeviceInfo(
       token: String,
       hatName: String,
-      contractId: String): Option[ContractDataInfoRefined] =
+      deviceId: String): Option[DeviceDataInfoRefined] =
     for {
       tokenR <- refineV[NonEmpty](token).toOption
       hatNameR <- refineV[NonEmpty](hatName).toOption
-      contractIdR <- refineV[NonEmpty](contractId).toOption
-      contractDataInfoRefined = ContractDataInfoRefined(
-                                  ShortLivedToken(tokenR),
-                                  HatName(hatNameR),
-                                  ContractId(UUID.fromString(contractIdR))
-                                )
-    } yield contractDataInfoRefined
+      deviceIdR <- refineV[NonEmpty](deviceId).toOption
+      deviceDataInfoRefined = DeviceDataInfoRefined(
+                                ShortLivedToken(tokenR),
+                                HatName(hatNameR),
+                                DeviceId(deviceIdR)
+                              )
+    } yield deviceDataInfoRefined
 
-  def refineContractDataReadRequest(req: ContractDataReadRequest): Option[ContractDataInfoRefined] =
-    refineContractInfo(req.token, req.hatName, req.contractId)
+  def refineDeviceDataReadRequest(req: DeviceDataReadRequest): Option[DeviceDataInfoRefined] =
+    refineDeviceInfo(req.token, req.hatName, req.deviceId)
 
-  def refineContractDataCreateRequest(req: ContractDataCreateRequest): Option[ContractDataInfoRefined] =
-    refineContractInfo(req.token, req.hatName, req.contractId)
+  def refineDeviceDataCreateRequest(req: DeviceDataCreateRequest): Option[DeviceDataInfoRefined] =
+    refineDeviceInfo(req.token, req.hatName, req.deviceId)
 
-  def refineContractDataUpdateRequest(req: ContractDataUpdateRequest): Option[ContractDataInfoRefined] =
-    refineContractInfo(req.token, req.hatName, req.contractId)
+  def refineDeviceDataUpdateRequest(req: DeviceDataUpdateRequest): Option[DeviceDataInfoRefined] =
+    refineDeviceInfo(req.token, req.hatName, req.deviceId)
 
-  def contractValid(
-      contract: ContractDataInfoRefined,
+  def deviceValid(
+      device: DeviceDataInfoRefined,
       namespace: String
     )(implicit hatServer: HatServer): Future[(Option[HatUser], Either[RequestValidationFailure, RequestVerified])] =
     for {
-      hatUser <- usersService.getUser(contract.hatName.value)
-      requestAssestment <- assessRequest(contract, namespace)
+      hatUser <- usersService.getUser(device.hatName.value)
+      requestAssestment <- assessRequest(device, namespace)
     } yield (hatUser, requestAssestment)
 
   def handleJsArray(
@@ -415,34 +449,33 @@ class ContractData @Inject() (
     rolesOk
   }
 
-  // TODO: Use KeyId
   private def requestKeyId(
-      contractDataInfo: ContractDataInfoRefined): Option[String] =
+      deviceDataInfo: DeviceDataInfoRefined): Option[String] =
     for {
       keyId <- ShortLivedTokenOps
-                 .getKeyId(contractDataInfo.token.value)
+                 .getKeyId(deviceDataInfo.token.value)
                  .toOption
     } yield keyId
 
-  def verifyContract(contractDataInfo: ContractDataInfoRefined): Future[
-    Either[ContractVerificationFailure, ContractVerificationSuccess]
+  def verifyDevice(deviceDataInfo: DeviceDataInfoRefined): Future[
+    Either[DeviceVerificationFailure, DeviceVerificationSuccess]
   ] = {
-    import ContractVerificationFailure._
+    import DeviceVerificationFailure._
 
     // This logic is tied up with special types
-    val maybeContractDataRequestKeyId = for {
-      keyId <- requestKeyId(contractDataInfo)
+    val maybeDeviceDataRequestKeyId = for {
+      keyId <- requestKeyId(deviceDataInfo)
     } yield keyId
 
-    maybeContractDataRequestKeyId match {
+    maybeDeviceDataRequestKeyId match {
       case Some(keyId) =>
-        logger.info(s"ContractData-keyId: ${keyId}")
-        verifyTokenWithAdjudicator(contractDataInfo, keyId)
+        logger.info(s"DeviceData-keyId: ${keyId}")
+        verifyTokenWithAdjudicator(deviceDataInfo, keyId)
       case _ =>
         Future.successful(
           Left(
-            InvalidContractDataRequestFailure(
-              "Contract Data Request or KeyId missing"
+            InvalidDeviceDataRequestFailure(
+              "Device Data Request or KeyId missing"
             )
           )
         )
@@ -450,45 +483,45 @@ class ContractData @Inject() (
   }
 
   def verifyJwtClaim(
-      contractRequestBodyRefined: ContractDataInfoRefined,
-      publicKeyAsByteArray: Array[Byte]): Either[ContractVerificationFailure, ContractVerificationSuccess] = {
-    import ContractVerificationFailure._
-    import ContractVerificationSuccess._
+      deviceRequestBodyRefined: DeviceDataInfoRefined,
+      publicKeyAsByteArray: Array[Byte]): Either[DeviceVerificationFailure, DeviceVerificationSuccess] = {
+    import DeviceVerificationFailure._
+    import DeviceVerificationSuccess._
 
     logger.error(
-      s"ContractData.verifyJwtClaim.token: ${contractRequestBodyRefined.token.toString}"
+      s"DeviceData.verifyJwtClaim.token: ${deviceRequestBodyRefined.token.toString}"
     )
     logger.error(
-      s"ContractData.verifyJwtClaim.pubKey: ${publicKeyAsByteArray}"
+      s"DeviceData.verifyJwtClaim.pubKey: ${publicKeyAsByteArray}"
     )
 
     val tryJwtClaim = ShortLivedTokenOps.verifyToken(
-      Some(contractRequestBodyRefined.token.toString),
+      Some(deviceRequestBodyRefined.token.toString),
       publicKeyAsByteArray
     )
     tryJwtClaim match {
       case Success(jwtClaim) => Right(JwtClaimVerified(jwtClaim))
       case Failure(errorMsg) =>
         logger.error(
-          s"ContractData.verifyJwtClaim.failureMessage: ${errorMsg.getMessage}"
+          s"DeviceData.verifyJwtClaim.failureMessage: ${errorMsg.getMessage}"
         )
         Left(
           InvalidTokenFailure(
-            s"Token: ${contractRequestBodyRefined.token.toString} was not verified."
+            s"Token: ${deviceRequestBodyRefined.token.toString} was not verified."
           )
         )
     }
   }
 
   def verifyTokenWithAdjudicator(
-      contractRequestBodyRefined: ContractDataInfoRefined,
+      deviceRequestBodyRefined: DeviceDataInfoRefined,
       keyId: String): Future[
-    Either[ContractVerificationFailure, ContractVerificationSuccess]
+    Either[DeviceVerificationFailure, DeviceVerificationSuccess]
   ] =
-    adjudicatorClient
+    authServiceClient
       .getPublicKey(
-        contractRequestBodyRefined.hatName,
-        contractRequestBodyRefined.contractId,
+        deviceRequestBodyRefined.hatName,
+        deviceRequestBodyRefined.deviceId,
         keyId
       )
       .map { publicKeyResponse =>
@@ -499,7 +532,7 @@ class ContractData @Inject() (
                 )
               ) =>
             Left(
-              ContractVerificationFailure.ServiceRespondedWithFailure(
+              DeviceVerificationFailure.ServiceRespondedWithFailure(
                 s"The Adjudicator Service responded with an error: ${failureDescription}"
               )
             )
@@ -509,21 +542,21 @@ class ContractData @Inject() (
                 )
               ) =>
             Left(
-              ContractVerificationFailure.ServiceRespondedWithFailure(
+              DeviceVerificationFailure.ServiceRespondedWithFailure(
                 s"The Adjudicator Service responded with an error: ${failureDescription}"
               )
             )
           case Right(PublicKeyReceived(publicKey)) =>
-            verifyJwtClaim(contractRequestBodyRefined, publicKey)
+            verifyJwtClaim(deviceRequestBodyRefined, publicKey)
         }
       }
 
   def assessRequest(
-      contractDataInfo: ContractDataInfoRefined,
+      deviceDataInfo: DeviceDataInfoRefined,
       namespace: String): Future[Either[RequestValidationFailure, RequestVerified]] = {
-    val eventuallyMaybeDecision = verifyContract(contractDataInfo)
+    val eventuallyMaybeDecision = verifyDevice(deviceDataInfo)
     val eventuallyMaybeApp =
-      trustedApplicationProvider.application(contractDataInfo.contractId.value.toString())
+      trustedApplicationProvider.application(deviceDataInfo.deviceId.value.toString())
 
     eventuallyMaybeDecision.flatMap { maybeDecision =>
       eventuallyMaybeApp.flatMap { maybeApp =>
@@ -533,15 +566,15 @@ class ContractData @Inject() (
             logger.info(s"Found a namespace: ${ns}")
             Future.successful(
               Right(
-                RequestVerified(s"Token: ${contractDataInfo.contractId}")
+                RequestVerified(s"Token: ${deviceDataInfo.deviceId}")
               )
             )
           case None =>
-            logger.error(s"def assessRequest: decide returned None - ${contractDataInfo} - ${namespace}")
+            logger.error(s"def assessRequest: decide returned None - ${deviceDataInfo} - ${namespace}")
             Future.successful(
               Left(
                 RequestValidationFailure.InvalidShortLivedToken(
-                  s"Token: ${contractDataInfo.contractId}"
+                  s"Token: ${deviceDataInfo.deviceId}"
                 )
               )
             )
@@ -549,10 +582,10 @@ class ContractData @Inject() (
       }
     } recover {
       case e =>
-        logger.error(s"ContractData.assessRequest:Failure ${e}")
+        logger.error(s"DeviceData.assessRequest:Failure ${e}")
         Left(
           RequestValidationFailure.InvalidShortLivedToken(
-            s"Token: ${contractDataInfo.contractId}"
+            s"Token: ${deviceDataInfo.deviceId}"
           )
         )
     }
@@ -560,12 +593,12 @@ class ContractData @Inject() (
 
   def decide(
       eitherDecision: Either[
-        ContractVerificationFailure,
-        ContractVerificationSuccess
+        DeviceVerificationFailure,
+        DeviceVerificationSuccess
       ],
       maybeApp: Option[Application],
       namespace: String): Option[String] = {
-    import ContractVerificationSuccess._
+    import DeviceVerificationSuccess._
 
     logger.info(s"def decide: decision: ${eitherDecision} - app: ${maybeApp} - ns: ${namespace}")
 
