@@ -32,12 +32,22 @@ import scala.concurrent.duration._
 
 class DataDebitServiceSpec extends DataDebitServiceSpecContext {
 
+  private var n = 1
+
   before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
+
+    def printPermissions(label: String): Unit = {
+      println(s"permissions $label iteration $n")
+      Await.result(db.run(DataDebitPermissions.result), 60.seconds) foreach println
+    }
+
     val endpointRecordsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
+
+    printPermissions("before")
+
     val action = DBIO.seq(
-      DataDebitPermissions.delete,
       DataDebit.filter(_.dataDebitKey.like("test%")).delete,
       DataCombinators.filter(_.combinatorId.like("test%")).delete,
       DataBundles.filter(_.bundleId.like("test%")).delete,
@@ -45,7 +55,12 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext {
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
       DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
     )
+
+    Await.result(db.run(DataDebitPermissions.delete.transactionally), 60.seconds)
     Await.result(db.run(action.transactionally), 60.seconds)
+
+    printPermissions("after")
+    n += 1
   }
 
   "The `createDataDebit` method" should "Save a data debit" in {
