@@ -42,11 +42,20 @@ class DataDebitServiceSpec
   override def beforeAll: Unit =
     Await.result(databaseReady, 60.seconds)
 
+  private var n = 1
+
   override def beforeEach: Unit = {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
+    def printPermissions(label: String): Unit = {
+      println(s"permissions $label iteration $n")
+      Await.result(db.run(DataDebitPermissions.result), 60.seconds) foreach println
+    }
+
     val endpointRecordsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
+
+    printPermissions("before")
 
     val action = DBIO.seq(
       DataDebitPermissions.delete,
@@ -59,6 +68,9 @@ class DataDebitServiceSpec
     )
 
     Await.result(db.run(action.transactionally), 60.seconds)
+
+    printPermissions("after")
+    n += 1
   }
 
   "The `createDataDebit` method" should "Save a data debit" in {
