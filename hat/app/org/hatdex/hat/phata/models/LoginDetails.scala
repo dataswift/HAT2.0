@@ -28,7 +28,7 @@ import me.gosimple.nbvcxz._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{ JsError, _ }
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class ApiPasswordChange(
     newPassword: String,

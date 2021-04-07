@@ -37,8 +37,8 @@ import play.api.{ Configuration, Logger, UsefulException }
 
 import java.nio.charset.StandardCharsets
 import javax.inject.Inject
-import scala.collection.JavaConverters._
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.jdk.CollectionConverters._
 
 trait Mailer {
   protected val configuration: Configuration
