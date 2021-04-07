@@ -38,8 +38,12 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
   before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
+    val permissionsDeleted = Await.result(db.run(DataDebitPermissions.delete.transactionally), 60.seconds)
+    logger.info(s"deleted $permissionsDeleted rows from table data_debit_permissions (iteration $iteration)")
+
     val endpointRecordsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
-    val action = DBIO.seq(
+    val actions = Seq(
+      DataDebitPermissions.delete,
       DataDebit.filter(_.dataDebitKey.like("test%")).delete,
       DataCombinators.filter(_.combinatorId.like("test%")).delete,
       DataBundles.filter(_.bundleId.like("test%")).delete,
@@ -47,9 +51,7 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
       DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
     )
-    val permissionsDeleted = Await.result(db.run(DataDebitPermissions.delete.transactionally), 60.seconds)
-    logger.info(s"deleted $permissionsDeleted rows from table data_debit_permissions (iteration $iteration)")
-    Await.result(db.run(action.transactionally), 60.seconds)
+    actions foreach (dbio => Await.result(db.run(dbio.transactionally), 60.seconds))
     iteration += 1
   }
 
