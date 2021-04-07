@@ -565,7 +565,7 @@ class ApplicationsService @Inject() (
       enabled
     )
     val query = Tables.ApplicationStatus.insertOrUpdate(status)
-    db.run(query).map(_ => status)
+    db.run(query.transactionally).map(_ => status)
   }
 
   def appCacheKey(id: String)(implicit hat: HatServer): String =
