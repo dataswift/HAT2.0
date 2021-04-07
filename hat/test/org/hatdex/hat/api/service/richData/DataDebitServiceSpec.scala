@@ -58,7 +58,6 @@ class DataDebitServiceSpec
     printPermissions("before")
 
     val action = DBIO.seq(
-      DataDebitPermissions.delete,
       DataDebit.filter(_.dataDebitKey.like("test%")).delete,
       DataCombinators.filter(_.combinatorId.like("test%")).delete,
       DataBundles.filter(_.bundleId.like("test%")).delete,
@@ -67,6 +66,7 @@ class DataDebitServiceSpec
       DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
     )
 
+    Await.result(db.run(DataDebitPermissions.delete.transactionally), 60.seconds)
     Await.result(db.run(action.transactionally), 60.seconds)
 
     printPermissions("after")
