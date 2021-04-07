@@ -51,14 +51,14 @@ class FunctionServiceSpec extends DataFeedDirectMapperContext {
     val endpointRecordsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
 
     val action = DBIO.seq(
-      DataBundles.filter(_.bundleId.like("test%")).delete,
       SheFunction.filter(_.id.like("test%")).delete,
+      DataBundles.filter(_.bundleId.like("test%")).delete,
       DataJsonGroupRecords.filter(_.recordId in endpointRecordsQuery).delete,
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
       DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
     )
 
-    Await.result(db.run(action), 60.seconds)
+    Await.result(db.run(action.transactionally), 60.seconds)
   }
 
   "The `get` method" should "return `None` when no such function exists" in {

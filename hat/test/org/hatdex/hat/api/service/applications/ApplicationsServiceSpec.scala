@@ -29,36 +29,17 @@ import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
 import com.mohiva.play.silhouette.impl.authenticators.{ JWTRS256Authenticator, JWTRS256AuthenticatorSettings }
 import io.dataswift.models.hat.EndpointData
 import io.dataswift.models.hat.applications.{ ApplicationStatus, HatApplication, Version }
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.service.applications.ApplicationExceptions.HatApplicationSetupException
 import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataService }
 import org.joda.time.DateTime
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
-import play.api.Logger
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
 
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 class ApplicationsServiceSpec extends ApplicationsServiceContext {
-
-  import scala.concurrent.ExecutionContext.Implicits.global
-  val logger: Logger = Logger(this.getClass)
-
-  override def beforeAll: Unit = {
-    val cache = application.injector.instanceOf[AsyncCacheApi]
-    cache.removeAll()
-    import org.hatdex.hat.dal.Tables
-    import org.hatdex.libs.dal.HATPostgresProfile.api._
-    val action = DBIO.seq(
-      Tables.DataDebitPermissions.delete,
-      Tables.DataBundles.filter(_.bundleId like "notables%").delete,
-      Tables.DataDebit.delete,
-      Tables.ApplicationStatus.delete
-    )
-    Await.result(db.run(action), 60.seconds)
-  }
 
   "The `applicationStatus` parameterless method" should "List all available applications" in {
     val service = application.injector.instanceOf[ApplicationsService]
