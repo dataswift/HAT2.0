@@ -112,7 +112,7 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) extends Loggi
 
     val insertQuery = if (skipErrors) {
       val temp = queries.map(q => q.asTry)
-      db.run(DBIO.sequence(temp))
+      db.run(DBIO.sequence(temp).transactionally)
         .map {
           _.collect {
             case Success(d) => d
