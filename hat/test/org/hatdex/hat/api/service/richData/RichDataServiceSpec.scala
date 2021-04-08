@@ -237,8 +237,7 @@ class RichDataServiceSpec extends RichDataServiceContext {
   before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
-
-    val action = DBIO.seq(
+    Seq(
       SheFunction.delete,
       DataDebitBundle.delete,
       DataDebitContract.delete,
@@ -247,9 +246,7 @@ class RichDataServiceSpec extends RichDataServiceContext {
       DataJsonGroupRecords.delete,
       DataJsonGroups.delete,
       DataJson.delete
-    )
-
-    Await.result(db.run(action.transactionally), 60.seconds)
+    ) foreach (dbio => Await.result(db.run(dbio.transactionally), 60.seconds))
   }
 
   "The `saveData` method" should "Save a single JSON datapoint and add ID" in {

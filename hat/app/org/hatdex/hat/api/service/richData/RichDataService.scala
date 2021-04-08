@@ -35,7 +35,7 @@ import org.hatdex.hat.utils.Utils
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.{ DateTime, LocalDateTime }
 import org.postgresql.util.PSQLException
-import play.api.Logger
+import play.api.{ Logger, Logging }
 import play.api.libs.json._
 
 import java.security.MessageDigest
@@ -46,9 +46,7 @@ import scala.collection.immutable.HashMap
 import scala.concurrent.Future
 import scala.util.Success
 
-class RichDataService @Inject() (implicit ec: DalExecutionContext) {
-
-  protected val logger: Logger = Logger(this.getClass)
+class RichDataService @Inject() (implicit ec: DalExecutionContext) extends Logging {
 
   private def dbDataRow(
       endpoint: String,
@@ -74,6 +72,7 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
     val queries = endpointData map { endpointDataGroup =>
       val endpointRow =
         dbDataRow(endpointDataGroup.endpoint, userId, endpointDataGroup.data)
+      logger.debug(s"about to save new data_json row with key ${endpointRow.recordId}")
 
       val linkedRows = endpointDataGroup.links
         .map(_.toList)
