@@ -46,4 +46,28 @@ object NamespaceUtils {
     }
     matchedRoles.flatten.nonEmpty
   }
+
+  def getWriteNamespace(roles: Seq[UserRole]): Option[String] = {
+    val writeNamespaces = roles.map {
+      case NamespaceWrite(n) => n
+      case _                 => ""
+    }
+
+    if (writeNamespaces.isEmpty)
+      None
+    else
+      Some(writeNamespaces.head)
+  }
+
+  def getReadNamespace(roles: Seq[UserRole]): Option[String] = {
+    val readNamespaces = roles.map {
+      case NamespaceRead(n) => n
+      case _                => ""
+    }
+
+    if (readNamespaces.isEmpty)
+      None
+    else
+      Some(readNamespaces.head)
+  }
 }

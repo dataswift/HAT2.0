@@ -61,4 +61,34 @@ class NamespaceTestSpec extends BaseSpec with MockitoSugar {
     readRoles == false
     writeRoles == true
   }
+
+  it should "NamespaceUtils: Find a write namespace" in {
+    val applicationPermissions: Seq[UserRole] = List(NamespaceWrite("correctnamespace"))
+    val writeRoles                            = NamespaceUtils.getWriteNamespace(applicationPermissions)
+
+    writeRoles.isDefined
+    writeRoles.get == "correctnamespace"
+  }
+
+  it should "NamespaceUtils: Find a read namespace" in {
+    val applicationPermissions: Seq[UserRole] = List(NamespaceRead("correctnamespace"))
+    val readRoles                             = NamespaceUtils.getReadNamespace(applicationPermissions)
+
+    readRoles.isDefined
+    readRoles.get == "correctnamespace"
+  }
+
+  it should "NamespaceUtils: Find no write namespace" in {
+    val applicationPermissions: Seq[UserRole] = List(NamespaceRead("correctnamespace"))
+    val writeRoles                            = NamespaceUtils.getWriteNamespace(applicationPermissions)
+
+    !writeRoles.isDefined
+  }
+
+  it should "NamespaceUtils: Find no read namespace" in {
+    val applicationPermissions: Seq[UserRole] = List(NamespaceWrite("correctnamespace"))
+    val readRoles                             = NamespaceUtils.getReadNamespace(applicationPermissions)
+
+    !readRoles.isDefined
+  }
 }
