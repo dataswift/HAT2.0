@@ -26,32 +26,25 @@ package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.test._
 import io.dataswift.models.hat._
-import io.dataswift.test.common.BaseSpec
+import io.dataswift.models.hat.json.RichDataJsonFormats._
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.service.richData.{ DataDebitContractService, RichDataService }
 import org.joda.time.LocalDateTime
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
-import play.api.Logger
 import play.api.libs.json.{ JsArray, JsObject, JsValue, Json }
 import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
 class RichDataSpec extends RichDataContext {
-  import scala.concurrent.ExecutionContext.Implicits.global
-  import io.dataswift.models.hat.json.RichDataJsonFormats._
-
-  val logger: Logger = Logger(this.getClass)
 
   before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
-
     val endpointRecordsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
-
     val action = DBIO.seq(
       DataDebitBundle.filter(_.bundleId.like("test%")).delete,
       DataDebitContract.filter(_.dataDebitKey.like("test%")).delete,
@@ -60,14 +53,6 @@ class RichDataSpec extends RichDataContext {
       DataJsonGroupRecords.filter(_.recordId in endpointRecordsQuery).delete,
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
       DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
-      // DataDebitBundle.delete,
-      // DataDebitContract.delete,
-      // DataDebit.delete,
-      // DataCombinators.delete,
-      // DataBundles.delete,
-      // DataJsonGroupRecords.delete,
-      // DataJsonGroups.delete,
-      // DataJson.delete
     )
 
     Await.result(db.run(action.transactionally), 60.seconds)
