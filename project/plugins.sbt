@@ -1,7 +1,7 @@
 resolvers += "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com"
 
 addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.8.1")
-addSbtPlugin("com.typesafe.play" % "sbt-plugin"          % "2.8.7")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin"          % "2.8.8")
 
 // Code Quality
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.1")
