@@ -24,6 +24,7 @@
 package org.hatdex.hat.NamespaceUtils
 
 import io.dataswift.models.hat.{ NamespaceRead, NamespaceWrite, UserRole }
+import io.dataswift.models.hat.applications.Application
 
 object NamespaceUtils {
 
@@ -70,4 +71,31 @@ object NamespaceUtils {
     else
       Some(readNamespaces.head)
   }
+
+  def verifyNamespace(
+      app: Application,
+      namespace: String): Boolean = {
+
+    val canReadNamespace  = verifyNamespaceRead(app, namespace)
+    val canWriteNamespace = verifyNamespaceWrite(app, namespace)
+
+    (canReadNamespace || canWriteNamespace)
+  }
+
+  def verifyNamespaceRead(
+      app: Application,
+      namespace: String): Boolean = {
+    val rolesOk = testReadNamespacePermissions(app.permissions.rolesGranted, namespace)
+
+    rolesOk
+  }
+
+  def verifyNamespaceWrite(
+      app: Application,
+      namespace: String): Boolean = {
+    val rolesOk = testWriteNamespacePermissions(app.permissions.rolesGranted, namespace)
+
+    rolesOk
+  }
+
 }

@@ -63,6 +63,7 @@ import play.api.libs.json.JsResult
 import scala.concurrent.Await
 import cats.instances.future
 import io.dataswift.models.hat.applications.ApplicationPermissions
+import com.gargoylesoftware.htmlunit.javascript.host.Namespace
 
 class MachineData @Inject() (
     components: ControllerComponents,
@@ -231,30 +232,41 @@ class MachineData @Inject() (
   // --- API Handlers ---
 
   def getData(
+      namespace: String,
       endpoint: String,
       orderBy: Option[String],
       ordering: Option[String],
       skip: Option[Int],
       take: Option[Int]): Action[AnyContent] =
     UserAwareAction.async { implicit request =>
-      // maybeDeviceDataInfo match {
-      //   case Some(deviceDataInfo) =>
-      //     deviceValid(deviceDataInfo, "NAMESPACE").flatMap { deviceOk =>
-      //       deviceOk match {
-      //         case (Some(_hatUser @ _), Right(RequestVerified(_ns @ _))) =>
-      //           makeData("NAMESPACE", endpoint, orderBy, ordering, skip, take)
-      //         case (_, Left(x)) => handleFailedRequestAssessment(x)
-      //         case (None, Right(_)) =>
-      //           logger.warn(s"ReadDevice: Hat not found for:  ${deviceDataRead}")
-      //           handleFailedRequestAssessment(HatNotFound(deviceDataInfo.hatName.toString))
-      //         case (_, _) =>
-      //           logger.warn(s"ReadDevice: Fallback Error case for: ${deviceDataRead}")
-      //           handleFailedRequestAssessment(GeneralError)
-      //       }
-      //     }
-      //   case None => Future.successful(BadRequest("Missing Device Details."))
-      // }
-      Future.successful(BadRequest("Missing Device Details."))
+      val eventuallyVerdict = getRequestVerdict(request.headers, request.host, namespace: String)
+
+      eventuallyVerdict.flatMap { verdict =>
+        verdict match {
+          case Left(_) => Future.successful(BadRequest("oops"))
+          case Right(DeviceRequestSuccess(hatUser)) =>
+            makeData(namespace, endpoint, orderBy, ordering, skip, take)
+        }
+      }
+
+    // maybeDeviceDataInfo match {
+    //   case Some(deviceDataInfo) =>
+    //     deviceValid(deviceDataInfo, "NAMESPACE").flatMap { deviceOk =>
+    //       deviceOk match {
+    //         case (Some(_hatUser @ _), Right(RequestVerified(_ns @ _))) =>
+    //           makeData("NAMESPACE", endpoint, orderBy, ordering, skip, take)
+    //         case (_, Left(x)) => handleFailedRequestAssessment(x)
+    //         case (None, Right(_)) =>
+    //           logger.warn(s"ReadDevice: Hat not found for:  ${deviceDataRead}")
+    //           handleFailedRequestAssessment(HatNotFound(deviceDataInfo.hatName.toString))
+    //         case (_, _) =>
+    //           logger.warn(s"ReadDevice: Fallback Error case for: ${deviceDataRead}")
+    //           handleFailedRequestAssessment(GeneralError)
+    //       }
+    //     }
+    //   case None => Future.successful(BadRequest("Missing Device Details."))
+    // }
+
     }
 
   // -------------------------------------------
@@ -293,52 +305,127 @@ class MachineData @Inject() (
     Future.successful(Some(dotSplit))
   }
 
+  case class DeviceRequestFailure(message: String)
+  case class DeviceRequestSuccess(hatUser: HatUser)
+  case class DeviceRequestSuccess2(message: String)
+
+  private def getRequestVerdict(
+      reqHeaders: Headers,
+      reqHost: String,
+      namespace: String
+    )(implicit hatServer: HatServer): Future[Either[DeviceRequestFailure, DeviceRequestSuccess]] = {
+    val eventuallyMaybeUserAndApp = for {
+      sltoken <- Future.successful(reqHeaders.get("X-Auth-Token"))
+      sltokenBody <- getTokenFromHeaders(reqHeaders)
+      hatName <- getUsernameFromRequest(reqHost)
+      user <- usersService.getUser(hatName.get)
+      app <- trustedApplicationProvider.application(sltokenBody.get.deviceId)
+    } yield (sltoken, user, app, hatName)
+
+    eventuallyMaybeUserAndApp.flatMap { maybeUserAndApp =>
+      maybeUserAndApp match {
+        case (Some(sltoken), Some(user), Some(app), Some(hatName)) =>
+          verifyApplicationAndNamespace(sltoken, app, namespace, hatName).flatMap { appAndNamespaceOk =>
+            appAndNamespaceOk match {
+              case Left(_)  => Future.successful(Left(DeviceRequestFailure("appAndNamespaceOk failed")))
+              case Right(_) => Future.successful(Right(DeviceRequestSuccess(user)))
+            }
+          }
+        case (_, _, _, _) =>
+          Future.successful(Left(DeviceRequestFailure("Missing element of maybeUserAndApp")))
+      }
+    }
+  }
+
+  private def verifyApplicationAndNamespace(
+      sltoken: String,
+      app: Application,
+      namespace: String,
+      hatName: String): Future[Either[DeviceRequestFailure, DeviceRequestSuccess2]] = {
+    val maybeRefinedDevice = refineDeviceInfo(sltoken.split(" ")(1).trim, hatName, app.id)
+    maybeRefinedDevice match {
+      case Some(refinedDevice) =>
+        verifyDevice(refinedDevice).flatMap { isVerified =>
+          isVerified match {
+            case Right(deviceIsVerified @ _) =>
+              if (NamespaceUtils.verifyNamespaceWrite(app, namespace)) {
+                println(s"Namespace:  ${namespace}")
+                println(s"RolesGrant: ${app.permissions}")
+                Future.successful(Right(DeviceRequestSuccess2("all good")))
+              } else
+                Future.successful(Left(DeviceRequestFailure("oops")))
+            case _ =>
+              Future.successful(Left(DeviceRequestFailure("oops")))
+          }
+        }
+      case None =>
+        Future.successful(Left(DeviceRequestFailure("Missing Refined Data")))
+    }
+  }
+
   def createData(
+      namespace: String,
       endpoint: String,
       skipErrors: Option[Boolean]): Action[DeviceDataCreateRequest] =
     UserAwareAction.async(parsers.json[DeviceDataCreateRequest]) { implicit request =>
       val deviceDataCreate = request.body
 
-      val eventuallyMaybeUserAndApp = for {
-        sltoken <- Future.successful(request.headers.get("X-Auth-Token"))
-        sltokenBody <- getTokenFromHeaders(request.headers)
-        hatName <- getUsernameFromRequest(request.host)
-        user <- usersService.getUser(hatName.get)
-        app <- trustedApplicationProvider.application(sltokenBody.get.deviceId)
-      } yield (sltoken, user, app, hatName)
+      val eventuallyVerdict = getRequestVerdict(request.headers, request.host, namespace)
 
-      eventuallyMaybeUserAndApp.flatMap { maybeUserAndApp =>
-        maybeUserAndApp match {
-          case (Some(sltoken), Some(user), Some(app), Some(hatName)) =>
-            (NamespaceUtils.getWriteNamespace(app.permissions.rolesGranted)) match {
-              case Some(namespace) =>
-                (refineDeviceInfo(sltoken.split(" ")(1).trim, hatName, app.id)) match {
-                  case Some(dd) =>
-                    verifyDevice(dd).flatMap { isVerified =>
-                      isVerified match {
-                        case Right(deviceIsVerified @ _) =>
-                          handleCreateDeviceData(
-                            hatUser = user,
-                            machineDataCreate = deviceDataCreate,
-                            namespace = namespace,
-                            endpoint = endpoint,
-                            skipErrors = skipErrors
-                          )
-                        case Left(deviceIsNotVerified) =>
-                          logger.error(deviceIsNotVerified.toString())
-                          Future.successful(BadRequest("Device failed to verify"))
-                      }
-                    }
-                  case None =>
-                    logger.error(s"No writeable namespace found for app: ${app.id}")
-                    Future.successful(BadRequest("Device failed to verify"))
-                }
-              case None =>
-                Future.successful(BadRequest("Malformed Token Body"))
-            }
-          case (_, _, _, _) => Future.successful(BadRequest("Something is missing"))
+      eventuallyVerdict.flatMap { verdict =>
+        verdict match {
+          case Left(_) => Future.successful(BadRequest("oops"))
+          case Right(DeviceRequestSuccess(hatUser)) =>
+            handleCreateDeviceData(
+              hatUser = hatUser,
+              machineDataCreate = deviceDataCreate,
+              namespace = namespace,
+              endpoint = endpoint,
+              skipErrors = skipErrors
+            )
         }
       }
+
+    // val eventuallyMaybeUserAndApp = for {
+    //   sltoken <- Future.successful(request.headers.get("X-Auth-Token"))
+    //   sltokenBody <- getTokenFromHeaders(request.headers)
+    //   hatName <- getUsernameFromRequest(request.host)
+    //   user <- usersService.getUser(hatName.get)
+    //   app <- trustedApplicationProvider.application(sltokenBody.get.deviceId)
+    // } yield (sltoken, user, app, hatName)
+
+    // eventuallyMaybeUserAndApp.flatMap { maybeUserAndApp =>
+    //   maybeUserAndApp match {
+    //     case (Some(sltoken), Some(user), Some(app), Some(hatName)) =>
+    //       (NamespaceUtils.getWriteNamespace(app.permissions.rolesGranted)) match {
+    //         case Some(namespace) =>
+    //           (refineDeviceInfo(sltoken.split(" ")(1).trim, hatName, app.id)) match {
+    //             case Some(dd) =>
+    //               verifyDevice(dd).flatMap { isVerified =>
+    //                 isVerified match {
+    //                   case Right(deviceIsVerified @ _) =>
+    //                     handleCreateDeviceData(
+    //                       hatUser = user,
+    //                       machineDataCreate = deviceDataCreate,
+    //                       namespace = namespace,
+    //                       endpoint = endpoint,
+    //                       skipErrors = skipErrors
+    //                     )
+    //                   case Left(deviceIsNotVerified) =>
+    //                     logger.error(deviceIsNotVerified.toString())
+    //                     Future.successful(BadRequest("Device failed to verify"))
+    //                 }
+    //               }
+    //             case None =>
+    //               logger.error(s"No writeable namespace found for app: ${app.id}")
+    //               Future.successful(BadRequest("Device failed to verify"))
+    //           }
+    //         case None =>
+    //           Future.successful(BadRequest("Malformed Token Body"))
+    //       }
+    //     case (_, _, _, _) => Future.successful(BadRequest("Something is missing"))
+    //   }
+    // }
 
     // val deviceDataCreate    = request.body
     // val maybeDeviceDataInfo = refineDeviceDataCreateRequest(deviceDataCreate)
@@ -361,28 +448,41 @@ class MachineData @Inject() (
     // }
     }
 
-  def updateData: Action[DeviceDataUpdateRequest] =
+  def updateData(namespace: String): Action[DeviceDataUpdateRequest] =
     UserAwareAction.async(parsers.json[DeviceDataUpdateRequest]) { implicit request =>
-      // val deviceDataUpdate    = request.body
-      // val maybeDeviceDataInfo = refineDeviceDataUpdateRequest(deviceDataUpdate)
-      // maybeDeviceDataInfo match {
-      //   case Some(deviceDataInfo) =>
-      //     deviceValid(deviceDataInfo, "NAMESPACE").flatMap { deviceOk =>
-      //       deviceOk match {
-      //         case (Some(hatUser), Right(RequestVerified(ns))) =>
-      //           handleUpdateDeviceData(hatUser, deviceDataUpdate, ns)
-      //         case (_, Left(x)) => handleFailedRequestAssessment(x)
-      //         case (None, Right(_)) =>
-      //           logger.warn(s"UpdateDevice: Hat not found for:  ${deviceDataUpdate}")
-      //           handleFailedRequestAssessment(HatNotFound(deviceDataInfo.hatName.toString))
-      //         case (_, _) =>
-      //           logger.warn(s"UpdateDevice: Fallback Error case for:  ${deviceDataUpdate}")
-      //           handleFailedRequestAssessment(GeneralError)
-      //       }
-      //     }
-      //   case None => Future.successful(BadRequest("Missing Device Details."))
-      // }
-      Future.successful(BadRequest("Missing Device Details."))
+      val deviceDataUpdate  = request.body
+      val eventuallyVerdict = getRequestVerdict(request.headers, request.host, namespace)
+
+      eventuallyVerdict.flatMap { verdict =>
+        verdict match {
+          case Left(oops) => Future.successful(BadRequest(oops.toString()))
+          case Right(DeviceRequestSuccess(hatUser)) =>
+            handleUpdateDeviceData(hatUser, deviceDataUpdate, namespace)
+        }
+      }
+
+    // Handle these errors
+
+    // val deviceDataUpdate    = request.body
+    // val maybeDeviceDataInfo = refineDeviceDataUpdateRequest(deviceDataUpdate)
+    // maybeDeviceDataInfo match {
+    //   case Some(deviceDataInfo) =>
+    //     deviceValid(deviceDataInfo, "NAMESPACE").flatMap { deviceOk =>
+    //       deviceOk match {
+    //         case (Some(hatUser), Right(RequestVerified(ns))) =>
+    //           handleUpdateDeviceData(hatUser, deviceDataUpdate, ns)
+    //         case (_, Left(x)) => handleFailedRequestAssessment(x)
+    //         case (None, Right(_)) =>
+    //           logger.warn(s"UpdateDevice: Hat not found for:  ${deviceDataUpdate}")
+    //           handleFailedRequestAssessment(HatNotFound(deviceDataInfo.hatName.toString))
+    //         case (_, _) =>
+    //           logger.warn(s"UpdateDevice: Fallback Error case for:  ${deviceDataUpdate}")
+    //           handleFailedRequestAssessment(GeneralError)
+    //       }
+    //     }
+    //   case None => Future.successful(BadRequest("Missing Device Details."))
+    // }
+
     }
 
   private def makeData(

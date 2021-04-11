@@ -84,6 +84,6 @@ POST          /contract-data/create/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+
 PUT           /contract-data/update/$namespace<[0-9a-z-]+>                                   org.hatdex.hat.api.controllers.ContractData.updateData(namespace)
 
 # Machine to Machine
-GET           /machine-data/$endpoint<[0-9a-z-/]+>                                            org.hatdex.hat.api.controllers.MachineData.getData(endpoint: String, orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
-POST          /machine-data/$endpoint<[0-9a-z-/]+>                                            org.hatdex.hat.api.controllers.MachineData.createData(endpoint: String, skipErrors: Option[Boolean])
-PUT           /machine-data                                                                   org.hatdex.hat.api.controllers.MachineData.updateData
+GET           /machine-data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                    org.hatdex.hat.api.controllers.MachineData.getData(namespace: String, endpoint: String, orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
+POST          /machine-data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                    org.hatdex.hat.api.controllers.MachineData.createData(namespace: String, endpoint: String, skipErrors: Option[Boolean])
+PUT           /machine-data/$namespace<[0-9a-z-]+>                                           org.hatdex.hat.api.controllers.MachineData.updateData(namespace: String)

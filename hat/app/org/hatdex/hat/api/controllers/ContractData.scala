@@ -248,7 +248,8 @@ class ContractData @Inject() (
       endpoint: String,
       skipErrors: Option[Boolean]): Action[ContractDataCreateRequest] =
     UserAwareAction.async(parsers.json[ContractDataCreateRequest]) { implicit request =>
-      val contractDataCreate    = request.body
+      val contractDataCreate = request.body
+
       val maybeContractDataInfo = refineContractDataCreateRequest(contractDataCreate)
       maybeContractDataInfo match {
         case Some(contractDataInfo) =>
@@ -374,43 +375,6 @@ class ContractData @Inject() (
     dataService
       .saveData(userId, values)
       .map(saved => Created(Json.toJson(saved.head)))
-  }
-
-  def verifyNamespace(
-      app: Application,
-      namespace: String): Boolean = {
-    logger.info(s"verifyNamespace ${namespace} for app ${app}")
-
-    val canReadNamespace  = verifyNamespaceRead(app, namespace)
-    val canWriteNamespace = verifyNamespaceWrite(app, namespace)
-
-    logger.info(
-      s"def verifyNamespace read: ${canReadNamespace} - write: ${canWriteNamespace}"
-    )
-
-    (canReadNamespace || canWriteNamespace)
-  }
-
-  def verifyNamespaceRead(
-      app: Application,
-      namespace: String): Boolean = {
-    val rolesOk = NamespaceUtils.testReadNamespacePermissions(app.permissions.rolesGranted, namespace)
-    logger.info(
-      s"NamespaceRead: AppPerms: ${app.permissions}, RolesOk: ${rolesOk}, namespace: ${namespace}, result: ${rolesOk}"
-    )
-
-    rolesOk
-  }
-
-  def verifyNamespaceWrite(
-      app: Application,
-      namespace: String): Boolean = {
-    val rolesOk = NamespaceUtils.testWriteNamespacePermissions(app.permissions.rolesGranted, namespace)
-    logger.info(
-      s"NamespaceWrite: AppPerms: ${app.permissions}, RolesOk: ${rolesOk}, namespace: ${namespace}, result: ${rolesOk}"
-    )
-
-    rolesOk
   }
 
   // TODO: Use KeyId
@@ -570,7 +534,7 @@ class ContractData @Inject() (
     (eitherDecision, maybeApp) match {
       case (Right(JwtClaimVerified(_jwtClaim @ _)), Some(app)) =>
         logger.info(s"def decide: JwtClaim verified for app ${app}")
-        if (verifyNamespace(app, namespace))
+        if (NamespaceUtils.verifyNamespace(app, namespace))
           Some(namespace)
         else
           None
