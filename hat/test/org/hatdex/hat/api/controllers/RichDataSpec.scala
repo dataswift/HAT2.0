@@ -30,6 +30,7 @@ import io.dataswift.models.hat.json.RichDataJsonFormats._
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.service.richData.{ DataDebitContractService, RichDataService }
 import org.joda.time.LocalDateTime
+import org.scalatest.time.{ Millis, Span }
 import play.api.libs.json.{ JsArray, JsObject, JsValue, Json }
 import play.api.mvc.Result
 import play.api.test.Helpers._
@@ -40,6 +41,9 @@ import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
 class RichDataSpec extends RichDataContext {
+
+  implicit override val patienceConfig: PatienceConfig =
+    PatienceConfig(timeout = Span(800, Millis), interval = Span(50, Millis))
 
   before {
     import org.hatdex.hat.dal.Tables._
@@ -56,33 +60,6 @@ class RichDataSpec extends RichDataContext {
     )
 
     Await.result(db.run(action.transactionally), 60.seconds)
-  }
-
-  "The Saving and Reading data" should "must be equivalent" in {
-    val service = application.injector.instanceOf[RichDataService]
-
-    val dataEndpoint = "samplecontract/a/b"
-    val values       = Seq(EndpointData(dataEndpoint, None, None, None, nestedJson, None))
-    val futSaved = service
-      .saveData(owner.userId, values)
-
-    val saved = Await.result(futSaved, 10.seconds)
-    saved.length must equal(1)
-    Json.toJson(saved.head.data) must equal(nestedJson)
-
-    val query =
-      Seq(EndpointQuery(dataEndpoint, None, None, None))
-    val data = service.propertyData(
-      query,
-      None,
-      true,
-      0,
-      Some(10)
-    )
-
-    val res = Await.result(data, 10.seconds)
-    res.length must equal(1)
-    Json.toJson(res.head.data) must equal(nestedJson)
   }
 
   "The `getEndpointData` method" should "Return an empty array for an unknown endpoint" in {
@@ -110,7 +87,7 @@ class RichDataSpec extends RichDataContext {
     )
 
     val response = for {
-      _ <- service.saveData(owner.userId, data).map(_.head)
+      _ <- service.saveData(owner.userId, data)
       r <- Helpers.call(controller.getEndpointData("test", "endpoint", Some("field"), None, None, Some(2)), request)
     } yield r
     val responseData = contentAsJson(response).as[Seq[EndpointData]]
@@ -132,7 +109,7 @@ class RichDataSpec extends RichDataContext {
     )
 
     val response = for {
-      _ <- service.saveData(owner.userId, data).map(_.head)
+      _ <- service.saveData(owner.userId, data)
       r <- Helpers.call(
              controller.getEndpointData("test", "endpoint", Some("field"), Some("descending"), Some(1), Some(2)),
              request
@@ -141,6 +118,24 @@ class RichDataSpec extends RichDataContext {
     val responseData = contentAsJson(response).as[Seq[EndpointData]]
     responseData.length must equal(2)
     responseData.head.data must equal(simpleJson)
+  }
+
+  "The `getRecord` method" should "look up a single JSON data point by primary key" in {
+    val request = FakeRequest("GET", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
+    val controller = application.injector.instanceOf[RichData]
+    val service    = application.injector.instanceOf[RichDataService]
+    val data       = EndpointData("test/getrecord", None, None, None, complexJson, None)
+
+    val respAndUuid = for {
+      saved <- service.saveData(owner.userId, Seq(data))
+      uuid = saved.head.recordId.value
+      r <- Helpers.call(controller.getRecord(uuid), request)
+    } yield r -> uuid
+
+    val uuid         = respAndUuid.futureValue._2
+    val endpointData = contentAsJson(respAndUuid.map(_._1)).as[EndpointData]
+    endpointData mustBe data.copy(recordId = Some(uuid))
   }
 
   "The `saveEndpointData` method" should "Save a single record" in {

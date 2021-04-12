@@ -249,6 +249,32 @@ class RichDataServiceSpec extends RichDataServiceContext {
     ) foreach (dbio => Await.result(db.run(dbio.transactionally), 60.seconds))
   }
 
+  "Saved and read data" should "be the same" in {
+    val service = application.injector.instanceOf[RichDataService]
+
+    val dataEndpoint = "test/a/b"
+    val values       = Seq(EndpointData(dataEndpoint, None, None, None, simpleJson, None))
+    val futSaved     = service.saveData(owner.userId, values)
+
+    val saved = Await.result(futSaved, 10.seconds)
+    saved.length must equal(1)
+    Json.toJson(saved.head.data) must equal(simpleJson)
+
+    val query =
+      Seq(EndpointQuery(dataEndpoint, None, None, None))
+    val data = service.propertyData(
+      query,
+      None,
+      true,
+      0,
+      Some(10)
+    )
+
+    val res = Await.result(data, 10.seconds)
+    res.length must equal(1)
+    Json.toJson(res.head.data) must equal(simpleJson)
+  }
+
   "The `saveData` method" should "Save a single JSON datapoint and add ID" in {
     val service = application.injector.instanceOf[RichDataService]
     val saved   = service.saveData(owner.userId, List(EndpointData("test/test", None, None, None, simpleJson, None)))

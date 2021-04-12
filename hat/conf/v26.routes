@@ -36,7 +36,7 @@ POST          /data-batch                                                       
 POST          /data-bundle/$bundleId<[0-9a-zA-Z-]+>                                          org.hatdex.hat.api.controllers.RichData.registerBundle(bundleId)
 GET           /data-bundle/$bundleId<[0-9a-zA-Z-]+>                                          org.hatdex.hat.api.controllers.RichData.fetchBundle(bundleId)
 GET           /data-bundle/$bundleId<[0-9a-zA-Z-]+>/structure                                org.hatdex.hat.api.controllers.RichData.bundleStructure(bundleId)
-GET           /data-record/$namespace<[0-9a-z-]+>/:recordId                                  org.hatdex.hat.api.controllers.RichData.getRecord(namespace, recordId:java.util.UUID)
+GET           /data-record/:recordId                                                         org.hatdex.hat.api.controllers.RichData.getRecord(recordId:java.util.UUID)
 
 GET           /data-debit/$dataDebitId<[0-9a-zA-Z-]+>                                        org.hatdex.hat.api.controllers.DataDebits.getDataDebit(dataDebitId: String)
 GET           /data-debit/$dataDebitId<[0-9a-zA-Z-]+>/values                                 org.hatdex.hat.api.controllers.DataDebits.getDataDebitValues(dataDebitId: String)

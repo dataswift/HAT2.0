@@ -345,35 +345,18 @@ class RichData @Inject() (
       }
     }
 
-  def getRecord(
-      namespace: String,
-      recordId: UUID): Action[AnyContent] =
-    SecuredAction(
-      WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(
-          NamespaceWrite("*"),
-          Owner()
-        )
-    )
-      .async { implicit request =>
-        request2ApplicationStatus(request).flatMap { maybeAppStatus =>
-          if (authorizeEndpointDataRead(namespace, maybeAppStatus))
-            dataService.getRecord(
-              request.identity.userId,
-              recordId
-            ) map { saved =>
-              Ok(Json.toJson(saved))
-            } recover {
-              case RichDataMissingException(message, _) =>
-                BadRequest(Json.toJson(Errors.dataMissing(message)))
+  def getRecord(recordId: UUID): Action[AnyContent] =
+    UserAwareAction.async { implicit request =>
+      request.identity match {
+        case Some(realIdentity) =>
+          dataService.getRecord(realIdentity.userId, recordId) map { saved =>
+            Ok(Json.toJson(saved))
+          } recover {
+              case RichDataMissingException(message, _) => BadRequest(Json.toJson(Errors.dataMissing(message)))
             }
-          else
-            Future.failed(
-              RichDataPermissionsException(
-                "No rights to Get some or all of the data requested"
-              )
-            )
-        }
+        case None => Future.successful(Forbidden)
       }
+    }
 
   def updateRecords(): Action[Seq[EndpointData]] =
     SecuredAction(
