@@ -36,6 +36,12 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
+env:
+  config: []
+  secret:
+    enabled: false
+    name: ""
+
 service:
   type: ClusterIP
   port: 9000
