@@ -37,7 +37,29 @@ securityContext: {}
   # runAsUser: 1000
 
 env:
-  config: []
+  config: 
+    ADJUDICATOR_ADDRESS: "contracts.dataswift.dev"
+    AWS_REGION: "eu-west-1"
+    CORS_ALLOWED_ORIGIN_1: "https://developers.dataswift.dev"
+    CORS_ALLOWED_ORIGIN_2: "http://localhost:3000"
+    CORS_ALLOWED_ORIGIN_3: "https://localhost:3000"
+    CORS_ALLOWED_ORIGIN_4: "https://developers.dataswift.dev"
+    DEX_ADDRESS: "dex.dataswift.dev"
+    DROPS_SHE_BASE_URL: "drops-she-staging"
+    ELASTICACHE_CONFIG_ENDPOINT: "dsw-ca-ro05jyxnfn0k.onquve.cfg.euw1.cache.amazonaws.com:11211"
+    HAT_ADMIN_EMAIL: "systems@dataswift.io"
+    HAT_BETA: "true"
+    HAT_DB_IDLE_TIMEOUT: "60 seconds"
+    HAT_DB_THREADS: "15"
+    HAT_DOMAIN: ".dataswift.dev"
+    HAT_SERVER_PROVIDER: "org.hatdex.hat.modules.HatServerProviderModule"
+    HAT_STORAGE_S3_BUCKET: "dswift-hat-stage-hatservicefar-y9-storages3bucket-7oi63342ympf"
+    JAVA_OPTS: "-Xmx1000m -Xms512m"
+    MAILER_FROM: "Dataswift <systems@dataswift.dev>"
+    MILLINER_ADDRESS: "dataswift.dev"
+    PDA_REGISTRY_HOST: "hatters.dataswift.dev"
+    RESOURCE_MGMT_SERVER_IDLE_TIMEOUT: "180 seconds"
+    SHE_BASE_URL: "dswift-she-staging"
   secret:
     enabled: false
     name: ""
