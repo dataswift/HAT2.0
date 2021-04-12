@@ -202,19 +202,6 @@ class RichData @Inject() (
     } getOrElse Set()
 
   // Extract to namespace library
-  private def authorizeEndpointDataRead(
-      namespace: String,
-      appStatus: Option[HatApplication]
-    )(implicit
-      user: HatUser,
-      authenticator: HatApiAuthEnvironment#A): Boolean = {
-
-    val role = NamespaceRead(namespace)
-    WithRole.isAuthorized(user, authenticator, role) || appStatus.exists(
-      ContainsApplicationRole.isAuthorized(user, _, authenticator, role)
-    )
-  }
-
   private def authorizeEndpointDataWrite(
       data: Seq[EndpointData],
       appStatus: Option[HatApplication]
