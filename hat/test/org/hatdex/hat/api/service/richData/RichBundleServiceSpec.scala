@@ -24,29 +24,20 @@
 
 package org.hatdex.hat.api.service.richData
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import io.dataswift.models.hat._
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import play.api.Logger
 import play.api.libs.json.{ JsObject, Json }
 
-class RichBundleServiceSpec
-    extends BaseSpec
-    with BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with RichBundleServiceContext {
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+class RichBundleServiceSpec extends RichBundleServiceContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
   val logger: Logger = Logger(this.getClass)
 
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
-
-  override def before: Unit = {
+  before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
@@ -211,7 +202,7 @@ class RichBundleServiceSpec
 
 }
 
-trait RichBundleServiceContext extends HATTestContext {
+class RichBundleServiceContext extends HATTestContext {
   protected val simpleTransformation: JsObject = Json
     .parse("""
       | {

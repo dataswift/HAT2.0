@@ -121,10 +121,15 @@ class ApplicationsService @Inject() (
     )(implicit hat: HatServer,
       user: HatUser,
       requestHeader: RequestHeader): Future[Option[HatApplication]] = {
-    val eventuallyCleanedCache = if (bustCache) {
-      cache.remove(s"apps:${hat.domain}")
-      cache.remove(appCacheKey(id))
-    } else Future.successful(Done)
+    val eventuallyCleanedCache =
+      if (bustCache)
+        Future.sequence(
+          List(
+            cache.remove(s"apps:${hat.domain}"),
+            cache.remove(appCacheKey(id))
+          )
+        )
+      else Future.successful(Done)
     for {
       _ <- eventuallyCleanedCache
       application <- cache
@@ -259,7 +264,7 @@ class ApplicationsService @Inject() (
                  )
                )
     } yield {
-      logger.debug(
+      logger.info(
         s"Application status for ${app.application.id}: active = ${app.active}, setup = ${app.setup}, needs updating = ${app.needsUpdating}"
       )
       app
@@ -560,7 +565,7 @@ class ApplicationsService @Inject() (
       enabled
     )
     val query = Tables.ApplicationStatus.insertOrUpdate(status)
-    db.run(query).map(_ => status)
+    db.run(query.transactionally).map(_ => status)
   }
 
   def appCacheKey(id: String)(implicit hat: HatServer): String =

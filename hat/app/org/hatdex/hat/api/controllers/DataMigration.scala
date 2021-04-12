@@ -24,10 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import javax.inject.Inject
-
-import scala.concurrent.ExecutionContext
-
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.json.RichDataJsonFormats
@@ -36,6 +32,9 @@ import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController, 
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
+
+import javax.inject.Inject
+import scala.concurrent.ExecutionContext
 
 class DataMigration @Inject() (
     components: ControllerComponents,

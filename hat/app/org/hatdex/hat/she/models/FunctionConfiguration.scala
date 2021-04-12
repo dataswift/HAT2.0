@@ -24,8 +24,6 @@
 
 package org.hatdex.hat.she.models
 
-import java.util.UUID
-
 import io.dataswift.models.hat.applications._
 import io.dataswift.models.hat.json.{
   ApplicationJsonProtocol,
@@ -38,6 +36,8 @@ import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataBundlesRow, SheFunctionRow, SheFunctionStatusRow }
 import org.joda.time.{ DateTime, Period }
 import play.api.libs.json._
+
+import java.util.UUID
 
 case class Response(
     namespace: String,

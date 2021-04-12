@@ -24,31 +24,26 @@
 
 package org.hatdex.hat.phata.controllers
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import com.mohiva.play.silhouette.test._
 import io.dataswift.models.hat.EndpointData
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.service.richData.RichDataService
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
 
-class PhataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with PhataContext {
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
-  import scala.concurrent.ExecutionContext.Implicits.global
+class PhataSpec extends PhataContext {
+
   val logger: Logger = Logger(this.getClass)
 
   import io.dataswift.models.hat.json.RichDataJsonFormats._
 
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
-
-  override def before: Unit = {
+  before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
@@ -117,7 +112,7 @@ class PhataSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll 
   // }
 }
 
-trait PhataContext extends HATTestContext {
+class PhataContext extends HATTestContext {
 
   val samplePublicNotable: JsValue = Json.parse("""
       |{

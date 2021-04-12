@@ -24,12 +24,6 @@
 
 package org.hatdex.hat.she.service
 
-import javax.inject.Inject
-
-import scala.concurrent.duration._
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Success, Try }
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream._
@@ -43,6 +37,11 @@ import org.hatdex.hat.utils.{ SourceAugmenter, SourceMergeSorter }
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.JsNumber
+
+import javax.inject.Inject
+import scala.concurrent.duration._
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Success, Try }
 
 class FeedGeneratorService @Inject() (
   )(implicit

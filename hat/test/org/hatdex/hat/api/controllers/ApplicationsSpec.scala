@@ -24,9 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import com.mohiva.play.silhouette.test._
 import io.dataswift.models.hat.applications.{ Application, HatApplication }
 import io.dataswift.models.hat.json.ApplicationJsonProtocol
@@ -40,14 +37,14 @@ import play.api.libs.json.{ JsObject, JsString }
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
 
-class ApplicationsSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with ApplicationsServiceContext {
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+class ApplicationsSpec extends ApplicationsServiceContext {
 
   val logger: Logger = Logger(this.getClass)
 
-  override def beforeAll(): Unit =
-    Await.result(databaseReady, 60.seconds)
-
-  override def before(): Unit = {
+  before {
     import org.hatdex.hat.dal.Tables
     import org.hatdex.libs.dal.HATPostgresProfile.api._
     val action = DBIO.seq(Tables.ApplicationStatus.delete)

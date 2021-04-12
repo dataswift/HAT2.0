@@ -23,10 +23,6 @@
  */
 package org.hatdex.hat.phata.controllers
 
-import javax.inject.Inject
-
-import scala.concurrent.ExecutionContext.Implicits.global
-
 import com.mohiva.play.silhouette.api.Silhouette
 import controllers.{ Assets, AssetsFinder, AssetsFinderProvider }
 import io.dataswift.models.hat.EndpointDataBundle
@@ -37,6 +33,9 @@ import play.api.cache.{ Cached, CachedBuilder }
 import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.{ Configuration, Logger }
+
+import javax.inject.Inject
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class Phata @Inject() (
     components: ControllerComponents,

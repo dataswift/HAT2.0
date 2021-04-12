@@ -24,11 +24,6 @@
 
 package org.hatdex.hat.utils
 
-import javax.inject.{ Inject, Singleton }
-
-import scala.concurrent.ExecutionContext
-import scala.util.Try
-
 import akka.stream.Materializer
 import com.nimbusds.jose.JWSObject
 import com.nimbusds.jwt.JWTClaimsSet
@@ -37,6 +32,10 @@ import io.dataswift.log.play.Slf4jLoggingFilter
 import play.api.Configuration
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.RequestHeader
+
+import javax.inject.{ Inject, Singleton }
+import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 @Singleton
 class ActiveHatCounter() {
