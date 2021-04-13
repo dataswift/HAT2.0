@@ -41,7 +41,7 @@ object Dependencies {
     val Nbvcxz                = "1.5.0"
     val PlayMemcached         = "0.11.0"
 
-    val Adjudicator = "0.1.0+14-9fc4b28b+20210407-1634"
+    val Adjudicator = "0.1.3.1"
     val DexClient   = "3.2.1"
     val DsBackend   = "2.2.1"
     val DsTestTools = "0.2.3"

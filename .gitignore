@@ -24,3 +24,5 @@ project/metals.sbt
 .scalafix-common.conf
 .vscode
 /\.bsp
+
+project/project/
