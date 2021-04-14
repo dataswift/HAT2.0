@@ -24,9 +24,9 @@
 
 package org.hatdex.hat.phata.models
 
-import java.security.interfaces.RSAPublicKey
-
 import org.hatdex.hat.resourceManagement.HatServer
+
+import java.security.interfaces.RSAPublicKey
 
 case class HatPublicInfo(
     domain: String,

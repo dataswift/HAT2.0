@@ -24,49 +24,41 @@
 
 package org.hatdex.hat.she.service
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import io.dataswift.models.hat.EndpointQuery
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
 import org.joda.time.DateTimeUtils
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import play.api.Logger
 
-class FunctionServiceSpec
-    extends BaseSpec
-    with BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with DataFeedDirectMapperContext {
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
-  import scala.concurrent.ExecutionContext.Implicits.global
+class FunctionServiceSpec extends DataFeedDirectMapperContext {
+
   val logger: Logger = Logger(this.getClass)
 
-  override def beforeAll: Unit = {
+  override def beforeAll: Unit =
     DateTimeUtils.setCurrentMillisFixed(1514764800000L)
-    Await.result(databaseReady, 60.seconds)
-  }
 
   override def afterAll: Unit =
     DateTimeUtils.setCurrentMillisSystem()
 
-  override def before(): Unit = {
+  before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
     val endpointRecordsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
 
     val action = DBIO.seq(
-      DataBundles.filter(_.bundleId.like("test%")).delete,
       SheFunction.filter(_.id.like("test%")).delete,
+      DataBundles.filter(_.bundleId.like("test%")).delete,
       DataJsonGroupRecords.filter(_.recordId in endpointRecordsQuery).delete,
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
       DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
     )
 
-    Await.result(db.run(action), 60.seconds)
+    Await.result(db.run(action.transactionally), 60.seconds)
   }
 
   "The `get` method" should "return `None` when no such function exists" in {

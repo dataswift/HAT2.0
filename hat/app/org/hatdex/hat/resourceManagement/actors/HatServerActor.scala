@@ -24,12 +24,6 @@
 
 package org.hatdex.hat.resourceManagement.actors
 
-import javax.inject.Inject
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import scala.util.{ Failure, Success }
-
 import akka.actor._
 import akka.pattern.pipe
 import com.google.inject.assistedinject.Assisted
@@ -37,6 +31,11 @@ import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.hatdex.hat.resourceManagement._
 import play.api.cache.AsyncCacheApi
 import play.api.{ Configuration, Logger }
+
+import javax.inject.Inject
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.{ Failure, Success }
 
 object HatServerActor {
   sealed trait HatServerActorMessage

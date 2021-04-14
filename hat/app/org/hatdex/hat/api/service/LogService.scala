@@ -24,14 +24,13 @@
 
 package org.hatdex.hat.api.service
 
-import java.util.UUID
-import javax.inject.Inject
-
-import scala.concurrent.Future
-
 import akka.Done
 import io.dataswift.models.hat.LogRequest
 import play.api.Logger
+
+import java.util.UUID
+import javax.inject.Inject
+import scala.concurrent.Future
 
 class LogService @Inject() (implicit val ec: DalExecutionContext) {
   val logger: Logger = Logger(this.getClass)

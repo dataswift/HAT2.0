@@ -1,9 +1,5 @@
 package org.hatdex.hat.api.controllers
 
-import javax.inject.Inject
-
-import scala.util.Try
-
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.json.HatJsonFormats
@@ -13,6 +9,9 @@ import org.hatdex.hat.utils.HatBodyParsers
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{ Action, ControllerComponents }
+
+import javax.inject.Inject
+import scala.util.Try
 
 class LogController @Inject() (
     components: ControllerComponents,
