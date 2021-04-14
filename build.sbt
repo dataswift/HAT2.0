@@ -146,9 +146,13 @@ lazy val hat = project
 inThisBuild(
   List(
     scalaVersion := "2.13.5",
-    scalafixScalaBinaryVersion := scalaVersion,
+    scalafixScalaBinaryVersion := scalaVersion.value,
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"
   )
 )
+
+// Deps
+//filterScalaLibrary := true // include scala library in output
+dependencyDotFile := file("dependencies.dot") //render dot file to `./dependencies.dot`
