@@ -117,13 +117,13 @@ class ApplicationsService @Inject() (
 
   //** AuthService
   private val authserviceAddress =
-    configuration.underlying.getString("adjudicator.address")
+    configuration.underlying.getString("authservice.address")
   private val authserviceScheme =
-    configuration.underlying.getString("adjudicator.scheme")
+    configuration.underlying.getString("authservice.scheme")
   private val authserviceEndpoint =
     s"${authserviceScheme}${authserviceAddress}"
   private val authserviceSharedSecret =
-    configuration.underlying.getString("adjudicator.sharedSecret")
+    configuration.underlying.getString("authservice.sharedSecret")
   private val authserviceClient = new AuthServiceRequest(
     authserviceEndpoint,
     JwtSecretKey(authserviceSharedSecret),
