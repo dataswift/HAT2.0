@@ -23,9 +23,10 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup 
+      - name: Setup
         uses: actions/setup-java@v2
         with:
+          distribution: "adopt"
           java-version: 11
           java-package: jdk
           architecture: x64
@@ -57,7 +58,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_DATASWIFT_USER }}
           password: ${{ secrets.DOCKERHUB_DATASWIFT_PASS }}
-        
+
       - name: Container Registry - Push
         run: docker push ${{ env.REPOSITORY }}:${{ github.sha }}
 

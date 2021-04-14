@@ -5,7 +5,7 @@ name: Trivy Jira
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 4 * * MON'
+    - cron: "0 4 * * MON"
 
 env:
   REGISTRY: dataswift/hat
@@ -31,9 +31,9 @@ env:
           with:
             token: ${{ secrets.GITHUB_TOKEN }}
             image: ${{ env.REGISTRY }}:${{ github.sha }}
-            issue: 'true'
+            issue: "true"
             issue_label: trivy, vulnerability, security
-            issue_title: Trivy generated Security Alert
+            issue_title: Trivy Security Alert
 
         - name: Jira Login
           if: steps.trivy.outputs.issue_number != ''
@@ -50,7 +50,7 @@ env:
           with:
             project: ${{ secrets.JIRA_TRIVY_PROJECT }}
             issuetype: ${{ secrets.JIRA_TRIVY_ISSUE_TYPE }}
-            summary: Trivy has detected a vulnerability with a Docker container
+            summary: Trivy Security Alert - ${{ github.repository }}
             description: ${{steps.trivy.outputs.html_url}}
 
         - name: Container - Scan - Save Result
@@ -68,4 +68,3 @@ env:
           uses: github/codeql-action/upload-sarif@v1
           with:
             sarif_file: "trivy-results.sarif"
-
