@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - dev
+      - DAS-518-device-data-endpoints
 
 env:
   RUMPEL: live
@@ -23,7 +23,7 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup 
+      - name: Setup
         uses: actions/setup-java@v1
         with:
           java-version: 11
@@ -57,7 +57,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_DATASWIFT_USER }}
           password: ${{ secrets.DOCKERHUB_DATASWIFT_PASS }}
-        
+
       - name: Container Registry - Push
         run: docker push ${{ env.REPOSITORY }}:${{ github.sha }}
 
