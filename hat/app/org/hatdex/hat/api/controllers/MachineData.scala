@@ -63,7 +63,10 @@ import play.api.libs.json.JsResult
 import scala.concurrent.Await
 import cats.instances.future
 import io.dataswift.models.hat.applications.ApplicationPermissions
-import com.gargoylesoftware.htmlunit.javascript.host.Namespace
+
+import eu.timepit.refined._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.collection.NonEmpty
 
 class MachineData @Inject() (
     components: ControllerComponents,

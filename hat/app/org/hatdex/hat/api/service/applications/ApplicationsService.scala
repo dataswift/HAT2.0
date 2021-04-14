@@ -27,7 +27,7 @@ import akka.Done
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import dev.profunktor.auth.jwt.JwtSecretKey
-import io.dataswift.adjudicator.Types.ContractId
+import io.dataswift.adjudicator.Types.{ ContractId, DeviceId }
 import io.dataswift.models.hat.applications._
 import io.dataswift.models.hat.{ AccessToken, EndpointQuery }
 import org.hatdex.hat.api.service.applications.ApplicationExceptions.{
@@ -42,7 +42,7 @@ import org.hatdex.hat.dal.Tables
 import org.hatdex.hat.dal.Tables.ApplicationStatusRow
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.she.service.FunctionService
-import org.hatdex.hat.utils.{ AdjudicatorRequest, FutureTransformations, Utils }
+import org.hatdex.hat.utils.{ AdjudicatorRequest, AuthServiceRequest, FutureTransformations, Utils }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.cache.AsyncCacheApi
@@ -50,6 +50,9 @@ import play.api.libs.json.{ JsObject, JsString }
 import play.api.libs.ws.WSClient
 import play.api.mvc.RequestHeader
 import play.api.{ Configuration, Logger }
+import eu.timepit.refined._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.collection.NonEmpty
 
 import java.util.UUID
 import javax.inject.Inject
@@ -109,6 +112,21 @@ class ApplicationsService @Inject() (
   private val adjudicatorClient = new AdjudicatorRequest(
     adjudicatorEndpoint,
     JwtSecretKey(adjudicatorSharedSecret),
+    wsClient
+  )
+
+  //** AuthService
+  private val authserviceAddress =
+    configuration.underlying.getString("adjudicator.address")
+  private val authserviceScheme =
+    configuration.underlying.getString("adjudicator.scheme")
+  private val authserviceEndpoint =
+    s"${authserviceScheme}${authserviceAddress}"
+  private val authserviceSharedSecret =
+    configuration.underlying.getString("adjudicator.sharedSecret")
+  private val authserviceClient = new AuthServiceRequest(
+    authserviceEndpoint,
+    JwtSecretKey(authserviceSharedSecret),
     wsClient
   )
 
@@ -240,6 +258,19 @@ class ApplicationsService @Inject() (
         Future.successful(Done)
     }
 
+  def joinDevice(
+      application: Application,
+      hatName: String): Future[Any] =
+    application.kind match {
+      case _: ApplicationKind.Device =>
+        refineV[NonEmpty](application.id).toOption match {
+          case Some(x) => authserviceClient.joinDevice(hatName, DeviceId(x))
+          case None    => Future.successful(Done)
+        }
+      case _ =>
+        Future.successful(Done)
+    }
+
   private def setupApplication(
       application: HatApplication
     )(implicit hat: HatServer,
@@ -247,6 +278,7 @@ class ApplicationsService @Inject() (
       requestHeader: RequestHeader): Future[HatApplication] =
     for {
       _ <- joinContract(application.application, hat.hatName)
+      _ <- joinDevice(application.application, hat.hatName)
       _ <- applicationSetupStatusUpdate(application, enabled = true)(
              hat.db
            ) // Update status
