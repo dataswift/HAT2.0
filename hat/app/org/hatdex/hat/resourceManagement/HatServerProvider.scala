@@ -24,13 +24,6 @@
 
 package org.hatdex.hat.resourceManagement
 
-import java.io.StringWriter
-import java.security.interfaces.RSAPublicKey
-import javax.inject.{ Inject, Named, Singleton }
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
-
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
@@ -42,6 +35,12 @@ import org.hatdex.hat.utils.LoggingProvider
 import play.api.Configuration
 import play.api.cache.{ AsyncCacheApi, NamedCache }
 import play.api.mvc.Request
+
+import java.io.StringWriter
+import java.security.interfaces.RSAPublicKey
+import javax.inject.{ Inject, Named, Singleton }
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 trait HatServerProvider extends DynamicEnvironmentProviderService[HatServer] {
   def retrieve[B](request: Request[B]): Future[Option[HatServer]]

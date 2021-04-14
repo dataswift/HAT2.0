@@ -24,11 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import java.util.UUID
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat.json.HatJsonFormats
 import io.dataswift.models.hat.{ Owner, Platform, _ }
@@ -41,6 +36,10 @@ import org.hatdex.hat.utils.HatBodyParsers
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
+
+import java.util.UUID
+import javax.inject.Inject
+import scala.concurrent.{ ExecutionContext, Future }
 
 class Users @Inject() (
     components: ControllerComponents,

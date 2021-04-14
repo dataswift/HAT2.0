@@ -24,31 +24,25 @@
 
 package org.hatdex.hat.api.service.richData
 
+import io.dataswift.models.hat._
+import play.api.Logging
+
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-import io.dataswift.models.hat._
-import io.dataswift.test.common.BaseSpec
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
+class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
 
-class DataDebitServiceSpec
-    extends BaseSpec
-    with BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with DataDebitServiceSpecContext {
+  private var iteration = 1
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
-
-  override def beforeEach: Unit = {
+  before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
+    val permissionsDeleted = Await.result(db.run(DataDebitPermissions.delete.transactionally), 60.seconds)
+    logger.info(s"deleted $permissionsDeleted rows from table data_debit_permissions (iteration $iteration)")
 
     val endpointRecordsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
-
-    val action = DBIO.seq(
+    val actions = Seq(
       DataDebitPermissions.delete,
       DataDebit.filter(_.dataDebitKey.like("test%")).delete,
       DataCombinators.filter(_.combinatorId.like("test%")).delete,
@@ -57,8 +51,8 @@ class DataDebitServiceSpec
       DataJsonGroups.filterNot(g => g.groupId in DataJsonGroupRecords.map(_.groupId)).delete,
       DataJson.filter(r => r.recordId in endpointRecordsQuery).delete
     )
-
-    Await.result(db.run(action.transactionally), 60.seconds)
+    actions foreach (dbio => Await.result(db.run(dbio.transactionally), 60.seconds))
+    iteration += 1
   }
 
   "The `createDataDebit` method" should "Save a data debit" in {
@@ -320,7 +314,7 @@ class DataDebitServiceSpec
   }
 }
 
-trait DataDebitServiceSpecContext extends RichBundleServiceContext {
+class DataDebitServiceSpecContext extends RichBundleServiceContext {
   val testDataDebitRequest: DataDebitSetupRequest = DataDebitSetupRequest(
     "testdd",
     "purpose of the data use",

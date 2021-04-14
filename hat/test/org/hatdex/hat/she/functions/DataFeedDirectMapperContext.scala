@@ -29,7 +29,7 @@ import io.dataswift.models.hat.json.RichDataJsonFormats
 import org.hatdex.hat.she.service.FunctionServiceContext
 import play.api.libs.json.{ Format, Json }
 
-trait DataFeedDirectMapperContext extends FunctionServiceContext {
+class DataFeedDirectMapperContext extends FunctionServiceContext {
   implicit private val endpointDataFormat: Format[EndpointData] = RichDataJsonFormats.endpointDataFormat
 
   private val exampleTweetRetweetText =

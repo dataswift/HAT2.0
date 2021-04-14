@@ -23,13 +23,6 @@
  */
 package org.hatdex.hat.api.service
 
-import javax.inject.{ Inject, Singleton }
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import scala.util.Failure
-
 import akka.Done
 import akka.actor.{ ActorSystem, Scheduler }
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
@@ -46,6 +39,12 @@ import play.api.libs.json.{ JsObject, Json }
 import play.api.libs.ws.WSClient
 import play.api.test.FakeRequest
 import play.api.{ Configuration, Logger }
+
+import javax.inject.{ Inject, Singleton }
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.Failure
 
 @Singleton
 class StatsReporter @Inject() (

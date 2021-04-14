@@ -24,9 +24,9 @@
 
 package org.hatdex.hat.resourceManagement
 
-import scala.concurrent.Future
-
 import play.api.mvc.Request
+
+import scala.concurrent.Future
 
 class FakeHatServerProvider(fakeHatServer: HatServer) extends HatServerProvider {
   def retrieve[B](request: Request[B]): Future[Option[HatServer]] =

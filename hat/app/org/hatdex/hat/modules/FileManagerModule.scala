@@ -24,8 +24,6 @@
 
 package org.hatdex.hat.modules
 
-import javax.inject.{ Singleton => JSingleton }
-
 import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper
 import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
 import com.google.inject.{ AbstractModule, Provides }
@@ -33,6 +31,8 @@ import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.service.{ AwsS3Configuration, FileManager, FileManagerS3 }
 import play.api.Configuration
 import play.api.libs.concurrent.AkkaGuiceSupport
+
+import javax.inject.{ Singleton => JSingleton }
 
 class FileManagerModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 

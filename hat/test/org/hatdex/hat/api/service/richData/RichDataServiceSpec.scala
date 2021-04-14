@@ -24,35 +24,20 @@
 
 package org.hatdex.hat.api.service.richData
 
-import java.util.UUID
+import akka.stream.scaladsl.Sink
+import io.dataswift.models.hat._
+import org.hatdex.hat.api.HATTestContext
+import org.hatdex.hat.dal.Tables._
+import play.api.libs.json.{ JsObject, JsValue, Json }
 
+import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
-import akka.stream.scaladsl.Sink
-import io.dataswift.models.hat._
-import io.dataswift.test.common.BaseSpec
-import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.dal.Tables._
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
-import play.api.Logger
-import play.api.libs.json.{ JsObject, JsValue, Json }
+class RichDataStreamingServiceSpec extends RichDataServiceContext {
 
-class RichDataStreamingServiceSpec
-    extends BaseSpec
-    with BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with RichDataServiceContext {
-
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
-
-  override protected def afterAll(): Unit = container.close()
-
-  override def beforeEach: Unit = {
-    import org.hatdex.hat.dal.Tables._
+  before {
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 
     val endpointRecrodsQuery = DataJson.filter(_.source.like("test%")).map(_.recordId)
@@ -247,21 +232,13 @@ class RichDataStreamingServiceSpec
   }
 }
 
-class RichDataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with RichDataServiceContext {
+class RichDataServiceSpec extends RichDataServiceContext {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-  val logger: Logger = Logger(this.getClass)
-
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
-
-  override def beforeEach: Unit = {
+  before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
-
-    val action = DBIO.seq(
-      // TODO: Why do I need to fully qualify this?  I don't know currently.
-      org.hatdex.hat.dal.Tables.SheFunction.delete,
+    Seq(
+      SheFunction.delete,
       DataDebitBundle.delete,
       DataDebitContract.delete,
       DataCombinators.delete,
@@ -269,9 +246,33 @@ class RichDataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAn
       DataJsonGroupRecords.delete,
       DataJsonGroups.delete,
       DataJson.delete
+    ) foreach (dbio => Await.result(db.run(dbio.transactionally), 60.seconds))
+  }
+
+  "Saved and read data" should "be the same" in {
+    val service = application.injector.instanceOf[RichDataService]
+
+    val dataEndpoint = "test/a/b"
+    val values       = Seq(EndpointData(dataEndpoint, None, None, None, simpleJson, None))
+    val futSaved     = service.saveData(owner.userId, values)
+
+    val saved = Await.result(futSaved, 10.seconds)
+    saved.length must equal(1)
+    Json.toJson(saved.head.data) must equal(simpleJson)
+
+    val query =
+      Seq(EndpointQuery(dataEndpoint, None, None, None))
+    val data = service.propertyData(
+      query,
+      None,
+      true,
+      0,
+      Some(10)
     )
 
-    Await.result(db.run(action.transactionally), 60.seconds)
+    val res = Await.result(data, 10.seconds)
+    res.length must equal(1)
+    Json.toJson(res.head.data) must equal(simpleJson)
   }
 
   "The `saveData` method" should "Save a single JSON datapoint and add ID" in {
@@ -332,6 +333,30 @@ class RichDataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAn
       (record.head.links.get.head.data \ "field").as[String] must equal("value2")
     }
     Await.result(saved, 10.seconds)
+  }
+
+  "The `getRecord` method" should "look up a single JSON data point by primary key" in {
+    val service      = application.injector.instanceOf[RichDataService]
+    val endpointData = sampleData.head
+
+    val result: Future[(Seq[EndpointData], EndpointData)] = for {
+      saved <- service.saveData(owner.userId, List(endpointData))
+      lookedUp <- service.getRecord(owner.userId, saved.head.recordId.value)
+    } yield saved -> lookedUp
+    val (saved, lookedUp) = Await.result(result, 10.seconds)
+
+    lookedUp.recordId mustBe Some(saved.head.recordId.value)
+    lookedUp.data mustBe endpointData.data
+    lookedUp.endpoint mustBe endpointData.endpoint
+  }
+
+  it should "throw an RichDataMissingException for an unknown record id" in {
+    val service   = application.injector.instanceOf[RichDataService]
+    val unknownId = UUID.fromString("00000000-1111-0000-1111-000000000000")
+
+    intercept[RichDataMissingException](
+      Await.result(service.getRecord(owner.userId, unknownId), 10.seconds)
+    )
   }
 
   "The `propertyData` method" should "Find test endpoint values and map them to expected json output" in {
@@ -970,7 +995,7 @@ class RichDataServiceSpec extends BaseSpec with BeforeAndAfterEach with BeforeAn
   }
 }
 
-trait RichDataServiceContext extends HATTestContext {
+class RichDataServiceContext extends HATTestContext {
   val simpleJson: JsValue = Json.parse("""
       | {
       |   "field": "value",

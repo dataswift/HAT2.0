@@ -24,13 +24,12 @@
 
 package org.hatdex.hat.api.service
 
-import javax.inject.Inject
-
-import scala.concurrent.Future
-
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import play.api.Logger
+
+import javax.inject.Inject
+import scala.concurrent.Future
 
 class SystemStatusService @Inject() (implicit val ec: DalExecutionContext) {
   val logger: Logger = Logger(this.getClass)
