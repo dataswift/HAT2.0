@@ -24,8 +24,6 @@
 
 package org.hatdex.hat.api.service.monitoring
 
-import java.util.UUID
-
 import akka.stream.Materializer
 import io.dataswift.models.hat.{ EndpointData, Owner }
 import io.dataswift.test.common.BaseSpec
@@ -35,6 +33,8 @@ import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsValue, Json }
 import play.api.{ Application, Logger }
+
+import java.util.UUID
 
 class JsonStatsServiceSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with JsonStatsServiceContext {
 

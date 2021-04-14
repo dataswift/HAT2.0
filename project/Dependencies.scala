@@ -31,7 +31,7 @@ object Dependencies {
     val PlayJson              = "2.9.2"
     val Silhouette            = "5.2.0"
     val AtlassianJwt          = "3.2.0"
-    val AwsSdk                = "1.11.979"
+    val AwsSdk                = "1.11.989"
     val AlpakkaAwsLambda      = "1.1.2"
     val CommonsLang3          = "3.11"
     val BouncyCastle          = "1.68"
@@ -114,12 +114,11 @@ object Dependencies {
     }
 
     object ScalaTest {
-      val scalaplaytestmock = "org.scalatestplus" %% "mockito-3-4"  % "3.2.6.0" % Test
+      val scalaplaytestmock = "org.scalatestplus" %% "mockito-3-4"  % "3.2.7.0" % Test
       val mockitoCore       = "org.mockito"        % "mockito-core" % "3.4.6"   % Test
     }
 
     object Dataswift {
-      val testCommon            = "io.dataswift" %% "test-common"             % Version.DsTestTools % Test
       val integrationTestCommon = "io.dataswift" %% "integration-test-common" % Version.DsTestTools % Test
     }
   }

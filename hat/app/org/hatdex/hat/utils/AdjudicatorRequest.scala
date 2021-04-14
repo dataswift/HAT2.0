@@ -1,7 +1,5 @@
 package org.hatdex.hat.utils
 
-import scala.concurrent.{ ExecutionContext, Future }
-
 import dev.profunktor.auth.jwt.JwtSecretKey
 import eu.timepit.refined._
 import eu.timepit.refined.auto._
@@ -13,6 +11,8 @@ import play.api.Logger
 import play.api.http.Status._
 import play.api.libs.json.Json
 import play.api.libs.ws.{ WSClient, WSRequest }
+
+import scala.concurrent.{ ExecutionContext, Future }
 
 object AdjudicatorRequestTypes {
   // Public Key Request

@@ -24,24 +24,19 @@
 
 package org.hatdex.hat.api.controllers
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
 
-class ContractDataSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with ContractDataContext {
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+class ContractDataSpec extends ContractDataContext {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   val logger: Logger = Logger(this.getClass)
-
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
 
   "The Save Contract method" should "Return 400 on an empty request" in {
     val request = FakeRequest("POST", "http://hat.hubofallthings.net")
@@ -85,6 +80,6 @@ class ContractDataSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterA
   }
 }
 
-trait ContractDataContext extends HATTestContext {
+class ContractDataContext extends HATTestContext {
   val emptyRequestBody: JsValue = Json.parse("""{"token":"", "contractId":"", "hatName":"","body":""}""")
 }

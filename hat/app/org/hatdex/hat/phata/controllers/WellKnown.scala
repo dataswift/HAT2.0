@@ -23,11 +23,10 @@
  */
 package org.hatdex.hat.phata.controllers
 
-import javax.inject.Inject
-
-import scala.concurrent.Future
-
 import play.api.mvc._
+
+import javax.inject.Inject
+import scala.concurrent.Future
 
 class WellKnown @Inject() (components: ControllerComponents) extends AbstractController(components) {
 

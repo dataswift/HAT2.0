@@ -24,16 +24,16 @@
 
 package org.hatdex.hat.resourceManagement
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
 import org.mockito.{ Mockito => MockitoMockito }
 import play.api.Logger
 import play.api.test.FakeRequest
 
-class HatServiceProviderSpec extends BaseSpec with HATTestContext {
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+class HatServiceProviderSpec extends HATTestContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
   val logger: Logger = Logger(this.getClass)
@@ -91,7 +91,7 @@ class HatServiceProviderSpec extends BaseSpec with HATTestContext {
 // I believe this is no longer required.
 // trait HatServerProviderContext {
 //   import scala.concurrent.ExecutionContext.Implicits.global
-//   //val mockLogger = mock[Logger]
+//   //val mockLogger = MockitoSugar.mock[Logger]
 
 //   class FakeModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 //     override def configure(): Unit = {
