@@ -252,8 +252,21 @@ class ApplicationsService @Inject() (
       hatName: String): Future[Any] =
     application.kind match {
       case _: ApplicationKind.Contract =>
+        logger.info(s"joinContract OK: hat:${hatName} - contract:${application.id}")
         adjudicatorClient
           .joinContract(hatName, ContractId(UUID.fromString(application.id)))
+      case _ =>
+        logger.info(s"joinContract, not a contract: hat:${hatName} - app:${application.id}")
+        Future.successful(Done)
+    }
+
+  def leaveContract(
+      application: Application,
+      hatName: String): Future[Any] =
+    application.kind match {
+      case _: ApplicationKind.Contract =>
+        adjudicatorClient
+          .leaveContract(hatName, ContractId(UUID.fromString(application.id)))
       case _ =>
         Future.successful(Done)
     }
@@ -264,7 +277,25 @@ class ApplicationsService @Inject() (
     application.kind match {
       case _: ApplicationKind.Device =>
         refineV[NonEmpty](application.id).toOption match {
-          case Some(x) => authserviceClient.joinDevice(hatName, DeviceId(x))
+          case Some(x) =>
+            logger.info(s"joinDevice OK: hat:${hatName} - device:${x}")
+            authserviceClient.joinDevice(hatName, DeviceId(x))
+          case None =>
+            logger.info(s"joinDevice Fail: hat:${hatName} - device:${application.id}")
+            Future.successful(Done)
+        }
+      case _ =>
+        logger.info(s"joinDevice, not a device: hat:${hatName} - app:${application.id}")
+        Future.successful(Done)
+    }
+
+  def leaveDevice(
+      application: Application,
+      hatName: String): Future[Any] =
+    application.kind match {
+      case _: ApplicationKind.Device =>
+        refineV[NonEmpty](application.id).toOption match {
+          case Some(x) => authserviceClient.leaveDevice(hatName, DeviceId(x))
           case None    => Future.successful(Done)
         }
       case _ =>
@@ -423,6 +454,8 @@ class ApplicationsService @Inject() (
                    )
                  )
                )
+      _ <- leaveContract(app.application, hat.hatName)
+      _ <- leaveDevice(app.application, hat.hatName)
     } yield {
       logger.debug(
         s"Application status for ${app.application.id}: active = ${app.active}, setup = ${app.setup}, needs updating = ${app.needsUpdating}"
