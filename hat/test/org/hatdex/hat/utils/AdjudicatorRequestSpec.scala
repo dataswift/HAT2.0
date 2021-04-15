@@ -27,7 +27,6 @@ import io.dataswift.adjudicator.Types.{ ContractId, HatName }
 import io.dataswift.test.common.BaseSpec
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Logger
-import play.api.test.{ WsTestClient }
 
 import java.util.UUID
 import scala.concurrent.duration._
@@ -38,70 +37,59 @@ class AdjudicatorRequestSpec extends BaseSpec with AdjudicatorContext {
   val logger: Logger                                 = Logger(this.getClass)
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
-  //** Adjudicator
-  val adjudicatorAddress          = "localhost:9002"
-  val adjudicatorScheme           = "http://"
-  val adjudicatorEndpoint: String = s"${adjudicatorScheme}${adjudicatorAddress}"
-
   val hatName: HatName       = HatName("hatName")
   val contractId: ContractId = ContractId(UUID.fromString("21a3eed7-5d32-46ba-a884-1fdaf7259739"))
 
   "The `AdjudicatorRequest should`" should "Add a Hat to a Contract" in {
-    WsTestClient.withClient { client =>
-      //val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, JwtSecretKey("secret"), client)
-      val joinContract = mockAdjudicatorClient.joinContract("hatName", contractId)
-      val eventuallyJoinContract = joinContract.map { response =>
-          response match {
-            case Left(l)  => false
-            case Right(r) => true
-          }
-        } recover {
-            case e =>
-              Future.successful(false)
-          }
+    val joinContract = mockAdjudicatorClient.joinContract("hatName", contractId)
+    val eventuallyJoinContract = joinContract.map { response =>
+        response match {
+          case Left(_)  => false
+          case Right(_) => true
+        }
+      } recover {
+          case e =>
+            logger.info(s"Exception: ${e.getMessage()}")
+            Future.successful(false)
+        }
 
-      val result = Await.result(eventuallyJoinContract, 10.seconds)
-      result must equal(true)
-    }
+    val result = Await.result(eventuallyJoinContract, 10.seconds)
+    result must equal(true)
   }
 
   it should "Request a PublicKey" in {
-    WsTestClient.withClient { client =>
-      //val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, JwtSecretKey("secret"), client)
-      val getPublicKey =
-        mockAdjudicatorClient.getPublicKey(hatName, contractId, "21a3eed7-5d32-46ba-a884-1fdaf7259739")
-      val eventuallyPublicKey = getPublicKey.map { response =>
-          response match {
-            case Left(l)  => false
-            case Right(r) => true
-          }
-        } recover {
-            case _e =>
-              Future.successful(false)
-          }
+    val getPublicKey =
+      mockAdjudicatorClient.getPublicKey(hatName, contractId, "21a3eed7-5d32-46ba-a884-1fdaf7259739")
+    val eventuallyPublicKey = getPublicKey.map { response =>
+        response match {
+          case Left(_)  => false
+          case Right(_) => true
+        }
+      } recover {
+          case e =>
+            logger.info(s"Exception: ${e.getMessage()}")
+            Future.successful(false)
+        }
 
-      val result = Await.result(eventuallyPublicKey, 10.seconds)
-      result must equal(true)
-    }
+    val result = Await.result(eventuallyPublicKey, 10.seconds)
+    result must equal(true)
   }
 
   it should "Remove a Hat to a Contract" in {
-    WsTestClient.withClient { client =>
-      //val adjudicatorClient = new AdjudicatorRequest(adjudicatorEndpoint, JwtSecretKey("secret"), client)
-      val leaveContract = mockAdjudicatorClient.leaveContract("hatName", contractId)
-      val eventuallyLeaveContract = leaveContract.map { response =>
-          response match {
-            case Left(l)  => false
-            case Right(r) => true
-          }
-        } recover {
-            case e =>
-              Future.successful(false)
-          }
+    val leaveContract = mockAdjudicatorClient.leaveContract("hatName", contractId)
+    val eventuallyLeaveContract = leaveContract.map { response =>
+        response match {
+          case Left(_)  => false
+          case Right(_) => true
+        }
+      } recover {
+          case e =>
+            logger.info(s"Exception: ${e.getMessage()}")
+            Future.successful(false)
+        }
 
-      val result = Await.result(eventuallyLeaveContract, 10.seconds)
-      result must equal(true)
-    }
+    val result = Await.result(eventuallyLeaveContract, 10.seconds)
+    result must equal(true)
   }
 }
 
