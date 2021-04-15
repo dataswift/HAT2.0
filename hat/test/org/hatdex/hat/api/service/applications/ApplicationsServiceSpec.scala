@@ -370,36 +370,53 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
   "JoinContract" should "not run unless the application template is a Contract" in {
     val service = application.injector.instanceOf[ApplicationsService]
 
-    val result = for {
-      _ <- service.joinContract(fakeContract, "hatName")
+    for {
+      contractApp <- service.joinContract(fakeContract, "hatName")
       notablesApp <- service.joinContract(notablesApp, "hatName")
-    } yield notablesApp must equal(Done)
-    //contractApp must beLeft(ServiceRespondedWithFailure("The Adjudicator Service responded with an error: Internal Server Error"))
-    Await.result(result, 10.seconds)
+    } yield {
+      notablesApp must equal(Done)
+      contractApp mustBe Left
+    }
   }
 
-  // Commented until I figure out how to Mock it.
-  //    "Adding a Contract should succeed" in {
-  //      val service = application.injector.instanceOf[ApplicationsService]
+  "JoinDevice" should "not run unless the application template is a Device" in {
+    val service = application.injector.instanceOf[ApplicationsService]
 
-  //      val result = for {
-  //        _ <- service.setup(
-  //          HatApplication(
-  //            fakeContract,
-  //            setup = false,
-  //            enabled = false,
-  //            active = false,
-  //            None,
-  //            None,
-  //            None))
-  //        apps <- service.applicationStatus()
-  //      } yield {
-  //        apps.length must be equal 8
-  //        val setupApp = apps.find(_.application.id == notablesApp.id)
-  //        setupApp must not be empty
-  //        setupApp.get.setup must beTrue
-  //      }
+    for {
+      deviceApp <- service.joinDevice(fakeDevice, "hatName")
+      notablesApp <- service.joinDevice(notablesApp, "hatName")
+    } yield {
+      notablesApp must equal(Done)
+      deviceApp mustBe Left
+    }
+  }
 
-  //      result await (1, 20.seconds)
-  //    }
+  "Contract Setup" should "add a Contract successfully" in {
+    val service = application.injector.instanceOf[ApplicationsService]
+
+    for {
+      _ <- service.setup(HatApplication(fakeContract, setup = false, enabled = false, active = false, None, None, None))
+      apps <- service.applicationStatus()
+    } yield {
+      apps.size must equal(8)
+      val setupApp = apps.find(_.application.id == fakeContract.id)
+      setupApp must not be empty
+      setupApp.get.setup must equal(true)
+    }
+  }
+
+  "Device Setup" should "add a Device successfully" in {
+    val service = application.injector.instanceOf[ApplicationsService]
+
+    for {
+      _ <- service.setup(HatApplication(fakeDevice, setup = false, enabled = false, active = false, None, None, None))
+      apps <- service.applicationStatus()
+    } yield {
+      apps.size must equal(8)
+      val setupApp = apps.find(_.application.id == fakeDevice.id)
+      setupApp must not be empty
+      setupApp.get.setup must equal(true)
+    }
+  }
+
 }

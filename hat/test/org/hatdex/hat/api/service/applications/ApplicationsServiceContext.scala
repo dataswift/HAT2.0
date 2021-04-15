@@ -73,6 +73,8 @@ class ApplicationsServiceContext extends HATTestContext {
 
   val contractKind: ApplicationKind.Kind = Contract("https://dataswift.io")
 
+  val deviceKind: ApplicationKind.Kind = ApplicationKind.Device("https://dataswift.io")
+
   val description: FormattedText = FormattedText(
     text =
       "\n Anything you write online is your data – searches, social media posts, comments and notes.\n\n Start your notes here on Notables, where they will be stored completely privately in your HAT.\n\n Use Notables to draft and share social media posts. You can set how long they stay on Twitter or Facebook – a day, a week or a month. You can always set them back to private later: it will disappear from your social media but you won’t lose it because it’s saved in your HAT.\n\n Add images or pin locations as reminders of where you were or what you saw.\n          ",
@@ -260,6 +262,18 @@ class ApplicationsServiceContext extends HATTestContext {
   val fakeContract: Application =
     Application(
       id = "21a3eed7-5d32-46ba-a884-1fdaf7259731",
+      kind = contractKind,
+      info = appInfo,
+      developer = developer,
+      permissions = permissions,
+      dependencies = None,
+      setup = setup,
+      status = status
+    )
+
+  val fakeDevice: Application =
+    Application(
+      id = "device",
       kind = contractKind,
       info = appInfo,
       developer = developer,
