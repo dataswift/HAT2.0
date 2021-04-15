@@ -120,7 +120,6 @@ class UserLimiter @Inject() (
     implicit
     configuration: Configuration,
     ec: ExecutionContext) {
-  import scala.language.higherKinds
 
   /**
     * A Rate limiter Function for.

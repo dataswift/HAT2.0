@@ -27,10 +27,8 @@ package org.hatdex.hat.api.controllers
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
 import io.dataswift.models.hat._
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.service._
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.Helpers._

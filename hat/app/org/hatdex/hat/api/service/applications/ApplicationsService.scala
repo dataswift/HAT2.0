@@ -27,6 +27,9 @@ import akka.Done
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
 import dev.profunktor.auth.jwt.JwtSecretKey
+import eu.timepit.refined._
+import eu.timepit.refined.auto._
+import eu.timepit.refined.collection.NonEmpty
 import io.dataswift.adjudicator.Types.{ ContractId, DeviceId }
 import io.dataswift.models.hat.applications._
 import io.dataswift.models.hat.{ AccessToken, EndpointQuery }
@@ -50,9 +53,6 @@ import play.api.libs.json.{ JsObject, JsString }
 import play.api.libs.ws.WSClient
 import play.api.mvc.RequestHeader
 import play.api.{ Configuration, Logger }
-import eu.timepit.refined._
-import eu.timepit.refined.auto._
-import eu.timepit.refined.collection.NonEmpty
 
 import java.util.UUID
 import javax.inject.Inject

@@ -1,18 +1,18 @@
 package org.hatdex.hat.utils
 
-import scala.concurrent.{ ExecutionContext, Future }
-
 import dev.profunktor.auth.jwt.JwtSecretKey
 import eu.timepit.refined._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.collection.NonEmpty
 import io.dataswift.adjudicator.Types.{ DeviceId, HatName }
-import io.dataswift.adjudicator.{ HatClaim, HatDeviceClaim, JwtClaimBuilder }
+import io.dataswift.adjudicator.{ HatDeviceClaim, JwtClaimBuilder }
 import pdi.jwt.{ Jwt, JwtAlgorithm, JwtClaim, JwtHeader }
 import play.api.Logger
 import play.api.http.Status._
 import play.api.libs.json.Json
 import play.api.libs.ws.{ WSClient, WSRequest }
+
+import scala.concurrent.{ ExecutionContext, Future }
 
 object AuthServiceRequestTypes {
   // Public Key Request

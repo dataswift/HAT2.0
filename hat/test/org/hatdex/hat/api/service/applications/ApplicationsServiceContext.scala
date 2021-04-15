@@ -46,7 +46,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.test.FakeRequest
-import play.api.{ Logger, Application => PlayApplication }
+import play.api.{ Application => PlayApplication, Logger }
 import play.core.server.Server
 
 import scala.concurrent.Future

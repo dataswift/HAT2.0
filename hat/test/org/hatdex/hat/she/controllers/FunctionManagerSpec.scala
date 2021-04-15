@@ -38,8 +38,8 @@ import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
 
 class FunctionManagerSpec extends DataFeedDirectMapperContext {
 

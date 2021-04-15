@@ -23,8 +23,8 @@
  */
 package org.hatdex.hat.NamespaceUtils
 
-import io.dataswift.models.hat.{ NamespaceRead, NamespaceWrite, UserRole }
 import io.dataswift.models.hat.applications.Application
+import io.dataswift.models.hat.{ NamespaceRead, NamespaceWrite, UserRole }
 
 object NamespaceUtils {
 

@@ -24,13 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import java.util.UUID
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Failure, Success }
-import scala.concurrent.duration._
-
 import com.mohiva.play.silhouette.api.Silhouette
 import dev.profunktor.auth.jwt.JwtSecretKey
 import eu.timepit.refined._
@@ -45,7 +38,6 @@ import org.hatdex.hat.NamespaceUtils.NamespaceUtils
 import org.hatdex.hat.api.controllers.RequestValidationFailure._
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.applications.{ ApplicationsService, TrustedApplicationProvider }
-import org.hatdex.hat.api.service.monitoring.HatDataEventDispatcher
 import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
@@ -59,14 +51,11 @@ import play.api.libs.json.Reads._
 import play.api.libs.json.{ JsArray, JsValue, Json, Reads }
 import play.api.libs.ws.WSClient
 import play.api.mvc._
-import play.api.libs.json.JsResult
-import scala.concurrent.Await
-import cats.instances.future
-import io.dataswift.models.hat.applications.ApplicationPermissions
 
-import eu.timepit.refined._
-import eu.timepit.refined.auto._
-import eu.timepit.refined.collection.NonEmpty
+import java.util.UUID
+import javax.inject.Inject
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success }
 
 class MachineData @Inject() (
     components: ControllerComponents,
