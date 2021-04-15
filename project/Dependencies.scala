@@ -31,7 +31,7 @@ object Dependencies {
     val PlayJson              = "2.9.2"
     val Silhouette            = "5.2.0"
     val AtlassianJwt          = "3.2.0"
-    val AwsSdk                = "1.11.989"
+    val AwsSdk                = "1.11.999"
     val AlpakkaAwsLambda      = "1.1.2"
     val CommonsLang3          = "3.11"
     val BouncyCastle          = "1.68"
@@ -40,11 +40,16 @@ object Dependencies {
     val PrettyTime            = "5.0.0.Final"
     val Nbvcxz                = "1.5.0"
     val PlayMemcached         = "0.11.0"
-
-    val Adjudicator = "0.1.3.1"
-    val DexClient   = "3.2.1"
-    val DsBackend   = "2.2.1"
-    val DsTestTools = "0.2.3"
+    val Adjudicator           = "0.1.3.1"
+    val DexClient             = "3.2.1"
+    val DsBackend             = "2.2.1"
+    val DsTestTools           = "0.2.4"
+    val MockitoCore           = "3.9.0"
+    val ScalaPlayTestMock     = "3.2.7.0"
+    val Janino                = "3.1.3"
+    val CirceConfig           = "0.8.0"
+    val ScalaGuice            = "4.2.11"
+    val HatDexSlickPGDriver   = "0.1.2"
   }
 
   val resolvers = Seq(
@@ -98,12 +103,12 @@ object Dependencies {
 
     object HATDeX {
       val dexClient = "org.hatdex" %% "dex-client-scala"      % Version.DexClient
-      val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.1.2"
+      val codegen   = "org.hatdex" %% "slick-postgres-driver" % Version.HatDexSlickPGDriver
     }
 
-    val scalaGuice  = "net.codingwell"     %% "scala-guice"  % "4.2.11"
-    val circeConfig = "io.circe"           %% "circe-config" % "0.8.0"
-    val janino      = "org.codehaus.janino" % "janino"       % "3.1.3"
+    val scalaGuice  = "net.codingwell"     %% "scala-guice"  % Version.ScalaGuice
+    val circeConfig = "io.circe"           %% "circe-config" % Version.CirceConfig
+    val janino      = "org.codehaus.janino" % "janino"       % Version.Janino
 
     object ContractLibrary {
       val adjudicator = "io.dataswift" %% "adjudicatorlib" % Version.Adjudicator
@@ -114,8 +119,8 @@ object Dependencies {
     }
 
     object ScalaTest {
-      val scalaplaytestmock = "org.scalatestplus" %% "mockito-3-4"  % "3.2.7.0" % Test
-      val mockitoCore       = "org.mockito"        % "mockito-core" % "3.4.6"   % Test
+      val scalaplaytestmock = "org.scalatestplus" %% "mockito-3-4"  % Version.ScalaPlayTestMock % Test
+      val mockitoCore       = "org.mockito"        % "mockito-core" % Version.MockitoCore       % Test
     }
 
     object Dataswift {

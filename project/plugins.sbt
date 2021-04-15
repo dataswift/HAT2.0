@@ -16,7 +16,7 @@ addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.5.1")
 addSbtPlugin("org.hatdex" % "sbt-slick-postgres-generator" % "0.1.2")
 
 // run "sbt dependencyUpdates" to check maven for updates or "sbt ";dependencyUpdates; reload plugins; dependencyUpdates" for sbt plugins
-addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.5.2")
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.5.3")
 
 // ScalaFMT, ScalaFIX and Tools Common
 addSbtPlugin("org.scalameta" % "sbt-scalafmt"          % "2.4.2")

@@ -25,14 +25,14 @@
 package org.hatdex.hat.api.service
 
 import org.hatdex.hat.api.HATTestContext
-import org.scalatest.time.{ Millis, Second, Span }
+import org.scalatest.time.{ Millis, Seconds, Span }
 
 import scala.concurrent.Future
 
 class FileManagerS3Spec extends HATTestContext {
 
   implicit val defaultPatience: PatienceConfig =
-    PatienceConfig(timeout = Span(1, Second), interval = Span(50, Millis))
+    PatienceConfig(timeout = Span(10, Seconds), interval = Span(50, Millis))
 
   "The `getUploadUrl` method" should "return a signed url for a provided key" in {
     val fileManager            = application.injector.instanceOf[FileManager]
