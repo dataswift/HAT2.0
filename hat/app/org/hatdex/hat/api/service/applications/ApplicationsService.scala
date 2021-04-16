@@ -247,7 +247,7 @@ class ApplicationsService @Inject() (
     ) // If data debit was there, must have been setup successfully
   }
 
-  def joinContract(
+  def joinContractOrDevice(
       application: Application,
       hatName: String): Future[Any] =
     application.kind match {
@@ -255,26 +255,6 @@ class ApplicationsService @Inject() (
         logger.info(s"joinContract OK: hat:${hatName} - contract:${application.id}")
         adjudicatorClient
           .joinContract(hatName, ContractId(UUID.fromString(application.id)))
-      case _ =>
-        logger.info(s"joinContract, not a contract: hat:${hatName} - app:${application.id}")
-        Future.successful(Done)
-    }
-
-  def leaveContract(
-      application: Application,
-      hatName: String): Future[Any] =
-    application.kind match {
-      case _: ApplicationKind.Contract =>
-        adjudicatorClient
-          .leaveContract(hatName, ContractId(UUID.fromString(application.id)))
-      case _ =>
-        Future.successful(Done)
-    }
-
-  def joinDevice(
-      application: Application,
-      hatName: String): Future[Any] =
-    application.kind match {
       case _: ApplicationKind.Device =>
         refineV[NonEmpty](application.id).toOption match {
           case Some(x) =>
@@ -285,14 +265,17 @@ class ApplicationsService @Inject() (
             Future.successful(Done)
         }
       case _ =>
-        logger.info(s"joinDevice, not a device: hat:${hatName} - app:${application.id}")
+        logger.info(s"joinContract, not a contract: hat:${hatName} - app:${application.id}")
         Future.successful(Done)
     }
 
-  def leaveDevice(
+  def leaveContractOrDevice(
       application: Application,
       hatName: String): Future[Any] =
     application.kind match {
+      case _: ApplicationKind.Contract =>
+        adjudicatorClient
+          .leaveContract(hatName, ContractId(UUID.fromString(application.id)))
       case _: ApplicationKind.Device =>
         refineV[NonEmpty](application.id).toOption match {
           case Some(x) => authserviceClient.leaveDevice(hatName, DeviceId(x))
@@ -308,8 +291,7 @@ class ApplicationsService @Inject() (
       user: HatUser,
       requestHeader: RequestHeader): Future[HatApplication] =
     for {
-      _ <- joinContract(application.application, hat.hatName)
-      _ <- joinDevice(application.application, hat.hatName)
+      _ <- joinContractOrDevice(application.application, hat.hatName)
       _ <- applicationSetupStatusUpdate(application, enabled = true)(
              hat.db
            ) // Update status
@@ -454,8 +436,7 @@ class ApplicationsService @Inject() (
                    )
                  )
                )
-      _ <- leaveContract(app.application, hat.hatName)
-      _ <- leaveDevice(app.application, hat.hatName)
+      _ <- leaveContractOrDevice(app.application, hat.hatName)
     } yield {
       logger.debug(
         s"Application status for ${app.application.id}: active = ${app.active}, setup = ${app.setup}, needs updating = ${app.needsUpdating}"

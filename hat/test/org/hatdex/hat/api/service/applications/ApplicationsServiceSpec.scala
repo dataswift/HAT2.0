@@ -371,8 +371,8 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
     val service = application.injector.instanceOf[ApplicationsService]
 
     for {
-      contractApp <- service.joinContract(fakeContract, "hatName")
-      notablesApp <- service.joinContract(notablesApp, "hatName")
+      contractApp <- service.joinContractOrDevice(fakeContract, "hatName")
+      notablesApp <- service.joinContractOrDevice(notablesApp, "hatName")
     } yield {
       notablesApp must equal(Done)
       contractApp mustBe Left
@@ -383,8 +383,8 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
     val service = application.injector.instanceOf[ApplicationsService]
 
     for {
-      deviceApp <- service.joinDevice(fakeDevice, "hatName")
-      notablesApp <- service.joinDevice(notablesApp, "hatName")
+      deviceApp <- service.joinContractOrDevice(fakeDevice, "hatName")
+      notablesApp <- service.joinContractOrDevice(notablesApp, "hatName")
     } yield {
       notablesApp must equal(Done)
       deviceApp mustBe Left

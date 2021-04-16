@@ -56,14 +56,14 @@ object FutureRetries {
       minJitter: Double): List[FiniteDuration] =
     delays.map { delay =>
       val jitter =
-        delay * (minJitter + (maxJitter - minJitter) * Random.nextDouble)
+        delay * (minJitter + (maxJitter - minJitter) * Random.nextDouble())
       jitter match {
         case d: FiniteDuration => d
         case _                 => delay
       }
     }
 
-  val fibonacci: Stream[FiniteDuration] =
+  val fibonacci: LazyList[FiniteDuration] =
     0.seconds #:: 1.seconds #:: (fibonacci zip fibonacci.tail).map { t =>
           t._1 + t._2
         }

@@ -34,6 +34,7 @@ import io.dataswift.adjudicator.Types.{ DeviceId, HatName, ShortLivedToken }
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.applications.Application
 import io.dataswift.models.hat.json.RichDataJsonFormats
+import org.hatdex.hat.BearerTokenParser.BearerTokenParser
 import org.hatdex.hat.NamespaceUtils.NamespaceUtils
 import org.hatdex.hat.api.controllers.RequestValidationFailure._
 import org.hatdex.hat.api.service.UsersService
@@ -57,6 +58,14 @@ import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
 
+object MachineData {
+  case class SLTokenBody(
+      iss: String,
+      exp: Long,
+      deviceId: String)
+  implicit val sltokenBodyReads: Reads[SLTokenBody] = Json.reads[SLTokenBody]
+}
+
 class MachineData @Inject() (
     components: ControllerComponents,
     parsers: HatBodyParsers,
@@ -71,6 +80,7 @@ class MachineData @Inject() (
   )(wsClient: WSClient)
     extends HatApiController(components, silhouette) {
   import RichDataJsonFormats._
+  import MachineData._
 
   private val logger             = loggingProvider.logger(this.getClass)
   private val defaultRecordLimit = 1000
@@ -104,13 +114,6 @@ class MachineData @Inject() (
   case class DeviceDataUpdateRequest(
       body: Seq[EndpointData])
   implicit val machineDataUpdateRequestReads: Reads[DeviceDataUpdateRequest] = Json.reads[DeviceDataUpdateRequest]
-
-  // Move this, or keep it here?
-  case class SLTokenBody(
-      iss: String,
-      exp: Long,
-      deviceId: String)
-  implicit val sltokenBodyReads: Reads[SLTokenBody] = Json.reads[SLTokenBody]
 
   // Errors
   sealed abstract class DeviceVerificationFailure
@@ -215,7 +218,7 @@ class MachineData @Inject() (
       eventuallyVerdict.flatMap { verdict =>
         verdict match {
           case Left(_) => Future.successful(BadRequest("oops"))
-          case Right(DeviceRequestRequestSuccess(hatUser)) =>
+          case Right(DeviceRequestRequestSuccess(_)) =>
             makeData(namespace, endpoint, orderBy, ordering, skip, take)
         }
       }
@@ -249,15 +252,18 @@ class MachineData @Inject() (
     val xAuthToken: Option[String] = headers.get("X-Auth-Token")
     xAuthToken match {
       case Some(tokenAsString) =>
-        val tokenOnly = tokenAsString.split(" ")(1).trim
-        println(s"token only     : ${tokenOnly}")
-
-        val tokenBody = ShortLivedTokenOps.getBody(tokenOnly).getOrElse("")
-        println(s"token body     : ${tokenBody}")
-
-        val tokenBodyJson: Option[SLTokenBody] = Json.parse(tokenBody).validate[SLTokenBody].asOpt
-        println(s"token body json: ${tokenBodyJson}")
-        Future.successful(tokenBodyJson)
+        val tokenOnly = BearerTokenParser.parseToken(tokenAsString)
+        println(s"tokenOnly    : ${tokenOnly}")
+        tokenOnly match {
+          case Some(token) =>
+            val tokenBody = ShortLivedTokenOps.getBody(token).getOrElse("")
+            println(s"tokenBody    : ${tokenBody}")
+            val tokenBodyJson: Option[SLTokenBody] = Json.parse(tokenBody).validate[SLTokenBody].asOpt
+            println(s"tokenBodyJson: ${tokenBodyJson}")
+            Future.successful(tokenBodyJson)
+          case _ =>
+            Future.successful(None)
+        }
       case None =>
         Future.successful(None)
     }

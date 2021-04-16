@@ -74,6 +74,33 @@ class MachineDataSpec extends MachineDataContext {
     val res = Await.result(response, 5.seconds)
     res.header.status must equal(400)
   }
+
+  "The getTokenFromHeaders" should "find an SLTokenBody" in {
+    import org.hatdex.hat.api.controllers.MachineData.SLTokenBody
+    val controller = application.injector.instanceOf[MachineData]
+    val headers = play.api.mvc.Headers(
+      ("X-Auth-Token",
+       "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiIsImtpZCI6IjgzNDg0NTNiLWM0ZWYtNDczYS05ODhiLWY2NmFiZWFjYmZkMyJ9.eyJpc3MiOiJkYXRhc3dpZnRhZGp1ZGljYXRpb24iLCJleHAiOjE2MTg1ODMyNDQsCiAgImRldmljZUlkIiA6ICJzYW1wbGVkZXZpY2UiCn0.A0A1YR59Xatd8sudFFsRVZDSadPfC0Sm0c1OecMsyTudshXLb3Zg36eEIrZMRgh-M9Br30Ybr6X1ZrG9cdv5r-BkfPGaR9lGBFmP5GDkag5_LhpJvUyieucqQj2cyrNfGp1EiSeEwZtLHI_WvJhFH6LeGpMXk08DxOE_O6KA1RE"
+      )
+    )
+
+    val ret = Await.result(controller.getTokenFromHeaders(headers), 2.seconds)
+
+    ret must equal(
+      Some(SLTokenBody("dataswiftadjudication", 1618583244, "sampledevice"))
+    )
+  }
+
+  it should "gracefully fail on a bad bearer" in {
+    val controller = application.injector.instanceOf[MachineData]
+    val headers = play.api.mvc.Headers(
+      ("X-Auth-Token", "Bearer garbage")
+    )
+
+    val ret = Await.result(controller.getTokenFromHeaders(headers), 2.seconds)
+    ret must equal(None)
+  }
+
 }
 
 class MachineDataContext extends HATTestContext {
