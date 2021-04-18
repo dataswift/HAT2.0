@@ -48,11 +48,8 @@ object Dependencies {
   }
 
   val resolvers = Seq(
-    Resolver.jcenterRepo,
-    "Atlassian Releases" at "https://maven.atlassian.com/public/",
-    Resolver.bintrayRepo("scalaz", "releases"),
-    "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com",
-    "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com"
+    "Atlassian" at "https://maven.atlassian.com/public/",
+    "Dataswift" at "https://dataswift.jfrog.io/artifactory/public/",
   )
 
   object Library {

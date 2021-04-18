@@ -23,15 +23,18 @@ jobs:
           submodules: recursive
 
       - name: Cache - GHA
-        id: cache
         uses: actions/cache@v1
         with:
           path: ~/.cache/coursier/v1/https
           key: ${{ runner.OS }}-coursier-cache
 
-      - name: Setup
-        uses: actions/setup-java@v1
+      - name: Add extra resolvers
+        run: curl https://${{ secrets.ARTIFACTS_CACHE_BUCKET }}/resolvers.sbt --create-dirs -o ~/.sbt/resolvers.sbt
+
+      - name: Setup Java
+        uses: actions/setup-java@v2
         with:
+          distribution: adopt
           java-version: 11
           java-package: jdk
           architecture: x64

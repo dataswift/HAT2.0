@@ -19,11 +19,13 @@ jobs:
           submodules: recursive
 
       - name: Cache - GHA
-        id: cache
         uses: actions/cache@v1
         with:
           path: ~/.cache/coursier/v1/https
           key: ${{ runner.OS }}-coursier-cache
+
+      - name: Add extra resolvers
+        run: curl https://${{ secrets.ARTIFACTS_CACHE_BUCKET }}/resolvers.sbt --create-dirs -o ~/.sbt/resolvers.sbt
 
       - name: Setup
         uses: actions/setup-java@v1
@@ -52,3 +54,13 @@ jobs:
 
       - name: Build
         run: sbt docker:stage && docker build hat/target/docker/stage
+
+      - name: AWS - Configure
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.DEPLOYER_SHARED_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.DEPLOYER_SHARED_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - name: Cache - Upload
+        run: aws s3 sync ~/.cache/coursier/v1/https/ s3://${{ secrets.ARTIFACTS_CACHE_BUCKET }} --sse AES256 --follow-symlinks --no-progress
