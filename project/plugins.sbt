@@ -11,7 +11,7 @@ addSbtPlugin("org.scoverage" % "sbt-coveralls" % "1.2.7")
 addSbtPlugin("com.typesafe.sbt" % "sbt-web"     % "1.4.4")
 addSbtPlugin("com.typesafe.sbt" % "sbt-digest"  % "1.1.4")
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip"    % "1.0.2")
-addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.13")
+addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.5.1")
 
 addSbtPlugin("org.hatdex" % "sbt-slick-postgres-generator" % "0.1.2")
 
@@ -20,5 +20,5 @@ addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.5.2")
 
 // ScalaFMT, ScalaFIX and Tools Common
 addSbtPlugin("org.scalameta" % "sbt-scalafmt"          % "2.4.2")
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix"          % "0.9.26")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix"          % "0.9.27")
 addSbtPlugin("io.dataswift"  % "sbt-scalatools-common" % "0.2.3")

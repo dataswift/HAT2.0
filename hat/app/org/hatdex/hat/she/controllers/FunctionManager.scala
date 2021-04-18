@@ -24,10 +24,6 @@
 
 package org.hatdex.hat.she.controllers
 
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import io.dataswift.models.hat._
@@ -38,6 +34,9 @@ import org.hatdex.hat.she.service.{ FunctionExecutionTriggerHandler, FunctionSer
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
+
+import javax.inject.Inject
+import scala.concurrent.{ ExecutionContext, Future }
 
 class FunctionManager @Inject() (
     components: ControllerComponents,

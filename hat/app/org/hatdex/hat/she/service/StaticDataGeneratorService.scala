@@ -23,10 +23,6 @@
  */
 package org.hatdex.hat.she.service
 
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.she.mappers.{
@@ -40,6 +36,9 @@ import org.hatdex.hat.she.mappers.{
 }
 import org.hatdex.hat.she.models.StaticDataValues
 import play.api.Logger
+
+import javax.inject.Inject
+import scala.concurrent.{ ExecutionContext, Future }
 
 class StaticDataGeneratorService @Inject() (
   )(implicit

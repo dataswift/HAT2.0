@@ -24,8 +24,6 @@
 
 package org.hatdex.hat.she.service
 
-import scala.concurrent.{ ExecutionContext, Future }
-
 import com.google.inject.{ AbstractModule, Provides }
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.applications._
@@ -37,6 +35,8 @@ import org.joda.time.DateTime
 import play.api.{ Application }
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsBoolean, JsObject }
+
+import scala.concurrent.{ ExecutionContext, Future }
 
 trait FunctionServiceContext extends HATTestContext {
 

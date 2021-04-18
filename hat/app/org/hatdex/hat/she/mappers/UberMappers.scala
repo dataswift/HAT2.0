@@ -1,9 +1,5 @@
 package org.hatdex.hat.she.mappers
 
-import java.util.UUID
-
-import scala.util.Try
-
 import io.dataswift.models.hat.applications.{
   DataFeedItem,
   DataFeedItemContent,
@@ -15,6 +11,9 @@ import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, FilterOpera
 import org.hatdex.hat.she.models.StaticDataValues
 import org.joda.time.DateTime
 import play.api.libs.json.{ JsError, JsSuccess, JsValue, Json }
+
+import java.util.UUID
+import scala.util.Try
 
 class UberRidesMapper extends DataEndpointMapper {
   override protected val dataDeduplicationField: Option[String] = Some(

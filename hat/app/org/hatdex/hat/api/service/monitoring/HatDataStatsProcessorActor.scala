@@ -24,10 +24,6 @@
 
 package org.hatdex.hat.api.service.monitoring
 
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-
 import akka.Done
 import akka.actor.Actor
 import io.dataswift.models.hat.{
@@ -46,6 +42,9 @@ import org.hatdex.hat.api.service.monitoring.HatDataEventBus.{
 }
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerDiscoveryException, HatServerProvider }
 import play.api.Logger
+
+import javax.inject.Inject
+import scala.concurrent.{ ExecutionContext, Future }
 
 class HatDataStatsProcessorActor @Inject() (
     processor: HatDataStatsProcessor)
