@@ -1,4 +1,5 @@
-resolvers += "Dataswift Plugins" at "https://dataswift.jfrog.io/artifactory/public/"
+resolvers += "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com"
+resolvers += "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com"
 
 addSbtPlugin("com.typesafe.sbt"  % "sbt-native-packager" % "1.8.1")
 addSbtPlugin("com.typesafe.play" % "sbt-plugin"          % "2.8.7")

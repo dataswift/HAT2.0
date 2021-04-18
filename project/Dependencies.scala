@@ -49,7 +49,8 @@ object Dependencies {
 
   val resolvers = Seq(
     "Atlassian" at "https://maven.atlassian.com/public/",
-    "Dataswift" at "https://dataswift.jfrog.io/artifactory/public/",
+    "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com",
+    "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com"
   )
 
   object Library {
