@@ -1,32 +1,32 @@
-name-template: 'v$RESOLVED_VERSION'
-tag-template: 'v$RESOLVED_VERSION'
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
 
 categories:
-  - title: 'Features'
+  - title: "Features"
     labels:
-      - 'feature'
-  - title: 'Bugs'
+      - "feature"
+  - title: "Bugs"
     labels:
-      - 'bug'
-      - 'fix'
-  - title: 'Maintenance'
-    labels: 
-      - 'chore'
+      - "bug"
+      - "fix"
+  - title: "Maintenance"
+    labels:
+      - "chore"
 
-change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
 change-title-escapes: '\<*_&'
 
 version-resolver:
   default: patch
   major:
     labels:
-      - 'major'
+      - "major"
   minor:
     labels:
-      - 'minor'
+      - "minor"
   patch:
     labels:
-      - 'patch'
+      - "patch"
 
 template: |
   ## Changes
