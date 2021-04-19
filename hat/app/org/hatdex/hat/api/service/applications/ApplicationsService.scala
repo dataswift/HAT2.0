@@ -252,13 +252,13 @@ class ApplicationsService @Inject() (
       hatName: String): Future[Any] =
     application.kind match {
       case _: ApplicationKind.Contract =>
-        logger.info(s"joinContract OK: hat:${hatName} - contract:${application.id}")
+        logger.info(s"joinContract OK: hat:${hatName} - contract: ${application.id}")
         adjudicatorClient
           .joinContract(hatName, ContractId(UUID.fromString(application.id)))
       case _: ApplicationKind.Device =>
         refineV[NonEmpty](application.id).toOption match {
           case Some(x) =>
-            logger.info(s"joinDevice OK: hat:${hatName} - device:${x}")
+            logger.info(s"joinDevice OK: hat:${hatName} - device: ${x}")
             authserviceClient.joinDevice(hatName, DeviceId(x))
           case None =>
             logger.info(s"joinDevice Fail: hat:${hatName} - device:${application.id}")

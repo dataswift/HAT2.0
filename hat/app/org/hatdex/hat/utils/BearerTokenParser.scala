@@ -24,8 +24,6 @@
 package org.hatdex.hat.BearerTokenParser
 
 object BearerTokenParser {
-  //private val bearerPrefix = "Bearer "
-
   private val bearerRegex = """Bearer (.+?)""".r
 
   def parseToken(token: String): Option[String] =

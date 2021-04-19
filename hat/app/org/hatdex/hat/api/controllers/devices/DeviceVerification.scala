@@ -60,23 +60,9 @@ class DeviceVerification(
     Future.successful(slTokenBody)
   }
 
-  // TODO: Improve
-  def getUsernameFromRequest(requestUrl: String): Future[Option[String]] = {
-    val hostOnly =
-      if (requestUrl.startsWith("http://"))
-        requestUrl.drop(7)
-      else if (requestUrl.startsWith("https://"))
-        requestUrl.drop(8)
-      else
-        requestUrl
-
-    val dotSplit = hostOnly.split('.')(0)
-    Future.successful(Some(dotSplit))
-  }
-
   def getRequestVerdict(
       reqHeaders: Headers,
-      reqHost: String,
+      hatName: String,
       namespace: String,
       usersService: UsersService,
       trustedApplicationProvider: TrustedApplicationProvider
@@ -84,21 +70,20 @@ class DeviceVerification(
     val eventuallyMaybeUserAndApp = for {
       sltoken <- Future.successful(reqHeaders.get("X-Auth-Token"))
       sltokenBody <- getTokenFromHeaders(reqHeaders)
-      hatName <- getUsernameFromRequest(reqHost)
-      user <- usersService.getUser(hatName.get)
+      user <- usersService.getUser(hatName)
       app <- trustedApplicationProvider.application(sltokenBody.map(_.deviceId).getOrElse(""))
-    } yield (sltoken, user, app, hatName)
+    } yield (sltoken, user, app)
 
     eventuallyMaybeUserAndApp.flatMap { maybeUserAndApp =>
       maybeUserAndApp match {
-        case (Some(sltoken), Some(user), Some(app), Some(hatName)) =>
+        case (Some(sltoken), Some(user), Some(app)) =>
           verifyApplicationAndNamespace(sltoken, app, namespace, hatName).flatMap { appAndNamespaceOk =>
             appAndNamespaceOk match {
               case Left(_)  => Future.successful(Left(DeviceRequestFailure("appAndNamespaceOk failed")))
               case Right(_) => Future.successful(Right(DeviceRequestSuccess(user)))
             }
           }
-        case (_, _, _, _) =>
+        case (_, _, _) =>
           Future.successful(Left(DeviceRequestFailure("Missing element of maybeUserAndApp")))
       }
     }

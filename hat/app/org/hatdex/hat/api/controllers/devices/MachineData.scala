@@ -77,21 +77,38 @@ class MachineData @Inject() (
 
   val deviceVerification = new DeviceVerification(wsClient, configuration)
 
-  case class DeviceDataCreateRequest(
-      body: Option[JsValue])
+  case class DeviceDataCreateRequest(body: Option[JsValue])
   implicit val deviceDataCreateRequestReads: Reads[DeviceDataCreateRequest] = Json.reads[DeviceDataCreateRequest]
 
-  case class DeviceDataUpdateRequest(
-      body: Seq[EndpointData])
+  case class DeviceDataUpdateRequest(body: Seq[EndpointData])
   implicit val machineDataUpdateRequestReads: Reads[DeviceDataUpdateRequest] = Json.reads[DeviceDataUpdateRequest]
 
   // -- Error Handler - Error to Response
   def handleFailedRequestAssessment(failure: DeviceVerificationFailure): Future[Result] =
     failure match {
       case DeviceRequestFailure(errorMessage) =>
+        logger.info(s"DeviceRequestFailure: ${errorMessage}")
         Future.successful(BadRequest(s"DeviceRequest was invalid: ${errorMessage}"))
+
       case ServiceRespondedWithFailure(errorMessage) =>
-        Future.successful(BadRequest(s"ServiceRespondedWithFailure was invalid: ${errorMessage}"))
+        logger.info(s"ServiceRespondedWithFailure: ${errorMessage}")
+        Future.successful(ServiceUnavailable)
+
+      case ApplicationAndNamespaceNotValid =>
+        logger.info(s"ApplicationAndNamespaceNotValid")
+        Future.successful(BadRequest(s"DeviceRequest was invalid"))
+
+      case FailedDeviceRefinement =>
+        logger.info(s"FailedDeviceRefinement")
+        Future.successful(BadRequest(s"DeviceRequest was invalid."))
+
+      case InvalidTokenFailure(errorMessage) =>
+        logger.info(s"InvalidTokenFailure: ${errorMessage}")
+        Future.successful(BadRequest(s"DeviceRequest was invalid: ${errorMessage}"))
+
+      case InvalidDeviceDataRequestFailure(errorMessage) =>
+        logger.info(s"InvalidDeviceDataRequestFailure: ${errorMessage}")
+        Future.successful(BadRequest(s"DeviceRequest Body was invalid"))
     }
 
   // --- API Handlers ---
@@ -106,8 +123,8 @@ class MachineData @Inject() (
     UserAwareAction.async { implicit request =>
       val eventuallyVerdict =
         deviceVerification.getRequestVerdict(request.headers,
-                                             request.host,
-                                             namespace: String,
+                                             request.dynamicEnvironment.hatName,
+                                             namespace,
                                              usersService,
                                              trustedApplicationProvider
         )
@@ -129,7 +146,7 @@ class MachineData @Inject() (
       val deviceDataCreate = request.body
       val eventuallyVerdict =
         deviceVerification.getRequestVerdict(request.headers,
-                                             request.host,
+                                             request.dynamicEnvironment.hatName,
                                              namespace,
                                              usersService,
                                              trustedApplicationProvider
@@ -137,7 +154,7 @@ class MachineData @Inject() (
 
       eventuallyVerdict.flatMap { verdict =>
         verdict match {
-          case Left(_) => Future.successful(BadRequest("oops"))
+          case Left(verdictError) => handleFailedRequestAssessment(verdictError)
           case Right(DeviceVerificationSuccess.DeviceRequestSuccess(hatUser)) =>
             handleCreateDeviceData(
               hatUser = hatUser,
@@ -156,7 +173,7 @@ class MachineData @Inject() (
       val deviceDataUpdate = request.body
       val eventuallyVerdict =
         deviceVerification.getRequestVerdict(request.headers,
-                                             request.host,
+                                             request.dynamicEnvironment.hatName,
                                              namespace,
                                              usersService,
                                              trustedApplicationProvider
@@ -164,14 +181,13 @@ class MachineData @Inject() (
 
       eventuallyVerdict.flatMap { verdict =>
         verdict match {
-          case Left(oops) => Future.successful(BadRequest(oops.toString()))
+          case Left(verdictError) => handleFailedRequestAssessment(verdictError)
           case Right(DeviceVerificationSuccess.DeviceRequestSuccess(hatUser)) =>
             handleUpdateDeviceData(hatUser, deviceDataUpdate, namespace)
         }
       }
 
     // Handle these errors
-
     // val deviceDataUpdate    = request.body
     // val maybeDeviceDataInfo = refineDeviceDataUpdateRequest(deviceDataUpdate)
     // maybeDeviceDataInfo match {
