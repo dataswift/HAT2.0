@@ -22,69 +22,54 @@
  * 5 / 2017
  */
 
-package org.hatdex.hat.api.controllers
+package org.hatdex.hat.api.controllers.devices
 
 import org.hatdex.hat.api.HATTestContext
 import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
-
+import org.hatdex.hat.api.controllers.devices.DeviceVerification
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import play.api.libs.ws.WSClient
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import play.api.Configuration
+import play.libs.ws
+import com.typesafe.config.Config
+import io.dataswift.test.common.BaseSpec
+import play.api.Play
+import play.api.libs.ws.ahc.AhcWSClient
 
-class MachineDataSpec extends MachineDataContext {
+class DeviceVerificationSpec extends BaseSpec {
   import scala.concurrent.ExecutionContext.Implicits.global
+  implicit val system       = ActorSystem()
+  implicit val materializer = ActorMaterializer()
+  val wsClient              = AhcWSClient()
+  val logger: Logger        = Logger(this.getClass)
+  //lazy val wsClient  = application.injector.instanceOf[WSClient]
 
-  val logger: Logger = Logger(this.getClass)
-  val postRequest = FakeRequest("POST", "http://hat.hubofallthings.net")
-    .withJsonBody(emptyRequestBody)
-
-  val getRequest = FakeRequest("POST", "http://hat.hubofallthings.net")
-
-  "The Save Machine method" should "Return 400 on an empty request" in {
-
-    val controller = application.injector.instanceOf[MachineData]
-
-    val response = for {
-      _ <- Helpers.call(controller.createData("samplemachine", "testendpoint", None), postRequest)
-      r <- Helpers.call(controller.getData("samplemachine", "testendpoint", None, None, None, None), getRequest)
-    } yield r
-
-    val res = Await.result(response, 5.seconds)
-    res.header.status must equal(400)
-  }
-
-  "The Read Machine Data method" should "Return 400 on an empty request" in {
-    val controller = application.injector.instanceOf[MachineData]
-
-    val response =
-      Helpers.call(controller.getData("samplemachine", "testendpoint", None, None, None, None), getRequest)
-
-    val res = Await.result(response, 5.seconds)
-    res.header.status must equal(400)
-  }
-
-  "The Update Machine Data method" should "Return 400 on an empty request" in {
-    val controller = application.injector.instanceOf[MachineData]
-
-    val response =
-      Helpers.call(controller.getData("samplemachine", "testendpoint", None, None, None, None), getRequest)
-
-    val res = Await.result(response, 5.seconds)
-    res.header.status must equal(400)
-  }
+  val dv = new DeviceVerification(wsClient,
+                                  Configuration.from(
+                                    Map(
+                                      "authservice.address" -> "",
+                                      "authservice.scheme" -> "",
+                                      "authservice.sharedSecret" -> ""
+                                    )
+                                  )
+  )
 
   "The getTokenFromHeaders" should "find an SLTokenBody" in {
     import org.hatdex.hat.api.controllers.MachineData.SLTokenBody
-    val controller = application.injector.instanceOf[MachineData]
+
     val headers = play.api.mvc.Headers(
       ("X-Auth-Token",
        "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiIsImtpZCI6IjgzNDg0NTNiLWM0ZWYtNDczYS05ODhiLWY2NmFiZWFjYmZkMyJ9.eyJpc3MiOiJkYXRhc3dpZnRhZGp1ZGljYXRpb24iLCJleHAiOjE2MTg1ODMyNDQsCiAgImRldmljZUlkIiA6ICJzYW1wbGVkZXZpY2UiCn0.A0A1YR59Xatd8sudFFsRVZDSadPfC0Sm0c1OecMsyTudshXLb3Zg36eEIrZMRgh-M9Br30Ybr6X1ZrG9cdv5r-BkfPGaR9lGBFmP5GDkag5_LhpJvUyieucqQj2cyrNfGp1EiSeEwZtLHI_WvJhFH6LeGpMXk08DxOE_O6KA1RE"
       )
     )
 
-    val ret = Await.result(controller.getTokenFromHeaders(headers), 2.seconds)
+    val ret = Await.result(dv.getTokenFromHeaders(headers), 2.seconds)
 
     ret must equal(
       Some(SLTokenBody("dataswiftadjudication", 1618583244, "sampledevice"))
@@ -92,17 +77,15 @@ class MachineDataSpec extends MachineDataContext {
   }
 
   it should "gracefully fail on a bad bearer" in {
-    val controller = application.injector.instanceOf[MachineData]
     val headers = play.api.mvc.Headers(
       ("X-Auth-Token", "Bearer garbage")
     )
 
-    val ret = Await.result(controller.getTokenFromHeaders(headers), 2.seconds)
+    val ret = Await.result(dv.getTokenFromHeaders(headers), 2.seconds)
     ret must equal(None)
   }
-
 }
 
-class MachineDataContext extends HATTestContext {
+class DeviceVerificationContext extends HATTestContext {
   val emptyRequestBody: JsValue = Json.parse("""{"body":""}""")
 }

@@ -274,7 +274,7 @@ class ApplicationsServiceContext extends HATTestContext {
   val fakeDevice: Application =
     Application(
       id = "device",
-      kind = contractKind,
+      kind = deviceKind,
       info = appInfo,
       developer = developer,
       permissions = permissions,
