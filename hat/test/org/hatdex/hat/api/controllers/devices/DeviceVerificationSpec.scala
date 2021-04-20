@@ -24,28 +24,21 @@
 
 package org.hatdex.hat.api.controllers.devices
 
+import akka.actor.ActorSystem
+import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
-import play.api.Logger
-import play.api.libs.json.{ JsValue, Json }
-import play.api.test.Helpers._
-import play.api.test.{ FakeRequest, Helpers }
 import org.hatdex.hat.api.controllers.devices.DeviceVerification
+import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.ws.ahc.AhcWSClient
+import play.api.{ Configuration, Logger }
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import play.api.libs.ws.WSClient
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import play.api.Configuration
-import play.libs.ws
-import com.typesafe.config.Config
-import io.dataswift.test.common.BaseSpec
-import play.api.Play
-import play.api.libs.ws.ahc.AhcWSClient
 
 class DeviceVerificationSpec extends BaseSpec {
-  import scala.concurrent.ExecutionContext.Implicits.global
+  //import scala.concurrent.ExecutionContext.Implicits.global
   implicit val system       = ActorSystem()
-  implicit val materializer = ActorMaterializer()
+  implicit val materializer = akka.stream.Materializer
   val wsClient              = AhcWSClient()
   val logger: Logger        = Logger(this.getClass)
   //lazy val wsClient  = application.injector.instanceOf[WSClient]

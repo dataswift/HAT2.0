@@ -103,7 +103,7 @@ class DeviceVerification(
             case Right(deviceIsVerified @ _) =>
               if (NamespaceUtils.verifyNamespaceWrite(app, namespace))
                 Future.successful(
-                  Right(DeviceRequestVerificationSuccess("Application ${app.id}-${namespace} verified."))
+                  Right(DeviceRequestVerificationSuccess(s"Application ${app.id}-${namespace} verified."))
                 )
               else
                 Future.successful(Left(DeviceVerificationFailure.ApplicationAndNamespaceNotValid))
@@ -112,7 +112,7 @@ class DeviceVerification(
           }
         }
       case None =>
-        logger.info("Failed to refine: ${sltoken} - ${app} - ${namespace} - ${hatName}")
+        logger.info(s"Failed to refine: ${sltoken} - ${app} - ${namespace} - ${hatName}")
         Future.successful(Left(DeviceVerificationFailure.FailedDeviceRefinement))
     }
   }

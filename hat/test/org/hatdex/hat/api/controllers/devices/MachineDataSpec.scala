@@ -74,7 +74,6 @@ class MachineDataSpec extends MachineDataContext {
     val res = Await.result(response, 5.seconds)
     res.header.status must equal(400)
   }
-
 }
 
 class MachineDataContext extends HATTestContext {
