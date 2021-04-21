@@ -49,7 +49,7 @@ import play.api.cache.AsyncCacheApi
 import play.api.libs.json.{ JsObject, JsString }
 import play.api.libs.ws.WSClient
 import play.api.mvc.RequestHeader
-import play.api.{ Configuration, Logger }
+import play.api.{ Configuration, Logging }
 
 import java.util.UUID
 import javax.inject.Inject
@@ -90,22 +90,18 @@ class ApplicationsService @Inject() (
     silhouette: Silhouette[HatApiAuthEnvironment],
     statsReporter: StatsReporter,
     configuration: Configuration,
-    system: ActorSystem
-  )(wsClient: WSClient
-  )(implicit val ec: DalExecutionContext) {
+    system: ActorSystem,
+    wsClient: WSClient
+  )(implicit val ec: DalExecutionContext)
+    extends Logging {
 
-  private val logger                                    = Logger(this.getClass)
-  private val applicationsCacheDuration: FiniteDuration = 30.minutes
+  private val applicationsCacheDuration = configuration.get[FiniteDuration]("memcached.application-ttl")
 
   //** Adjudicator
-  private val adjudicatorAddress =
-    configuration.underlying.getString("adjudicator.address")
-  private val adjudicatorScheme =
-    configuration.underlying.getString("adjudicator.scheme")
-  private val adjudicatorEndpoint =
-    s"${adjudicatorScheme}${adjudicatorAddress}"
-  private val adjudicatorSharedSecret =
-    configuration.underlying.getString("adjudicator.sharedSecret")
+  private val adjudicatorAddress      = configuration.get[String]("adjudicator.address")
+  private val adjudicatorScheme       = configuration.get[String]("adjudicator.scheme")
+  private val adjudicatorEndpoint     = s"${adjudicatorScheme}${adjudicatorAddress}"
+  private val adjudicatorSharedSecret = configuration.get[String]("adjudicator.sharedSecret")
   private val adjudicatorClient = new AdjudicatorRequest(
     adjudicatorEndpoint,
     JwtSecretKey(adjudicatorSharedSecret),
@@ -146,10 +142,7 @@ class ApplicationsService @Inject() (
                                          maybeApp.map(refetchApplicationsStatus(_, Seq(setup).flatten))
                                        )
                              _ <- status
-                                    .map(s =>
-                                      cache
-                                        .set(appCacheKey(id), s._1, applicationsCacheDuration)
-                                    )
+                                    .map(s => cache.set(appCacheKey(id), s._1, applicationsCacheDuration))
                                     .getOrElse(Future.successful(Done))
                            } yield status.map(_._1)
                        }
@@ -162,22 +155,19 @@ class ApplicationsService @Inject() (
       requestHeader: RequestHeader): Future[Seq[HatApplication]] =
     cache
       .get[Seq[HatApplication]](s"apps:${hat.domain}")
-      .flatMap({
+      .flatMap {
         case Some(applications) => Future.successful(applications)
         case None =>
           for {
             apps <- trustedApplicationProvider.applications // potentially caching
             setup <- applicationSetupStatus()(hat.db) // database
             statuses <- Future.sequence(apps.map(refetchApplicationsStatus(_, setup)))
+            apps = statuses.map(_._1)
             _ <- if (statuses.forall(_._2))
-                   cache.set(
-                     s"apps:${hat.domain}",
-                     statuses.unzip._1,
-                     applicationsCacheDuration
-                   )
+                   cache.set(s"apps:${hat.domain}", apps, applicationsCacheDuration)
                  else Future.successful(Done)
-          } yield statuses.unzip._1
-      })
+          } yield apps
+      }
 
   private def refetchApplicationsStatus(
       app: Application,
