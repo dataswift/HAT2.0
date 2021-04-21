@@ -25,23 +25,18 @@
 package org.hatdex.hat.api.service.richData
 
 import io.dataswift.models.hat._
-import play.api.Logging
+import org.scalatest.LoneElement
 
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
 
-class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
-
-  private var iteration = 1
+class DataDebitServiceSpec extends DataDebitServiceSpecContext with LoneElement {
 
   before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
-    val permissionsDeleted = Await.result(db.run(DataDebitPermissions.delete.transactionally), 60.seconds)
-    logger.info(s"deleted $permissionsDeleted rows from table data_debit_permissions (iteration $iteration)")
-
-    val actions = Seq(
+    val actions = DBIO.seq(
       DataDebitPermissions.delete,
       DataDebit.delete,
       DataCombinators.delete,
@@ -50,82 +45,53 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
       DataJsonGroups.delete,
       DataJson.delete
     )
-    actions foreach (dbio => Await.result(db.run(dbio.transactionally), 60.seconds))
-    iteration += 1
+    await(db.run(actions.transactionally))
   }
 
   "The `createDataDebit` method" should "Save a data debit" in {
     val service = application.injector.instanceOf[DataDebitService]
-    val saved   = service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
-    saved map { debit =>
-      debit.dataDebitKey must equal("testdd")
-      debit.permissions.length must equal(1)
-      debit.permissions.head.active must equal(false)
-    }
-    Await.result(saved, 10.seconds)
+    val saved   = await(service.createDataDebit("testdd", testDataDebitRequest, owner.userId))
+    saved.dataDebitKey must equal("testdd")
+    saved.permissions.loneElement.active mustBe false
   }
 
   it should "Throw an error when a duplicate data debit is getting saved" in {
     val service = application.injector.instanceOf[DataDebitService]
-
-    try for {
+    val saved = for {
       _ <- service.createDataDebit("testdd2", testDataDebitRequest, owner.userId)
       saved <- service.createDataDebit("testdd2", testDataDebitRequestUpdate, owner.userId)
     } yield saved
-    catch {
-      case (rddde: RichDataDuplicateDebitException) =>
-        true
-      case _: Throwable =>
-        fail()
-    }
+    intercept[RichDataDuplicateDebitException](await(saved))
   }
 
   it should "Throw an error when a different data debit with same bundle ID is getting saved" in {
     val service = application.injector.instanceOf[DataDebitService]
-
-    try for {
+    val saved = for {
       _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
       saved <-
         service.createDataDebit("testdd2", testDataDebitDetailsUpdate.copy(dataDebitKey = "testdd2"), owner.userId)
     } yield saved
-    catch {
-      case (rddde: RichDataDuplicateDebitException) =>
-        true
-      case _: Throwable =>
-        fail()
-    }
+    intercept[RichDataDuplicateBundleException](await(saved))
   }
 
-  // TODO: Fails in CI
-  // "The `dataDebit` method" should "Return a data debit by ID" in {
-  //   val service = application.injector.instanceOf[DataDebitService]
-  //   val saved = for {
-  //     _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
-  //     _ <- service.createDataDebit("testdd2", testDataDebitRequestUpdate, owner.userId)
-  //     saved <- service.dataDebit("testdd")
-  //   } yield saved
+  "The `dataDebit` method" should "Return a data debit by ID" in {
+    val service = application.injector.instanceOf[DataDebitService]
+    val saved = for {
+      _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
+      _ <- service.createDataDebit("testdd2", testDataDebitRequestUpdate, owner.userId)
+      saved <- service.dataDebit("testdd")
+    } yield saved
+    val debit = await(saved).value
 
-  //   saved map { maybeDebit =>
-  //     maybeDebit must not be empty
-  //     val debit = maybeDebit.get
-  //     debit.dataDebitKey must equal("testdd")
-  //     debit.permissions.length must equal(1)
-  //     debit.permissions.head.active must equal(false)
-  //     debit.permissions.head.bundle.name must equal(testDataDebitRequest.bundle.name)
-  //   }
-  //   Await.result(saved, 10.seconds)
-  // }
+    debit.dataDebitKey mustBe "testdd"
+    val permission = debit.permissions.loneElement
+    permission.active mustBe false
+    permission.bundle.name mustBe testDataDebitRequest.bundle.name
+  }
 
   "The `dataDebit` method" should "Return None when data debit doesn't exist" in {
     val service = application.injector.instanceOf[DataDebitService]
-    val saved = for {
-      saved <- service.dataDebit("testdd")
-    } yield saved
-
-    saved map { maybeDebit =>
-      maybeDebit must equal(empty)
-    }
-    Await.result(saved, 10.seconds)
+    await(service.dataDebit("testdd")) mustBe None
   }
 
   "The `dataDebitEnable` method" should "Enable an existing data debit" in {
@@ -136,15 +102,10 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
       saved <- service.dataDebit("testdd")
     } yield saved
 
-    saved map { maybeDebit =>
-      maybeDebit must not be empty
-      val debit = maybeDebit.get
-      debit.dataDebitKey must equal("testdd")
-      debit.permissions.length must equal(1)
-      debit.permissions.head.active must equal(true)
-      debit.activePermissions must not be empty
-    }
-    Await.result(saved, 10.seconds)
+    val debit = await(saved).value
+    debit.dataDebitKey must equal("testdd")
+    debit.permissions.loneElement.active mustBe true
+    debit.activePermissions must not be empty
   }
 
   it should "Enable a data debit after a few iterations of bundle adjustments" in {
@@ -156,16 +117,11 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
       saved <- service.dataDebit("testdd")
     } yield saved
 
-    saved map { maybeDebit =>
-      maybeDebit must not be empty
-      val debit = maybeDebit.get
-      debit.dataDebitKey must equal("testdd")
-      debit.permissions.length must equal(2)
-      debit.activePermissions must not be empty
-      debit.activePermissions.get.bundle.name must equal(testDataDebitRequestUpdate.bundle.name)
-      debit.permissions.exists(_.active == false) must equal(true)
-    }
-    Await.result(saved, 10.seconds)
+    val debit = await(saved).value
+    debit.dataDebitKey must equal("testdd")
+    debit.permissions.length must equal(2)
+    debit.activePermissions.value.bundle.name must equal(testDataDebitRequestUpdate.bundle.name)
+    debit.permissions.exists(_.active == false) mustBe true
   }
 
   "The `dataDebitDisable` method" should "Disable all bundles linked to a data debit" in {
@@ -180,13 +136,9 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
       saved <- service.dataDebit("testdd")
     } yield saved
 
-    saved map { maybeDebit =>
-      maybeDebit must not be empty
-      val debit = maybeDebit.get
-      debit.permissions.length must equal(2)
-      debit.permissions.exists(_.active == true) must equal(false)
-    }
-    Await.result(saved, 10.seconds)
+    val debit = await(saved).value
+    debit.permissions.length must equal(2)
+    debit.permissions.exists(_.active == true) mustBe false
   }
 
   "The `updateDataDebitPermissions` method" should "Update a data debit by inserting an additional bundle" in {
@@ -196,15 +148,12 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
       updated <- service.updateDataDebitPermissions("testdd", testDataDebitRequestUpdate, owner.userId)
     } yield updated
 
-    saved map { debit =>
-      debit.dataDebitKey must equal("testdd")
-      debit.permissions.length must equal(2)
-      debit.permissions.head.active must equal(false)
-      debit.currentPermissions must not be empty
-      debit.currentPermissions.get.bundle.name must equal(testBundle2.name)
-      debit.activePermissions must equal(empty)
-    }
-    Await.result(saved, 10.seconds)
+    val debit = await(saved)
+    debit.dataDebitKey must equal("testdd")
+    debit.permissions.length must equal(2)
+    debit.permissions.head.active mustBe false
+    debit.currentPermissions.value.bundle.name must equal(testBundle2.name)
+    debit.activePermissions mustBe None
   }
 
   it should "Update a data debit by inserting an additional conditions bundle" in {
@@ -214,15 +163,12 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
       updated <- service.updateDataDebitPermissions("testdd", testDataDebitRequestUpdateConditions, owner.userId)
     } yield updated
 
-    saved map { debit =>
-      debit.dataDebitKey must equal("testdd")
-      debit.permissions.length must equal(2)
-      debit.permissions.head.active must equal(false)
-      debit.currentPermissions must not be empty
-      debit.currentPermissions.get.bundle.name must equal(testBundle2.name)
-      debit.activePermissions must equal(empty)
-    }
-    Await.result(saved, 10.seconds)
+    val debit = await(saved)
+    debit.dataDebitKey must equal("testdd")
+    debit.permissions.length must equal(2)
+    debit.permissions.head.active mustBe false
+    debit.currentPermissions.value.bundle.name must equal(testBundle2.name)
+    debit.activePermissions mustBe None
   }
 
   it should "Update data debit without changing bundle linked to this debit" in {
@@ -232,34 +178,24 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
       updated <- service.updateDataDebitPermissions("testdd", testDataDebitDetailsUpdate, owner.userId)
     } yield updated
 
-    saved map { debit =>
-      debit.dataDebitKey must equal("testdd")
-      debit.permissions.length must equal(2)
-      debit.permissions.head.active must equal(false)
-      debit.currentPermissions must not be empty
-      debit.currentPermissions.get.bundle.name must equal(testBundle.name)
-      debit.activePermissions must equal(empty)
-    }
-    Await.result(saved, 10.seconds)
+    val debit = await(saved)
+    debit.dataDebitKey must equal("testdd")
+    debit.permissions.length must equal(2)
+    debit.permissions.head.active mustBe false
+    debit.currentPermissions.value.bundle.name must equal(testBundle.name)
+    debit.activePermissions mustBe None
   }
 
   it should "Throw an error when updating data debit that does not already exist" in {
     val service = application.injector.instanceOf[DataDebitService]
-
-    try for {
-      updated <- service.updateDataDebitPermissions("testdd2", testDataDebitDetailsUpdate, owner.userId)
-    } yield updated
-    catch {
-      case (rdde: RichDataDebitException) =>
-        true
-      case _: Throwable =>
-        fail()
-    }
+    intercept[RichDataDebitException](
+      await(service.updateDataDebitPermissions("testdd2", testDataDebitDetailsUpdate, owner.userId))
+    )
   }
 
   it should "Throw an error when updating data debit with bundle linked to another debit" in {
     val service = application.injector.instanceOf[DataDebitService]
-    try for {
+    val updatedDataDebit = for {
       _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
       _ <- service.createDataDebit("testdd2", testDataDebitRequestUpdate, owner.userId)
       updated <-
@@ -268,17 +204,12 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
                                            owner.userId
         )
     } yield updated
-    catch {
-      case (rdde: RichDataDuplicateBundleException) =>
-        true
-      case _: Throwable =>
-        fail()
-    }
+    intercept[RichDataDuplicateBundleException](await(updatedDataDebit))
   }
 
   it should "Throw an error when updating data debit with conditions bundle linked to another debit" in {
     val service = application.injector.instanceOf[DataDebitService]
-    try for {
+    val updatedDataDebit = for {
       _ <- service.createDataDebit("testdd", testDataDebitRequest, owner.userId)
       _ <- service.createDataDebit("testdd2", testDataDebitRequestUpdate, owner.userId)
       updated <- service.updateDataDebitPermissions(
@@ -287,14 +218,7 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
                    owner.userId
                  )
     } yield updated
-    catch {
-      case (rdde: RichDataDuplicateBundleException) =>
-        logger.info("expected", rdde)
-        true
-      case th: Throwable =>
-        logger.info("unexpected", th)
-        fail()
-    }
+    intercept[RichDataDuplicateBundleException](await(updatedDataDebit))
   }
 
   // Fails with duplicate bundle ID
@@ -306,12 +230,11 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
       _ <- service.createDataDebit("testddB", testDataDebitRequestB, owner.userId)
       saved <- service.all()
     } yield saved
-
-    saved map { debits =>
-      debits.length must equal(2)
-    }
-    Await.result(saved, 10.seconds)
+    await(saved).length mustBe 2
   }
+
+  def await[T](block: => Future[T]): T = Await.result(block, 10.seconds)
+
 }
 
 class DataDebitServiceSpecContext extends RichBundleServiceContext {
