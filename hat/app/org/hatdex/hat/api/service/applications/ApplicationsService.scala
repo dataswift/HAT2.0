@@ -95,7 +95,7 @@ class ApplicationsService @Inject() (
   )(implicit val ec: DalExecutionContext)
     extends Logging {
 
-  private val applicationsCacheDuration: FiniteDuration = configuration.get[FiniteDuration]("memcached.application-ttl")
+  private val applicationsCacheDuration = configuration.get[FiniteDuration]("memcached.application-ttl")
 
   //** Adjudicator
   private val adjudicatorAddress      = configuration.get[String]("adjudicator.address")
