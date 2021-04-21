@@ -289,11 +289,12 @@ class DataDebitServiceSpec extends DataDebitServiceSpecContext with Logging {
     } yield updated
     catch {
       case (rdde: RichDataDuplicateBundleException) =>
+        logger.info("expected", rdde)
         true
-      case _: Throwable =>
+      case th: Throwable =>
+        logger.info("unexpected", th)
         fail()
     }
-
   }
 
   // Fails with duplicate bundle ID
