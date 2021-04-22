@@ -24,11 +24,6 @@
 
 package org.hatdex.hat.api.service.applications
 
-import javax.inject.Inject
-
-import scala.concurrent.Future
-import scala.concurrent.duration._
-
 import io.dataswift.models.hat.applications.Application
 import org.hatdex.dex.apiV2.DexClient
 import org.hatdex.dex.apiV2.Errors.ApiException
@@ -36,6 +31,10 @@ import org.hatdex.hat.api.service.RemoteExecutionContext
 import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
 import play.api.{ Configuration, Logger }
+
+import javax.inject.Inject
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 trait TrustedApplicationProvider {
   def applications: Future[Seq[Application]]
@@ -59,15 +58,15 @@ class TrustedApplicationProviderDex @Inject() (
     "v1.1"
   )
 
+  private val applicationsCacheDuration = configuration.get[FiniteDuration]("memcached.application-ttl")
+
   private val includeUnpublished: Boolean =
     configuration.getOptional[Boolean]("exchange.beta").getOrElse(false)
-
-  private val dexApplicationsCacheDuration: FiniteDuration = 30.minutes
 
   def applications: Future[Seq[Application]] =
     cache.getOrElseUpdate(
       "apps:dexApplications",
-      dexApplicationsCacheDuration
+      applicationsCacheDuration
     ) {
       dexClient.applications(includeUnpublished = includeUnpublished)
     }
@@ -76,7 +75,7 @@ class TrustedApplicationProviderDex @Inject() (
     cache
       .getOrElseUpdate(
         s"apps:dex:$id",
-        dexApplicationsCacheDuration
+        applicationsCacheDuration
       ) {
         dexClient.application(id, None)
       }

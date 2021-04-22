@@ -1,9 +1,5 @@
 package org.hatdex.hat.she.mappers
 
-import java.util.UUID
-
-import scala.util.Try
-
 import io.dataswift.models.hat.applications.{
   DataFeedItem,
   DataFeedItemContent,
@@ -15,6 +11,9 @@ import io.dataswift.models.hat.applications.{
 import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, PropertyQuery }
 import org.joda.time.DateTime
 import play.api.libs.json.JsValue
+
+import java.util.UUID
+import scala.util.Try
 
 class MonzoTransactionMapper extends DataEndpointMapper {
   def dataQueries(

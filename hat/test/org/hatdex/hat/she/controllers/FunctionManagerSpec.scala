@@ -24,30 +24,24 @@
 
 package org.hatdex.hat.she.controllers
 
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-
 import akka.util
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
 import io.dataswift.models.hat.{ EndpointQuery, ErrorMessage, SuccessResponse }
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
 import org.hatdex.hat.she.models.FunctionConfiguration
 import org.hatdex.hat.she.service.FunctionService
 import org.joda.time.DateTimeUtils
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 import play.api.Logger
 import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
 
-class FunctionManagerSpec
-    extends BaseSpec
-    with BeforeAndAfterEach
-    with BeforeAndAfterAll
-    with DataFeedDirectMapperContext {
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+
+class FunctionManagerSpec extends DataFeedDirectMapperContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
   val logger: Logger = Logger(this.getClass)
@@ -57,10 +51,8 @@ class FunctionManagerSpec
 
   implicit def defaultAwaitTimeout: util.Timeout = 60.seconds
 
-  override def beforeAll: Unit = {
+  override def beforeAll: Unit =
     DateTimeUtils.setCurrentMillisFixed(1514764800000L)
-    Await.result(databaseReady, 60.seconds)
-  }
 
   override def afterAll: Unit =
     DateTimeUtils.setCurrentMillisSystem()

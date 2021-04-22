@@ -24,14 +24,13 @@
 
 package org.hatdex.hat.api.service.monitoring
 
-import javax.inject.{ Inject, Named }
-
-import scala.concurrent.duration._
-
 import akka.actor.{ ActorRef, ActorSystem }
 import akka.stream.scaladsl.{ Sink, Source }
 import akka.stream.{ ActorMaterializer, OverflowStrategy }
 import akka.{ Done, NotUsed }
+
+import javax.inject.{ Inject, Named }
+import scala.concurrent.duration._
 
 trait HatDataEventRouter {
   def init(): Done

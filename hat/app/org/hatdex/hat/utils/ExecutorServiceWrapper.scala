@@ -28,16 +28,12 @@
 
 package org.hatdex.hat.utils
 
-import java.util.concurrent.{ Callable, CancellationException, ExecutorService, Future => JavaFuture, TimeUnit }
-import java.{ util => jutil }
-
-import scala.collection.JavaConverters._
+import java.util.concurrent.{ Callable, CancellationException, ExecutorService, TimeUnit, Future => JavaFuture }
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, ExecutionContext, Future, Promise }
+import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success }
-
-import concurrent.{ Await, ExecutionContext, Future, Promise }
-import concurrent.duration._
-import concurrent.duration.TimeUnit
 
 class ExecutorServiceWrapper(implicit ec: ExecutionContext) extends ExecutorService {
 
@@ -84,17 +80,17 @@ class ExecutorServiceWrapper(implicit ec: ExecutionContext) extends ExecutorServ
     })
 
   def invokeAll[T](
-      tasks: jutil.Collection[_ <: Callable[T]],
+      tasks: java.util.Collection[_ <: Callable[T]],
       timeout: Long,
-      unit: TimeUnit): jutil.List[JavaFuture[T]] =
+      unit: TimeUnit): java.util.List[JavaFuture[T]] =
     invokeAll(tasks, durationFor(timeout, unit))
 
   def invokeAll[T](
-      tasks: java.util.Collection[_ <: Callable[T]]): jutil.List[JavaFuture[T]] =
+      tasks: java.util.Collection[_ <: Callable[T]]): java.util.List[JavaFuture[T]] =
     invokeAll(tasks, Duration.Inf)
 
   def invokeAny[T](
-      tasks: jutil.Collection[_ <: Callable[T]],
+      tasks: java.util.Collection[_ <: Callable[T]],
       timeout: Long,
       unit: TimeUnit): T =
     invokeAny(tasks, durationFor(timeout, unit))

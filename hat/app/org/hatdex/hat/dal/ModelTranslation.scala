@@ -24,8 +24,6 @@
 
 package org.hatdex.hat.dal
 
-import scala.annotation.tailrec
-
 import io.dataswift.models.hat.json.HatJsonFormats
 import io.dataswift.models.hat.{
   DataDebit => ApiDataDebit,
@@ -37,6 +35,8 @@ import org.hatdex.hat.authentication.models.{ HatAccessLog, HatUser }
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.phata.models.MailTokenUser
 import org.joda.time.Duration
+
+import scala.annotation.tailrec
 
 object ModelTranslation {
   def fromDbModel(user: UserUserRow): HatUser =

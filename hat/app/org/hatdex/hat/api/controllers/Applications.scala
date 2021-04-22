@@ -24,10 +24,6 @@
 
 package org.hatdex.hat.api.controllers
 
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.json.ApplicationJsonProtocol
@@ -37,6 +33,9 @@ import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnviro
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
+
+import javax.inject.Inject
+import scala.concurrent.{ ExecutionContext, Future }
 
 class Applications @Inject() (
     components: ControllerComponents,
