@@ -24,13 +24,12 @@
 
 package org.hatdex.hat.utils
 
-import javax.inject.Inject
-
-import scala.concurrent.{ ExecutionContext, Future }
-
 import play.api.http.{ HttpErrorHandler, Status }
 import play.api.libs.json.{ JsError, Reads }
 import play.api.mvc.{ BodyParser, PlayBodyParsers }
+
+import javax.inject.Inject
+import scala.concurrent.{ ExecutionContext, Future }
 
 class HatBodyParsers @Inject() (
     errorHandler: HttpErrorHandler,

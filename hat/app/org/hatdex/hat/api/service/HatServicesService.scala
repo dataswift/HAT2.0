@@ -23,10 +23,6 @@
  */
 package org.hatdex.hat.api.service
 
-import javax.inject.Inject
-
-import scala.concurrent.Future
-
 import akka.http.scaladsl.model.Uri
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat._
@@ -39,6 +35,9 @@ import org.joda.time.LocalDateTime
 import play.api.Logger
 import play.api.libs.json.{ JsObject, Json }
 import play.api.mvc.RequestHeader
+
+import javax.inject.Inject
+import scala.concurrent.Future
 
 class HatServicesService @Inject() (
     silhouette: Silhouette[HatApiAuthEnvironment]

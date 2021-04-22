@@ -24,14 +24,14 @@
 
 package org.hatdex.hat.api.service.monitoring
 
-import java.util.UUID
-
 import io.dataswift.models.hat._
 import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.authentication.models.HatUser
 import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
+
+import java.util.UUID
 
 class EndpointSubscriberServiceSpec
     extends BaseSpec

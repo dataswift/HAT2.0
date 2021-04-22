@@ -24,15 +24,6 @@
 
 package org.hatdex.hat.api.service.richData
 
-import java.security.MessageDigest
-import java.util.UUID
-import javax.inject.Inject
-
-import scala.annotation.tailrec
-import scala.collection.immutable.HashMap
-import scala.concurrent.Future
-import scala.util.Success
-
 import akka.stream.SubstreamCancelStrategy
 import akka.stream.scaladsl.Source
 import akka.{ Done, NotUsed }
@@ -44,12 +35,18 @@ import org.hatdex.hat.utils.Utils
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.{ DateTime, LocalDateTime }
 import org.postgresql.util.PSQLException
-import play.api.Logger
+import play.api.{ Logger, Logging }
 import play.api.libs.json._
 
-class RichDataService @Inject() (implicit ec: DalExecutionContext) {
+import java.security.MessageDigest
+import java.util.UUID
+import javax.inject.Inject
+import scala.annotation.tailrec
+import scala.collection.immutable.HashMap
+import scala.concurrent.Future
+import scala.util.Success
 
-  protected val logger: Logger = Logger(this.getClass)
+class RichDataService @Inject() (implicit ec: DalExecutionContext) extends Logging {
 
   private def dbDataRow(
       endpoint: String,
@@ -75,6 +72,7 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
     val queries = endpointData map { endpointDataGroup =>
       val endpointRow =
         dbDataRow(endpointDataGroup.endpoint, userId, endpointDataGroup.data)
+      logger.debug(s"about to save new data_json row with key ${endpointRow.recordId}")
 
       val linkedRows = endpointDataGroup.links
         .map(_.toList)
@@ -256,6 +254,21 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) {
         throw RichDataMissingException("Records missing for deleting", e)
     }
   }
+
+  def getRecord(
+      userId: UUID,
+      recordId: UUID
+    )(implicit db: Database): Future[EndpointData] =
+    db
+      .run(
+        DataJson
+          .filter(r => r.recordId === recordId && r.owner === userId)
+          .result
+      )
+      .map {
+        case Seq(record) => ModelTranslation.fromDbModel(record)
+        case _           => throw RichDataMissingException("No single record found for provided ID")
+      }
 
   def updateRecords(
       userId: UUID,

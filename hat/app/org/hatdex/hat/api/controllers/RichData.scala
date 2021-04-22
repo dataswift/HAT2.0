@@ -332,6 +332,19 @@ class RichData @Inject() (
       }
     }
 
+  def getRecord(recordId: UUID): Action[AnyContent] =
+    UserAwareAction.async { implicit request =>
+      request.identity match {
+        case Some(realIdentity) =>
+          dataService.getRecord(realIdentity.userId, recordId) map { saved =>
+            Ok(Json.toJson(saved))
+          } recover {
+              case RichDataMissingException(message, _) => BadRequest(Json.toJson(Errors.dataMissing(message)))
+            }
+        case None => Future.successful(Forbidden)
+      }
+    }
+
   def updateRecords(): Action[Seq[EndpointData]] =
     SecuredAction(
       WithRole(DataCredit(""), Owner()) || ContainsApplicationRole(
@@ -632,6 +645,8 @@ class RichData @Inject() (
     def bundleNotFound(bundleId: String): ErrorMessage =
       ErrorMessage("Bundle Not Found", s"Bundle $bundleId not found")
 
+    def dataMissing(message: String): ErrorMessage =
+      ErrorMessage("Data Missing", s"Could not find unique record: $message")
     def dataUpdateMissing(message: String): ErrorMessage =
       ErrorMessage("Data Missing", s"Could not update records: $message")
     def dataDeleteMissing(message: String): ErrorMessage =
