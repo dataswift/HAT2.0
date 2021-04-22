@@ -24,8 +24,6 @@
 
 package org.hatdex.hat.api.service.applications
 
-import scala.concurrent.Future
-
 import akka.Done
 import akka.util.ByteString
 import com.google.inject.AbstractModule
@@ -38,20 +36,22 @@ import org.hatdex.hat.api.service.StatsReporter
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.HatServer
 import org.joda.time.{ DateTime, LocalDateTime }
-import org.mockito.ArgumentMatchers.{ any }
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.http.HttpEntity
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.test.FakeRequest
-import play.api.{ Application => PlayApplication, Logger }
+import play.api.{ Logger, Application => PlayApplication }
 import play.core.server.Server
-//import org.mockito.Mockito._
 
-trait ApplicationsServiceContext extends HATTestContext {
+import scala.concurrent.Future
+
+class ApplicationsServiceContext extends HATTestContext {
   override lazy val application: PlayApplication = new GuiceApplicationBuilder()
     .configure(conf)
     .overrides(new FakeModule)
@@ -359,7 +359,7 @@ trait ApplicationsServiceContext extends HATTestContext {
       }
     }
 
-    val mockStatusChecker = mock[ApplicationStatusCheckService]
+    val mockStatusChecker = MockitoSugar.mock[ApplicationStatusCheckService]
     when(mockStatusChecker.status(any[ApplicationStatus.Internal], any[String])).thenReturn(Future.successful(true))
     when(mockStatusChecker.status(any[ApplicationStatus.Status], any[String])).thenAnswer(StatusCheck())
 
@@ -367,7 +367,7 @@ trait ApplicationsServiceContext extends HATTestContext {
   }
 
   lazy val mockStatsReporter: StatsReporter = {
-    val mockStatsReporter = mock[StatsReporter]
+    val mockStatsReporter = MockitoSugar.mock[StatsReporter]
     when(mockStatsReporter.registerOwnerConsent(any[String])(any[HatServer])).thenReturn(Future.successful(Done))
     //(mockStatsReporter.registerOwnerConsent _).expects(any[String]) returns Future.successful(Done)
 

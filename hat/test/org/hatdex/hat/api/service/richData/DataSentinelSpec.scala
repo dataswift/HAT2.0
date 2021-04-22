@@ -24,22 +24,17 @@
 
 package org.hatdex.hat.api.service.richData
 
+import io.dataswift.models.hat._
+import org.joda.time.DateTime
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-import io.dataswift.models.hat._
-import io.dataswift.test.common.BaseSpec
-import org.joda.time.DateTime
-import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
-
-class DataSentinelSpec extends BaseSpec with BeforeAndAfterEach with BeforeAndAfterAll with RichDataServiceContext {
+class DataSentinelSpec extends RichDataServiceContext {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  override def beforeAll: Unit =
-    Await.result(databaseReady, 60.seconds)
-
-  override def beforeEach: Unit = {
+  before {
     import org.hatdex.hat.dal.Tables._
     import org.hatdex.libs.dal.HATPostgresProfile.api._
 

@@ -3,7 +3,8 @@
 
 # [Hub of All Things](https://hubofallthings.com)
 
- This repository contains an implementation of the [Hub-of-All-Things](http://hubofallthings.com) HAT Microserver project.
+This repository contains an implementation of the [Hub-of-All-Things](http://hubofallthings.com) HAT Microserver
+project.
 
 ## Releases
 
@@ -13,10 +14,12 @@ The current project version is [here](https://github.com/dataswift/HAT2.0/releas
 
 The Hub-of-All-Things is a HAT Microserver for individuals to own, control and share their data.
 
-A Personal Microserver (“the HAT”) is a personal single tenant (“the individual self”) technology system that is fully individual self-service, to enable an individual to define a full set of “meta-data” defined as a specific set of personal data, personal preferences and personal behaviour events. 
+A Personal Microserver (“the HAT”) is a personal single tenant (“the individual self”) technology system that is fully
+individual self-service, to enable an individual to define a full set of “meta-data” defined as a specific set of
+personal data, personal preferences and personal behaviour events.
 
-The HAT enables individuals to share the correct information (quality and quantity), with the correct people, in the correct situations for the correct purposes and to gain the benefits.
-
+The HAT enables individuals to share the correct information (quality and quantity), with the correct people, in the
+correct situations for the correct purposes and to gain the benefits.
 
 ## Technology stack
 
@@ -40,26 +43,22 @@ This HAT Microserver implementation is written in Scala (2.12.11) uses the follo
 
     127.0.0.1   bobtheplumber.hat.org
     127.0.0.1   bobtheplumber.example.com
-    
 
 ### 3a. Using docker-compose
-    
+
     > cd <DIRECTORY_YOU_CHECKED_OUT_INTO>/deployment/docker
     > docker-compose up
-   
 
-When the build finishes, open [`https://bobtheplumber.example.com:9001`](https://bobtheplumber.example.com:9001) in a browser.
-Standard account login password is `testing`.
+When the build finishes, open [`https://bobtheplumber.example.com:9001`](https://bobtheplumber.example.com:9001) in a
+browser. Standard account login password is `testing`.
 
 ### 3b. Building locally
 
-
 ### HAT Setup
 
-HAT runs as a combination of a backing PostgreSQL database (with a 
-[public schema](https://github.com/Hub-of-all-Things/hat-database-schema) 
-for flattened data storage) and a software stack that provides logic to
-work with the schema using HTTP APIs.
+HAT runs as a combination of a backing PostgreSQL database (with a
+[public schema](https://github.com/Hub-of-all-Things/hat-database-schema)
+for flattened data storage) and a software stack that provides logic to work with the schema using HTTP APIs.
 
 To run it from source in a development environment two sets of tools are required:
 
@@ -78,7 +77,8 @@ To launch the HAT, follow these steps:
     ```bash
     > make dev
     ```
-3. Add custom local domain mapping to your `/etc/hosts` file. This will make sure when you go to the defined address from your machine you will be pointed back to your own machine. E.g.:
+3. Add custom local domain mapping to your `/etc/hosts` file. This will make sure when you go to the defined address
+   from your machine you will be pointed back to your own machine. E.g.:
     ```
     127.0.0.1   bobtheplumber.hat.org
     127.0.0.1   bobtheplumber.example.com
@@ -93,17 +93,17 @@ To launch the HAT, follow these steps:
 
 ### Customising your development environment
 
-Your best source of information on how the development environment could
-be customised is the `hat/conf/dev.conf` configuration file. Make sure you
-run the project locally with the configuration enabled (using the steps above)
+Your best source of information on how the development environment could be customised is the `hat/conf/dev.conf`
+configuration file. Make sure you run the project locally with the configuration enabled (using the steps above)
 or it will just show you the message that the HAT could not be found.
 
 Among other things, the configuration includes:
 
 - host names alongside port numbers of the test HATs ([http://yourname.hat.org:9000](http://yourname.hat.org:9000))
-- access credentials used to log in as the owner or restricted platform user into the HAT (the default password is a very unsafe *testing*)
+- access credentials used to log in as the owner or restricted platform user into the HAT (the default password is a
+  very unsafe *testing*)
 - database connection details (important if you want to change your database setup above)
-- private and public keys used for token signing and verification  
+- private and public keys used for token signing and verification
 
 Specifically, it has 4 major sections:
 
@@ -121,19 +121,18 @@ Specifically, it has 4 major sections:
       "evolutions/hat-database-schema/13_liveEvolutions.sql",
       "evolutions/hat-database-schema/14_newHat.sql"]
     ```  
-- `devhats` list sets out the list of HATs that are served by the current server, for 
-each including owner details to be initialised with and database access
-credentials. Each specified database must exist before launching the server
-but are initialised with the right schema at start time
-- `hat` section lists all corresponding HAT configurations to serve, here
-you could change the HAT domain name, owner's email address or public/private
-keypair used by the HAT for its token operations
+- `devhats` list sets out the list of HATs that are served by the current server, for each including owner details to be
+  initialised with and database access credentials. Each specified database must exist before launching the server but
+  are initialised with the right schema at start time
+- `hat` section lists all corresponding HAT configurations to serve, here you could change the HAT domain name, owner's
+  email address or public/private keypair used by the HAT for its token operations
 
 ## Using docker-compose
 
-We have put together a [docker-compose](https://docs.docker.com/compose/) file that will allow you to run a PostgreSQL node and a HAT node easily.
+We have put together a [docker-compose](https://docs.docker.com/compose/) file that will allow you to run a PostgreSQL
+node and a HAT node easily.
 
-###  Get the Source and the submodules
+### Get the Source and the submodules
 
     > git clone https://github.com/Hub-of-all-Things/HAT2.0.git
     > cd HAT2.0
@@ -143,13 +142,13 @@ We have put together a [docker-compose](https://docs.docker.com/compose/) file t
     > docker-compose up
     > open [https://bobtheplumber.example:9001](https://bobtheplumber.example:9001)
 
- 
-
 ## Additional information
 
 - API documentation can be found at the [developers' portal](https://developers.hubofallthings.com)
-- [HAT Database Schema](https://github.com/Hub-of-all-Things/hat-database-schema) has been split up into a separate project for easier reuse across different environments.
+- [HAT Database Schema](https://github.com/Hub-of-all-Things/hat-database-schema) has been split up into a separate
+  project for easier reuse across different environments.
 
 ## License
 
-HAT including HAT Schema and API is licensed under [AGPL - GNU AFFERO GENERAL PUBLIC LICENSE](https://github.com/Hub-of-all-Things/HAT/blob/master/LICENSE/AGPL)
+HAT including HAT Schema and API is licensed
+under [AGPL - GNU AFFERO GENERAL PUBLIC LICENSE](https://github.com/Hub-of-all-Things/HAT/blob/master/LICENSE/AGPL)

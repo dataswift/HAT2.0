@@ -24,8 +24,6 @@
 
 package org.hatdex.hat.api.service.monitoring
 
-import java.util.UUID
-
 import akka.stream.Materializer
 import com.google.inject.AbstractModule
 import io.dataswift.models.hat.{ EndpointData, InboundDataStats, Owner }
@@ -41,6 +39,8 @@ import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsValue, Json }
 import play.api.{ Application, Logger }
+
+import java.util.UUID
 
 class HatDataStatsProcessorSpec
     extends BaseSpec

@@ -24,12 +24,6 @@
 
 package org.hatdex.hat.api.service.richData
 
-import java.sql.SQLException
-import java.util.UUID
-import javax.inject.Inject
-
-import scala.concurrent.Future
-
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.json.RichDataJsonFormats
 import org.hatdex.hat.api.service.RemoteExecutionContext
@@ -40,6 +34,11 @@ import org.joda.time.LocalDateTime
 import org.postgresql.util.PSQLException
 import play.api.Logger
 import play.api.libs.json._
+
+import java.sql.SQLException
+import java.util.UUID
+import javax.inject.Inject
+import scala.concurrent.Future
 
 class DataDebitContractService @Inject() (
     implicit val ec: RemoteExecutionContext) {

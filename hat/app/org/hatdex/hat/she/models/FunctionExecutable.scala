@@ -24,10 +24,10 @@
 
 package org.hatdex.hat.she.models
 
-import scala.concurrent.Future
-
 import io.dataswift.models.hat.EndpointDataBundle
 import org.joda.time.DateTime
+
+import scala.concurrent.Future
 
 trait FunctionExecutable {
   val configuration: FunctionConfiguration
