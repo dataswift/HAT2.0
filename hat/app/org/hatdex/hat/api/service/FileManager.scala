@@ -24,16 +24,15 @@
 
 package org.hatdex.hat.api.service
 
-import javax.inject.Inject
-
-import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
-
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.{ GeneratePresignedUrlRequest, SSEAlgorithm }
 import com.typesafe.config.Config
 import org.hatdex.hat.resourceManagement.HatServer
 import play.api.{ ConfigLoader, Logger }
+
+import javax.inject.Inject
+import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
 trait FileManager {
   def getUploadUrl(

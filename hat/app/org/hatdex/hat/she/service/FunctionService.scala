@@ -24,13 +24,6 @@
 
 package org.hatdex.hat.she.service
 
-import java.security.MessageDigest
-import javax.inject.Inject
-
-import scala.concurrent.duration._
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Failure, Success }
-
 import akka.Done
 import io.dataswift.models.hat.json.{ ApplicationJsonProtocol, DataFeedItemJsonProtocol }
 import io.dataswift.models.hat.{ EndpointData, Owner }
@@ -43,6 +36,12 @@ import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Json
+
+import java.security.MessageDigest
+import javax.inject.Inject
+import scala.concurrent.duration._
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success }
 
 class FunctionService @Inject() (
     functionRegistry: FunctionExecutableRegistry,

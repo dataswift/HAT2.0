@@ -24,15 +24,14 @@
 
 package org.hatdex.hat
 
-import javax.inject.Singleton
+import akka.Done
+import play.api.cache.AsyncCacheApi
 
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
-
-import akka.Done
-import play.api.cache.AsyncCacheApi
 
 @Singleton
 class FakeCache extends AsyncCacheApi {
