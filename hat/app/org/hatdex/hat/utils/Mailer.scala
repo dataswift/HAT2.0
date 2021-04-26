@@ -118,6 +118,14 @@ trait HatMailer extends Mailer {
       lang: Lang,
       server: HatServer): Done
 
+  def customWelcomeEmail(
+      email: String,
+      appName: Option[String],
+      appLogoUrl: Option[String],
+      verificationLink: String
+    )(implicit m: MessagesApi,
+      lang: Lang): Done
+
   def emailVerified(
       email: String,
       loginLink: String
@@ -200,9 +208,23 @@ class HatMailerImpl @Inject() (
       from = emailFrom,
       subject = messages("email.dataswift.auth.subject.verifyEmail"),
       bodyHtml = views.html.mails.emailAuthVerifyEmail(email, verificationLink).toString(),
-      bodyText = views.txt.mails
-        .emailAuthVerifyEmail(email, verificationLink)
-        .toString()
+      bodyText = views.txt.mails.emailAuthVerifyEmail(email, verificationLink).toString()
+    )
+    Done
+  }
+
+  def customWelcomeEmail(
+      email: String,
+      appName: Option[String],
+      appLogoUrl: Option[String],
+      verificationLink: String
+    )(implicit messages: MessagesApi,
+      lang: Lang): Done = {
+    sendEmail(email)(
+      from = emailFrom,
+      subject = messages("email.dataswift.auth.subject.verifyEmail"),
+      bodyHtml = views.html.mails.emailAuthCustomWelcome(email, appName, appLogoUrl, verificationLink).toString(),
+      bodyText = views.txt.mails.emailAuthCustomWelcome(email, appName, appLogoUrl, verificationLink).toString()
     )
     Done
   }
