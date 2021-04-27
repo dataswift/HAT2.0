@@ -524,7 +524,7 @@ class Authentication @Inject() (
 
   def testEmail: Action[AnyContent] = {
     implicit val language: Lang = Lang.defaultLang
-    UnsecuredAction.async{ _ =>
+    UnsecuredAction.async { _ =>
       for {
       _ <- Future.successful(mailer.customWelcomeEmail("marios.tsekis@dataswift.io", Some("HAT APP"), Some("https://media.dataswift.io/apps/5FXFmzeekVy7UZS7l3AhdZ4bfYEPSXGeccRTZli5zYdrCjbDbXu5W/mzJxPscK1617901460.png"), "https://dataswift.io"))
       } yield Ok(Json.toJson(SuccessResponse("HAT claimed")))

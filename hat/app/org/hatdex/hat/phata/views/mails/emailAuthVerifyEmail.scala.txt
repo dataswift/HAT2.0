@@ -12,7 +12,7 @@
 @verificationLink
 
 @messagesApi("email.dataswift.auth.if.this.was.not.you")
-contact@@dataswift.io
+support@@dataswift.io
 
 @messagesApi("email.dataswift.auth.temporary.links")
 
