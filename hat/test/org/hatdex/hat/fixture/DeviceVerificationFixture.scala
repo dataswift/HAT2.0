@@ -1,9 +1,9 @@
 package org.hatdex.hat.fixture
 
-import io.dataswift.test.common.BaseSpec
 import play.api.inject.guice.GuiceApplicationBuilder
+import org.hatdex.hat.api.HATTestContext
 
-abstract class DeviceVerificationFixture extends BaseSpec {
+abstract class DeviceVerificationFixture extends HATTestContext {
   val injector = {
     val application =
       new GuiceApplicationBuilder()

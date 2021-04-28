@@ -17,7 +17,6 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 class AuthServiceWsClient @Inject() (
     configuration: Configuration,
-    secret: JwtSecretKey,
     ws: WSClient
   )(implicit ec: ExecutionContext)
     extends AuthServiceClient
@@ -32,6 +31,7 @@ class AuthServiceWsClient @Inject() (
     s"${authServiceScheme}${authServiceAddress}"
   private val authServiceSharedSecret =
     configuration.underlying.getString("authservice.sharedSecret")
+  private val secret: JwtSecretKey = JwtSecretKey(authServiceSharedSecret)
 
   private val hatDeviceClaimBuilder: JwtClaimBuilder[HatDeviceClaim] = HatDeviceClaim.builder
 

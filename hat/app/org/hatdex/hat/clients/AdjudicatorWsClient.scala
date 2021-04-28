@@ -18,7 +18,6 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 class AdjudicatorWsClient @Inject() (
     configuration: Configuration,
-    secret: JwtSecretKey,
     ws: WSClient
   )(implicit ec: ExecutionContext)
     extends AdjudicatorClient
@@ -33,6 +32,8 @@ class AdjudicatorWsClient @Inject() (
     s"${adjudicatorScheme}${adjudicatorAddress}"
   private val adjudicatorSharedSecret =
     configuration.underlying.getString("adjudicator.sharedSecret")
+
+  private val secret: JwtSecretKey = JwtSecretKey(adjudicatorSharedSecret)
 
   //val logger: Logger = Logger(this.getClass)
 
