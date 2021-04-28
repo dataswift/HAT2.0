@@ -58,15 +58,15 @@ class TrustedApplicationProviderDex @Inject() (
     "v1.1"
   )
 
+  private val applicationsCacheDuration = configuration.get[FiniteDuration]("memcached.application-ttl")
+
   private val includeUnpublished: Boolean =
     configuration.getOptional[Boolean]("exchange.beta").getOrElse(false)
-
-  private val dexApplicationsCacheDuration: FiniteDuration = 30.minutes
 
   def applications: Future[Seq[Application]] =
     cache.getOrElseUpdate(
       "apps:dexApplications",
-      dexApplicationsCacheDuration
+      applicationsCacheDuration
     ) {
       dexClient.applications(includeUnpublished = includeUnpublished)
     }
@@ -75,7 +75,7 @@ class TrustedApplicationProviderDex @Inject() (
     cache
       .getOrElseUpdate(
         s"apps:dex:$id",
-        dexApplicationsCacheDuration
+        applicationsCacheDuration
       ) {
         dexClient.application(id, None)
       }
