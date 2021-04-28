@@ -18,42 +18,20 @@
  * Public License along with this program. If not, see
  * <http://www.gnu.org/licenses/>.
  *
- * Written by Andrius Aucinas <andrius.aucinas@hatdex.org>
- * 5 / 2017
+ * Written by Tyler Weir <tyler.weir@dataswift.io>
+ * 4 / 2021
  */
 
 package org.hatdex.hat.api.controllers.devices
 
-import akka.actor.ActorSystem
-import io.dataswift.test.common.BaseSpec
-import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.controllers.devices.DeviceVerification
-import play.api.libs.json.{ JsValue, Json }
-import play.api.libs.ws.ahc.AhcWSClient
-import play.api.{ Configuration, Logger }
+import org.hatdex.hat.fixture.DeviceVerificationFixture
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import org.hatdex.hat.clients.AuthServiceWsClient
 
-class DeviceVerificationSpec extends BaseSpec {
-  implicit val system       = ActorSystem()
-  implicit val materializer = akka.stream.Materializer
-  val wsClient              = AhcWSClient()
-  val logger: Logger        = Logger(this.getClass)
-
-  val authClient: AuthServiceWsClient = mock[AuthServiceWsClient]
-
-  val dv = new DeviceVerification(wsClient,
-                                  Configuration.from(
-                                    Map(
-                                      "authservice.address" -> "",
-                                      "authservice.scheme" -> "",
-                                      "authservice.sharedSecret" -> ""
-                                    )
-                                  ),
-                                  authClient
-  )
+class DeviceVerificationSpec extends DeviceVerificationFixture {
+  val deviceVerification = injector.instanceOf[DeviceVerification]
 
   "The getTokenFromHeaders" should "find an SLTokenBody" in {
     import org.hatdex.hat.api.controllers.MachineData.SLTokenBody
@@ -64,7 +42,7 @@ class DeviceVerificationSpec extends BaseSpec {
       )
     )
 
-    val ret = Await.result(dv.getTokenFromHeaders(headers), 2.seconds)
+    val ret = Await.result(deviceVerification.getTokenFromHeaders(headers), 2.seconds)
 
     ret must equal(
       Some(SLTokenBody("dataswiftadjudication", 1618583244, "sampledevice"))
@@ -73,14 +51,10 @@ class DeviceVerificationSpec extends BaseSpec {
 
   it should "gracefully fail on a bad bearer" in {
     val headers = play.api.mvc.Headers(
-      ("X-Auth-Token", "Bearer garbage")
+      ("X-Auth-Token", "garbage")
     )
 
-    val ret = Await.result(dv.getTokenFromHeaders(headers), 2.seconds)
+    val ret = Await.result(deviceVerification.getTokenFromHeaders(headers), 2.seconds)
     ret must equal(None)
   }
-}
-
-class DeviceVerificationContext extends HATTestContext {
-  val emptyRequestBody: JsValue = Json.parse("""{"body":""}""")
 }

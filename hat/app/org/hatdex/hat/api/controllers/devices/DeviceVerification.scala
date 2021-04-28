@@ -16,18 +16,15 @@ import org.hatdex.hat.clients.AuthServiceRequestTypes._
 import org.hatdex.hat.clients.{ AuthServiceRequestTypes, AuthServiceWsClient }
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.{ NamespaceUtils }
+import play.api.Logger
 import play.api.libs.json.Json
-import play.api.libs.ws.WSClient
 import play.api.mvc.Headers
-import play.api.{ Configuration, Logger }
 
 import javax.inject.Inject
 import scala.concurrent.Future
 import scala.util.{ Failure, Success }
 
 class DeviceVerification @Inject() (
-    wsClient: WSClient,
-    configuration: Configuration,
     authServiceClient: AuthServiceWsClient) {
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
   private val logger                                 = Logger(this.getClass)

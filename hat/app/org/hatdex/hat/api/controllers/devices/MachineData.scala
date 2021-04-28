@@ -68,6 +68,7 @@ class MachineData @Inject() (
     usersService: UsersService,
     authServiceClient: AuthServiceWsClient,
     trustedApplicationProvider: TrustedApplicationProvider,
+    deviceVerification: DeviceVerification,
     implicit val ec: ExecutionContext,
     implicit val applicationsService: ApplicationsService
   )(wsClient: WSClient)
@@ -77,7 +78,7 @@ class MachineData @Inject() (
   private val logger             = loggingProvider.logger(this.getClass)
   private val defaultRecordLimit = 1000
 
-  val deviceVerification = new DeviceVerification(wsClient, configuration, authServiceClient)
+  //val deviceVerification = new DeviceVerification(wsClient, configuration, authServiceClient)
 
   case class DeviceDataCreateRequest(body: Option[JsValue])
   implicit val deviceDataCreateRequestReads: Reads[DeviceDataCreateRequest] = Json.reads[DeviceDataCreateRequest]
