@@ -199,11 +199,11 @@ trait HATTestContext extends PostgresqlSpec with MockitoSugar with BeforeAndAfte
       .resetDatabase()
       .flatMap(_ => schemaMigration.run(devHatMigrations))
       .flatMap { _ =>
-        val usersService = application.injector.instanceOf[UsersService]
+        val userService = application.injector.instanceOf[UserService]
         for {
-          _ <- usersService.saveUser(dataCreditUser)
-          _ <- usersService.saveUser(dataDebitUser)
-          _ <- usersService.saveUser(owner)
+          _ <- userService.saveUser(dataCreditUser)
+          _ <- userService.saveUser(dataDebitUser)
+          _ <- userService.saveUser(owner)
         } yield ()
       }
   }

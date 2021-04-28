@@ -29,7 +29,7 @@ import io.dataswift.models.hat._
 import io.dataswift.models.hat.json.HatJsonFormats
 import org.hatdex.hat.api.repository.FileMetadataRepository
 import org.hatdex.hat.api.service.applications.ApplicationsService
-import org.hatdex.hat.api.service.{ FileManager, FileNotAuthorisedException, FileUploadService, UsersService }
+import org.hatdex.hat.api.service.{ FileManager, FileNotAuthorisedException, FileUploadService, UserService }
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.utils.HatBodyParsers
 import play.api.Logger
@@ -48,7 +48,7 @@ class Files @Inject() (
     fileUploadService: FileUploadService,
     fileMetadataRepository: FileMetadataRepository,
     fileManager: FileManager,
-    usersService: UsersService
+    userService: UserService
   )(implicit ec: ExecutionContext,
     applicationsService: ApplicationsService)
     extends HatApiController(components, silhouette) {
@@ -185,7 +185,7 @@ class Files @Inject() (
         fileMetadataRepository.getById(fileId) flatMap {
           case Some(file) if fileUploadService.fileAccessAllowed(request.identity, file, maybeAsApplication) =>
             val eventuallyGranted = for {
-              user <- usersService.getUser(userId) if user.isDefined
+              user <- userService.getUser(userId) if user.isDefined
               _ <- fileMetadataRepository.grantAccess(file, user.get, content)
               updated <- fileMetadataRepository.getById(fileId).map(_.get)
             } yield updated
@@ -212,7 +212,7 @@ class Files @Inject() (
         fileMetadataRepository.getById(fileId) flatMap {
           case Some(file) if fileUploadService.fileAccessAllowed(request.identity, file, maybeAsApplication) =>
             val eventuallyGranted = for {
-              user <- usersService.getUser(userId) if user.isDefined
+              user <- userService.getUser(userId) if user.isDefined
               _ <- fileMetadataRepository.restrictAccess(file, user.get)
               updated <- fileMetadataRepository.getById(fileId).map(_.get)
             } yield updated
@@ -264,7 +264,7 @@ class Files @Inject() (
       WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))
     ).async(parsers.json[ApiHatFile]) { implicit request =>
       val eventuallyAllowedFiles = for {
-        user <- usersService.getUser(userId) if user.isDefined
+        user <- userService.getUser(userId) if user.isDefined
         _ <- fileMetadataRepository.grantAccessPattern(
                request.body,
                user.get,
@@ -297,7 +297,7 @@ class Files @Inject() (
       WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))
     ).async(parsers.json[ApiHatFile]) { implicit request =>
       val eventuallyAllowedFiles = for {
-        user <- usersService.getUser(userId) if user.isDefined
+        user <- userService.getUser(userId) if user.isDefined
         _ <- fileMetadataRepository.restrictAccessPattern(request.body, user.get)
         matchingFiles <- fileMetadataRepository.search(request.body)
       } yield matchingFiles

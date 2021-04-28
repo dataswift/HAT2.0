@@ -25,18 +25,15 @@
 package org.hatdex.hat.api.controllers
 
 import org.hatdex.hat.api.HATTestContext
-import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
 
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 class ContractDataSpec extends ContractDataContext {
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  val logger: Logger = Logger(this.getClass)
 
   "The Save Contract method" should "Return 400 on an empty request" in {
     val request = FakeRequest("POST", "http://hat.hubofallthings.net")

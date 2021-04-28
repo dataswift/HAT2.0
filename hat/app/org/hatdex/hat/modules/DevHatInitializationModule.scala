@@ -27,7 +27,7 @@ package org.hatdex.hat.modules
 import com.typesafe.config.Config
 import io.dataswift.models.hat.{ Owner, Platform }
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.service.{ DalExecutionContext, UsersService }
+import org.hatdex.hat.api.service.{ DalExecutionContext, UserService }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.HatDbSchemaMigration
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider }
@@ -50,7 +50,7 @@ class DevHatInitializationModule extends ScalaModule with AkkaGuiceSupport {
 class DevHatInitializer @Inject() (
     configuration: Configuration,
     serverProvider: HatServerProvider,
-    usersService: UsersService
+    userService: UserService
   )(implicit ec: DalExecutionContext) {
   val logger: Logger = Logger(this.getClass)
 
@@ -94,7 +94,7 @@ class DevHatInitializer @Inject() (
     val ownerId    = UUID.fromString("694dd8ed-56ae-4910-abf1-6ec4887b4c42")
     val platformId = UUID.fromString("6507ae16-13d7-479b-8ebc-65c28fec1634")
     for {
-      savedOwner <- usersService.saveUser(
+      savedOwner <- userService.saveUser(
                       HatUser(
                         ownerId,
                         hat.owner,
@@ -104,7 +104,7 @@ class DevHatInitializer @Inject() (
                         enabled = true
                       )
                     )
-      savedPlatform <- usersService.saveUser(
+      savedPlatform <- userService.saveUser(
                          HatUser(
                            platformId,
                            hat.platform,
