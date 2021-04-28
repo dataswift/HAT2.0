@@ -34,14 +34,15 @@ import play.api.{ Configuration, Logger }
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import org.hatdex.hat.clients.AuthServiceWsClient
 
 class DeviceVerificationSpec extends BaseSpec {
-  //import scala.concurrent.ExecutionContext.Implicits.global
   implicit val system       = ActorSystem()
   implicit val materializer = akka.stream.Materializer
   val wsClient              = AhcWSClient()
   val logger: Logger        = Logger(this.getClass)
-  //lazy val wsClient  = application.injector.instanceOf[WSClient]
+
+  val authClient: AuthServiceWsClient = mock[AuthServiceWsClient]
 
   val dv = new DeviceVerification(wsClient,
                                   Configuration.from(
@@ -50,7 +51,8 @@ class DeviceVerificationSpec extends BaseSpec {
                                       "authservice.scheme" -> "",
                                       "authservice.sharedSecret" -> ""
                                     )
-                                  )
+                                  ),
+                                  authClient
   )
 
   "The getTokenFromHeaders" should "find an SLTokenBody" in {
@@ -58,7 +60,7 @@ class DeviceVerificationSpec extends BaseSpec {
 
     val headers = play.api.mvc.Headers(
       ("X-Auth-Token",
-       "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiIsImtpZCI6IjgzNDg0NTNiLWM0ZWYtNDczYS05ODhiLWY2NmFiZWFjYmZkMyJ9.eyJpc3MiOiJkYXRhc3dpZnRhZGp1ZGljYXRpb24iLCJleHAiOjE2MTg1ODMyNDQsCiAgImRldmljZUlkIiA6ICJzYW1wbGVkZXZpY2UiCn0.A0A1YR59Xatd8sudFFsRVZDSadPfC0Sm0c1OecMsyTudshXLb3Zg36eEIrZMRgh-M9Br30Ybr6X1ZrG9cdv5r-BkfPGaR9lGBFmP5GDkag5_LhpJvUyieucqQj2cyrNfGp1EiSeEwZtLHI_WvJhFH6LeGpMXk08DxOE_O6KA1RE"
+       "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiIsImtpZCI6IjgzNDg0NTNiLWM0ZWYtNDczYS05ODhiLWY2NmFiZWFjYmZkMyJ9.eyJpc3MiOiJkYXRhc3dpZnRhZGp1ZGljYXRpb24iLCJleHAiOjE2MTg1ODMyNDQsCiAgImRldmljZUlkIiA6ICJzYW1wbGVkZXZpY2UiCn0.A0A1YR59Xatd8sudFFsRVZDSadPfC0Sm0c1OecMsyTudshXLb3Zg36eEIrZMRgh-M9Br30Ybr6X1ZrG9cdv5r-BkfPGaR9lGBFmP5GDkag5_LhpJvUyieucqQj2cyrNfGp1EiSeEwZtLHI_WvJhFH6LeGpMXk08DxOE_O6KA1RE"
       )
     )
 

@@ -21,7 +21,7 @@
  * Written by Tyler Weir <tyler.weir@dataswift.io>
  * 1 / 2021
  */
-package org.hatdex.hat.NamespaceUtils
+package org.hatdex.hat.utils
 
 import io.dataswift.models.hat.applications.Application
 import io.dataswift.models.hat.{ NamespaceRead, NamespaceWrite, UserRole }
@@ -50,52 +50,40 @@ object NamespaceUtils {
 
   def getWriteNamespace(roles: Seq[UserRole]): Option[String] = {
     val writeNamespaces = roles.map {
-      case NamespaceWrite(n) => n
-      case _                 => ""
+      case NamespaceWrite(n) => Some(n)
+      case _                 => None
     }
 
     if (writeNamespaces.isEmpty)
       None
     else
-      Some(writeNamespaces.head)
+      writeNamespaces.head
   }
 
   def getReadNamespace(roles: Seq[UserRole]): Option[String] = {
     val readNamespaces = roles.map {
-      case NamespaceRead(n) => n
-      case _                => ""
+      case NamespaceRead(n) => Some(n)
+      case _                => None
     }
 
     if (readNamespaces.isEmpty)
       None
     else
-      Some(readNamespaces.head)
+      readNamespaces.head
   }
 
-  def verifyNamespace(
+  def verifyNamespaceReadWrite(
       app: Application,
-      namespace: String): Boolean = {
-
-    val canReadNamespace  = verifyNamespaceRead(app, namespace)
-    val canWriteNamespace = verifyNamespaceWrite(app, namespace)
-
-    (canReadNamespace || canWriteNamespace)
-  }
+      namespace: String): Boolean =
+    verifyNamespaceRead(app, namespace) && verifyNamespaceWrite(app, namespace)
 
   def verifyNamespaceRead(
       app: Application,
-      namespace: String): Boolean = {
-    val rolesOk = testReadNamespacePermissions(app.permissions.rolesGranted, namespace)
-
-    rolesOk
-  }
+      namespace: String): Boolean =
+    testReadNamespacePermissions(app.permissions.rolesGranted, namespace)
 
   def verifyNamespaceWrite(
       app: Application,
-      namespace: String): Boolean = {
-    val rolesOk = testWriteNamespacePermissions(app.permissions.rolesGranted, namespace)
-
-    rolesOk
-  }
-
+      namespace: String): Boolean =
+    testWriteNamespacePermissions(app.permissions.rolesGranted, namespace)
 }

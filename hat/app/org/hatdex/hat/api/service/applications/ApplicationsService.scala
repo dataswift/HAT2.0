@@ -26,7 +26,6 @@ package org.hatdex.hat.api.service.applications
 import akka.Done
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
-import dev.profunktor.auth.jwt.JwtSecretKey
 import eu.timepit.refined._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.collection.NonEmpty
@@ -41,11 +40,12 @@ import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataDuplicate
 import org.hatdex.hat.api.service.{ DalExecutionContext, RemoteExecutionContext, StatsReporter }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.clients._
 import org.hatdex.hat.dal.Tables
 import org.hatdex.hat.dal.Tables.ApplicationStatusRow
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.she.service.FunctionService
-import org.hatdex.hat.utils.{ AdjudicatorRequest, AuthServiceRequest, FutureTransformations, Utils }
+import org.hatdex.hat.utils.{ FutureTransformations, Utils }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.cache.AsyncCacheApi
@@ -92,6 +92,8 @@ class ApplicationsService @Inject() (
     functionService: FunctionService,
     silhouette: Silhouette[HatApiAuthEnvironment],
     statsReporter: StatsReporter,
+    authServiceClient: AuthServiceWsClient,
+    adjudicatorClient: AdjudicatorWsClient,
     configuration: Configuration,
     system: ActorSystem
   )(wsClient: WSClient
@@ -99,36 +101,6 @@ class ApplicationsService @Inject() (
 
   private val logger                                    = Logger(this.getClass)
   private val applicationsCacheDuration: FiniteDuration = 30.minutes
-
-  //** Adjudicator
-  private val adjudicatorAddress =
-    configuration.underlying.getString("adjudicator.address")
-  private val adjudicatorScheme =
-    configuration.underlying.getString("adjudicator.scheme")
-  private val adjudicatorEndpoint =
-    s"${adjudicatorScheme}${adjudicatorAddress}"
-  private val adjudicatorSharedSecret =
-    configuration.underlying.getString("adjudicator.sharedSecret")
-  private val adjudicatorClient = new AdjudicatorRequest(
-    adjudicatorEndpoint,
-    JwtSecretKey(adjudicatorSharedSecret),
-    wsClient
-  )
-
-  //** AuthService
-  private val authserviceAddress =
-    configuration.underlying.getString("authservice.address")
-  private val authserviceScheme =
-    configuration.underlying.getString("authservice.scheme")
-  private val authserviceEndpoint =
-    s"${authserviceScheme}${authserviceAddress}"
-  private val authserviceSharedSecret =
-    configuration.underlying.getString("authservice.sharedSecret")
-  private val authserviceClient = new AuthServiceRequest(
-    authserviceEndpoint,
-    JwtSecretKey(authserviceSharedSecret),
-    wsClient
-  )
 
   def hmiDetails(id: String): Future[Option[Application]] =
     trustedApplicationProvider.application(id) // calls cached by TrustedApplicationProvider
@@ -259,7 +231,7 @@ class ApplicationsService @Inject() (
         refineV[NonEmpty](application.id).toOption match {
           case Some(x) =>
             logger.info(s"joinDevice OK: hat:${hatName} - device: ${x}")
-            authserviceClient.joinDevice(hatName, DeviceId(x))
+            authServiceClient.joinDevice(hatName, DeviceId(x))
           case None =>
             logger.info(s"joinDevice Fail: hat:${hatName} - device:${application.id}")
             Future.successful(Done)
@@ -278,7 +250,7 @@ class ApplicationsService @Inject() (
           .leaveContract(hatName, ContractId(UUID.fromString(application.id)))
       case _: ApplicationKind.Device =>
         refineV[NonEmpty](application.id).toOption match {
-          case Some(x) => authserviceClient.leaveDevice(hatName, DeviceId(x))
+          case Some(x) => authServiceClient.leaveDevice(hatName, DeviceId(x))
           case None    => Future.successful(Done)
         }
       case _ =>

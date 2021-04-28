@@ -25,7 +25,7 @@ package org.hatdex.hat.utils
 
 import io.dataswift.models.hat.{ NamespaceRead, NamespaceWrite, UserRole }
 import io.dataswift.test.common.BaseSpec
-import org.hatdex.hat.NamespaceUtils._
+import org.hatdex.hat.utils._
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Logger
 
@@ -115,4 +115,6 @@ class NamespaceTestSpec extends BaseSpec with MockitoSugar {
 
     !readRoles.isDefined
   }
+
+  it should "Get Read permissions" in {}
 }

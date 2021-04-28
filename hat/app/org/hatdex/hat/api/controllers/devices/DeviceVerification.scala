@@ -1,59 +1,42 @@
 package org.hatdex.hat.api.controllers.devices
 
-import dev.profunktor.auth.jwt
 import eu.timepit.refined._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.collection.NonEmpty
 import io.dataswift.adjudicator.ShortLivedTokenOps
 import io.dataswift.adjudicator.Types.{ DeviceId, HatName, ShortLivedToken }
 import io.dataswift.models.hat.applications.Application
-import org.hatdex.hat.BearerTokenParser.BearerTokenParser
-import org.hatdex.hat.NamespaceUtils.NamespaceUtils
 import org.hatdex.hat.api.controllers.devices.Types.DeviceVerificationFailure._
 import org.hatdex.hat.api.controllers.devices.Types.DeviceVerificationSuccess._
 import org.hatdex.hat.api.controllers.devices.Types._
 import org.hatdex.hat.api.controllers.{ MachineData, RequestValidationFailure, RequestVerified }
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.applications.TrustedApplicationProvider
+import org.hatdex.hat.clients.AuthServiceRequestTypes._
+import org.hatdex.hat.clients.{ AuthServiceRequestTypes, AuthServiceWsClient }
 import org.hatdex.hat.resourceManagement.HatServer
-import org.hatdex.hat.utils.{ AuthServiceRequest, AuthServiceRequestTypes }
+import org.hatdex.hat.utils.{ NamespaceUtils }
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.Headers
 import play.api.{ Configuration, Logger }
 
+import javax.inject.Inject
 import scala.concurrent.Future
 import scala.util.{ Failure, Success }
 
-import AuthServiceRequestTypes._
-
-class DeviceVerification(
+class DeviceVerification @Inject() (
     wsClient: WSClient,
-    configuration: Configuration) {
+    configuration: Configuration,
+    authServiceClient: AuthServiceWsClient) {
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
   private val logger                                 = Logger(this.getClass)
-
-  // -- AuthService Client
-  private val authServiceAddress =
-    configuration.underlying.getString("authservice.address")
-  private val authServiceScheme =
-    configuration.underlying.getString("authservice.scheme")
-  private val authServiceEndpoint =
-    s"${authServiceScheme}${authServiceAddress}"
-  private val authServiceSharedSecret =
-    configuration.underlying.getString("authservice.sharedSecret")
-  private val authServiceClient = new AuthServiceRequest(
-    authServiceEndpoint,
-    jwt.JwtSecretKey(authServiceSharedSecret),
-    wsClient
-  )
 
   // -- Auth Token handler
   def getTokenFromHeaders(headers: Headers): Future[Option[MachineData.SLTokenBody]] = {
     val slTokenBody = for {
       xAuthToken <- headers.get("X-Auth-Token")
-      bearerToken <- BearerTokenParser.parseToken(xAuthToken)
-      slTokenBody <- ShortLivedTokenOps.getBody(bearerToken).toOption
+      slTokenBody <- ShortLivedTokenOps.getBody(xAuthToken).toOption
       ret <- Json.parse(slTokenBody).validate[MachineData.SLTokenBody].asOpt
     } yield ret
 
@@ -65,7 +48,8 @@ class DeviceVerification(
       hatName: String,
       namespace: String,
       usersService: UsersService,
-      trustedApplicationProvider: TrustedApplicationProvider
+      trustedApplicationProvider: TrustedApplicationProvider,
+      permissions: RequiredNamespacePermissions
     )(implicit hatServer: HatServer): Future[Either[DeviceVerificationFailure, DeviceRequestSuccess]] = {
     val eventuallyMaybeUserAndApp = for {
       sltoken <- Future.successful(reqHeaders.get("X-Auth-Token"))
@@ -74,18 +58,17 @@ class DeviceVerification(
       app <- trustedApplicationProvider.application(sltokenBody.map(_.deviceId).getOrElse(""))
     } yield (sltoken, user, app)
 
-    eventuallyMaybeUserAndApp.flatMap { maybeUserAndApp =>
-      maybeUserAndApp match {
-        case (Some(sltoken), Some(user), Some(app)) =>
-          verifyApplicationAndNamespace(sltoken, app, namespace, hatName).flatMap { appAndNamespaceOk =>
-            appAndNamespaceOk match {
-              case Left(_)  => Future.successful(Left(DeviceRequestFailure("appAndNamespaceOk failed")))
-              case Right(_) => Future.successful(Right(DeviceRequestSuccess(user)))
-            }
+    eventuallyMaybeUserAndApp.flatMap {
+      case (Some(sltoken), Some(user), Some(app)) =>
+        verifyApplicationAndNamespace(sltoken, app, namespace, hatName, permissions).flatMap { appAndNamespaceOk =>
+          appAndNamespaceOk match {
+            case Left(_)  => Future.successful(Left(DeviceRequestFailure("appAndNamespaceOk failed")))
+            case Right(_) => Future.successful(Right(DeviceRequestSuccess(user)))
           }
-        case (_, _, _) =>
-          Future.successful(Left(DeviceRequestFailure("Missing element of maybeUserAndApp")))
-      }
+        }
+      case (_, _, _) =>
+        Future.successful(Left(DeviceRequestFailure("Missing element of maybeUserAndApp")))
+
     }
   }
 
@@ -93,29 +76,40 @@ class DeviceVerification(
       sltoken: String,
       app: Application,
       namespace: String,
-      hatName: String): Future[Either[DeviceVerificationFailure, DeviceRequestVerificationSuccess]] = {
+      hatName: String,
+      permissions: RequiredNamespacePermissions)
+      : Future[Either[DeviceVerificationFailure, DeviceRequestVerificationSuccess]] = {
     val maybeRefinedDevice = refineDeviceInfo(sltoken.split(" ")(1).trim, hatName, app.id)
 
     maybeRefinedDevice match {
       case Some(refinedDevice) =>
-        verifyDevice(refinedDevice).flatMap { isVerified =>
-          isVerified match {
-            case Right(deviceIsVerified @ _) =>
-              if (NamespaceUtils.verifyNamespaceWrite(app, namespace))
-                Future.successful(
-                  Right(DeviceRequestVerificationSuccess(s"Application ${app.id}-${namespace} verified."))
-                )
-              else
-                Future.successful(Left(DeviceVerificationFailure.ApplicationAndNamespaceNotValid))
-            case Left(verifyDeviceError) =>
-              Future.successful(Left(verifyDeviceError))
-          }
+        verifyDevice(refinedDevice).flatMap {
+          case Right(deviceIsVerified @ _) =>
+            if (NamespaceUtils.verifyNamespaceWrite(app, namespace))
+              Future.successful(
+                Right(DeviceRequestVerificationSuccess(s"Application ${app.id}-${namespace} verified."))
+              )
+            else
+              Future.successful(Left(DeviceVerificationFailure.ApplicationAndNamespaceNotValid))
+          case Left(verifyDeviceError) =>
+            Future.successful(Left(verifyDeviceError))
         }
       case None =>
         logger.info(s"Failed to refine: ${sltoken} - ${app} - ${namespace} - ${hatName}")
         Future.successful(Left(DeviceVerificationFailure.FailedDeviceRefinement))
     }
   }
+
+  def verifyNamespacePermission(
+      app: Application,
+      namespace: String,
+      permissions: RequiredNamespacePermissions): Boolean =
+    permissions match {
+      case Read      => NamespaceUtils.verifyNamespaceRead(app, namespace)
+      case Write     => NamespaceUtils.verifyNamespaceWrite(app, namespace)
+      case ReadWrite => NamespaceUtils.verifyNamespaceReadWrite(app, namespace)
+      case _         => false
+    }
 
   def refineDeviceInfo(
       token: String,
@@ -247,6 +241,7 @@ class DeviceVerification(
     eventuallyMaybeDecision.flatMap { maybeDecision =>
       eventuallyMaybeApp.flatMap { maybeApp =>
         logger.info(s"AssessRequest: ${maybeDecision} - ${maybeApp} - ${namespace}")
+
         decide(maybeDecision, maybeApp, namespace) match {
           case Some(ns) =>
             logger.info(s"Found a namespace: ${ns}")
@@ -256,7 +251,7 @@ class DeviceVerification(
               )
             )
           case None =>
-            logger.error(s"def assessRequest: decide returned None - ${deviceDataInfo} - ${namespace}")
+            logger.error(s"assessRequest: decide returned None - ${deviceDataInfo} - ${namespace}")
             Future.successful(
               Left(
                 RequestValidationFailure.InvalidShortLivedToken(
@@ -291,7 +286,7 @@ class DeviceVerification(
     (eitherDecision, maybeApp) match {
       case (Right(JwtClaimVerified(_jwtClaim @ _)), Some(app)) =>
         logger.info(s"def decide: JwtClaim verified for app ${app}")
-        if (NamespaceUtils.verifyNamespace(app, namespace))
+        if (NamespaceUtils.verifyNamespaceReadWrite(app, namespace))
           Some(namespace)
         else
           None

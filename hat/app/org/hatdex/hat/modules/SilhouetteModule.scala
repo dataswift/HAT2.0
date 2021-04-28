@@ -45,6 +45,7 @@ import com.typesafe.config.Config
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.service.{ MailTokenService, MailTokenUserService }
 import org.hatdex.hat.authentication._
+import org.hatdex.hat.clients._
 import org.hatdex.hat.phata.models.MailTokenUser
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, HatMailerImpl }
@@ -86,6 +87,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteCo
 
     bind[EventBus].toInstance(EventBus())
     bind[Clock].toInstance(Clock())
+
+    bind[AuthServiceClient].to[AuthServiceWsClient].in[JSingleton]()
+    bind[AdjudicatorClient].to[AdjudicatorWsClient].in[JSingleton]()
   }
 
   @Provides

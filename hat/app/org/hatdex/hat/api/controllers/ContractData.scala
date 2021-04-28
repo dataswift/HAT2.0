@@ -25,7 +25,6 @@
 package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import dev.profunktor.auth.jwt.JwtSecretKey
 import eu.timepit.refined._
 import eu.timepit.refined.auto._
 import eu.timepit.refined.collection.NonEmpty
@@ -34,16 +33,16 @@ import io.dataswift.adjudicator.Types.{ ContractId, HatName, ShortLivedToken }
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.applications.Application
 import io.dataswift.models.hat.json.RichDataJsonFormats
-import org.hatdex.hat.NamespaceUtils.NamespaceUtils
 import org.hatdex.hat.api.controllers.RequestValidationFailure._
 import org.hatdex.hat.api.service.UsersService
 import org.hatdex.hat.api.service.applications.{ ApplicationsService, TrustedApplicationProvider }
 import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
+import org.hatdex.hat.clients.AdjudicatorRequestTypes._
+import org.hatdex.hat.clients.AdjudicatorWsClient
 import org.hatdex.hat.resourceManagement.HatServer
-import org.hatdex.hat.utils.AdjudicatorRequestTypes._
-import org.hatdex.hat.utils.{ AdjudicatorRequest, HatBodyParsers, LoggingProvider }
+import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider, NamespaceUtils }
 import org.hatdex.libs.dal.HATPostgresProfile
 import pdi.jwt.JwtClaim
 import play.api.Configuration
@@ -75,6 +74,7 @@ class ContractData @Inject() (
     loggingProvider: LoggingProvider,
     configuration: Configuration,
     usersService: UsersService,
+    adjudicatorClient: AdjudicatorWsClient,
     trustedApplicationProvider: TrustedApplicationProvider,
     implicit val ec: ExecutionContext,
     implicit val applicationsService: ApplicationsService
@@ -84,21 +84,6 @@ class ContractData @Inject() (
 
   private val logger             = loggingProvider.logger(this.getClass)
   private val defaultRecordLimit = 1000
-
-  // Adjudicator
-  private val adjudicatorAddress =
-    configuration.underlying.getString("adjudicator.address")
-  private val adjudicatorScheme =
-    configuration.underlying.getString("adjudicator.scheme")
-  private val adjudicatorEndpoint =
-    s"${adjudicatorScheme}${adjudicatorAddress}"
-  private val adjudicatorSharedSecret =
-    configuration.underlying.getString("adjudicator.sharedSecret")
-  private val adjudicatorClient = new AdjudicatorRequest(
-    adjudicatorEndpoint,
-    JwtSecretKey(adjudicatorSharedSecret),
-    wsClient
-  )
 
   // Types
   case class ContractDataInfoRefined(
@@ -226,18 +211,16 @@ class ContractData @Inject() (
       val maybeContractDataInfo = refineContractDataReadRequest(contractDataRead)
       maybeContractDataInfo match {
         case Some(contractDataInfo) =>
-          contractValid(contractDataInfo, namespace).flatMap { contractOk =>
-            contractOk match {
-              case (Some(_hatUser @ _), Right(RequestVerified(_ns @ _))) =>
-                makeData(namespace, endpoint, orderBy, ordering, skip, take)
-              case (_, Left(x)) => handleFailedRequestAssessment(x)
-              case (None, Right(_)) =>
-                logger.warn(s"ReadContract: Hat not found for:  ${contractDataRead}")
-                handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
-              case (_, _) =>
-                logger.warn(s"ReadContract: Fallback Error case for: ${contractDataRead}")
-                handleFailedRequestAssessment(GeneralError)
-            }
+          contractValid(contractDataInfo, namespace).flatMap {
+            case (Some(_hatUser @ _), Right(RequestVerified(_ns @ _))) =>
+              makeData(namespace, endpoint, orderBy, ordering, skip, take)
+            case (_, Left(x)) => handleFailedRequestAssessment(x)
+            case (None, Right(_)) =>
+              logger.warn(s"ReadContract: Hat not found for:  ${contractDataRead}")
+              handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
+            case (_, _) =>
+              logger.warn(s"ReadContract: Fallback Error case for: ${contractDataRead}")
+              handleFailedRequestAssessment(GeneralError)
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
       }
@@ -253,18 +236,16 @@ class ContractData @Inject() (
       val maybeContractDataInfo = refineContractDataCreateRequest(contractDataCreate)
       maybeContractDataInfo match {
         case Some(contractDataInfo) =>
-          contractValid(contractDataInfo, namespace).flatMap { contractOk =>
-            contractOk match {
-              case (Some(hatUser), Right(RequestVerified(_ns))) =>
-                handleCreateContractData(hatUser, contractDataCreate, namespace, endpoint, skipErrors)
-              case (_, Left(x)) => handleFailedRequestAssessment(x)
-              case (None, Right(_)) =>
-                logger.warn(s"CreateContract: Hat not found for:  ${contractDataCreate}")
-                handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
-              case (_, _) =>
-                logger.warn(s"CreateContract: Fallback Error case for: ${contractDataCreate}")
-                handleFailedRequestAssessment(GeneralError)
-            }
+          contractValid(contractDataInfo, namespace).flatMap {
+            case (Some(hatUser), Right(RequestVerified(_ns))) =>
+              handleCreateContractData(hatUser, contractDataCreate, namespace, endpoint, skipErrors)
+            case (_, Left(x)) => handleFailedRequestAssessment(x)
+            case (None, Right(_)) =>
+              logger.warn(s"CreateContract: Hat not found for:  ${contractDataCreate}")
+              handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
+            case (_, _) =>
+              logger.warn(s"CreateContract: Fallback Error case for: ${contractDataCreate}")
+              handleFailedRequestAssessment(GeneralError)
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
       }
@@ -276,18 +257,16 @@ class ContractData @Inject() (
       val maybeContractDataInfo = refineContractDataUpdateRequest(contractDataUpdate)
       maybeContractDataInfo match {
         case Some(contractDataInfo) =>
-          contractValid(contractDataInfo, namespace).flatMap { contractOk =>
-            contractOk match {
-              case (Some(hatUser), Right(RequestVerified(ns))) =>
-                handleUpdateContractData(hatUser, contractDataUpdate, ns)
-              case (_, Left(x)) => handleFailedRequestAssessment(x)
-              case (None, Right(_)) =>
-                logger.warn(s"UpdateContract: Hat not found for:  ${contractDataUpdate}")
-                handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
-              case (_, _) =>
-                logger.warn(s"UpdateContract: Fallback Error case for:  ${contractDataUpdate}")
-                handleFailedRequestAssessment(GeneralError)
-            }
+          contractValid(contractDataInfo, namespace).flatMap {
+            case (Some(hatUser), Right(RequestVerified(ns))) =>
+              handleUpdateContractData(hatUser, contractDataUpdate, ns)
+            case (_, Left(x)) => handleFailedRequestAssessment(x)
+            case (None, Right(_)) =>
+              logger.warn(s"UpdateContract: Hat not found for:  ${contractDataUpdate}")
+              handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
+            case (_, _) =>
+              logger.warn(s"UpdateContract: Fallback Error case for:  ${contractDataUpdate}")
+              handleFailedRequestAssessment(GeneralError)
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
       }
@@ -534,7 +513,7 @@ class ContractData @Inject() (
     (eitherDecision, maybeApp) match {
       case (Right(JwtClaimVerified(_jwtClaim @ _)), Some(app)) =>
         logger.info(s"def decide: JwtClaim verified for app ${app}")
-        if (NamespaceUtils.verifyNamespace(app, namespace))
+        if (NamespaceUtils.verifyNamespaceReadWrite(app, namespace))
           Some(namespace)
         else
           None

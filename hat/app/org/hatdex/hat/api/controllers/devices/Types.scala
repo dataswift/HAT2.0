@@ -11,6 +11,11 @@ object Types {
       hatName: HatName,
       deviceId: DeviceId)
 
+  sealed trait RequiredNamespacePermissions
+  case object Read extends RequiredNamespacePermissions
+  case object Write extends RequiredNamespacePermissions
+  case object ReadWrite extends RequiredNamespacePermissions
+
   // -- Errors
   sealed abstract class DeviceVerificationFailure
   object DeviceVerificationFailure {

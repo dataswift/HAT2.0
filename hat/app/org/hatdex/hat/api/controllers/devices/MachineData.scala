@@ -36,6 +36,7 @@ import org.hatdex.hat.api.service.applications.{ ApplicationsService, TrustedApp
 import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
+import org.hatdex.hat.clients._
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider }
 import org.hatdex.libs.dal.HATPostgresProfile
@@ -65,6 +66,7 @@ class MachineData @Inject() (
     loggingProvider: LoggingProvider,
     configuration: Configuration,
     usersService: UsersService,
+    authServiceClient: AuthServiceWsClient,
     trustedApplicationProvider: TrustedApplicationProvider,
     implicit val ec: ExecutionContext,
     implicit val applicationsService: ApplicationsService
@@ -75,7 +77,7 @@ class MachineData @Inject() (
   private val logger             = loggingProvider.logger(this.getClass)
   private val defaultRecordLimit = 1000
 
-  val deviceVerification = new DeviceVerification(wsClient, configuration)
+  val deviceVerification = new DeviceVerification(wsClient, configuration, authServiceClient)
 
   case class DeviceDataCreateRequest(body: Option[JsValue])
   implicit val deviceDataCreateRequestReads: Reads[DeviceDataCreateRequest] = Json.reads[DeviceDataCreateRequest]
@@ -126,15 +128,14 @@ class MachineData @Inject() (
                                              request.dynamicEnvironment.hatName,
                                              namespace,
                                              usersService,
-                                             trustedApplicationProvider
+                                             trustedApplicationProvider,
+                                             permissions = Read
         )
 
-      eventuallyVerdict.flatMap { verdict =>
-        verdict match {
-          case Left(verdictError) => handleFailedRequestAssessment(verdictError)
-          case Right(DeviceVerificationSuccess.DeviceRequestSuccess(_)) =>
-            makeData(namespace, endpoint, orderBy, ordering, skip, take)
-        }
+      eventuallyVerdict.flatMap {
+        case Left(verdictError) => handleFailedRequestAssessment(verdictError)
+        case Right(DeviceVerificationSuccess.DeviceRequestSuccess(_)) =>
+          makeData(namespace, endpoint, orderBy, ordering, skip, take)
       }
     }
 
@@ -149,21 +150,20 @@ class MachineData @Inject() (
                                              request.dynamicEnvironment.hatName,
                                              namespace,
                                              usersService,
-                                             trustedApplicationProvider
+                                             trustedApplicationProvider,
+                                             permissions = Write
         )
 
-      eventuallyVerdict.flatMap { verdict =>
-        verdict match {
-          case Left(verdictError) => handleFailedRequestAssessment(verdictError)
-          case Right(DeviceVerificationSuccess.DeviceRequestSuccess(hatUser)) =>
-            handleCreateDeviceData(
-              hatUser = hatUser,
-              machineDataCreate = deviceDataCreate,
-              namespace = namespace,
-              endpoint = endpoint,
-              skipErrors = skipErrors
-            )
-        }
+      eventuallyVerdict.flatMap {
+        case Left(verdictError) => handleFailedRequestAssessment(verdictError)
+        case Right(DeviceVerificationSuccess.DeviceRequestSuccess(hatUser)) =>
+          handleCreateDeviceData(
+            hatUser = hatUser,
+            machineDataCreate = deviceDataCreate,
+            namespace = namespace,
+            endpoint = endpoint,
+            skipErrors = skipErrors
+          )
       }
 
     }
@@ -176,37 +176,15 @@ class MachineData @Inject() (
                                              request.dynamicEnvironment.hatName,
                                              namespace,
                                              usersService,
-                                             trustedApplicationProvider
+                                             trustedApplicationProvider,
+                                             permissions = ReadWrite
         )
 
-      eventuallyVerdict.flatMap { verdict =>
-        verdict match {
-          case Left(verdictError) => handleFailedRequestAssessment(verdictError)
-          case Right(DeviceVerificationSuccess.DeviceRequestSuccess(hatUser)) =>
-            handleUpdateDeviceData(hatUser, deviceDataUpdate, namespace)
-        }
+      eventuallyVerdict.flatMap {
+        case Left(verdictError) => handleFailedRequestAssessment(verdictError)
+        case Right(DeviceVerificationSuccess.DeviceRequestSuccess(hatUser)) =>
+          handleUpdateDeviceData(hatUser, deviceDataUpdate, namespace)
       }
-
-    // Handle these errors
-    // val deviceDataUpdate    = request.body
-    // val maybeDeviceDataInfo = refineDeviceDataUpdateRequest(deviceDataUpdate)
-    // maybeDeviceDataInfo match {
-    //   case Some(deviceDataInfo) =>
-    //     deviceValid(deviceDataInfo, "NAMESPACE").flatMap { deviceOk =>
-    //       deviceOk match {
-    //         case (Some(hatUser), Right(RequestVerified(ns))) =>
-    //           handleUpdateDeviceData(hatUser, deviceDataUpdate, ns)
-    //         case (_, Left(x)) => handleFailedRequestAssessment(x)
-    //         case (None, Right(_)) =>
-    //           logger.warn(s"UpdateDevice: Hat not found for:  ${deviceDataUpdate}")
-    //           handleFailedRequestAssessment(HatNotFound(deviceDataInfo.hatName.toString))
-    //         case (_, _) =>
-    //           logger.warn(s"UpdateDevice: Fallback Error case for:  ${deviceDataUpdate}")
-    //           handleFailedRequestAssessment(GeneralError)
-    //       }
-    //     }
-    //   case None => Future.successful(BadRequest("Missing Device Details."))
-    // }
     }
 
   // -- Operations
@@ -234,7 +212,7 @@ class MachineData @Inject() (
   }
 
   // -- Create Data
-  def handleCreateDeviceData(
+  private def handleCreateDeviceData(
       hatUser: HatUser,
       machineDataCreate: DeviceDataCreateRequest,
       namespace: String,
@@ -268,7 +246,7 @@ class MachineData @Inject() (
     }
 
   // -- Update Data
-  def handleUpdateDeviceData(
+  private def handleUpdateDeviceData(
       hatUser: HatUser,
       machineDataUpdate: DeviceDataUpdateRequest,
       namespace: String
@@ -296,16 +274,7 @@ class MachineData @Inject() (
     def refineDevice: DeviceDataInfoRefined
   }
 
-  def deviceValid(
-      device: DeviceDataInfoRefined,
-      namespace: String
-    )(implicit hatServer: HatServer): Future[(Option[HatUser], Either[RequestValidationFailure, RequestVerified])] =
-    for {
-      hatUser <- usersService.getUser(device.hatName.value)
-      requestAssestment <- deviceVerification.assessRequest(device, namespace, trustedApplicationProvider)
-    } yield (hatUser, requestAssestment)
-
-  def handleJsArray(
+  private def handleJsArray(
       userId: UUID,
       array: JsArray,
       dataEndpoint: String,
@@ -319,7 +288,7 @@ class MachineData @Inject() (
       .map(saved => Created(Json.toJson(saved)))
   }
 
-  def handleJsValue(
+  private def handleJsValue(
       userId: UUID,
       value: JsValue,
       dataEndpoint: String

@@ -30,6 +30,7 @@ import play.api.Logger
 
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, ExecutionContext, Future }
+import org.hatdex.hat.clients.AuthServiceWsClient
 
 class AuthServiceRequestSpec extends BaseSpec with AuthServiceContext {
 
@@ -94,33 +95,33 @@ class AuthServiceRequestSpec extends BaseSpec with AuthServiceContext {
 
 trait AuthServiceContext extends MockitoSugar {
   import org.mockito.ArgumentMatchers.{ any }
-  import org.hatdex.hat.utils.AuthServiceRequestTypes._
+  import org.hatdex.hat.clients.AuthServiceRequestTypes._
   import org.mockito.Mockito._
   import eu.timepit.refined.auto._
 
   val fakeDeviceId: DeviceId     = DeviceId("iamafortress")
   val fakePublicKey: Array[Byte] = "publicKey".getBytes()
 
-  val mockAuthServiceClient: AuthServiceRequest = mock[AuthServiceRequest]
+  val mockAuthServiceClient: AuthServiceWsClient = mock[AuthServiceWsClient]
 
   // Mocked JoinDevice
   when(
     mockAuthServiceClient
-      .joinDevice(any[String], any[DeviceId])(any[ExecutionContext])
+      .joinDevice(any[String], any[DeviceId])
   )
     .thenReturn(Future.successful(Right(DeviceJoined(fakeDeviceId))))
 
   // Mocked getPublicKey
   when(
     mockAuthServiceClient
-      .getPublicKey(any[HatName], any[DeviceId], any[String])(any[ExecutionContext])
+      .getPublicKey(any[HatName], any[DeviceId], any[String])
   )
     .thenReturn(Future.successful(Right(PublicKeyReceived(fakePublicKey))))
 
   // Mocked LeaveDevice
   when(
     mockAuthServiceClient
-      .leaveDevice(any[String], any[DeviceId])(any[ExecutionContext])
+      .leaveDevice(any[String], any[DeviceId])
   )
     .thenReturn(Future.successful(Right(DeviceLeft(fakeDeviceId))))
 }
