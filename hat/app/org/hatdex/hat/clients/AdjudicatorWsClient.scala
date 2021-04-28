@@ -35,8 +35,6 @@ class AdjudicatorWsClient @Inject() (
 
   private val secret: JwtSecretKey = JwtSecretKey(adjudicatorSharedSecret)
 
-  //val logger: Logger = Logger(this.getClass)
-
   private val hatClaimBuiler: JwtClaimBuilder[HatClaim] = HatClaim.builder
 
   private def createHatClaimFromString(
