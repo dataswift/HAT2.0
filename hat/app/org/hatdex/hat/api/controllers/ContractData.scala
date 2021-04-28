@@ -25,17 +25,16 @@
 package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
-import io.dataswift.models.hat._
-import io.dataswift.models.hat.json.RichDataJsonFormats
-import org.hatdex.hat.api.service.richData._
-import org.hatdex.hat.authentication.models._
+import io.dataswift.models.hat.{ EndpointData, EndpointQuery, ErrorMessage }
+import org.hatdex.hat.api.service.richData.{ RichDataMissingException, RichDataService }
+import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.HatBodyParsers
 import org.hatdex.libs.dal.HATPostgresProfile
 import pdi.jwt.JwtClaim
 import play.api.Logging
-import play.api.libs.json.{ JsArray, JsValue, Json, Reads }
+import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.mvc._
 
 import java.util.UUID
@@ -68,16 +67,10 @@ class ContractData @Inject() (
   )(implicit ec: ExecutionContext)
     extends HatApiController(components, silhouette)
     with Logging {
-  import RichDataJsonFormats._
+
+  import io.dataswift.models.hat.json.RichDataJsonFormats._
 
   private val defaultRecordLimit = 1000
-
-  implicit private val contractDataReadRequestReads: Reads[ContractDataReadRequest] =
-    Json.reads[ContractDataReadRequest]
-  implicit private val contractDataCreateRequestReads: Reads[ContractDataCreateRequest] =
-    Json.reads[ContractDataCreateRequest]
-  implicit private val contractDataUpdateRequestReads: Reads[ContractDataUpdateRequest] =
-    Json.reads[ContractDataUpdateRequest]
 
   def readContractData(
       namespace: String,
@@ -86,8 +79,8 @@ class ContractData @Inject() (
       ordering: Option[String],
       skip: Option[Int],
       take: Option[Int]): Action[ContractDataReadRequest] =
-    contractAction.doWithContract(parsers.json[ContractDataReadRequest], namespace, isWriteAction = false) {
-      (_, _, hatServer) =>
+    contractAction.doWithContract(parsers.json[ContractDataReadRequest], Some(namespace), isWriteAction = false) {
+      (_, _, hatServer, _) =>
         makeData(namespace, endpoint, orderBy, ordering, skip, take)(hatServer.db)
     }
 
@@ -95,14 +88,14 @@ class ContractData @Inject() (
       namespace: String,
       endpoint: String,
       skipErrors: Option[Boolean]): Action[ContractDataCreateRequest] =
-    contractAction.doWithContract(parsers.json[ContractDataCreateRequest], namespace, isWriteAction = true) {
-      (createRequest, user, hatServer) =>
+    contractAction.doWithContract(parsers.json[ContractDataCreateRequest], Some(namespace), isWriteAction = true) {
+      (createRequest, user, hatServer, _) =>
         handleCreateContractData(user, createRequest, namespace, endpoint, skipErrors)(hatServer)
     }
 
   def updateContractData(namespace: String): Action[ContractDataUpdateRequest] =
-    contractAction.doWithContract(parsers.json[ContractDataUpdateRequest], namespace, isWriteAction = true) {
-      (updateRequest, user, hatServer) =>
+    contractAction.doWithContract(parsers.json[ContractDataUpdateRequest], Some(namespace), isWriteAction = true) {
+      (updateRequest, user, hatServer, _) =>
         handleUpdateContractData(user, updateRequest, namespace)(hatServer)
     }
 

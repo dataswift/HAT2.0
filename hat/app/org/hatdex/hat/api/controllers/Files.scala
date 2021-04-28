@@ -29,10 +29,10 @@ import io.dataswift.models.hat._
 import io.dataswift.models.hat.json.HatJsonFormats
 import org.hatdex.hat.api.repository.FileMetadataRepository
 import org.hatdex.hat.api.service.applications.ApplicationsService
-import org.hatdex.hat.api.service.{ FileManager, FileNotAuthorisedException, FileUploadService, UserService }
+import org.hatdex.hat.api.service.{ FileNotAuthorisedException, FileUploadService, UserService }
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.utils.HatBodyParsers
-import play.api.Logger
+import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc._
 
@@ -47,14 +47,12 @@ class Files @Inject() (
     silhouette: Silhouette[HatApiAuthEnvironment],
     fileUploadService: FileUploadService,
     fileMetadataRepository: FileMetadataRepository,
-    fileManager: FileManager,
     userService: UserService
   )(implicit ec: ExecutionContext,
     applicationsService: ApplicationsService)
-    extends HatApiController(components, silhouette) {
+    extends HatApiController(components, silhouette)
+    with Logging {
   import HatJsonFormats._
-
-  val logger: Logger = Logger(this.getClass)
 
   def startUpload: Action[ApiHatFile] =
     SecuredAction(
@@ -152,7 +150,7 @@ class Files @Inject() (
             case notFound: FileNotFoundException =>
               NotFound(Json.toJson(ErrorMessage("No such file", notFound.getMessage)))
             case th =>
-              logger.warn(s"Error updating file '$fileId': ${th.getMessage}")
+              logger.error(s"Error updating file '$fileId': ${th.getMessage}")
               BadRequest(Json.toJson(ErrorMessage("Error updating file", "Unexpected exception")))
           }
       }
@@ -162,16 +160,16 @@ class Files @Inject() (
     SecuredAction(
       WithRole(Owner()) || ContainsApplicationRole(Owner(), ManageFiles("*"))
     ).async { implicit request =>
-      fileMetadataRepository.getById(fileId) flatMap {
-        case Some(file) =>
-          val eventuallyDeleted = for {
-            _ <- fileManager.deleteContents(fileId)
-            deleted <- fileMetadataRepository.save(file.copy(status = Some(HatFileStatus.Deleted())))
-          } yield deleted
-          eventuallyDeleted.map(file => Ok(Json.toJson(file)))
-        case None =>
-          Future.successful(NotFound(Json.toJson(ErrorMessage("No such file", s"File $fileId not found"))))
-      }
+      fileUploadService
+        .delete(fileId)
+        .map(file => Ok(Json.toJson(file)))
+        .recover {
+          case notFound: FileNotFoundException =>
+            NotFound(Json.toJson(ErrorMessage("No such file", notFound.getMessage)))
+          case th =>
+            logger.error(s"Error deleting file '$fileId': ${th.getMessage}")
+            BadRequest(Json.toJson(ErrorMessage("Error deleting file", "Unexpected exception")))
+        }
     }
 
   def allowAccess(
@@ -190,7 +188,7 @@ class Files @Inject() (
               updated <- fileMetadataRepository.getById(fileId).map(_.get)
             } yield updated
             eventuallyGranted.map(f => Ok(Json.toJson(f)))
-          case None =>
+          case _ =>
             Future.successful(
               NotFound(
                 Json.toJson(
@@ -217,7 +215,7 @@ class Files @Inject() (
               updated <- fileMetadataRepository.getById(fileId).map(_.get)
             } yield updated
             eventuallyGranted.map(f => Ok(Json.toJson(f)))
-          case None =>
+          case _ =>
             Future.successful(
               NotFound(
                 Json.toJson(
@@ -245,7 +243,7 @@ class Files @Inject() (
               updated <- fileMetadataRepository.getById(fileId).map(_.get)
             } yield updated
             eventuallyGranted.map(f => Ok(Json.toJson(f)))
-          case None =>
+          case _ =>
             Future.successful(
               NotFound(
                 Json.toJson(

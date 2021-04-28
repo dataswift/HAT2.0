@@ -54,7 +54,7 @@ class FileUploadServiceImpl @Inject() (
       user: HatUser,
       maybeApplication: Option[HatApplication]
     )(implicit hatServer: HatServer,
-      authenticator: HatApiAuthEnvironment#A): Future[ApiHatFile] = {
+      maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Future[ApiHatFile] = {
     implicit val db: Database = hatServer.db
     fileMetadataRepository.getById(fileId) flatMap {
       case Some(file) if fileContentAccessAllowed(user, file, maybeApplication) =>
@@ -72,7 +72,7 @@ class FileUploadServiceImpl @Inject() (
       user: HatUser,
       maybeApplication: Option[HatApplication]
     )(implicit hatServer: HatServer,
-      authenticator: HatApiAuthEnvironment#A): Future[ApiHatFile] =
+      maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Future[ApiHatFile] =
     file.fileId map { id =>
       implicit val db: Database = hatServer.db
       fileMetadataRepository.getById(id) flatMap {
@@ -94,7 +94,7 @@ class FileUploadServiceImpl @Inject() (
       user: HatUser,
       maybeApplication: Option[HatApplication]
     )(implicit hatServer: HatServer,
-      authenticator: HatApiAuthEnvironment#A): Future[ApiHatFile] = {
+      maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Future[ApiHatFile] = {
     implicit val db: Database = hatServer.db
     fileMetadataRepository.getById(fileId) flatMap {
       case Some(file) if fileContentAccessAllowed(user, file, maybeApplication) =>
@@ -110,7 +110,7 @@ class FileUploadServiceImpl @Inject() (
       user: HatUser,
       file: ApiHatFile
     )(implicit hatServer: HatServer,
-      authenticator: HatApiAuthEnvironment#A): Future[ApiHatFile] =
+      maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Future[ApiHatFile] =
     fileManager
       .getContentUrl(file.fileId.get)
       .map(url => file.copy(contentUrl = Some(url)))
@@ -134,18 +134,8 @@ class FileUploadServiceImpl @Inject() (
       user: HatUser,
       file: ApiHatFile,
       appStatus: Option[HatApplication]
-    )(implicit authenticator: HatApiAuthEnvironment#A): Boolean =
-    appStatus.exists(
-      ContainsApplicationRole.isAuthorized(
-        user,
-        _,
-        authenticator,
-        ManageFiles(file.source)
-      )
-    ) ||
-      WithRole.isAuthorized(user, authenticator, Owner()) ||
-      (file.permissions.isDefined &&
-        file.permissions.get.exists(_.userId == user.userId))
+    )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Boolean =
+    file.permissions.exists(_.exists(_.userId == user.userId)) || isOwnerOrCanManage(user, file.source, appStatus)
 
   override def listFiles(
       user: HatUser,
@@ -153,7 +143,8 @@ class FileUploadServiceImpl @Inject() (
       appStatus: Option[HatApplication]
     )(implicit hatServer: HatServer,
       authenticator: HatApiAuthEnvironment#A): Future[Seq[ApiHatFile]] = {
-    implicit val db: Database = hatServer.db
+    implicit val db: Database                          = hatServer.db
+    implicit val auth: Option[HatApiAuthEnvironment#A] = Some(authenticator)
     fileMetadataRepository
       .search(fileTemplate)
       .map(_.filter(fileAccessAllowed(user, _, appStatus)))
@@ -166,7 +157,18 @@ class FileUploadServiceImpl @Inject() (
               Future.successful(filePermissionsCleaned(user, file))
           }
       }
+  }
 
+  override def delete(fileId: String)(implicit hatServer: HatServer): Future[ApiHatFile] = {
+    implicit val db: Database = hatServer.db
+    fileMetadataRepository.getById(fileId) flatMap {
+      case Some(file) =>
+        for {
+          _ <- fileManager.deleteContents(fileId)
+          deleted <- fileMetadataRepository.save(file.copy(status = Some(HatFileStatus.Deleted())))
+        } yield deleted
+      case _ => fileNotFound(fileId)
+    }
   }
 
   private def fileNotFound(fileId: String): Future[Nothing] =
@@ -186,33 +188,43 @@ class FileUploadServiceImpl @Inject() (
       user <- maybeUser
       authenticator <- maybeAuthenticator
     } yield
-      if (fileContentAccessAllowed(user, file, maybeApplication)(authenticator)) getFileUrl(fileId)
-      else fileNotFound(fileId)
+      if (fileContentAccessAllowed(user, file, maybeApplication)(Some(authenticator)))
+        getFileUrl(fileId)
+      else
+        fileNotFound(fileId)
     maybeUrl.getOrElse(fileNotFound(fileId))
   }
+
+  private def isOwnerOrCanManage(
+      user: HatUser,
+      source: String,
+      appStatus: Option[HatApplication]
+    )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Boolean =
+    maybeAuthenticator exists { authenticator =>
+      appStatus.exists(
+        ContainsApplicationRole.isAuthorized(
+          user,
+          _,
+          authenticator,
+          ManageFiles(source)
+        )
+      ) || WithRole.isAuthorized(user, authenticator, Owner())
+    }
 
   private def fileContentAccessAllowed(
       user: HatUser,
       file: ApiHatFile,
       appStatus: Option[HatApplication]
-    )(implicit authenticator: HatApiAuthEnvironment#A): Boolean =
-    appStatus.exists(
-      ContainsApplicationRole.isAuthorized(
-        user,
-        _,
-        authenticator,
-        ManageFiles("*")
-      )
-    ) ||
-      WithRole.isAuthorized(user, authenticator, Owner()) ||
-      (file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) &&
-        file.permissions.exists(_.exists(p => p.userId == user.userId && p.contentReadable)))
+    )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Boolean =
+    (file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) &&
+      file.permissions.exists(_.exists(p => p.userId == user.userId && p.contentReadable))) ||
+      isOwnerOrCanManage(user, "*", appStatus)
 
   private def filePermissionsCleaned(
       user: HatUser,
       file: ApiHatFile
-    )(implicit authenticator: HatApiAuthEnvironment#A): ApiHatFile =
-    if (WithRole.isAuthorized(user, authenticator, Owner()))
+    )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): ApiHatFile =
+    if (maybeAuthenticator.exists(WithRole.isAuthorized(user, _, Owner())))
       file
     else
       file.copy(permissions = None)

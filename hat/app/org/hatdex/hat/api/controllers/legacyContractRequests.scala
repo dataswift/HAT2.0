@@ -3,8 +3,10 @@ package org.hatdex.hat.api.controllers
 import eu.timepit.refined.collection.NonEmpty
 import eu.timepit.refined.refineV
 import io.dataswift.adjudicator.Types.{ ContractId, HatName, ShortLivedToken }
-import io.dataswift.models.hat.EndpointData
-import play.api.libs.json.JsValue
+import io.dataswift.models.hat.json.HatJsonFormats
+import io.dataswift.models.hat.{ ApiHatFile, EndpointData }
+import play.api.libs.json.{ JsValue, Json, Reads }
+import io.dataswift.models.hat.json.RichDataJsonFormats._
 
 import java.util.UUID
 import scala.util.Try
@@ -27,6 +29,11 @@ case class ContractDataReadRequest(
     RequestValidator.validateContractInfo(token, hatName, contractId)
 }
 
+object ContractDataReadRequest {
+  implicit val contractDataReadRequestReads: Reads[ContractDataReadRequest] =
+    Json.reads[ContractDataReadRequest]
+}
+
 case class ContractDataCreateRequest(
     token: String,
     hatName: String,
@@ -37,6 +44,11 @@ case class ContractDataCreateRequest(
     RequestValidator.validateContractInfo(token, hatName, contractId)
 }
 
+object ContractDataCreateRequest {
+  implicit val contractDataCreateRequestReads: Reads[ContractDataCreateRequest] =
+    Json.reads[ContractDataCreateRequest]
+}
+
 case class ContractDataUpdateRequest(
     token: String,
     hatName: String,
@@ -45,6 +57,26 @@ case class ContractDataUpdateRequest(
     extends MaybeWithContractInfo {
   def extractContractInfo: Option[ContractDataInfoRefined] =
     RequestValidator.validateContractInfo(token, hatName, contractId)
+}
+
+object ContractDataUpdateRequest {
+  implicit val contractDataUpdateRequestReads: Reads[ContractDataUpdateRequest] =
+    Json.reads[ContractDataUpdateRequest]
+}
+
+case class ContractFile(
+    token: String,
+    hatName: String,
+    contractId: String,
+    file: ApiHatFile)
+    extends MaybeWithContractInfo {
+  def extractContractInfo: Option[ContractDataInfoRefined] =
+    RequestValidator.validateContractInfo(token, hatName, contractId)
+}
+
+object ContractFile {
+  import HatJsonFormats.apiHatFileFormat
+  implicit val contractFileReads: Reads[ContractFile] = Json.reads[ContractFile]
 }
 
 private object RequestValidator {

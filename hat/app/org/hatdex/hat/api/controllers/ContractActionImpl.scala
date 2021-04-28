@@ -36,15 +36,15 @@ class ContractActionImpl @Inject() (
 
   override def doWithContract[A <: MaybeWithContractInfo](
       parser: BodyParser[A],
-      namespace: String,
+      maybeNamespace: Option[String],
       isWriteAction: Boolean
-    )(contractAction: (A, HatUser, HatServer) => Future[Result]): Action[A] =
+    )(contractAction: (A, HatUser, HatServer, Option[HatApiAuthEnvironment#A]) => Future[Result]): Action[A] =
     UserAwareAction.async(parser) { implicit request =>
       request.body.extractContractInfo match {
         case Some(contractDataInfo) =>
-          contractValid(contractDataInfo, namespace, isWriteAction).flatMap {
+          contractValid(contractDataInfo, maybeNamespace, isWriteAction).flatMap {
             case (Some(user), Right(RequestVerified(_))) =>
-              contractAction(request.body, user, request.dynamicEnvironment)
+              contractAction(request.body, user, request.dynamicEnvironment, request.authenticator)
             case (_, Left(x)) => handleFailedRequestAssessment(x)
             case (None, Right(_)) =>
               logger.warn(s"Hat not found for:  $contractDataInfo")
@@ -59,26 +59,26 @@ class ContractActionImpl @Inject() (
 
   private def handleFailedRequestAssessment(failure: RequestValidationFailure): Future[Result] =
     failure match {
-      case HatNotFound(hatName)               => Future.successful(BadRequest(s"HatName not found: ${hatName}"))
-      case MissingHatName(hatName)            => Future.successful(BadRequest(s"Missing HatName: ${hatName}"))
-      case InaccessibleNamespace(namespace)   => Future.successful(BadRequest(s"Namespace Inaccessible: ${namespace}"))
-      case InvalidShortLivedToken(contractId) => Future.successful(BadRequest(s"Invalid Token: ${contractId}"))
+      case HatNotFound(hatName)               => Future.successful(BadRequest(s"HatName not found: $hatName"))
+      case MissingHatName(hatName)            => Future.successful(BadRequest(s"Missing HatName: $hatName"))
+      case InaccessibleNamespace(namespace)   => Future.successful(BadRequest(s"Namespace Inaccessible: $namespace"))
+      case InvalidShortLivedToken(contractId) => Future.successful(BadRequest(s"Invalid Token: $contractId"))
       case GeneralError                       => Future.successful(BadRequest("Unknown Error"))
     }
 
   private def contractValid(
       contract: ContractDataInfoRefined,
-      namespace: String,
+      maybeNamespace: Option[String],
       isWriteAction: Boolean
     )(implicit hatServer: HatServer): Future[(Option[HatUser], Either[RequestValidationFailure, RequestVerified])] =
     for {
       hatUser <- userService.getUser(contract.hatName.value)
-      requestAssessment <- assessRequest(contract, namespace, isWriteAction)
+      requestAssessment <- assessRequest(contract, maybeNamespace, isWriteAction)
     } yield (hatUser, requestAssessment)
 
   private def assessRequest(
       contractDataInfo: ContractDataInfoRefined,
-      namespace: String,
+      maybeNamespace: Option[String],
       isWriteAction: Boolean): Future[Either[RequestValidationFailure, RequestVerified]] = {
     val eventuallyMaybeDecision = verifyContract(contractDataInfo)
     val eventuallyMaybeApp =
@@ -86,18 +86,12 @@ class ContractActionImpl @Inject() (
 
     eventuallyMaybeDecision.flatMap { maybeDecision =>
       eventuallyMaybeApp.flatMap { maybeApp =>
-        logger.info(s"AssessRequest: ${maybeDecision} - ${maybeApp} - ${namespace}")
-        decide(maybeDecision, maybeApp, namespace, isWriteAction) match {
-          case Some(ns) =>
-            logger.info(s"Found a namespace: ${ns}")
-            Future.successful(
-              Right(
-                RequestVerified(s"Token: ${contractDataInfo.contractId}")
-              )
-            )
-          case None =>
-            logger.error(s"private def assessRequest: decide returned None - ${contractDataInfo} - ${namespace}")
-            Future.successful(Left(InvalidShortLivedToken(s"Token: ${contractDataInfo.contractId}")))
+        logger.info(s"AssessRequest: ${maybeDecision} - ${maybeApp} - ${maybeNamespace}")
+        if (decide(maybeDecision, maybeApp, maybeNamespace, isWriteAction))
+          Future.successful(Right(RequestVerified(s"Token: ${contractDataInfo.contractId}")))
+        else {
+          logger.error(s"private def assessRequest: decide returned None - ${contractDataInfo} - ${maybeNamespace}")
+          Future.successful(Left(InvalidShortLivedToken(s"Token: ${contractDataInfo.contractId}")))
         }
       }
     } recover {
@@ -113,21 +107,18 @@ class ContractActionImpl @Inject() (
         ContractVerificationSuccess
       ],
       maybeApp: Option[Application],
-      namespace: String,
-      isWriteAction: Boolean): Option[String] =
+      maybeNamespace: Option[String],
+      isWriteAction: Boolean): Boolean =
     (eitherDecision, maybeApp) match {
       case (Right(JwtClaimVerified(_)), Some(app)) =>
         logger.debug(s"JwtClaim verified for app ${app.id}")
-        if (verifyNamespace(app, namespace, isWriteAction))
-          Some(namespace)
-        else
-          None
+        maybeNamespace forall (verifyNamespace(app, _, isWriteAction))
       case (Left(decision), _) =>
         logger.info(s"contract not verified: $decision")
-        None
+        false
       case (_, _) =>
         logger.info("contract not verified, catch all")
-        None
+        false
     }
 
   private def verifyNamespace(

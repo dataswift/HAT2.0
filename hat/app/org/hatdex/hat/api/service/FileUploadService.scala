@@ -21,21 +21,21 @@ trait FileUploadService {
       user: HatUser,
       maybeApplication: Option[HatApplication]
     )(implicit hatServer: HatServer,
-      authenticator: HatApiAuthEnvironment#A): Future[ApiHatFile]
+      maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Future[ApiHatFile]
 
   def update(
       file: ApiHatFile,
       user: HatUser,
       maybeApplication: Option[HatApplication]
     )(implicit hatServer: HatServer,
-      authenticator: HatApiAuthEnvironment#A): Future[ApiHatFile]
+      maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Future[ApiHatFile]
 
   def getFile(
       fileId: String,
       user: HatUser,
       maybeApplication: Option[HatApplication]
     )(implicit hatServer: HatServer,
-      authenticator: HatApiAuthEnvironment#A): Future[ApiHatFile]
+      maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Future[ApiHatFile]
 
   def getContentUrl(
       fileId: String,
@@ -48,7 +48,7 @@ trait FileUploadService {
       user: HatUser,
       file: ApiHatFile,
       appStatus: Option[HatApplication]
-    )(implicit authenticator: HatApiAuthEnvironment#A): Boolean
+    )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Boolean
 
   def listFiles(
       user: HatUser,
@@ -56,4 +56,7 @@ trait FileUploadService {
       appStatus: Option[HatApplication]
     )(implicit hatServer: HatServer,
       authenticator: HatApiAuthEnvironment#A): Future[Seq[ApiHatFile]]
+
+  def delete(fileId: String)(implicit hatServer: HatServer): Future[ApiHatFile]
+
 }
