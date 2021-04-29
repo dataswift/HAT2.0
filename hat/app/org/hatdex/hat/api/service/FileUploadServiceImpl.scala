@@ -63,7 +63,7 @@ class FileUploadServiceImpl @Inject() (
           fileSize <- fileManager.getFileSize(fileId) if fileSize > 0
           savedFile <- fileMetadataRepository.save(file.copy(status = Some(HatFileStatus.Completed(fileSize))))
         } yield savedFile
-      case Some(file) =>
+      case Some(_) =>
         logger.info(s"Not marking $fileId complete, access forbidden")
         fileNotFound(fileId)
       case _ =>
@@ -188,15 +188,12 @@ class FileUploadServiceImpl @Inject() (
       maybeAuthenticator: Option[HatApiAuthEnvironment#A]
     )(implicit hatServer: HatServer): Future[URL] = {
     val fileId = file.fileId.get
-    val maybeUrl = for {
-      user <- maybeUser
-      authenticator <- maybeAuthenticator
-    } yield
-      if (fileContentAccessAllowed(user, file, maybeApplication)(Some(authenticator)))
+    maybeUser map { user =>
+      if (fileContentAccessAllowed(user, file, maybeApplication)(maybeAuthenticator))
         getFileUrl(fileId)
       else
         fileNotFound(fileId)
-    maybeUrl.getOrElse(fileNotFound(fileId))
+    } getOrElse fileNotFound(fileId)
   }
 
   private def isOwnerOrCanManage(
