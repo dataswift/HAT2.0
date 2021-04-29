@@ -86,11 +86,13 @@ class ContractActionImpl @Inject() (
 
     eventuallyMaybeDecision.flatMap { maybeDecision =>
       eventuallyMaybeApp.flatMap { maybeApp =>
-        logger.info(s"AssessRequest: ${maybeDecision} - ${maybeApp} - ${maybeNamespace}")
+        logger.info(
+          s"AssessRequest: decision $maybeDecision - app id ${maybeApp.map(_.id)} - namespace $maybeNamespace"
+        )
         if (decide(maybeDecision, maybeApp, maybeNamespace, isWriteAction))
           Future.successful(Right(RequestVerified(s"Token: ${contractDataInfo.contractId}")))
         else {
-          logger.error(s"private def assessRequest: decide returned None - ${contractDataInfo} - ${maybeNamespace}")
+          logger.info(s"assessRequest: decide returned false - $contractDataInfo - $maybeNamespace")
           Future.successful(Left(InvalidShortLivedToken(s"Token: ${contractDataInfo.contractId}")))
         }
       }
@@ -141,28 +143,16 @@ class ContractActionImpl @Inject() (
   private def verifyJwtClaim(
       contractRequestBodyRefined: ContractDataInfoRefined,
       publicKeyAsByteArray: Array[Byte]): Either[ContractVerificationFailure, ContractVerificationSuccess] = {
-    logger.error(
-      s"ContractData.verifyJwtClaim.token: ${contractRequestBodyRefined.token.toString}"
-    )
-    logger.error(
-      s"ContractData.verifyJwtClaim.pubKey: ${publicKeyAsByteArray}"
-    )
-
+    logger.debug(s"verifyJwtClaim.token: ${contractRequestBodyRefined.token}")
     val tryJwtClaim = ShortLivedTokenOps.verifyToken(
       Some(contractRequestBodyRefined.token.toString),
       publicKeyAsByteArray
     )
     tryJwtClaim match {
       case Success(jwtClaim) => Right(JwtClaimVerified(jwtClaim))
-      case Failure(errorMsg) =>
-        logger.error(
-          s"ContractData.verifyJwtClaim.failureMessage: ${errorMsg.getMessage}"
-        )
-        Left(
-          InvalidTokenFailure(
-            s"Token: ${contractRequestBodyRefined.token.toString} was not verified."
-          )
-        )
+      case Failure(th) =>
+        logger.error(s"verifyJwtClaim failed: ${th.getMessage}")
+        Left(InvalidTokenFailure(s"Token: ${contractRequestBodyRefined.token} was not verified."))
     }
   }
 

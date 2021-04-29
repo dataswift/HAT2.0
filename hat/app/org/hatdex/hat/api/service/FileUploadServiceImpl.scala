@@ -219,10 +219,8 @@ class FileUploadServiceImpl @Inject() (
       checkComplete: Boolean = true
     )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Boolean = {
     val statusOk = if (checkComplete) file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) else true
-    (statusOk && file.permissions.exists(_.exists { p =>
-      logger.info(s"permission $p")
-      p.userId == user.userId && p.contentReadable
-    })) ||
+    statusOk &&
+    file.permissions.exists(_.exists(p => p.userId == user.userId && p.contentReadable)) ||
     isOwnerOrCanManage(user, "*", appStatus)
   }
 
