@@ -57,13 +57,17 @@ class FileUploadServiceImpl @Inject() (
       maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Future[ApiHatFile] = {
     implicit val db: Database = hatServer.db
     fileMetadataRepository.getById(fileId) flatMap {
-      case Some(file) if fileContentAccessAllowed(user, file, maybeApplication) =>
-        logger.debug(s"Marking $file complete")
+      case Some(file) if fileContentAccessAllowed(user, file, maybeApplication, checkComplete = false) =>
+        logger.info(s"Marking $file complete")
         for {
           fileSize <- fileManager.getFileSize(fileId) if fileSize > 0
           savedFile <- fileMetadataRepository.save(file.copy(status = Some(HatFileStatus.Completed(fileSize))))
         } yield savedFile
-      case _ => fileNotFound(fileId)
+      case Some(file) =>
+        logger.info(s"Not marking $fileId complete, access forbidden")
+        fileNotFound(fileId)
+      case _ =>
+        fileNotFound(fileId)
     }
   }
 
@@ -214,11 +218,16 @@ class FileUploadServiceImpl @Inject() (
   private def fileContentAccessAllowed(
       user: HatUser,
       file: ApiHatFile,
-      appStatus: Option[HatApplication]
-    )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Boolean =
-    (file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) &&
-      file.permissions.exists(_.exists(p => p.userId == user.userId && p.contentReadable))) ||
-      isOwnerOrCanManage(user, "*", appStatus)
+      appStatus: Option[HatApplication],
+      checkComplete: Boolean = true
+    )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Boolean = {
+    val statusOk = if (checkComplete) file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) else true
+    (statusOk && file.permissions.exists(_.exists { p =>
+      logger.info(s"permission $p")
+      p.userId == user.userId && p.contentReadable
+    })) ||
+    isOwnerOrCanManage(user, "*", appStatus)
+  }
 
   private def filePermissionsCleaned(
       user: HatUser,

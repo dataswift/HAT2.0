@@ -61,7 +61,7 @@ class ContractFiles @Inject() (
     }
 
   def getDetail(fileId: String): Action[ContractDataReadRequest] =
-    contractAction.doWithContract(parsers.json[ContractDataReadRequest], None, isWriteAction = true) {
+    contractAction.doWithContract(parsers.json[ContractDataReadRequest], None, isWriteAction = false) {
       (_, user, hatServer, maybeAuthenticator) =>
         fileUploadService
           .getFile(fileId, user, None)(hatServer, maybeAuthenticator)
@@ -78,7 +78,7 @@ class ContractFiles @Inject() (
     }
 
   def getContent(fileId: String): Action[ContractDataReadRequest] =
-    contractAction.doWithContract(parsers.json[ContractDataReadRequest], None, isWriteAction = true) {
+    contractAction.doWithContract(parsers.json[ContractDataReadRequest], None, isWriteAction = false) {
       (_, user, hatServer, maybeAuthenticator) =>
         fileUploadService
           .getContentUrl(fileId, Some(user), None, maybeAuthenticator)(hatServer)
