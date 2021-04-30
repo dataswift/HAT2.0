@@ -309,11 +309,11 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller   = application.injector.instanceOf[Authentication]
     val tokenService = application.injector.instanceOf[MailTokenUserService]
     val tokenId      = UUID.randomUUID().toString
-    val usersService = application.injector.instanceOf[UsersService]
+    val userService  = application.injector.instanceOf[UserService]
 
     val result: Future[Result] = for {
       _ <- tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
-      _ <- usersService.saveUser(
+      _ <- userService.saveUser(
              owner.copy(roles = Seq(DataDebitOwner("")))
            ) // forcing owner user to a different role for the test
       result <- Helpers.call(controller.handleResetPassword(tokenId), request)

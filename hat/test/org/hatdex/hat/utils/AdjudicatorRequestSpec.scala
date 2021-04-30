@@ -25,9 +25,10 @@ package org.hatdex.hat.utils
 import eu.timepit.refined.auto._
 import io.dataswift.adjudicator.Types.{ ContractId, HatName }
 import io.dataswift.test.common.BaseSpec
+import org.hatdex.hat.client.AdjudicatorWsClient
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Logger
-import play.api.test.{ WsTestClient }
+import play.api.test.WsTestClient
 
 import java.util.UUID
 import scala.concurrent.duration._
@@ -107,13 +108,13 @@ class AdjudicatorRequestSpec extends BaseSpec with AdjudicatorContext {
 
 trait AdjudicatorContext extends MockitoSugar {
   import org.mockito.ArgumentMatchers.{ any }
-  import org.hatdex.hat.utils.AdjudicatorRequestTypes._
+  import org.hatdex.hat.client.AdjudicatorRequestTypes._
   import org.mockito.Mockito._
 
   val fakeContractUUID: UUID     = java.util.UUID.randomUUID()
   val fakePublicKey: Array[Byte] = "publicKey".getBytes()
 
-  val mockAdjudicatorClient: AdjudicatorRequest = MockitoSugar.mock[AdjudicatorRequest]
+  val mockAdjudicatorClient: AdjudicatorWsClient = MockitoSugar.mock[AdjudicatorWsClient]
 
   // Mocked JoinContract
   when(
