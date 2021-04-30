@@ -30,15 +30,14 @@ import play.api.libs.json.{ JsValue, Json }
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import org.hatdex.hat.fixture.DeviceVerificationFixture
 
 class DeviceVerificationSpec extends DeviceVerificationContext {
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   "The getTokenFromHeaders" should "find an SLTokenBody" in {
     import org.hatdex.hat.api.controllers.MachineData.SLTokenBody
 
     val dv = application.injector.instanceOf[DeviceVerification]
+
     val headers = play.api.mvc.Headers(
       ("X-Auth-Token",
        "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiIsImtpZCI6IjgzNDg0NTNiLWM0ZWYtNDczYS05ODhiLWY2NmFiZWFjYmZkMyJ9.eyJpc3MiOiJkYXRhc3dpZnRhZGp1ZGljYXRpb24iLCJleHAiOjE2MTg1ODMyNDQsCiAgImRldmljZUlkIiA6ICJzYW1wbGVkZXZpY2UiCn0.A0A1YR59Xatd8sudFFsRVZDSadPfC0Sm0c1OecMsyTudshXLb3Zg36eEIrZMRgh-M9Br30Ybr6X1ZrG9cdv5r-BkfPGaR9lGBFmP5GDkag5_LhpJvUyieucqQj2cyrNfGp1EiSeEwZtLHI_WvJhFH6LeGpMXk08DxOE_O6KA1RE"
@@ -56,9 +55,11 @@ class DeviceVerificationSpec extends DeviceVerificationContext {
     val headers = play.api.mvc.Headers(
       ("X-Auth-Token", "Bearer garbage")
     )
+
     val dv = application.injector.instanceOf[DeviceVerification]
 
     val ret = Await.result(dv.getTokenFromHeaders(headers), 2.seconds)
+
     ret must equal(None)
   }
 }

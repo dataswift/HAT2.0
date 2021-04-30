@@ -30,7 +30,7 @@ case class ApiVerificationRequest(
     applicationId: String,
     email: String,
     redirectUri: String) {
-  override def toString() =
+  override def toString(): String =
     s"ApiVerificationRequest(applicationId: $applicationId, email:REDACTED, redirectUri: $redirectUri)"
 }
 
@@ -46,7 +46,7 @@ case class ApiVerificationCompletionRequest(
     hatName: String,
     hatCluster: String,
     password: String) {
-  override def toString() =
+  override def toString(): String =
     s"ApiVerificationCompletionRequest(email:REDACTED, termsAgreed:$termsAgreed, optins:$optins, hatName:$hatName, hatCluster:$hatCluster, password:REDACTED)"
 }
 
@@ -58,7 +58,7 @@ case class HattersClaimPayload(
     newsletterOptin: Option[Boolean],
     hatName: String,
     hatCluster: String) {
-  override def toString() =
+  override def toString(): String =
     s"HattersClaimPayload(email:REDACTED, termsAgreed:${termsAgreed}, sandbox:$sandbox, platform:$platform, newsletterOptin:$newsletterOptin, hatName:$hatName, hatCluster:$hatCluster)"
 
 }

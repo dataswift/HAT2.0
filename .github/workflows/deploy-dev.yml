@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - DAS-518-device-data-endpoints
+      - dev
 
 env:
   RUMPEL: live

@@ -39,16 +39,14 @@ import org.hatdex.hat.api.service.applications.{ ApplicationsService, TrustedApp
 import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
+import org.hatdex.hat.clients.AdjudicatorClient
 import org.hatdex.hat.clients.AdjudicatorRequestTypes._
-import org.hatdex.hat.clients.AdjudicatorWsClient
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider, NamespaceUtils }
 import org.hatdex.libs.dal.HATPostgresProfile
 import pdi.jwt.JwtClaim
-import play.api.Configuration
 import play.api.libs.json.Reads._
 import play.api.libs.json.{ JsArray, JsValue, Json, Reads }
-import play.api.libs.ws.WSClient
 import play.api.mvc._
 
 import java.util.UUID
@@ -72,13 +70,11 @@ class ContractData @Inject() (
     silhouette: Silhouette[HatApiAuthEnvironment],
     dataService: RichDataService,
     loggingProvider: LoggingProvider,
-    configuration: Configuration,
     usersService: UsersService,
-    adjudicatorClient: AdjudicatorWsClient,
+    adjudicatorClient: AdjudicatorClient,
     trustedApplicationProvider: TrustedApplicationProvider,
     implicit val ec: ExecutionContext,
-    implicit val applicationsService: ApplicationsService
-  )(wsClient: WSClient)
+    implicit val applicationsService: ApplicationsService)
     extends HatApiController(components, silhouette) {
   import RichDataJsonFormats._
 
