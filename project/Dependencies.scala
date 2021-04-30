@@ -37,7 +37,7 @@ object Dependencies {
     val BouncyCastle          = "1.68"
     val PlayPrometheusFilters = "0.6.1"
     val PlayGuard             = "2.5.0"
-    val PrettyTime            = "5.0.0.Final"
+    val PrettyTime            = "5.0.1.Final"
     val Nbvcxz                = "1.5.0"
     val PlayMemcached         = "0.11.0"
 
