@@ -31,12 +31,12 @@ import io.dataswift.models.hat.json.RichDataJsonFormats
 import org.hatdex.hat.api.controllers.devices.DeviceVerification
 import org.hatdex.hat.api.controllers.devices.Types.DeviceVerificationFailure._
 import org.hatdex.hat.api.controllers.devices.Types._
-import org.hatdex.hat.api.service.UsersService
+import org.hatdex.hat.api.service.UserService
 import org.hatdex.hat.api.service.applications.{ ApplicationsService, TrustedApplicationProvider }
 import org.hatdex.hat.api.service.richData._
 import org.hatdex.hat.authentication.models._
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
-import org.hatdex.hat.clients._
+import org.hatdex.hat.client.{ AuthServiceClient }
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider }
 import org.hatdex.libs.dal.HATPostgresProfile
@@ -65,8 +65,8 @@ class MachineData @Inject() (
     dataService: RichDataService,
     loggingProvider: LoggingProvider,
     configuration: Configuration,
-    usersService: UsersService,
-    authServiceClient: AuthServiceWsClient,
+    usersService: UserService,
+    authServiceClient: AuthServiceClient,
     trustedApplicationProvider: TrustedApplicationProvider,
     deviceVerification: DeviceVerification,
     implicit val ec: ExecutionContext,

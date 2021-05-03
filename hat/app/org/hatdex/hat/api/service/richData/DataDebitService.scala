@@ -27,7 +27,7 @@ package org.hatdex.hat.api.service.richData
 import akka.Done
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.json.RichDataJsonFormats
-import org.hatdex.hat.api.service.{ RemoteExecutionContext, UsersService }
+import org.hatdex.hat.api.service.{ RemoteExecutionContext, UserService }
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables.{ DataDebit => DbDataDebit, DataDebitPermissions => DbDataDebitPermissions, _ }
 import org.hatdex.hat.resourceManagement.HatServer
@@ -44,7 +44,7 @@ import scala.concurrent.Future
 import scala.util.Success
 
 class DataDebitService @Inject() (
-    usersService: UsersService
+    userService: UserService
   )(implicit val ec: RemoteExecutionContext) {
   import RichDataJsonFormats._
 
@@ -119,13 +119,13 @@ class DataDebitService @Inject() (
       }
       .andThen {
         case Success(_) =>
-          usersService
+          userService
             .getUser(userId)
             .flatMap { maybeUser =>
               FutureTransformations.transform(
                 maybeUser
                   .map(_.withRoles(DataDebitOwner(key)))
-                  .map(usersService.saveUser)
+                  .map(userService.saveUser)
               )
             }
       }
@@ -253,13 +253,13 @@ class DataDebitService @Inject() (
       }
       .andThen {
         case Success(_) =>
-          usersService
+          userService
             .getUser(userId)
             .flatMap { maybeUser =>
               FutureTransformations.transform(
                 maybeUser
                   .map(_.withRoles(DataDebitOwner(key)))
-                  .map(usersService.saveUser)
+                  .map(userService.saveUser)
               )
             }
       }

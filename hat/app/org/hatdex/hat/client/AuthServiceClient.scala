@@ -1,7 +1,7 @@
-package org.hatdex.hat.clients
+package org.hatdex.hat.client
 
 import io.dataswift.adjudicator.Types.{ DeviceId, HatName }
-import org.hatdex.hat.clients.AuthServiceRequestTypes._
+import org.hatdex.hat.client.AuthServiceRequestTypes._
 
 import scala.concurrent.Future
 
@@ -14,7 +14,7 @@ trait AuthServiceClient {
   def joinDevice(
       hatName: String,
       deviceId: DeviceId): Future[Either[
-    JoinDeviceRequestFailure.ServiceRespondedWithFailure,
+    JoinDeviceServiceFailure,
     DeviceJoined
   ]]
 

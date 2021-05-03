@@ -25,7 +25,7 @@
 package org.hatdex.hat.authentication
 
 import com.mohiva.play.silhouette.api.LoginInfo
-import org.hatdex.hat.api.service.UsersService
+import org.hatdex.hat.api.service.UserService
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.HatServer
 
@@ -35,9 +35,9 @@ import scala.concurrent.Future
 /**
   * Handles actions to users.
   *
-  * @param usersService The underlying database User Service implementation
+  * @param userService The underlying database User Service implementation
   */
-class AuthUserServiceImpl @Inject() (usersService: UsersService) extends AuthUserService {
+class AuthUserServiceImpl @Inject() (userService: UserService) extends AuthUserService {
 
   /**
     * Retrieves a user that matches the specified login info.
@@ -48,7 +48,7 @@ class AuthUserServiceImpl @Inject() (usersService: UsersService) extends AuthUse
   def retrieve(
       loginInfo: LoginInfo
     )(implicit dyn: HatServer): Future[Option[HatUser]] =
-    usersService.getUser(loginInfo.providerKey)(dyn)
+    userService.getUser(loginInfo.providerKey)(dyn)
 
   /**
     * Saves a user.
@@ -57,7 +57,7 @@ class AuthUserServiceImpl @Inject() (usersService: UsersService) extends AuthUse
     * @return The saved user.
     */
   def save(user: HatUser)(implicit dyn: HatServer): Future[HatUser] =
-    usersService.saveUser(user)(dyn)
+    userService.saveUser(user)(dyn)
 
   /**
     * Removes a user.
@@ -66,7 +66,7 @@ class AuthUserServiceImpl @Inject() (usersService: UsersService) extends AuthUse
     * @return The saved user.
     */
   def remove(loginInfo: LoginInfo)(implicit dyn: HatServer): Future[Unit] =
-    usersService.removeUser(loginInfo.providerKey)(dyn)
+    userService.removeUser(loginInfo.providerKey)(dyn)
 
   /**
     * Link user profiles together

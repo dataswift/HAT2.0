@@ -1,4 +1,4 @@
-package org.hatdex.hat.clients
+package org.hatdex.hat.client
 
 import dev.profunktor.auth.jwt.JwtSecretKey
 import eu.timepit.refined._
@@ -49,7 +49,7 @@ class AuthServiceWsClient @Inject() (
     maybeHatName.map(HatDeviceClaim(_, deviceId))
 
   // Internal calls
-  def getPublicKey(
+  override def getPublicKey(
       hatName: HatName,
       deviceId: DeviceId,
       keyId: String): Future[Either[PublicKeyRequestFailure, PublicKeyReceived]] = {
@@ -63,7 +63,7 @@ class AuthServiceWsClient @Inject() (
       case None =>
         Future.successful(
           Left(
-            PublicKeyRequestFailure.ServiceRespondedWithFailure(
+            PublicKeyServiceFailure(
               s"The AuthService Service responded with an error."
             )
           )
@@ -71,10 +71,10 @@ class AuthServiceWsClient @Inject() (
     }
   }
 
-  def joinDevice(
+  override def joinDevice(
       hatName: String,
       deviceId: DeviceId): Future[Either[
-    JoinDeviceRequestFailure.ServiceRespondedWithFailure,
+    JoinDeviceServiceFailure,
     DeviceJoined
   ]] = {
     val claim = createHatClaimFromString(hatName, deviceId)
@@ -87,7 +87,7 @@ class AuthServiceWsClient @Inject() (
       case None =>
         Future.successful(
           Left(
-            JoinDeviceRequestFailure.ServiceRespondedWithFailure(
+            JoinDeviceServiceFailure(
               s"The AuthService Service responded with an error."
             )
           )
@@ -95,7 +95,7 @@ class AuthServiceWsClient @Inject() (
     }
   }
 
-  def leaveDevice(
+  override def leaveDevice(
       hatName: String,
       deviceId: DeviceId): Future[Either[LeaveDeviceRequestFailure, DeviceLeft]] = {
     val claim = createHatClaimFromString(hatName, deviceId)
@@ -108,7 +108,7 @@ class AuthServiceWsClient @Inject() (
       case None =>
         Future.successful(
           Left(
-            LeaveDeviceRequestFailure.ServiceRespondedWithFailure(
+            LeaveDeviceServiceFailure(
               s"The AuthService Service responded with an error."
             )
           )
@@ -121,7 +121,7 @@ class AuthServiceWsClient @Inject() (
       req: WSRequest,
       deviceId: DeviceId
     )(implicit ec: ExecutionContext): Future[Either[
-    JoinDeviceRequestFailure.ServiceRespondedWithFailure,
+    JoinDeviceServiceFailure,
     DeviceJoined
   ]] = {
     logger.info(s"runJoinDeviceRequest: ${deviceId}")
@@ -133,7 +133,7 @@ class AuthServiceWsClient @Inject() (
         case _ =>
           logger.error(s"runJoinDeviceRequest: KO response: ${response.statusText}")
           Left(
-            JoinDeviceRequestFailure.ServiceRespondedWithFailure(
+            JoinDeviceServiceFailure(
               s"The AuthService Service responded with an error: ${response.statusText}"
             )
           )
@@ -142,7 +142,7 @@ class AuthServiceWsClient @Inject() (
       case e =>
         logger.error(s"runJoinDeviceRequest: exception: ${e.getMessage}")
         Left(
-          JoinDeviceRequestFailure.ServiceRespondedWithFailure(
+          JoinDeviceServiceFailure(
             s"The AuthService Service responded with an error: ${e.getMessage}"
           )
         )
@@ -162,7 +162,7 @@ class AuthServiceWsClient @Inject() (
         case _ =>
           logger.error(s"runLeaveDeviceRequest: KO response: ${response.statusText}")
           Left(
-            LeaveDeviceRequestFailure.ServiceRespondedWithFailure(
+            LeaveDeviceServiceFailure(
               s"The AuthService Service responded with an error: ${response.statusText}"
             )
           )
@@ -171,7 +171,7 @@ class AuthServiceWsClient @Inject() (
       case e =>
         logger.error(s"runLeaveDeviceRequest: KO response: ${e.getMessage()}")
         Left(
-          LeaveDeviceRequestFailure.ServiceRespondedWithFailure(
+          LeaveDeviceServiceFailure(
             s"The AuthService Service responded with an error: ${e.getMessage}"
           )
         )
@@ -190,7 +190,7 @@ class AuthServiceWsClient @Inject() (
           maybeArrayByte match {
             case None =>
               Left(
-                PublicKeyRequestFailure.InvalidPublicKeyFailure(
+                InvalidPublicKeyFailure(
                   "The response was not able to be decoded into an Array[Byte]."
                 )
               )
@@ -198,7 +198,7 @@ class AuthServiceWsClient @Inject() (
           }
         case _ =>
           Left(
-            PublicKeyRequestFailure.ServiceRespondedWithFailure(
+            PublicKeyServiceFailure(
               s"The AuthService Service responded with an error: ${response.statusText}"
             )
           )
@@ -206,7 +206,7 @@ class AuthServiceWsClient @Inject() (
     } recover {
       case e =>
         Left(
-          PublicKeyRequestFailure.ServiceRespondedWithFailure(
+          PublicKeyServiceFailure(
             s"The AuthService Service responded with an error: ${e.getMessage}"
           )
         )

@@ -38,7 +38,6 @@ import org.hatdex.hat.utils.{ HatBodyParsers, LoggingProvider }
 import org.hatdex.libs.dal.HATPostgresProfile
 import play.api.libs.json.Reads._
 import play.api.libs.json.{ JsArray, JsValue, Json }
-import play.api.libs.ws.WSClient
 import play.api.mvc._
 
 import java.util.UUID
@@ -56,8 +55,7 @@ class RichData @Inject() (
     dataDebitService: DataDebitContractService,
     loggingProvider: LoggingProvider,
     implicit val ec: ExecutionContext,
-    implicit val applicationsService: ApplicationsService
-  )(wsClient: WSClient)
+    implicit val applicationsService: ApplicationsService)
     extends HatApiController(components, silhouette) {
 
   import RichDataJsonFormats._

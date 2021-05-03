@@ -26,11 +26,11 @@ package org.hatdex.hat.modules
 
 import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper
 import com.amazonaws.services.simpleemail.{ AmazonSimpleEmailService, AmazonSimpleEmailServiceClientBuilder }
+import com.google.inject.Provides
 import com.google.inject.name.Named
-import com.google.inject.{ AbstractModule, Provides }
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.actions.{ SecuredErrorHandler, UnsecuredErrorHandler }
-import com.mohiva.play.silhouette.api.crypto.{ Crypter, _ }
+import com.mohiva.play.silhouette.api.crypto.{ Crypter, CrypterAuthenticatorEncoder, Signer }
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services._
 import com.mohiva.play.silhouette.api.util._
@@ -45,7 +45,6 @@ import com.typesafe.config.Config
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.service.{ MailTokenService, MailTokenUserService }
 import org.hatdex.hat.authentication._
-import org.hatdex.hat.clients._
 import org.hatdex.hat.phata.models.MailTokenUser
 import org.hatdex.hat.resourceManagement.{ HatServer, HatServerProvider }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, HatMailerImpl }
@@ -60,7 +59,7 @@ import scala.concurrent.duration.FiniteDuration
 /**
   * The Guice module which wires all Silhouette dependencies.
   */
-class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteConfigLoaders {
+class SilhouetteModule extends ScalaModule with SilhouetteConfigLoaders {
 
   /**
     * Configures the module.
@@ -87,9 +86,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule with SilhouetteCo
 
     bind[EventBus].toInstance(EventBus())
     bind[Clock].toInstance(Clock())
-
-    bind[AuthServiceClient].to[AuthServiceWsClient].in[JSingleton]()
-    bind[AdjudicatorClient].to[AdjudicatorWsClient].in[JSingleton]()
   }
 
   @Provides

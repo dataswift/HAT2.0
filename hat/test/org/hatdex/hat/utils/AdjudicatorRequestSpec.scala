@@ -25,18 +25,19 @@ package org.hatdex.hat.utils
 import eu.timepit.refined.auto._
 import io.dataswift.adjudicator.Types.{ ContractId, HatName }
 import io.dataswift.test.common.BaseSpec
+import org.hatdex.hat.client.AdjudicatorWsClient
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Logger
 
 import java.util.UUID
 import scala.concurrent.duration._
-import scala.concurrent.{ Await, ExecutionContext, Future }
-import org.hatdex.hat.clients.AdjudicatorWsClient
+import scala.concurrent.{ Await, Future }
+import scala.concurrent.ExecutionContext
 
 class AdjudicatorRequestSpec extends BaseSpec with AdjudicatorContext {
 
-  val logger: Logger                                 = Logger(this.getClass)
-  implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
+  val logger: Logger = Logger(this.getClass)
+  //implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
   val hatName: HatName       = HatName("hatName")
   val contractId: ContractId = ContractId(UUID.fromString("21a3eed7-5d32-46ba-a884-1fdaf7259739"))
@@ -95,8 +96,9 @@ class AdjudicatorRequestSpec extends BaseSpec with AdjudicatorContext {
 }
 
 trait AdjudicatorContext extends MockitoSugar {
+  implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
+  import org.hatdex.hat.client.AdjudicatorRequestTypes._
   import org.mockito.ArgumentMatchers.{ any }
-  import org.hatdex.hat.clients.AdjudicatorRequestTypes._
   import org.mockito.Mockito._
 
   val fakeContractUUID: UUID     = java.util.UUID.randomUUID()
@@ -104,24 +106,21 @@ trait AdjudicatorContext extends MockitoSugar {
 
   val mockAdjudicatorClient: AdjudicatorWsClient = MockitoSugar.mock[AdjudicatorWsClient]
 
-  // Mocked JoinContract
   when(
     mockAdjudicatorClient
-      .joinContract(any[String], any[ContractId])
+      .joinContract(any[String], any[ContractId])(any[ExecutionContext])
   )
     .thenReturn(Future.successful(Right(ContractJoined(ContractId(fakeContractUUID)))))
 
-  // Mocked getPublicKey
   when(
     mockAdjudicatorClient
-      .getPublicKey(any[HatName], any[ContractId], any[String])
+      .getPublicKey(any[HatName], any[ContractId], any[String])(any[ExecutionContext])
   )
     .thenReturn(Future.successful(Right(PublicKeyReceived(fakePublicKey))))
 
-  // Mocked LeaveContract
   when(
     mockAdjudicatorClient
-      .leaveContract(any[String], any[ContractId])
+      .leaveContract(any[String], any[ContractId])(any[ExecutionContext])
   )
     .thenReturn(Future.successful(Right(ContractLeft(ContractId(fakeContractUUID)))))
 }

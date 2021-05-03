@@ -30,7 +30,7 @@ import play.api.Logger
 
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, ExecutionContext, Future }
-import org.hatdex.hat.clients.AuthServiceWsClient
+import org.hatdex.hat.client.AuthServiceWsClient
 
 class AuthServiceRequestSpec extends BaseSpec with AuthServiceContext {
 
@@ -95,7 +95,7 @@ class AuthServiceRequestSpec extends BaseSpec with AuthServiceContext {
 
 trait AuthServiceContext extends MockitoSugar {
   import org.mockito.ArgumentMatchers.{ any }
-  import org.hatdex.hat.clients.AuthServiceRequestTypes._
+  import org.hatdex.hat.client.AuthServiceRequestTypes._
   import org.mockito.Mockito._
   import eu.timepit.refined.auto._
 

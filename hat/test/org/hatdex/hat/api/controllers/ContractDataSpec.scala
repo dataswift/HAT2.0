@@ -25,18 +25,15 @@
 package org.hatdex.hat.api.controllers
 
 import org.hatdex.hat.api.HATTestContext
-import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
 
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 class ContractDataSpec extends ContractDataContext {
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  val logger: Logger = Logger(this.getClass)
 
   "The Save Contract method" should "Return 400 on an empty request" in {
     val request = FakeRequest("POST", "http://hat.hubofallthings.net")
@@ -45,8 +42,8 @@ class ContractDataSpec extends ContractDataContext {
     val controller = application.injector.instanceOf[ContractData]
 
     val response = for {
-      _ <- Helpers.call(controller.createData("samplecontract", "testendpoint", None), request)
-      r <- Helpers.call(controller.readData("samplecontract", "testendpoint", None, None, None, None), request)
+      _ <- Helpers.call(controller.createContractData("samplecontract", "testendpoint", None), request)
+      r <- Helpers.call(controller.readContractData("samplecontract", "testendpoint", None, None, None, None), request)
     } yield r
 
     val res = Await.result(response, 5.seconds)
@@ -60,7 +57,7 @@ class ContractDataSpec extends ContractDataContext {
     val controller = application.injector.instanceOf[ContractData]
 
     val response =
-      Helpers.call(controller.readData("samplecontract", "testendpoint", None, None, None, None), request)
+      Helpers.call(controller.readContractData("samplecontract", "testendpoint", None, None, None, None), request)
 
     val res = Await.result(response, 5.seconds)
     res.header.status must equal(400)
@@ -73,7 +70,7 @@ class ContractDataSpec extends ContractDataContext {
     val controller = application.injector.instanceOf[ContractData]
 
     val response =
-      Helpers.call(controller.readData("samplecontract", "testendpoint", None, None, None, None), request)
+      Helpers.call(controller.readContractData("samplecontract", "testendpoint", None, None, None, None), request)
 
     val res = Await.result(response, 5.seconds)
     res.header.status must equal(400)

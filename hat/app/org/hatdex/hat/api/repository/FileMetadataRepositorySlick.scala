@@ -22,10 +22,11 @@
  * 2 / 2017
  */
 
-package org.hatdex.hat.api.service
+package org.hatdex.hat.api.repository
 
 import io.dataswift.models.hat.json.HatJsonFormats
 import io.dataswift.models.hat.{ ApiHatFile, HatFileStatus }
+import org.hatdex.hat.api.service.DalExecutionContext
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
@@ -39,10 +40,10 @@ import javax.inject.Inject
 import scala.concurrent.Future
 import scala.util.{ Failure, Success }
 
-class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
+class FileMetadataRepositorySlick @Inject() (implicit val ec: DalExecutionContext) extends FileMetadataRepository {
   val logger: Logger = Logger(this.getClass)
 
-  def getUniqueFileId(
+  override def getUniqueFileId(
       file: ApiHatFile
     )(implicit db: Database): Future[ApiHatFile] = {
     val extensionNormalized = file.name
@@ -53,9 +54,7 @@ class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
       .map(ext => s".$ext")
       .getOrElse("")
 
-    val nameNormalized = Slugs
-      .slugify(s"${file.source}${file.name}")
-      .stripSuffix(extensionNormalized.stripPrefix("."))
+    val nameNormalized = Slugs.slugify(s"${file.source}${file.name}").stripSuffix(extensionNormalized.stripPrefix("."))
 
     val similarFilesSearch =
       HatFile.filter(t => t.id like s"$nameNormalized%$extensionNormalized")
@@ -75,14 +74,14 @@ class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
     }
   }
 
-  def save(file: ApiHatFile)(implicit db: Database): Future[ApiHatFile] = {
+  override def save(file: ApiHatFile)(implicit db: Database): Future[ApiHatFile] = {
     import HatJsonFormats.apiHatFileStatusFormat
     val dbFile = HatFileRow(
       file.fileId.get,
       file.name,
       file.source,
       file.dateCreated.map(_.toLocalDateTime).getOrElse(LocalDateTime.now()),
-      file.lastUpdated.map(_.toLocalDateTime).getOrElse(LocalDateTime.now()),
+      LocalDateTime.now(),
       file.tags.map(_.toList),
       file.title,
       file.description,
@@ -91,19 +90,18 @@ class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
       file.contentPublic.getOrElse(false)
     )
 
-    val updatedFileQuery = HatFile
-      .joinLeft(HatFileAccess)
-      .on(_.id === _.fileId)
-      .filter(_._1.id === file.fileId.get)
+    val updatedFileQuery =
+      HatFile
+        .filter(_.id === file.fileId.get)
+        .joinLeft(HatFileAccess)
+        .on(_.id === _.fileId)
 
-    val fileQuery = (HatFile returning HatFile)
-      .insertOrUpdate(dbFile)
-      .andThen(updatedFileQuery.result)
+    val fileQuery =
+      (HatFile returning HatFile)
+        .insertOrUpdate(dbFile)
+        .andThen(updatedFileQuery.result)
 
-    val result = db
-      .run(fileQuery)
-      .map(groupFilePermissions)
-      .map(_.head)
+    val result = db.run(fileQuery).map(groupFilePermissions).map(_.head)
 
     result.onComplete {
       case Success(_) => logger.debug(s"File $file saved")
@@ -122,7 +120,7 @@ class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
           .copy(permissions = Some(permissions.unzip._2.flatten.map(ModelTranslation.fromDbModel)))
     }
 
-  def grantAccess(
+  override def grantAccess(
       file: ApiHatFile,
       user: HatUser,
       content: Boolean
@@ -132,17 +130,7 @@ class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
     db.run(HatFileAccess.forceInsert(filePermissionRow)).map(_ => ())
   }
 
-  def restrictAccess(
-      file: ApiHatFile,
-      user: HatUser
-    )(implicit db: Database): Future[Unit] = {
-    val filePermissionRemove = HatFileAccess
-      .filter(f => f.fileId === file.fileId.get && f.userId === user.userId)
-      .delete
-    db.run(filePermissionRemove).map(_ => ())
-  }
-
-  def grantAccessPattern(
+  override def grantAccessPattern(
       fileTemplate: ApiHatFile,
       user: HatUser,
       content: Boolean
@@ -159,7 +147,17 @@ class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
     } map { _ => () }
   }
 
-  def restrictAccessPattern(
+  override def restrictAccess(
+      file: ApiHatFile,
+      user: HatUser
+    )(implicit db: Database): Future[Unit] = {
+    val filePermissionRemove = HatFileAccess
+      .filter(f => f.fileId === file.fileId.get && f.userId === user.userId)
+      .delete
+    db.run(filePermissionRemove).map(_ => ())
+  }
+
+  override def restrictAccessPattern(
       fileTemplate: ApiHatFile,
       user: HatUser
     )(implicit db: Database): Future[Unit] = {
@@ -174,7 +172,7 @@ class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
     db.run(filePermissionRemove).map(_ => ())
   }
 
-  def delete(fileId: String)(implicit db: Database): Future[ApiHatFile] = {
+  override def delete(fileId: String)(implicit db: Database): Future[ApiHatFile] = {
     val query = for {
       _ <- HatFile
              .filter(_.id === fileId)
@@ -206,7 +204,7 @@ class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
       )
     }
 
-  def getById(
+  override def getById(
       fileId: String
     )(implicit db: Database): Future[Option[ApiHatFile]] = {
     val fileQuery = HatFile
@@ -219,7 +217,7 @@ class FileMetadataService @Inject() (implicit val ec: DalExecutionContext) {
       .map(_.headOption)
   }
 
-  def search(
+  override def search(
       fileTemplate: ApiHatFile
     )(implicit db: Database): Future[Seq[ApiHatFile]] = {
     val fileQuery = for {

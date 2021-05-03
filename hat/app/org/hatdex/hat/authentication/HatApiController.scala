@@ -67,6 +67,8 @@ abstract class HatController[T <: HatAuthEnvironment](
       implicit request: UserAwareRequest[T, A]): HatServer = request.dynamicEnvironment
   implicit def securedRequest2Authenticator[A](
       implicit request: SecuredRequest[T, A]): T#A = request.authenticator
+  implicit def securedRequest2OptionAuthenticator[A](
+      implicit request: SecuredRequest[T, A]): Option[T#A] = Some(request.authenticator)
   implicit def hatServer2db(implicit hatServer: HatServer): Database =
     hatServer.db
   implicit def identity2ApiUser(implicit identity: T#I): User =

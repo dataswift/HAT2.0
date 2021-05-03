@@ -22,7 +22,7 @@
  * 2 / 2017
  */
 
-package org.hatdex.hat.api.service
+package org.hatdex.hat.api.repository
 
 import io.dataswift.models.hat.{ ApiHatFile, ApiHatFilePermissions, HatFileStatus }
 import org.hatdex.hat.api.HATTestContext
@@ -31,7 +31,7 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class FileMetadataServiceSpec extends HATTestContext {
+class FileMetadataRepositorySlickSpec extends HATTestContext {
 
   before {
     import org.hatdex.hat.dal.Tables._
@@ -46,7 +46,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   "The `getUniqueFileId` method" should "return a ApiHatFile with fileId appended" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val fileWithId = service.getUniqueFileId(
       ApiHatFile(None, "testFile", "test", None, None, None, None, None, None, None, None, None)
@@ -57,7 +57,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   it should "keep file extension when creating file" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val fileWithId = service.getUniqueFileId(
       ApiHatFile(None, "testFile.png", "test", None, None, None, None, None, None, None, None, None)
@@ -69,7 +69,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   it should "deduplicate file IDs by adding numbers to the end of the filename" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val file = ApiHatFile(None,
                           "testFile.png",
@@ -99,7 +99,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   "The `save` method" should "insert new files into the database" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
     val file = ApiHatFile(Some("testtestfile.png"),
                           "testFile.png",
                           "test",
@@ -125,7 +125,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   it should "upsert file information for existing files" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
     val file = ApiHatFile(Some("testtestfile.png"),
                           "testFile.png",
                           "test",
@@ -160,7 +160,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   "The `delete` method" should "Change file status to `Deleted`" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
     val file = ApiHatFile(Some("testtestfile2.png"),
                           "testFile.png",
                           "test",
@@ -192,7 +192,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   // }
 
   "The `getById` method" should "Return file information for an existing file" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
     val file = ApiHatFile(Some("testtestfile.png"),
                           "testFile.png",
                           "test",
@@ -219,12 +219,12 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   it should "Return `None` for file that does not exist" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
     service.getById("testtestfile.png") === None
   }
 
   "The `search` method" should "Return empty list when no files exist" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
     val found   = service.search(ApiHatFile(None, "", "", None, None, None, None, None, None, None, None, None))
 
     val r = Await.result(found, 10.seconds)
@@ -232,7 +232,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   it should "Look up a single file by Id" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
     val found = for {
       _ <- service.save(
              ApiHatFile(Some("testtestfile.png"),
@@ -259,7 +259,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   it should "Look up files by exact source" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
     val found = for {
       _ <- service.save(
              ApiHatFile(Some("testtestfile.png"),
@@ -313,7 +313,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   it should "Look up files by exact name" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
     val found = for {
       _ <- service.save(
              ApiHatFile(Some("testtestfile.png"),
@@ -422,7 +422,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   it should "Look up files by tags" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
     val found = for {
       _ <- service.save(
              ApiHatFile(Some("testtestfile.png"),
@@ -494,7 +494,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   it should "Look up files by status" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
     val found = for {
       _ <- service.save(
              ApiHatFile(Some("testtestfile.png"),
@@ -562,7 +562,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   it should "Search files by description" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
     val found = for {
       _ <- service.save(
              ApiHatFile(Some("testtestfile.png"),
@@ -625,7 +625,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   "The `grantAccess` method" should "Grant file detail access to an existing user" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val granted = for {
       file <- service.save(
@@ -659,7 +659,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   "The `restrictAccess` method" should "Restrict file access" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val granted = for {
       file <- service.save(
@@ -693,7 +693,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   "The `grantAccessPattern` method" should "Grant file access to an existing user for a matching file access pattern" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val granted = for {
       file1 <- service.save(
@@ -795,7 +795,7 @@ class FileMetadataServiceSpec extends HATTestContext {
   }
 
   "The `restrictAccessPattern` method" should "Restrict file access to an existing user for a matching file access pattern" in {
-    val service = application.injector.instanceOf[FileMetadataService]
+    val service = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val granted = for {
       file1 <- service.save(

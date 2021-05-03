@@ -40,7 +40,7 @@ import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataDuplicate
 import org.hatdex.hat.api.service.{ DalExecutionContext, RemoteExecutionContext, StatsReporter }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.clients._
+import org.hatdex.hat.client.{ AdjudicatorClient, AuthServiceClient }
 import org.hatdex.hat.dal.Tables
 import org.hatdex.hat.dal.Tables.ApplicationStatusRow
 import org.hatdex.hat.resourceManagement.HatServer
@@ -92,8 +92,8 @@ class ApplicationsService @Inject() (
     functionService: FunctionService,
     silhouette: Silhouette[HatApiAuthEnvironment],
     statsReporter: StatsReporter,
-    authServiceClient: AuthServiceWsClient,
-    adjudicatorClient: AdjudicatorWsClient,
+    authServiceClient: AuthServiceClient,
+    adjudicatorClient: AdjudicatorClient,
     configuration: Configuration,
     system: ActorSystem,
     wsClient: WSClient
@@ -101,6 +101,17 @@ class ApplicationsService @Inject() (
     extends Logging {
 
   private val applicationsCacheDuration = configuration.get[FiniteDuration]("memcached.application-ttl")
+
+  //** Adjudicator
+  // private val adjudicatorAddress      = configuration.get[String]("adjudicator.address")
+  // private val adjudicatorScheme       = configuration.get[String]("adjudicator.scheme")
+  // private val adjudicatorEndpoint     = s"${adjudicatorScheme}${adjudicatorAddress}"
+  // private val adjudicatorSharedSecret = configuration.get[String]("adjudicator.sharedSecret")
+  // private val adjudicatorClient = new AdjudicatorWsClient(
+  //   adjudicatorEndpoint,
+  //   JwtSecretKey(adjudicatorSharedSecret),
+  //   wsClient
+  // )
 
   def hmiDetails(id: String): Future[Option[Application]] =
     trustedApplicationProvider.application(id) // calls cached by TrustedApplicationProvider

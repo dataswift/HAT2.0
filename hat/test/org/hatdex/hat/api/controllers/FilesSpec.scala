@@ -28,6 +28,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
 import io.dataswift.models.hat._
 import org.hatdex.hat.api.HATTestContext
+import org.hatdex.hat.api.repository.FileMetadataRepositorySlick
 import org.hatdex.hat.api.service._
 import play.api.libs.json.Json
 import play.api.mvc.Result
@@ -124,7 +125,7 @@ class FilesSpec extends FilesContext {
       .withAuthenticator(owner.loginInfo)
 
     val controller          = application.injector.instanceOf[Files]
-    val fileMetadataService = application.injector.instanceOf[FileMetadataService]
+    val fileMetadataService = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val result: Future[Result] = for {
       _ <- fileMetadataService.save(hatFileSimplePng)
@@ -190,7 +191,7 @@ class FilesSpec extends FilesContext {
       .withAuthenticator(dataCreditUser.loginInfo)
 
     val controller          = application.injector.instanceOf[Files]
-    val fileMetadataService = application.injector.instanceOf[FileMetadataService]
+    val fileMetadataService = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val result: Future[Result] = for {
       _ <- fileMetadataService.save(hatFileSimple)
@@ -206,7 +207,7 @@ class FilesSpec extends FilesContext {
       .withAuthenticator(dataCreditUser.loginInfo)
 
     val controller          = application.injector.instanceOf[Files]
-    val fileMetadataService = application.injector.instanceOf[FileMetadataService]
+    val fileMetadataService = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val result: Future[Result] = for {
       _ <- fileMetadataService.save(hatFileSimpleComplete)
@@ -226,7 +227,7 @@ class FilesSpec extends FilesContext {
       .withAuthenticator(dataCreditUser.loginInfo)
 
     val controller          = application.injector.instanceOf[Files]
-    val fileMetadataService = application.injector.instanceOf[FileMetadataService]
+    val fileMetadataService = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val result: Future[Result] = for {
       _ <- fileMetadataService.save(hatFileSimpleComplete)
@@ -257,7 +258,7 @@ class FilesSpec extends FilesContext {
       .withAuthenticator(dataCreditUser.loginInfo)
 
     val controller          = application.injector.instanceOf[Files]
-    val fileMetadataService = application.injector.instanceOf[FileMetadataService]
+    val fileMetadataService = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val result: Future[Result] = for {
       _ <- fileMetadataService.save(hatFileSimpleComplete)
@@ -273,7 +274,7 @@ class FilesSpec extends FilesContext {
     val request = FakeRequest("GET", "http://hat.hubofallthings.net")
 
     val controller          = application.injector.instanceOf[Files]
-    val fileMetadataService = application.injector.instanceOf[FileMetadataService]
+    val fileMetadataService = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val result: Future[Result] = for {
       _ <- fileMetadataService.save(hatFileSimpleCompletePublic)
@@ -288,7 +289,7 @@ class FilesSpec extends FilesContext {
       .withAuthenticator(dataCreditUser.loginInfo)
 
     val controller          = application.injector.instanceOf[Files]
-    val fileMetadataService = application.injector.instanceOf[FileMetadataService]
+    val fileMetadataService = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val result: Future[Result] = for {
       _ <- fileMetadataService.save(hatFileSimpleComplete)
@@ -304,7 +305,7 @@ class FilesSpec extends FilesContext {
       .withAuthenticator(owner.loginInfo)
 
     val controller          = application.injector.instanceOf[Files]
-    val fileMetadataService = application.injector.instanceOf[FileMetadataService]
+    val fileMetadataService = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val result: Future[Result] = for {
       file <- fileMetadataService.save(hatFileSimpleComplete)
@@ -320,7 +321,7 @@ class FilesSpec extends FilesContext {
       .withAuthenticator(owner.loginInfo)
 
     val controller          = application.injector.instanceOf[Files]
-    val fileMetadataService = application.injector.instanceOf[FileMetadataService]
+    val fileMetadataService = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val result: Future[Result] = for {
       file <- fileMetadataService.save(hatFileSimpleCompletePublic)
@@ -336,7 +337,7 @@ class FilesSpec extends FilesContext {
       .withAuthenticator(dataCreditUser.loginInfo)
 
     val controller          = application.injector.instanceOf[Files]
-    val fileMetadataService = application.injector.instanceOf[FileMetadataService]
+    val fileMetadataService = application.injector.instanceOf[FileMetadataRepositorySlick]
 
     val result: Future[Result] = for {
       file <- fileMetadataService.save(hatFileSimpleComplete)

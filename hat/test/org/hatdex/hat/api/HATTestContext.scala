@@ -40,7 +40,7 @@ import org.hatdex.hat.api.service._
 import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.clients._
+import org.hatdex.hat.client._
 import org.hatdex.hat.dal.HatDbSchemaMigration
 import org.hatdex.hat.phata.models.MailTokenUser
 import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
@@ -200,11 +200,11 @@ trait HATTestContext extends PostgresqlSpec with MockitoSugar with BeforeAndAfte
       .resetDatabase()
       .flatMap(_ => schemaMigration.run(devHatMigrations))
       .flatMap { _ =>
-        val usersService = application.injector.instanceOf[UsersService]
+        val userService = application.injector.instanceOf[UserService]
         for {
-          _ <- usersService.saveUser(dataCreditUser)
-          _ <- usersService.saveUser(dataDebitUser)
-          _ <- usersService.saveUser(owner)
+          _ <- userService.saveUser(dataCreditUser)
+          _ <- userService.saveUser(dataDebitUser)
+          _ <- userService.saveUser(owner)
         } yield ()
       }
   }
@@ -234,8 +234,8 @@ trait HATTestContext extends PostgresqlSpec with MockitoSugar with BeforeAndAfte
       bind[AsyncCacheApi].annotatedWith(new NamedCacheImpl("user-cache")).to[FakeCache]
       bind[AsyncCacheApi].to[FakeCache]
       bind[LoggingProvider].toInstance(new MockLoggingProvider(mockLogger))
-      bind[AuthServiceClient].to[AuthServiceWsClient]
-      bind[AdjudicatorClient].to[AdjudicatorWsClient]
+      // bind[AuthServiceClient].to[AuthServiceWsClient]
+      // bind[AdjudicatorClient].to[AdjudicatorWsClient]
     }
 
     @Provides

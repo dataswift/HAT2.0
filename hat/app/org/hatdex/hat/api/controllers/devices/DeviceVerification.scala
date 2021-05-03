@@ -6,14 +6,15 @@ import eu.timepit.refined.collection.NonEmpty
 import io.dataswift.adjudicator.ShortLivedTokenOps
 import io.dataswift.adjudicator.Types.{ DeviceId, HatName, ShortLivedToken }
 import io.dataswift.models.hat.applications.Application
+import org.hatdex.hat.api.controllers.{ MachineData }
 import org.hatdex.hat.api.controllers.devices.Types.DeviceVerificationFailure._
 import org.hatdex.hat.api.controllers.devices.Types.DeviceVerificationSuccess._
 import org.hatdex.hat.api.controllers.devices.Types._
-import org.hatdex.hat.api.controllers.{ MachineData, RequestValidationFailure, RequestVerified }
-import org.hatdex.hat.api.service.UsersService
+import org.hatdex.hat.api.service.UserService
 import org.hatdex.hat.api.service.applications.TrustedApplicationProvider
-import org.hatdex.hat.clients.AuthServiceRequestTypes._
-import org.hatdex.hat.clients.{ AuthServiceRequestTypes, AuthServiceWsClient }
+import org.hatdex.hat.client.{ AuthServiceClient }
+import org.hatdex.hat.client.AuthServiceRequestTypes._
+import org.hatdex.hat.client.ClientResponse._
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.{ NamespaceUtils }
 import play.api.Logger
@@ -25,7 +26,7 @@ import scala.concurrent.Future
 import scala.util.{ Failure, Success }
 
 class DeviceVerification @Inject() (
-    authServiceClient: AuthServiceWsClient) {
+    authServiceClient: AuthServiceClient) {
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
   private val logger                                 = Logger(this.getClass)
 
@@ -44,7 +45,7 @@ class DeviceVerification @Inject() (
       reqHeaders: Headers,
       hatName: String,
       namespace: String,
-      usersService: UsersService,
+      usersService: UserService,
       trustedApplicationProvider: TrustedApplicationProvider,
       permissions: RequiredNamespacePermissions
     )(implicit hatServer: HatServer): Future[Either[DeviceVerificationFailure, DeviceRequestSuccess]] = {
@@ -202,23 +203,23 @@ class DeviceVerification @Inject() (
       .map { publicKeyResponse =>
         publicKeyResponse match {
           case Left(
-                AuthServiceRequestTypes.PublicKeyRequestFailure.ServiceRespondedWithFailure(
+                PublicKeyServiceFailure(
                   failureDescription
                 )
               ) =>
             Left(
               DeviceVerificationFailure.ServiceRespondedWithFailure(
-                s"The Adjudicator Service responded with an error: ${failureDescription}"
+                s"The AuthService responded with an error: ${failureDescription}"
               )
             )
           case Left(
-                AuthServiceRequestTypes.PublicKeyRequestFailure.InvalidPublicKeyFailure(
+                InvalidPublicKeyFailure(
                   failureDescription
                 )
               ) =>
             Left(
               DeviceVerificationFailure.ServiceRespondedWithFailure(
-                s"The Adjudicator Service responded with an error: ${failureDescription}"
+                s"The  AuthService responded with an error: ${failureDescription}"
               )
             )
           case Right(PublicKeyReceived(publicKey)) =>
@@ -251,7 +252,7 @@ class DeviceVerification @Inject() (
             logger.error(s"assessRequest: decide returned None - ${deviceDataInfo} - ${namespace}")
             Future.successful(
               Left(
-                RequestValidationFailure.InvalidShortLivedToken(
+                InvalidShortLivedToken(
                   s"Token: ${deviceDataInfo.deviceId}"
                 )
               )
@@ -262,7 +263,7 @@ class DeviceVerification @Inject() (
       case e =>
         logger.error(s"DeviceData.assessRequest:Failure ${e}")
         Left(
-          RequestValidationFailure.InvalidShortLivedToken(
+          InvalidShortLivedToken(
             s"Token: ${deviceDataInfo.deviceId}"
           )
         )

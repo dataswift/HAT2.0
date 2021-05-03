@@ -27,7 +27,7 @@ package org.hatdex.hat.she.service
 import akka.Done
 import io.dataswift.models.hat.json.{ ApplicationJsonProtocol, DataFeedItemJsonProtocol }
 import io.dataswift.models.hat.{ EndpointData, Owner }
-import org.hatdex.hat.api.service.UsersService
+import org.hatdex.hat.api.service.UserService
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.dal.Tables._
 import org.hatdex.hat.resourceManagement.HatServer
@@ -46,7 +46,7 @@ import scala.util.{ Failure, Success }
 class FunctionService @Inject() (
     functionRegistry: FunctionExecutableRegistry,
     dataService: RichDataService,
-    usersService: UsersService
+    userService: UserService
   )(implicit
     ec: ExecutionContext) {
 
@@ -228,7 +228,7 @@ class FunctionService @Inject() (
                           removeDuplicateData
                         ) // Remove duplicate data in case some records mapped onto the same values when transformed
           // TODO handle cases when function runs for longer and connection to DB needs to be reestablished
-          owner <- usersService
+          owner <- userService
                      .getUserByRole(Owner())
                      .map(
                        _.head
