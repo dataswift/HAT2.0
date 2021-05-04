@@ -31,7 +31,7 @@ object Dependencies {
     val PlayJson              = "2.9.2"
     val Silhouette            = "5.2.0"
     val AtlassianJwt          = "3.2.0"
-    val AwsSdk                = "1.11.1003"
+    val AwsSdk                = "1.11.1010"
     val AlpakkaAwsLambda      = "1.1.2"
     val CommonsLang3          = "3.11"
     val BouncyCastle          = "1.68"
