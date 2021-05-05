@@ -138,8 +138,13 @@ class FileUploadServiceImpl @Inject() (
       user: HatUser,
       file: ApiHatFile,
       appStatus: Option[HatApplication]
-    )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Boolean =
+    )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Boolean = {
+    logger.info(s"permissions for ${user.userId}?\n${file.permissions.map(_.mkString(","))}")
+    val isOwner = isOwnerOrCanManage(user, file.source, appStatus)
+    val permis  = file.permissions.exists(_.exists(_.userId == user.userId))
+    logger.info(s"owner $isOwner, permed $permis")
     file.permissions.exists(_.exists(_.userId == user.userId)) || isOwnerOrCanManage(user, file.source, appStatus)
+  }
 
   override def listFiles(
       user: HatUser,
@@ -219,9 +224,11 @@ class FileUploadServiceImpl @Inject() (
       checkComplete: Boolean = true
     )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Boolean = {
     val statusOk = if (checkComplete) file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) else true
-    statusOk &&
-    file.permissions.exists(_.exists(p => p.userId == user.userId && p.contentReadable)) ||
-    isOwnerOrCanManage(user, "*", appStatus)
+    val permis   = file.permissions.exists(_.exists(p => p.userId == user.userId && p.contentReadable))
+    logger.info(s"permissions for ${user.userId}?\n${file.permissions.map(_.mkString(","))}")
+    val isOwner = isOwnerOrCanManage(user, "*", appStatus)
+    logger.info(s"owner $isOwner, permed $permis")
+    statusOk && permis || isOwnerOrCanManage(user, "*", appStatus)
   }
 
   private def filePermissionsCleaned(
