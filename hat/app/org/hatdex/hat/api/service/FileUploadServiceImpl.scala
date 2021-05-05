@@ -145,13 +145,10 @@ class FileUploadServiceImpl @Inject() (
       file: ApiHatFile,
       appStatus: Option[HatApplication]
     )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Boolean = {
-    logger.info(s"fileAccessAllowed permissions for ${user.userId}?\n${file.permissions.map(_.mkString(","))}")
-    val isOwner = isOwnerOrCanManage(user, file.source, appStatus)
-    val permis  = file.permissions.exists(_.exists(_.userId == user.userId))
-    val result =
-      file.permissions.exists(_.exists(_.userId == user.userId)) || isOwnerOrCanManage(user, file.source, appStatus)
-    logger.info(s"fileAccessAllowed owner $isOwner, permed $permis, result $result")
-    result
+    val isOwner       = isOwnerOrCanManage(user, file.source, appStatus)
+    val hasPermission = file.permissions.exists(_.exists(_.userId == user.userId))
+    logger.debug(s"fileAccessAllowed owner $isOwner, hasPermission $hasPermission")
+    hasPermission || isOwner
   }
 
   override def listFiles(
@@ -231,12 +228,11 @@ class FileUploadServiceImpl @Inject() (
       appStatus: Option[HatApplication],
       checkComplete: Boolean = true
     )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Boolean = {
-    val statusOk = if (checkComplete) file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) else true
-    val permis   = file.permissions.exists(_.exists(p => p.userId == user.userId && p.contentReadable))
-    logger.info(s"fileContentAccessAllowed permissions for ${user.userId}?\n${file.permissions.map(_.mkString(","))}")
-    val isOwner = isOwnerOrCanManage(user, "*", appStatus)
-    val result  = statusOk && permis || isOwnerOrCanManage(user, "*", appStatus)
-    logger.info(s"fileContentAccessAllowed owner $isOwner, permed $permis, result $result")
+    val statusOk      = if (checkComplete) file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) else true
+    val hasPermission = file.permissions.exists(_.exists(p => p.userId == user.userId && p.contentReadable))
+    val isOwner       = isOwnerOrCanManage(user, "*", appStatus)
+    val result        = statusOk && hasPermission || isOwner
+    logger.debug(s"fileContentAccessAllowed owner $isOwner, hasPermission $hasPermission, result $result")
     result
   }
 
