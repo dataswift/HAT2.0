@@ -103,7 +103,7 @@ class FileUploadServiceImpl @Inject() (
     implicit val db: Database = hatServer.db
     fileMetadataRepository.getById(fileId) flatMap {
       case Some(file) if fileContentAccessAllowed(user, file, maybeApplication) =>
-        fileWithContentUrl(user, file)
+        fileWithContentUrl(user, file, cleanPermissions)
       case Some(file) if fileAccessAllowed(user, file, maybeApplication) =>
         if (cleanPermissions) Future.successful(filePermissionsCleaned(user, file))
         else Future.successful(file)
@@ -114,13 +114,17 @@ class FileUploadServiceImpl @Inject() (
 
   private def fileWithContentUrl(
       user: HatUser,
-      file: ApiHatFile
+      file: ApiHatFile,
+      cleanPermissions: Boolean = true
     )(implicit hatServer: HatServer,
       maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Future[ApiHatFile] =
     fileManager
       .getContentUrl(file.fileId.get)
-      .map(url => file.copy(contentUrl = Some(url)))
-      .map(filePermissionsCleaned(user, _))
+      .map { url =>
+        val fileWithUrl = file.copy(contentUrl = Some(url))
+        if (cleanPermissions) filePermissionsCleaned(user, fileWithUrl)
+        else fileWithUrl
+      }
 
   override def getContentUrl(
       fileId: String,
