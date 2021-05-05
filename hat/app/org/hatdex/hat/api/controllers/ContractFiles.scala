@@ -106,7 +106,8 @@ class ContractFiles @Inject() (
       (_, user, hatServer, maybeAuthenticator) =>
         val result =
           for {
-            file <- fileUploadService.getFile(fileId, user, None)(hatServer, maybeAuthenticator)
+            file <-
+              fileUploadService.getFile(fileId, user, None, cleanPermissions = false)(hatServer, maybeAuthenticator)
             accessAllowed <- Future(fileUploadService.fileAccessAllowed(user, file, None)(maybeAuthenticator))
             if accessAllowed
             _ = accessAllowed // to work around incorrect compiler warning
