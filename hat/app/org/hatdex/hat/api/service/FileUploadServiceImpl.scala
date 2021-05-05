@@ -96,7 +96,8 @@ class FileUploadServiceImpl @Inject() (
   override def getFile(
       fileId: String,
       user: HatUser,
-      maybeApplication: Option[HatApplication]
+      maybeApplication: Option[HatApplication],
+      cleanPermissions: Boolean = true
     )(implicit hatServer: HatServer,
       maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Future[ApiHatFile] = {
     implicit val db: Database = hatServer.db
@@ -104,7 +105,8 @@ class FileUploadServiceImpl @Inject() (
       case Some(file) if fileContentAccessAllowed(user, file, maybeApplication) =>
         fileWithContentUrl(user, file)
       case Some(file) if fileAccessAllowed(user, file, maybeApplication) =>
-        Future.successful(filePermissionsCleaned(user, file))
+        if (cleanPermissions) Future.successful(filePermissionsCleaned(user, file))
+        else Future.successful(file)
       case Some(_) => Future.failed(new FileNotAuthorisedException(fileId))
       case None    => fileNotFound(fileId)
     }
@@ -139,11 +141,13 @@ class FileUploadServiceImpl @Inject() (
       file: ApiHatFile,
       appStatus: Option[HatApplication]
     )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Boolean = {
-    logger.info(s"permissions for ${user.userId}?\n${file.permissions.map(_.mkString(","))}")
+    logger.info(s"fileAccessAllowed permissions for ${user.userId}?\n${file.permissions.map(_.mkString(","))}")
     val isOwner = isOwnerOrCanManage(user, file.source, appStatus)
     val permis  = file.permissions.exists(_.exists(_.userId == user.userId))
-    logger.info(s"owner $isOwner, permed $permis")
-    file.permissions.exists(_.exists(_.userId == user.userId)) || isOwnerOrCanManage(user, file.source, appStatus)
+    val result =
+      file.permissions.exists(_.exists(_.userId == user.userId)) || isOwnerOrCanManage(user, file.source, appStatus)
+    logger.info(s"fileAccessAllowed owner $isOwner, permed $permis, result $result")
+    result
   }
 
   override def listFiles(
@@ -225,10 +229,11 @@ class FileUploadServiceImpl @Inject() (
     )(implicit maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Boolean = {
     val statusOk = if (checkComplete) file.status.exists(_.isInstanceOf[HatFileStatus.Completed]) else true
     val permis   = file.permissions.exists(_.exists(p => p.userId == user.userId && p.contentReadable))
-    logger.info(s"permissions for ${user.userId}?\n${file.permissions.map(_.mkString(","))}")
+    logger.info(s"fileContentAccessAllowed permissions for ${user.userId}?\n${file.permissions.map(_.mkString(","))}")
     val isOwner = isOwnerOrCanManage(user, "*", appStatus)
-    logger.info(s"owner $isOwner, permed $permis")
-    statusOk && permis || isOwnerOrCanManage(user, "*", appStatus)
+    val result  = statusOk && permis || isOwnerOrCanManage(user, "*", appStatus)
+    logger.info(s"fileContentAccessAllowed owner $isOwner, permed $permis, result $result")
+    result
   }
 
   private def filePermissionsCleaned(

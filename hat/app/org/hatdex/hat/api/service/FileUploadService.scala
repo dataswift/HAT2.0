@@ -33,7 +33,8 @@ trait FileUploadService {
   def getFile(
       fileId: String,
       user: HatUser,
-      maybeApplication: Option[HatApplication]
+      maybeApplication: Option[HatApplication],
+      cleanPermissions: Boolean = true
     )(implicit hatServer: HatServer,
       maybeAuthenticator: Option[HatApiAuthEnvironment#A]): Future[ApiHatFile]
 
