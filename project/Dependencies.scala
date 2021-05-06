@@ -101,7 +101,7 @@ object Dependencies {
 
     val scalaGuice  = "net.codingwell"     %% "scala-guice"  % "4.2.11"
     val circeConfig = "io.circe"           %% "circe-config" % "0.8.0"
-    val janino      = "org.codehaus.janino" % "janino"       % "3.1.3"
+    val janino      = "org.codehaus.janino" % "janino"       % "3.1.4"
 
     object ContractLibrary {
       val adjudicator = "io.dataswift" %% "adjudicatorlib" % Version.Adjudicator
