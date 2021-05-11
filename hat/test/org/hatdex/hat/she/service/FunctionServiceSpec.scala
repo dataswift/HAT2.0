@@ -27,22 +27,12 @@ package org.hatdex.hat.she.service
 import io.dataswift.models.hat.EndpointQuery
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
-import org.joda.time.DateTimeUtils
-import play.api.Logger
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 class FunctionServiceSpec extends DataFeedDirectMapperContext {
-
-  val logger: Logger = Logger(this.getClass)
-
-  override def beforeAll: Unit =
-    DateTimeUtils.setCurrentMillisFixed(1514764800000L)
-
-  override def afterAll: Unit =
-    DateTimeUtils.setCurrentMillisSystem()
 
   before {
     import org.hatdex.hat.dal.Tables._

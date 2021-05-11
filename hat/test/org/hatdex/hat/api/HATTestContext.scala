@@ -29,7 +29,7 @@ import akka.stream.Materializer
 import com.amazonaws.services.s3.AmazonS3
 import com.atlassian.jwt.core.keys.KeyUtils
 import com.dimafeng.testcontainers.PostgreSQLContainer
-import com.google.inject.{ AbstractModule, Provides }
+import com.google.inject.Provides
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette, SilhouetteProvider }
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import io.dataswift.integrationtest.common.PostgresqlSpec
@@ -42,12 +42,12 @@ import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.HatDbSchemaMigration
 import org.hatdex.hat.phata.models.MailTokenUser
-import org.hatdex.hat.resourceManagement.{ FakeHatConfiguration, FakeHatServerProvider, HatServer, HatServerProvider }
+import org.hatdex.hat.resourceManagement.{ FakeHatServerProvider, HatServer, HatServerProvider }
 import org.hatdex.hat.utils.{ ErrorHandler, HatMailer, LoggingProvider, MockLoggingProvider }
 import org.hatdex.libs.dal.HATPostgresProfile.backend.Database
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
+import org.scalatest.BeforeAndAfter
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
@@ -62,78 +62,33 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
-trait HATTestContext extends PostgresqlSpec with MockitoSugar with BeforeAndAfter with BeforeAndAfterAll {
+abstract class HATTestContext extends PostgresqlSpec with MockitoSugar with BeforeAndAfter {
 
   lazy val conf: Configuration = containerToConfig(postgresqlContainer)
 
   override def afterStart(): Unit =
     Await.result(databaseReady(), 60.seconds)
 
-  def containerToConfig(c: PostgreSQLContainer): Configuration =
-    Configuration.from(
-      Map(
-        "play.cache.createBoundCaches" -> "false",
-        "resourceManagement.hatDBIdleTimeout" -> "30 seconds",
-        "hat" -> Map(
-              "hat.hubofallthings.net" -> Map(
-                    "ownerEmail" -> "user@hat.org",
-                    "database" -> (
-                          Map(
-                            "dataSourceClass" -> "org.postgresql.ds.PGSimpleDataSource",
-                            "properties" -> (Map("databaseName" -> c.container.getDatabaseName(),
-                                                 "user" -> c.username,
-                                                 "password" -> c.password,
-                                                 "url" -> c.jdbcUrl
-                                )),
-                            "serverName" -> c.container.getHost(),
-                            "numThreads" -> 10,
-                            "connectionPool" -> "disabled"
-                          )
-                        ),
-                    "publicKey" -> """-----BEGIN PUBLIC KEY-----
-          |MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAznT9VIjovMEB/hoZ9j+j
-          |z9G+WWAsfj9IB7mAMQEICoLMWHC1ZnO4nrqTrRiQFKKrWekjhXFRp8jQZmGhv/sw
-          |h5EsIcbRUzNNPSBmiCM0NXHG8wwN8cFigHXLQB0p4ekOWOHpEXfIZkTN5VlpUq1o
-          |PdbgMXRW8NdU+Mwr7qQiUnHxaW0imFiahPs3n5Q3KLt2nWcxlvazeaRDphkEtFTk
-          |JCaFx9TPzd1NSYpBidSMC2cwhVM6utaNk3ZRktCs+y0iFezL606x28P6+VuDkb19
-          |6OxWEvSSxL3+1KQbKi3B9Hg/BNhigGsqQ35GzVPVygT7m90u9nNlxJ7KvfQDQc8t
-          |dQIDAQAB
-          |-----END PUBLIC KEY-----""".stripMargin,
-                    "privateKey" -> """-----BEGIN RSA PRIVATE KEY-----
-          |MIIEowIBAAKCAQEAznT9VIjovMEB/hoZ9j+jz9G+WWAsfj9IB7mAMQEICoLMWHC1
-          |ZnO4nrqTrRiQFKKrWekjhXFRp8jQZmGhv/swh5EsIcbRUzNNPSBmiCM0NXHG8wwN
-          |8cFigHXLQB0p4ekOWOHpEXfIZkTN5VlpUq1oPdbgMXRW8NdU+Mwr7qQiUnHxaW0i
-          |mFiahPs3n5Q3KLt2nWcxlvazeaRDphkEtFTkJCaFx9TPzd1NSYpBidSMC2cwhVM6
-          |utaNk3ZRktCs+y0iFezL606x28P6+VuDkb196OxWEvSSxL3+1KQbKi3B9Hg/BNhi
-          |gGsqQ35GzVPVygT7m90u9nNlxJ7KvfQDQc8tdQIDAQABAoIBAF00Voub1UolbjNb
-          |cD4Jw/fVrjPmJaAHDIskNRmqaAlqvDrvAw3SD1ZlT7b04FLYjzfjdvxOyLjRATg/
-          |OkkT6vhA0yYafjSr8+I1JuSt0+uOxmzCE+eA0OnCg/QZVmedEbORpWkT5P46cKNq
-          |RpCjJWzJfWQGLBvFcqBxeCHfqnkCFESRDG+YTUTzQ3Z4tdvXh/Wn7ZNAsJFaM2+x
-          |krJF7bBas9MJ/A8fumtuickr6DpFB6/nQsKqou3wDsMPN9SeTgXAzvufnssK0bGx
-          |8Z0F7pQUsl7CF2VuSXH2rcmW59JOpqPeZQ1JfrJZRxZ839vY+0BUF+Ti3FVJBb95
-          |aXLqHF8CgYEA+vwJCI6y+W/Cfwu79ssoJB+038sJftqkpKcFCipTsvX26h8o5+Vd
-          |BSvo58cjbXSV6a7PevkQvlgpKPki9SZnE+LoEmq1KbmN6yV0kev4Kzmi7P9Lz1Z8
-          |XRkt5KWQSMn65ZhLRHeomM71TgzDye1QI6rIKp4oumZUrlj8xGPB7VMCgYEA0pUq
-          |DSprxCQajw5WiH9X2sswrzDuK/+YAPZFBcRkK2KS9KGkltqlU9EmfZSX794vqfZw
-          |WBzJMRvxy0tF9QYSFahGivk98dzUUfARx79lIrKDBRVeUuP5LQ762K7BhDanym5a
-          |4YvzRPsJGHUT6Kyn1nsoP/CXqr1fxbv/HaN7WRcCgYEAz+x+O1WklZptobyB4kmZ
-          |npuZx5C39ByEK1emiC5amrbD8F8SD1LnhgJDd8h05Beini5Q+opdwaLdrnD+8eL3
-          |n/Tp12AJZ2CuXrDv6nd3Z6/e9sHk9waqDqJub65tYq/Zp91L9ZO/26AQfrF6fc2Z
-          |B4NTQmM2UH24B5v3A2e1X7sCgYBXnFuMcrO3PNYX4n05+NESZCrzGEZe483XyJ3a
-          |0mRicHZ3dLDHWlwiTQfYg3PbBfOKoM8IuaEy309vpveKA2aOwB3pP9z3vUpQdLLR
-          |Cd4H24ELImLF1bcbefn/IGW+ngac/+CrqdAiSNb15+/Kg9qoL0EFqRFQpc0stRRk
-          |vllZLQKBgEuos9IFTnXvF5+NpwQJ54t4YQW/StgPL7sPVA86irXnuT3VwdVNg2VF
-          |AZa/LU3jAXt2iTziR0LTKueamj/V+YM4qVyc/LhUPvjKlsCjyLBb647p3C/ogYbj
-          |mO9kGhALaD5okBcI/VuAQiFvBXdK0ii/nVcBApXEu47PG4oYUgPI
-          |-----END RSA PRIVATE KEY-----""".stripMargin
-                  )
-            )
-      )
-    )
-
-  // Initialize configuration
   val hatAddress     = "hat.hubofallthings.net"
   val hatUrl: String = s"http://$hatAddress"
+
+  def containerToConfig(c: PostgreSQLContainer): Configuration =
+    Configuration
+      .load(play.api.Environment.simple())
+      .withFallback(
+        Configuration.from(
+          Map(
+            "hat" -> Map(
+                  "hat.hubofallthings.net" -> Map(
+                        "database" ->
+                            Map(
+                              "properties" -> Map("user" -> c.username, "password" -> c.password, "url" -> c.jdbcUrl)
+                            )
+                      )
+                )
+          )
+        )
+      )
 
   implicit lazy val db: Database = Database.forURL(
     url = postgresqlContainer.jdbcUrl,
@@ -221,7 +176,7 @@ trait HATTestContext extends PostgresqlSpec with MockitoSugar with BeforeAndAfte
   /**
     * A fake Guice module.
     */
-  class FakeModule extends AbstractModule with ScalaModule {
+  class IntegrationSpecModule extends ScalaModule {
     override def configure(): Unit = {
       bind[Environment[HatApiAuthEnvironment]].toInstance(environment)
       bind[Silhouette[HatApiAuthEnvironment]].to[SilhouetteProvider[HatApiAuthEnvironment]]
@@ -241,15 +196,15 @@ trait HATTestContext extends PostgresqlSpec with MockitoSugar with BeforeAndAfte
 
   }
 
-  class ExtrasModule extends AbstractModule with ScalaModule {
+  class EmptyAppProviderModule extends ScalaModule {
     override def configure(): Unit =
       bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(Seq()))
   }
 
   lazy val application: Application = new GuiceApplicationBuilder()
-    .configure(FakeHatConfiguration.config)
-    .overrides(new FakeModule)
-    .overrides(new ExtrasModule)
+    .configure(conf)
+    .overrides(new IntegrationSpecModule)
+    .overrides(new EmptyAppProviderModule)
     .build()
 
   implicit lazy val materializer: Materializer = application.materializer

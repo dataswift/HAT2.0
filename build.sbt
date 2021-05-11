@@ -28,6 +28,7 @@ lazy val hat = project
           Library.Play.Jwt.atlassianJwtCore,
           Library.Play.Jwt.bouncyCastlePkix,
           Library.Backend.logPlay,
+          Library.Backend.redisCache,
           Library.HATDeX.dexClient,
           Library.HATDeX.codegen,
           Library.Utils.awsJavaS3Sdk,
@@ -36,7 +37,6 @@ lazy val hat = project
           Library.Utils.prettyTime,
           Library.Utils.nbvcxz,
           Library.Utils.alpakkaAwsLambda,
-          Library.Utils.playMemcached % Runtime,
           Library.scalaGuice,
           Library.circeConfig,
           Library.ContractLibrary.adjudicator,
@@ -77,6 +77,7 @@ lazy val hat = project
     // as Bash is incompatible with Alpine
     Universal / javaOptions ++= Seq(),
     Docker / packageName := "hat",
+    dockerEnvVars := Map("REDIS_CACHE_KEY_PREFIX" -> s"hat:${version.value}"),
     // add a flag to not run in prod
     // modify the binary to include "-javaagent:codeguru-profiler-java-agent-standalone-1.1.0.jar="profilingGroupName:HatInDev,heapSummaryEnabled:true"
     dockerCommands := (buildEnv.value match {
