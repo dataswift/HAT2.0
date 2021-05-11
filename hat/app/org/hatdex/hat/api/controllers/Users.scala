@@ -27,7 +27,7 @@ package org.hatdex.hat.api.controllers
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat.json.HatJsonFormats
 import io.dataswift.models.hat.{ Owner, Platform, _ }
-import org.hatdex.hat.api.service.UsersService
+import org.hatdex.hat.api.service.UserService
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.authentication.{ HatApiController, WithRole, _ }
@@ -44,7 +44,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 class Users @Inject() (
     components: ControllerComponents,
     silhouette: Silhouette[HatApiAuthEnvironment],
-    usersService: UsersService,
+    userService: UserService,
     hatBodyParsers: HatBodyParsers,
     implicit val ec: ExecutionContext,
     implicit val applicationsService: ApplicationsService)
@@ -55,7 +55,7 @@ class Users @Inject() (
 
   def listUsers(): Action[AnyContent] =
     SecuredAction.async { implicit request =>
-      usersService.listUsers map { users =>
+      userService.listUsers map { users =>
         Ok(Json.toJson(users.map(ModelTranslation.fromInternalModel)))
       }
     }
@@ -90,7 +90,7 @@ class Users @Inject() (
           )
         )
       else
-        usersService.getUser(user.email).flatMap { maybeExistingUser =>
+        userService.getUser(user.email).flatMap { maybeExistingUser =>
           maybeExistingUser map { _ =>
             Future.successful(
               BadRequest(
@@ -103,7 +103,7 @@ class Users @Inject() (
               )
             )
           } getOrElse {
-            usersService.saveUser(hatUser).map { created =>
+            userService.saveUser(hatUser).map { created =>
               Created(Json.toJson(ModelTranslation.fromInternalModel(created)))
             } recover {
               case e =>
@@ -127,7 +127,7 @@ class Users @Inject() (
           Platform()
         )
     ).async { implicit request =>
-      usersService.getUser(userId) flatMap { maybeUser =>
+      userService.getUser(userId) flatMap { maybeUser =>
         maybeUser map { user =>
           if (privilegedRole(user))
             Future.successful(
@@ -141,7 +141,7 @@ class Users @Inject() (
               )
             )
           else
-            usersService.deleteUser(userId) map { _ =>
+            userService.deleteUser(userId) map { _ =>
               Ok(Json.toJson(SuccessResponse(s"Account deleted")))
             }
         } getOrElse {
@@ -163,7 +163,7 @@ class Users @Inject() (
           Platform()
         )
     ).async(hatBodyParsers.json[User]) { implicit request =>
-      usersService.getUser(userId) flatMap { maybeUser =>
+      userService.getUser(userId) flatMap { maybeUser =>
         maybeUser.filter(_.userId == request.body.userId) map { user =>
           val updatedUser =
             ModelTranslation.fromExternalModel(request.body, enabled = true)
@@ -179,7 +179,7 @@ class Users @Inject() (
               )
             )
           else
-            usersService.saveUser(updatedUser) map { created =>
+            userService.saveUser(updatedUser) map { created =>
               Created(Json.toJson(ModelTranslation.fromInternalModel(created)))
             }
         } getOrElse {
@@ -201,7 +201,7 @@ class Users @Inject() (
           Platform()
         )
     ).async { implicit request =>
-      usersService.getUser(userId) flatMap { maybeUser =>
+      userService.getUser(userId) flatMap { maybeUser =>
         maybeUser map { user =>
           if (privilegedRole(user))
             Future.successful(
@@ -215,7 +215,7 @@ class Users @Inject() (
               )
             )
           else
-            usersService.changeUserState(userId, enabled = true).map { _ =>
+            userService.changeUserState(userId, enabled = true).map { _ =>
               Ok(Json.toJson(SuccessResponse("Enabled")))
             }
         } getOrElse {
@@ -237,7 +237,7 @@ class Users @Inject() (
           Platform()
         )
     ).async { implicit request =>
-      usersService.getUser(userId) flatMap { maybeUser =>
+      userService.getUser(userId) flatMap { maybeUser =>
         maybeUser map { user =>
           if (privilegedRole(user))
             Future.successful(
@@ -251,7 +251,7 @@ class Users @Inject() (
               )
             )
           else
-            usersService.changeUserState(userId, enabled = true).map { _ =>
+            userService.changeUserState(userId, enabled = true).map { _ =>
               Ok(Json.toJson(SuccessResponse("Enabled")))
             }
         } getOrElse {

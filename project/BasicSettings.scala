@@ -71,11 +71,11 @@ object BasicSettings extends AutoPlugin {
             "-Ywarn-unused:privates", // Warn if a private member is unused.
             "-Ywarn-value-discard" // Warn when non-Unit expression results are unused.
           ),
-      scalacOptions in Test ~= { (options: Seq[String]) =>
+      Test / scalacOptions ~= { (options: Seq[String]) =>
         options filterNot (_ == "-Ywarn-dead-code") // Allow dead code in tests (to support using mockito).
       },
-      parallelExecution in Test := false,
-      fork in Test := true,
+      Test / parallelExecution := false,
+      Test / fork := true,
       // Needed to avoid https://github.com/travis-ci/travis-ci/issues/3775 in forked tests
       // in Travis with `sudo: false`.
       // See https://github.com/sbt/sbt/issues/653
