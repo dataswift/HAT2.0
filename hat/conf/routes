@@ -13,13 +13,11 @@ PUT         /users/user/:userId/enable                           org.hatdex.hat.
 PUT         /users/user/:userId/disable                          org.hatdex.hat.api.controllers.Users.disableUser(userId: java.util.UUID)
 PUT         /users/user/:userId/delete                           org.hatdex.hat.api.controllers.Users.deleteUser(userId: java.util.UUID)
 PUT         /users/user/:userId/update                           org.hatdex.hat.api.controllers.Users.updateUser(userId: java.util.UUID)
-GET         /test-email                                          org.hatdex.hat.api.controllers.Authentication.testEmail
 
 # SYSTEM routes
 GET         /system/update                                       org.hatdex.hat.api.controllers.SystemStatus.update()
 
 # AUTHENTICATION routes
-
 GET         /control/v2/auth/hatlogin                            org.hatdex.hat.api.controllers.Authentication.hatLogin(name: String, redirect: String)
 POST        /control/v2/auth/password                            org.hatdex.hat.api.controllers.Authentication.passwordChangeProcess
 POST        /control/v2/auth/passwordReset                       org.hatdex.hat.api.controllers.Authentication.handleForgotPassword
@@ -36,6 +34,5 @@ GET         /metrics                                             com.github.stij
 ->          /api/v2.6                                            v26.Routes
 
 # Frontend routes
-
 GET         /                                                    org.hatdex.hat.phata.controllers.Phata.dashboard(path = "")
 GET         /*path                                               org.hatdex.hat.phata.controllers.Phata.dashboard(path)
