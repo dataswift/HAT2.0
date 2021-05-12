@@ -73,7 +73,7 @@ trait Mailer {
   def serverErrorNotify(
       request: RequestHeader,
       exception: UsefulException
-    )(implicit m: Messages): Done
+    )(implicit m: Messages): Unit
 
   def serverExceptionNotify(
       request: RequestHeader,
@@ -91,7 +91,7 @@ trait HatMailer extends Mailer {
   def serverErrorNotify(
       request: RequestHeader,
       exception: UsefulException
-    )(implicit m: Messages): Done
+    )(implicit m: Messages): Unit
 
   def serverExceptionNotify(
       request: RequestHeader,
@@ -145,14 +145,14 @@ class HatMailerImpl @Inject() (
   def serverErrorNotify(
       request: RequestHeader,
       exception: UsefulException
-    )(implicit m: Messages): Done = {
+    )(implicit m: Messages): Unit = {
     sendEmail(adminEmails: _*)(
       from = emailFrom,
       subject = s"HAT server ${request.host} error #${exception.id}",
       bodyHtml = views.html.mails.emailServerError(request, exception).toString(),
       bodyText = views.html.mails.emailServerError(request, exception).toString()
     )
-    Done
+
   }
 
   def serverExceptionNotify(
