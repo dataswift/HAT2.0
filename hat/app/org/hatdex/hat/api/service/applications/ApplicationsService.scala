@@ -38,11 +38,12 @@ import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataDuplicate
 import org.hatdex.hat.api.service.{ DalExecutionContext, RemoteExecutionContext, StatsReporter }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.client.AdjudicatorWsClient
 import org.hatdex.hat.dal.Tables
 import org.hatdex.hat.dal.Tables.ApplicationStatusRow
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.she.service.FunctionService
-import org.hatdex.hat.utils.{ AdjudicatorRequest, FutureTransformations, Utils }
+import org.hatdex.hat.utils.{ FutureTransformations, Utils }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.cache.AsyncCacheApi
@@ -102,7 +103,7 @@ class ApplicationsService @Inject() (
   private val adjudicatorScheme       = configuration.get[String]("adjudicator.scheme")
   private val adjudicatorEndpoint     = s"${adjudicatorScheme}${adjudicatorAddress}"
   private val adjudicatorSharedSecret = configuration.get[String]("adjudicator.sharedSecret")
-  private val adjudicatorClient = new AdjudicatorRequest(
+  private val adjudicatorClient = new AdjudicatorWsClient(
     adjudicatorEndpoint,
     JwtSecretKey(adjudicatorSharedSecret),
     wsClient
