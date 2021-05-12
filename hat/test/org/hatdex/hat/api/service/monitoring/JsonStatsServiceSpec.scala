@@ -24,18 +24,14 @@
 
 package org.hatdex.hat.api.service.monitoring
 
-import akka.stream.Materializer
 import io.dataswift.models.hat.{ EndpointData, Owner }
 import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.authentication.models.HatUser
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
-import play.api.Application
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsValue, Json }
 
 import java.util.UUID
 
-class JsonStatsServiceSpec extends BaseSpec with BeforeAndAfter with BeforeAndAfterAll with JsonStatsServiceContext {
+class JsonStatsServiceSpec extends BaseSpec with JsonStatsServiceContext {
 
   "The `countJsonPaths` method" should "Correctly count numbers of values for simple objects" in {
     val result = JsonStatsService.countJsonPaths(simpleJson)
@@ -118,10 +114,6 @@ class JsonStatsServiceSpec extends BaseSpec with BeforeAndAfter with BeforeAndAf
 trait JsonStatsServiceContext {
   // Setup default users for testing
   val owner: HatUser = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
-
-  lazy val application: Application = new GuiceApplicationBuilder().build()
-
-  implicit lazy val materializer: Materializer = application.materializer
 
   val simpleJson: JsValue = Json.parse("""
       | {

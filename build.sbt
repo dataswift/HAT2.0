@@ -5,6 +5,8 @@ import sbt.Keys._
 val codeguruURI =
   "https://repo1.maven.org/maven2/software/amazon/codeguruprofiler/codeguru-profiler-java-agent-standalone/1.1.0/codeguru-profiler-java-agent-standalone-1.1.0.jar"
 
+Global / excludeLintKeys += dockerEnvVars
+
 // the application
 lazy val hat = project
   .in(file("hat"))

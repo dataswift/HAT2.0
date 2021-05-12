@@ -34,7 +34,6 @@ import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, ApiValidationRequest, MailTokenUser }
 import org.joda.time.DateTime
-import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Result
 import play.api.test.Helpers._
@@ -47,8 +46,6 @@ import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
 class AuthenticationSpec extends AuthenticationContext {
-
-  val logger: Logger = Logger(this.getClass)
 
   "The `publicKey` method" should "Return public key of the HAT" in {
     val request = FakeRequest("GET", "http://hat.hubofallthings.net")
@@ -295,8 +292,6 @@ class AuthenticationSpec extends AuthenticationContext {
       _ <- tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
       result <- Helpers.call(controller.handleResetPassword(tokenId), request)
     } yield result
-
-    logger.warn(s"reset pass response: ${contentAsJson(result)}")
 
     status(result) must equal(OK)
   }

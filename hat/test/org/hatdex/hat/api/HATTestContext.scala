@@ -28,14 +28,13 @@ import akka.Done
 import akka.stream.Materializer
 import com.amazonaws.services.s3.AmazonS3
 import com.atlassian.jwt.core.keys.KeyUtils
-import com.dimafeng.testcontainers.PostgreSQLContainer
+import com.dimafeng.testcontainers.{ GenericContainer, MultipleContainers, PostgreSQLContainer }
 import com.google.inject.Provides
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette, SilhouetteProvider }
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import io.dataswift.integrationtest.common.PostgresqlSpec
 import io.dataswift.models.hat.{ DataCredit, DataDebitOwner, Owner }
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.FakeCache
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
@@ -49,12 +48,10 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.cache.AsyncCacheApi
 import play.api.http.HttpErrorHandler
 import play.api.i18n.{ Lang, MessagesApi }
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{ Application, Configuration, Logger }
-import play.cache.NamedCacheImpl
 
 import java.io.StringReader
 import java.util.UUID
@@ -64,7 +61,28 @@ import scala.concurrent.{ Await, Future }
 
 abstract class HATTestContext extends PostgresqlSpec with MockitoSugar with BeforeAndAfter {
 
-  lazy val conf: Configuration = containerToConfig(postgresqlContainer)
+  protected val redisContainer: GenericContainer = GenericContainer("redis:6.2-alpine", exposedPorts = Seq(6379))
+
+  override val container: MultipleContainers = MultipleContainers(redisContainer, postgresqlContainer)
+
+  lazy val conf: Configuration =
+    Configuration.from(
+      Map(
+        "play.cache.redis.host" -> redisContainer.container.getHost,
+        "play.cache.redis.port" -> redisContainer.container.getFirstMappedPort,
+        "hat" -> Map(
+              "hat.hubofallthings.net" -> Map(
+                    "database" ->
+                        Map(
+                          "properties" -> Map("user" -> postgresqlContainer.username,
+                                              "password" -> postgresqlContainer.password,
+                                              "url" -> postgresqlContainer.jdbcUrl
+                              )
+                        )
+                  )
+            )
+      )
+    )
 
   override def afterStart(): Unit =
     Await.result(databaseReady(), 60.seconds)
@@ -72,12 +90,52 @@ abstract class HATTestContext extends PostgresqlSpec with MockitoSugar with Befo
   val hatAddress     = "hat.hubofallthings.net"
   val hatUrl: String = s"http://$hatAddress"
 
+  private val publicKey = """-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAznT9VIjovMEB/hoZ9j+j
+z9G+WWAsfj9IB7mAMQEICoLMWHC1ZnO4nrqTrRiQFKKrWekjhXFRp8jQZmGhv/sw
+h5EsIcbRUzNNPSBmiCM0NXHG8wwN8cFigHXLQB0p4ekOWOHpEXfIZkTN5VlpUq1o
+PdbgMXRW8NdU+Mwr7qQiUnHxaW0imFiahPs3n5Q3KLt2nWcxlvazeaRDphkEtFTk
+JCaFx9TPzd1NSYpBidSMC2cwhVM6utaNk3ZRktCs+y0iFezL606x28P6+VuDkb19
+6OxWEvSSxL3+1KQbKi3B9Hg/BNhigGsqQ35GzVPVygT7m90u9nNlxJ7KvfQDQc8t
+dQIDAQAB
+-----END PUBLIC KEY-----"""
+
+  private val privateKey = """-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEAznT9VIjovMEB/hoZ9j+jz9G+WWAsfj9IB7mAMQEICoLMWHC1
+ZnO4nrqTrRiQFKKrWekjhXFRp8jQZmGhv/swh5EsIcbRUzNNPSBmiCM0NXHG8wwN
+8cFigHXLQB0p4ekOWOHpEXfIZkTN5VlpUq1oPdbgMXRW8NdU+Mwr7qQiUnHxaW0i
+mFiahPs3n5Q3KLt2nWcxlvazeaRDphkEtFTkJCaFx9TPzd1NSYpBidSMC2cwhVM6
+utaNk3ZRktCs+y0iFezL606x28P6+VuDkb196OxWEvSSxL3+1KQbKi3B9Hg/BNhi
+gGsqQ35GzVPVygT7m90u9nNlxJ7KvfQDQc8tdQIDAQABAoIBAF00Voub1UolbjNb
+cD4Jw/fVrjPmJaAHDIskNRmqaAlqvDrvAw3SD1ZlT7b04FLYjzfjdvxOyLjRATg/
+OkkT6vhA0yYafjSr8+I1JuSt0+uOxmzCE+eA0OnCg/QZVmedEbORpWkT5P46cKNq
+RpCjJWzJfWQGLBvFcqBxeCHfqnkCFESRDG+YTUTzQ3Z4tdvXh/Wn7ZNAsJFaM2+x
+krJF7bBas9MJ/A8fumtuickr6DpFB6/nQsKqou3wDsMPN9SeTgXAzvufnssK0bGx
+8Z0F7pQUsl7CF2VuSXH2rcmW59JOpqPeZQ1JfrJZRxZ839vY+0BUF+Ti3FVJBb95
+aXLqHF8CgYEA+vwJCI6y+W/Cfwu79ssoJB+038sJftqkpKcFCipTsvX26h8o5+Vd
+BSvo58cjbXSV6a7PevkQvlgpKPki9SZnE+LoEmq1KbmN6yV0kev4Kzmi7P9Lz1Z8
+XRkt5KWQSMn65ZhLRHeomM71TgzDye1QI6rIKp4oumZUrlj8xGPB7VMCgYEA0pUq
+DSprxCQajw5WiH9X2sswrzDuK/+YAPZFBcRkK2KS9KGkltqlU9EmfZSX794vqfZw
+WBzJMRvxy0tF9QYSFahGivk98dzUUfARx79lIrKDBRVeUuP5LQ762K7BhDanym5a
+4YvzRPsJGHUT6Kyn1nsoP/CXqr1fxbv/HaN7WRcCgYEAz+x+O1WklZptobyB4kmZ
+npuZx5C39ByEK1emiC5amrbD8F8SD1LnhgJDd8h05Beini5Q+opdwaLdrnD+8eL3
+n/Tp12AJZ2CuXrDv6nd3Z6/e9sHk9waqDqJub65tYq/Zp91L9ZO/26AQfrF6fc2Z
+B4NTQmM2UH24B5v3A2e1X7sCgYBXnFuMcrO3PNYX4n05+NESZCrzGEZe483XyJ3a
+0mRicHZ3dLDHWlwiTQfYg3PbBfOKoM8IuaEy309vpveKA2aOwB3pP9z3vUpQdLLR
+Cd4H24ELImLF1bcbefn/IGW+ngac/+CrqdAiSNb15+/Kg9qoL0EFqRFQpc0stRRk
+vllZLQKBgEuos9IFTnXvF5+NpwQJ54t4YQW/StgPL7sPVA86irXnuT3VwdVNg2VF
+AZa/LU3jAXt2iTziR0LTKueamj/V+YM4qVyc/LhUPvjKlsCjyLBb647p3C/ogYbj
+mO9kGhALaD5okBcI/VuAQiFvBXdK0ii/nVcBApXEu47PG4oYUgPI
+-----END RSA PRIVATE KEY-----"""
+
   def containerToConfig(c: PostgreSQLContainer): Configuration =
     Configuration
       .load(play.api.Environment.simple())
       .withFallback(
         Configuration.from(
           Map(
+            "play.cache.redis.host" -> redisContainer.container.getHost,
+            "play.cache.redis.port" -> redisContainer.container.getFirstMappedPort,
             "hat" -> Map(
                   "hat.hubofallthings.net" -> Map(
                         "database" ->
@@ -99,17 +157,15 @@ abstract class HATTestContext extends PostgresqlSpec with MockitoSugar with Befo
   // Build up the FakeEnvironment for authentication testing
   private val keyUtils = new KeyUtils()
 
-  implicit lazy val hatServer: HatServer = {
-    val hatConfig = conf.get[Configuration](s"hat.$hatAddress")
+  implicit lazy val hatServer: HatServer =
     HatServer(
       hatAddress,
       "hat",
       "user@hat.org",
-      keyUtils.readRsaPrivateKeyFromPem(new StringReader(hatConfig.get[String]("privateKey"))),
-      keyUtils.readRsaPublicKeyFromPem(new StringReader(hatConfig.get[String]("publicKey"))),
+      keyUtils.readRsaPrivateKeyFromPem(new StringReader(privateKey)),
+      keyUtils.readRsaPublicKeyFromPem(new StringReader(publicKey)),
       db
     )
-  }
 
   // Setup default users for testing
   val owner: HatUser = HatUser(UUID.randomUUID(),
@@ -119,6 +175,7 @@ abstract class HATTestContext extends PostgresqlSpec with MockitoSugar with Befo
                                Seq(Owner()),
                                enabled = true
   )
+
   val dataDebitUser: HatUser = HatUser(
     UUID.randomUUID(),
     "dataDebitUser",
@@ -149,7 +206,7 @@ abstract class HATTestContext extends PostgresqlSpec with MockitoSugar with Befo
   )
 
   def databaseReady(): Future[Unit] = {
-    val schemaMigration = new HatDbSchemaMigration(conf, db, global)
+    val schemaMigration = new HatDbSchemaMigration(application.configuration, db, global)
     schemaMigration
       .resetDatabase()
       .flatMap(_ => schemaMigration.run(devHatMigrations))
@@ -185,8 +242,6 @@ abstract class HATTestContext extends PostgresqlSpec with MockitoSugar with Befo
       bind[MailTokenService[MailTokenUser]].to[MailTokenUserService]
       bind[HatMailer].toInstance(mockMailer)
       bind[HttpErrorHandler].to[ErrorHandler]
-      bind[AsyncCacheApi].annotatedWith(new NamedCacheImpl("user-cache")).to[FakeCache]
-      bind[AsyncCacheApi].to[FakeCache]
       bind[LoggingProvider].toInstance(new MockLoggingProvider(mockLogger))
     }
 
@@ -201,11 +256,12 @@ abstract class HATTestContext extends PostgresqlSpec with MockitoSugar with Befo
       bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(Seq()))
   }
 
-  lazy val application: Application = new GuiceApplicationBuilder()
-    .configure(conf)
-    .overrides(new IntegrationSpecModule)
-    .overrides(new EmptyAppProviderModule)
-    .build()
+  lazy val application: Application =
+    new GuiceApplicationBuilder()
+      .configure(conf)
+      .overrides(new IntegrationSpecModule)
+      .overrides(new EmptyAppProviderModule)
+      .build()
 
   implicit lazy val materializer: Materializer = application.materializer
 
