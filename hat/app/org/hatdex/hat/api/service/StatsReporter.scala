@@ -51,7 +51,7 @@ class StatsReporter @Inject() (
     wsClient: WSClient,
     configuration: Configuration,
     system: ActorSystem,
-    usersService: UsersService,
+    userService: UserService,
     authenticatorService: AuthenticatorService[
       JWTRS256Authenticator,
       HatServer
@@ -165,7 +165,7 @@ class StatsReporter @Inject() (
   }
 
   private def platformUser()(implicit server: HatServer): Future[HatUser] =
-    usersService.getUserByRole(Platform())(server).map(_.head)
+    userService.getUserByRole(Platform())(server).map(_.head)
 
   private def validateToken()(implicit server: HatServer): Future[String] = {
     //private def applicationToken()(implicit server: HatServer): Future[String] = {

@@ -36,7 +36,7 @@ import io.dataswift.models.hat._
 import io.dataswift.models.hat.applications.ApplicationSetup
 import io.dataswift.models.hat.json.HatJsonFormats
 import org.hatdex.hat.api.service.applications.ApplicationsService
-import org.hatdex.hat.api.service.{ HatServicesService, LogService, MailTokenService, UsersService }
+import org.hatdex.hat.api.service.{ HatServicesService, LogService, MailTokenService, UserService }
 import org.hatdex.hat.authentication._
 import org.hatdex.hat.phata.models._
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
@@ -64,7 +64,7 @@ class Authentication @Inject() (
     hatServicesService: HatServicesService,
     passwordHasherRegistry: PasswordHasherRegistry,
     authInfoRepository: AuthInfoRepository[HatServer],
-    usersService: UsersService,
+    userService: UserService,
     applicationsService: ApplicationsService,
     logService: LogService,
     mailer: HatMailer,
@@ -158,7 +158,7 @@ class Authentication @Inject() (
                            service,
                            Some(redirectUrl)
                          )
-        _ <- usersService.logLogin(
+        _ <- userService.logLogin(
                request.identity,
                "hatLogin",
                linkedService.category,
@@ -206,7 +206,7 @@ class Authentication @Inject() (
           .authenticate(Credentials(username, password))
           .map(_.copy(request.dynamicEnvironment.id))
           .flatMap { loginInfo =>
-            usersService.getUser(loginInfo.providerKey).flatMap {
+            userService.getUser(loginInfo.providerKey).flatMap {
               // If we find a user, create and return an access token (JWT)
               case Some(user) =>
                 val customClaims = hatServicesService.generateUserTokenClaims(user, hatService)
@@ -218,7 +218,7 @@ class Authentication @Inject() (
                              authenticator.copy(customClaims = Some(customClaims))
                            )
                   // Logging
-                  _ <- usersService.logLogin(
+                  _ <- userService.logLogin(
                          user,
                          "api",
                          user.roles
@@ -315,7 +315,7 @@ class Authentication @Inject() (
       )
       if (email == request.dynamicEnvironment.ownerEmail)
         // Find the specific user who is the owner.
-        usersService.listUsers
+        userService.listUsers
           .map(_.find(_.roles.contains(Owner())))
           .flatMap {
             case Some(_) =>
@@ -347,7 +347,7 @@ class Authentication @Inject() (
           if (token.email == request.dynamicEnvironment.ownerEmail)
             // Find the users with the owner role
             // ???: Why not using the email
-            usersService.listUsers
+            userService.listUsers
               .map(_.find(_.roles.contains(Owner())))
               .flatMap {
                 case Some(user) =>
@@ -404,7 +404,7 @@ class Authentication @Inject() (
       // (email, applicationId) in the body
       // Look up the application (Is this in the HAT itself?  Not DEX)
       if (claimHatRequest.email == email)
-        usersService.listUsers
+        userService.listUsers
           .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(Verified("email"))))))
           .flatMap {
             case Some(user) =>
@@ -464,7 +464,7 @@ class Authentication @Inject() (
       tokenService.retrieve(verificationToken).flatMap {
         case Some(token)
             if token.isSignUp && !token.isExpired && token.email == request.dynamicEnvironment.ownerEmail =>
-          usersService.listUsers
+          userService.listUsers
             .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(Verified("email"))))))
             .flatMap {
               case Some(user) =>

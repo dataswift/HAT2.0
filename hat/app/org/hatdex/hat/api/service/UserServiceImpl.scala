@@ -39,20 +39,19 @@ import javax.inject.Inject
 import scala.concurrent.Future
 import scala.util.Success
 
-class UsersService @Inject() (
+class UserServiceImpl @Inject() (
     cache: AsyncCacheApi
-  )(implicit ec: DalExecutionContext) {
+  )(implicit ec: DalExecutionContext)
+    extends UserService {
   val logger: Logger = Logger(this.getClass)
 
   implicit def hatServer2db(implicit hatServer: HatServer): Database =
     hatServer.db
 
-  def listUsers()(implicit server: HatServer): Future[Seq[HatUser]] =
+  override def listUsers()(implicit server: HatServer): Future[Seq[HatUser]] =
     queryUser(UserUser)
 
-  def getUser(
-      userId: UUID
-    )(implicit server: HatServer): Future[Option[HatUser]] =
+  override def getUser(userId: UUID)(implicit server: HatServer): Future[Option[HatUser]] =
     cache
       .get[HatUser](s"${server.domain}:user:$userId")
       .flatMap {
@@ -67,9 +66,7 @@ class UsersService @Inject() (
             })
       }
 
-  def getUser(
-      username: String
-    )(implicit server: HatServer): Future[Option[HatUser]] =
+  override def getUser(username: String)(implicit server: HatServer): Future[Option[HatUser]] =
     cache
       .get[HatUser](s"${server.domain}:user:$username")
       .flatMap {
@@ -136,7 +133,7 @@ class UsersService @Inject() (
     }
   }
 
-  def saveUser(user: HatUser)(implicit server: HatServer): Future[HatUser] = {
+  override def saveUser(user: HatUser)(implicit server: HatServer): Future[HatUser] = {
     val userRow = UserUserRow(
       user.userId,
       LocalDateTime.now(),
@@ -167,7 +164,7 @@ class UsersService @Inject() (
       })
   }
 
-  def deleteUser(userId: UUID)(implicit server: HatServer): Future[Unit] =
+  override def deleteUser(userId: UUID)(implicit server: HatServer): Future[Unit] =
     getUser(userId) flatMap {
         case Some(user) if user.roles.contains(Owner()) =>
           Future.failed(new RuntimeException("Can not delete owner user"))
@@ -187,7 +184,7 @@ class UsersService @Inject() (
             }
       }
 
-  def changeUserState(
+  override def changeUserState(
       userId: UUID,
       enabled: Boolean
     )(implicit server: HatServer): Future[Unit] =
@@ -196,7 +193,7 @@ class UsersService @Inject() (
       case None       => Future.successful(())
     }
 
-  def removeUser(username: String)(implicit server: HatServer): Future[Unit] = {
+  override def removeUser(username: String)(implicit server: HatServer): Future[Unit] = {
     val eventualUserIds =
       server.db.run(UserUser.filter(_.email === username).map(_.userId).result)
     eventualUserIds flatMap { userIds =>
@@ -206,7 +203,7 @@ class UsersService @Inject() (
     }
   }
 
-  def previousLogin(
+  override def previousLogin(
       user: HatUser
     )(implicit server: HatServer): Future[Option[HatAccessLog]] = {
     logger.debug(s"Getting previous login for $user@${server.domain}")
@@ -233,7 +230,7 @@ class UsersService @Inject() (
       )
   }
 
-  def logLogin(
+  override def logLogin(
       user: HatUser,
       loginType: String,
       scope: String,
