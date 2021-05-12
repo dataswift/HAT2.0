@@ -43,7 +43,7 @@ object Dependencies {
     val Adjudicator = "0.1.0-SNAPSHOT"
     val DexClient   = "3.2.2"
     val DsBackend   = "2.3.0"
-    val DsTestTools = "0.2.3"
+    val DsTestTools = "0.2.5"
   }
 
   val resolvers = Seq(

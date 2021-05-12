@@ -4,7 +4,7 @@ import io.dataswift.models.hat.applications.{ DataFeedItem, DataFeedItemContent,
 import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, PropertyQuery }
 import org.hatdex.hat.she.models.StaticDataValues
 import org.joda.time.DateTime
-import play.api.libs.json.{ __, JsError, JsNumber, JsObject, JsResult, JsSuccess, JsValue }
+import play.api.libs.json._
 
 import java.util.UUID
 import scala.util.Try

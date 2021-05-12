@@ -5,6 +5,7 @@
         </encoder>
     </appender>
     <logger name="org.hatdex.hat.api.service.richData.RichDataService" level="debug"/>
+    <logger name="org.hatdex.hat.api.service.applications.ApplicationsService" level="info"/>
     <root level="warn">
         <appender-ref ref="CONSOLE"/>
     </root>

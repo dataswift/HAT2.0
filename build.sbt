@@ -142,6 +142,7 @@ lazy val hat = project
 inThisBuild(
   List(
     scalaVersion := "2.13.5",
+    scalafixScalaBinaryVersion := "2.13",
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.5.0"

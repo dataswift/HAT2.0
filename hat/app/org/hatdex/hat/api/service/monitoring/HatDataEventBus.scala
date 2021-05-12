@@ -89,7 +89,6 @@ class HatDataEventBus extends EventBus with SubchannelClassification {
 }
 
 class HatDataEventDispatcher @Inject() (dataEventBus: HatDataEventBus) {
-  import scala.language.implicitConversions
   implicit def userModelTranslation(user: HatUser): User =
     ModelTranslation.fromInternalModel(user)
   protected val logger: Logger = Logger(this.getClass)
