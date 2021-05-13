@@ -77,7 +77,7 @@ class DeviceVerification @Inject() (
       hatName: String,
       permissions: RequiredNamespacePermissions)
       : Future[Either[DeviceVerificationFailure, DeviceRequestVerificationSuccess]] = {
-    val maybeRefinedDevice = refineDeviceInfo(sltoken.split(" ")(1).trim, hatName, app.id)
+    val maybeRefinedDevice = refineDeviceInfo(sltoken.trim, hatName, app.id)
 
     maybeRefinedDevice match {
       case Some(refinedDevice) =>

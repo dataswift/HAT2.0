@@ -56,11 +56,19 @@ class DeviceVerificationSpec extends DeviceVerificationContext {
       ("X-Auth-Token", "Bearer garbage")
     )
 
-    val dv = application.injector.instanceOf[DeviceVerification]
-
+    val dv  = application.injector.instanceOf[DeviceVerification]
     val ret = Await.result(dv.getTokenFromHeaders(headers), 2.seconds)
-
     ret must equal(None)
+  }
+
+  "refinedDeviceInfo" should "refine information correctly tp Some(DeviceDataInfoRefined)" in {
+    val slToken = "fff"
+    val hatName = "hatname"
+    val appId   = "foobar"
+
+    val dv     = application.injector.instanceOf[DeviceVerification]
+    val result = dv.refineDeviceInfo(slToken, hatName, appId)
+    result mustBe defined
   }
 }
 

@@ -224,7 +224,7 @@ class AuthServiceWsClient @Inject() (
       hatDeviceClaim <- maybeHatDeviceClaim
       token: JwtClaim = hatDeviceClaimBuilder.build(hatDeviceClaim)
       encoded         = Jwt.encode(JwtHeader(JwtAlgorithm.HS256), token, secret.value)
-      request         = ws.url(url).withHttpHeaders("X-Auth-Token" -> s"${encoded}")
+      request         = ws.url(url).withHttpHeaders("x-auth-token" -> s"${encoded}")
     } yield request
   }
 }
