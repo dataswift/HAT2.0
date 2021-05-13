@@ -222,7 +222,7 @@ mO9kGhALaD5okBcI/VuAQiFvBXdK0ii/nVcBApXEu47PG4oYUgPI
 
   val mockLogger: Logger    = MockitoSugar.mock[play.api.Logger]
   val mockMailer: HatMailer = MockitoSugar.mock[HatMailer]
-  when(mockMailer.passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])).thenReturn(Done)
+  when(mockMailer.passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])).thenReturn(Future())
 
   val fileManagerS3Mock: FileManagerS3Mock = new FileManagerS3Mock
 

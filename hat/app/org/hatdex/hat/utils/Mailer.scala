@@ -57,7 +57,7 @@ trait Mailer {
       bodyHtml: String,
       bodyText: String
     )(implicit
-      ec: ExecutionContext): Future[Done] =
+      ec: ExecutionContext): Future[Unit] =
     if (!mock) {
       val message = new Message(content(subject), new Body(content(bodyText)).withHtml(content(bodyHtml)))
       val request = new SendEmailRequest(from, new Destination(recipients.asJava), message)
@@ -73,12 +73,12 @@ trait Mailer {
   def serverErrorNotify(
       request: RequestHeader,
       exception: UsefulException
-    )(implicit m: Messages): Done
+    )(implicit m: Messages): Future[Unit]
 
   def serverExceptionNotify(
       request: RequestHeader,
       exception: Throwable
-    )(implicit m: Messages): Done
+    )(implicit m: Messages): Future[Unit]
 
 }
 
@@ -91,39 +91,47 @@ trait HatMailer extends Mailer {
   def serverErrorNotify(
       request: RequestHeader,
       exception: UsefulException
-    )(implicit m: Messages): Done
+    )(implicit m: Messages): Future[Unit]
 
   def serverExceptionNotify(
       request: RequestHeader,
       exception: Throwable
-    )(implicit m: Messages): Done
+    )(implicit m: Messages): Future[Unit]
 
   def passwordReset(
       email: String,
       resetLink: String
     )(implicit m: MessagesApi,
       lang: Lang,
-      server: HatServer): Done
+      server: HatServer): Future[Unit]
 
   def passwordChanged(
       email: String
     )(implicit m: MessagesApi,
       lang: Lang,
-      server: HatServer): Done
+      server: HatServer): Future[Unit]
 
   def verifyEmail(
       email: String,
       verificationLink: String
     )(implicit m: MessagesApi,
       lang: Lang,
-      server: HatServer): Done
+      server: HatServer): Future[Unit]
+
+  def customWelcomeEmail(
+      email: String,
+      appName: Option[String],
+      appLogoUrl: Option[String],
+      verificationLink: String
+    )(implicit m: MessagesApi,
+      lang: Lang): Future[Unit]
 
   def emailVerified(
       email: String,
       loginLink: String
     )(implicit m: MessagesApi,
       lang: Lang,
-      server: HatServer): Done
+      server: HatServer): Future[Unit]
 }
 
 class HatMailerImpl @Inject() (
@@ -137,20 +145,19 @@ class HatMailerImpl @Inject() (
   def serverErrorNotify(
       request: RequestHeader,
       exception: UsefulException
-    )(implicit m: Messages): Done = {
+    )(implicit m: Messages): Future[Unit] = {
     sendEmail(adminEmails: _*)(
       from = emailFrom,
       subject = s"HAT server ${request.host} error #${exception.id}",
       bodyHtml = views.html.mails.emailServerError(request, exception).toString(),
       bodyText = views.html.mails.emailServerError(request, exception).toString()
     )
-    Done
   }
 
   def serverExceptionNotify(
       request: RequestHeader,
       exception: Throwable
-    )(implicit m: Messages): Done = {
+    )(implicit m: Messages): Future[Unit] = {
     sendEmail(adminEmails: _*)(
       from = emailFrom,
       subject =
@@ -158,7 +165,6 @@ class HatMailerImpl @Inject() (
       bodyHtml = views.html.mails.emailServerThrowable(request, exception).toString(),
       bodyText = views.html.mails.emailServerThrowable(request, exception).toString()
     )
-    Done
   }
 
   def passwordReset(
@@ -166,28 +172,27 @@ class HatMailerImpl @Inject() (
       resetLink: String
     )(implicit messages: MessagesApi,
       lang: Lang,
-      server: HatServer): Done = {
+      server: HatServer): Future[Unit] = {
     sendEmail(email)(
       from = emailFrom,
       subject = messages("email.dataswift.auth.subject.resetPassword"),
       bodyHtml = views.html.mails.emailAuthResetPassword(email, resetLink).toString(),
       bodyText = views.txt.mails.emailAuthResetPassword(email, resetLink).toString()
     )
-    Done
+
   }
 
   def passwordChanged(
       email: String
     )(implicit messages: MessagesApi,
       lang: Lang,
-      server: HatServer): Done = {
+      server: HatServer): Future[Unit] = {
     sendEmail(email)(
       from = emailFrom,
       subject = messages("email.dataswift.auth.subject.passwordChanged"),
       bodyHtml = views.html.mails.emailAuthPasswordChanged().toString(),
       bodyText = views.txt.mails.emailAuthPasswordChanged().toString()
     )
-    Done
   }
 
   def verifyEmail(
@@ -195,16 +200,28 @@ class HatMailerImpl @Inject() (
       verificationLink: String
     )(implicit messages: MessagesApi,
       lang: Lang,
-      server: HatServer): Done = {
+      server: HatServer): Future[Unit] = {
     sendEmail(email)(
       from = emailFrom,
       subject = messages("email.dataswift.auth.subject.verifyEmail"),
       bodyHtml = views.html.mails.emailAuthVerifyEmail(email, verificationLink).toString(),
-      bodyText = views.txt.mails
-        .emailAuthVerifyEmail(email, verificationLink)
-        .toString()
+      bodyText = views.txt.mails.emailAuthVerifyEmail(email, verificationLink).toString()
     )
-    Done
+  }
+
+  def customWelcomeEmail(
+      email: String,
+      appName: Option[String],
+      appLogoUrl: Option[String],
+      verificationLink: String
+    )(implicit messages: MessagesApi,
+      lang: Lang): Future[Unit] = {
+    sendEmail(email)(
+      from = emailFrom,
+      subject = messages("email.dataswift.auth.subject.verifyEmail"),
+      bodyHtml = views.html.mails.emailAuthCustomWelcome(email, appName, appLogoUrl, verificationLink).toString(),
+      bodyText = views.txt.mails.emailAuthCustomWelcome(email, appName, appLogoUrl, verificationLink).toString()
+    )
   }
 
   def emailVerified(
@@ -212,13 +229,12 @@ class HatMailerImpl @Inject() (
       loginLink: String
     )(implicit messages: MessagesApi,
       lang: Lang,
-      server: HatServer): Done = {
+      server: HatServer): Future[Unit] = {
     sendEmail(email)(
       from = emailFrom,
       subject = messages("email.dataswift.auth.subject.verifyEmail"),
       bodyHtml = views.html.mails.emailHatClaimed(email, loginLink).toString(),
       bodyText = views.txt.mails.emailHatClaimed(email, loginLink).toString()
     )
-    Done
   }
 }
