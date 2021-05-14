@@ -43,7 +43,6 @@ import org.hatdex.libs.dal.HATPostgresProfile
 import play.api.Configuration
 import play.api.libs.json.Reads._
 import play.api.libs.json.{ JsArray, JsValue, Json, Reads }
-import play.api.libs.ws.WSClient
 import play.api.mvc._
 
 import java.util.UUID
@@ -70,21 +69,12 @@ class MachineData @Inject() (
     trustedApplicationProvider: TrustedApplicationProvider,
     deviceVerification: DeviceVerification,
     implicit val ec: ExecutionContext,
-    implicit val applicationsService: ApplicationsService
-  )(wsClient: WSClient)
+    implicit val applicationsService: ApplicationsService)
     extends HatApiController(components, silhouette) {
   import RichDataJsonFormats._
 
   private val logger             = loggingProvider.logger(this.getClass)
   private val defaultRecordLimit = 1000
-
-  //val deviceVerification = new DeviceVerification(wsClient, configuration, authServiceClient)
-
-  case class DeviceDataCreateRequest(body: Option[JsValue])
-  implicit val deviceDataCreateRequestReads: Reads[DeviceDataCreateRequest] = Json.reads[DeviceDataCreateRequest]
-
-  case class DeviceDataUpdateRequest(body: Seq[EndpointData])
-  implicit val machineDataUpdateRequestReads: Reads[DeviceDataUpdateRequest] = Json.reads[DeviceDataUpdateRequest]
 
   // -- Error Handler - Error to Response
   def handleFailedRequestAssessment(failure: DeviceVerificationFailure): Future[Result] =
@@ -143,8 +133,8 @@ class MachineData @Inject() (
   def createData(
       namespace: String,
       endpoint: String,
-      skipErrors: Option[Boolean]): Action[DeviceDataCreateRequest] =
-    UserAwareAction.async(parsers.json[DeviceDataCreateRequest]) { implicit request =>
+      skipErrors: Option[Boolean]): Action[JsValue] =
+    UserAwareAction.async(parsers.json[JsValue]) { implicit request =>
       val deviceDataCreate = request.body
       val eventuallyVerdict =
         deviceVerification.getRequestVerdict(request.headers,
@@ -155,22 +145,31 @@ class MachineData @Inject() (
                                              permissions = Write
         )
 
-      eventuallyVerdict.flatMap {
-        case Left(verdictError) => handleFailedRequestAssessment(verdictError)
-        case Right(DeviceVerificationSuccess.DeviceRequestSuccess(hatUser)) =>
-          handleCreateDeviceData(
-            hatUser = hatUser,
-            machineDataCreate = deviceDataCreate,
-            namespace = namespace,
-            endpoint = endpoint,
-            skipErrors = skipErrors
-          )
-      }
+      eventuallyVerdict
+        .flatMap {
+          case Left(verdictError) => handleFailedRequestAssessment(verdictError)
+          case Right(DeviceVerificationSuccess.DeviceRequestSuccess(hatUser)) =>
+            handleCreateDeviceData(
+              hatUser = hatUser,
+              machineDataCreate = deviceDataCreate,
+              namespace = namespace,
+              endpoint = endpoint,
+              skipErrors = skipErrors
+            )
+        }
+        .recover {
+          case e: RichDataDuplicateException =>
+            BadRequest(Json.toJson(Errors.richDataError(e)))
+          case e: RichDataPermissionsException =>
+            Forbidden(Json.toJson(Errors.forbidden(e)))
+          case e: RichDataServiceException =>
+            BadRequest(Json.toJson(Errors.richDataError(e)))
+        }
 
     }
 
-  def updateData(namespace: String): Action[DeviceDataUpdateRequest] =
-    UserAwareAction.async(parsers.json[DeviceDataUpdateRequest]) { implicit request =>
+  def updateData(namespace: String): Action[Seq[EndpointData]] =
+    UserAwareAction.async(parsers.json[Seq[EndpointData]]) { implicit request =>
       val deviceDataUpdate = request.body
       val eventuallyVerdict =
         deviceVerification.getRequestVerdict(request.headers,
@@ -215,51 +214,46 @@ class MachineData @Inject() (
   // -- Create Data
   private def handleCreateDeviceData(
       hatUser: HatUser,
-      machineDataCreate: DeviceDataCreateRequest,
+      machineDataCreate: JsValue,
       namespace: String,
       endpoint: String,
       skipErrors: Option[Boolean]
-    )(implicit hatServer: HatServer): Future[Result] =
-    machineDataCreate.body match {
-      // Missing Json Body, do nothing, return error
-      case None =>
-        logger.error(s"saveDeviceData included no json body - ns:${namespace} - endpoint:${endpoint}")
-        Future.successful(NotFound)
-
-      // There is a Json body, process either an JsArray or a JsValue
-      case Some(jsBody) =>
-        val dataEndpoint = s"$namespace/$endpoint"
-        jsBody match {
-          case array: JsArray =>
-            handleJsArray(
-              hatUser.userId,
-              array,
-              dataEndpoint,
-              skipErrors
-            )
-          case value: JsValue =>
-            handleJsValue(
-              hatUser.userId,
-              value,
-              dataEndpoint
-            )
-        }
+    )(implicit hatServer: HatServer): Future[Result] = {
+    val dataEndpoint = s"$namespace/$endpoint"
+    machineDataCreate match {
+      case array: JsArray =>
+        handleJsArray(
+          hatUser.userId,
+          array,
+          dataEndpoint,
+          skipErrors
+        )
+      case value: JsValue =>
+        handleJsValue(
+          hatUser.userId,
+          value,
+          dataEndpoint
+        )
+      case _ =>
+        Future.successful(BadRequest("Incorrectly formatted body."))
     }
+  }
 
   // -- Update Data
   private def handleUpdateDeviceData(
       hatUser: HatUser,
-      machineDataUpdate: DeviceDataUpdateRequest,
+      machineDataUpdate: Seq[EndpointData],
       namespace: String
     )(implicit hatServer: HatServer): Future[Result] =
-    machineDataUpdate.body.length match {
+    machineDataUpdate.length match {
       // Missing Json Body, do nothing, return error
       case 0 =>
         logger.error(s"updateDeviceData included no json body - ns:${namespace}")
-        Future.successful(NotFound)
+        Future.successful(BadRequest("Missing update body."))
+
       // There is a Json body, process either an JsArray or a JsValue
       case _ =>
-        val dataSeq = machineDataUpdate.body.map(item => item.copy(endpoint = s"${namespace}/${item.endpoint}"))
+        val dataSeq = machineDataUpdate //.map(item => item.copy(endpoint = s"${namespace}/${item.endpoint}"))
         dataService.updateRecords(
           hatUser.userId,
           dataSeq
@@ -267,7 +261,8 @@ class MachineData @Inject() (
           Created(Json.toJson(saved))
         } recover {
           case RichDataMissingException(message, _) =>
-            BadRequest(Json.toJson(ErrorsFromRichData.dataUpdateMissing(message)))
+            println(message)
+            BadRequest(Json.toJson(Errors.dataUpdateMissing(message)))
         }
     }
 
@@ -301,8 +296,51 @@ class MachineData @Inject() (
       .map(saved => Created(Json.toJson(saved.head)))
   }
 
-  private object ErrorsFromRichData {
+  private object Errors {
+    def dataDebitDoesNotExist: ErrorMessage =
+      ErrorMessage("Not Found", "Data Debit with this ID does not exist")
+    def dataDebitNotFound(id: String): ErrorMessage =
+      ErrorMessage("Not Found", s"Data Debit $id not found")
+    def dataDebitNotEnabled(id: String): ErrorMessage =
+      ErrorMessage("Bad Request", s"Data Debit $id not enabled")
+    def dataDebitMalformed(err: Throwable): ErrorMessage =
+      ErrorMessage(
+        "Bad Request",
+        s"Data Debit request malformed: ${err.getMessage}"
+      )
+    def dataDebitBundleMalformed(
+        id: String,
+        err: Throwable): ErrorMessage =
+      ErrorMessage(
+        "Data Debit Bundle malformed",
+        s"Data Debit $id active bundle malformed: ${err.getMessage}"
+      )
+
+    def bundleNotFound(bundleId: String): ErrorMessage =
+      ErrorMessage("Bundle Not Found", s"Bundle $bundleId not found")
+
+    def dataMissing(message: String): ErrorMessage =
+      ErrorMessage("Data Missing", s"Could not find unique record: $message")
     def dataUpdateMissing(message: String): ErrorMessage =
       ErrorMessage("Data Missing", s"Could not update records: $message")
+    def dataDeleteMissing(message: String): ErrorMessage =
+      ErrorMessage("Data Missing", s"Could not delete records: $message")
+    def dataLinkMissing(message: String): ErrorMessage =
+      ErrorMessage("Data Missing", s"Could not link records: $message")
+
+    def dataCombinatorNotFound(combinator: String): ErrorMessage =
+      ErrorMessage("Combinator Not Found", s"Combinator $combinator not found")
+
+    def richDataDuplicate(error: Throwable): ErrorMessage =
+      ErrorMessage("Bad Request", s"Duplicate data - ${error.getMessage}")
+    def richDataError(error: Throwable): ErrorMessage =
+      ErrorMessage(
+        "Bad Request",
+        s"Could not insert data - ${error.getMessage}"
+      )
+    def forbidden(error: Throwable): ErrorMessage =
+      ErrorMessage("Forbidden", s"Access Denied - ${error.getMessage}")
+    def forbidden(message: String): ErrorMessage =
+      ErrorMessage("Forbidden", s"Access Denied - ${message}")
   }
 }
