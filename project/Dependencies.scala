@@ -32,7 +32,7 @@ object Dependencies {
     val Silhouette            = "5.2.0"
     val AtlassianJwt          = "3.2.0"
     val AwsSdk                = "1.11.1003"
-    val AlpakkaAwsLambda      = "1.1.2"
+    val AlpakkaAwsLambda      = "3.0.0"
     val CommonsLang3          = "3.11"
     val BouncyCastle          = "1.68"
     val PlayPrometheusFilters = "0.6.1"
