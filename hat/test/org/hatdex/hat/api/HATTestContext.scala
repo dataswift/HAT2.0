@@ -199,18 +199,18 @@ trait HATTestContext extends PostgresqlSpec with MockitoSugar with BeforeAndAfte
       .resetDatabase()
       .flatMap(_ => schemaMigration.run(devHatMigrations))
       .flatMap { _ =>
-        val usersService = application.injector.instanceOf[UsersService]
+        val userService = application.injector.instanceOf[UserService]
         for {
-          _ <- usersService.saveUser(dataCreditUser)
-          _ <- usersService.saveUser(dataDebitUser)
-          _ <- usersService.saveUser(owner)
+          _ <- userService.saveUser(dataCreditUser)
+          _ <- userService.saveUser(dataDebitUser)
+          _ <- userService.saveUser(owner)
         } yield ()
       }
   }
 
   val mockLogger: Logger    = MockitoSugar.mock[play.api.Logger]
   val mockMailer: HatMailer = MockitoSugar.mock[HatMailer]
-  when(mockMailer.passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])).thenReturn(Done)
+  when(mockMailer.passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])).thenReturn(Future())
 
   val fileManagerS3Mock: FileManagerS3Mock = new FileManagerS3Mock
 

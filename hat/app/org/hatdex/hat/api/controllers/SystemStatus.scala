@@ -28,7 +28,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.json.HatJsonFormats
 import org.hatdex.hat.api.service.applications.ApplicationsService
-import org.hatdex.hat.api.service.{ SystemStatusService, UsersService }
+import org.hatdex.hat.api.service.{ SystemStatusService, UserService }
 import org.hatdex.hat.authentication.{ ContainsApplicationRole, HatApiAuthEnvironment, HatApiController, WithRole }
 import org.hatdex.hat.resourceManagement._
 import org.ocpsoft.prettytime.PrettyTime
@@ -48,7 +48,7 @@ class SystemStatus @Inject() (
     configuration: Configuration,
     silhouette: Silhouette[HatApiAuthEnvironment],
     systemStatusService: SystemStatusService,
-    usersService: UsersService,
+    userService: UserService,
     hatDatabaseProvider: HatDatabaseProvider
   )(implicit
     val ec: ExecutionContext,
@@ -89,7 +89,7 @@ class SystemStatus @Inject() (
       val eventualStatus = for {
         dbsize <- systemStatusService.tableSizeTotal
         fileSize <- systemStatusService.fileStorageTotal
-        maybePreviousLogin <- usersService.previousLogin(request.identity)
+        maybePreviousLogin <- userService.previousLogin(request.identity)
       } yield {
         val dbsa =
           SystemStatusService.humanReadableByteCount(dbStorageAllowance)
