@@ -24,7 +24,7 @@ jobs:
           submodules: recursive
 
       - name: Cache - GHA
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.5
         with:
           path: ~/.cache/coursier/v1/https
           key: ${{ runner.OS }}-coursier-cache
