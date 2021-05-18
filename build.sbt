@@ -1,13 +1,8 @@
 import Dependencies.Library
-import com.typesafe.sbt.packager.docker._
+import com.typesafe.sbt.packager.docker.Cmd
 import sbt.Keys._
 
-val codeguruURI =
-  "https://repo1.maven.org/maven2/software/amazon/codeguruprofiler/codeguru-profiler-java-agent-standalone/1.1.0/codeguru-profiler-java-agent-standalone-1.1.0.jar"
-
 lazy val dockerSettings = Seq(
-  Universal / javaOptions += "-Dpidfile.path=/dev/null",
-  Docker / version := version.value,
   dockerCommands := Seq(
     Cmd(IO.read(file("Dockerfile"))),
     Cmd("CMD", s"./${packageName.value}"),
