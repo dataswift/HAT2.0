@@ -1,18 +1,18 @@
 import Dependencies.Library
-import com.typesafe.sbt.packager.docker._
 import sbt.Keys._
 
 val codeguruURI =
   "https://repo1.maven.org/maven2/software/amazon/codeguruprofiler/codeguru-profiler-java-agent-standalone/1.1.0/codeguru-profiler-java-agent-standalone-1.1.0.jar"
 
-Global / excludeLintKeys += dockerEnvVars
-
 // the application
 lazy val hat = project
   .in(file("hat"))
+  .settings(dockerSettings)
   .enablePlugins(PlayScala)
   .enablePlugins(SbtWeb, SbtSassify, SbtGzip, SbtDigest)
   .enablePlugins(BasicSettings)
+  .enablePlugins(SlickCodeGeneratorPlugin)
+  .disablePlugins(PlayLogback)
   .settings(
     libraryDependencies ++= Seq(
           Library.Play.ws,
@@ -57,6 +57,7 @@ lazy val hat = project
           case BuildEnv.Stage | BuildEnv.Production =>
             libraryDependencies.value
         }),
+    excludeDependencies := Seq(ExclusionRule("org.slf4j", "slf4j-nop")),
     Test / parallelExecution := false,
     Assets / pipelineStages := Seq(digest),
     Assets / sourceDirectory := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
@@ -72,48 +73,6 @@ lazy val hat = project
     Compile / packageDoc / publishArtifact := false,
     Compile / packageSrc / publishArtifact := false
   )
-  .enablePlugins(JavaAppPackaging)
-  .enablePlugins(AshScriptPlugin)
-  .settings(
-    // Use the alternative "Ash" script for running compiled project form inside Alpine-derived container
-    // as Bash is incompatible with Alpine
-    Universal / javaOptions ++= Seq(),
-    Docker / packageName := "hat",
-    dockerEnvVars := Map("REDIS_CACHE_KEY_PREFIX" -> s"hat:${version.value}"),
-    // add a flag to not run in prod
-    // modify the binary to include "-javaagent:codeguru-profiler-java-agent-standalone-1.1.0.jar="profilingGroupName:HatInDev,heapSummaryEnabled:true"
-    dockerCommands := (buildEnv.value match {
-          case BuildEnv.Developement | BuildEnv.Test =>
-            Seq(
-              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine"),
-              Cmd("WORKDIR", "/opt/docker/bin"),
-              Cmd("CMD", s"./${packageName.value}"),
-              Cmd("EXPOSE", "9000"),
-              Cmd("RUN", s"apk add --no-cache wget; wget --no-check-certificate ${codeguruURI}"),
-              Cmd("USER", "daemon"),
-              Cmd("COPY", "--chown=daemon:daemon", "1/opt", "opt", "/opt/")
-            )
-          case BuildEnv.Stage | BuildEnv.Production =>
-            Seq(
-              Cmd("FROM", "adoptopenjdk/openjdk11:jre-11.0.10_9-alpine"),
-              Cmd("WORKDIR", "/opt/docker/bin"),
-              Cmd("CMD", s"./${packageName.value}"),
-              Cmd("EXPOSE", "9000"),
-              Cmd("USER", "daemon"),
-              Cmd("COPY", "--chown=daemon:daemon", "1/opt", "opt", "/opt/")
-            )
-        }),
-    Universal / javaOptions ++= (buildEnv.value match {
-          case BuildEnv.Developement | BuildEnv.Test =>
-            Seq(
-              "-javaagent:/opt/docker/bin/codeguru-profiler-java-agent-standalone-1.1.0.jar=\"profilingGroupName:HatInDev,heapSummaryEnabled:true\""
-            )
-          case BuildEnv.Stage | BuildEnv.Production =>
-            Seq(
-            )
-        })
-  )
-  .enablePlugins(SlickCodeGeneratorPlugin)
   .settings(
     gentables / codegenPackageName := "org.hatdex.hat.dal",
     gentables / codegenBaseDir := (baseDirectory.value / "app").getCanonicalPath,
