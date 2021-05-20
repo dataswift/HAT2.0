@@ -33,30 +33,18 @@ import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, Truste
 import org.hatdex.hat.api.service.monitoring.HatDataEventBus.DataCreatedEvent
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
-import org.hatdex.hat.resourceManagement.FakeHatConfiguration
 import org.joda.time.DateTime
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
+import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsValue, Json }
-import play.api.{ Application, Logger }
 
 import java.util.UUID
 
-class HatDataStatsProcessorSpec
-    extends BaseSpec
-    with BeforeAndAfter
-    with BeforeAndAfterAll
-    with HatDataStatsProcessorContext {
-
-  val logger: Logger = Logger(this.getClass)
+class HatDataStatsProcessorSpec extends BaseSpec with HatDataStatsProcessorContext {
 
   "The `computeInboundStats` method" should "Correctly count numbers of values for simple objects" in {
-    import io.dataswift.models.hat.json.DataStatsFormat._
-
     val service                 = application.injector.instanceOf[HatDataStatsProcessor]
     val stats: InboundDataStats = service.computeInboundStats(simpleDataCreatedEvent)
-
-    logger.debug(s"Got back stats: ${Json.prettyPrint(Json.toJson(stats)(inboundDataStatsFormat))}")
 
     stats.logEntry must equal("test item")
     stats.statsType must equal("inbound")
@@ -86,7 +74,6 @@ trait HatDataStatsProcessorContext {
   }
 
   lazy val application: Application = new GuiceApplicationBuilder()
-    .configure(FakeHatConfiguration.config)
     .overrides(new ExtrasModule)
     .build()
 

@@ -39,12 +39,11 @@ object Dependencies {
     val PlayGuard             = "2.5.0"
     val PrettyTime            = "5.0.0.Final"
     val Nbvcxz                = "1.5.0"
-    val PlayMemcached         = "0.11.0"
 
     val Adjudicator = "0.1.0-SNAPSHOT"
-    val DexClient   = "3.2.1"
-    val DsBackend   = "2.2.1"
-    val DsTestTools = "0.2.3"
+    val DexClient   = "3.2.2"
+    val DsBackend   = "2.3.1"
+    val DsTestTools = "0.2.5"
   }
 
   val resolvers = Seq(
@@ -87,11 +86,11 @@ object Dependencies {
       val nbvcxz           = "me.gosimple"            % "nbvcxz"                        % Version.Nbvcxz
       val alpakkaAwsLambda = "com.lightbend.akka"    %% "akka-stream-alpakka-awslambda" % Version.AlpakkaAwsLambda
       val apacheCommonLang = "org.apache.commons"     % "commons-lang3"                 % Version.CommonsLang3
-      val playMemcached    = "com.github.mumoshu"    %% "play2-memcached-play28"        % Version.PlayMemcached
     }
 
     object Backend {
-      val logPlay = "io.dataswift" %% "log-play" % Version.DsBackend
+      val logPlay    = "io.dataswift" %% "log-play"    % Version.DsBackend
+      val redisCache = "io.dataswift" %% "redis-cache" % Version.DsBackend
     }
 
     object HATDeX {

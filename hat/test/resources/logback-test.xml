@@ -4,7 +4,8 @@
             <pattern>%d{"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", UTC} [%-5level] %logger{1} - %msg%n</pattern>
         </encoder>
     </appender>
-    <logger name="org.hatdex.hat.api.service.richData.RichDataService" level="debug"/>
+    <logger name="redis.actors.RedisClientActor" level="off"/>
+    <logger name="liquibase" level="error"/>
     <root level="warn">
         <appender-ref ref="CONSOLE"/>
     </root>
