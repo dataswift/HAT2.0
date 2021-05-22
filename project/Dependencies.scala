@@ -99,7 +99,7 @@ object Dependencies {
       val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.1.2"
     }
 
-    val scalaGuice  = "net.codingwell"     %% "scala-guice"  % "4.2.11"
+    val scalaGuice  = "net.codingwell"     %% "scala-guice"  % "5.0.1"
     val circeConfig = "io.circe"           %% "circe-config" % "0.8.0"
     val janino      = "org.codehaus.janino" % "janino"       % "3.1.3"
 
