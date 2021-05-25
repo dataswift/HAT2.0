@@ -113,18 +113,12 @@ trait HatMailer extends Mailer {
 
   def verifyEmail(
       email: String,
+      appName: String,
+      appLogoUrl: String,
       verificationLink: String
     )(implicit m: MessagesApi,
       lang: Lang,
       server: HatServer): Future[Unit]
-
-  def customWelcomeEmail(
-      email: String,
-      appName: Option[String],
-      appLogoUrl: Option[String],
-      verificationLink: String
-    )(implicit m: MessagesApi,
-      lang: Lang): Future[Unit]
 
   def emailVerified(
       email: String,
@@ -145,19 +139,18 @@ class HatMailerImpl @Inject() (
   def serverErrorNotify(
       request: RequestHeader,
       exception: UsefulException
-    )(implicit m: Messages): Future[Unit] = {
+    )(implicit m: Messages): Future[Unit] =
     sendEmail(adminEmails: _*)(
       from = emailFrom,
       subject = s"HAT server ${request.host} error #${exception.id}",
       bodyHtml = views.html.mails.emailServerError(request, exception).toString(),
       bodyText = views.html.mails.emailServerError(request, exception).toString()
     )
-  }
 
   def serverExceptionNotify(
       request: RequestHeader,
       exception: Throwable
-    )(implicit m: Messages): Future[Unit] = {
+    )(implicit m: Messages): Future[Unit] =
     sendEmail(adminEmails: _*)(
       from = emailFrom,
       subject =
@@ -165,14 +158,13 @@ class HatMailerImpl @Inject() (
       bodyHtml = views.html.mails.emailServerThrowable(request, exception).toString(),
       bodyText = views.html.mails.emailServerThrowable(request, exception).toString()
     )
-  }
 
   def passwordReset(
       email: String,
       resetLink: String
     )(implicit messages: MessagesApi,
       lang: Lang,
-      server: HatServer): Future[Unit] = {
+      server: HatServer): Future[Unit] =
     sendEmail(email)(
       from = emailFrom,
       subject = messages("email.dataswift.auth.subject.resetPassword"),
@@ -180,61 +172,43 @@ class HatMailerImpl @Inject() (
       bodyText = views.txt.mails.emailAuthResetPassword(email, resetLink).toString()
     )
 
-  }
-
   def passwordChanged(
       email: String
     )(implicit messages: MessagesApi,
       lang: Lang,
-      server: HatServer): Future[Unit] = {
+      server: HatServer): Future[Unit] =
     sendEmail(email)(
       from = emailFrom,
       subject = messages("email.dataswift.auth.subject.passwordChanged"),
       bodyHtml = views.html.mails.emailAuthPasswordChanged().toString(),
       bodyText = views.txt.mails.emailAuthPasswordChanged().toString()
     )
-  }
 
   def verifyEmail(
       email: String,
+      appName: String,
+      appLogoUrl: String,
       verificationLink: String
     )(implicit messages: MessagesApi,
       lang: Lang,
-      server: HatServer): Future[Unit] = {
+      server: HatServer): Future[Unit] =
     sendEmail(email)(
       from = emailFrom,
       subject = messages("email.dataswift.auth.subject.verifyEmail"),
-      bodyHtml = views.html.mails.emailAuthVerifyEmail(email, verificationLink).toString(),
-      bodyText = views.txt.mails.emailAuthVerifyEmail(email, verificationLink).toString()
+      bodyHtml = views.html.mails.emailAuthVerifyEmail(email, appName, appLogoUrl, verificationLink).toString(),
+      bodyText = views.txt.mails.emailAuthVerifyEmail(email, appName, appLogoUrl, verificationLink).toString()
     )
-  }
-
-  def customWelcomeEmail(
-      email: String,
-      appName: Option[String],
-      appLogoUrl: Option[String],
-      verificationLink: String
-    )(implicit messages: MessagesApi,
-      lang: Lang): Future[Unit] = {
-    sendEmail(email)(
-      from = emailFrom,
-      subject = messages("email.dataswift.auth.subject.verifyEmail"),
-      bodyHtml = views.html.mails.emailAuthCustomWelcome(email, appName, appLogoUrl, verificationLink).toString(),
-      bodyText = views.txt.mails.emailAuthCustomWelcome(email, appName, appLogoUrl, verificationLink).toString()
-    )
-  }
 
   def emailVerified(
       email: String,
       loginLink: String
     )(implicit messages: MessagesApi,
       lang: Lang,
-      server: HatServer): Future[Unit] = {
+      server: HatServer): Future[Unit] =
     sendEmail(email)(
       from = emailFrom,
       subject = messages("email.dataswift.auth.subject.verifyEmail"),
       bodyHtml = views.html.mails.emailHatClaimed(email, loginLink).toString(),
       bodyText = views.txt.mails.emailHatClaimed(email, loginLink).toString()
     )
-  }
 }

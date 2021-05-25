@@ -23,8 +23,8 @@
 package org.hatdex.hat.utils
 
 import io.dataswift.test.common.BaseSpec
-import play.api.Logger
 import org.hatdex.hat.phata.models.{ ApiVerificationCompletionRequest, ApiVerificationRequest, HattersClaimPayload }
+import play.api.Logger
 
 class HatClaimRedactionTests extends BaseSpec {
 

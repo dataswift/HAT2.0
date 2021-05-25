@@ -26,33 +26,16 @@ package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.test._
 import io.dataswift.models.hat.applications.{ Application, HatApplication }
-import io.dataswift.models.hat.json.ApplicationJsonProtocol
+import io.dataswift.models.hat.json.ApplicationJsonProtocol._
+import io.dataswift.models.hat.json.HatJsonFormats.{ accessTokenFormat, errorMessage }
 import io.dataswift.models.hat.{ AccessToken, ErrorMessage }
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.service.applications.ApplicationsServiceContext
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll }
-import play.api.Logger
 import play.api.libs.json.{ JsObject, JsString }
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 class ApplicationsSpec extends ApplicationsServiceContext {
-
-  val logger: Logger = Logger(this.getClass)
-
-  before {
-    import org.hatdex.hat.dal.Tables
-    import org.hatdex.libs.dal.HATPostgresProfile.api._
-    val action = DBIO.seq(Tables.ApplicationStatus.delete)
-    Await.result(db.run(action), 60.seconds)
-  }
-
-  import ApplicationJsonProtocol._
-  import io.dataswift.models.hat.json.HatJsonFormats.{ accessTokenFormat, errorMessage }
 
   "The `applications` method" should "Return list of available applications" in {
     val request = FakeRequest("GET", "http://hat.hubofallthings.net")
@@ -190,7 +173,6 @@ class ApplicationsSpec extends ApplicationsServiceContext {
     val result     = controller.applicationToken(notablesApp.id).apply(request)
 
     Helpers.status(result) must equal(FORBIDDEN)
-    logger.info(s"Got back result ${contentAsString(result)}")
     val error = contentAsJson(result) \ "error"
     error.get.as[String] must equal("Forbidden")
   }

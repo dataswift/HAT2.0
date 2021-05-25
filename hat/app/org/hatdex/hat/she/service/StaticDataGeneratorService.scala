@@ -25,15 +25,7 @@ package org.hatdex.hat.she.service
 
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.resourceManagement.HatServer
-import org.hatdex.hat.she.mappers.{
-  FacebookProfileStaticDataMapper,
-  FitbitProfileStaticDataMapper,
-  InstagramProfileStaticDataMapper,
-  SpotifyProfileStaticDataMapper,
-  StaticDataEndpointMapper,
-  TwitterProfileStaticDataMapper,
-  UberProfileStaticDataMapper
-}
+import org.hatdex.hat.she.mappers._
 import org.hatdex.hat.she.models.StaticDataValues
 import play.api.Logger
 

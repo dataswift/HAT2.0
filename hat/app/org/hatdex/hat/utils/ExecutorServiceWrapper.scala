@@ -28,7 +28,7 @@
 
 package org.hatdex.hat.utils
 
-import java.util.concurrent.{ Callable, CancellationException, ExecutorService, TimeUnit, Future => JavaFuture }
+import java.util.concurrent.{ Callable, CancellationException, ExecutorService, Future => JavaFuture, TimeUnit }
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, ExecutionContext, Future, Promise }
 import scala.jdk.CollectionConverters._

@@ -24,15 +24,14 @@
 
 package org.hatdex.hat.she.service
 
-import com.google.inject.{ AbstractModule, Provides }
+import com.google.inject.Provides
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.applications._
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.HATTestContext
-import org.hatdex.hat.resourceManagement.FakeHatConfiguration
 import org.hatdex.hat.she.models._
 import org.joda.time.DateTime
-import play.api.{ Application }
+import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsBoolean, JsObject }
 
@@ -43,7 +42,7 @@ trait FunctionServiceContext extends HATTestContext {
   /**
     * A fake Guice module.
     */
-  class CustomisedFakeModule extends AbstractModule with ScalaModule {
+  class CustomisedFakeModule extends ScalaModule {
 
     @Provides
     def provideFunctionExecutableRegistry(): FunctionExecutableRegistry =
@@ -51,9 +50,8 @@ trait FunctionServiceContext extends HATTestContext {
   }
 
   override lazy val application: Application = new GuiceApplicationBuilder()
-    .configure(FakeHatConfiguration.config)
-    .overrides(new FakeModule)
-    .overrides(new ExtrasModule)
+    .configure(conf)
+    .overrides(new IntegrationSpecModule)
     .overrides(new CustomisedFakeModule)
     .build()
 

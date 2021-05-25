@@ -44,10 +44,6 @@ import software.amazon.awssdk.services.lambda.model.{ InvokeRequest, InvokeRespo
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 
-import java.util.concurrent.ExecutorService
-import javax.inject.Inject
-import scala.concurrent.{ ExecutionContext, Future }
-
 class LambdaFunctionExecutable(
     id: String,
     version: Version,

@@ -32,6 +32,7 @@ import io.dataswift.models.hat.applications.{ ApplicationStatus, HatApplication,
 import org.hatdex.hat.api.service.applications.ApplicationExceptions.HatApplicationSetupException
 import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataService }
 import org.joda.time.DateTime
+import org.scalatest.BeforeAndAfter
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
 
@@ -39,7 +40,7 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class ApplicationsServiceSpec extends ApplicationsServiceContext {
+class ApplicationsServiceSpec extends ApplicationsServiceContext with BeforeAndAfter {
 
   "The `applicationStatus` parameterless method" should "List all available applications" in {
     val service = application.injector.instanceOf[ApplicationsService]
@@ -54,10 +55,15 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
     Await.result(result, 20.seconds)
   }
 
-  it should "Include setup applications" in {
+  "The `applicationStatus` method" should "Return `active=false` status for Internal status check apps that are not setup" in {
+    val service = application.injector.instanceOf[ApplicationsService]
+    val app     = Await.result(service.applicationStatus(notablesApp.id), 20.seconds).value
+    app.active mustBe false
+  }
+
+  "The `applicationStatus` parameterless method" should "Include setup applications" in {
     val service = application.injector.instanceOf[ApplicationsService]
     val result = for {
-
       _ <- service.setup(HatApplication(notablesApp, setup = false, enabled = false, active = false, None, None, None))
       apps <- service.applicationStatus()
     } yield {
@@ -65,8 +71,7 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
       apps.find(_.application.id == notablesAppDebitless.id) must not be empty
       apps.find(_.application.id == notablesAppIncompatible.id) must not be empty
       val setupApp = apps.find(_.application.id == notablesApp.id)
-      setupApp must not be empty
-      setupApp.get.setup must equal(true)
+      setupApp.value.setup mustBe true
     }
     Await.result(result, 20.seconds)
   }
@@ -74,40 +79,22 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
   "The `applicationStatus` method" should "Provide status for a specific application" in {
     val service = application.injector.instanceOf[ApplicationsService]
     val result = for {
-      app <- service.applicationStatus(notablesApp.id)
-    } yield {
-      app must not be empty
-      app.get.application.id must equal(notablesApp.id)
-    }
+      Some(app) <- service.applicationStatus(notablesApp.id)
+    } yield app.application.id mustBe notablesApp.id
     Await.result(result, 20.seconds)
-
   }
 
   it should "Return `None` when application is not found by ID" in {
     val service = application.injector.instanceOf[ApplicationsService]
-    val result = for {
-      app <- service.applicationStatus("randomid")
-    } yield app
-    val app = Await.result(result, 20.seconds)
-    app must equal(None)
-  }
-
-  it should "Return `active=false` status for Internal status check apps that are not setup" in {
-    val service = application.injector.instanceOf[ApplicationsService]
-    val result = for {
-      app <- service.applicationStatus(notablesApp.id)
-    } yield app must not be empty
-    // TODO: Failing in CI
-    //app.get.active must equal(false)
-    Await.result(result, 20.seconds)
+    Await.result(service.applicationStatus("randomid"), 20.seconds) mustBe None
   }
 
   it should "Return `active=true` status and most recent data timestamp for active app" in {
     val service     = application.injector.instanceOf[ApplicationsService]
     val dataService = application.injector.instanceOf[RichDataService]
     val result = for {
-      app <- service.applicationStatus(notablesApp.id)
-      _ <- service.setup(app.get)
+      Some(initialApp) <- service.applicationStatus(notablesApp.id)
+      _ <- service.setup(initialApp)
       _ <- dataService.saveData(
              owner.userId,
              Seq(
@@ -121,13 +108,10 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
              ),
              skipErrors = true
            )
-      app <- service.applicationStatus(notablesApp.id, bustCache = true)
+      Some(app) <- service.applicationStatus(notablesApp.id, bustCache = true)
     } yield {
-      app must not be empty
-      app.get.setup must equal(true)
-      app.get.needsUpdating === false
-      // TODO: what is the matcher for this?
-      //app.get.mostRecentData must beSome[DateTime]
+      app.setup mustBe true
+      app.needsUpdating.value mustBe false
     }
     Await.result(result, 10.seconds)
   }
@@ -135,14 +119,13 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
   it should "Return `active=false` status for External status check apps that are setup but respond with wrong status" in {
     val service = application.injector.instanceOf[ApplicationsService]
     val result = for {
-      app <- service.applicationStatus(notablesAppExternalFailing.id)
-      appSetupResponse <- service.setup(app.get)
-      setup <- service.applicationStatus(notablesAppExternalFailing.id)
+      Some(app) <- service.applicationStatus(notablesAppExternalFailing.id)
+      appSetupResponse <- service.setup(app)
+      Some(setup) <- service.applicationStatus(notablesAppExternalFailing.id)
     } yield {
-      setup must not be empty
-      appSetupResponse.setup must equal(true)
-      setup.get.setup must equal(true)
-      setup.get.active must equal(false)
+      appSetupResponse.setup mustBe true
+      setup.setup mustBe true
+      setup.active mustBe false
     }
     Await.result(result, 10.seconds)
   }
@@ -151,13 +134,12 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
     val service = application.injector.instanceOf[ApplicationsService]
 
     val result = for {
-      app <- service.applicationStatus(notablesAppExternal.id)
-      _ <- service.setup(app.get)
-      setup <- service.applicationStatus(notablesAppExternal.id)
+      Some(app) <- service.applicationStatus(notablesAppExternal.id)
+      _ <- service.setup(app)
+      Some(setup) <- service.applicationStatus(notablesAppExternal.id)
     } yield {
-      setup must not be empty
-      setup.get.setup must equal(true)
-      setup.get.active must equal(true)
+      setup.setup mustBe true
+      setup.active mustBe true
     }
 
     Await.result(result, 10.seconds)
@@ -169,11 +151,10 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
       _ <- service.setup(
              HatApplication(notablesAppIncompatible, setup = false, enabled = false, active = false, None, None, None)
            )
-      app <- service.applicationStatus(notablesAppIncompatibleUpdated.id)
+      Some(app) <- service.applicationStatus(notablesAppIncompatibleUpdated.id)
     } yield {
-      app must not be empty
-      app.get.setup must equal(true)
-      app.get.needsUpdating === true
+      app.setup mustBe true
+      app.needsUpdating mustBe Some(true)
     }
     Await.result(result, 10.seconds)
   }
@@ -183,18 +164,17 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
     val dataDebitService = application.injector.instanceOf[DataDebitService]
     val cache            = application.injector.instanceOf[AsyncCacheApi]
     val result = for {
-      app <- service.applicationStatus(notablesApp.id)
-      _ <- service.setup(app.get)(hatServer, owner, fakeRequest)
-      _ <- dataDebitService.dataDebitDisable(app.get.application.dataDebitId.get, cancelAtPeriodEnd = false)
+      Some(app) <- service.applicationStatus(notablesApp.id)
+      _ <- service.setup(app)(hatServer, owner, fakeRequest)
+      _ <- dataDebitService.dataDebitDisable(app.application.dataDebitId.get, cancelAtPeriodEnd = false)
       _ <- cache.remove(
-             service.appCacheKey(app.get.application.id)
-           ) //cache.remove(s"apps:${hatServer.domain}:${app.get.application.id}")
-      _ <- cache.get(service.appCacheKey(app.get.application.id))
-      setup <- service.applicationStatus(app.get.application.id)
+             service.appCacheKey(app.application.id)
+           ) //cache.remove(s"apps:${hatServer.domain}:${app.application.id}")
+      _ <- cache.get(service.appCacheKey(app.application.id))
+      Some(setup) <- service.applicationStatus(app.application.id)
     } yield {
-      setup must not be empty
-      setup.get.setup must equal(true)
-      setup.get.active must equal(false)
+      setup.setup mustBe true
+      setup.active mustBe false
     }
     Await.result(result, 10.seconds)
   }
@@ -203,15 +183,13 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
     val service          = application.injector.instanceOf[ApplicationsService]
     val dataDebitService = application.injector.instanceOf[DataDebitService]
     val result = for {
-      app <- service.applicationStatus(notablesApp.id)
-      setup <- service.setup(app.get)
-      dd <- dataDebitService.dataDebit(notablesApp.dataDebitId.get)
-      _ <- dataDebitService.dataDebit(app.get.application.dataDebitId.get)
+      Some(app) <- service.applicationStatus(notablesApp.id)
+      setup <- service.setup(app)
+      dd <- dataDebitService.dataDebit(notablesApp.dataDebitId.value)
+      _ <- dataDebitService.dataDebit(app.application.dataDebitId.value)
     } yield {
-      setup.active must equal(true)
-      dd must not be empty
-      dd.get.activePermissions must not be empty
-      dd.get.activePermissions.get.bundle.name must equal(notablesApp.permissions.dataRequired.get.bundle.name)
+      setup.active mustBe true
+      dd.value.activePermissions.value.bundle.name must equal(notablesApp.permissions.dataRequired.get.bundle.name)
     }
     Await.result(result, 10.seconds)
   }
@@ -219,9 +197,9 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
   it should "Enable an application and update its status with no data debit required" in {
     val service = application.injector.instanceOf[ApplicationsService]
     val result = for {
-      app <- service.applicationStatus(notablesAppDebitless.id)
-      setup <- service.setup(app.get)
-    } yield setup.active must equal(true)
+      Some(app) <- service.applicationStatus(notablesAppDebitless.id)
+      setup <- service.setup(app)
+    } yield setup.active mustBe true
 
     Await.result(result, 10.seconds)
   }
@@ -238,14 +216,14 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
   "Application `setup` method for applications with dependencies" should "Enable plug dependencies" in {
     val service = application.injector.instanceOf[ApplicationsService]
     val result = for {
-      app <- service.applicationStatus(notablesAppDebitlessWithPlugDependency.id)
-      setup <- service.setup(app.get)
+      Some(app) <- service.applicationStatus(notablesAppDebitlessWithPlugDependency.id)
+      setup <- service.setup(app)
       dependency <- service.applicationStatus(plugApp.id)
     } yield {
-      setup.active must equal(true)
-      setup.enabled must equal(true)
+      setup.active mustBe true
+      setup.enabled mustBe true
       setup.dependenciesEnabled must not be empty
-      dependency.get.enabled === true
+      dependency.value.enabled === true
     }
 
     Await.result(result, 10.seconds)
@@ -254,11 +232,11 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
   it should "Return partial success for application with invalid dependencies" in {
     val service = application.injector.instanceOf[ApplicationsService]
     val result = for {
-      app <- service.applicationStatus(notablesAppDebitlessWithInvalidDependency.id)
-      setup <- service.setup(app.get)
+      Some(app) <- service.applicationStatus(notablesAppDebitlessWithInvalidDependency.id)
+      setup <- service.setup(app)
     } yield {
-      setup.active must equal(true)
-      setup.enabled must equal(true)
+      setup.active mustBe true
+      setup.enabled mustBe true
       setup.dependenciesEnabled === false
     }
 
@@ -269,14 +247,13 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
     val service          = application.injector.instanceOf[ApplicationsService]
     val dataDebitService = application.injector.instanceOf[DataDebitService]
     val result = for {
-      app <- service.applicationStatus(notablesApp.id)
-      _ <- service.setup(app.get)
-      setup <- service.disable(app.get)
-      dd <- dataDebitService.dataDebit(app.get.application.dataDebitId.get)
+      Some(app) <- service.applicationStatus(notablesApp.id)
+      _ <- service.setup(app)
+      setup <- service.disable(app)
+      dd <- dataDebitService.dataDebit(app.application.dataDebitId.get)
     } yield {
-      setup.active must equal(false)
-      dd must not be empty
-      dd.get.activePermissions must equal(None)
+      setup.active mustBe false
+      dd.value.activePermissions mustBe None
     }
 
     Await.result(result, 10.seconds)
@@ -285,10 +262,10 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
   it should "Disable an application without a data debit" in {
     val service = application.injector.instanceOf[ApplicationsService]
     val result = for {
-      app <- service.applicationStatus(notablesAppDebitless.id)
-      _ <- service.setup(app.get)
-      setup <- service.disable(app.get)
-    } yield setup.active must equal(false)
+      Some(app) <- service.applicationStatus(notablesAppDebitless.id)
+      _ <- service.setup(app)
+      setup <- service.disable(app)
+    } yield setup.active mustBe false
 
     Await.result(result, 10.seconds)
   }
@@ -335,7 +312,7 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
                 "token"
         )
         .map { result =>
-          result must equal(true)
+          result mustBe true
         }
       Await.result(result, 10.seconds)
     }
@@ -347,7 +324,7 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
       val result = service
         .status(ApplicationStatus.External(Version("1.0.0"), "/status", 200, None, None, None, DateTime.now()), "token")
         .map { result =>
-          result must equal(true)
+          result mustBe true
         }
       Await.result(result, 10.seconds)
     }
@@ -361,7 +338,7 @@ class ApplicationsServiceSpec extends ApplicationsServiceContext {
                 "token"
         )
         .map { result =>
-          result must equal(false)
+          result mustBe false
         }
       Await.result(result, 10.seconds)
     }
