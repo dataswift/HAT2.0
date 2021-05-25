@@ -101,3 +101,16 @@ jobs:
           platforms: linux/amd64,linux/arm64
           cache-from: type=registry,ref=ghcr.io/datasiwft/hat:latest
           file: hat/target/docker/stage/Dockerfile
+
+      - name: Slack
+        uses: lazy-actions/slatify@master
+        if: failure()
+        with:
+          type: ${{ job.status }}
+          job_name: "*${{ env.GITHUB_WORKFLOW }}*"
+          channel: "ci"
+          commit: true
+          mention: "here"
+          mention_if: "failure"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          url: ${{ secrets.SLACK_WEBHOOK_URL }}
