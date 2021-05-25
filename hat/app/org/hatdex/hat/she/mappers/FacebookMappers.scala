@@ -1,14 +1,6 @@
 package org.hatdex.hat.she.mappers
 
-import io.dataswift.models.hat.applications.{
-  DataFeedItem,
-  DataFeedItemContent,
-  DataFeedItemLocation,
-  DataFeedItemMedia,
-  DataFeedItemTitle,
-  LocationAddress,
-  LocationGeo
-}
+import io.dataswift.models.hat.applications._
 import io.dataswift.models.hat.{ EndpointQuery, EndpointQueryFilter, PropertyQuery }
 import org.hatdex.hat.she.models.StaticDataValues
 import org.joda.time.DateTime
