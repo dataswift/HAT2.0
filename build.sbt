@@ -102,7 +102,7 @@ lazy val hat = project
 // Enable the semantic DB for scalafix
 inThisBuild(
   List(
-    scalaVersion := "2.13.5",
+    scalaVersion := "2.13.6",
     scalafixScalaBinaryVersion := "2.13",
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
