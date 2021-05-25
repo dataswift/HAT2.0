@@ -89,5 +89,5 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
-          cache-from: type=registry,ref=ghcr.io/datasiwft/base:latest
+          cache-from: type=registry,ref=ghcr.io/datasiwft/hat:latest
           file: hat/target/docker/stage/Dockerfile
