@@ -1,14 +1,7 @@
 package org.hatdex.hat.client
 
 import io.dataswift.adjudicator.Types.{ ContractId, HatName }
-import org.hatdex.hat.client.AdjudicatorRequestTypes.{
-  ContractJoined,
-  ContractLeft,
-  JoinContractServiceFailure,
-  LeaveContractRequestFailure,
-  PublicKeyReceived,
-  PublicKeyRequestFailure
-}
+import org.hatdex.hat.client.AdjudicatorRequestTypes._
 
 import scala.concurrent.{ ExecutionContext, Future }
 

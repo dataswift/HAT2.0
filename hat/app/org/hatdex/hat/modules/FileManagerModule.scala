@@ -26,7 +26,7 @@ package org.hatdex.hat.modules
 
 import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper
 import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
-import com.google.inject.{ AbstractModule, Provides }
+import com.google.inject.Provides
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.repository.{ FileMetadataRepository, FileMetadataRepositorySlick }
 import org.hatdex.hat.api.service.{

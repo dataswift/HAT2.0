@@ -35,7 +35,7 @@ import org.hatdex.hat.utils.Utils
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.{ DateTime, LocalDateTime }
 import org.postgresql.util.PSQLException
-import play.api.{ Logger, Logging }
+import play.api.Logging
 import play.api.libs.json._
 
 import java.security.MessageDigest

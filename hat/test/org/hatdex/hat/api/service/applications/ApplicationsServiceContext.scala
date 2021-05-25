@@ -26,7 +26,6 @@ package org.hatdex.hat.api.service.applications
 
 import akka.Done
 import akka.util.ByteString
-import com.google.inject.AbstractModule
 import io.dataswift.models.hat._
 import io.dataswift.models.hat.applications.ApplicationKind.{ App, Contract }
 import io.dataswift.models.hat.applications._
@@ -46,19 +45,18 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.test.FakeRequest
-import play.api.{ Logger, Application => PlayApplication }
+import play.api.{ Application => PlayApplication, Logger }
 import play.core.server.Server
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class ApplicationsServiceContext extends HATTestContext {
   override lazy val application: PlayApplication = new GuiceApplicationBuilder()
     .configure(conf)
-    .overrides(new FakeModule)
-    .overrides(new CustomisedFakeModule)
+    .overrides(new IntegrationSpecModule)
+    .overrides(new AppProviderModule)
     .build()
-
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   private val logger = Logger(this.getClass)
 
@@ -374,7 +372,7 @@ class ApplicationsServiceContext extends HATTestContext {
     mockStatsReporter
   }
 
-  class CustomisedFakeModule extends AbstractModule with ScalaModule {
+  class AppProviderModule extends ScalaModule {
     override def configure(): Unit = {
       bind[TrustedApplicationProvider].toInstance(
         new TestApplicationProvider(
@@ -390,7 +388,6 @@ class ApplicationsServiceContext extends HATTestContext {
           )
         )
       )
-
       bind[ApplicationStatusCheckService].toInstance(mockStatusChecker)
       bind[StatsReporter].toInstance(mockStatsReporter)
     }

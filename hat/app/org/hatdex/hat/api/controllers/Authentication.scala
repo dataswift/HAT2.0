@@ -436,7 +436,11 @@ class Authentication @Inject() (
                     val emailVerificationOptions =
                       EmailVerificationOptions(email, language, app.application.id, maybeSetupUrl.getOrElse(""))
                     val verificationLink = emailVerificationLink(request.host, token.id, emailVerificationOptions)
-                    mailer.verifyEmail(email, verificationLink)
+                    mailer.verifyEmail(email,
+                                       app.application.info.name,
+                                       app.application.info.graphics.logo.normal,
+                                       verificationLink
+                    )
 
                     response
                 }
