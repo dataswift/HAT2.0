@@ -9,7 +9,6 @@ env:
   RUMPEL: live
   RUMPEL_ALT: latest
   RUMPEL_BUCKET: dswift-hat-sandbox-frontend-build-artifacts
-  REPOSITORY: dataswift/hat
 
 jobs:
   build:
