@@ -71,6 +71,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_DATASWIFT_USER }}
           password: ${{ secrets.DOCKERHUB_DATASWIFT_PASS }}
 
+      - id: date
+        run: |
+          echo "::set-output name=ts::$(date +%s)"
+
       - name: Container - Meta
         id: meta
         uses: docker/metadata-action@v3
@@ -78,7 +82,7 @@ jobs:
           images: |
             dataswift/hat
           tags: |
-            type=sha,prefix=main-,format=short
+            type=sha,prefix=main-,suffix=-${{ steps.date.outputs.ts }},format=short
 
       - name: Container - Build & Push
         uses: docker/build-push-action@v2
