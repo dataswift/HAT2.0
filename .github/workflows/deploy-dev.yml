@@ -79,7 +79,7 @@ jobs:
           images: |
             dataswift/hat
           tags: |
-            type=sha,prefix=dev-,format=short
+            type=sha,prefix=dev-,format=long
 
       - name: Container - Build & Push
         uses: docker/build-push-action@v2
