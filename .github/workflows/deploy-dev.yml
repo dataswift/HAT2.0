@@ -58,7 +58,7 @@ jobs:
           cd -
 
       - name: App - Build
-        run: sbt -Denv=prod -Dhttp.port=8080 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null docker:stage
+        run: sbt docker:stage
 
       - name: Container - Setup QEMU
         uses: docker/setup-qemu-action@v1
