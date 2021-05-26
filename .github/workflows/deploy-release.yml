@@ -57,7 +57,7 @@ jobs:
           cd -
 
       - name: App - Build
-        run: sbt docker:stage
+        run: sbt Docker/stage
 
       - name: Container - Setup QEMU
         uses: docker/setup-qemu-action@v1
