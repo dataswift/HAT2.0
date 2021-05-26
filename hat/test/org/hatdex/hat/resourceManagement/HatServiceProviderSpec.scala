@@ -24,7 +24,6 @@
 
 package org.hatdex.hat.resourceManagement
 
-import io.dataswift.test.common.BaseSpec
 import org.hatdex.hat.api.HATTestContext
 import org.mockito.{ Mockito => MockitoMockito }
 import play.api.Logger

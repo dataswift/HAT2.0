@@ -4,9 +4,9 @@ import eu.timepit.refined.collection.NonEmpty
 import eu.timepit.refined.refineV
 import io.dataswift.adjudicator.Types.{ ContractId, HatName, ShortLivedToken }
 import io.dataswift.models.hat.json.HatJsonFormats
+import io.dataswift.models.hat.json.RichDataJsonFormats._
 import io.dataswift.models.hat.{ ApiHatFile, EndpointData }
 import play.api.libs.json.{ JsValue, Json, Reads }
-import io.dataswift.models.hat.json.RichDataJsonFormats._
 
 import java.util.UUID
 import scala.util.Try

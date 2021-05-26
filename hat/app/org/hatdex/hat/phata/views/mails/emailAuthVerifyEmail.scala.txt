@@ -1,21 +1,47 @@
 @import play.api.i18n.{ Lang, MessagesApi }
 
-@(email: String, verificationLink: String)(implicit messagesApi: MessagesApi, language: Lang)
+@(email: String, appName: String, appLogo: String, verificationLink: String)(implicit messagesApi: MessagesApi, language: Lang)
 
-@messagesApi("email.dataswift.auth.welcome.to.dataswift")
+@messagesApi("email.dataswift.auth.welcome.to.pda", appName)
 
 @messagesApi("email.dataswift.auth.hi"),
 
-@messagesApi("email.dataswift.auth.someone.signed.up") [@email].
+@messagesApi("email.dataswift.auth.pda.was.created", email)
+
+====================
+
+@appLogo
+
+====================
 
 @messagesApi("email.dataswift.auth.if.this.was.you")
 @verificationLink
 
+@messagesApi("email.dataswift.auth.if.that.doesnt.work")
+@verificationLink
+
 @messagesApi("email.dataswift.auth.if.this.was.not.you")
-contact@@dataswift.io
+support@@dataswift.io
 
 @messagesApi("email.dataswift.auth.temporary.links")
+
+====================
+
+@messagesApi("email.hatClaim.safePlace.title")
+
+@messagesApi("email.hatClaim.safePlace.description")
+
 
 @messagesApi("email.dataswift.auth.thank.you")
 
 @messagesApi("email.dataswift.auth.dataswift")
+
+====================
+
+@messagesApi("email.dataswift.auth.footer.copyrights")
+
+@messagesApi("email.dataswift.auth.footer.authorised.by")
+
+@messagesApi("email.dataswift.auth.footer.hat.community.foundation")
+
+@messagesApi("email.dataswift.auth.footer.financial.conduct.authority")
