@@ -27,10 +27,18 @@ package org.hatdex.hat.she.functions
 import io.dataswift.models.hat.EndpointData
 import io.dataswift.models.hat.json.RichDataJsonFormats
 import org.hatdex.hat.she.service.FunctionServiceContext
+import org.joda.time.DateTimeUtils
+import org.scalatest.BeforeAndAfterAll
 import play.api.libs.json.{ Format, Json }
 
-class DataFeedDirectMapperContext extends FunctionServiceContext {
+class DataFeedDirectMapperContext extends FunctionServiceContext with BeforeAndAfterAll {
   implicit private val endpointDataFormat: Format[EndpointData] = RichDataJsonFormats.endpointDataFormat
+
+  override def beforeAll: Unit =
+    DateTimeUtils.setCurrentMillisFixed(1514764800000L)
+
+  override def afterAll: Unit =
+    DateTimeUtils.setCurrentMillisSystem()
 
   private val exampleTweetRetweetText =
     """

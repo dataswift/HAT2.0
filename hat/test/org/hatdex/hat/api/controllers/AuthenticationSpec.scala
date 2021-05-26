@@ -34,7 +34,6 @@ import org.hatdex.hat.api.HATTestContext
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.phata.models.{ ApiPasswordChange, ApiPasswordResetRequest, ApiValidationRequest, MailTokenUser }
 import org.joda.time.DateTime
-import play.api.Logger
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Result
 import play.api.test.Helpers._
@@ -47,8 +46,6 @@ import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
 class AuthenticationSpec extends AuthenticationContext {
-
-  val logger: Logger = Logger(this.getClass)
 
   "The `publicKey` method" should "Return public key of the HAT" in {
     val request = FakeRequest("GET", "http://hat.hubofallthings.net")
@@ -296,8 +293,6 @@ class AuthenticationSpec extends AuthenticationContext {
       result <- Helpers.call(controller.handleResetPassword(tokenId), request)
     } yield result
 
-    logger.warn(s"reset pass response: ${contentAsJson(result)}")
-
     status(result) must equal(OK)
   }
 
@@ -309,11 +304,11 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller   = application.injector.instanceOf[Authentication]
     val tokenService = application.injector.instanceOf[MailTokenUserService]
     val tokenId      = UUID.randomUUID().toString
-    val usersService = application.injector.instanceOf[UsersService]
+    val userService  = application.injector.instanceOf[UserService]
 
     val result: Future[Result] = for {
       _ <- tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
-      _ <- usersService.saveUser(
+      _ <- userService.saveUser(
              owner.copy(roles = Seq(DataDebitOwner("")))
            ) // forcing owner user to a different role for the test
       result <- Helpers.call(controller.handleResetPassword(tokenId), request)

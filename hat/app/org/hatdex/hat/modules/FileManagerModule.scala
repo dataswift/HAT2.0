@@ -26,17 +26,25 @@ package org.hatdex.hat.modules
 
 import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper
 import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
-import com.google.inject.{ AbstractModule, Provides }
+import com.google.inject.Provides
 import net.codingwell.scalaguice.ScalaModule
-import org.hatdex.hat.api.service.{ AwsS3Configuration, FileManager, FileManagerS3 }
+import org.hatdex.hat.api.repository.{ FileMetadataRepository, FileMetadataRepositorySlick }
+import org.hatdex.hat.api.service.{
+  AwsS3Configuration,
+  FileManager,
+  FileManagerS3,
+  FileUploadService,
+  FileUploadServiceImpl
+}
 import play.api.Configuration
-import play.api.libs.concurrent.AkkaGuiceSupport
 
 import javax.inject.{ Singleton => JSingleton }
 
-class FileManagerModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
+class FileManagerModule extends ScalaModule {
 
   override def configure(): Unit = {
+    bind[FileUploadService].to[FileUploadServiceImpl]
+    bind[FileMetadataRepository].to[FileMetadataRepositorySlick]
     bind[FileManager].to[FileManagerS3]
     ()
   }

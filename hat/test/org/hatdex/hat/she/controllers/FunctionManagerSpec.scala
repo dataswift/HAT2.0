@@ -24,38 +24,27 @@
 
 package org.hatdex.hat.she.controllers
 
-import akka.util
+import akka.util.Timeout
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.test._
+import io.dataswift.models.hat.json.HatJsonFormats.{ errorMessage, successResponse }
 import io.dataswift.models.hat.{ EndpointQuery, ErrorMessage, SuccessResponse }
 import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.she.functions.DataFeedDirectMapperContext
 import org.hatdex.hat.she.models.FunctionConfiguration
+import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol._
 import org.hatdex.hat.she.service.FunctionService
-import org.joda.time.DateTimeUtils
-import play.api.Logger
 import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.api.test.{ FakeRequest, Helpers }
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
 
 class FunctionManagerSpec extends DataFeedDirectMapperContext {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-  val logger: Logger = Logger(this.getClass)
-
-  import io.dataswift.models.hat.json.HatJsonFormats.{ errorMessage, successResponse }
-  import org.hatdex.hat.she.models.FunctionConfigurationJsonProtocol._
-
-  implicit def defaultAwaitTimeout: util.Timeout = 60.seconds
-
-  override def beforeAll: Unit =
-    DateTimeUtils.setCurrentMillisFixed(1514764800000L)
-
-  override def afterAll: Unit =
-    DateTimeUtils.setCurrentMillisSystem()
+  implicit def defaultAwaitTimeout: Timeout = 60.seconds
 
   "The `functionList` method" should "return status 401 if authenticator but no identity was found" in {
     val request = FakeRequest("GET", "http://hat.hubofallthings.net")

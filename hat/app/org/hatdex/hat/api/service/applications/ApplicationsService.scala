@@ -26,7 +26,6 @@ package org.hatdex.hat.api.service.applications
 import akka.Done
 import akka.actor.ActorSystem
 import com.mohiva.play.silhouette.api.Silhouette
-import dev.profunktor.auth.jwt.JwtSecretKey
 import io.dataswift.adjudicator.Types.ContractId
 import io.dataswift.models.hat.applications._
 import io.dataswift.models.hat.{ AccessToken, EndpointQuery }
@@ -35,19 +34,19 @@ import org.hatdex.hat.api.service.applications.ApplicationExceptions.{
   HatApplicationSetupException
 }
 import org.hatdex.hat.api.service.richData.{ DataDebitService, RichDataDuplicateDebitException, RichDataService }
-import org.hatdex.hat.api.service.{ DalExecutionContext, RemoteExecutionContext, StatsReporter }
+import org.hatdex.hat.api.service.{ DalExecutionContext, StatsReporter }
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.client.AdjudicatorClient
 import org.hatdex.hat.dal.Tables
 import org.hatdex.hat.dal.Tables.ApplicationStatusRow
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.she.service.FunctionService
-import org.hatdex.hat.utils.{ AdjudicatorRequest, FutureTransformations, Utils }
+import org.hatdex.hat.utils.{ FutureTransformations, Utils }
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.DateTime
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json.{ JsObject, JsString }
-import play.api.libs.ws.WSClient
 import play.api.mvc.RequestHeader
 import play.api.{ Configuration, Logging }
 
@@ -56,29 +55,6 @@ import javax.inject.Inject
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Success
-
-class ApplicationStatusCheckService @Inject() (
-    wsClient: WSClient
-  )(implicit val rec: RemoteExecutionContext) {
-
-  def status(
-      statusCheck: ApplicationStatus.Status,
-      token: String): Future[Boolean] =
-    statusCheck match {
-      case _: ApplicationStatus.Internal => Future.successful(true)
-      case s: ApplicationStatus.External => status(s, token)
-    }
-
-  protected def status(
-      statusCheck: ApplicationStatus.External,
-      token: String): Future[Boolean] =
-    wsClient
-      .url(statusCheck.statusUrl)
-      .withHttpHeaders("x-auth-token" -> token)
-      .withRequestTimeout(5000.millis)
-      .get()
-      .map(_.status == statusCheck.expectedStatus)
-}
 
 class ApplicationsService @Inject() (
     cache: AsyncCacheApi,
@@ -91,22 +67,11 @@ class ApplicationsService @Inject() (
     statsReporter: StatsReporter,
     configuration: Configuration,
     system: ActorSystem,
-    wsClient: WSClient
+    adjudicatorClient: AdjudicatorClient
   )(implicit val ec: DalExecutionContext)
     extends Logging {
 
-  private val applicationsCacheDuration = configuration.get[FiniteDuration]("memcached.application-ttl")
-
-  //** Adjudicator
-  private val adjudicatorAddress      = configuration.get[String]("adjudicator.address")
-  private val adjudicatorScheme       = configuration.get[String]("adjudicator.scheme")
-  private val adjudicatorEndpoint     = s"${adjudicatorScheme}${adjudicatorAddress}"
-  private val adjudicatorSharedSecret = configuration.get[String]("adjudicator.sharedSecret")
-  private val adjudicatorClient = new AdjudicatorRequest(
-    adjudicatorEndpoint,
-    JwtSecretKey(adjudicatorSharedSecret),
-    wsClient
-  )
+  private val applicationsCacheDuration = configuration.get[FiniteDuration]("application-cache-ttl")
 
   def hmiDetails(id: String): Future[Option[Application]] =
     trustedApplicationProvider.application(id) // calls cached by TrustedApplicationProvider
@@ -224,8 +189,7 @@ class ApplicationsService @Inject() (
       hatName: String): Future[Any] =
     application.kind match {
       case _: ApplicationKind.Contract =>
-        adjudicatorClient
-          .joinContract(hatName, ContractId(UUID.fromString(application.id)))
+        adjudicatorClient.joinContract(hatName, ContractId(UUID.fromString(application.id)))
       case _ =>
         Future.successful(Done)
     }
@@ -345,13 +309,11 @@ class ApplicationsService @Inject() (
           .map(_ => throw e)
 
       case _: HatApplicationDependencyException =>
-        applicationStatus(application.application.id, bustCache = true).map { maybeApplication =>
-          maybeApplication match {
-            case Some(application) =>
-              application.copy(dependenciesEnabled = Some(false))
-            case None =>
-              throw new NoSuchElementException("Application not found")
-          }
+        applicationStatus(application.application.id, bustCache = true).map {
+          case Some(application) =>
+            application.copy(dependenciesEnabled = Some(false))
+          case None =>
+            throw new NoSuchElementException("Application not found")
         }
     }
   }
@@ -478,7 +440,7 @@ class ApplicationsService @Inject() (
           )
         for {
           ((status, _), canCacheStatus) <- eventualStatus
-          (mostRecentData, canCacheData) <- eventualMostRecentData
+          (mostRecentDateTime, canCacheData) <- eventualMostRecentData
         } yield {
           logger.debug(
             s"Check compatibility between $version and new ${app.status}: ${Version(version)
@@ -494,7 +456,7 @@ class ApplicationsService @Inject() (
                 app.status.compatibility.greaterThan(Version(version))
               ), // Needs updating if setup version beyond compatible
               dependenciesEnabled = None,
-              mostRecentData
+              mostRecentDateTime
             ),
             canCacheStatus && canCacheData
           )
