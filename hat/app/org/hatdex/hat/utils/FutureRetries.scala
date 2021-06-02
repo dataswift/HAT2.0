@@ -56,7 +56,7 @@ object FutureRetries {
       minJitter: Double): List[FiniteDuration] =
     delays.map { delay =>
       val jitter =
-        delay * (minJitter + (maxJitter - minJitter) * Random.nextDouble)
+        delay * (minJitter + (maxJitter - minJitter) * Random.nextDouble())
       jitter match {
         case d: FiniteDuration => d
         case _                 => delay

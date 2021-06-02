@@ -1,11 +1,11 @@
 
 GET           /system/status                                                                 org.hatdex.hat.api.controllers.SystemStatus.status()
-GET           /phata/profile                                                                 org.hatdex.hat.phata.controllers.Phata.profile
-POST          /report-frontend-action                                                        org.hatdex.hat.api.controllers.LogController.logFrontendAction
+GET           /phata/profile                                                                 org.hatdex.hat.phata.controllers.Phata.profile()
+POST          /report-frontend-action                                                        org.hatdex.hat.api.controllers.LogController.logFrontendAction()
 DELETE        /system/destroy-cache                                                          org.hatdex.hat.api.controllers.SystemStatus.destroyCache()
 
 # FILE routes
-POST          /files/upload                                                                  org.hatdex.hat.api.controllers.Files.startUpload
+POST          /files/upload                                                                  org.hatdex.hat.api.controllers.Files.startUpload()
 POST          /files/search                                                                  org.hatdex.hat.api.controllers.Files.listFiles()
 PUT           /files/file/:fileId/complete                                                   org.hatdex.hat.api.controllers.Files.completeUpload(fileId)
 GET           /files/file/:fileId                                                            org.hatdex.hat.api.controllers.Files.getDetail(fileId)
@@ -29,9 +29,9 @@ POST          /data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>               
 DELETE        /data/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>                            org.hatdex.hat.api.controllers.RichData.deleteEndpointData(namespace, endpoint)
 PUT           /data                                                                          org.hatdex.hat.api.controllers.RichData.updateRecords()
 DELETE        /data                                                                          org.hatdex.hat.api.controllers.RichData.deleteDataRecords(records: Seq[java.util.UUID])
-GET           /data/sources                                                                  org.hatdex.hat.api.controllers.RichData.listEndpoints
+GET           /data/sources                                                                  org.hatdex.hat.api.controllers.RichData.listEndpoints()
 POST          /data-link                                                                     org.hatdex.hat.api.controllers.RichData.linkDataRecords(records: Seq[java.util.UUID])
-POST          /data-batch                                                                    org.hatdex.hat.api.controllers.RichData.saveBatchData
+POST          /data-batch                                                                    org.hatdex.hat.api.controllers.RichData.saveBatchData()
 POST          /data-bundle/$bundleId<[0-9a-zA-Z-]+>                                          org.hatdex.hat.api.controllers.RichData.registerBundle(bundleId)
 GET           /data-bundle/$bundleId<[0-9a-zA-Z-]+>                                          org.hatdex.hat.api.controllers.RichData.fetchBundle(bundleId)
 GET           /data-bundle/$bundleId<[0-9a-zA-Z-]+>/structure                                org.hatdex.hat.api.controllers.RichData.bundleStructure(bundleId)
@@ -79,14 +79,14 @@ GET           /she/static/$endpoint<[0-9a-z-/]+>                                
 
 
 # Contract Data
-POST          /contract-data/read/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>              org.hatdex.hat.api.controllers.v1.ContractData.readContractData(namespace, endpoint, orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
-POST          /contract-data/create/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>            org.hatdex.hat.api.controllers.v1.ContractData.createContractData(namespace, endpoint, skipErrors: Option[Boolean])
-PUT           /contract-data/update/$namespace<[0-9a-z-]+>                                   org.hatdex.hat.api.controllers.v1.ContractData.updateContractData(namespace)
+POST          /contract-data/read/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>              org.hatdex.hat.api.controllers.v2.ContractData.readContractData(namespace, endpoint, orderBy: Option[String], ordering: Option[String], skip: Option[Int], take: Option[Int])
+POST          /contract-data/create/$namespace<[0-9a-z-]+>/$endpoint<[0-9a-z-/]+>            org.hatdex.hat.api.controllers.v2.ContractData.createContractData(namespace, endpoint, skipErrors: Option[Boolean])
+PUT           /contract-data/update/$namespace<[0-9a-z-]+>                                   org.hatdex.hat.api.controllers.v2.ContractData.updateContractData(namespace)
 
-POST          /contract/file/upload                                                          org.hatdex.hat.api.controllers.v1.ContractFiles.startUpload
-PUT           /contract/file/:fileId/complete                                                org.hatdex.hat.api.controllers.v1.ContractFiles.completeUpload(fileId)
-POST          /contract/file/:fileId                                                         org.hatdex.hat.api.controllers.v1.ContractFiles.getDetail(fileId)
-PUT           /contract/file/:fileId                                                         org.hatdex.hat.api.controllers.v1.ContractFiles.updateFile(fileId)
-DELETE        /contract/file/:fileId                                                         org.hatdex.hat.api.controllers.v1.ContractFiles.deleteFile(fileId)
-POST          /contract/file/:fileId/content                                                 org.hatdex.hat.api.controllers.v1.ContractFiles.getContent(fileId)
+POST          /contract/file/upload                                                          org.hatdex.hat.api.controllers.v2.ContractFiles.startUpload()
+PUT           /contract/file/:fileId/complete                                                org.hatdex.hat.api.controllers.v2.ContractFiles.completeUpload(fileId)
+POST          /contract/file/:fileId                                                         org.hatdex.hat.api.controllers.v2.ContractFiles.getDetail(fileId)
+PUT           /contract/file/:fileId                                                         org.hatdex.hat.api.controllers.v2.ContractFiles.updateFile(fileId)
+DELETE        /contract/file/:fileId                                                         org.hatdex.hat.api.controllers.v2.ContractFiles.deleteFile(fileId)
+POST          /contract/file/:fileId/content                                                 org.hatdex.hat.api.controllers.v2.ContractFiles.getContent(fileId)
 

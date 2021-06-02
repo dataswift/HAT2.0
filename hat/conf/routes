@@ -1,14 +1,14 @@
 # Utility routes
 GET         /assets/*file                                        controllers.Assets.at(file)
-GET         /.well-known/apple-app-site-association              org.hatdex.hat.phata.controllers.WellKnown.appleAppSiteAssociation
+GET         /.well-known/apple-app-site-association              org.hatdex.hat.phata.controllers.WellKnown.appleAppSiteAssociation()
 
 # USER Routes
-GET         /users/user                                          org.hatdex.hat.api.controllers.Users.listUsers
-POST        /users/user                                          org.hatdex.hat.api.controllers.Users.createUser
-GET         /publickey                                           org.hatdex.hat.api.controllers.Authentication.publicKey
-GET         /users/access_token/validate                         org.hatdex.hat.api.controllers.Authentication.validateToken
+GET         /users/user                                          org.hatdex.hat.api.controllers.Users.listUsers()
+POST        /users/user                                          org.hatdex.hat.api.controllers.Users.createUser()
+GET         /publickey                                           org.hatdex.hat.api.controllers.Authentication.publicKey()
+GET         /users/access_token/validate                         org.hatdex.hat.api.controllers.Authentication.validateToken()
 GET         /users/application_token                             org.hatdex.hat.api.controllers.Authentication.applicationToken(name: String, resource: String)
-GET         /users/access_token                                  org.hatdex.hat.api.controllers.Authentication.accessToken
+GET         /users/access_token                                  org.hatdex.hat.api.controllers.Authentication.accessToken()
 PUT         /users/user/:userId/enable                           org.hatdex.hat.api.controllers.Users.enableUser(userId: java.util.UUID)
 PUT         /users/user/:userId/disable                          org.hatdex.hat.api.controllers.Users.disableUser(userId: java.util.UUID)
 PUT         /users/user/:userId/delete                           org.hatdex.hat.api.controllers.Users.deleteUser(userId: java.util.UUID)
@@ -19,19 +19,20 @@ GET         /system/update                                       org.hatdex.hat.
 
 # AUTHENTICATION routes
 GET         /control/v2/auth/hatlogin                            org.hatdex.hat.api.controllers.Authentication.hatLogin(name: String, redirect: String)
-POST        /control/v2/auth/password                            org.hatdex.hat.api.controllers.Authentication.passwordChangeProcess
-POST        /control/v2/auth/passwordReset                       org.hatdex.hat.api.controllers.Authentication.handleForgotPassword
+POST        /control/v2/auth/password                            org.hatdex.hat.api.controllers.Authentication.passwordChangeProcess()
+POST        /control/v2/auth/passwordReset                       org.hatdex.hat.api.controllers.Authentication.handleForgotPassword()
 POST        /control/v2/auth/passwordreset/confirm/:token        org.hatdex.hat.api.controllers.Authentication.handleResetPassword(token: String)
 POST        /control/v2/auth/claim                               org.hatdex.hat.api.controllers.Authentication.handleVerificationRequest(lang: Option[String])
 POST        /control/v2/auth/request-verification                org.hatdex.hat.api.controllers.Authentication.handleVerificationRequest(lang: Option[String])
 POST        /control/v2/auth/claim/complete/:verificationToken   org.hatdex.hat.api.controllers.Authentication.handleVerification(verificationToken: String)
 
 # Metrics
-GET         /metrics                                             com.github.stijndehaes.playprometheusfilters.controllers.PrometheusController.getMetrics
+GET         /metrics                                             com.github.stijndehaes.playprometheusfilters.controllers.PrometheusController.getMetrics()
 
 ->          /api/v2                                              v20.Routes
 ->          /api/v2.0                                            v20.Routes
 ->          /api/v2.6                                            v26.Routes
+->          /api/v2.7                                            v27.Routes
 
 # Frontend routes
 GET         /                                                    org.hatdex.hat.phata.controllers.Phata.dashboard(path = "")

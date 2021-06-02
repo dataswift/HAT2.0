@@ -1,4 +1,4 @@
-package org.hatdex.hat.api.controllers
+package org.hatdex.hat.api.controllers.common
 
 import eu.timepit.refined.collection.NonEmpty
 import eu.timepit.refined.refineV
@@ -6,6 +6,7 @@ import io.dataswift.adjudicator.Types.{ ContractId, HatName, ShortLivedToken }
 import io.dataswift.models.hat.json.HatJsonFormats
 import io.dataswift.models.hat.json.RichDataJsonFormats._
 import io.dataswift.models.hat.{ ApiHatFile, EndpointData }
+import pdi.jwt.JwtClaim
 import play.api.libs.json.{ JsValue, Json, Reads }
 
 import java.util.UUID
@@ -91,3 +92,20 @@ private object RequestValidator {
       uuid <- Try(UUID.fromString(contractIdR.value)).toOption
     } yield ContractDataInfoRefined(ShortLivedToken(tokenR), HatName(hatNameR), ContractId(uuid))
 }
+
+sealed trait RequestValidationFailure
+case class HatNotFound(hatName: String) extends RequestValidationFailure
+case class MissingHatName(hatName: String) extends RequestValidationFailure
+case class InaccessibleNamespace(namespace: String) extends RequestValidationFailure
+case class InvalidShortLivedToken(contractId: String) extends RequestValidationFailure
+case object GeneralError extends RequestValidationFailure
+
+case class RequestVerified(namespace: String) extends AnyVal
+
+sealed trait ContractVerificationFailure
+case class ServiceRespondedWithFailure(failureDescription: String) extends ContractVerificationFailure
+case class InvalidTokenFailure(failureDescription: String) extends ContractVerificationFailure
+case class InvalidContractDataRequestFailure(failureDescription: String) extends ContractVerificationFailure
+
+sealed trait ContractVerificationSuccess
+case class JwtClaimVerified(jwtClaim: JwtClaim) extends ContractVerificationSuccess

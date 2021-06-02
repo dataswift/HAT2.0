@@ -37,6 +37,10 @@ import play.api.inject.ApplicationLifecycle
 import play.api.libs.concurrent.AkkaGuiceSupport
 import play.api.{ Configuration, Environment }
 
+import org.hatdex.hat.api.controllers.v1
+import org.hatdex.hat.api.controllers.v2
+import javax.inject.{ Singleton => JSingleton }
+
 class HatTestServerProviderModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
   override def configure(): Unit = {
@@ -48,6 +52,9 @@ class HatTestServerProviderModule extends AbstractModule with ScalaModule with A
     bind[HatServerProvider].to[HatServerProviderImpl]
 
     bind[TrustedApplicationProvider].to[TrustedApplicationProviderDex]
+    bind[v1.ContractAction].to[v1.ContractActionImpl].in(classOf[JSingleton])
+    bind[v2.ContractAction].to[v2.ContractActionImpl].in(classOf[JSingleton])
+
     ()
   }
 

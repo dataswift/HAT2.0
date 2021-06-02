@@ -54,7 +54,7 @@ class FeedGenerator @Inject() (
       until: Option[Long]): Action[AnyContent] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
       feedGeneratorService
-        .getFeed(endpoint, since, until, appHandlesLocations)
+        .getFeed(endpoint, since, until, appHandlesLocations())
         .map((items: Seq[DataFeedItem]) => Ok(Json.toJson(items)))
     }
 
@@ -63,7 +63,7 @@ class FeedGenerator @Inject() (
       until: Option[Long]): Action[AnyContent] =
     SecuredAction(WithRole(Owner()) || ContainsApplicationRole(Owner())).async { implicit request =>
       feedGeneratorService
-        .fullFeed(since, until, appHandlesLocations)
+        .fullFeed(since, until, appHandlesLocations())
         .map(items => Ok(Json.toJson(items)))
     }
 

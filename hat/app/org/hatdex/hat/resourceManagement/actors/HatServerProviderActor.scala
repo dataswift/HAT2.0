@@ -60,7 +60,7 @@ class HatServerProviderActor @Inject() (
       val retrievingSender = sender
       getHatServerActor(hat) map { hatServerActor =>
         log.info(
-          s"Success: Got HAT server provider actor, forwarding retrieval message with sender $sender $retrievingSender"
+          s"Success: Got HAT server provider actor, forwarding retrieval message with sender ${sender} ${retrievingSender}"
         )
         hatServerActor tell (HatServerActor.HatRetrieve(), retrievingSender)
       } onComplete {

@@ -1,9 +1,10 @@
-package org.hatdex.hat.api.controllers
+package org.hatdex.hat.api.controllers.v1
 
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.HatServer
 import play.api.mvc.{ Action, BodyParser, Result }
+import org.hatdex.hat.api.controllers.common._
 
 import scala.concurrent.Future
 

@@ -86,6 +86,7 @@ class SilhouetteModule extends ScalaModule with SilhouetteConfigLoaders {
 
     bind[EventBus].toInstance(EventBus())
     bind[Clock].toInstance(Clock())
+
   }
 
   @Provides

@@ -48,7 +48,7 @@ trait StaticDataEndpointMapper extends JodaWrites with JodaReads {
       hatServer: HatServer,
       richDataService: RichDataService): Future[Seq[StaticDataValues]] = {
 
-    val staticData = Future.sequence(dataQueries.map { query =>
+    val staticData = Future.sequence(dataQueries().map { query =>
       val eventualDataSource: Future[Seq[EndpointData]] =
         richDataService.propertyData(
           query.endpoints,

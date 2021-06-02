@@ -139,7 +139,7 @@ class FunctionExecutionTriggerHandler @Inject() (
   implicit protected val functionExecutionTimeout: FiniteDuration =
     configuration.get[FiniteDuration]("she.executionDispatcher.functionExecutionTimeout")
 
-  protected val functionTriggerLogger: ActorRef = actorSystem.actorOf(Props[FunctionTriggerLogger])
+  protected val functionTriggerLogger: ActorRef = actorSystem.actorOf(Props[FunctionTriggerLogger]())
 
   protected val functionTriggerFlow: Flow[(String, Set[String]), (String, FunctionConfiguration, Done), _] =
     Flow[(String, Set[String])]

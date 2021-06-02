@@ -1,4 +1,4 @@
-package org.hatdex.hat.api.controllers
+package org.hatdex.hat.api.controllers.v2
 
 import com.mohiva.play.silhouette.api.Silhouette
 import eu.timepit.refined.auto._
@@ -18,10 +18,25 @@ import org.hatdex.hat.client.AdjudicatorRequestTypes.{
 import org.hatdex.hat.resourceManagement.HatServer
 import play.api.Logging
 import play.api.mvc.{ Action, BodyParser, ControllerComponents, Result }
+import org.hatdex.hat.api.controllers.common._
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success }
+import play.api.mvc.Request
+import play.api.libs.json.Reads
+import play.api.libs.json.Json
+import play.api.mvc.Headers
+import play.mvc.BodyParser.AnyContent
+
+// Temp
+object MachineData {
+  case class SLTokenBody(
+      iss: String,
+      exp: Long,
+      deviceId: String)
+  implicit val sltokenBodyReads: Reads[SLTokenBody] = Json.reads[SLTokenBody]
+}
 
 class ContractActionImpl @Inject() (
     components: ControllerComponents,
@@ -34,37 +49,33 @@ class ContractActionImpl @Inject() (
     with Logging
     with ContractAction {
 
-  override def doWithContract[A <: MaybeWithContractInfo](
-      parser: BodyParser[A],
+  override def doWithToken[A]( // <: MaybeWithToken](
+      parser: Option[BodyParser[A]],
       maybeNamespace: Option[String],
-      isWriteAction: Boolean
+      isWriteAction: Boolean // replace with type
     )(contractAction: (A, HatUser, HatServer, Option[HatApiAuthEnvironment#A]) => Future[Result]): Action[A] =
-    UserAwareAction.async(parser) { implicit request =>
-      request.body.extractContractInfo match {
-        case Some(contractDataInfo) =>
-          contractValid(contractDataInfo, maybeNamespace, isWriteAction).flatMap {
-            case (Some(user), Right(RequestVerified(_))) =>
-              contractAction(request.body, user, request.dynamicEnvironment, request.authenticator)
-            case (_, Left(x)) => handleFailedRequestAssessment(x)
-            case (None, Right(_)) =>
-              logger.warn(s"Hat not found for:  $contractDataInfo")
-              handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
-            case (_, _) =>
-              logger.warn(s"Fallback Error case for: $contractDataInfo")
-              handleFailedRequestAssessment(GeneralError)
-          }
-        case None => Future.successful(BadRequest("Missing Contract Details."))
+    UserAwareAction.async(parser.get) { implicit request =>
+      val maybeUser: Future[Option[HatUser]] = for {
+        _ <- getTokenFromHeaders(request.headers)
+        user <- userService.getUser(request.dynamicEnvironment.hatName)
+      } yield user
+
+      maybeUser.flatMap {
+        case Some(user) =>
+          contractAction(request.body, user, request.dynamicEnvironment, request.authenticator)
       }
     }
 
-  private def handleFailedRequestAssessment(failure: RequestValidationFailure): Future[Result] =
-    failure match {
-      case HatNotFound(hatName)               => Future.successful(BadRequest(s"HatName not found: $hatName"))
-      case MissingHatName(hatName)            => Future.successful(BadRequest(s"Missing HatName: $hatName"))
-      case InaccessibleNamespace(namespace)   => Future.successful(BadRequest(s"Namespace Inaccessible: $namespace"))
-      case InvalidShortLivedToken(contractId) => Future.successful(BadRequest(s"Invalid Token: $contractId"))
-      case GeneralError                       => Future.successful(BadRequest("Unknown Error"))
-    }
+  // -- Auth Token handler
+  private def getTokenFromHeaders(headers: Headers): Future[Option[MachineData.SLTokenBody]] = {
+    val slTokenBody = for {
+      _xAuthToken <- headers.get("X-Auth-Token")
+      slTokenBody <- Some("abc") //ShortLivedTokenOps.getBody(xAuthToken).toOption
+      ret <- Json.parse(slTokenBody).validate[MachineData.SLTokenBody].asOpt
+    } yield ret
+
+    Future.successful(slTokenBody)
+  }
 
   private def contractValid(
       contract: ContractDataInfoRefined,

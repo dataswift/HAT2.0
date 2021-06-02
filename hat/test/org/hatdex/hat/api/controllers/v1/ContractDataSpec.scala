@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2017 HAT Data Exchange Ltd
- * SPDX-License-Identifier: AGPL-3.0
  *
  * This file is part of the Hub of All Things project (HAT).
  *
@@ -22,7 +21,7 @@
  * 5 / 2017
  */
 
-package org.hatdex.hat.api.controllers
+package org.hatdex.hat.api.controllers.v1
 
 import org.hatdex.hat.api.HATTestContext
 import play.api.libs.json.{ JsValue, Json }
