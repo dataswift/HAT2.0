@@ -34,7 +34,7 @@ object Dependencies {
   object DsLib {
     private object Version {
       val DsAdjudicator         = "0.2.0"
-      val DsBackend             = "2.4.1"
+      val DsBackend             = "2.5.0"
       val DsDexClient           = "3.3.1"
       val DsSilhouette          = "5.3.0"
       val DsSlickPostgresDriver = "0.1.2"
@@ -43,7 +43,7 @@ object Dependencies {
     val Adjudicator              = "io.dataswift" %% "adjudicatorlib"                            % Version.DsAdjudicator
     val DexClient                = "org.hatdex"   %% "dex-client-scala"                          % Version.DsDexClient
     val IntegrationTestCommon    = "io.dataswift" %% "integration-test-common"                   % Version.DsBackend
-    val LogPlay                  = "io.dataswift" %% "log-play"                                  % Version.DsBackend
+    val PlayCommon               = "io.dataswift" %% "play-common"                               % Version.DsBackend
     val RedisCache               = "io.dataswift" %% "redis-cache"                               % Version.DsBackend
     val SilhouetteCryptoJca      = "com.mohiva"   %% "dataswift-play-silhouette-crypto-jca"      % Version.DsSilhouette
     val SilhouettePasswordBcrypt = "com.mohiva"   %% "dataswift-play-silhouette-password-bcrypt" % Version.DsSilhouette

@@ -22,7 +22,7 @@ lazy val hat = project
           PlayImport.ws,
           DsLib.Adjudicator,
           DsLib.DexClient,
-          DsLib.LogPlay,
+          DsLib.PlayCommon,
           DsLib.RedisCache,
           DsLib.SilhouetteCryptoJca,
           DsLib.SilhouettePasswordBcrypt,
