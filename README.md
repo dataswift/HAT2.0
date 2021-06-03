@@ -129,8 +129,7 @@ Specifically, it has 4 major sections:
 
 ## Using docker-compose
 
-We have put together a [docker-compose](https://docs.docker.com/compose/) file that will allow you to run a PostgreSQL
-node and a HAT node easily.
+We have put together a [docker-compose](https://docs.docker.com/compose/) file that will allow you to run a PostgreSQL node and a HAT node easily.
 
 ### Get the Source and the submodules
 
@@ -141,6 +140,10 @@ node and a HAT node easily.
     > cd deployment/docker
     > docker-compose up
     > open [https://bobtheplumber.example:9001](https://bobtheplumber.example:9001)
+
+## Using Helm 3
+
+The HAT solution is easy deployable on top of Kubernetes via [Helm 3 chart](charts).
 
 ## Additional information
 
