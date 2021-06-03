@@ -37,7 +37,11 @@ import org.joda.time.DateTime
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsValue, Json }
+import org.hatdex.hat.api.controllers.v1
+import org.hatdex.hat.api.controllers.v2
+import org.hatdex.hat.api.controllers.common.{ ContractDataOperations, ContractDataOperationsImpl }
 
+import javax.inject.{ Singleton => JSingleton }
 import java.util.UUID
 
 class HatDataStatsProcessorSpec extends BaseSpec with HatDataStatsProcessorContext {
@@ -69,8 +73,16 @@ trait HatDataStatsProcessorContext {
   val owner: HatUser = HatUser(UUID.randomUUID(), "hatuser", Some("pa55w0rd"), "hatuser", Seq(Owner()), enabled = true)
 
   class ExtrasModule extends AbstractModule with ScalaModule {
-    override def configure(): Unit =
+    override def configure(): Unit = {
       bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(Seq()))
+      bind[v1.ContractAction].to[v1.ContractActionImpl].in(classOf[JSingleton])
+      bind[v2.ContractAction].to[v2.ContractActionImpl].in(classOf[JSingleton])
+      bind[v1.ContractData].to[v1.ContractDataImpl].in(classOf[JSingleton])
+      bind[v2.ContractData].to[v2.ContractDataImpl].in(classOf[JSingleton])
+      bind[v1.ContractFiles].to[v1.ContractFilesImpl].in(classOf[JSingleton])
+      bind[v2.ContractFiles].to[v2.ContractFilesImpl].in(classOf[JSingleton])
+      bind[ContractDataOperations].to[ContractDataOperationsImpl].in(classOf[JSingleton])
+    }
   }
 
   lazy val application: Application = new GuiceApplicationBuilder()
