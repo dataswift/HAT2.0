@@ -3,13 +3,13 @@ package org.hatdex.hat.api.controllers.v2
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat.ErrorMessage
 import io.dataswift.models.hat.json.HatJsonFormats
+import org.hatdex.hat.api.controllers.common._
 import org.hatdex.hat.api.service.{ FileNotAuthorisedException, FileUploadService }
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.utils.HatBodyParsers
 import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{ Action, ControllerComponents }
-import org.hatdex.hat.api.controllers.common._
 
 import java.io.FileNotFoundException
 import javax.inject.Inject
@@ -29,7 +29,7 @@ class ContractFilesImpl @Inject() (
   import HatJsonFormats._
 
   def startUpload: Action[ContractFile] =
-    contractAction.doWithToken(Some(parsers.json[ContractFile]), None, isWriteAction = true) {
+    contractAction.doWithToken(parsers.json[ContractFile], None, permissions = Write) {
       (contractFile, user, hatServer, _) =>
         fileUploadService
           .startUpload(contractFile.file, user)(hatServer)
@@ -42,7 +42,7 @@ class ContractFilesImpl @Inject() (
     }
 
   def completeUpload(fileId: String): Action[ContractDataReadRequest] =
-    contractAction.doWithToken(Some(parsers.json[ContractDataReadRequest]), None, isWriteAction = true) {
+    contractAction.doWithToken(parsers.json[ContractDataReadRequest], None, permissions = Write) {
       (_, user, hatServer, maybeAuthenticator) =>
         fileUploadService.completeUpload(fileId, user, None)(hatServer, maybeAuthenticator).map { completed =>
           Ok(Json.toJson(completed))
@@ -63,7 +63,7 @@ class ContractFilesImpl @Inject() (
     }
 
   def getDetail(fileId: String): Action[ContractDataReadRequest] =
-    contractAction.doWithToken(Some(parsers.json[ContractDataReadRequest]), None, isWriteAction = false) {
+    contractAction.doWithToken(parsers.json[ContractDataReadRequest], None, permissions = Read) {
       (_, user, hatServer, maybeAuthenticator) =>
         fileUploadService
           .getFile(fileId, user, None)(hatServer, maybeAuthenticator)
@@ -80,7 +80,7 @@ class ContractFilesImpl @Inject() (
     }
 
   def getContent(fileId: String): Action[ContractDataReadRequest] =
-    contractAction.doWithToken(Some(parsers.json[ContractDataReadRequest]), None, isWriteAction = false) {
+    contractAction.doWithToken(parsers.json[ContractDataReadRequest], None, permissions = Read) {
       (_, user, hatServer, maybeAuthenticator) =>
         fileUploadService
           .getContentUrl(fileId, Some(user), None, maybeAuthenticator)(hatServer)
@@ -89,7 +89,7 @@ class ContractFilesImpl @Inject() (
     }
 
   def updateFile(fileId: String): Action[ContractFile] =
-    contractAction.doWithToken(Some(parsers.json[ContractFile]), None, isWriteAction = true) {
+    contractAction.doWithToken(parsers.json[ContractFile], None, permissions = Write) {
       (contractUpdate, user, hatServer, maybeAuthenticator) =>
         fileUploadService
           .update(contractUpdate.file, user, None)(hatServer, maybeAuthenticator)
@@ -104,7 +104,7 @@ class ContractFilesImpl @Inject() (
     }
 
   def deleteFile(fileId: String): Action[ContractDataReadRequest] =
-    contractAction.doWithToken(Some(parsers.json[ContractDataReadRequest]), None, isWriteAction = true) {
+    contractAction.doWithToken(parsers.json[ContractDataReadRequest], None, permissions = Write) {
       (_, user, hatServer, maybeAuthenticator) =>
         val result =
           for {

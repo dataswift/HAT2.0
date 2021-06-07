@@ -6,6 +6,7 @@ import io.dataswift.adjudicator.Types.{ ContractId, HatName, ShortLivedToken }
 import io.dataswift.models.hat.json.HatJsonFormats
 import io.dataswift.models.hat.json.RichDataJsonFormats._
 import io.dataswift.models.hat.{ ApiHatFile, EndpointData }
+import org.hatdex.hat.authentication.models.HatUser
 import pdi.jwt.JwtClaim
 import play.api.libs.json.{ JsValue, Json, Reads }
 
@@ -19,6 +20,45 @@ case class ContractDataInfoRefined(
 
 trait MaybeWithContractInfo {
   def extractContractInfo: Option[ContractDataInfoRefined]
+}
+
+// Remove this later
+object MachineData {
+  case class SLTokenBody(
+      iss: String,
+      exp: Long,
+      deviceId: String)
+  implicit val sltokenBodyReads: Reads[SLTokenBody] = Json.reads[SLTokenBody]
+}
+
+case class DeviceDataInfoRefined(
+    token: ShortLivedToken,
+    hatName: HatName,
+    contractId: ContractId)
+
+sealed trait RequiredNamespacePermissions
+case object Read extends RequiredNamespacePermissions
+case object Write extends RequiredNamespacePermissions
+case object ReadWrite extends RequiredNamespacePermissions
+
+// -- Errors
+sealed abstract class DeviceVerificationFailure
+object DeviceVerificationFailure {
+  final case class ServiceRespondedWithFailure(failureDescription: String) extends DeviceVerificationFailure
+  final case class InvalidTokenFailure(failureDescription: String) extends DeviceVerificationFailure
+  final case object ApplicationAndNamespaceNotValid extends DeviceVerificationFailure
+  final case class InvalidDeviceDataRequestFailure(
+      failureDescription: String)
+      extends DeviceVerificationFailure
+  final case object FailedDeviceRefinement extends DeviceVerificationFailure
+  final case class DeviceRequestFailure(message: String) extends DeviceVerificationFailure
+}
+
+sealed abstract class DeviceVerificationSuccess
+object DeviceVerificationSuccess {
+  final case class JwtClaimVerified(jwtClaim: JwtClaim) extends DeviceVerificationSuccess
+  final case class DeviceRequestSuccess(hatUser: HatUser) extends DeviceVerificationSuccess
+  final case class DeviceRequestVerificationSuccess(message: String) extends DeviceVerificationSuccess
 }
 
 case class ContractDataReadRequest(
@@ -99,6 +139,8 @@ case class MissingHatName(hatName: String) extends RequestValidationFailure
 case class InaccessibleNamespace(namespace: String) extends RequestValidationFailure
 case class InvalidShortLivedToken(contractId: String) extends RequestValidationFailure
 case object GeneralError extends RequestValidationFailure
+case object XAuthTokenMissing extends RequestValidationFailure
+case object ApplicationNotFound extends RequestValidationFailure
 
 case class RequestVerified(namespace: String) extends AnyVal
 

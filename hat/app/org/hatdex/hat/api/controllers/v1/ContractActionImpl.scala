@@ -4,7 +4,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import eu.timepit.refined.auto._
 import io.dataswift.adjudicator.ShortLivedTokenOps
 import io.dataswift.models.hat.applications.Application
-import org.hatdex.hat.NamespaceUtils.NamespaceUtils
+import org.hatdex.hat.api.controllers.common._
 import org.hatdex.hat.api.service.UserService
 import org.hatdex.hat.api.service.applications.TrustedApplicationProvider
 import org.hatdex.hat.authentication.models.HatUser
@@ -16,9 +16,9 @@ import org.hatdex.hat.client.AdjudicatorRequestTypes.{
   PublicKeyServiceFailure
 }
 import org.hatdex.hat.resourceManagement.HatServer
+import org.hatdex.hat.utils.NamespaceUtils
 import play.api.Logging
 import play.api.mvc.{ Action, BodyParser, ControllerComponents, Result }
-import org.hatdex.hat.api.controllers.common._
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
@@ -29,7 +29,8 @@ class ContractActionImpl @Inject() (
     silhouette: Silhouette[HatApiAuthEnvironment],
     userService: UserService,
     trustedApplicationProvider: TrustedApplicationProvider,
-    adjudicatorClient: AdjudicatorClient
+    adjudicatorClient: AdjudicatorClient,
+    contractDataOperations: ContractDataOperations
   )(implicit ec: ExecutionContext)
     extends HatApiController(components, silhouette)
     with Logging
@@ -46,25 +47,16 @@ class ContractActionImpl @Inject() (
           contractValid(contractDataInfo, maybeNamespace, isWriteAction).flatMap {
             case (Some(user), Right(RequestVerified(_))) =>
               contractAction(request.body, user, request.dynamicEnvironment, request.authenticator)
-            case (_, Left(x)) => handleFailedRequestAssessment(x)
+            case (_, Left(x)) => contractDataOperations.handleFailedRequestAssessment(x)
             case (None, Right(_)) =>
               logger.warn(s"Hat not found for:  $contractDataInfo")
-              handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
+              contractDataOperations.handleFailedRequestAssessment(HatNotFound(contractDataInfo.hatName.toString))
             case (_, _) =>
               logger.warn(s"Fallback Error case for: $contractDataInfo")
-              handleFailedRequestAssessment(GeneralError)
+              contractDataOperations.handleFailedRequestAssessment(GeneralError)
           }
         case None => Future.successful(BadRequest("Missing Contract Details."))
       }
-    }
-
-  private def handleFailedRequestAssessment(failure: RequestValidationFailure): Future[Result] =
-    failure match {
-      case HatNotFound(hatName)               => Future.successful(BadRequest(s"HatName not found: $hatName"))
-      case MissingHatName(hatName)            => Future.successful(BadRequest(s"Missing HatName: $hatName"))
-      case InaccessibleNamespace(namespace)   => Future.successful(BadRequest(s"Namespace Inaccessible: $namespace"))
-      case InvalidShortLivedToken(contractId) => Future.successful(BadRequest(s"Invalid Token: $contractId"))
-      case GeneralError                       => Future.successful(BadRequest("Unknown Error"))
     }
 
   private def contractValid(

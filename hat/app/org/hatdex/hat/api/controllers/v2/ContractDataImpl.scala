@@ -25,22 +25,17 @@
 package org.hatdex.hat.api.controllers.v2
 
 import com.mohiva.play.silhouette.api.Silhouette
-import io.dataswift.models.hat.{ EndpointData, EndpointQuery, ErrorMessage }
+import io.dataswift.models.hat.EndpointData
 import org.hatdex.hat.api.controllers.common._
-import org.hatdex.hat.api.service.richData.{ RichDataMissingException, RichDataService }
-import org.hatdex.hat.authentication.models.HatUser
+import org.hatdex.hat.api.service.richData.RichDataService
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
-import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.HatBodyParsers
-import org.hatdex.libs.dal.HATPostgresProfile
-import pdi.jwt.JwtClaim
 import play.api.Logging
-import play.api.libs.json.{ JsArray, JsValue, Json }
+import play.api.libs.json.JsValue
 import play.api.mvc._
 
-import java.util.UUID
 import javax.inject.Inject
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.ExecutionContext
 
 class ContractDataImpl @Inject() (
     components: ControllerComponents,
@@ -65,7 +60,7 @@ class ContractDataImpl @Inject() (
       ordering: Option[String],
       skip: Option[Int],
       take: Option[Int]): Action[AnyContent] =
-    contractAction.doWithToken(None, Some(namespace), isWriteAction = false) { (_, _, hatServer, _) =>
+    contractAction.doWithToken(Some(namespace), permissions = Read) { (_, hatServer, _) =>
       contractDataOperations.makeData(namespace, endpoint, orderBy, ordering, skip, take)(hatServer.db)
     }
 
@@ -73,7 +68,7 @@ class ContractDataImpl @Inject() (
       namespace: String,
       endpoint: String,
       skipErrors: Option[Boolean]): Action[JsValue] =
-    contractAction.doWithToken(Some(parsers.json[JsValue]), Some(namespace), isWriteAction = true) {
+    contractAction.doWithToken(parsers.json[JsValue], Some(namespace), permissions = Write) {
       (createRequest, user, hatServer, _) =>
         contractDataOperations.handleCreateContractData(user, Some(createRequest), namespace, endpoint, skipErrors)(
           hatServer
@@ -81,7 +76,7 @@ class ContractDataImpl @Inject() (
     }
 
   def updateContractData(namespace: String): Action[Seq[EndpointData]] =
-    contractAction.doWithToken(Some(parsers.json[Seq[EndpointData]]), Some(namespace), isWriteAction = true) {
+    contractAction.doWithToken(parsers.json[Seq[EndpointData]], Some(namespace), permissions = Write) {
       (updateRequest, user, hatServer, _) =>
         contractDataOperations.handleUpdateContractData(user, updateRequest, namespace)(hatServer)
     }

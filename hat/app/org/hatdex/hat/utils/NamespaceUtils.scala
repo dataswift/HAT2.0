@@ -21,8 +21,10 @@
  * Written by Tyler Weir <tyler.weir@dataswift.io>
  * 1 / 2021
  */
-package org.hatdex.hat.NamespaceUtils
 
+package org.hatdex.hat.utils
+
+import io.dataswift.models.hat.applications.Application
 import io.dataswift.models.hat.{ NamespaceRead, NamespaceWrite, UserRole }
 
 object NamespaceUtils {
@@ -46,4 +48,43 @@ object NamespaceUtils {
     }
     matchedRoles.flatten.nonEmpty
   }
+
+  def getWriteNamespace(roles: Seq[UserRole]): Option[String] = {
+    val writeNamespaces = roles.map {
+      case NamespaceWrite(n) => Some(n)
+      case _                 => None
+    }
+
+    if (writeNamespaces.isEmpty)
+      None
+    else
+      writeNamespaces.head
+  }
+
+  def getReadNamespace(roles: Seq[UserRole]): Option[String] = {
+    val readNamespaces = roles.map {
+      case NamespaceRead(n) => Some(n)
+      case _                => None
+    }
+
+    if (readNamespaces.isEmpty)
+      None
+    else
+      readNamespaces.head
+  }
+
+  def verifyNamespaceReadWrite(
+      app: Application,
+      namespace: String): Boolean =
+    verifyNamespaceRead(app, namespace) && verifyNamespaceWrite(app, namespace)
+
+  def verifyNamespaceRead(
+      app: Application,
+      namespace: String): Boolean =
+    testReadNamespacePermissions(app.permissions.rolesGranted, namespace)
+
+  def verifyNamespaceWrite(
+      app: Application,
+      namespace: String): Boolean =
+    testWriteNamespacePermissions(app.permissions.rolesGranted, namespace)
 }

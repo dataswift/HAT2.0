@@ -1,7 +1,7 @@
 
 GET           /system/status                                                                 org.hatdex.hat.api.controllers.SystemStatus.status()
-GET           /phata/profile                                                                 org.hatdex.hat.phata.controllers.Phata.profile
-POST          /report-frontend-action                                                        org.hatdex.hat.api.controllers.LogController.logFrontendAction
+GET           /phata/profile                                                                 org.hatdex.hat.phata.controllers.Phata.profile()
+POST          /report-frontend-action                                                        org.hatdex.hat.api.controllers.LogController.logFrontendAction()
 DELETE        /system/destroy-cache                                                          org.hatdex.hat.api.controllers.SystemStatus.destroyCache()
 
 # FILE routes

@@ -2,17 +2,16 @@ package org.hatdex.hat.api.controllers.common
 
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat.{ EndpointData, EndpointQuery, ErrorMessage }
+import org.hatdex.hat.api.controllers.common._
 import org.hatdex.hat.api.service.richData.{ RichDataMissingException, RichDataService }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
 import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.HatBodyParsers
 import org.hatdex.libs.dal.HATPostgresProfile
-import pdi.jwt.JwtClaim
 import play.api.Logging
 import play.api.libs.json.{ JsArray, JsValue, Json }
 import play.api.mvc._
-import org.hatdex.hat.api.controllers.common._
 
 import java.util.UUID
 import javax.inject.Inject
@@ -139,4 +138,14 @@ class ContractDataOperationsImpl @Inject() (
 
   private def dataUpdateMissing(message: String): ErrorMessage =
     ErrorMessage("Data Missing", s"Could not update records: $message")
+
+  def handleFailedRequestAssessment(failure: RequestValidationFailure): Future[Result] =
+    failure match {
+      case HatNotFound(hatName)               => Future.successful(BadRequest(s"HatName not found: $hatName"))
+      case MissingHatName(hatName)            => Future.successful(BadRequest(s"Missing HatName: $hatName"))
+      case InaccessibleNamespace(namespace)   => Future.successful(BadRequest(s"Namespace Inaccessible: $namespace"))
+      case InvalidShortLivedToken(contractId) => Future.successful(BadRequest(s"Invalid Token: $contractId"))
+      case GeneralError                       => Future.successful(BadRequest("Unknown Error"))
+    }
+
 }

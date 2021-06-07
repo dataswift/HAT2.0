@@ -1,7 +1,7 @@
 package org.hatdex.hat.utils
 import io.dataswift.models.hat.{ NamespaceRead, NamespaceWrite, UserRole }
 import io.dataswift.test.common.BaseSpec
-import org.hatdex.hat.NamespaceUtils._
+import org.hatdex.hat.utils.NamespaceUtils
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.Logger
 

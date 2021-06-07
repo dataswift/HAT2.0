@@ -1,11 +1,11 @@
 package org.hatdex.hat.api.controllers.common
 
-import org.hatdex.libs.dal.HATPostgresProfile
+import io.dataswift.models.hat.EndpointData
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.resourceManagement.HatServer
-import play.api.mvc.Result
+import org.hatdex.libs.dal.HATPostgresProfile
 import play.api.libs.json.JsValue
-import io.dataswift.models.hat.EndpointData
+import play.api.mvc.Result
 
 import scala.concurrent.Future
 
@@ -32,4 +32,6 @@ trait ContractDataOperations {
       contractDataUpdate: Seq[EndpointData],
       namespace: String
     )(implicit hatServer: HatServer): Future[Result]
+
+  def handleFailedRequestAssessment(failure: RequestValidationFailure): Future[Result]
 }

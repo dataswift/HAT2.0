@@ -74,6 +74,8 @@ class ContractDataSpec extends ContractDataContext {
     val res = Await.result(response, 5.seconds)
     res.header.status must equal(400)
   }
+
+  // No success tests
 }
 
 class ContractDataContext extends HATTestContext {
