@@ -9,7 +9,7 @@ metadata:
   namespace: {{ .Release.Namespace | quote }}
 {{- end }}
   labels:
-    app.kubernetes.io/component: app
+    app.kubernetes.io/component: metrics
     {{- include "hat.labels" . | nindent 4 }}
     {{- if .Values.metrics.prometheusRule.additionalLabels }}
     {{- toYaml .Values.metrics.prometheusRule.additionalLabels | nindent 4 }}
@@ -17,7 +17,7 @@ metadata:
 spec:
 {{- if .Values.metrics.prometheusRule.rules }}
   groups:
-  - name: {{ template "ingress-nginx.name" . }}
+  - name:  {{ include "hat.fullname" . }}
     rules: {{- toYaml .Values.metrics.prometheusRule.rules | nindent 4 }}
 {{- end }}
 {{- end }}
