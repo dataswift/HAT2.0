@@ -1,0 +1,43 @@
+{{- if and .Values.metrics.enabled .Values.metrics.serviceMonitor.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "hat.fullname" . }}
+{{- if .Values.metrics.serviceMonitor.namespace }}
+  namespace: {{ .Values.metrics.serviceMonitor.namespace | quote }}
+{{- end }}
+  labels:
+    {{- include "hat.labels" . | nindent 4 }}
+  {{- if .Values.metrics.serviceMonitor.additionalLabels }}
+    {{- toYaml .Values.metrics.serviceMonitor.additionalLabels | nindent 4 }}
+  {{- end }}
+spec:
+  endpoints:
+    - port: metrics
+      interval: {{ .Values.metrics.serviceMonitor.scrapeInterval }}
+    {{- if .Values.metrics.serviceMonitor.honorLabels }}
+      honorLabels: true
+    {{- end }}
+    {{- if .Values.metrics.serviceMonitor.metricRelabelings }}
+      metricRelabelings: {{ toYaml .Values.metrics.serviceMonitor.metricRelabelings | nindent 8 }}
+    {{- end }}
+{{- if .Values.metrics.serviceMonitor.jobLabel }}
+  jobLabel: {{ .Values.metrics.serviceMonitor.jobLabel | quote }}
+{{- end }}
+{{- if .Values.metrics.serviceMonitor.namespaceSelector }}
+  namespaceSelector: {{ toYaml .Values.metrics.serviceMonitor.namespaceSelector | nindent 4 }}
+{{ else }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+{{- end }}
+{{- if .Values.metrics.serviceMonitor.targetLabels }}
+  targetLabels:
+  {{- range .Values.metrics.serviceMonitor.targetLabels }}
+    - {{ . }}
+  {{- end }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "hat.labels" . | nindent 6 }}
+{{- end }}

@@ -1,0 +1,20 @@
+{{- if and .Values.metrics.enabled .Values.metrics.prometheusRule.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "hat.fullname" . }}
+{{- if .Values.metrics.prometheusRule.namespace }}
+  namespace: {{ .Values.metrics.prometheusRule.namespace | quote }}
+{{- end }}
+  labels:
+    {{- include "hat.labels" . | nindent 4 }}
+  {{- if .Values.metrics.prometheusRule.additionalLabels }}
+    {{- toYaml .Values.metrics.prometheusRule.additionalLabels | nindent 4 }}
+  {{- end }}
+spec:
+{{- if .Values.metrics.prometheusRule.rules }}
+  groups:
+  - name: {{ template "ingress-nginx.name" . }}
+    rules: {{- toYaml .Values.metrics.prometheusRule.rules | nindent 4 }}
+{{- end }}
+{{- end }}
