@@ -3,6 +3,7 @@ kind: ConfigMap
 metadata:
   name: {{ include "hat.fullname" . }}  
   labels:
+    app.kubernetes.io/component: app
     {{- include "hat.labels" . | nindent 4 }}
 data:
   {{- range $key, $val := .Values.env.config }}
