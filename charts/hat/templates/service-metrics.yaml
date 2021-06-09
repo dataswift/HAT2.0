@@ -3,17 +3,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "hat.fullname" . }}
+  name: {{ include "hat.fullname" . }}-metrics
   namespace: {{ .Release.Namespace | quote }}
   labels: 
     {{- include "hat.labels" . | nindent 4 }}
     app.kubernetes.io/component: metrics
-  {{- if .Values.metrics.service.annotations }}
+  {{- with .Values.metrics.service.annotations }}
   annotations:
-    {{- if .Values.metrics.service.annotations }}
-    {{- include "common.tplvalues.render" (dict "value" .Values.metrics.service.annotations "context" $) | nindent 4 }}
-    {{- end }}
-  {{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}  
 spec:
   type: {{ .Values.metrics.service.type }}
   ports:

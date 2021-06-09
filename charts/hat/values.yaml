@@ -64,7 +64,7 @@ ingress:
   #      - chart-example.local
 
 metrics:
-  enabled: false
+  enabled: true
 
   service:
     annotations:
@@ -75,7 +75,7 @@ metrics:
     port: 9000
 
   serviceMonitor:
-    enabled: false
+    enabled: true
     additionalLabels: {}
     # The label to use to retrieve the job name from.
     # jobLabel: "app.kubernetes.io/name"

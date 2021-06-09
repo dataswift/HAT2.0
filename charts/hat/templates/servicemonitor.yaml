@@ -5,6 +5,8 @@ metadata:
   name: {{ include "hat.fullname" . }}
 {{- if .Values.metrics.serviceMonitor.namespace }}
   namespace: {{ .Values.metrics.serviceMonitor.namespace | quote }}
+{{- else }}
+  namespace: {{ .Release.Namespace | quote }}
 {{- end }}
   labels:
     {{- include "hat.labels" . | nindent 4 }}
