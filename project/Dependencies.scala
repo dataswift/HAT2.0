@@ -34,7 +34,7 @@ object Dependencies {
     val AwsSdk                = "1.11.1003"
     val AlpakkaAwsLambda      = "1.1.2"
     val CommonsLang3          = "3.11"
-    val BouncyCastle          = "1.68"
+    val BouncyCastle          = "1.69"
     val PlayPrometheusFilters = "0.6.1"
     val PlayGuard             = "2.5.0"
     val PrettyTime            = "5.0.0.Final"
