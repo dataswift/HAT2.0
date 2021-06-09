@@ -6,8 +6,8 @@ metadata:
   name: {{ include "hat.fullname" . }}-metrics
   namespace: {{ .Release.Namespace | quote }}
   labels: 
-    {{- include "hat.labels" . | nindent 4 }}
     app.kubernetes.io/component: metrics
+    {{- include "hat.labels" . | nindent 4 }}    
   {{- with .Values.metrics.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
