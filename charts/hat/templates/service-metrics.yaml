@@ -1,0 +1,26 @@
+
+{{- if .Values.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "hat.fullname" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: 
+    {{- include "hat.labels" . | nindent 4 }}
+    app.kubernetes.io/component: metrics
+  {{- if .Values.metrics.service.annotations }}
+  annotations:
+    {{- if .Values.metrics.service.annotations }}
+    {{- include "common.tplvalues.render" (dict "value" .Values.metrics.service.annotations "context" $) | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.metrics.service.type }}
+  ports:
+    - name: metrics
+      port: {{ .Values.metrics.service.port }}
+      targetPort: metrics
+  selector: 
+    app.kubernetes.io/component: app
+    {{- include "hat.selectorLabels" . | nindent 4 }}
+{{- end }}

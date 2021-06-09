@@ -7,10 +7,11 @@ metadata:
   namespace: {{ .Values.metrics.prometheusRule.namespace | quote }}
 {{- end }}
   labels:
+    app.kubernetes.io/component: app
     {{- include "hat.labels" . | nindent 4 }}
-  {{- if .Values.metrics.prometheusRule.additionalLabels }}
+    {{- if .Values.metrics.prometheusRule.additionalLabels }}
     {{- toYaml .Values.metrics.prometheusRule.additionalLabels | nindent 4 }}
-  {{- end }}
+    {{- end }}
 spec:
 {{- if .Values.metrics.prometheusRule.rules }}
   groups:

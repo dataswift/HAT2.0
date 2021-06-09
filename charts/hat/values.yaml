@@ -71,19 +71,8 @@ metrics:
       prometheus.io/scrape: "true"
       prometheus.io/port: "9000"
 
-    # clusterIP: ""
-
-    ## List of IP addresses at which the stats-exporter service is available
-    ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
-    ##
-    externalIPs: []
-
-    # loadBalancerIP: ""
-    loadBalancerSourceRanges: []
-    servicePort: 9000
     type: ClusterIP
-    # externalTrafficPolicy: ""
-    # nodePort: ""
+    port: 9000
 
   serviceMonitor:
     enabled: false

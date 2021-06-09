@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: {{ include "hat.fullname" . }}
   labels:
+    app.kubernetes.io/component: app
     {{- include "hat.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
@@ -10,6 +11,7 @@ spec:
   {{- end }}
   selector:
     matchLabels:
+      app.kubernetes.io/component: app
       {{- include "hat.selectorLabels" . | nindent 6 }}
   template:
     metadata:
@@ -19,6 +21,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
+        app.kubernetes.io/component: app
         {{- include "hat.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}

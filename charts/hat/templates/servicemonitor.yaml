@@ -39,5 +39,6 @@ spec:
 {{- end }}
   selector:
     matchLabels:
+      app.kubernetes.io/component: metrics
       {{- include "hat.labels" . | nindent 6 }}
 {{- end }}
