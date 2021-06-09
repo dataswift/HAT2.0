@@ -15,9 +15,10 @@ metadata:
 spec:
   type: {{ .Values.metrics.service.type }}
   ports:
-    - name: metrics
-      port: {{ .Values.metrics.service.port }}
-      targetPort: metrics
+    - port: {{ .Values.metrics.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: metrics      
   selector: 
     app.kubernetes.io/component: app
     {{- include "hat.selectorLabels" . | nindent 4 }}
