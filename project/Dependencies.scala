@@ -26,97 +26,44 @@ import sbt._
 
 object Dependencies {
 
-  private object Version {
-    val Play: String          = play.core.PlayVersion.current
-    val PlayJson              = "2.9.2"
-    val Silhouette            = "5.2.0"
-    val AtlassianJwt          = "3.2.0"
-    val AwsSdk                = "1.11.1003"
-    val AlpakkaAwsLambda      = "3.0.1"
-    val CommonsLang3          = "3.11"
-    val BouncyCastle          = "1.68"
-    val PlayPrometheusFilters = "0.6.1"
-    val PlayGuard             = "2.5.0"
-    val PrettyTime            = "5.0.0.Final"
-    val Nbvcxz                = "1.5.0"
-
-    val Adjudicator = "0.1.0-SNAPSHOT"
-    val DexClient   = "3.2.2"
-    val DsBackend   = "2.3.1"
-    val DsTestTools = "0.2.5"
-  }
-
   val resolvers = Seq(
     "Atlassian" at "https://maven.atlassian.com/public/",
-    "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com",
-    "HAT Library Artifacts Snapshots" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-snapshots.hubofallthings.com"
+    "HAT Library Artifacts Releases" at "https://s3-eu-west-1.amazonaws.com/library-artifacts-releases.hubofallthings.com"
   )
 
-  object Library {
-
-    object Play {
-      val ws        = "com.typesafe.play"   %% "play-ws"        % Version.Play
-      val cache     = "com.typesafe.play"   %% "play-cache"     % Version.Play
-      val test      = "com.typesafe.play"   %% "play-test"      % Version.Play
-      val jdbc      = "com.typesafe.play"   %% "play-jdbc"      % Version.Play
-      val json      = "com.typesafe.play"   %% "play-json"      % Version.PlayJson
-      val jsonJoda  = "com.typesafe.play"   %% "play-json-joda" % Version.PlayJson
-      val playGuard = "com.digitaltangible" %% "play-guard"     % Version.PlayGuard
-
-      object Jwt {
-        val bouncyCastle     = "org.bouncycastle"  % "bcprov-jdk15on" % Version.BouncyCastle
-        val bouncyCastlePkix = "org.bouncycastle"  % "bcpkix-jdk15on" % Version.BouncyCastle
-        val atlassianJwtCore = "com.atlassian.jwt" % "jwt-core"       % Version.AtlassianJwt
-      }
-
-      object Silhouette {
-        val passwordBcrypt    = "com.mohiva" %% "dataswift-play-silhouette-password-bcrypt" % Version.Silhouette
-        val persistence       = "com.mohiva" %% "dataswift-play-silhouette-persistence"     % Version.Silhouette
-        val cryptoJca         = "com.mohiva" %% "dataswift-play-silhouette-crypto-jca"      % Version.Silhouette
-        val silhouette        = "com.mohiva" %% "dataswift-play-silhouette"                 % Version.Silhouette
-        val silhouetteTestkit = "com.mohiva" %% "dataswift-play-silhouette-testkit"         % Version.Silhouette % Test
-      }
+  object DsLib {
+    private object Version {
+      val DsAdjudicator         = "0.2.0"
+      val DsBackend             = "2.5.0"
+      val DsDexClient           = "3.3.1"
+      val DsSilhouette          = "5.3.0"
+      val DsSlickPostgresDriver = "0.1.2"
     }
 
-    object Utils {
-      val awsJavaS3Sdk     = "com.amazonaws"          % "aws-java-sdk-s3"               % Version.AwsSdk
-      val awsJavaSesSdk    = "com.amazonaws"          % "aws-java-sdk-ses"              % Version.AwsSdk
-      val awsJavaLambdaSdk = "com.amazonaws"          % "aws-java-sdk-lambda"           % Version.AwsSdk
-      val prettyTime       = "org.ocpsoft.prettytime" % "prettytime"                    % Version.PrettyTime
-      val nbvcxz           = "me.gosimple"            % "nbvcxz"                        % Version.Nbvcxz
-      val alpakkaAwsLambda = "com.lightbend.akka"    %% "akka-stream-alpakka-awslambda" % Version.AlpakkaAwsLambda
-      val apacheCommonLang = "org.apache.commons"     % "commons-lang3"                 % Version.CommonsLang3
-    }
-
-    object Backend {
-      val logPlay    = "io.dataswift" %% "log-play"    % Version.DsBackend
-      val redisCache = "io.dataswift" %% "redis-cache" % Version.DsBackend
-    }
-
-    object HATDeX {
-      val dexClient = "org.hatdex" %% "dex-client-scala"      % Version.DexClient
-      val codegen   = "org.hatdex" %% "slick-postgres-driver" % "0.1.2"
-    }
-
-    val scalaGuice  = "net.codingwell"     %% "scala-guice"  % "4.2.11"
-    val circeConfig = "io.circe"           %% "circe-config" % "0.8.0"
-    val janino      = "org.codehaus.janino" % "janino"       % "3.1.3"
-
-    object ContractLibrary {
-      val adjudicator = "io.dataswift" %% "adjudicatorlib" % Version.Adjudicator
-    }
-
-    object Prometheus {
-      val filters = "io.github.jyllands-posten" %% "play-prometheus-filters" % Version.PlayPrometheusFilters
-    }
-
-    object ScalaTest {
-      val scalaplaytestmock = "org.scalatestplus" %% "mockito-3-4"  % "3.2.7.0" % Test
-      val mockitoCore       = "org.mockito"        % "mockito-core" % "3.4.6"   % Test
-    }
-
-    object Dataswift {
-      val integrationTestCommon = "io.dataswift" %% "integration-test-common" % Version.DsTestTools % Test
-    }
+    val Adjudicator              = "io.dataswift" %% "adjudicatorlib"                            % Version.DsAdjudicator
+    val DexClient                = "org.hatdex"   %% "dex-client-scala"                          % Version.DsDexClient
+    val IntegrationTestCommon    = "io.dataswift" %% "integration-test-common"                   % Version.DsBackend
+    val PlayCommon               = "io.dataswift" %% "play-common"                               % Version.DsBackend
+    val RedisCache               = "io.dataswift" %% "redis-cache"                               % Version.DsBackend
+    val SilhouetteCryptoJca      = "com.mohiva"   %% "dataswift-play-silhouette-crypto-jca"      % Version.DsSilhouette
+    val SilhouettePasswordBcrypt = "com.mohiva"   %% "dataswift-play-silhouette-password-bcrypt" % Version.DsSilhouette
+    val SilhouettePersistence    = "com.mohiva"   %% "dataswift-play-silhouette-persistence"     % Version.DsSilhouette
+    val SilhouetteTestkit        = "com.mohiva"   %% "dataswift-play-silhouette-testkit"         % Version.DsSilhouette
+    val SlickPostgresDriver      = "org.hatdex"   %% "slick-postgres-driver"                     % Version.DsSlickPostgresDriver
   }
+
+  private object Version {
+    val AlpakkaAwsLambda     = "1.1.2"
+    val CirceConfig          = "0.8.0"
+    val PrettyTime           = "5.0.0.Final"
+    val ScalaTestplusMockito = "3.2.9.0"
+  }
+
+  object LocalThirdParty {
+    val AlpakkaAwsLambda     = "com.lightbend.akka"    %% "akka-stream-alpakka-awslambda" % Version.AlpakkaAwsLambda
+    val CirceConfig          = "io.circe"              %% "circe-config"                  % Version.CirceConfig
+    val PrettyTime           = "org.ocpsoft.prettytime" % "prettytime"                    % Version.PrettyTime
+    val ScalaTestplusMockito = "org.scalatestplus"     %% "mockito-3-4"                   % Version.ScalaTestplusMockito
+  }
+
 }

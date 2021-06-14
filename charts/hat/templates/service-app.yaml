@@ -3,6 +3,7 @@ kind: Service
 metadata:
   name: {{ include "hat.fullname" . }}
   labels:
+    app.kubernetes.io/component: app
     {{- include "hat.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
@@ -12,4 +13,5 @@ spec:
       protocol: TCP
       name: http
   selector:
+    app.kubernetes.io/component: app
     {{- include "hat.selectorLabels" . | nindent 4 }}
