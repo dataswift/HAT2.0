@@ -1,4 +1,5 @@
-import Dependencies.Library
+import Dependencies._
+import play.sbt.PlayImport
 import sbt.Keys._
 
 val codeguruURI =
@@ -15,49 +16,37 @@ lazy val hat = project
   .disablePlugins(PlayLogback)
   .settings(
     libraryDependencies ++= Seq(
-          Library.Play.ws,
-          filters,
-          ehcache,
-          Library.Play.cache,
-          Library.Play.playGuard,
-          Library.Play.json,
-          Library.Play.jsonJoda,
-          Library.Play.test,
-          Library.Play.Silhouette.passwordBcrypt,
-          Library.Play.Silhouette.persistence,
-          Library.Play.Silhouette.cryptoJca,
-          Library.Play.Silhouette.silhouette,
-          Library.Play.Jwt.atlassianJwtCore,
-          Library.Play.Jwt.bouncyCastlePkix,
-          Library.Backend.logPlay,
-          Library.Backend.redisCache,
-          Library.HATDeX.dexClient,
-          Library.HATDeX.codegen,
-          Library.Utils.awsJavaS3Sdk,
-          Library.Utils.awsJavaSesSdk,
-          Library.Utils.awsJavaLambdaSdk,
-          Library.Utils.prettyTime,
-          Library.Utils.nbvcxz,
-          Library.Utils.alpakkaAwsLambda,
-          Library.scalaGuice,
-          Library.circeConfig,
-          Library.ContractLibrary.adjudicator,
-          Library.Utils.apacheCommonLang,
-          Library.Prometheus.filters,
-          Library.janino
+          PlayImport.ehcache,
+          PlayImport.filters,
+          PlayImport.guice,
+          PlayImport.ws,
+          DsLib.Adjudicator,
+          DsLib.DexClient,
+          DsLib.PlayCommon,
+          DsLib.RedisCache,
+          DsLib.SilhouetteCryptoJca,
+          DsLib.SilhouettePasswordBcrypt,
+          DsLib.SilhouettePersistence,
+          DsLib.SlickPostgresDriver,
+          Lib.AwsV1Sdk,
+          Lib.BouncyCastle,
+          Lib.Ficus,
+          Lib.Guard,
+          Lib.Nbvcxz,
+          Lib.PlayJson,
+          Lib.PlayJsonJoda,
+          Lib.PlaySlick,
+          Lib.PlayTest,
+          Lib.PrometheusFilter,
+          Lib.ScalaGuice,
+          LocalThirdParty.AlpakkaAwsLambda,
+          LocalThirdParty.CirceConfig,
+          LocalThirdParty.PrettyTime,
+          DsLib.IntegrationTestCommon          % Test,
+          DsLib.SilhouetteTestkit              % Test,
+          Lib.ScalaTestScalaCheck              % Test,
+          LocalThirdParty.ScalaTestplusMockito % Test
         ),
-    libraryDependencies := (buildEnv.value match {
-          case BuildEnv.Developement | BuildEnv.Test =>
-            libraryDependencies.value ++ Seq(
-                  Library.Play.Silhouette.silhouetteTestkit,
-                  Library.ScalaTest.scalaplaytestmock,
-                  Library.Dataswift.integrationTestCommon,
-                  Library.ScalaTest.mockitoCore
-                )
-          case BuildEnv.Stage | BuildEnv.Production =>
-            libraryDependencies.value
-        }),
-    excludeDependencies := Seq(ExclusionRule("org.slf4j", "slf4j-nop")),
     Test / parallelExecution := false,
     Assets / pipelineStages := Seq(digest),
     Assets / sourceDirectory := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
@@ -102,7 +91,6 @@ lazy val hat = project
 // Enable the semantic DB for scalafix
 inThisBuild(
   List(
-    scalaVersion := "2.13.5",
     scalafixScalaBinaryVersion := "2.13",
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
