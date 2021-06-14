@@ -10,6 +10,7 @@ kind: Ingress
 metadata:
   name: {{ $fullName }}
   labels:
+    app.kubernetes.io/component: app
     {{- include "hat.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:

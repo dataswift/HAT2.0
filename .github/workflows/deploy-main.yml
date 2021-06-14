@@ -9,7 +9,6 @@ env:
   RUMPEL: live
   RUMPEL_ALT: latest
   RUMPEL_BUCKET: dswift-hat-sandbox-frontend-build-artifacts
-  REPOSITORY: dataswift/hat
 
 jobs:
   build:
@@ -20,15 +19,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
+          fetch-depth: 0
           submodules: recursive
 
       - name: Cache - GHA
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cache/coursier/v1/https
           key: ${{ runner.OS }}-coursier-cache
 
-      - name: Add extra resolvers
+      - name: Cache - Resolvers
         run: curl https://${{ secrets.ARTIFACTS_CACHE_BUCKET }}/resolvers.sbt --create-dirs -o ~/.sbt/resolvers.sbt
 
       - name: Setup Java
@@ -39,7 +39,7 @@ jobs:
           java-package: jdk
           architecture: x64
 
-      - name: Frontend
+      - name: App - Frontend
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOYER_SANDBOX_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOYER_SANDBOX_SECRET_ACCESS_KEY }}
@@ -56,25 +56,53 @@ jobs:
           rm -r alt-rumpel
           cd -
 
-      - name: Build
-        run: |
-          sbt -Denv=prod -Dhttp.port=8080 -Dpidfile.path=/dev/null -Dplay.server.pidfile.path=/dev/null docker:stage
-          docker build -t ${{ env.REPOSITORY }}:${{ github.sha }} hat/target/docker/stage
+      - name: App - Build
+        run: sbt Docker/stage
 
-      - name: Container Registry - Login
+      - name: Container - Setup QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Container - Setup Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Container - Login DockerHub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_DATASWIFT_USER }}
           password: ${{ secrets.DOCKERHUB_DATASWIFT_PASS }}
 
-      - name: Container Registry - Push
-        run: docker push ${{ env.REPOSITORY }}:${{ github.sha }}
+      - id: date
+        run: |
+          echo "::set-output name=ts::$(date +%s)"
 
-      - name: Invoke deployment
-        uses: benc-uk/workflow-dispatch@v1
+      - name: Container - Meta
+        id: meta
+        uses: docker/metadata-action@v3
         with:
-          workflow: Deploy
-          ref: refs/heads/main
-          repo: dataswift/deployments
-          token: ${{ secrets.BOT_GITHUB_TOKEN }}
-          inputs: '{ "service": "hat", "environment": "sandbox", "version": "${{ env.REPOSITORY }}:${{ github.sha }}" }'
+          images: |
+            dataswift/hat
+          tags: |
+            type=sha,prefix=main-,suffix=-${{ steps.date.outputs.ts }},format=short
+
+      - name: Container - Build & Push
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: hat/target/docker/stage
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=ghcr.io/datasiwft/hat:latest
+
+      - name: Slack
+        uses: lazy-actions/slatify@master
+        if: failure()
+        with:
+          type: ${{ job.status }}
+          job_name: "*${{ env.GITHUB_WORKFLOW }}*"
+          channel: "ci"
+          commit: true
+          mention: "here"
+          mention_if: "failure"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          url: ${{ secrets.SLACK_WEBHOOK_URL }}

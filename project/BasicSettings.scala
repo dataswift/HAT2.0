@@ -31,15 +31,6 @@ import sbt._
 object BasicSettings extends AutoPlugin {
   override def trigger = allRequirements
 
-  object autoImport {
-    object BuildEnv extends Enumeration {
-      val Production, Stage, Test, Developement = Value
-    }
-
-    val buildEnv = settingKey[BuildEnv.Value]("the current build environment")
-  }
-  import autoImport._
-
   override def projectSettings =
     Seq(
       organization := "org.hatdex",
@@ -79,27 +70,6 @@ object BasicSettings extends AutoPlugin {
       // in Travis with `sudo: false`.
       // See https://github.com/sbt/sbt/issues/653
       // and https://github.com/travis-ci/travis-ci/issues/3775
-      javaOptions += "-Xmx1G",
-      buildEnv := {
-        sys.props
-          .get("env")
-          .orElse(sys.env.get("BUILD_ENV"))
-          .flatMap {
-            case "prod"  => Some(BuildEnv.Production)
-            case "stage" => Some(BuildEnv.Stage)
-            case "test"  => Some(BuildEnv.Test)
-            case "dev"   => Some(BuildEnv.Developement)
-            case unknown => None
-          }
-          .getOrElse(BuildEnv.Developement)
-      },
-      // give feed back
-      onLoadMessage := {
-        // depend on the old message as well
-        val defaultMessage = onLoadMessage.value
-        val env            = buildEnv.value
-        s"""|$defaultMessage
-          |Running in build environment: $env""".stripMargin
-      }
+      javaOptions += "-Xmx1G"
     )
 }
