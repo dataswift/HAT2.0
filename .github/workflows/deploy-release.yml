@@ -95,12 +95,11 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          context: .
+          context: hat/target/docker/stage
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
           cache-from: type=registry,ref=ghcr.io/datasiwft/hat:latest
-          file: hat/target/docker/stage/Dockerfile
 
       - name: Slack
         uses: lazy-actions/slatify@master
