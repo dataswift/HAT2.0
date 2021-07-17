@@ -7,7 +7,7 @@ val codeguruURI =
 
 // the application
 lazy val hat = project
-  .in(file("hat"))
+  .in(file("."))
   .settings(dockerSettings)
   .enablePlugins(PlayScala)
   .enablePlugins(SbtWeb, SbtSassify, SbtGzip, SbtDigest)

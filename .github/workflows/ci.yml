@@ -41,7 +41,7 @@ jobs:
         run: git submodule update
 
       - name: Test
-        run: sbt clean test -Dconfig.file=hat/conf/application.test.conf
+        run: sbt clean test -Dconfig.file=conf/application.test.conf
 
       # - name: Coverage - off until we re-add Coverage
       #   run: sbt "project hat" coverage test -Dconfig.file=hat/conf/application.test.conf
