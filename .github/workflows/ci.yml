@@ -47,7 +47,7 @@ jobs:
       #   run: sbt "project hat" coverage test -Dconfig.file=hat/conf/application.test.conf
 
       - name: Build
-        run: sbt Docker/stage && docker build hat/target/docker/stage
+        run: sbt Docker/stage && docker build target/docker/stage
 
       - name: AWS - Configure
         uses: aws-actions/configure-aws-credentials@v1
