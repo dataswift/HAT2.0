@@ -53,7 +53,8 @@ email.dataswift.auth.reset.password.link=Redefinir senha
 email.dataswift.auth.password.updated=Senha atualizada
 
 email.dataswift.auth.welcome.to.pda={0} recebe você em sua Personal Data Account
-email.dataswift.auth.pda.was.created=Uma conta de dados pessoais da Dataswift usando este endereço de e-mail, [{0}] foi criada para você em nome de
+email.dataswift.auth.pda.using.email.address=Uma conta de dados pessoais da Dataswift usando este endereço de e-mail,
+email.dataswift.auth.pda.has.been.created=foi criada para você em nome de
 email.dataswift.auth.go.to.app=Vá para {0}
 
 email.dataswift.auth.safe.place=Um local seguro para seus dados
