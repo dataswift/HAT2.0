@@ -6,7 +6,8 @@
 
 @messagesApi("email.dataswift.auth.hi"),
 
-@messagesApi("email.dataswift.auth.pda.was.created", email)
+@messagesApi("email.dataswift.auth.pda.using.email.address")
+[@email] @messagesApi("email.dataswift.auth.pda.has.been.created")
 
 ====================
 
