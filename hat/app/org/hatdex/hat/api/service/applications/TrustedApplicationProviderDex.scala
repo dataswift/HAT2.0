@@ -1,8 +1,8 @@
 package org.hatdex.hat.api.service.applications
 
 import io.dataswift.models.hat.applications.Application
-import org.hatdex.dex.apiV2.DexClient
-import org.hatdex.dex.apiV2.Errors.ApiException
+import org.hatdex.dex.apiV3.DexClient
+import org.hatdex.dex.apiV3.Errors.ApiException
 import org.hatdex.hat.api.service.RemoteExecutionContext
 import play.api.cache.AsyncCacheApi
 import play.api.libs.ws.WSClient
@@ -21,12 +21,8 @@ class TrustedApplicationProviderDex @Inject() (
 
   private val logger = Logger(this.getClass)
 
-  private val dexClient = new DexClient(
-    wsClient,
-    configuration.underlying.getString("exchange.address"),
-    configuration.underlying.getString("exchange.scheme"),
-    "v1.1"
-  )
+  private val dexAddress = configuration.underlying.getString("exchange.address")
+  private val dexClient = new DexClient(wsClient, dexAddress)
 
   private val applicationsCacheDuration = configuration.get[FiniteDuration]("application-cache-ttl")
 
@@ -38,7 +34,7 @@ class TrustedApplicationProviderDex @Inject() (
       "apps:dexApplications",
       applicationsCacheDuration
     ) {
-      dexClient.applications(includeUnpublished = includeUnpublished)
+      dexClient.applications(includeUnpublished)
     }
 
   def application(id: String): Future[Option[Application]] =

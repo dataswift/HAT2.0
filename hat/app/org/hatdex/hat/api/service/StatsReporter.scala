@@ -28,7 +28,7 @@ import akka.actor.{ ActorSystem, Scheduler }
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.impl.authenticators.JWTRS256Authenticator
 import io.dataswift.models.hat.{ DataStats, Platform }
-import org.hatdex.dex.apiV2.DexClient
+import org.hatdex.dex.apiV3.DexClient
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.dal.Tables._
@@ -68,12 +68,8 @@ class StatsReporter @Inject() (
   )
   private val statsBatchSize = 100
 
-  private val dexClient = new DexClient(
-    wsClient,
-    configuration.underlying.getString("exchange.address"),
-    configuration.underlying.getString("exchange.scheme"),
-    "v1.1"
-  )
+  private val dexAdress = configuration.underlying.getString("exchange.address")
+  private val dexClient = new DexClient(wsClient, dexAdress)
   //  val defaultSsslConfig = AkkaSSLConfig()
 
   def reportStatistics(

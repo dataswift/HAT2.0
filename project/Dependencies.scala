@@ -34,8 +34,8 @@ object Dependencies {
   object DsLib {
     private object Version {
       val DsAdjudicator         = "0.2.0"
-      val DsBackend             = "2.5.0"
-      val DsDexClient           = "3.3.1"
+      val DsBackend             = "2.5.2"
+      val DsDexClient           = "3.4.2"
       val DsSilhouette          = "5.3.0"
       val DsSlickPostgresDriver = "0.1.2"
     }
