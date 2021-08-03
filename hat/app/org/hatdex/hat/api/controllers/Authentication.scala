@@ -407,7 +407,7 @@ class Authentication @Inject() (
           .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(Verified("email"))))))
           .flatMap {
             case Some(user) =>
-              logger.info(s"User found: ${user.name}")
+              logger.info("User found")
               val eventualClaimContext = for {
                 maybeApplication <- applicationsService
                                       .applicationStatus()(request.dynamicEnvironment, user, request)

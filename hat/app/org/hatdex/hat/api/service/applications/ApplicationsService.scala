@@ -150,11 +150,17 @@ class ApplicationsService @Inject() (
               logger.info("Fetching application setup status")
               applicationSetupStatus()(hat.db) // database
             }
-            statuses <- Future.sequence(apps.map(refetchApplicationsStatus(_, setup)))
+            statuses <- {
+              logger.info(s"Refreshing application status")
+              Future.sequence(apps.map(refetchApplicationsStatus(_, setup)))
+            }
             apps = statuses.map(_._1)
-            _ <- if (statuses.forall(_._2))
-              cache.set(s"apps:${hat.domain}", apps, applicationsCacheDuration)
-            else Future.successful(Done)
+            _ <- {
+              logger.info("Attempting to save applications in cache")
+              if (statuses.forall(_._2))
+                cache.set(s"apps:${hat.domain}", apps, applicationsCacheDuration)
+              else Future.successful(Done)
+            }
           } yield apps
       }
   }
@@ -316,6 +322,7 @@ class ApplicationsService @Inject() (
     )(implicit hat: HatServer,
       user: HatUser,
       requestHeader: RequestHeader): Future[HatApplication] = {
+    logger.info(s"Setting app application: ${application.application.id}")
     val appSetup = for {
       // Create and enable the data debit
       _ <- enableAssociatedDataDebit(application)
