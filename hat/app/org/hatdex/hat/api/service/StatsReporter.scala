@@ -164,6 +164,7 @@ class StatsReporter @Inject() (
     userService.getUserByRole(Platform())(server).map(_.head)
 
   private def validateToken()(implicit server: HatServer): Future[String] = {
+    logger.info("Validating token")
     val resource = configuration.underlying.getString("exchange.address")
     val customClaims = Map(
       "resource" -> Json.toJson(resource),
