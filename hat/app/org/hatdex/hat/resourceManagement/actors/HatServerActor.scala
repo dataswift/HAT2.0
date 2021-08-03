@@ -66,7 +66,7 @@ class HatServerActor @Inject() (
 
   def receive: Receive = {
     case _: HatRetrieve =>
-      log.debug(s"RECEIVE HATRetrieve, stashing, connecting")
+      log.info(s"RECEIVE HATRetrieve, stashing, connecting")
       stash()
       context.become(connecting)
       connect().pipeTo(self)
