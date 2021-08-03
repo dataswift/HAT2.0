@@ -558,21 +558,24 @@ class Authentication @Inject() (
   private def ensureValidToken(
       email: String,
       isSignup: Boolean
-    )(implicit hatServer: HatServer): Future[MailTokenUser] =
+    )(implicit hatServer: HatServer): Future[MailTokenUser] = {
+    logger.info("Checking for valid tokens")
     tokenService.retrieve(email, isSignup).flatMap {
       case Some(token) if token.isExpired =>
-        // TODO: log event for audit purpose
+        logger.info(s"Token $token is expired. Consuming the token and creating a new one")
         for {
           _ <- tokenService.consume(token.id)
           newToken <- tokenService.create(MailTokenUser(email, isSignup = isSignup))
         } yield newToken.get // TODO: Using .get is not great here
       // the underlying implementation generates non-option type and then wraps it in Option, interface not great, suggestions appreciated
       case Some(token) =>
+        logger.debug("Token found")
         Future.successful(token)
       case None =>
-        // TODO: log event for audit purpose
+        logger.info("Creating new token")
         tokenService.create(MailTokenUser(email, isSignup = isSignup)).map(_.get)
     }
+  }
 
   /**
     * Generate email verification string
@@ -580,8 +583,10 @@ class Authentication @Inject() (
   private def emailVerificationLink(
       host: String,
       token: String,
-      verificationOptions: EmailVerificationOptions): String =
+      verificationOptions: EmailVerificationOptions): String = {
+    logger.info("Creating email verification link")
     s"https://$host/auth/verify-email/$token?${verificationOptions.asQueryParameters}"
+  }
 
   // TODO: add reset options support
   private def passwordResetLink(
