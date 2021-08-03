@@ -112,7 +112,7 @@ class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatK
       readRsaPrivateKey(confPrivateKey)
     } getOrElse {
       Future.failed(
-        new HatServerDiscoveryException(s"Private Key for $hat not found")
+        new HatServerDiscoveryException(s"Private Key for $hat not found in the configuration")
       )
     }
 
