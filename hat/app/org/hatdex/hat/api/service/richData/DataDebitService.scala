@@ -34,7 +34,7 @@ import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.FutureTransformations
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
-import play.api.Logger
+import play.api.{ Configuration, Logger }
 import play.api.libs.json._
 
 import java.sql.SQLException
@@ -44,7 +44,8 @@ import scala.concurrent.Future
 import scala.util.Success
 
 class DataDebitService @Inject() (
-    userService: UserService
+    userService: UserService,
+    config: Configuration
   )(implicit val ec: RemoteExecutionContext) {
   import RichDataJsonFormats._
 
@@ -292,6 +293,7 @@ class DataDebitService @Inject() (
   }
 
   def all()(implicit server: HatServer): Future[Seq[DataDebit]] = {
+    val dexAddress: String = config.get[String]("exchange.address")
     val legacyWarning =
       "This Data Debit is in a legacy format, and the HAT App is unable to display all the information associated with it fully. This may include a logo, title and full description"
     filterDataDebits(DbDataDebitPermissions)(server.db)
@@ -310,11 +312,11 @@ class DataDebitService @Inject() (
               else dd.requestClientName,
             requestClientLogoUrl =
               if (dd.requestClientName.isEmpty)
-                "https://dex.hubofallthings.com/assets//images/dex.png"
+                s"$dexAddress/assets/images/dex.png"
               else dd.requestClientLogoUrl,
             requestClientUrl =
               if (dd.requestClientName.isEmpty)
-                "https://dex.hubofallthings.com/"
+                dexAddress
               else dd.requestClientUrl
           )
         )

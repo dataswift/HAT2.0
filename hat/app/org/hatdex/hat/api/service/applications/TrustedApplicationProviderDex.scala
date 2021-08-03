@@ -34,7 +34,7 @@ class TrustedApplicationProviderDex @Inject() (
       "apps:dexApplications",
       applicationsCacheDuration
     ) {
-      dexClient.applications(includeUnpublished)
+      dexClient.applications(Some(includeUnpublished))
     }
 
   def application(id: String): Future[Option[Application]] =

@@ -81,8 +81,6 @@ class Authentication @Inject() (
     .status(req => s"${req.host}${req.path}", 200)
     .includeStatus(404, 600)
 
-  private val emailScheme = "https://"
-
   private val pdaAccountRegistry: DataswiftServiceConfig =
     configuration.underlying.as[DataswiftServiceConfig]("pdaAccountRegistry.verificationCallback").right.get
   private val isSandboxPda: Boolean =
@@ -401,6 +399,7 @@ class Authentication @Inject() (
       val email           = request.dynamicEnvironment.ownerEmail
       val response        = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions")))
 
+      logger.info("Handling verification request")
       // (email, applicationId) in the body
       // Look up the application (Is this in the HAT itself?  Not DEX)
       if (claimHatRequest.email == email)
@@ -408,6 +407,7 @@ class Authentication @Inject() (
           .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(Verified("email"))))))
           .flatMap {
             case Some(user) =>
+              logger.info(s"User found: ${user.name}")
               val eventualClaimContext = for {
                 maybeApplication <- applicationsService
                                       .applicationStatus()(request.dynamicEnvironment, user, request)
@@ -581,13 +581,13 @@ class Authentication @Inject() (
       host: String,
       token: String,
       verificationOptions: EmailVerificationOptions): String =
-    s"$emailScheme$host/auth/verify-email/$token?${verificationOptions.asQueryParameters}"
+    s"https://$host/auth/verify-email/$token?${verificationOptions.asQueryParameters}"
 
   // TODO: add reset options support
   private def passwordResetLink(
       host: String,
       token: String): String =
-    s"$emailScheme$host/auth/change-password/$token"
+    s"https://$host/auth/change-password/$token"
 
   // private def roleMatcher(rolesToMatch: Seq[UserRole], rolesRequired: Seq[UserRole]): Boolean = {
   //   //rolesToMatch.map(userRole => roleMatch(userRole, rolesRequired)

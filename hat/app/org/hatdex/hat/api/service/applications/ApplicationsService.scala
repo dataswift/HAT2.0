@@ -117,22 +117,33 @@ class ApplicationsService @Inject() (
   def applicationStatus(
     )(implicit hat: HatServer,
       user: HatUser,
-      requestHeader: RequestHeader): Future[Seq[HatApplication]] =
+      requestHeader: RequestHeader): Future[Seq[HatApplication]] = {
+    logger.info(s"Fetching application status")
     cache
       .get[Seq[HatApplication]](s"apps:${hat.domain}")
       .flatMap {
-        case Some(applications) => Future.successful(applications)
+        case Some(applications) =>
+          logger.info("Application was found in the cache")
+          Future.successful(applications)
         case None =>
+          logger.info("Application was not found in the cache. Fetching application")
           for {
-            apps <- trustedApplicationProvider.applications // potentially caching
-            setup <- applicationSetupStatus()(hat.db) // database
+            apps <- {
+              logger.info("Fetching applications")
+              trustedApplicationProvider.applications // potentially caching
+            }
+            setup <- {
+              logger.info("Fetching application setup status")
+              applicationSetupStatus()(hat.db) // database
+            }
             statuses <- Future.sequence(apps.map(refetchApplicationsStatus(_, setup)))
             apps = statuses.map(_._1)
             _ <- if (statuses.forall(_._2))
-                   cache.set(s"apps:${hat.domain}", apps, applicationsCacheDuration)
-                 else Future.successful(Done)
+              cache.set(s"apps:${hat.domain}", apps, applicationsCacheDuration)
+            else Future.successful(Done)
           } yield apps
       }
+  }
 
   private def refetchApplicationsStatus(
       app: Application,
