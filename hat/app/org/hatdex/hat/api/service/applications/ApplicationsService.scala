@@ -82,6 +82,7 @@ class ApplicationsService @Inject() (
     )(implicit hat: HatServer,
       user: HatUser,
       requestHeader: RequestHeader): Future[Option[HatApplication]] = {
+    logger.info(s"Fetching application status for app with id: $id")
     val eventuallyCleanedCache =
       if (bustCache)
         Future.sequence(
@@ -100,15 +101,28 @@ class ApplicationsService @Inject() (
                          case None          =>
                            // if any item has expired, the aggregated statuses must be refreshed
                            cache.remove(s"apps:${hat.domain}")
+                           logger.info("App was not found in the cache. Making request")
                            for {
-                             maybeApp <- trustedApplicationProvider.application(id)
-                             setup <- applicationSetupStatus(id)(hat.db)
-                             status <- FutureTransformations.transform(
-                                         maybeApp.map(refetchApplicationsStatus(_, Seq(setup).flatten))
-                                       )
-                             _ <- status
-                                    .map(s => cache.set(appCacheKey(id), s._1, applicationsCacheDuration))
-                                    .getOrElse(Future.successful(Done))
+                             maybeApp <- {
+                               logger.info("Fetching app")
+                               trustedApplicationProvider.application(id)
+                             }
+                             setup <- {
+                               logger.info("Fetching app status")
+                               applicationSetupStatus(id)(hat.db)
+                             }
+                             status <- {
+                               logger.info("Making the transformation by refetching app")
+                               FutureTransformations.transform(
+                                 maybeApp.map(refetchApplicationsStatus(_, Seq(setup).flatten))
+                               )
+                             }
+                             _ <- {
+                               logger.info("Storing the app in the cache")
+                               status
+                                 .map(s => cache.set(appCacheKey(id), s._1, applicationsCacheDuration))
+                                 .getOrElse(Future.successful(Done))
+                             }
                            } yield status.map(_._1)
                        }
     } yield application

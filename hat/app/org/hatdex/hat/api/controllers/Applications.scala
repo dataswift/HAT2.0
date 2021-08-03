@@ -138,6 +138,7 @@ class Applications @Inject() (
           Owner()
         )
     ).async { implicit request =>
+      logger.info(s"Setting up application with id: $id")
       applicationsService.applicationStatus(id).flatMap { maybeStatus =>
         maybeStatus map { status =>
           applicationsService
