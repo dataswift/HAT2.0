@@ -55,12 +55,7 @@ class FileManagerModule extends ScalaModule {
     configuration.get[AwsS3Configuration]("storage.s3Configuration")
   }
 
-  @Provides @JSingleton
-  def provideS3Client(configuration: AwsS3Configuration): AmazonS3 =
-    AmazonS3ClientBuilder
-      .standard()
-      .withRegion(configuration.region)
-      .withCredentials(new EC2ContainerCredentialsProviderWrapper)
-      .build()
+  @Provides @JSingleton  
+  def provideS3Client(configuration: AwsS3Configuration): AmazonS3 = AmazonS3ClientBuilder.defaultClient()
 
 }
