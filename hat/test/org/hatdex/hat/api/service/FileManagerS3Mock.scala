@@ -24,17 +24,9 @@
 
 package org.hatdex.hat.api.service
 
-import com.amazonaws.auth.{ AWSStaticCredentialsProvider, BasicAWSCredentials }
 import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
 
 class FileManagerS3Mock {
   // TOOD: Move this to localstack test container
-  private val awsCreds = new BasicAWSCredentials("testAwsAccessKey", "testAwsSecret")
-  val mockS3client: AmazonS3 =
-    AmazonS3ClientBuilder
-      .standard()
-      .withRegion("eu-west-1")
-      .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-      .build()
-
+  val mockS3client: AmazonS3 = AmazonS3ClientBuilder.defaultClient()
 }
