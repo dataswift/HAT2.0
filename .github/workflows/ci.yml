@@ -42,10 +42,6 @@ jobs:
 
       - name: Test
         run: sbt clean test -Dconfig.file=hat/conf/application.test.conf
-        env:
-          AWS_REGION: 'eu-west-1'
-          AWS_ACCESS_KEY_ID: 'testAwsAccessKey'
-          AWS_SECRET_ACCESS_KEY: 'testAwsSecret'
 
       # - name: Coverage - off until we re-add Coverage
       #   run: sbt "project hat" coverage test -Dconfig.file=hat/conf/application.test.conf
