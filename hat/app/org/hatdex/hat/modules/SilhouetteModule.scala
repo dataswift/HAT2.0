@@ -24,7 +24,6 @@
 
 package org.hatdex.hat.modules
 
-import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper
 import com.amazonaws.services.simpleemail.{ AmazonSimpleEmailService, AmazonSimpleEmailServiceClientBuilder }
 import com.google.inject.Provides
 import com.google.inject.name.Named
@@ -229,12 +228,7 @@ class SilhouetteModule extends ScalaModule with SilhouetteConfigLoaders {
     new CredentialsProvider(authInfoRepository, passwordHasherRegistry)
 
   @Provides @JSingleton
-  def provideMailClient(config: Configuration): AmazonSimpleEmailService =
-    AmazonSimpleEmailServiceClientBuilder
-      .standard()
-      .withRegion(config.get[String]("mailer.awsRegion"))
-      .withCredentials(new EC2ContainerCredentialsProviderWrapper)
-      .build()
+  def provideMailClient: AmazonSimpleEmailService = AmazonSimpleEmailServiceClientBuilder.defaultClient()
 
 }
 
