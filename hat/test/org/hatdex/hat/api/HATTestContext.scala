@@ -84,9 +84,6 @@ abstract class HATTestContext extends PostgresqlSpec with MockitoSugar with Befo
       )
     )
 
-  def beforeAll(): Unit =
-    System.setProperty("aws.region", "eu-west-1")
-
   override def afterStart(): Unit =
     Await.result(databaseReady(), 60.seconds)
 
