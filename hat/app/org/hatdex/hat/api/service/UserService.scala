@@ -12,6 +12,8 @@ trait UserService {
 
   def getUser(userId: UUID)(implicit server: HatServer): Future[Option[HatUser]]
 
+  def getMockUser(hatName: String, domain: String): Future[Option[HatUser]]
+
   def getUser(username: String)(implicit server: HatServer): Future[Option[HatUser]]
 
   def getUserByRole(role: UserRole)(implicit server: HatServer): Future[Seq[HatUser]]

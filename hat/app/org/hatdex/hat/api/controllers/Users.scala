@@ -26,11 +26,11 @@ package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat.json.HatJsonFormats
-import io.dataswift.models.hat.{ Owner, Platform, _ }
+import io.dataswift.models.hat.{Owner, Platform, _}
 import org.hatdex.hat.api.service.UserService
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.authentication.models.HatUser
-import org.hatdex.hat.authentication.{ HatApiController, WithRole, _ }
+import org.hatdex.hat.authentication.{HatApiController, WithRole, _}
 import org.hatdex.hat.dal.ModelTranslation
 import org.hatdex.hat.utils.HatBodyParsers
 import play.api.Logger
@@ -39,7 +39,8 @@ import play.api.mvc._
 
 import java.util.UUID
 import javax.inject.Inject
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.impl.Promise
+import scala.concurrent.{ExecutionContext, Future}
 
 class Users @Inject() (
     components: ControllerComponents,
@@ -52,6 +53,18 @@ class Users @Inject() (
   import HatJsonFormats._
 
   private val logger = Logger(this.getClass)
+
+  def testFunction(hatname: String): Action[AnyContent] =
+    Action.async {
+      for {
+      user <- userService.getMockUser(hatname, "dataswift.net")
+      } yield {
+        user match {
+          case Some(value) => Ok(Json.toJson(ModelTranslation.fromInternalModel(value)))
+          case None => BadRequest(Json.toJson(Map("Message" -> "user Not found")))
+        }
+      }
+    }
 
   def listUsers(): Action[AnyContent] =
     SecuredAction.async { implicit request =>
