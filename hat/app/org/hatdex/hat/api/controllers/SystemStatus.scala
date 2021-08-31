@@ -79,6 +79,12 @@ class SystemStatus @Inject() (
       }
     }
 
+  def healthReport(): Action[AnyContent] = {
+    Action.async {
+      Future.successful(Ok(Json.toJson(Map[String, String]("Status" -> "OK"))))
+    }
+  }
+
   def status(): Action[AnyContent] =
     SecuredAction(
       WithRole(Owner(), Platform()) || ContainsApplicationRole(
