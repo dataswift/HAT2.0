@@ -40,8 +40,7 @@ import scala.concurrent.Future
 import scala.util.Success
 
 class UserServiceImpl @Inject() (
-    cache: AsyncCacheApi,
-    mockDb: Database
+    cache: AsyncCacheApi
   )(implicit ec: DalExecutionContext)
     extends UserService {
   val logger: Logger = Logger(this.getClass)
@@ -64,21 +63,6 @@ class UserServiceImpl @Inject() (
               case Success(Some(u)) =>
                 cache.set(s"${server.domain}:user:${u.userId}", u)
                 cache.set(s"${server.domain}:user:${u.email}", u)
-            })
-      }
-
-  override def getMockUser(hatName: String, domain: String): Future[Option[HatUser]] =
-    cache
-      .get[HatUser](s"${domain}:user:$hatName")
-      .flatMap {
-        case Some(cached) => Future.successful(Some(cached))
-        case None =>
-          queryUser(UserUser.filter(_.name === hatName))(mockDb)
-            .map(_.headOption)
-            .andThen({
-              case Success(Some(u)) =>
-                cache.set(s"${domain}:user:${u.userId}", u)
-                cache.set(s"${domain}:user:${u.email}", u)
             })
       }
 

@@ -34,8 +34,8 @@ import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.FutureTransformations
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
-import play.api.{ Configuration, Logger }
 import play.api.libs.json._
+import play.api.{ Configuration, Logger }
 
 import java.sql.SQLException
 import java.util.UUID

@@ -22,7 +22,7 @@ class TrustedApplicationProviderDex @Inject() (
   private val logger = Logger(this.getClass)
 
   private val dexAddress = configuration.underlying.getString("exchange.address")
-  private val dexClient = new DexClient(wsClient, dexAddress)
+  private val dexClient  = new DexClient(wsClient, dexAddress)
 
   private val applicationsCacheDuration = configuration.get[FiniteDuration]("application-cache-ttl")
 

@@ -33,8 +33,6 @@ GET         /metrics                                             com.github.stij
 ->          /api/v2.0                                            v20.Routes
 ->          /api/v2.6                                            v26.Routes
 
-GET         /api/:name/v2.6/test                                 org.hatdex.hat.api.controllers.Users.testFunction(name)
-
 # Frontend routes
 GET         /                                                    org.hatdex.hat.phata.controllers.Phata.dashboard(path = "")
 GET         /*path                                               org.hatdex.hat.phata.controllers.Phata.dashboard(path)
