@@ -54,6 +54,7 @@ spec:
           readinessProbe:
             tcpSocket:
               port: http
+            initialDelaySeconds: 30
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
