@@ -46,7 +46,7 @@ import play.api.i18n.Lang
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.{ Action, _ }
-import play.api.{ Configuration, Logger }
+import play.api.{ Configuration, Logger, Logging }
 
 import java.net.{ URLDecoder, URLEncoder }
 import javax.inject.Inject
@@ -71,11 +71,10 @@ class Authentication @Inject() (
     tokenService: MailTokenService[MailTokenUser],
     wsClient: WSClient,
     limiter: UserLimiter)
-    extends HatApiController(components, silhouette) {
+    extends HatApiController(components, silhouette)
+    with Logging {
 
   import HatJsonFormats._
-
-  private val logger = Logger(this.getClass)
 
   private val indefiniteSuccessCaching: CachedBuilder = cached
     .status(req => s"${req.host}${req.path}", 200)
@@ -322,7 +321,7 @@ class Authentication @Inject() (
               val token = MailTokenUser(email, isSignup = false)
               // Store that token
               tokenService.create(token).map { _ =>
-                mailer.passwordReset(email, passwordResetLink(request.host, token.id))
+                mailer.passwordReset(email, passwordResetLink(request.host, token.id, email))
                 response
               }
             // The user was not found, but return the "If we found an email address, we'll send the link."
@@ -591,8 +590,9 @@ class Authentication @Inject() (
   // TODO: add reset options support
   private def passwordResetLink(
       host: String,
-      token: String): String =
-    s"https://$host/auth/change-password/$token"
+      token: String,
+      email: String): String =
+    s"https://$host/auth/change-password/$token?email=${URLEncoder.encode(email, "UTF-8")}"
 
   // private def roleMatcher(rolesToMatch: Seq[UserRole], rolesRequired: Seq[UserRole]): Boolean = {
   //   //rolesToMatch.map(userRole => roleMatch(userRole, rolesRequired)
