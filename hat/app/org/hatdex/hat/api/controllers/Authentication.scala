@@ -46,7 +46,7 @@ import play.api.i18n.Lang
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.{ Action, _ }
-import play.api.{ Configuration, Logger, Logging }
+import play.api.{ Configuration, Logging }
 
 import java.net.{ URLDecoder, URLEncoder }
 import javax.inject.Inject
@@ -84,6 +84,7 @@ class Authentication @Inject() (
     configuration.underlying.as[DataswiftServiceConfig]("pdaAccountRegistry.verificationCallback").right.get
   private val isSandboxPda: Boolean =
     configuration.getOptional[Boolean]("exchange.beta").getOrElse(true)
+  private lazy val clientHost: String = configuration.get[String]("hat.clientHost")
 
   // * Error Responses *
   // Extracted as these messages increased the length of functions.
@@ -321,7 +322,7 @@ class Authentication @Inject() (
               val token = MailTokenUser(email, isSignup = false)
               // Store that token
               tokenService.create(token).map { _ =>
-                mailer.passwordReset(email, passwordResetLink(request.host, token.id, email))
+                mailer.passwordReset(email, passwordResetLink(token.id, email))
                 response
               }
             // The user was not found, but return the "If we found an email address, we'll send the link."
@@ -434,7 +435,7 @@ class Authentication @Inject() (
 
                     val emailVerificationOptions =
                       EmailVerificationOptions(email, language, app.application.id, maybeSetupUrl.getOrElse(""))
-                    val verificationLink = emailVerificationLink(request.host, token.id, emailVerificationOptions)
+                    val verificationLink = emailVerificationLink(token.id, emailVerificationOptions)
                     mailer.verifyEmail(email,
                                        app.application.info.name,
                                        app.application.info.graphics.logo.normal,
@@ -580,19 +581,17 @@ class Authentication @Inject() (
     * Generate email verification string
     */
   private def emailVerificationLink(
-      host: String,
       token: String,
       verificationOptions: EmailVerificationOptions): String = {
     logger.info("Creating email verification link")
-    s"https://$host/auth/verify-email/$token?${verificationOptions.asQueryParameters}"
+    s"https://$clientHost/auth/verify-email/$token?${verificationOptions.asQueryParameters}"
   }
 
   // TODO: add reset options support
   private def passwordResetLink(
-      host: String,
       token: String,
       email: String): String =
-    s"https://$host/auth/change-password/$token?email=${URLEncoder.encode(email, "UTF-8")}"
+    s"https://$clientHost/auth/change-password/$token?email=${URLEncoder.encode(email, "UTF-8")}"
 
   // private def roleMatcher(rolesToMatch: Seq[UserRole], rolesRequired: Seq[UserRole]): Boolean = {
   //   //rolesToMatch.map(userRole => roleMatch(userRole, rolesRequired)
