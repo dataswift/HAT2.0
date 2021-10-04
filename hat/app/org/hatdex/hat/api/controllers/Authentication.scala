@@ -502,7 +502,7 @@ class Authentication @Inject() (
                     }
 
                   val fullyQualifiedHatAddress: String =
-                    s"https://$clientHost/login"
+                    s"https://$clientHost"
                   mailer.emailVerified(token.email, fullyQualifiedHatAddress)
                   result
                 }
