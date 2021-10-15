@@ -42,7 +42,7 @@ jobs:
         run: git submodule update
 
       - name: Test
-        run: sbt clean test -Dconfig.file=hat/conf/application.test.conf        
+        run: sbt clean test -Dconfig.file=hat/conf/application.test.conf
         env:
           AWS_REGION: eu-west-1
 

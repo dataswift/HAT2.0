@@ -27,7 +27,5 @@ package org.hatdex.hat.api.service
 import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
 
 class FileManagerS3Mock {
-  // TODO: Move this to localstack test container
-
   val mockS3client: AmazonS3 = AmazonS3ClientBuilder.defaultClient()
 }
