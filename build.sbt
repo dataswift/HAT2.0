@@ -48,6 +48,10 @@ lazy val hat = project
           LocalThirdParty.ScalaTestplusMockito % Test
         ),
     Test / parallelExecution := false,
+    Test / fork := true,
+    Test / envVars := Map("AWS_DEFAULT_REGION" -> "eu-west-1", "AWS_REGION" -> "eu-west-1"),
+    IntegrationTest / fork := true,
+    IntegrationTest / envVars := Map("AWS_DEFAULT_REGION" -> "eu-west-1", "AWS_REGION" -> "eu-west-1"),
     Assets / pipelineStages := Seq(digest),
     Assets / sourceDirectory := baseDirectory.value / "app" / "org" / "hatdex" / "hat" / "phata" / "assets",
     update / aggregate := false,

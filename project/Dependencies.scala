@@ -35,7 +35,7 @@ object Dependencies {
     private object Version {
       val DsAdjudicator         = "0.2.0"
       val DsBackend             = "2.5.5"
-      val DsDexClient           = "3.4.2"
+      val DsDexClient           = "3.4.3"
       val DsSilhouette          = "5.3.0"
       val DsSlickPostgresDriver = "0.1.2"
     }
