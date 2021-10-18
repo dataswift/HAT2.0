@@ -50,6 +50,7 @@ class DataDebitService @Inject() (
   import RichDataJsonFormats._
 
   val logger: Logger = Logger(this.getClass)
+  val dexAddress: String = config.get[String]("exchange.address")
 
   def createDataDebit(
       key: String,
@@ -293,7 +294,6 @@ class DataDebitService @Inject() (
   }
 
   def all()(implicit server: HatServer): Future[Seq[DataDebit]] = {
-    val dexAddress: String = config.get[String]("exchange.address")
     val legacyWarning =
       "This Data Debit is in a legacy format, and the HAT App is unable to display all the information associated with it fully. This may include a logo, title and full description"
     filterDataDebits(DbDataDebitPermissions)(server.db)

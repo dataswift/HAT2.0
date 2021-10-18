@@ -104,21 +104,21 @@ class ApplicationsService @Inject() (
                            logger.info("App was not found in the cache. Making request")
                            for {
                              maybeApp <- {
-                               logger.info("Fetching app")
+                               logger.debug("Fetching app")
                                trustedApplicationProvider.application(id)
                              }
                              setup <- {
-                               logger.info("Fetching app status")
+                               logger.debug("Fetching app status")
                                applicationSetupStatus(id)(hat.db)
                              }
                              status <- {
-                               logger.info("Making the transformation by refetching app")
+                               logger.debug("Making the transformation by refetching app")
                                FutureTransformations.transform(
                                  maybeApp.map(refetchApplicationsStatus(_, Seq(setup).flatten))
                                )
                              }
                              _ <- {
-                               logger.info("Storing the app in the cache")
+                               logger.debug("Storing the app in the cache")
                                status
                                  .map(s => cache.set(appCacheKey(id), s._1, applicationsCacheDuration))
                                  .getOrElse(Future.successful(Done))
@@ -137,26 +137,26 @@ class ApplicationsService @Inject() (
       .get[Seq[HatApplication]](s"apps:${hat.domain}")
       .flatMap {
         case Some(applications) =>
-          logger.info("Application was found in the cache")
+          logger.debug("Application was found in the cache")
           Future.successful(applications)
         case None =>
-          logger.info("Application was not found in the cache. Fetching application")
+          logger.debug("Application was not found in the cache. Fetching application")
           for {
             apps <- {
-              logger.info("Fetching applications")
+              logger.debug("Fetching applications")
               trustedApplicationProvider.applications // potentially caching
             }
             setup <- {
-              logger.info("Fetching application setup status")
+              logger.debug("Fetching application setup status")
               applicationSetupStatus()(hat.db) // database
             }
             statuses <- {
-              logger.info(s"Refreshing application status")
+              logger.debug(s"Refreshing application status")
               Future.sequence(apps.map(refetchApplicationsStatus(_, setup)))
             }
             apps = statuses.map(_._1)
             _ <- {
-              logger.info("Attempting to save applications in cache")
+              logger.debug("Attempting to save applications in cache")
               if (statuses.forall(_._2))
                 cache.set(s"apps:${hat.domain}", apps, applicationsCacheDuration)
               else Future.successful(Done)

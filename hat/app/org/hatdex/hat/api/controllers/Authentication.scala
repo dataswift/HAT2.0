@@ -80,11 +80,12 @@ class Authentication @Inject() (
     .status(req => s"${req.host}${req.path}", 200)
     .includeStatus(404, 600)
 
+  private val emailScheme = "https://"
+
   private val pdaAccountRegistry: DataswiftServiceConfig =
     configuration.underlying.as[DataswiftServiceConfig]("pdaAccountRegistry.verificationCallback").right.get
   private val isSandboxPda: Boolean =
     configuration.getOptional[Boolean]("exchange.beta").getOrElse(true)
-  private lazy val clientHost: String = configuration.get[String]("hat.clientHost")
 
   // * Error Responses *
   // Extracted as these messages increased the length of functions.
@@ -322,7 +323,7 @@ class Authentication @Inject() (
               val token = MailTokenUser(email, isSignup = false)
               // Store that token
               tokenService.create(token).map { _ =>
-                mailer.passwordReset(email, passwordResetLink(token.id, email))
+                mailer.passwordReset(email, passwordResetLink(token.id, request.host))
                 response
               }
             // The user was not found, but return the "If we found an email address, we'll send the link."
@@ -435,7 +436,7 @@ class Authentication @Inject() (
 
                     val emailVerificationOptions =
                       EmailVerificationOptions(email, language, app.application.id, maybeSetupUrl.getOrElse(""))
-                    val verificationLink = emailVerificationLink(token.id, emailVerificationOptions)
+                    val verificationLink = emailVerificationLink(request.host, token.id, emailVerificationOptions)
                     mailer.verifyEmail(email,
                                        app.application.info.name,
                                        app.application.info.graphics.logo.normal,
@@ -502,7 +503,7 @@ class Authentication @Inject() (
                     }
 
                   val fullyQualifiedHatAddress: String =
-                    s"https://$clientHost"
+                    s"https://${hatClaimComplete.hatName}.${hatClaimComplete.hatCluster}"
                   mailer.emailVerified(token.email, fullyQualifiedHatAddress)
                   result
                 }
@@ -581,17 +582,18 @@ class Authentication @Inject() (
     * Generate email verification string
     */
   private def emailVerificationLink(
-      token: String,
-      verificationOptions: EmailVerificationOptions): String = {
+                                     host: String,
+                                     token: String,
+                                     verificationOptions: EmailVerificationOptions): String = {
     logger.info("Creating email verification link")
-    s"https://$clientHost/auth/verify-email/$token?${verificationOptions.asQueryParameters}"
+    s"$emailScheme$host/auth/verify-email/$token?${verificationOptions.asQueryParameters}"
   }
 
   // TODO: add reset options support
   private def passwordResetLink(
-      token: String,
-      email: String): String =
-    s"https://$clientHost/auth/change-password/$token?email=${URLEncoder.encode(email, "UTF-8")}"
+                                 host: String,
+                                 token: String): String =
+    s"$emailScheme$host/auth/change-password/$token"
 
   // private def roleMatcher(rolesToMatch: Seq[UserRole], rolesRequired: Seq[UserRole]): Boolean = {
   //   //rolesToMatch.map(userRole => roleMatch(userRole, rolesRequired)

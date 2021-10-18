@@ -66,7 +66,7 @@ class HatServerActor @Inject() (
 
   def receive: Receive = {
     case _: HatRetrieve =>
-      log.info(s"RECEIVE HATRetrieve, stashing, connecting")
+      log.debug(s"RECEIVE HATRetrieve, stashing, connecting")
       stash()
       context.become(connecting)
       connect().pipeTo(self)
@@ -126,7 +126,7 @@ class HatServerActor @Inject() (
       }
 
   private def server(hat: String): Future[HatServer] = {
-    log.info(s"fetching hat keys for hat: $hat")
+    log.debug(s"fetching hat keys for hat: $hat")
     val server = for {
       privateKey <- hatKeyProvider.privateKey(hat)
       publicKey <- hatKeyProvider.publicKey(hat)
