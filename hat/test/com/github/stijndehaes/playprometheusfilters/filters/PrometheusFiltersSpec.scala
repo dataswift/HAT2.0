@@ -23,7 +23,9 @@ class PrometheusFiltersSpec extends BaseSpec {
   implicit val system: ActorSystem             = ActorSystem()
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  private val noExclusionsConfig = Configuration("play-prometheus-filters.exclude.paths" -> Nil)
+  private val noExclusionsConfig = Configuration(
+    "play-prometheus-filters.exclude.paths" -> Nil,
+    "play-prometheus-filters.metric.resolution" -> "milliseconds")
 
   "LatencyFilter" should "Measure the latency" in {
     // I needed to have an independnt collector per test, otherwise they complain about having duplicate labels.
@@ -70,7 +72,7 @@ class PrometheusFiltersSpec extends BaseSpec {
     metrics must have size 1
     val samples = metrics.get(0).samples
 
-    samples.get(0).value mustBe 1.0
+    samples.get(0).value mustBe 0.0
     samples.get(0).labelValues must have size expectedLabelCount
     samples.get(0).labelValues.get(0) mustBe expectedMethod
     samples.get(0).labelValues.get(1) mustBe expectedStatus

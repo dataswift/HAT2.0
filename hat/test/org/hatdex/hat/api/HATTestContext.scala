@@ -24,7 +24,6 @@
 
 package org.hatdex.hat.api
 
-import akka.Done
 import akka.stream.Materializer
 import com.amazonaws.services.s3.AmazonS3
 import com.atlassian.jwt.core.keys.KeyUtils

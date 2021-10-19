@@ -16,6 +16,7 @@ PUT         /users/user/:userId/update                           org.hatdex.hat.
 
 # SYSTEM routes
 GET         /system/update                                       org.hatdex.hat.api.controllers.SystemStatus.update()
+GET         /healthz                                             org.hatdex.hat.api.controllers.SystemStatus.healthReport()
 
 # AUTHENTICATION routes
 GET         /control/v2/auth/hatlogin                            org.hatdex.hat.api.controllers.Authentication.hatLogin(name: String, redirect: String)

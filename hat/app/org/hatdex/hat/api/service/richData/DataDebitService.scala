@@ -34,8 +34,8 @@ import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.FutureTransformations
 import org.hatdex.libs.dal.HATPostgresProfile.api._
 import org.joda.time.LocalDateTime
-import play.api.Logger
 import play.api.libs.json._
+import play.api.{ Configuration, Logger }
 
 import java.sql.SQLException
 import java.util.UUID
@@ -44,11 +44,13 @@ import scala.concurrent.Future
 import scala.util.Success
 
 class DataDebitService @Inject() (
-    userService: UserService
+    userService: UserService,
+    config: Configuration
   )(implicit val ec: RemoteExecutionContext) {
   import RichDataJsonFormats._
 
   val logger: Logger = Logger(this.getClass)
+  val dexAddress: String = config.get[String]("exchange.address")
 
   def createDataDebit(
       key: String,
@@ -310,11 +312,11 @@ class DataDebitService @Inject() (
               else dd.requestClientName,
             requestClientLogoUrl =
               if (dd.requestClientName.isEmpty)
-                "https://dex.hubofallthings.com/assets//images/dex.png"
+                s"$dexAddress/assets/images/dex.png"
               else dd.requestClientLogoUrl,
             requestClientUrl =
               if (dd.requestClientName.isEmpty)
-                "https://dex.hubofallthings.com/"
+                dexAddress
               else dd.requestClientUrl
           )
         )
