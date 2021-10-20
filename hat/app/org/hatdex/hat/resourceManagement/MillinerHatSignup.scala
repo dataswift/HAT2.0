@@ -38,17 +38,9 @@ trait MillinerHatSignup {
   val logger: Logger
   val ws: WSClient
   val configuration: Configuration
-  val schema: String =
-    configuration.get[String]("resourceManagement.millinerAddress") match {
-      case address if address.startsWith("https") => "https://"
-      case address if address.startsWith("http")  => "http://"
-      case _                                      => "https://"
-    }
 
   val millinerAddress: String = configuration
     .get[String]("resourceManagement.millinerAddress")
-    .stripPrefix("http://")
-    .stripPrefix("https://")
   val hatSharedSecret: String =
     configuration.get[String]("resourceManagement.hatSharedSecret")
 
@@ -60,8 +52,7 @@ trait MillinerHatSignup {
     // Cache the signup information for subsequent calls (For private/public key and database details)
     cache.getOrElseUpdate[HatSignup](s"configuration:$hatAddress") {
       val request: WSRequest = ws
-        .url(s"$schema$millinerAddress/api/manage/configuration/$hatAddress")
-        .withVirtualHost(millinerAddress)
+        .url(s"$millinerAddress/api/manage/configuration/$hatAddress")
         .withHttpHeaders(
           "Accept" -> "application/json",
           "X-Auth-Token" -> hatSharedSecret

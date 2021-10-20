@@ -112,7 +112,7 @@ class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatK
       readRsaPrivateKey(confPrivateKey)
     } getOrElse {
       Future.failed(
-        new HatServerDiscoveryException(s"Private Key for $hat not found")
+        new HatServerDiscoveryException(s"Private Key for $hat not found in the configuration")
       )
     }
 
@@ -154,18 +154,20 @@ class HatKeyProviderMilliner @Inject() (
 
   def privateKey(
       hat: String
-    )(implicit ec: ExecutionContext): Future[RSAPrivateKey] =
+    )(implicit ec: ExecutionContext): Future[RSAPrivateKey] = {
+    logger.info(s"Fetching private Key for hat: $hat")
     getHatSignup(hat) flatMap { signup =>
       logger.debug(
         s"Received signup info, parsing private key ${signup.keys.map(_.privateKey)}"
       )
       readRsaPrivateKey(signup.keys.get.privateKey)
     } recoverWith {
-        case _ =>
-          Future.failed(
-            new HatServerDiscoveryException(s"Private Key for $hat not found")
-          )
-      }
+      case _ =>
+        Future.failed(
+          new HatServerDiscoveryException(s"Private Key for $hat not found")
+        )
+    }
+  }
 
   def ownerEmail(hat: String)(implicit ec: ExecutionContext): Future[String] =
     getHatSignup(hat) map { signup =>
