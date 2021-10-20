@@ -28,8 +28,9 @@ jobs:
         run: curl https://${{ secrets.ARTIFACTS_CACHE_BUCKET }}/resolvers.sbt --create-dirs -o ~/.sbt/resolvers.sbt
 
       - name: Setup
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v2.3.1
         with:
+          distribution: adopt
           java-version: 11
           java-package: jdk
           architecture: x64
@@ -42,8 +43,6 @@ jobs:
 
       - name: Test
         run: sbt clean test -Dconfig.file=hat/conf/application.test.conf
-        env:
-          AWS_REGION: eu-west-1
 
       # - name: Coverage - off until we re-add Coverage
       #   run: sbt "project hat" coverage test -Dconfig.file=hat/conf/application.test.conf
