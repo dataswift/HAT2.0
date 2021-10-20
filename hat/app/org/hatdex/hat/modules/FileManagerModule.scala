@@ -24,7 +24,6 @@
 
 package org.hatdex.hat.modules
 
-import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper
 import com.amazonaws.services.s3.{ AmazonS3, AmazonS3ClientBuilder }
 import com.google.inject.Provides
 import net.codingwell.scalaguice.ScalaModule
@@ -56,11 +55,6 @@ class FileManagerModule extends ScalaModule {
   }
 
   @Provides @JSingleton
-  def provideS3Client(configuration: AwsS3Configuration): AmazonS3 =
-    AmazonS3ClientBuilder
-      .standard()
-      .withRegion(configuration.region)
-      .withCredentials(new EC2ContainerCredentialsProviderWrapper)
-      .build()
+  def provideS3Client: AmazonS3 = AmazonS3ClientBuilder.defaultClient()
 
 }

@@ -46,7 +46,7 @@ import play.api.i18n.Lang
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.{ Action, _ }
-import play.api.{ Configuration, Logger }
+import play.api.{ Configuration, Logging }
 
 import java.net.{ URLDecoder, URLEncoder }
 import javax.inject.Inject
@@ -71,11 +71,10 @@ class Authentication @Inject() (
     tokenService: MailTokenService[MailTokenUser],
     wsClient: WSClient,
     limiter: UserLimiter)
-    extends HatApiController(components, silhouette) {
+    extends HatApiController(components, silhouette)
+    with Logging {
 
   import HatJsonFormats._
-
-  private val logger = Logger(this.getClass)
 
   private val indefiniteSuccessCaching: CachedBuilder = cached
     .status(req => s"${req.host}${req.path}", 200)
@@ -324,7 +323,7 @@ class Authentication @Inject() (
               val token = MailTokenUser(email, isSignup = false)
               // Store that token
               tokenService.create(token).map { _ =>
-                mailer.passwordReset(email, passwordResetLink(request.host, token.id))
+                mailer.passwordReset(email, passwordResetLink(token.id, request.host))
                 response
               }
             // The user was not found, but return the "If we found an email address, we'll send the link."
@@ -401,6 +400,7 @@ class Authentication @Inject() (
       val email           = request.dynamicEnvironment.ownerEmail
       val response        = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions")))
 
+      logger.info("Handling verification request")
       // (email, applicationId) in the body
       // Look up the application (Is this in the HAT itself?  Not DEX)
       if (claimHatRequest.email == email)
@@ -408,6 +408,7 @@ class Authentication @Inject() (
           .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(Verified("email"))))))
           .flatMap {
             case Some(user) =>
+              logger.info("User found")
               val eventualClaimContext = for {
                 maybeApplication <- applicationsService
                                       .applicationStatus()(request.dynamicEnvironment, user, request)
@@ -558,35 +559,40 @@ class Authentication @Inject() (
   private def ensureValidToken(
       email: String,
       isSignup: Boolean
-    )(implicit hatServer: HatServer): Future[MailTokenUser] =
+    )(implicit hatServer: HatServer): Future[MailTokenUser] = {
+    logger.info("Checking for valid tokens")
     tokenService.retrieve(email, isSignup).flatMap {
       case Some(token) if token.isExpired =>
-        // TODO: log event for audit purpose
+        logger.info(s"Token $token is expired. Consuming the token and creating a new one")
         for {
           _ <- tokenService.consume(token.id)
           newToken <- tokenService.create(MailTokenUser(email, isSignup = isSignup))
         } yield newToken.get // TODO: Using .get is not great here
       // the underlying implementation generates non-option type and then wraps it in Option, interface not great, suggestions appreciated
       case Some(token) =>
+        logger.debug("Token found")
         Future.successful(token)
       case None =>
-        // TODO: log event for audit purpose
+        logger.info("Creating new token")
         tokenService.create(MailTokenUser(email, isSignup = isSignup)).map(_.get)
     }
+  }
 
   /**
     * Generate email verification string
     */
   private def emailVerificationLink(
-      host: String,
-      token: String,
-      verificationOptions: EmailVerificationOptions): String =
+                                     host: String,
+                                     token: String,
+                                     verificationOptions: EmailVerificationOptions): String = {
+    logger.info("Creating email verification link")
     s"$emailScheme$host/auth/verify-email/$token?${verificationOptions.asQueryParameters}"
+  }
 
   // TODO: add reset options support
   private def passwordResetLink(
-      host: String,
-      token: String): String =
+                                 host: String,
+                                 token: String): String =
     s"$emailScheme$host/auth/change-password/$token"
 
   // private def roleMatcher(rolesToMatch: Seq[UserRole], rolesRequired: Seq[UserRole]): Boolean = {
