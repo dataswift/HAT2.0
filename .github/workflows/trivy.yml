@@ -6,7 +6,7 @@ on:
     - cron: "30 3 * * *"
 
 env:
-  REGISTRY: ghcr.io/datasiwft/hat:latest
+  REGISTRY: ghcr.io/dataswift/hat:latest
 
 jobs:
   trivy-scan:
