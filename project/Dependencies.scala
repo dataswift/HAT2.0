@@ -34,10 +34,10 @@ object Dependencies {
   object DsLib {
     private object Version {
       val DsAdjudicator         = "0.2.0"
-      val DsBackend             = "2.5.5"
-      val DsDexClient           = "3.4.3"
+      val DsBackend             = "2.5.6"
+      val DsDexClient           = "3.4.4"
       val DsSilhouette          = "5.3.0"
-      val DsSlickPostgresDriver = "0.1.2"
+      val DsSlickPostgresDriver = "0.2.0"
     }
 
     val Adjudicator              = "io.dataswift" %% "adjudicatorlib"                            % Version.DsAdjudicator
@@ -56,7 +56,7 @@ object Dependencies {
     val AlpakkaAwsLambda     = "1.1.2"
     val CirceConfig          = "0.8.0"
     val PrettyTime           = "5.0.2.Final"
-    val ScalaTestplusMockito = "3.2.9.0"
+    val ScalaTestplusMockito = "3.2.10.0"
   }
 
   object LocalThirdParty {
