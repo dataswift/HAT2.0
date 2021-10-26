@@ -49,14 +49,12 @@ spec:
               containerPort: 9000
               protocol: TCP
           livenessProbe:
-            httpGet:
-              path: /healthz
+            tcpSocket:
               port: http
           readinessProbe:
             httpGet:
               path: /healthz
               port: http
-            initialDelaySeconds: 45
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
