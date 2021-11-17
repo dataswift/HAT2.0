@@ -323,7 +323,7 @@ class Authentication @Inject() (
               val token = MailTokenUser(email, isSignup = false)
               // Store that token
               tokenService.create(token).map { _ =>
-                mailer.passwordReset(email, passwordResetLink(token.id, request.host))
+                mailer.passwordReset(email, passwordResetLink(request.host, token.id))
                 response
               }
             // The user was not found, but return the "If we found an email address, we'll send the link."
