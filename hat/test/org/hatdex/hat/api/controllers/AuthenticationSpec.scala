@@ -44,6 +44,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
+import org.hatdex.hat.phata.models.ApiVerificationRequest
 
 class AuthenticationSpec extends AuthenticationContext {
 
@@ -53,7 +54,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller = application.injector.instanceOf[Authentication]
     val result     = controller.publicKey().apply(request)
 
-    status(result) must equal(OK)
+    Helpers.status(result) must equal(OK)
     contentAsString(result) must startWith("-----BEGIN PUBLIC KEY-----\n")
   }
 
@@ -64,7 +65,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller = application.injector.instanceOf[Authentication]
     val result     = controller.validateToken().apply(request)
 
-    status(result) must equal(UNAUTHORIZED)
+    Helpers.status(result) must equal(UNAUTHORIZED)
   }
 
   it should "Return simple success message for a valid token" in {
@@ -74,7 +75,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller = application.injector.instanceOf[Authentication]
     val result     = controller.validateToken().apply(request)
 
-    status(result) must equal(OK)
+    play.api.test.Helpers.status(result) must equal(OK)
     (contentAsJson(result) \ "message").as[String] must equal("Authenticated")
   }
 
@@ -85,7 +86,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = controller.hatLogin("TestService", "http://testredirect").apply(request)
 
-    status(result) must equal(UNAUTHORIZED)
+    Helpers.status(result) must equal(UNAUTHORIZED)
   }
 
   it should "return status 403 if authenticator and existing identity but wrong role" in {
@@ -95,7 +96,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = controller.hatLogin("TestService", "http://testredirect").apply(request)
 
-    status(result) must equal(FORBIDDEN)
+    Helpers.status(result) must equal(FORBIDDEN)
   }
 
   it should "return redirect url for authenticated owner" in {
@@ -105,7 +106,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = controller.hatLogin("TestService", "http://testredirect").apply(request)
 
-    status(result) must equal(OK)
+    Helpers.status(result) must equal(OK)
     contentAsString(result).contains("testredirect")
     contentAsString(result).contains("token\\=")
   }
@@ -116,7 +117,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = controller.accessToken().apply(request)
 
-    status(result) must equal(UNAUTHORIZED)
+    Helpers.status(result) must equal(UNAUTHORIZED)
   }
 
   it should "return status 401 if credentials but no matching identity" in {
@@ -143,7 +144,7 @@ class AuthenticationSpec extends AuthenticationContext {
 
     val result: Future[Result] = controller.accessToken().apply(request)
 
-    status(result) must equal(OK)
+    Helpers.status(result) must equal(OK)
     val token        = (contentAsJson(result) \ "accessToken").as[String]
     val unserialized = JWTRS256Authenticator.unserialize(token, encoder, settings)
     //unserialized must beSuccessfulTry
@@ -158,7 +159,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = Helpers.call(controller.passwordChangeProcess(), request)
 
-    status(result) must equal(FORBIDDEN)
+    Helpers.status(result) must equal(FORBIDDEN)
   }
 
   it should "return status 403 if old password incorrect" in {
@@ -169,7 +170,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = Helpers.call(controller.passwordChangeProcess(), request)
 
-    status(result) must equal(FORBIDDEN)
+    Helpers.status(result) must equal(FORBIDDEN)
   }
 
   it should "return status 400 if new password too weak" in {
@@ -189,8 +190,7 @@ class AuthenticationSpec extends AuthenticationContext {
     maybeResult must not be empty
     val result = maybeResult.get
 
-    status(result) must equal(BAD_REQUEST)
-    //      contentType(result) must beSome("application/json")
+    Helpers.status(result) must equal(BAD_REQUEST)
     (contentAsJson(result) \ "error").as[String] must equal("Bad Request")
   }
 
@@ -203,7 +203,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = Helpers.call(controller.passwordChangeProcess(), request)
 
-    status(result) must equal(OK)
+    Helpers.status(result) must equal(OK)
     (contentAsJson(result) \ "message").as[String] must equal("Password changed")
   }
 
@@ -215,7 +215,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = Helpers.call(controller.handleForgotPassword, request)
 
-    status(result) must equal(OK)
+    Helpers.status(result) must equal(OK)
   }
 
   // Times out
@@ -227,8 +227,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = Helpers.call(controller.handleForgotPassword, request)
 
-    status(result) must equal(OK)
-    //there was one(mockMailer).passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])
+    Helpers.status(result) must equal(OK)
   }
 
   "The `handleResetPassword` method" should "Return status 401 if no such token exists" in {
@@ -239,7 +238,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = Helpers.call(controller.handleResetPassword("nosuchtoken"), request)
 
-    status(result) must equal(UNAUTHORIZED)
+    Helpers.status(result) must equal(UNAUTHORIZED)
     (contentAsJson(result) \ "cause").as[String] must equal("Token does not exist")
   }
 
@@ -257,7 +256,7 @@ class AuthenticationSpec extends AuthenticationContext {
       result <- Helpers.call(controller.handleResetPassword(tokenId), request)
     } yield result
 
-    status(result) must equal(UNAUTHORIZED)
+    Helpers.status(result) must equal(UNAUTHORIZED)
     (contentAsJson(result) \ "cause").as[String] must equal("Token expired or invalid")
   }
 
@@ -275,7 +274,7 @@ class AuthenticationSpec extends AuthenticationContext {
       result <- Helpers.call(controller.handleResetPassword(tokenId), request)
     } yield result
 
-    status(result) must equal(UNAUTHORIZED)
+    Helpers.status(result) must equal(UNAUTHORIZED)
     (contentAsJson(result) \ "cause").as[String] must equal("Only HAT owner can reset their password")
   }
 
@@ -293,7 +292,7 @@ class AuthenticationSpec extends AuthenticationContext {
       result <- Helpers.call(controller.handleResetPassword(tokenId), request)
     } yield result
 
-    status(result) must equal(OK)
+    Helpers.status(result) must equal(OK)
   }
 
   it should "Return status 401 if no owner exists (should never happen)" in {
@@ -309,14 +308,37 @@ class AuthenticationSpec extends AuthenticationContext {
     val result: Future[Result] = for {
       _ <- tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
       _ <- userService.saveUser(
-             owner.copy(roles = Seq(DataDebitOwner("")))
+             owner.copy(roles = Seq())
            ) // forcing owner user to a different role for the test
       result <- Helpers.call(controller.handleResetPassword(tokenId), request)
     } yield result
 
-    status(result) must equal(UNAUTHORIZED)
+    Helpers.status(result) must equal(UNAUTHORIZED)
     (contentAsJson(result) \ "cause").as[String] must equal("No user matching token")
   }
+
+  "The `handleVerificationRequest` method" should "flexibly handle matching redirectURL" in {
+    val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
+      .withJsonBody(Json.toJson(apiVerificationRequestMatching))
+
+    val controller             = application.injector.instanceOf[Authentication]
+    val result: Future[Result] = Helpers.call(controller.handleVerificationRequest(None), request)
+
+    Helpers.status(result) must equal(OK)
+  }
+
+  it should "not match a different redirect URL base" in {
+    val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
+      .withJsonBody(Json.toJson(apiVerificationRequestNotMatching))
+
+    val controller             = application.injector.instanceOf[Authentication]
+    val result: Future[Result] = Helpers.call(controller.handleVerificationRequest(None), request)
+
+    Helpers.status(result) must equal(OK)
+  }
+
 }
 
 class AuthenticationContext extends HATTestContext {
@@ -332,4 +354,10 @@ class AuthenticationContext extends HATTestContext {
 
   val passwordValidationIncorrect: ApiValidationRequest = ApiValidationRequest("email@example.com", "appId")
   val passwordValidationOwner: ApiValidationRequest     = ApiValidationRequest("user@hat.org", "appId")
+
+  val apiVerificationRequestMatching: ApiVerificationRequest = 
+    ApiVerificationRequest("notablesAuth", "user@hat.org", "https://api.onezero-me.com/auth/redirectfromhat/scoring/facebook/avante/aruz3sc/8e4df03ffdffe0034da0c9008813f2a7:fd43cdc55b52fa31b47fa797ceef5424d52d269f5c3ed8b82858112c1a098a56a6689e101e5c8d499bc79eb28fe61b4d32ed2a9686727bd6f8f93e987b7a4e79")
+
+  val apiVerificationRequestNotMatching: ApiVerificationRequest = 
+    ApiVerificationRequest("notablesAuth", "user@hat.org", "https://api2.onezero-me.com/auth/redirectfromhat/scoring/facebook/avante/aruz3sc/8e4df03ffdffe0034da0c9008813f2a7:fd43cdc55b52fa31b47fa797ceef5424d52d269f5c3ed8b82858112c1a098a56a6689e101e5c8d499bc79eb28fe61b4d32ed2a9686727bd6f8f93e987b7a4e79")
 }
