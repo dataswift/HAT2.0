@@ -54,7 +54,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller = application.injector.instanceOf[Authentication]
     val result     = controller.publicKey().apply(request)
 
-    Helpers.status(result) must equal(OK)
+    status(result) must equal(OK)
     contentAsString(result) must startWith("-----BEGIN PUBLIC KEY-----\n")
   }
 
@@ -65,7 +65,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller = application.injector.instanceOf[Authentication]
     val result     = controller.validateToken().apply(request)
 
-    Helpers.status(result) must equal(UNAUTHORIZED)
+    status(result) must equal(UNAUTHORIZED)
   }
 
   it should "Return simple success message for a valid token" in {
@@ -75,7 +75,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller = application.injector.instanceOf[Authentication]
     val result     = controller.validateToken().apply(request)
 
-    play.api.test.Helpers.status(result) must equal(OK)
+    status(result) must equal(OK)
     (contentAsJson(result) \ "message").as[String] must equal("Authenticated")
   }
 
@@ -86,7 +86,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = controller.hatLogin("TestService", "http://testredirect").apply(request)
 
-    Helpers.status(result) must equal(UNAUTHORIZED)
+    status(result) must equal(UNAUTHORIZED)
   }
 
   it should "return status 403 if authenticator and existing identity but wrong role" in {
@@ -96,7 +96,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = controller.hatLogin("TestService", "http://testredirect").apply(request)
 
-    Helpers.status(result) must equal(FORBIDDEN)
+    status(result) must equal(FORBIDDEN)
   }
 
   it should "return redirect url for authenticated owner" in {
@@ -106,7 +106,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = controller.hatLogin("TestService", "http://testredirect").apply(request)
 
-    Helpers.status(result) must equal(OK)
+    status(result) must equal(OK)
     contentAsString(result).contains("testredirect")
     contentAsString(result).contains("token\\=")
   }
@@ -117,7 +117,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = controller.accessToken().apply(request)
 
-    Helpers.status(result) must equal(UNAUTHORIZED)
+    status(result) must equal(UNAUTHORIZED)
   }
 
   it should "return status 401 if credentials but no matching identity" in {
@@ -144,7 +144,7 @@ class AuthenticationSpec extends AuthenticationContext {
 
     val result: Future[Result] = controller.accessToken().apply(request)
 
-    Helpers.status(result) must equal(OK)
+    status(result) must equal(OK)
     val token        = (contentAsJson(result) \ "accessToken").as[String]
     val unserialized = JWTRS256Authenticator.unserialize(token, encoder, settings)
     //unserialized must beSuccessfulTry
@@ -159,7 +159,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = Helpers.call(controller.passwordChangeProcess(), request)
 
-    Helpers.status(result) must equal(FORBIDDEN)
+    status(result) must equal(FORBIDDEN)
   }
 
   it should "return status 403 if old password incorrect" in {
@@ -170,7 +170,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = Helpers.call(controller.passwordChangeProcess(), request)
 
-    Helpers.status(result) must equal(FORBIDDEN)
+    status(result) must equal(FORBIDDEN)
   }
 
   it should "return status 400 if new password too weak" in {
@@ -190,7 +190,7 @@ class AuthenticationSpec extends AuthenticationContext {
     maybeResult must not be empty
     val result = maybeResult.get
 
-    Helpers.status(result) must equal(BAD_REQUEST)
+    status(result) must equal(BAD_REQUEST)
     (contentAsJson(result) \ "error").as[String] must equal("Bad Request")
   }
 
@@ -203,7 +203,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = Helpers.call(controller.passwordChangeProcess(), request)
 
-    Helpers.status(result) must equal(OK)
+    status(result) must equal(OK)
     (contentAsJson(result) \ "message").as[String] must equal("Password changed")
   }
 
@@ -215,7 +215,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = Helpers.call(controller.handleForgotPassword, request)
 
-    Helpers.status(result) must equal(OK)
+    status(result) must equal(OK)
   }
 
   // Times out
@@ -227,7 +227,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = Helpers.call(controller.handleForgotPassword, request)
 
-    Helpers.status(result) must equal(OK)
+    status(result) must equal(OK)
   }
 
   "The `handleResetPassword` method" should "Return status 401 if no such token exists" in {
@@ -238,7 +238,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = Helpers.call(controller.handleResetPassword("nosuchtoken"), request)
 
-    Helpers.status(result) must equal(UNAUTHORIZED)
+    status(result) must equal(UNAUTHORIZED)
     (contentAsJson(result) \ "cause").as[String] must equal("Token does not exist")
   }
 
@@ -256,7 +256,7 @@ class AuthenticationSpec extends AuthenticationContext {
       result <- Helpers.call(controller.handleResetPassword(tokenId), request)
     } yield result
 
-    Helpers.status(result) must equal(UNAUTHORIZED)
+    status(result) must equal(UNAUTHORIZED)
     (contentAsJson(result) \ "cause").as[String] must equal("Token expired or invalid")
   }
 
@@ -274,7 +274,7 @@ class AuthenticationSpec extends AuthenticationContext {
       result <- Helpers.call(controller.handleResetPassword(tokenId), request)
     } yield result
 
-    Helpers.status(result) must equal(UNAUTHORIZED)
+    status(result) must equal(UNAUTHORIZED)
     (contentAsJson(result) \ "cause").as[String] must equal("Only HAT owner can reset their password")
   }
 
@@ -292,7 +292,7 @@ class AuthenticationSpec extends AuthenticationContext {
       result <- Helpers.call(controller.handleResetPassword(tokenId), request)
     } yield result
 
-    Helpers.status(result) must equal(OK)
+    status(result) must equal(OK)
   }
 
   it should "Return status 401 if no owner exists (should never happen)" in {
@@ -308,12 +308,12 @@ class AuthenticationSpec extends AuthenticationContext {
     val result: Future[Result] = for {
       _ <- tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
       _ <- userService.saveUser(
-             owner.copy(roles = Seq())
+             owner.copy(roles = Seq(DataDebitOwner("")))
            ) // forcing owner user to a different role for the test
       result <- Helpers.call(controller.handleResetPassword(tokenId), request)
     } yield result
 
-    Helpers.status(result) must equal(UNAUTHORIZED)
+    status(result) must equal(UNAUTHORIZED)
     (contentAsJson(result) \ "cause").as[String] must equal("No user matching token")
   }
 
@@ -325,7 +325,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = Helpers.call(controller.handleVerificationRequest(None), request)
 
-    Helpers.status(result) must equal(OK)
+    status(result) must equal(OK)
   }
 
   it should "not match a different redirect URL base" in {
@@ -336,7 +336,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val controller             = application.injector.instanceOf[Authentication]
     val result: Future[Result] = Helpers.call(controller.handleVerificationRequest(None), request)
 
-    Helpers.status(result) must equal(OK)
+    status(result) must equal(OK)
   }
 
 }
