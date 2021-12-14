@@ -314,7 +314,8 @@ class Authentication @Inject() (
       )
       if (email == request.dynamicEnvironment.ownerEmail)
         // Find the specific user who is the owner.
-        userService.listUsers()
+        userService
+          .listUsers()
           .map(_.find(_.roles.contains(Owner())))
           .flatMap {
             case Some(_) =>
@@ -343,10 +344,14 @@ class Authentication @Inject() (
         // Token was found, is not signup nor expired
         case Some(token) if !token.isSignUp && !token.isExpired =>
           // Token.email matches the dynamicEnv (what is this)
-          if (token.email == request.dynamicEnvironment.ownerEmail)
+          if (token.email == request.dynamicEnvironment.ownerEmail) {
             // Find the users with the owner role
             // ???: Why not using the email
-            userService.listUsers()
+            userService.listUsers().map { users =>
+              users.map(u => println(u))
+            }
+            userService
+              .listUsers()
               .map(_.find(_.roles.contains(Owner())))
               .flatMap {
                 case Some(user) =>
@@ -378,7 +383,7 @@ class Authentication @Inject() (
                 case None =>
                   Future.successful(noUserMatchingToken)
               }
-          else
+          } else
             Future.successful(onlyHatOwnerCanReset)
         case Some(_) =>
           tokenService.consume(tokenId)
@@ -466,7 +471,8 @@ class Authentication @Inject() (
       tokenService.retrieve(verificationToken).flatMap {
         case Some(token)
             if token.isSignUp && !token.isExpired && token.email == request.dynamicEnvironment.ownerEmail =>
-          userService.listUsers()
+          userService
+            .listUsers()
             .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(Verified("email"))))))
             .flatMap {
               case Some(user) =>

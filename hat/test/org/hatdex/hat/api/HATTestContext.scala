@@ -61,26 +61,17 @@ import scala.concurrent.{ Await, Future }
 import io.dataswift.models.hat.FormattedText
 import org.joda.time.{ DateTime, LocalDateTime }
 import io.dataswift.models.hat.Drawable
-import io.dataswift.models.hat.EndpointDataBundle
-import io.dataswift.models.hat.DataDebitRequest
 import io.dataswift.models.hat.UserRole
-import io.dataswift.models.hat.PropertyQuery
-import io.dataswift.models.hat.EndpointQuery
-import io.dataswift.models.hat.EndpointQueryFilter
-import play.api.libs.json.Json
-import io.dataswift.models.hat.FilterOperator
 import io.dataswift.models.hat.applications.ApplicationStatus
 import io.dataswift.models.hat.applications.ApplicationSetup
 import io.dataswift.models.hat.applications.ApplicationPermissions
 import io.dataswift.models.hat.applications.ApplicationDeveloper
 import io.dataswift.models.hat.applications.ApplicationInfo
 import io.dataswift.models.hat.applications.Version
-import io.dataswift.models.hat.applications.ApplicationGraphics
-import io.dataswift.models.hat.applications.DataFeedItem
 import io.dataswift.models.hat.applications.ApplicationKind
-import io.dataswift.models.hat.applications.DataFeedItemTitle
-import io.dataswift.models.hat.applications.DataFeedItemContent
 import io.dataswift.models.hat.applications.Application
+import io.dataswift.models.hat.applications.DataFeedItem
+import io.dataswift.models.hat.applications.ApplicationGraphics
 
 abstract class HATTestContext extends PostgresqlSpec with MockitoSugar with BeforeAndAfter {
 
@@ -216,21 +207,11 @@ mO9kGhALaD5okBcI/VuAQiFvBXdK0ii/nVcBApXEu47PG4oYUgPI
     enabled = true
   )
 
-  val appOwner: HatUser = HatUser(UUID.randomUUID(),
-                                  "appowner@example.com",
-                                  Some("$2a$06$QprGa33XAF7w8BjlnKYb3OfWNZOuTdzqKeEsF7BZUfbiTNemUW/n."),
-                                  "appowner",
-                                  Seq(Owner()),
-                                  enabled = true
-  )
-
-
   implicit lazy val environment: Environment[HatApiAuthEnvironment] = FakeEnvironment[HatApiAuthEnvironment](
     Seq(
       owner.loginInfo -> owner,
       dataDebitUser.loginInfo -> dataDebitUser,
-      dataCreditUser.loginInfo -> dataCreditUser,
-      appOwner.loginInfo -> appOwner
+      dataCreditUser.loginInfo -> dataCreditUser
     ),
     hatServer
   )
@@ -354,14 +335,15 @@ mO9kGhALaD5okBcI/VuAQiFvBXdK0ii/nVcBApXEu47PG4oYUgPI
   )
 
   val notablesAppAuth: Application =
-    Application(id = "notablesAuth",
-                kind = kindAuth,
-                info = appInfoAuth,
-                developer = developerAuth,
-                permissions = permissionsAuth,
-                dependencies = None,
-                setup = setupAuth,
-                status = appStatusAuth
+    Application(
+      id = "notablesAuth",
+      kind = kindAuth,
+      info = appInfoAuth,
+      developer = developerAuth,
+      permissions = permissionsAuth,
+      dependencies = None,
+      setup = setupAuth,
+      status = appStatusAuth
     )
 
   def databaseReady(): Future[Unit] = {
@@ -375,7 +357,6 @@ mO9kGhALaD5okBcI/VuAQiFvBXdK0ii/nVcBApXEu47PG4oYUgPI
           _ <- userService.saveUser(dataCreditUser)
           _ <- userService.saveUser(dataDebitUser)
           _ <- userService.saveUser(owner)
-          _ <- userService.saveUser(appOwner)
         } yield ()
       }
   }
