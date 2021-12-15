@@ -347,9 +347,6 @@ class Authentication @Inject() (
           if (token.email == request.dynamicEnvironment.ownerEmail) {
             // Find the users with the owner role
             // ???: Why not using the email
-            userService.listUsers().map { users =>
-              users.map(u => println(u))
-            }
             userService
               .listUsers()
               .map(_.find(_.roles.contains(Owner())))
