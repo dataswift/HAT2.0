@@ -36,6 +36,7 @@ import io.dataswift.models.hat.{ DataCredit, DataDebitOwner, Owner }
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.service._
 import org.hatdex.hat.api.service.applications.{ TestApplicationProvider, TrustedApplicationProvider }
+//import io.dataswift.models.hat.applications._
 import org.hatdex.hat.authentication.HatApiAuthEnvironment
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.dal.HatDbSchemaMigration
@@ -50,13 +51,27 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.http.HttpErrorHandler
 import play.api.i18n.{ Lang, MessagesApi }
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.{ Application, Configuration, Logger }
+import play.api.{ Application => PlayApplication, Configuration, Logger }
 
 import java.io.StringReader
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
+import io.dataswift.models.hat.FormattedText
+import org.joda.time.{ DateTime, LocalDateTime }
+import io.dataswift.models.hat.Drawable
+import io.dataswift.models.hat.UserRole
+import io.dataswift.models.hat.applications.ApplicationStatus
+import io.dataswift.models.hat.applications.ApplicationSetup
+import io.dataswift.models.hat.applications.ApplicationPermissions
+import io.dataswift.models.hat.applications.ApplicationDeveloper
+import io.dataswift.models.hat.applications.ApplicationInfo
+import io.dataswift.models.hat.applications.Version
+import io.dataswift.models.hat.applications.ApplicationKind
+import io.dataswift.models.hat.applications.Application
+import io.dataswift.models.hat.applications.DataFeedItem
+import io.dataswift.models.hat.applications.ApplicationGraphics
 
 abstract class HATTestContext extends PostgresqlSpec with MockitoSugar with BeforeAndAfter {
 
@@ -191,8 +206,13 @@ mO9kGhALaD5okBcI/VuAQiFvBXdK0ii/nVcBApXEu47PG4oYUgPI
     Seq(DataCredit(""), DataCredit("namespace")),
     enabled = true
   )
+
   implicit lazy val environment: Environment[HatApiAuthEnvironment] = FakeEnvironment[HatApiAuthEnvironment](
-    Seq(owner.loginInfo -> owner, dataDebitUser.loginInfo -> dataDebitUser, dataCreditUser.loginInfo -> dataCreditUser),
+    Seq(
+      owner.loginInfo -> owner,
+      dataDebitUser.loginInfo -> dataDebitUser,
+      dataCreditUser.loginInfo -> dataCreditUser
+    ),
     hatServer
   )
 
@@ -203,6 +223,128 @@ mO9kGhALaD5okBcI/VuAQiFvBXdK0ii/nVcBApXEu47PG4oYUgPI
     "evolutions/hat-database-schema/13_liveEvolutions.sql",
     "evolutions/hat-database-schema/14_newHat.sql"
   )
+
+  // Application
+  val kindAuth: ApplicationKind.Kind = ApplicationKind.App(
+    url = "https://itunes.apple.com/gb/app/notables/id1338778866?mt=8",
+    iosUrl = Some("https://itunes.apple.com/gb/app/notables/id1338778866?mt=8"),
+    androidUrl = None
+  )
+
+  val descriptionAuth: FormattedText = FormattedText(
+    text = "",
+    markdown = None,
+    html = None
+  )
+
+  val dataPreviewAuth: Seq[DataFeedItem] = List.empty
+
+  val graphicsAuth: ApplicationGraphics = ApplicationGraphics(
+    banner = Drawable(normal = "", small = None, large = None, xlarge = None),
+    logo = Drawable(
+      normal = "",
+      small = None,
+      large = None,
+      xlarge = None
+    ),
+    screenshots = List(
+      Drawable(
+        normal = "",
+        large = None,
+        small = None,
+        xlarge = None
+      ),
+      Drawable(
+        normal = "",
+        large = None,
+        small = None,
+        xlarge = None
+      ),
+      Drawable(
+        normal = "",
+        large = None,
+        small = None,
+        xlarge = None
+      )
+    )
+  )
+
+  val appInfoAuth: ApplicationInfo = ApplicationInfo(
+    version = Version(1, 0, 0),
+    updateNotes = None,
+    published = true,
+    name = "Notables",
+    headline = "All your words",
+    description = descriptionAuth,
+    hmiDescription = None,
+    termsUrl = "https://example.com/terms",
+    privacyPolicyUrl = None,
+    dataUsePurpose = "Data Will be processed by Notables for the following purpose...",
+    supportContact = "contact@hatdex.org",
+    rating = None,
+    dataPreview = dataPreviewAuth,
+    graphics = graphicsAuth,
+    primaryColor = None,
+    callbackUrl = None
+  )
+
+  val developerAuth: ApplicationDeveloper = ApplicationDeveloper(
+    id = "dex",
+    name = "HATDeX",
+    url = "https://hatdex.org",
+    country = Some("United Kingdom"),
+    logo = Some(
+      Drawable(
+        normal =
+          "https://s3-eu-west-1.amazonaws.com/hubofallthings-com-dexservi-dexpublicassetsbucket-kex8hb7fsdge/notablesapp/0x0ss.png",
+        small = None,
+        large = None,
+        xlarge = None
+      )
+    )
+  )
+
+  val permissionsAuth: ApplicationPermissions = ApplicationPermissions(
+    rolesGranted = List(
+      UserRole.userRoleDeserialize("namespacewrite", Some("rumpel")),
+      UserRole.userRoleDeserialize("namespaceread", Some("rumpel")),
+      UserRole.userRoleDeserialize("datadebit", Some("app-notables"))
+    ),
+    dataRetrieved = None,
+    dataRequired = None
+  )
+
+  val setupAuth: ApplicationSetup.External = ApplicationSetup.External(
+    url = None,
+    iosUrl = None,
+    androidUrl = None,
+    testingUrl = None,
+    validRedirectUris = List("https://api.onezero-me.com/"),
+    deauthorizeCallbackUrl = None,
+    onboarding = None,
+    preferences = None,
+    dependencies = None
+  )
+
+  val appStatusAuth: ApplicationStatus.Internal = ApplicationStatus.Internal(
+    compatibility = Version(1, 0, 0),
+    dataPreviewEndpoint = None,
+    staticDataPreviewEndpoint = None,
+    recentDataCheckEndpoint = Some("/rumpel/notablesv1"),
+    versionReleaseDate = DateTime.parse("2018-07-24T12:00:00")
+  )
+
+  val notablesAppAuth: Application =
+    Application(
+      id = "notablesAuth",
+      kind = kindAuth,
+      info = appInfoAuth,
+      developer = developerAuth,
+      permissions = permissionsAuth,
+      dependencies = None,
+      setup = setupAuth,
+      status = appStatusAuth
+    )
 
   def databaseReady(): Future[Unit] = {
     val schemaMigration = new HatDbSchemaMigration(application.configuration, db, global)
@@ -253,10 +395,10 @@ mO9kGhALaD5okBcI/VuAQiFvBXdK0ii/nVcBApXEu47PG4oYUgPI
 
   class EmptyAppProviderModule extends ScalaModule {
     override def configure(): Unit =
-      bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(Seq()))
+      bind[TrustedApplicationProvider].toInstance(new TestApplicationProvider(Seq(notablesAppAuth)))
   }
 
-  lazy val application: Application =
+  lazy val application: PlayApplication =
     new GuiceApplicationBuilder()
       .configure(conf)
       .overrides(new IntegrationSpecModule)
