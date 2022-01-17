@@ -44,6 +44,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
+import org.hatdex.hat.phata.models.ApiVerificationRequest
 
 class AuthenticationSpec extends AuthenticationContext {
 
@@ -190,7 +191,6 @@ class AuthenticationSpec extends AuthenticationContext {
     val result = maybeResult.get
 
     status(result) must equal(BAD_REQUEST)
-    //      contentType(result) must beSome("application/json")
     (contentAsJson(result) \ "error").as[String] must equal("Bad Request")
   }
 
@@ -228,7 +228,6 @@ class AuthenticationSpec extends AuthenticationContext {
     val result: Future[Result] = Helpers.call(controller.handleForgotPassword, request)
 
     status(result) must equal(OK)
-    //there was one(mockMailer).passwordReset(any[String], any[String])(any[MessagesApi], any[Lang], any[HatServer])
   }
 
   "The `handleResetPassword` method" should "Return status 401 if no such token exists" in {
@@ -317,6 +316,29 @@ class AuthenticationSpec extends AuthenticationContext {
     status(result) must equal(UNAUTHORIZED)
     (contentAsJson(result) \ "cause").as[String] must equal("No user matching token")
   }
+
+  "The `handleVerificationRequest` method" should "flexibly handle matching redirectURL" in {
+    val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
+      .withJsonBody(Json.toJson(apiVerificationRequestMatching))
+
+    val controller             = application.injector.instanceOf[Authentication]
+    val result: Future[Result] = Helpers.call(controller.handleVerificationRequest(None), request)
+
+    status(result) must equal(OK)
+  }
+
+  it should "not match a different redirect URL base" in {
+    val request = FakeRequest("POST", "http://hat.hubofallthings.net")
+      .withAuthenticator(owner.loginInfo)
+      .withJsonBody(Json.toJson(apiVerificationRequestNotMatching))
+
+    val controller             = application.injector.instanceOf[Authentication]
+    val result: Future[Result] = Helpers.call(controller.handleVerificationRequest(None), request)
+
+    status(result) must equal(OK)
+  }
+
 }
 
 class AuthenticationContext extends HATTestContext {
@@ -332,4 +354,10 @@ class AuthenticationContext extends HATTestContext {
 
   val passwordValidationIncorrect: ApiValidationRequest = ApiValidationRequest("email@example.com", "appId")
   val passwordValidationOwner: ApiValidationRequest     = ApiValidationRequest("user@hat.org", "appId")
+
+  val apiVerificationRequestMatching: ApiVerificationRequest = 
+    ApiVerificationRequest("notablesAuth", "user@hat.org", "https://api.onezero-me.com/auth/redirectfromhat/scoring/facebook/avante/aruz3sc/8e4df03ffdffe0034da0c9008813f2a7:fd43cdc55b52fa31b47fa797ceef5424d52d269f5c3ed8b82858112c1a098a56a6689e101e5c8d499bc79eb28fe61b4d32ed2a9686727bd6f8f93e987b7a4e79")
+
+  val apiVerificationRequestNotMatching: ApiVerificationRequest = 
+    ApiVerificationRequest("notablesAuth", "user@hat.org", "https://api2.onezero-me.com/auth/redirectfromhat/scoring/facebook/avante/aruz3sc/8e4df03ffdffe0034da0c9008813f2a7:fd43cdc55b52fa31b47fa797ceef5424d52d269f5c3ed8b82858112c1a098a56a6689e101e5c8d499bc79eb28fe61b4d32ed2a9686727bd6f8f93e987b7a4e79")
 }

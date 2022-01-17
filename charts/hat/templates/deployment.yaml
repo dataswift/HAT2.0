@@ -52,9 +52,9 @@ spec:
             tcpSocket:
               port: http
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /healthz
               port: http
-            initialDelaySeconds: 30
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
