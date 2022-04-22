@@ -43,6 +43,7 @@ import software.amazon.awssdk.services.lambda.model.{ InvokeRequest, InvokeRespo
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
+import software.amazon.awssdk.services.sts.StsClient
 
 class LambdaFunctionExecutable(
     id: String,
@@ -162,11 +163,15 @@ class AwsLambdaExecutor @Inject() (
 
   implicit private val materializer: Materializer = ActorMaterializer()
 
+  private val region = Region.of(configuration.get[String]("she.aws.region"))
+
+  implicit private val stsClient = StsClient.builder().region(this.region).build();
+  
   implicit private val lambdaClient: LambdaAsyncClient =
     LambdaAsyncClient
       .builder()
-      .region(Region.of(configuration.get[String]("she.aws.region")))
-      .credentialsProvider(StsAssumeRoleWithWebIdentityCredentialsProvider.builder().build())
+      .region(this.region)
+//      .credentialsProvider(StsAssumeRoleWithWebIdentityCredentialsProvider.builder().stsClient(this.stsClient).build())
       .build()
 
   actorSystem.registerOnTermination(lambdaClient.close())
