@@ -29,6 +29,7 @@ lazy val hat = project
           DsLib.SilhouettePersistence,
           DsLib.SlickPostgresDriver,
           Lib.AwsV1Sdk,
+          Lib.AwsV1SdkSts,
           Lib.BouncyCastle,
           Lib.Ficus,
           Lib.Guard,
