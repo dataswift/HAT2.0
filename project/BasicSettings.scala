@@ -72,4 +72,10 @@ object BasicSettings extends AutoPlugin {
       // and https://github.com/travis-ci/travis-ci/issues/3775
       javaOptions += "-Xmx1G"
     )
+  
+  object autoImport {
+    // Do Nothing
+    // Addet by Terry 20220422
+    // Not sure why this block is missing and how you got HAT to compile in the first place?
+  }
 }
