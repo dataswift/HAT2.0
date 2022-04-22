@@ -35,7 +35,7 @@ import org.hatdex.hat.api.service.RemoteExecutionContext
 import org.joda.time.DateTime
 import play.api.libs.json.{ Format, Json }
 import play.api.{ Configuration, Logger }
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider 
+import software.amazon.awssdk.services.sts.auth.StsAssumeRoleWithWebIdentityCredentialsProvider
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient
@@ -166,7 +166,7 @@ class AwsLambdaExecutor @Inject() (
     LambdaAsyncClient
       .builder()
       .region(Region.of(configuration.get[String]("she.aws.region")))
-      .credentialsProvider(DefaultCredentialsProvider.create())
+      .credentialsProvider(StsAssumeRoleWithWebIdentityCredentialsProvider.builder().build())
       .build()
 
   actorSystem.registerOnTermination(lambdaClient.close())
