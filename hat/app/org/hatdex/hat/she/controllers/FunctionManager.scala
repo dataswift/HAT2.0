@@ -150,7 +150,7 @@ class FunctionManager @Inject() (
                     )
                   )
               }
-/*          case FunctionConfiguration(
+          case FunctionConfiguration(
                 _,
                 _,
                 _,
@@ -185,7 +185,7 @@ class FunctionManager @Inject() (
                   )
                 )
               )
-            )*/
+            )
         } getOrElse {
           Future.successful(
             NotFound(
