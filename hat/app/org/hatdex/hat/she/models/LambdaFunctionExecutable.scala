@@ -44,6 +44,8 @@ import software.amazon.awssdk.services.lambda.model.{ InvokeRequest, InvokeRespo
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import software.amazon.awssdk.services.sts.StsClient
+import software.amazon.awssdk.services.sts.model.AssumeRoleWithWebIdentityRequest
+import java.util.UUID
 
 class LambdaFunctionExecutable(
     id: String,
@@ -164,14 +166,16 @@ class AwsLambdaExecutor @Inject() (
   implicit private val materializer: Materializer = ActorMaterializer()
 
   private val region = Region.of(configuration.get[String]("she.aws.region"))
+  private val roleArn = configuration.get[String]("she.aws.roleArn")
 
   implicit private val stsClient = StsClient.builder().region(this.region).build();
-  
+  private val assumeRoleRequest = AssumeRoleWithWebIdentityRequest.builder().roleSessionName(UUID.randomUUID().toString()).roleArn(this.roleArn).build();
+
   implicit private val lambdaClient: LambdaAsyncClient =
     LambdaAsyncClient
       .builder()
       .region(this.region)
-//      .credentialsProvider(StsAssumeRoleWithWebIdentityCredentialsProvider.builder().stsClient(this.stsClient).build())
+      .credentialsProvider(StsAssumeRoleWithWebIdentityCredentialsProvider.builder().stsClient(this.stsClient).refreshRequest(this.assumeRoleRequest).build())
       .build()
 
   actorSystem.registerOnTermination(lambdaClient.close())
