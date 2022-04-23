@@ -25,8 +25,6 @@
 package org.hatdex.hat.she.models
 
 import akka.actor.ActorSystem
-import akka.stream.alpakka.awslambda.scaladsl.AwsLambdaFlow
-import akka.stream.scaladsl.{ Sink, Source }
 import akka.stream.{ ActorMaterializer, Materializer }
 import io.dataswift.models.hat.EndpointDataBundle
 import io.dataswift.models.hat.applications.Version
@@ -39,13 +37,10 @@ import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient
 import software.amazon.awssdk.services.lambda.model.{ InvokeRequest, InvokeResponse }
+import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
-import software.amazon.awssdk.services.sts.StsClient
-import java.util.UUID
-import software.amazon.awssdk.services.sts.model.AssumeRoleWithWebIdentityRequest
-import software.amazon.awssdk.services.sts.auth.StsAssumeRoleWithWebIdentityCredentialsProvider
 
 class LambdaFunctionExecutable(
     id: String,
@@ -165,17 +160,11 @@ class AwsLambdaExecutor @Inject() (
 
   implicit private val materializer: Materializer = ActorMaterializer()
 
-  private val region = Region.of(configuration.get[String]("she.aws.region"))
-  private val roleArn = configuration.get[String]("she.aws.roleArn")
-
-  implicit private val stsClient = StsClient.builder().region(this.region).build();
-  private val assumeRoleRequest = AssumeRoleWithWebIdentityRequest.builder().roleSessionName(UUID.randomUUID().toString()).roleArn(this.roleArn).webIdentityToken(System.getenv("AWS_WEB_IDENTITY_TOKEN_FILE")).build();
-
   implicit private val lambdaClient: LambdaAsyncClient =
     LambdaAsyncClient
       .builder()
-      .region(this.region)
-      .credentialsProvider(StsAssumeRoleWithWebIdentityCredentialsProvider.builder().stsClient(this.stsClient).refreshRequest(this.assumeRoleRequest).build())
+      .region(Region.of(configuration.get[String]("she.aws.region")))
+      .credentialsProvider(WebIdentityTokenFileCredentialsProvider.create())
       .build()
 
   actorSystem.registerOnTermination(lambdaClient.close())
@@ -184,7 +173,33 @@ class AwsLambdaExecutor @Inject() (
       request: InvokeRequest
     )(implicit jsonFormatter: Format[T]): Future[T] =
     if (mock) Future.successful(null.asInstanceOf[T])
-    else
+    else {
+      val invokeResponse: InvokeResponse = lambdaClient.invoke{request}.get
+      invokeResponse match {
+        case r: InvokeResponse if r.statusCode() == 200 =>
+            logger.debug(s"""Function responded with:
+                | Status: ${r.statusCode()}
+                | Body: ${r.payload().asUtf8String()}
+                | Logs: ${Option(r.logResult()).map(log => java.util.Base64.getDecoder.decode(log))}
+            """.stripMargin)
+            val jsResponse =
+              Json.parse(r.payload().asUtf8String()).validate[T] recover {
+                  case e =>
+                    val message = s"Error parsing lambda response: $e"
+                    logger.error(message)
+                    throw DataFormatException(message)
+                }
+            Future(jsResponse.get)
+          case r =>
+            val message =
+              s"Retrieving SHE function configuration failed: $r, ${r.payload().asUtf8String()}"
+            logger.error(message)
+            throw new ApiException(message)
+      }
+    }
+      
+      
+      /*
       Source
         .single(request)
         .via(AwsLambdaFlow(1)(lambdaClient))
@@ -209,5 +224,6 @@ class AwsLambdaExecutor @Inject() (
               s"Retrieving SHE function configuration failed: $r, ${r.payload().asUtf8String()}"
             logger.error(message)
             throw new ApiException(message)
-        }
+        }*/
+    
 }
