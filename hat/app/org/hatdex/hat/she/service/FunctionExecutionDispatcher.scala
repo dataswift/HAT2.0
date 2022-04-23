@@ -202,7 +202,10 @@ class FunctionExecutionTriggerHandler @Inject() (
           functionService
             .run(conf, conf.status.lastExecution, useAll)(hatServer)
             .recover {
-              case e => throw SHEFunctionExecutionFailureException(s"$hat function ${conf.id} failed", e)
+              case e => {
+                logger.error(e.getMessage(), e)
+                throw SHEFunctionExecutionFailureException(s"$hat function ${conf.id} failed", e)
+              }
             }
         } getOrElse {
           Future.failed(
