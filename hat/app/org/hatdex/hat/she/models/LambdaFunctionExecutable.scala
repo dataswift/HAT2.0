@@ -44,8 +44,8 @@ import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import software.amazon.awssdk.services.sts.StsClient
 import java.util.UUID
-import software.amazon.awssdk.services.sts.model.AssumeRoleRequest
-import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider
+import software.amazon.awssdk.services.sts.model.AssumeRoleWithWebIdentityRequest
+import software.amazon.awssdk.services.sts.auth.StsAssumeRoleWithWebIdentityCredentialsProvider
 
 class LambdaFunctionExecutable(
     id: String,
@@ -169,13 +169,13 @@ class AwsLambdaExecutor @Inject() (
   private val roleArn = configuration.get[String]("she.aws.roleArn")
 
   implicit private val stsClient = StsClient.builder().region(this.region).build();
-  private val assumeRoleRequest = AssumeRoleRequest.builder().roleSessionName(UUID.randomUUID().toString()).roleArn(this.roleArn).build();
+  private val assumeRoleRequest = AssumeRoleWithWebIdentityRequest.builder().roleSessionName(UUID.randomUUID().toString()).roleArn(this.roleArn).webIdentityToken(System.getenv("AWS_WEB_IDENTITY_TOKEN_FILE")).build();
 
   implicit private val lambdaClient: LambdaAsyncClient =
     LambdaAsyncClient
       .builder()
       .region(this.region)
-      .credentialsProvider(StsAssumeRoleCredentialsProvider.builder().stsClient(this.stsClient).refreshRequest(this.assumeRoleRequest).build())
+      .credentialsProvider(StsAssumeRoleWithWebIdentityCredentialsProvider.builder().stsClient(this.stsClient).refreshRequest(this.assumeRoleRequest).build())
       .build()
 
   actorSystem.registerOnTermination(lambdaClient.close())
