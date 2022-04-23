@@ -30,6 +30,7 @@ lazy val hat = project
           DsLib.SlickPostgresDriver,
           Lib.AwsV1Sdk,
           Lib.AwsV2SdkLambda,
+          Lib.AwsV2SdkSts,
           Lib.AwsV2SdkAuth,
           Lib.BouncyCastle,
           Lib.Ficus,
