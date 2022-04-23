@@ -138,7 +138,7 @@ class FunctionManager @Inject() (
               .recover {
                 case e =>
                   logger.error(
-                    s"Function $function execution errored with ${e.getMessage}",
+                    s"Function $function execution errored with ${e.getStackTrace}",
                     e
                   )
                   InternalServerError(
