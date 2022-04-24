@@ -177,7 +177,7 @@ class AwsLambdaExecutor @Inject() (
       val invokeResponse: InvokeResponse = lambdaClient.invoke{request}.get
       invokeResponse match {
         case r: InvokeResponse if r.statusCode() == 200 =>
-            logger.info(s"""Function responded with:
+            logger.debug(s"""Function responded with:
                 | Status: ${r.statusCode()}
                 | Body: ${r.payload().asUtf8String()}
                 | Logs: ${Option(r.logResult()).map(log => java.util.Base64.getDecoder.decode(log))}
@@ -187,6 +187,7 @@ class AwsLambdaExecutor @Inject() (
                   case e =>
                     val message = s"Error parsing lambda response: $e"
                     logger.error(message)
+                    logger.error(s"Unable to parse: ${r.payload().asUtf8String()}")
                     throw DataFormatException(message)
                 }
             Future(jsResponse.get)
