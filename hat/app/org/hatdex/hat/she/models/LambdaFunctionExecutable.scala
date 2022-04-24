@@ -177,7 +177,7 @@ class AwsLambdaExecutor @Inject() (
       val invokeResponse: InvokeResponse = lambdaClient.invoke{request}.get
       invokeResponse match {
         case r: InvokeResponse if r.statusCode() == 200 =>
-            logger.debug(s"""Function responded with:
+            logger.info(s"""Function responded with:
                 | Status: ${r.statusCode()}
                 | Body: ${r.payload().asUtf8String()}
                 | Logs: ${Option(r.logResult()).map(log => java.util.Base64.getDecoder.decode(log))}
