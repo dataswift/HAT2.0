@@ -67,7 +67,7 @@ class FunctionExecutionTriggerHandler @Inject() (
       .flatMap {
         case Some(hatServer) =>
           functionService
-            .all(active = false)(hatServer.db) // TERRY this must be true in non-debug
+            .all(active = true)(hatServer.db) // TERRY this must be true in non-debug
             .map(
               _.filter({
                 case FunctionConfiguration(_,
@@ -75,7 +75,7 @@ class FunctionExecutionTriggerHandler @Inject() (
                                            _,
                                            FunctionTrigger.TriggerPeriodic(period),
                                            _,
-                                           FunctionStatus(_, true, Some(lastExecution), None)
+                                           FunctionStatus(true, true, Some(lastExecution), None)
                     ) if lastExecution.isBefore(DateTime.now().minus(period)) =>
                   true
                 case FunctionConfiguration(_,
@@ -83,7 +83,7 @@ class FunctionExecutionTriggerHandler @Inject() (
                                            _,
                                            FunctionTrigger.TriggerPeriodic(period),
                                            _,
-                                           FunctionStatus(_, true, Some(lastExecution), Some(started))
+                                           FunctionStatus(true, true, Some(lastExecution), Some(started))
                     )
                     if lastExecution.isBefore(DateTime.now().minus(period)) && started
                         .isBefore(DateTime.now().minus(functionExecutionTimeout.toMillis)) =>
@@ -93,7 +93,7 @@ class FunctionExecutionTriggerHandler @Inject() (
                                            _,
                                            FunctionTrigger.TriggerPeriodic(_),
                                            _,
-                                           FunctionStatus(_, true, None, None)
+                                           FunctionStatus(true, true, None, None)
                     ) =>
                   true // no execution recoded yet
                 case FunctionConfiguration(_,
@@ -101,7 +101,7 @@ class FunctionExecutionTriggerHandler @Inject() (
                                            _,
                                            FunctionTrigger.TriggerPeriodic(_),
                                            _,
-                                           FunctionStatus(_, true, None, Some(started))
+                                           FunctionStatus(true, true, None, Some(started))
                     ) if started.isBefore(DateTime.now().minus(functionExecutionTimeout.toMillis)) =>
                   true // no successful execution, current one timed out
                 case FunctionConfiguration(_,
@@ -109,7 +109,7 @@ class FunctionExecutionTriggerHandler @Inject() (
                                            _,
                                            FunctionTrigger.TriggerIndividual(),
                                            _,
-                                           FunctionStatus(_, true, _, _)
+                                           FunctionStatus(true, true, _, _)
                     ) =>
                   true
                 case _ => false // in all other cases, do not trigger

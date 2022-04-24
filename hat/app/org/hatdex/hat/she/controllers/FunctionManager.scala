@@ -131,7 +131,7 @@ class FunctionManager @Inject() (
       logger.debug(s"Trigger function $function")
       functionService.get(function).flatMap { maybeFunction =>
         maybeFunction.map {
-          case c: FunctionConfiguration => //if c.status.available && c.status.enabled =>
+          case c: FunctionConfiguration if c.status.available && c.status.enabled =>
             functionExecutionDispatcher
               .trigger(request.dynamicEnvironment.domain, c, useAll)(ec)
               .map(_ => Ok(Json.toJson(SuccessResponse("Function Executed"))))

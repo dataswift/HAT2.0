@@ -75,7 +75,7 @@ object BasicSettings extends AutoPlugin {
   
   object autoImport {
     // Do Nothing
-    // Addet by Terry 20220422
+    // Added by Terry 20220422
     // Not sure why this block is missing and how you got HAT to compile in the first place?
   }
 }
