@@ -37,7 +37,7 @@ import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient
 import software.amazon.awssdk.services.lambda.model.{ InvokeRequest, InvokeResponse }
-import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
@@ -164,7 +164,7 @@ class AwsLambdaExecutor @Inject() (
     LambdaAsyncClient
       .builder()
       .region(Region.of(configuration.get[String]("she.aws.region")))
-      .credentialsProvider(WebIdentityTokenFileCredentialsProvider.create())
+      .credentialsProvider(DefaultCredentialsProvider.create())
       .build()
 
   actorSystem.registerOnTermination(lambdaClient.close())
