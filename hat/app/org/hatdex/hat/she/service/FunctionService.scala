@@ -65,9 +65,8 @@ class FunctionService @Inject() (
 
     val functions =
       for ((k, v) <- saved ++ registered)
-        yield k -> (if ((saved contains k) && (registered contains k)) {
-          saved(k).update(v)
-        }
+        yield k -> (if ((saved contains k) && (registered contains k))
+                      saved(k).update(v)
                     else v)
 
     functions.values.toSeq
