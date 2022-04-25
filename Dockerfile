@@ -1,1 +1,1 @@
-FROM ghcr.io/dataswift/base:v0.3.1
+FROM ghcr.io/dataswift/base:v0.3.5
