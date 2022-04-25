@@ -67,7 +67,7 @@ class FunctionExecutionTriggerHandler @Inject() (
       .flatMap {
         case Some(hatServer) =>
           functionService
-            .all(active = true)(hatServer.db) // TERRY this must be true in non-debug
+            .all(active = true)(hatServer.db)
             .map(
               _.filter({
                 case FunctionConfiguration(_,
