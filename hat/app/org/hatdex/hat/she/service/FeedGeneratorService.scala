@@ -54,7 +54,9 @@ class FeedGeneratorService @Inject() (
 
   private val dataMappers: Seq[(String, DataEndpointMapper)] = Seq(
     "facebook/profile" -> new FacebookProfileMapper(),
+    "ozm-facebook/profile" -> new FacebookProfileMapper(),
     "facebook/feed" -> new FacebookFeedMapper(),
+    "ozm-facebook/feed" -> new FacebookFeedMapper(),
     "facebook/likes/pages" -> new FacebookPagesLikesMapper(),
     "facebook/events" -> new FacebookEventMapper(),
     "twitter/profile" -> new TwitterProfileMapper(),
