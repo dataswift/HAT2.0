@@ -54,9 +54,9 @@ class FeedGeneratorService @Inject() (
 
   private val dataMappers: Seq[(String, DataEndpointMapper)] = Seq(
     "facebook/profile" -> new FacebookProfileMapper(),
-    "ozm-facebook/profile" -> new FacebookProfileMapper(),
+    "ozm-facebook/profile" -> new OZMFacebookProfileMapper(),
     "facebook/feed" -> new FacebookFeedMapper(),
-    "ozm-facebook/feed" -> new FacebookFeedMapper(),
+    "ozm-facebook/feed" -> new OZMFacebookFeedMapper(),
     "facebook/likes/pages" -> new FacebookPagesLikesMapper(),
     "facebook/events" -> new FacebookEventMapper(),
     "twitter/profile" -> new TwitterProfileMapper(),
@@ -146,7 +146,7 @@ class FeedGeneratorService @Inject() (
       includeInsights: Boolean
     )(implicit
       hatServer: HatServer): Future[Seq[DataFeedItem]] = {
-    logger.debug(s"Fetching feed data for ${mappers.unzip._1}")
+    logger.info(s"Fetching feed data for ${mappers.unzip._1}")
     val now = DateTime.now()
     val sinceTime = since
       .map(t => new DateTime(t * 1000L))
@@ -156,7 +156,7 @@ class FeedGeneratorService @Inject() (
       .getOrElse(now.plus(defaultTimeForward.toMillis))
     val sources: Seq[Source[DataFeedItem, NotUsed]] = mappers.unzip._2
       .map(_.feed(Some(sinceTime), Some(untilTime)))
-
+    
     val sortedSources = new SourceMergeSorter()
       .mergeWithSorter(sources)
 

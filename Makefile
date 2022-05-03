@@ -36,10 +36,18 @@ dev:
 	@sbt ${DEV_SBT_JAVA_OPT} compile
 
 
+# Run me to set up an instance of postgresql in docker
+docker-db:
+	docker-compose -f docker-compose.yml up --build
+
+
+docker-db-stop:
+	docker-compose -f docker-compose.yml down
+
+
 run-dev:
 	$(info > Running HAT2.0 in development.)
 	@sbt "project hat" "run -Dconfig.resource=dev.conf"
-
 
 # List the targets for users
 .PHONY: list
