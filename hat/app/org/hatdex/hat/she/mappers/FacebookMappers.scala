@@ -39,7 +39,7 @@ class FacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
         _._1 == false
       ) // remove all fields that have the same values pre/current
     if (comparison.isEmpty)
-      Failure(new RuntimeException("Comparision Failure. Data the same"))
+      Failure(new RuntimeException("Comparison Failure. Data the same"))
     else
       for {
         title <- Try(
