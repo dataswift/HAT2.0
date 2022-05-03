@@ -25,3 +25,5 @@ project/metals.sbt
 .vscode
 /\.bsp
 project/project
+
+.env
