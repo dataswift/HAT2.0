@@ -8,6 +8,11 @@ import play.api.libs.json.{ JsValue }
 import java.util.UUID
 import scala.util.{ Failure, Try }
 
+/**
+ * Direct copy of FacebookMappers.scala
+ * and modified accordingly
+ * To be reviewed in conjunction with Rumpel review
+ */
 class OZMFacebookProfileMapper extends DataEndpointMapper with FeedItemComparator {
   def dataQueries(
       fromDate: Option[DateTime],
@@ -142,7 +147,6 @@ class OZMFacebookFeedMapper extends DataEndpointMapper {
       date <- Try((content \ "created_time").as[DateTime])
       tags <- Try(Seq("post", (content \ "type").as[String]))
     } yield {
-
       DataFeedItem(
         "facebook",
         date,
