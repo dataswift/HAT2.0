@@ -25,7 +25,6 @@
 package org.hatdex.hat.she.models
 
 import akka.actor.ActorSystem
-import akka.stream.{ ActorMaterializer, Materializer }
 import io.dataswift.models.hat.EndpointDataBundle
 import io.dataswift.models.hat.applications.Version
 import org.hatdex.dex.apiV2.Errors.{ ApiException, DataFormatException }
@@ -158,8 +157,6 @@ class AwsLambdaExecutor @Inject() (
 
   protected val logger: Logger = Logger(this.getClass)
 
-  implicit private val materializer: Materializer = ActorMaterializer()
-
   implicit private val lambdaClient: LambdaAsyncClient =
     LambdaAsyncClient
       .builder()
@@ -174,6 +171,8 @@ class AwsLambdaExecutor @Inject() (
     )(implicit jsonFormatter: Format[T]): Future[T] =
     if (mock) Future.successful(null.asInstanceOf[T])
     else {
+      logger.info("Invoking Request")
+      logger.info(request.toString())
       lambdaClient.invoke{request}.get match {
         case r: InvokeResponse if r.functionError() == null =>
           logger.debug(s"""Function responded with:
@@ -194,7 +193,6 @@ class AwsLambdaExecutor @Inject() (
           val message =
             s"Retrieving SHE function Response Error: ${r.functionError()}"
           logger.error(message)
-          logger.error(r.payload().asUtf8String())
           throw new ApiException(message)
         case r =>
           val message =
