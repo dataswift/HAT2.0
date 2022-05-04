@@ -194,6 +194,7 @@ class AwsLambdaExecutor @Inject() (
           val message =
             s"Retrieving SHE function Response Error: ${r.functionError()}"
           logger.error(message)
+          logger.error(r.payload().asUtf8String())
           throw new ApiException(message)
         case r =>
           val message =
