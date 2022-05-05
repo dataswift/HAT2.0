@@ -87,7 +87,7 @@ class SystemStatus @Inject() (
 
   def version(): Action[AnyContent] = {
     Action.async {
-      Future.successful(Ok(Json.toJson(Map[String, String]("Version" -> configuration.get[String]("hat.version")))))
+      Future.successful(Ok(Json.toJson(Map[String, String]("Version" -> configuration.get[String]("hat.ver")))))
     }
   }
 
