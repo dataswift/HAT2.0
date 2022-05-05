@@ -41,7 +41,7 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
-import java.util.concurrent.CompletionException
+import java.util.concurrent.CompletableFuture
 
 class LambdaFunctionExecutable(
     id: String,
@@ -178,7 +178,8 @@ class AwsLambdaExecutor @Inject() (
       logger.info("Invoking Request")
       logger.info(request.toString())
       try {
-        lambdaClient.invoke{request}.join() match {
+        val invokeRequestF: CompletableFuture[InvokeResponse] = lambdaClient.invoke{request}
+        invokeRequestF.get match {
           case r: InvokeResponse if r.functionError() == null =>
             logger.debug(s"""Function responded with:
                 | Status: ${r.statusCode()}
@@ -206,9 +207,9 @@ class AwsLambdaExecutor @Inject() (
             throw new ApiException(message)
         }
       } catch {
-        case e: CompletionException =>
+        case e: ResourceNotFoundException =>
           val message =
-              s"Retrieving SHE function Response CompletionException: $e, ${request.toString()}"
+              s"Retrieving SHE function Response ResourceNotFoundException: $e, ${request.toString()}"
           logger.error(message)
           throw new ApiException(message)
         case e: Exception =>
