@@ -176,7 +176,10 @@ class AwsLambdaExecutor @Inject() (
     else {
       logger.info("Invoking Request")
       logger.info(request.toString())
-      lambdaClient.invoke{request}.get match {
+      val invokeResponse: InvokeResponse = lambdaClient.invoke{request}.get
+      logger.info(invokeResponse.statusCode().toString())
+      logger.info(invokeResponse.functionError())
+      invokeResponse match {
         case r: InvokeResponse if r.functionError() == null && r.statusCode() == 200 =>
           logger.debug(s"""Function responded with:
               | Status: ${r.statusCode()}
