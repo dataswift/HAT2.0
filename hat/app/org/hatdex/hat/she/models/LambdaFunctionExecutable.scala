@@ -177,7 +177,7 @@ class AwsLambdaExecutor @Inject() (
       logger.info("Invoking Request")
       logger.info(request.toString())
       lambdaClient.invoke{request}.get match {
-        case r: InvokeResponse if r.functionError() == null =>
+        case r: InvokeResponse if r.functionError() == null && r.statusCode() == 200 =>
           logger.debug(s"""Function responded with:
               | Status: ${r.statusCode()}
               | Body: ${r.payload().asUtf8String()}
