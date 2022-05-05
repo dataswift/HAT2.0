@@ -41,6 +41,7 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
+import java.util.concurrent.CompletionException
 
 class LambdaFunctionExecutable(
     id: String,
@@ -205,16 +206,15 @@ class AwsLambdaExecutor @Inject() (
             throw new ApiException(message)
         }
       } catch {
-        case e: ResourceNotFoundException =>
+        case e: CompletionException =>
           val message =
-              s"Retrieving SHE function Response Exception: $e, ${request.toString()}"
-            logger.error(message)
-            throw new ApiException(message)
+              s"Retrieving SHE function Response CompletionException: $e, ${request.toString()}"
+          logger.error(message)
+          throw new ApiException(message)
         case e: Exception =>
-          val message =
-              s"Retrieving SHE function Response Unknown Exception: $e, ${request.toString()}"
-            logger.error(message)
-            throw new ApiException(message)
+          val message = s"Retrieving SHE function Response Unknown Exception: $e, ${request.toString()}"
+          logger.error(message)
+          throw new ApiException(message)
       }
     }
       
