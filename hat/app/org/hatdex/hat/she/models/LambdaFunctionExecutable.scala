@@ -192,7 +192,7 @@ class AwsLambdaExecutor @Inject() (
                   throw DataFormatException(message)
               }
           Future(jsResponse.get)
-        case r: InvokeResponse if r.functionError() != null =>
+        case r: InvokeResponse if r.functionError() != null || r.statusCode() >= 400 =>
           val message =
             s"Retrieving SHE function Response Error: ${r.functionError()}"
           logger.error(message)
