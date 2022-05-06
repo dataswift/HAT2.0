@@ -62,6 +62,8 @@ class SystemStatus @Inject() (
     configuration.get[Long]("resourceManagement.hatFileStorageAllowance")
   private val hatSharedSecret: String =
     configuration.get[String]("resourceManagement.hatSharedSecret")
+  private val hatVersion: String =
+    configuration.get[String]("hat.version")
 
   private val logger = Logger(this.getClass)
 
@@ -87,7 +89,7 @@ class SystemStatus @Inject() (
 
   def version(): Action[AnyContent] = {
     Action.async {
-      Future.successful(Ok(Json.toJson(Map[String, String]("Version" -> configuration.get[String]("hat.version")))))
+      Future.successful(Ok(Json.toJson(Map[String, String]("Version" -> hatVersion))))
     }
   }
 

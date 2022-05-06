@@ -36,11 +36,12 @@ import play.api.{ Configuration, Logger }
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient
-import software.amazon.awssdk.services.lambda.model.{ InvokeRequest, InvokeResponse }
+import software.amazon.awssdk.services.lambda.model.{ InvokeRequest, InvokeResponse, ResourceNotFoundException}
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
+import java.util.concurrent.CompletableFuture
 
 class LambdaFunctionExecutable(
     id: String,
@@ -174,31 +175,43 @@ class AwsLambdaExecutor @Inject() (
     )(implicit jsonFormatter: Format[T]): Future[T] =
     if (mock) Future.successful(null.asInstanceOf[T])
     else {
-      lambdaClient.invoke{request}.get match {
-        case r: InvokeResponse if r.functionError() == null =>
-          logger.debug(s"""Function responded with:
-              | Status: ${r.statusCode()}
-              | Body: ${r.payload().asUtf8String()}
-              | Logs: ${Option(r.logResult()).map(log => java.util.Base64.getDecoder.decode(log))}
-          """.stripMargin)
-          val jsResponse =
-            Json.parse(r.payload().asUtf8String()).validate[T] recover {
-                case e =>
-                  val message = s"Error parsing lambda response: $e"
-                  logger.error(message)
-                  logger.error(s"Unable to parse: ${r.payload().asUtf8String()}")
-                  throw DataFormatException(message)
-              }
-          Future(jsResponse.get)
-        case r: InvokeResponse if r.functionError() != null =>
+      try {
+        val invokeRequestF: CompletableFuture[InvokeResponse] = lambdaClient.invoke{request}
+        invokeRequestF.get match {
+          case r: InvokeResponse if r.functionError() == null =>
+            logger.debug(s"""Function responded with:
+                | Status: ${r.statusCode()}
+                | Body: ${r.payload().asUtf8String()}
+                | Logs: ${Option(r.logResult()).map(log => java.util.Base64.getDecoder.decode(log))}
+            """.stripMargin)
+            val jsResponse =
+              Json.parse(r.payload().asUtf8String()).validate[T] recover {
+                  case e =>
+                    val message = s"Error parsing lambda response: $e"
+                    logger.error(message)
+                    logger.error(s"Unable to parse: ${r.payload().asUtf8String()}")
+                    throw DataFormatException(message)
+                }
+            Future(jsResponse.get)
+          case r: InvokeResponse if r.functionError() != null =>
+            val message =
+              s"Retrieving SHE function Response Error: ${r.functionError()}"
+            logger.error(message)
+            throw new ApiException(message)
+          case r =>
+            val message =
+              s"Retrieving SHE function Response FAILED: $r, ${r.payload().asUtf8String()}"
+            logger.error(message)
+            throw new ApiException(message)
+        }
+      } catch {
+        case e: ResourceNotFoundException =>
           val message =
-            s"Retrieving SHE function Response Error: ${r.functionError()}"
+              s"Retrieving SHE function Response ResourceNotFoundException: $e, ${request.toString()}"
           logger.error(message)
-          logger.error(r.payload().asUtf8String())
           throw new ApiException(message)
-        case r =>
-          val message =
-            s"Retrieving SHE function Response FAILED: $r, ${r.payload().asUtf8String()}"
+        case e: Exception =>
+          val message = s"Retrieving SHE function Response Unknown Exception: $e, ${request.toString()}"
           logger.error(message)
           throw new ApiException(message)
       }
