@@ -62,7 +62,8 @@ class SystemStatus @Inject() (
     configuration.get[Long]("resourceManagement.hatFileStorageAllowance")
   private val hatSharedSecret: String =
     configuration.get[String]("resourceManagement.hatSharedSecret")
-  private val hatVersion: String = "v2.8.15-show-version-hardcoded"
+  private val hatVersion: String =
+    configuration.get[String]("hat.version")
 
   private val logger = Logger(this.getClass)
 
