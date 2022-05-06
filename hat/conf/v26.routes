@@ -1,6 +1,7 @@
 
 GET           /system/status                                                                 org.hatdex.hat.api.controllers.SystemStatus.status()
 GET           /healthz                                                                       org.hatdex.hat.api.controllers.SystemStatus.healthReport()
+GET           /version                                                                       org.hatdex.hat.api.controllers.SystemStatus.version()
 
 GET           /phata/profile                                                                 org.hatdex.hat.phata.controllers.Phata.profile
 POST          /report-frontend-action                                                        org.hatdex.hat.api.controllers.LogController.logFrontendAction
