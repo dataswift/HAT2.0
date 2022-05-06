@@ -175,11 +175,8 @@ class AwsLambdaExecutor @Inject() (
     )(implicit jsonFormatter: Format[T]): Future[T] =
     if (mock) Future.successful(null.asInstanceOf[T])
     else {
-      logger.info("Invoking Request")
       try {
-        logger.info(request.toString())
         val invokeRequestF: CompletableFuture[InvokeResponse] = lambdaClient.invoke{request}
-        logger.info("Successful Invocation")
         invokeRequestF.get match {
           case r: InvokeResponse if r.functionError() == null =>
             logger.debug(s"""Function responded with:
