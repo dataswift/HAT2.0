@@ -176,9 +176,10 @@ class AwsLambdaExecutor @Inject() (
     if (mock) Future.successful(null.asInstanceOf[T])
     else {
       logger.info("Invoking Request")
-      logger.info(request.toString())
       try {
+        logger.info(request.toString())
         val invokeRequestF: CompletableFuture[InvokeResponse] = lambdaClient.invoke{request}
+        logger.info("Successful Invocation")
         invokeRequestF.get match {
           case r: InvokeResponse if r.functionError() == null =>
             logger.debug(s"""Function responded with:
