@@ -133,7 +133,7 @@ class OZMFacebookFeedMapper extends DataEndpointMapper {
                            .getOrElse(
                              (content \ "story")
                                .asOpt[String]
-                               .getOrElse((content \ "description").as[String])
+                               .getOrElse((content \ "description").asOpt[String].getOrElse(""))
                            )}
              |
              |${(content \ "link")
