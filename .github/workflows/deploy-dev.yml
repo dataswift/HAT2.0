@@ -78,7 +78,7 @@ jobs:
 
       - name: Container - Meta
         id: meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         with:
           images: |
             dataswift/hat
