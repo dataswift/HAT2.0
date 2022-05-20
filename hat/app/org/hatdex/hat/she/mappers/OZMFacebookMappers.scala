@@ -99,61 +99,62 @@ class OZMFacebookFeedMapper extends DataEndpointMapper {
       recordId: UUID,
       content: JsValue,
       tailRecordId: Option[UUID] = None,
-      tailContent: Option[JsValue] = None): Try[DataFeedItem] =
-    for {
-      title <- Try(
-                 if ((content \ "type").as[String] == "photo")
-                   DataFeedItemTitle("You posted a photo", None, Some("photo"))
-                 else if ((content \ "type").as[String] == "link")
-                   DataFeedItemTitle("You shared a story", None, None)
-                 else
-                   DataFeedItemTitle("You posted", None, None)
-               )
-      media <- Try(
-                 (content \ "picture")
-                   .asOpt[String]
-                   .map(url =>
-                     List(
-                       DataFeedItemMedia(
-                         Some(url),
-                         (content \ "full_picture").asOpt[String]
-                       )
-                     )
+      tailContent: Option[JsValue] = None): Try[DataFeedItem] = {
+        for {
+          title <- Try(
+                     if ((content \ "type").as[String] == "photo")
+                       DataFeedItemTitle("You posted a photo", None, Some("photo"))
+                     else if ((content \ "type").as[String] == "link")
+                       DataFeedItemTitle("You shared a story", None, None)
+                     else
+                       DataFeedItemTitle("You posted", None, None)
                    )
-                   .getOrElse {
-                     List(
-                       DataFeedItemMedia(None, (content \ "full_picture").asOpt[String])
-                     )
-                   }
-               )
-      itemContent <- Try(
-                       DataFeedItemContent(
-                         Some(s"""${(content \ "message")
-                           .asOpt[String]
-                           .getOrElse(
-                             (content \ "story")
-                               .asOpt[String]
-                               .getOrElse((content \ "description").asOpt[String].getOrElse(""))
-                           )}
-             |
-             |${(content \ "link")
-                           .asOpt[String]
-                           .getOrElse("")}""".stripMargin.trim),
-                         None,
-                         Some(media),
-                         None
+          media <- Try(
+                     (content \ "picture")
+                       .asOpt[String]
+                       .map(url =>
+                         List(
+                           DataFeedItemMedia(
+                             Some(url),
+                             (content \ "full_picture").asOpt[String]
+                           )
+                         )
                        )
-                     )
-      date <- Try((content \ "created_time").as[DateTime])
-      tags <- Try(Seq("post", (content \ "type").as[String]))
-    } yield {
-      DataFeedItem(
-        "facebook",
-        date,
-        tags,
-        Some(title),
-        Some(itemContent),
-        None
-      )
-    }
+                       .getOrElse {
+                         List(
+                           DataFeedItemMedia(None, (content \ "full_picture").asOpt[String])
+                         )
+                       }
+                   )
+          itemContent <- Try(
+                           DataFeedItemContent(
+                             Some(s"""${(content \ "message")
+                               .asOpt[String]
+                               .getOrElse(
+                                 (content \ "story")
+                                   .asOpt[String]
+                                   .getOrElse((content \ "description").asOpt[String].getOrElse(""))
+                               )}
+                 |
+                 |${(content \ "link")
+                               .asOpt[String]
+                               .getOrElse("")}""".stripMargin.trim),
+                             None,
+                             Some(media),
+                             None
+                           )
+                         )
+          date <- Try((content \ "created_time").as[DateTime])
+          tags <- Try(Seq("post", (content \ "type").as[String]))
+        } yield {
+          DataFeedItem(
+            "facebook",
+            date,
+            tags,
+            Some(title),
+            Some(itemContent),
+            None
+          )
+        }
+      }
 }

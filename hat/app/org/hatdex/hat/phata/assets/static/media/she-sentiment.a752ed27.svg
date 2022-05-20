@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300px" height="300px" viewBox="0 0 300 300" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 53.2 (72643) - https://sketchapp.com -->
+    <title>Sentiment@1.5x</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <path d="M11,5.5 C11,8.537375 8.537375,11 5.5,11 C2.462625,11 0,8.537375 0,5.5 C0,2.462625 2.462625,0 5.5,0 C8.537375,0 11,2.462625 11,5.5" id="path-1"></path>
+        <path d="M39,5.5 C39,8.537375 36.537375,11 33.5,11 C30.462625,11 28,8.537375 28,5.5 C28,2.462625 30.462625,0 33.5,0 C36.537375,0 39,2.462625 39,5.5" id="path-2"></path>
+        <path d="M11,5.5 C11,8.537375 8.53875,11 5.5,11 C2.462625,11 0,8.537375 0,5.5 C0,2.462625 2.462625,0 5.5,0 C8.53875,0 11,2.462625 11,5.5" id="path-3"></path>
+        <path d="M39,5.5 C39,8.537375 36.537375,11 33.5,11 C30.462625,11 28,8.537375 28,5.5 C28,2.462625 30.462625,0 33.5,0 C36.537375,0 39,2.462625 39,5.5" id="path-4"></path>
+        <path d="M11,5.5 C11,8.537375 8.537375,11 5.5,11 C2.462625,11 0,8.537375 0,5.5 C0,2.462625 2.462625,0 5.5,0 C8.537375,0 11,2.462625 11,5.5" id="path-5"></path>
+        <path d="M39,5.5 C39,8.537375 36.537375,11 33.5,11 C30.462625,11 28,8.537375 28,5.5 C28,2.462625 30.462625,0 33.5,0 C36.537375,0 39,2.462625 39,5.5" id="path-6"></path>
+        <path d="M65.4915507,55 C63.2616659,60.5308253 56.3842436,64.5583949 48.2457753,64.5583949 C40.1073071,64.5583949 33.2298848,60.5308253 31,55" id="path-7"></path>
+    </defs>
+    <g id="Sentiment" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M150,296 C230.633861,296 296,230.633861 296,150 C296,69.366139 230.633861,4 150,4 C69.366139,4 4,69.366139 4,150 C4,230.633861 69.366139,296 150,296 Z" id="Fill-1" stroke="#FF9B26" stroke-width="8" fill="#FFFFFF"></path>
+        <g id=":(" transform="translate(158.000000, 123.000000)">
+            <path d="M47.7575317,95.5161744 C21.4233372,95.5161744 0,74.0928372 0,47.7586427 C0,21.4244483 21.4233372,0 47.7575317,0 C74.0917262,0 95.5150634,21.4244483 95.5150634,47.7586427 C95.5150634,74.0928372 74.0917262,95.5161744 47.7575317,95.5161744" id="Fill-3" stroke="#FF9B26" stroke-width="7" fill="#FEFEFE"></path>
+            <g id="Group" transform="translate(28.000000, 31.000000)">
+                <g id="Fill-7">
+                    <use fill="#4B556B" xlink:href="#path-1"></use>
+                    <use fill="#FF9B26" xlink:href="#path-1"></use>
+                </g>
+                <g id="Fill-11">
+                    <use fill="#4B556B" xlink:href="#path-2"></use>
+                    <use fill="#FF9B26" xlink:href="#path-2"></use>
+                </g>
+            </g>
+            <path d="M64.4915507,64.5595059 C62.2616659,59.0286807 55.3842436,55 47.2457753,55 C39.1073071,55 32.2298848,59.0286807 30,64.5595059" id="Stroke-15" stroke="#FF9B26" stroke-width="7" stroke-linecap="round"></path>
+        </g>
+        <g id=":|" transform="translate(46.000000, 123.000000)">
+            <g id="Group-3">
+                <path d="M47.7575317,95.5161744 C21.4233372,95.5161744 0,74.0928372 0,47.7586427 C0,21.4244483 21.4233372,0 47.7575317,0 C74.0917262,0 95.5150634,21.4244483 95.5150634,47.7586427 C95.5150634,74.0928372 74.0917262,95.5161744 47.7575317,95.5161744" id="Fill-17" stroke="#FF9B26" stroke-width="7" fill="#FEFEFE"></path>
+                <g id="Group-4" transform="translate(28.000000, 31.000000)">
+                    <g id="Fill-21">
+                        <use fill="#4B556B" xlink:href="#path-3"></use>
+                        <use fill="#FF9B26" xlink:href="#path-3"></use>
+                    </g>
+                    <g id="Fill-25">
+                        <use fill="#4B556B" xlink:href="#path-4"></use>
+                        <use fill="#FF9B26" xlink:href="#path-4"></use>
+                    </g>
+                </g>
+                <path d="M30,59 L65.0415222,59" id="Stroke-29" stroke="#FF9B26" stroke-width="7" stroke-linecap="round"></path>
+            </g>
+        </g>
+        <g id=":)" transform="translate(101.000000, 60.000000)">
+            <path d="M47.7575317,95.5161744 C21.4233372,95.5161744 0,74.0917262 0,47.7586427 C0,21.4244483 21.4233372,0 47.7575317,0 C74.0917262,0 95.5150634,21.4244483 95.5150634,47.7586427 C95.5150634,74.0917262 74.0917262,95.5161744 47.7575317,95.5161744" id="Fill-31" stroke="#FF9B26" stroke-width="7" fill="#FEFEFE"></path>
+            <g id="Group-2" transform="translate(29.000000, 31.000000)">
+                <g id="Fill-35">
+                    <use fill="#4B556B" xlink:href="#path-5"></use>
+                    <use fill="#FF9B26" xlink:href="#path-5"></use>
+                </g>
+                <g id="Fill-39">
+                    <use fill="#4B556B" xlink:href="#path-6"></use>
+                    <use fill="#FF9B26" xlink:href="#path-6"></use>
+                </g>
+            </g>
+            <g id="Stroke-43" stroke-linecap="round">
+                <use stroke="#4B556B" stroke-width="5" xlink:href="#path-7"></use>
+                <use stroke="#FF9B26" stroke-width="7" xlink:href="#path-7"></use>
+            </g>
+        </g>
+    </g>
+</svg>
