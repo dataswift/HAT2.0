@@ -48,8 +48,6 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
       fromDate: Option[DateTime],
       untilDate: Option[DateTime]): Option[FilterOperator.Operator] =
     fromDate.map { date =>
-      logger.info(s"fromDate ${fromDate}")
-      logger.info(s"untilDate ${untilDate}")
       FilterOperator.Between(
         Json.toJson(date.toString(dateTimeFormat)),
         Json.toJson(untilDate.map(_.toString(dateTimeFormat)))
@@ -108,11 +106,9 @@ trait DataEndpointMapper extends JodaWrites with JodaReads {
               tail.recordId,
               Some(tail.data)
             )
-            logger.info(s"record is $record")
             record
           case Seq(item) =>
             val record = mapDataRecord(item.recordId.get, item.data)
-            logger.info(s"record is $record")
             record
         }
         .collect({
