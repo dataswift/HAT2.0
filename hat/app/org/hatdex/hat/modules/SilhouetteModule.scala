@@ -54,6 +54,7 @@ import play.api.{ ConfigLoader, Configuration }
 import javax.inject.{ Singleton => JSingleton }
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
+import com.amazonaws.regions.Regions
 
 /**
   * The Guice module which wires all Silhouette dependencies.
@@ -228,7 +229,8 @@ class SilhouetteModule extends ScalaModule with SilhouetteConfigLoaders {
     new CredentialsProvider(authInfoRepository, passwordHasherRegistry)
 
   @Provides @JSingleton
-  def provideMailClient: AmazonSimpleEmailService = AmazonSimpleEmailServiceClientBuilder.defaultClient()
+  //def provideMailClient: AmazonSimpleEmailService = AmazonSimpleEmailServiceClientBuilder.defaultClient()
+  def provideMailClient: AmazonSimpleEmailService = AmazonSimpleEmailServiceClientBuilder.standard().withRegion(Regions.US_EAST_1).build()
 
 }
 
