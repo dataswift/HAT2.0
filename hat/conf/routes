@@ -9,6 +9,8 @@ GET         /publickey                                           org.hatdex.hat.
 GET         /users/access_token/validate                         org.hatdex.hat.api.controllers.Authentication.validateToken
 GET         /users/application_token                             org.hatdex.hat.api.controllers.Authentication.applicationToken(name: String, resource: String)
 GET         /users/access_token                                  org.hatdex.hat.api.controllers.Authentication.accessToken
+GET         /users/magic_link                                    org.hatdex.hat.api.controllers.Authentication.magicLink
+GET         /users/magic_login/:magicToken                       org.hatdex.hat.api.controllers.Authentication.magicLogin(magicToken: String)
 PUT         /users/user/:userId/enable                           org.hatdex.hat.api.controllers.Users.enableUser(userId: java.util.UUID)
 PUT         /users/user/:userId/disable                          org.hatdex.hat.api.controllers.Users.disableUser(userId: java.util.UUID)
 PUT         /users/user/:userId/delete                           org.hatdex.hat.api.controllers.Users.deleteUser(userId: java.util.UUID)

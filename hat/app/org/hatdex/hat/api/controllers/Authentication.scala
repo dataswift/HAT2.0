@@ -52,6 +52,7 @@ import java.net.{ URLDecoder, URLEncoder }
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import com.mohiva.play.silhouette.api.LoginInfo
 
 class Authentication @Inject() (
     components: ControllerComponents,
@@ -201,21 +202,25 @@ class Authentication @Inject() (
       } yield {
         val username = URLDecoder.decode(usernameParam, "UTF-8")
         val password = URLDecoder.decode(passwordParam, "UTF-8")
+
         credentialsProvider
           .authenticate(Credentials(username, password))
           .map(_.copy(request.dynamicEnvironment.id))
-          .flatMap { loginInfo =>
+          .flatMap { loginInfo: LoginInfo =>
             userService.getUser(loginInfo.providerKey).flatMap {
+
               // If we find a user, create and return an access token (JWT)
               case Some(user) =>
                 val customClaims = hatServicesService.generateUserTokenClaims(user, hatService)
                 for {
                   // JWT Authenticator
                   authenticator <- env.authenticatorService.create(loginInfo)
+
                   // JWT serialized as a String
                   token <- env.authenticatorService.init(
                              authenticator.copy(customClaims = Some(customClaims))
                            )
+
                   // Logging
                   _ <- userService.logLogin(
                          user,
@@ -227,6 +232,7 @@ class Authentication @Inject() (
                          None,
                          None
                        )
+
                   // AuthenticatorResult
                   result <- env.authenticatorService.embed(
                               token,
@@ -235,9 +241,11 @@ class Authentication @Inject() (
                 } yield {
                   // ???: Learn about the event bus
                   env.eventBus.publish(LoginEvent(user, request))
+
                   // AuthenticatorResult
                   result
                 }
+
               // No user found
               case None =>
                 Future.failed(new IdentityNotFoundException("Couldn't find user"))
@@ -249,6 +257,107 @@ class Authentication @Inject() (
         Future.successful(noUserOrPass)
       }
     }
+
+
+
+  // ----------------- MAGIC TOKEN -----------------------------------------------
+  def magicLink(): Action[AnyContent] =
+    (UserAwareAction andThen limiter.UserAwareRateLimit).async { implicit request =>
+      // pull details from the headers
+      val eventuallyAuthenticatedUser = for {
+        usernameParam <- request.headers.get("username")
+      } yield {
+
+        val username = URLDecoder.decode(usernameParam, "UTF-8")
+
+        credentialsProvider
+          .authenticate(Credentials(username, username))
+          .map(_.copy(request.dynamicEnvironment.id))
+          .flatMap { loginInfo: LoginInfo =>
+            userService.getUser(loginInfo.providerKey).flatMap {
+              // If we find a user, create and return an access token (JWT)
+              case Some(user) =>
+                // No user found
+                println("found a user emailing them a magicLink")
+                Future.successful(Ok(Json.toJson(SuccessResponse("Authenticated"))))
+              case None =>
+                Future.failed(new IdentityNotFoundException("Couldn't find user"))
+            }
+          }
+      }
+      // Credentials are no good --> Error
+      eventuallyAuthenticatedUser getOrElse {
+        Future.successful(noUserOrPass)
+      }
+    }
+
+    def magicLogin(token: String): Action[AnyContent] = {
+      (UserAwareAction andThen limiter.UserAwareRateLimit).async { implicit request =>
+          // pull details from the headers
+          val eventuallyAuthenticatedUser = for {
+            usernameParam <- request.headers.get("username")
+            passwordParam <- request.headers.get("password")
+          } yield {
+            val username = URLDecoder.decode(usernameParam, "UTF-8")
+            val password = URLDecoder.decode(passwordParam, "UTF-8")
+
+            credentialsProvider
+              .authenticate(Credentials(username, password))
+              .map(_.copy(request.dynamicEnvironment.id))
+              .flatMap { loginInfo: LoginInfo =>
+                userService.getUser(loginInfo.providerKey).flatMap {
+
+                  // If we find a user, create and return an access token (JWT)
+                  case Some(user) =>
+                    val customClaims = hatServicesService.generateUserTokenClaims(user, hatService)
+                    for {
+                      // JWT Authenticator
+                      authenticator <- env.authenticatorService.create(loginInfo)
+
+                      // JWT serialized as a String
+                      token <- env.authenticatorService.init(
+                                 authenticator.copy(customClaims = Some(customClaims))
+                               )
+
+                      // Logging
+                      _ <- userService.logLogin(
+                             user,
+                             "api",
+                             user.roles
+                               .filter(_.extra.isEmpty)
+                               .map(_.title)
+                               .mkString(":"),
+                             None,
+                             None
+                           )
+
+                      // AuthenticatorResult
+                      result <- env.authenticatorService.embed(
+                                  token,
+                                  Ok(Json.toJson(AccessToken(token, user.userId)))
+                                )
+                    } yield {
+                      // ???: Learn about the event bus
+                      env.eventBus.publish(LoginEvent(user, request))
+
+                      // AuthenticatorResult
+                      result
+                    }
+
+                  // No user found
+                  case None =>
+                    Future.failed(new IdentityNotFoundException("Couldn't find user"))
+                }
+              }
+          }
+          // Credentials are no good --> Error
+          eventuallyAuthenticatedUser getOrElse {
+            Future.successful(noUserOrPass)
+          }
+        }
+    }
+// ----------------- MAGIC TOKEN -----------------------------------------------
+
 
   /**
     * This is the authenticated, "I have the password, but I want to change it."
@@ -344,7 +453,7 @@ class Authentication @Inject() (
         // Token was found, is not signup nor expired
         case Some(token) if !token.isSignUp && !token.isExpired =>
           // Token.email matches the dynamicEnv (what is this)
-          if (token.email == request.dynamicEnvironment.ownerEmail) {
+          if (token.email == request.dynamicEnvironment.ownerEmail)
             // Find the users with the owner role
             // ???: Why not using the email
             userService
@@ -380,7 +489,7 @@ class Authentication @Inject() (
                 case None =>
                   Future.successful(noUserMatchingToken)
               }
-          } else
+          else
             Future.successful(onlyHatOwnerCanReset)
         case Some(_) =>
           tokenService.consume(tokenId)

@@ -205,7 +205,7 @@ class ApplicationsService @Inject() (
                          user.userId
                        )(hat)
                      )
-               })
+               }) 
         _ <- dataDebitService.dataDebitEnableNewestPermissions(ddId)(hat)
       } yield Done
     }
@@ -325,7 +325,8 @@ class ApplicationsService @Inject() (
     logger.info(s"Setting app application: ${application.application.id}")
     val appSetup = for {
       // Create and enable the data debit
-      _ <- enableAssociatedDataDebit(application)
+      // this should not happen and be deferred.
+      // _ <- enableAssociatedDataDebit(application)
       setup <- setupApplication(application)
       dependenciesSetup <- setupDependencies(application)
     } yield setup.copy(dependenciesEnabled = dependenciesSetup)

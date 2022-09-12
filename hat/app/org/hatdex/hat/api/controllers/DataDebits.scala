@@ -122,10 +122,14 @@ class DataDebits @Inject() (
 
   def getDataDebitValues(dataDebitId: String): Action[AnyContent] =
     SecuredAction(
-      WithRole(Owner(), DataDebitOwner(dataDebitId)) || ContainsApplicationRole(
+      WithRole(
+        Owner(), 
+        DataDebitOwner(dataDebitId)
+      ) || 
+      ContainsApplicationRole(
           Owner(),
           DataDebitOwner(dataDebitId)
-        )
+      )
     ).async { implicit request =>
       dataDebitService
         .dataDebit(dataDebitId)
