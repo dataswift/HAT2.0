@@ -93,3 +93,5 @@ PUT           /contract/file/:fileId                                            
 DELETE        /contract/file/:fileId                                                         org.hatdex.hat.api.controllers.ContractFiles.deleteFile(fileId)
 POST          /contract/file/:fileId/content                                                 org.hatdex.hat.api.controllers.ContractFiles.getContent(fileId)
 
+# trusted proxy
+GET           /trusted/:applicationId/status                                                 org.hatdex.hat.api.controllers.Authentication.applicationStatus(applicationId: String)
