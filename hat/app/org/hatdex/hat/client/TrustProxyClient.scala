@@ -5,7 +5,8 @@ import io.dataswift.adjudicator.{ HatClaim, JwtClaimBuilder }
 import pdi.jwt.{ Jwt, JwtAlgorithm, JwtClaim, JwtHeader }
 import play.api.Logging
 import play.api.http.Status._
-import play.api.libs.json.Json
+import play.api.libs.json.{ Json, Reads }
+import play.api.libs.json.Json.reads
 import play.api.libs.ws.{ WSClient, WSRequest }
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -16,6 +17,15 @@ object TrustProxyRequestTypes {
   case class PublicKeyServiceFailure(failureDescription: String) extends PublicKeyRequestFailure
   case class InvalidPublicKeyFailure(failureDescription: String) extends PublicKeyRequestFailure
   case class PublicKeyReceived(publicKey: String) extends AnyVal
+}
+
+object TrustProxyTypes {
+  case class TrustProxyContent(
+      iss: String,
+      email: String,
+      pdaUrl: String)
+  implicit val of: Reads[TrustProxyContent] = reads[TrustProxyContent]
+
 }
 
 trait TrustProxyClient {
@@ -30,6 +40,7 @@ class TrustProxyWsClient(
     extends TrustProxyClient
     with Logging {
   import TrustProxyRequestTypes._
+  import TrustProxyTypes._
 
   override def getPublicKey(
       ws: WSClient

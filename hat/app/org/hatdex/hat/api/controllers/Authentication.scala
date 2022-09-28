@@ -38,7 +38,7 @@ import io.dataswift.models.hat.json.HatJsonFormats
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.{ HatServicesService, LogService, MailTokenService, UserService }
 import org.hatdex.hat.authentication._
-import org.hatdex.hat.client.{ TrustProxyClient, TrustProxyWsClient }
+import org.hatdex.hat.client.{ TrustProxyClient }
 import org.hatdex.hat.phata.models._
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
 import org.hatdex.hat.utils.{ DataswiftServiceConfig, HatBodyParsers, HatMailer, TrustProxyUtils }
@@ -49,15 +49,10 @@ import play.api.libs.ws.WSClient
 import play.api.mvc.{ Action, _ }
 import play.api.{ Configuration, Logging }
 import org.hatdex.hat.resourceManagement.HatServer
-
 import java.net.{ URLDecoder, URLEncoder }
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import java.security.PublicKey
-import java.security.KeyFactory
-import java.security.spec.X509EncodedKeySpec
-import java.util.Base64
 
 class Authentication @Inject() (
     components: ControllerComponents,
@@ -76,7 +71,7 @@ class Authentication @Inject() (
     mailer: HatMailer,
     tokenService: MailTokenService[MailTokenUser],
     wsClient: WSClient,
-    trustProxyClient: TrustProxyClient,
+    // trustProxyClient: TrustProxyClient,
     limiter: UserLimiter)
     extends HatApiController(components, silhouette)
     with Logging {
@@ -607,59 +602,10 @@ class Authentication @Inject() (
       token: String): String =
     s"$emailScheme$host/auth/change-password/$token"
 
-  case class AppStatus(
-      active: Boolean,
-      enabled: Boolean)
-
-  // Auth Token Endpoints
-  def applicationStatus(applicationId: String): EssentialAction =
-    indefiniteSuccessCaching {
-      UserAwareAction.async { implicit request =>
-        val maybePublicKey = trustProxyClient.getPublicKey(wsClient) flatMap (ret =>
-                ret match {
-                  case Right(value) =>
-                    println(value)
-                    Future.successful(value)
-                  case _ =>
-                    println(ret)
-                    println("left")
-                    Future.failed(new UnknownError("HAT claim failed"))
-                }
-              )
-
-        maybePublicKey.flatMap { pKeyReceived =>
-          val pKey                      = pKeyReceived.publicKey
-          val rsaKeyFactory: KeyFactory = KeyFactory.getInstance("RSA")
-
-          val strippedKeyText = pKey.stripMargin
-            .replace("\n", "")
-            .replace("-----BEGIN PUBLIC KEY-----", "")
-            .replace("-----END PUBLIC KEY-----", "")
-
-          val bytes                   = Base64.getDecoder.decode(strippedKeyText)
-          val rsaPublicKey: PublicKey = rsaKeyFactory.generatePublic(new X509EncodedKeySpec(bytes))
-          /// -------------
-
-          // println(request.headers)
-          val trustToken = request.headers.get("TRUST_TOKEN")
-          // println(trustToken)
-          trustToken.map(t => TrustProxyUtils.decodeToken(t, rsaPublicKey))
-
-          val publicKey =
-            hatServerProvider.toString(request.dynamicEnvironment.publicKey)
-          Future.successful(Ok(publicKey))
-        }
-      }
-    }
-
   def roleMatchIt(
       roleToMatch: UserRole,
       roleRequired: UserRole): Boolean =
     roleRequired equals roleToMatch
-  // roleToMatch match {
-  //   case roleRequired: EmailVerified => true
-  //   case _            => false
-  // }
 }
 case class EmailVerificationOptions(
     email: String,
@@ -676,20 +622,3 @@ case class EmailVerificationOptions(
     s"$encodedEmail&$lang&$application&$redirect"
   }
 }
-
-//        /// -------------
-//        val pKey =
-//          """|-----BEGIN PUBLIC KEY-----
-//             |MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA1QJwoEfJ98lSxX8H14EQ
-//             |vGMioKfOCZo+U8Ck4pDullzzdQVACYmZ2ONpzCXavWiE9fO/nPNU8P8Kn9WaThTa
-//             |m++f++2H833UNYMm3hqWbUWMBpMA7zKKox4PX9pq/CN5krP8efK/OXA+1rPaqAyj
-//             |VePwKkbqp+pE8cX34iNToO3d7v56DppIJ1dA8JBMoNyPkBZQhKv9/T26gMQBK7GW
-//             |fKoAPGIhCw9zKyd5Hh5aMc3U/fBl+EEqdkXrQ56+rTvL3FkDW2zldT6be4MwPu2i
-//             |lqHvb+X9xtTgtHHuwpKLuLtnQtNBg/ddvNGiAzdbZKZflSfXo9//6FbzMh39odPN
-//             |CLKAKDKnVPbYnMw2Iyp7AWZBtLDcxwW7UYq+bXJzE50ir3grsbxhHZOvTZb22lH7
-//             |atcbRHDq9KTWjhLT03rKYisOO8pxAzyoJtXM4qWJLo23oP9eSRVNLGFxEUdiUd4h
-//             |G7ctYoqC7JJRIgwHm7iGwT/2T0nSzk7V0VrZrQsnV2nkV54g9gv31Qs+OZgJHsTF
-//             |2gIZDZLofiXf6FhpjEi0oGsoLH+ii4Iov+Ga9ZQ6ISHdwn7YiCejKZ1/RIGCz51f
-//             |QRX5EwRUkF+OwlPuTQjErNHg1rFR8vau3uCTmjIhed2/6KKdI5c+Fqy1gY01iNu9
-//             |Bo4ZCeoNvePHhoIEnQC/wBMCAwEAAQ==
-//             |-----END PUBLIC KEY-----""".stripMargin

@@ -532,7 +532,7 @@ class ApplicationsService @Inject() (
     db.run(query.result)
   }
 
-  protected def applicationSetupStatus(
+  def applicationSetupStatus(
       id: String
     )(implicit db: Database): Future[Option[ApplicationStatusRow]] = {
     val query = Tables.ApplicationStatus.filter(_.id === id)
