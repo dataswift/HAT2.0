@@ -22,7 +22,6 @@
  * 9 / 2022
  */
 
-
 package org.hatdex.hat.utils
 
 import org.hatdex.hat.client.TrustProxyTypes._
@@ -57,7 +56,6 @@ object TrustProxyUtils {
 
     ret match {
       case Success(value) =>
-        println(value)
         Some(value)
       case Failure(exception) =>
         None
@@ -74,21 +72,11 @@ object TrustProxyUtils {
     jwtClaim match {
       case Some(value) =>
         val c = Json.parse(value.content).as[TrustProxyContent]
-        println(c)
-        println(issuer, c.iss)
-        println(pdaUrl, c.pdaUrl)
-        println(email, c.email)
-        println(c.iss == issuer)
-        println(c.pdaUrl == pdaUrl)
-        println(c.email == email)
 
-        if (c.iss == issuer && c.pdaUrl == pdaUrl && c.email == email) {
-          println("TRUE")
+        if (c.iss == issuer && c.pdaUrl == pdaUrl && c.email == email)
           true
-        } else {
-          println("FALSE")
+        else
           false
-        }
       case _ =>
         false
     }

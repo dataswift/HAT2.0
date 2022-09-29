@@ -61,7 +61,6 @@ class TrustProxyWsClient(
     extends TrustProxyClient
     with Logging {
   import TrustProxyRequestTypes._
-  import TrustProxyTypes._
 
   override def getPublicKey(
       ws: WSClient
@@ -72,6 +71,7 @@ class TrustProxyWsClient(
 
     runPublicKeyRequest(makeRequest(url, ws))
   }
+
   // Base Request
   private def makeRequest(
       url: String,
