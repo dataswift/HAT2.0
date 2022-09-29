@@ -1,8 +1,29 @@
+/*
+ * Copyright (C) 2017 HAT Data Exchange Ltd
+ * SPDX-License-Identifier: AGPL-3.0
+ *
+ * This file is part of the Hub of All Things project (HAT).
+ *
+ * HAT is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation, version 3 of
+ * the License.
+ *
+ * HAT is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+ * the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General
+ * Public License along with this program. If not, see
+ * <http://www.gnu.org/licenses/>.
+ *
+ * Written by Tyler Weir <tyler.weir@dataswift.io>
+ * 9 / 2022
+ */
+
 package org.hatdex.hat.client
 
-import dev.profunktor.auth.jwt.JwtSecretKey
-import io.dataswift.adjudicator.{ HatClaim, JwtClaimBuilder }
-import pdi.jwt.{ Jwt, JwtAlgorithm, JwtClaim, JwtHeader }
 import play.api.Logging
 import play.api.http.Status._
 import play.api.libs.json.{ Json, Reads }
@@ -46,6 +67,7 @@ class TrustProxyWsClient(
       ws: WSClient
     )(implicit ec: ExecutionContext): Future[Either[PublicKeyRequestFailure, PublicKeyReceived]] = {
 
+    // FIXME: Temp until this is deployed
     val url = s"https://pdaproxy.playconcepts.co.uk/publickey"
 
     runPublicKeyRequest(makeRequest(url, ws))
@@ -64,16 +86,14 @@ class TrustProxyWsClient(
     )(implicit ec: ExecutionContext): Future[Either[PublicKeyRequestFailure, PublicKeyReceived]] = {
     logger.info(s"runPublicKeyRequest")
     req.get().map { response =>
-      // println(response.body)
       response.status match {
         case OK =>
           val body = response.body
-          // println(s"str: ${body}")
           Right(PublicKeyReceived(body))
         case _ =>
           Left(
             PublicKeyServiceFailure(
-              s"The Adjudicator Service responded with an error: ${response.statusText}"
+              s"The Trusted Proxy Service responded with an error: ${response.statusText}"
             )
           )
       }
@@ -81,7 +101,7 @@ class TrustProxyWsClient(
       case e =>
         Left(
           PublicKeyServiceFailure(
-            s"The Adjudicator Service responded with an error: ${e.getMessage}"
+            s"The Trusted Proxy Service responded with an error: ${e.getMessage}"
           )
         )
     }

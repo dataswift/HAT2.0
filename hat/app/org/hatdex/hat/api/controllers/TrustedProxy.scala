@@ -26,24 +26,18 @@ package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import io.dataswift.models.hat.json.HatJsonFormats
-import io.dataswift.models.hat.{ EndpointData, EndpointQuery, ErrorMessage }
+import io.dataswift.models.hat.ErrorMessage
 import org.hatdex.hat.api.service.{ HatServicesService, UserService }
 import org.hatdex.hat.api.service.applications.{ ApplicationsService, TrustedApplicationProvider }
-import org.hatdex.hat.api.service.richData.{ RichDataMissingException, RichDataService }
-import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
-import org.hatdex.hat.resourceManagement.HatServer
 import org.hatdex.hat.utils.HatBodyParsers
-import org.hatdex.libs.dal.HATPostgresProfile
-import pdi.jwt.JwtClaim
 import play.api.Logging
-import play.api.libs.json.{ JsArray, JsValue, Json }
+import play.api.libs.json.Json
 import play.api.mvc._
 import org.hatdex.hat.utils.TrustProxyUtils
 import org.hatdex.hat.client.TrustProxyClient
 import play.api.libs.ws.WSClient
 
-import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -51,7 +45,6 @@ class TrustedProxy @Inject() (
     components: ControllerComponents,
     parsers: HatBodyParsers,
     silhouette: Silhouette[HatApiAuthEnvironment],
-    dataService: RichDataService,
     trustProxyClient: TrustProxyClient,
     trustedApplicationProvider: TrustedApplicationProvider,
     contractAction: ContractAction,
