@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/>.
  *
  * Written by Tyler Weir <tyler.weir@dataswift.io>
- * 1 / 2021
+ * 9 / 2022
  */
 
 package org.hatdex.hat.api.controllers
@@ -179,52 +179,3 @@ class TrustedProxy @Inject() (
       }
     }
 }
-
-// Auth Token Endpoints
-//  def applicationStatus(applicationId: String): EssentialAction =
-//    UserAwareAction.async { implicit request =>
-//      println("*** TrustedProxy ***")
-//      trustProxyClient.getPublicKey(wsClient).flatMap { eitherPublicKey =>
-//        eitherPublicKey match {
-//          case Left(_) => Future.failed(new UnknownError("public key failed"))
-//          case Right(value) =>
-//            val rsaPublicKey = TrustProxyUtils.stringToPublicKey(value.publicKey)
-//            val trustToken   = request.headers.get("TRUST_TOKEN")
-//            val verified = TrustProxyUtils.verifyToken(
-//              trustToken.getOrElse(""),
-//              rsaPublicKey,
-//              request.dynamicEnvironment.ownerEmail,
-//              request.dynamicEnvironment.domain,
-//              "pda-api-gateway"
-//            )
-//
-//            if (verified) {
-//              println("*** TrustedProxy: verified ***")
-//              userService.getUser(request.dynamicEnvironment.hatName).flatMap { maybeHatUser =>
-//                maybeHatUser match {
-//                  case Some(user) =>
-//                    println(user)
-//                    val result =
-//                      applicationsService.applicationSetupStatus(applicationId)(request.dynamicEnvironment.db)
-//                    result.flatMap { row =>
-//                      println(row)
-//                      row match {
-//                        case Some(r) =>
-//                          println(r)
-//                          Future.successful(Ok("ok"))
-//                        case None =>
-//                          println("app not found")
-//                          Future.failed(new UnknownError("App not found"))
-//                      }
-//                    }
-//                  case None =>
-//                    println("user not found")
-//                    Future.failed(new UnknownError("HAT not found"))
-//                }
-//              }
-//              Future.successful(Ok("verified"))
-//            } else
-//              Future.failed(new UnknownError("HAT claim failed"))
-//        }
-//      }
-//    }
