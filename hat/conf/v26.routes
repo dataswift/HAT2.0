@@ -95,3 +95,4 @@ POST          /contract/file/:fileId/content                                    
 
 # trusted proxy
 GET           /trusted/:applicationId/status                                                 org.hatdex.hat.api.controllers.TrustedProxy.applicationStatus(applicationId: String)
+GET           /trusted/:applicationId/access-token                                           org.hatdex.hat.api.controllers.TrustedProxy.applicationToken(applicationId: String)

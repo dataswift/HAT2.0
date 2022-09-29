@@ -25,9 +25,10 @@
 package org.hatdex.hat.api.controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
+import io.dataswift.models.hat.json.HatJsonFormats
 import io.dataswift.models.hat.{ EndpointData, EndpointQuery, ErrorMessage }
-import org.hatdex.hat.api.service.UserService
-import org.hatdex.hat.api.service.applications.ApplicationsService
+import org.hatdex.hat.api.service.{ HatServicesService, UserService }
+import org.hatdex.hat.api.service.applications.{ ApplicationsService, TrustedApplicationProvider }
 import org.hatdex.hat.api.service.richData.{ RichDataMissingException, RichDataService }
 import org.hatdex.hat.authentication.models.HatUser
 import org.hatdex.hat.authentication.{ HatApiAuthEnvironment, HatApiController }
@@ -52,65 +53,178 @@ class TrustedProxy @Inject() (
     silhouette: Silhouette[HatApiAuthEnvironment],
     dataService: RichDataService,
     trustProxyClient: TrustProxyClient,
+    trustedApplicationProvider: TrustedApplicationProvider,
     contractAction: ContractAction,
     userService: UserService,
     applicationsService: ApplicationsService,
+    hatServicesService: HatServicesService,
     wsClient: WSClient
   )(implicit ec: ExecutionContext)
     extends HatApiController(components, silhouette)
     with Logging {
+
+  import HatJsonFormats._
 
   //import io.dataswift.models.hat.json.RichDataJsonFormats._
   case class AppStatus(
       active: Boolean,
       enabled: Boolean)
 
-  // Auth Token Endpoints
+  private def trustProxyVerification(
+      wsClient: WSClient,
+      ownerEmail: String,
+      domain: String,
+      trustToken: Option[String]): Future[Boolean] = {
+    val a = trustProxyClient
+      .getPublicKey(wsClient)
+      .flatMap {
+        case Left(_) => Future.failed(new UnknownError("public key failed"))
+        case Right(value) =>
+          val rsaPublicKey = TrustProxyUtils.stringToPublicKey(value.publicKey)
+          val verified = TrustProxyUtils.verifyToken(
+            trustToken.getOrElse(""),
+            rsaPublicKey,
+            ownerEmail,
+            domain,
+            "pda-api-gateway"
+          )
+          Future.successful(verified)
+      }
+    a
+  }
+
   def applicationStatus(applicationId: String): EssentialAction =
     UserAwareAction.async { implicit request =>
-      println("*** TrustedProxy ***")
-      trustProxyClient.getPublicKey(wsClient).flatMap { eitherPublicKey =>
-        eitherPublicKey match {
-          case Left(_) => Future.failed(new UnknownError("public key failed"))
-          case Right(value) =>
-            val rsaPublicKey = TrustProxyUtils.stringToPublicKey(value.publicKey)
-            val trustToken   = request.headers.get("TRUST_TOKEN")
-            val verified = TrustProxyUtils.verifyToken(
-              trustToken.getOrElse(""),
-              rsaPublicKey,
-              request.dynamicEnvironment.ownerEmail,
-              request.dynamicEnvironment.domain,
-              "pda-api-gateway"
-            )
+      val verified = trustProxyVerification(
+        wsClient,
+        request.dynamicEnvironment.ownerEmail,
+        request.dynamicEnvironment.domain,
+        request.headers.get("TRUST_TOKEN")
+      )
 
-            if (verified) {
-              println("*** TrustedProxy: verified ***")
-              userService.getUser(request.dynamicEnvironment.hatName).flatMap { maybeHatUser =>
-                maybeHatUser match {
-                  case Some(user) =>
-                    println(user)
-                    val result =
-                      applicationsService.applicationSetupStatus(applicationId)(request.dynamicEnvironment.db)
-                    result.flatMap { row =>
-                      println(row)
-                      row match {
-                        case Some(r) =>
-                          println(r)
-                          Future.successful(Ok("ok"))
-                        case None =>
-                          println("app not found")
-                          Future.failed(new UnknownError("App not found"))
-                      }
-                    }
+      verified.flatMap { v =>
+        if (v)
+          userService.getUser(request.dynamicEnvironment.hatName).flatMap {
+            case Some(user) =>
+              println(user)
+              val result =
+                applicationsService.applicationSetupStatus(applicationId)(request.dynamicEnvironment.db)
+              result.flatMap { row =>
+                println(row)
+                row match {
+                  case Some(r) =>
+                    println(r)
+                    Future.successful(Ok("ok"))
                   case None =>
-                    println("user not found")
-                    Future.failed(new UnknownError("HAT not found"))
+                    println("app not found")
+                    Future.failed(new UnknownError("App not found"))
                 }
               }
-              Future.successful(Ok("verified"))
-            } else
-              Future.failed(new UnknownError("HAT claim failed"))
+            case None =>
+              println("user not found")
+              Future.failed(new UnknownError("HAT not found"))
+          }
+
+        // Future.failed(new UnknownError("HAT claim failed"))
+        else
+          Future.failed(new UnknownError("HAT claim failed"))
+      }
+    }
+
+  def applicationToken(id: String): Action[AnyContent] =
+    UserAwareAction.async { implicit request =>
+      val verified = trustProxyVerification(
+        wsClient,
+        request.dynamicEnvironment.ownerEmail,
+        request.dynamicEnvironment.domain,
+        request.headers.get("TRUST_TOKEN")
+      )
+
+      verified.flatMap { v =>
+        if (v) {
+          println("GET THE APPLICATION_TOKEN")
+          // -------------
+          userService.getUser(request.dynamicEnvironment.hatName).flatMap {
+            case Some(hatUser) =>
+              trustedApplicationProvider
+                .application(id)
+                .flatMap { maybeApp =>
+                  maybeApp map { app =>
+                    applicationsService.applicationToken(
+                      hatUser,
+                      app
+                    ) map { token =>
+                      Ok(Json.toJson(token))
+                    }
+                  } getOrElse {
+                    Future.successful(
+                      NotFound(
+                        Json.toJson(
+                          ErrorMessage(
+                            "Application not Found",
+                            s"Application $id does not appear to be a valid application registered with the DEX"
+                          )
+                        )
+                      )
+                    )
+                  }
+                }
+          }
+          // -------------
+          // Future.successful(Ok("applicationToken"))
+        } else {
+          println("GET FUCT")
+          Future.failed(new UnknownError("HAT claim failed"))
         }
       }
     }
 }
+
+// Auth Token Endpoints
+//  def applicationStatus(applicationId: String): EssentialAction =
+//    UserAwareAction.async { implicit request =>
+//      println("*** TrustedProxy ***")
+//      trustProxyClient.getPublicKey(wsClient).flatMap { eitherPublicKey =>
+//        eitherPublicKey match {
+//          case Left(_) => Future.failed(new UnknownError("public key failed"))
+//          case Right(value) =>
+//            val rsaPublicKey = TrustProxyUtils.stringToPublicKey(value.publicKey)
+//            val trustToken   = request.headers.get("TRUST_TOKEN")
+//            val verified = TrustProxyUtils.verifyToken(
+//              trustToken.getOrElse(""),
+//              rsaPublicKey,
+//              request.dynamicEnvironment.ownerEmail,
+//              request.dynamicEnvironment.domain,
+//              "pda-api-gateway"
+//            )
+//
+//            if (verified) {
+//              println("*** TrustedProxy: verified ***")
+//              userService.getUser(request.dynamicEnvironment.hatName).flatMap { maybeHatUser =>
+//                maybeHatUser match {
+//                  case Some(user) =>
+//                    println(user)
+//                    val result =
+//                      applicationsService.applicationSetupStatus(applicationId)(request.dynamicEnvironment.db)
+//                    result.flatMap { row =>
+//                      println(row)
+//                      row match {
+//                        case Some(r) =>
+//                          println(r)
+//                          Future.successful(Ok("ok"))
+//                        case None =>
+//                          println("app not found")
+//                          Future.failed(new UnknownError("App not found"))
+//                      }
+//                    }
+//                  case None =>
+//                    println("user not found")
+//                    Future.failed(new UnknownError("HAT not found"))
+//                }
+//              }
+//              Future.successful(Ok("verified"))
+//            } else
+//              Future.failed(new UnknownError("HAT claim failed"))
+//        }
+//      }
+//    }
