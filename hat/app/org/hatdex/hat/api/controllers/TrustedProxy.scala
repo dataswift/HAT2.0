@@ -58,11 +58,6 @@ class TrustedProxy @Inject() (
 
   import HatJsonFormats._
 
-  //import io.dataswift.models.hat.json.RichDataJsonFormats._
-  case class AppStatus(
-      active: Boolean,
-      enabled: Boolean)
-
   private def trustProxyVerification(
       wsClient: WSClient,
       ownerEmail: String,
@@ -99,26 +94,19 @@ class TrustedProxy @Inject() (
         if (v)
           userService.getUser(request.dynamicEnvironment.hatName).flatMap {
             case Some(user) =>
-              println(user)
               val result =
                 applicationsService.applicationSetupStatus(applicationId)(request.dynamicEnvironment.db)
               result.flatMap { row =>
-                println(row)
                 row match {
                   case Some(r) =>
-                    println(r)
                     Future.successful(Ok("ok"))
                   case None =>
-                    println("app not found")
                     Future.failed(new UnknownError("App not found"))
                 }
               }
             case None =>
-              println("user not found")
               Future.failed(new UnknownError("HAT not found"))
           }
-
-        // Future.failed(new UnknownError("HAT claim failed"))
         else
           Future.failed(new UnknownError("HAT claim failed"))
       }
@@ -134,9 +122,7 @@ class TrustedProxy @Inject() (
       )
 
       verified.flatMap { v =>
-        if (v) {
-          println("GET THE APPLICATION_TOKEN")
-          // -------------
+        if (v)
           userService.getUser(request.dynamicEnvironment.hatName).flatMap {
             case Some(hatUser) =>
               trustedApplicationProvider
@@ -163,12 +149,8 @@ class TrustedProxy @Inject() (
                   }
                 }
           }
-          // -------------
-          // Future.successful(Ok("applicationToken"))
-        } else {
-          println("GET FUCT")
+        else
           Future.failed(new UnknownError("HAT claim failed"))
-        }
       }
     }
 }

@@ -103,5 +103,3 @@ inThisBuild(
     scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
   )
 )
-
-logLevel := Level.Error
