@@ -5,7 +5,7 @@ import dev.profunktor.auth.jwt.JwtSecretKey
 import net.codingwell.scalaguice.ScalaModule
 import org.hatdex.hat.api.controllers.{ ContractAction, ContractActionImpl }
 import org.hatdex.hat.api.service.{ UserService, UserServiceImpl }
-import org.hatdex.hat.client.{ AdjudicatorClient, AdjudicatorWsClient }
+import org.hatdex.hat.client.{ AdjudicatorClient, AdjudicatorWsClient, TrustProxyClient, TrustProxyWsClient }
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 
@@ -30,5 +30,15 @@ class AppModule extends ScalaModule {
       wsClient
     )
   }
+
+  @Provides
+  @JSingleton
+  def trustProxyClient(
+      configuration: Configuration,
+      wsClient: WSClient): TrustProxyClient =
+    new TrustProxyWsClient(
+      trustProxyAddress = configuration.get[String]("trustProxy.address"),
+      wsClient
+    )
 
 }

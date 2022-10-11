@@ -38,16 +38,17 @@ import io.dataswift.models.hat.json.HatJsonFormats
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.{ HatServicesService, LogService, MailTokenService, UserService }
 import org.hatdex.hat.authentication._
+import org.hatdex.hat.client.{ TrustProxyClient }
 import org.hatdex.hat.phata.models._
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
-import org.hatdex.hat.utils.{ DataswiftServiceConfig, HatBodyParsers, HatMailer }
+import org.hatdex.hat.utils.{ DataswiftServiceConfig, HatBodyParsers, HatMailer, TrustProxyUtils }
 import play.api.cache.{ Cached, CachedBuilder }
 import play.api.i18n.Lang
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.{ Action, _ }
 import play.api.{ Configuration, Logging }
-
+import org.hatdex.hat.resourceManagement.HatServer
 import java.net.{ URLDecoder, URLEncoder }
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -70,6 +71,7 @@ class Authentication @Inject() (
     mailer: HatMailer,
     tokenService: MailTokenService[MailTokenUser],
     wsClient: WSClient,
+    // trustProxyClient: TrustProxyClient,
     limiter: UserLimiter)
     extends HatApiController(components, silhouette)
     with Logging {
@@ -123,6 +125,7 @@ class Authentication @Inject() (
 
   // * Ok Responses *
   private def okMessage(body: String) = Ok(Json.toJson(SuccessResponse(s"${body}")))
+
   val hatIsAlreadyClaimed: Result =
     okMessage("The email associated with this HAT has already been verified.")
 
@@ -212,10 +215,13 @@ class Authentication @Inject() (
                 for {
                   // JWT Authenticator
                   authenticator <- env.authenticatorService.create(loginInfo)
+                  // foo <- applicationsService.applicationStatus("aaa", true)
+
                   // JWT serialized as a String
                   token <- env.authenticatorService.init(
                              authenticator.copy(customClaims = Some(customClaims))
                            )
+
                   // Logging
                   _ <- userService.logLogin(
                          user,
@@ -227,6 +233,7 @@ class Authentication @Inject() (
                          None,
                          None
                        )
+
                   // AuthenticatorResult
                   result <- env.authenticatorService.embed(
                               token,
@@ -344,7 +351,7 @@ class Authentication @Inject() (
         // Token was found, is not signup nor expired
         case Some(token) if !token.isSignUp && !token.isExpired =>
           // Token.email matches the dynamicEnv (what is this)
-          if (token.email == request.dynamicEnvironment.ownerEmail) {
+          if (token.email == request.dynamicEnvironment.ownerEmail)
             // Find the users with the owner role
             // ???: Why not using the email
             userService
@@ -380,7 +387,7 @@ class Authentication @Inject() (
                 case None =>
                   Future.successful(noUserMatchingToken)
               }
-          } else
+          else
             Future.successful(onlyHatOwnerCanReset)
         case Some(_) =>
           tokenService.consume(tokenId)
@@ -595,23 +602,10 @@ class Authentication @Inject() (
       token: String): String =
     s"$emailScheme$host/auth/change-password/$token"
 
-  // private def roleMatcher(rolesToMatch: Seq[UserRole], rolesRequired: Seq[UserRole]): Boolean = {
-  //   //rolesToMatch.map(userRole => roleMatch(userRole, rolesRequired)
-  //   false
-  // }
-
-  // private def roleMatch(roleToMatch: UserRole, rolesRequired: Seq[UserRole]): Boolean = {
-  //   rolesRequired.map(roleRequired => )
-  // }
-
   def roleMatchIt(
       roleToMatch: UserRole,
       roleRequired: UserRole): Boolean =
     roleRequired equals roleToMatch
-  // roleToMatch match {
-  //   case roleRequired: EmailVerified => true
-  //   case _            => false
-  // }
 }
 case class EmailVerificationOptions(
     email: String,
