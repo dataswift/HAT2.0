@@ -34,9 +34,10 @@ class AppModule extends ScalaModule {
   @Provides
   @JSingleton
   def trustProxyClient(
-      //configuration: Configuration,
+      configuration: Configuration,
       wsClient: WSClient): TrustProxyClient =
     new TrustProxyWsClient(
+      trustProxyAddress = configuration.get[String]("trustProxy.address"),
       wsClient
     )
 

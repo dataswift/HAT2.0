@@ -57,6 +57,7 @@ trait TrustProxyClient {
 }
 
 class TrustProxyWsClient(
+    trustProxyAddress: String,
     ws: WSClient)
     extends TrustProxyClient
     with Logging {
@@ -65,10 +66,7 @@ class TrustProxyWsClient(
   override def getPublicKey(
       ws: WSClient
     )(implicit ec: ExecutionContext): Future[Either[PublicKeyRequestFailure, PublicKeyReceived]] = {
-
-    // FIXME: Temp until this is deployed
-    val url = s"https://pdaproxy.playconcepts.co.uk/publickey"
-
+    val url = s"${trustProxyAddress}/publickey"
     runPublicKeyRequest(makeRequest(url, ws))
   }
 
@@ -77,14 +75,14 @@ class TrustProxyWsClient(
       url: String,
       ws: WSClient
     )(implicit ec: ExecutionContext): WSRequest = {
-    logger.info(s"makeRequest: ${url}")
+    logger.info(s"[TP] makeRequest: ${url}")
     ws.url(url)
   }
 
   private def runPublicKeyRequest(
       req: WSRequest
     )(implicit ec: ExecutionContext): Future[Either[PublicKeyRequestFailure, PublicKeyReceived]] = {
-    logger.info(s"runPublicKeyRequest")
+    logger.info(s"[TP] runPublicKeyRequest")
     req.get().map { response =>
       response.status match {
         case OK =>
