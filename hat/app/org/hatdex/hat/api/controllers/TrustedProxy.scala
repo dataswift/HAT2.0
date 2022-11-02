@@ -119,6 +119,10 @@ class TrustedProxy @Inject() (
 
   def applicationToken(id: String): Action[AnyContent] =
     UserAwareAction.async { implicit request =>
+      logger.info(s"${request.domain}")
+      for ((k, v) <- request.headers.headers)
+        logger.info(s"key: $k, value: $v")
+
       request.headers.get("TRUST_TOKEN") match {
         case Some(token) =>
           logger.info(s"TrustToken ${token}")
