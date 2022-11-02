@@ -62,7 +62,7 @@ class TrustedProxy @Inject() (
       wsClient: WSClient,
       ownerEmail: String,
       domain: String,
-      trustToken: Option[String]): Future[Boolean] =
+      optTrustToken: Option[String]): Future[Boolean] =
     trustProxyClient
       .getPublicKey(wsClient)
       .flatMap {
@@ -70,13 +70,19 @@ class TrustedProxy @Inject() (
         case Right(value) =>
           val rsaPublicKey = TrustProxyUtils.stringToPublicKey(value.publicKey)
           logger.info(s"[TP] Public key: $rsaPublicKey")
-          val verified = TrustProxyUtils.verifyToken(
-            trustToken.getOrElse(""),
-            rsaPublicKey,
-            ownerEmail,
-            domain,
-            "pda-api-gateway"
-          )
+          val verified = optTrustToken match {
+            case None =>
+              logger.info(s"[TP] TrustToken Header not found")
+              false
+            case Some(trustToken) =>
+              TrustProxyUtils.verifyToken(
+                trustToken,
+                rsaPublicKey,
+                ownerEmail,
+                domain,
+                "pda-api-gateway"
+              )
+          }
           Future.successful(verified)
       }
 
@@ -113,6 +119,13 @@ class TrustedProxy @Inject() (
 
   def applicationToken(id: String): Action[AnyContent] =
     UserAwareAction.async { implicit request =>
+      request.headers.get("TRUST_TOKEN") match {
+        case Some(token) =>
+          logger.info(s"TrustToken ${token}")
+        case None =>
+          logger.info(s"TrustToken missing")
+      }
+
       val verified = trustProxyVerification(
         wsClient,
         request.dynamicEnvironment.ownerEmail,
