@@ -82,13 +82,13 @@ object TrustProxyUtils {
           && c.pdaUrl.toLowerCase() == pdaUrl.toLowerCase()
           && c.email.toLowerCase() == email.toLowerCase()
         ) {
-          logger.debug(s"Issuer, email and pdaUrl match")
+          logger.info(s"Issuer, email and pdaUrl match")
           println(s"Issuer, email and pdaUrl match")
           true
         } else {
-          logger.debug(email)
-          logger.debug(issuer)
-          logger.debug(s"Issuer, email and pdaUrl do not match")
+          logger.info(email)
+          logger.info(issuer)
+          logger.info(s"Issuer, email and pdaUrl do not match")
           false
         }
       case _ =>

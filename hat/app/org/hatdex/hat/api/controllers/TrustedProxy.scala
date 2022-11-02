@@ -69,7 +69,7 @@ class TrustedProxy @Inject() (
         case Left(_) => Future.failed(new UnknownError("public key failed"))
         case Right(value) =>
           val rsaPublicKey = TrustProxyUtils.stringToPublicKey(value.publicKey)
-          logger.debug(s"Public key: $rsaPublicKey")
+          logger.info(s"Public key: $rsaPublicKey")
           val verified = TrustProxyUtils.verifyToken(
             trustToken.getOrElse(""),
             rsaPublicKey,
