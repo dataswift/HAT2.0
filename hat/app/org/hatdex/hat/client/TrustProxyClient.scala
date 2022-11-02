@@ -87,8 +87,11 @@ class TrustProxyWsClient(
       response.status match {
         case OK =>
           val body = response.body
+          logger.info(s"[TP] runPublicKeyRequest.body: ${response.body}")
           Right(PublicKeyReceived(body))
         case _ =>
+          logger.info(s"[TP] runPublicKeyRequest.failure: ${response.status}")
+          logger.info(s"[TP] The Trusted Proxy Service responded with an error: ${response.statusText}")
           Left(
             PublicKeyServiceFailure(
               s"The Trusted Proxy Service responded with an error: ${response.statusText}"
@@ -97,6 +100,7 @@ class TrustProxyWsClient(
       }
     } recover {
       case e =>
+        logger.info(s"[TP] runPublicKeyRequest.failureRecover: ${e.getMessage}")
         Left(
           PublicKeyServiceFailure(
             s"The Trusted Proxy Service responded with an error: ${e.getMessage}"
