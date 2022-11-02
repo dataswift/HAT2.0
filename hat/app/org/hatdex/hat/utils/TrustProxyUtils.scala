@@ -33,8 +33,11 @@ import java.security.KeyFactory
 import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 import scala.util.{ Failure, Success, Try }
+import play.api.Logger
 
 object TrustProxyUtils {
+
+  val logger: Logger = Logger(this.getClass)
   def stringToPublicKey(publicKeyAsString: String): PublicKey = {
     val pKey                      = publicKeyAsString
     val rsaKeyFactory: KeyFactory = KeyFactory.getInstance("RSA")
@@ -58,6 +61,7 @@ object TrustProxyUtils {
       case Success(value) =>
         Some(value)
       case Failure(exception) =>
+        logger.debug(s"Failed to decode token: ${exception.getMessage}")
         None
     }
   }
@@ -73,10 +77,20 @@ object TrustProxyUtils {
       case Some(value) =>
         val c = Json.parse(value.content).as[TrustProxyContent]
 
-        if (c.iss == issuer && c.pdaUrl == pdaUrl && c.email == email)
+        if (
+          c.iss.toLowerCase() == issuer.toLowerCase()
+          && c.pdaUrl.toLowerCase() == pdaUrl.toLowerCase()
+          && c.email.toLowerCase() == email.toLowerCase()
+        ) {
+          logger.debug(s"Issuer, email and pdaUrl match")
+          println(s"Issuer, email and pdaUrl match")
           true
-        else
+        } else {
+          logger.debug(email)
+          logger.debug(issuer)
+          logger.debug(s"Issuer, email and pdaUrl do not match")
           false
+        }
       case _ =>
         false
     }
