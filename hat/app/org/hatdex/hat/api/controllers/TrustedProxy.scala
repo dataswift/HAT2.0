@@ -62,13 +62,14 @@ class TrustedProxy @Inject() (
       wsClient: WSClient,
       ownerEmail: String,
       domain: String,
-      trustToken: Option[String]): Future[Boolean] = {
-    val a = trustProxyClient
+      trustToken: Option[String]): Future[Boolean] =
+    trustProxyClient
       .getPublicKey(wsClient)
       .flatMap {
         case Left(_) => Future.failed(new UnknownError("public key failed"))
         case Right(value) =>
           val rsaPublicKey = TrustProxyUtils.stringToPublicKey(value.publicKey)
+          logger.debug(s"Public key: $rsaPublicKey")
           val verified = TrustProxyUtils.verifyToken(
             trustToken.getOrElse(""),
             rsaPublicKey,
@@ -78,8 +79,6 @@ class TrustedProxy @Inject() (
           )
           Future.successful(verified)
       }
-    a
-  }
 
   def applicationStatus(applicationId: String): EssentialAction =
     UserAwareAction.async { implicit request =>
