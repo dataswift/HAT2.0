@@ -59,9 +59,10 @@ object TrustProxyUtils {
 
     ret match {
       case Success(value) =>
+        logger.info(s"decode token: ${value}")
         Some(value)
       case Failure(exception) =>
-        logger.debug(s"Failed to decode token: ${exception.getMessage}")
+        logger.info(s"Failed to decode token: ${exception.getMessage}")
         None
     }
   }
@@ -92,6 +93,7 @@ object TrustProxyUtils {
           false
         }
       case _ =>
+        logger.info(s"[verifyToken] decodeToken failed")
         false
     }
   }
