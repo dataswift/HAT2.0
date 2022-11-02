@@ -58,6 +58,7 @@ class TrustedProxy @Inject() (
 
   import HatJsonFormats._
 
+  val trustTokenHeader: String = "X-Trust-Token"
   private def trustProxyVerification(
       wsClient: WSClient,
       ownerEmail: String,
@@ -92,7 +93,7 @@ class TrustedProxy @Inject() (
         wsClient,
         request.dynamicEnvironment.ownerEmail,
         request.dynamicEnvironment.domain,
-        request.headers.get("TRUST_TOKEN")
+        request.headers.get(trustTokenHeader)
       )
 
       verified.flatMap { v =>
@@ -123,7 +124,7 @@ class TrustedProxy @Inject() (
       for ((k, v) <- request.headers.headers)
         logger.info(s"key: $k, value: $v")
 
-      request.headers.get("TRUST_TOKEN") match {
+      request.headers.get(trustTokenHeader) match {
         case Some(token) =>
           logger.info(s"TrustToken ${token}")
         case None =>
@@ -134,7 +135,7 @@ class TrustedProxy @Inject() (
         wsClient,
         request.dynamicEnvironment.ownerEmail,
         request.dynamicEnvironment.domain,
-        request.headers.get("TRUST_TOKEN")
+        request.headers.get(trustTokenHeader)
       )
 
       verified.flatMap { v =>
