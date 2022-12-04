@@ -607,8 +607,7 @@ class RichDataService @Inject() (implicit ec: DalExecutionContext) extends Loggi
           val linked = linkedResults.map {
             case (linkedRecord, linkedQueryId) =>
               endpointDataWithMappers(linkedRecord, linkedQueryId, mappers)
-          }
-          
+          }          
           val endpointData =
             endpointDataWithMappers(record, queryId.toString, mappers)
           if (linked.nonEmpty)
