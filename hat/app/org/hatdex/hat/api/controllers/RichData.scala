@@ -630,11 +630,11 @@ class RichData @Inject() (
 
     val filteredData = filter match {
       case Some(dataFilter) => {
-        println(s"!!!filtering: ${dataFilter}")
+        // println(s"!!!filtering: ${dataFilter}")
         filterJson(data, dataFilter)
       }
       case None => {
-        println("!!!not filtering")
+        // println("!!!not filtering")
         data
       }
     }  
