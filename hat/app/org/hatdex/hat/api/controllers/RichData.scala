@@ -89,17 +89,10 @@ class RichData @Inject() (
           NamespaceRead(namespace)
         )
     ).async { implicit request =>
-      println(request.queryString)
       val knownKeys = List("ordering", "orderBy", "skip", "take")
       val k: List[String] = request.queryString.keys.toList filterNot knownKeys.contains
-      
-      // attribute name
-      println(k)
-      
-      // attribute value
-      println(request.queryString.get(k.head))
-      
-      // verify filter
+            
+      // verify filter, this is dangerous
       val filter = RichDataFilter(k.head, request.queryString.get(k.head).get.toList)
       
       // anything that is not in the list above and be assumed to the attribute with the match being the predicate
@@ -651,15 +644,15 @@ class RichData @Inject() (
 
   // {"object": {"id": 3, "date": "2022-12-03T17:32:51.482Z", "value": true, "nested": "no problem", "random": "238"}, "something": "Normal JSON"} 
   private def filterJson(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {
-    println(s">> ${filter}")
+    // println(s">> ${filter}")
     data.map(d => {
       d.filter(a => {
-        println(a.data)
-        println(s">> attribute: ${filter.attribute}")
-        println(s">> value:     ${filter.value.head}")
-        println(s">> json extr: ${(a.data \\ filter.attribute).head}")
-        println(s">> json test: ${(a.data \\ filter.attribute).head.toString == filter.value.head}")
-        println((a.data \\ filter.attribute).map(_.as[String]))
+        // println(a.data)
+        // println(s">> attribute: ${filter.attribute}")
+        // println(s">> value:     ${filter.value.head}")
+        // println(s">> json extr: ${(a.data \\ filter.attribute).head}")
+        // println(s">> json test: ${(a.data \\ filter.attribute).head.toString == filter.value.head}")
+        // println((a.data \\ filter.attribute).map(_.as[String]))
         (a.data \\ filter.attribute).map(_.as[String]).contains(filter.value.head)
       })
     })
