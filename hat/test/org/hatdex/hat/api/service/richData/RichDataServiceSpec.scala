@@ -359,6 +359,31 @@ class RichDataServiceSpec extends RichDataServiceContext {
     )
   }
 
+  "The `getRecord with filter` method" should "look up a single JSON data point by primary key" in {
+    val service      = application.injector.instanceOf[RichDataService]
+    val endpointData = sampleData.head
+
+    val result: Future[(Seq[EndpointData], EndpointData)] = for {
+      saved <- service.saveData(owner.userId, List(endpointData))
+      lookedUp <- service.getRecord(owner.userId, saved.head.recordId.value)
+    } yield saved -> lookedUp
+    val (saved, lookedUp) = Await.result(result, 10.seconds)
+
+    lookedUp.recordId mustBe Some(saved.head.recordId.value)
+    lookedUp.data mustBe endpointData.data
+    lookedUp.endpoint mustBe endpointData.endpoint
+  }
+
+  it should "throw an RichDataMissingException for an unknown record id" in {
+    val service   = application.injector.instanceOf[RichDataService]
+    val unknownId = UUID.fromString("00000000-1111-0000-1111-000000000000")
+
+    intercept[RichDataMissingException](
+      Await.result(service.getRecord(owner.userId, unknownId), 10.seconds)
+    )
+  }
+
+  
   "The `propertyData` method" should "Find test endpoint values and map them to expected json output" in {
     val service = application.injector.instanceOf[RichDataService]
 

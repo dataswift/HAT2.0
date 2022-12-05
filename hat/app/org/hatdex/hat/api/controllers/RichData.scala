@@ -92,11 +92,16 @@ class RichData @Inject() (
       val knownKeys = List("ordering", "orderBy", "skip", "take")
       val k: List[String] = request.queryString.keys.toList filterNot knownKeys.contains
             
-      // verify filter, this is dangerous
-      val filter = RichDataFilter(k.head, request.queryString.get(k.head).get.toList)
+      val dataFilter = if (k.length == 0) {
+        None
+      }
+      else {
+        Some(RichDataFilter(k.head, request.queryString.get(k.head).get.toList))
+      }
+      
       
       // anything that is not in the list above and be assumed to the attribute with the match being the predicate
-      makeData(namespace, endpoint, orderBy, ordering, skip, take, Some(filter))
+      makeData(namespace, endpoint, orderBy, ordering, skip, take, dataFilter)
     }
 
   def saveEndpointData(
