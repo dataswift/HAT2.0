@@ -63,6 +63,8 @@ class RichData @Inject() (
   private val logger             = loggingProvider.logger(this.getClass)
   private val defaultRecordLimit = 1000
 
+  case class RichDataFilter(attribute: String, value: List[String])
+
   /**
     * Returns Data Records for a given endpoint
     *
@@ -87,7 +89,19 @@ class RichData @Inject() (
           NamespaceRead(namespace)
         )
     ).async { implicit request =>
-      makeData(namespace, endpoint, orderBy, ordering, skip, take)
+      val knownKeys = List("ordering", "orderBy", "skip", "take")
+      val k: List[String] = request.queryString.keys.toList filterNot knownKeys.contains
+            
+      val dataFilter = if (k.length == 0) {
+        None
+      }
+      else {
+        Some(RichDataFilter(k.head, request.queryString.get(k.head).get.toList))
+      }
+      
+      
+      // anything that is not in the list above and be assumed to the attribute with the match being the predicate
+      makeData(namespace, endpoint, orderBy, ordering, skip, take, dataFilter)
     }
 
   def saveEndpointData(
@@ -605,19 +619,48 @@ class RichData @Inject() (
       orderBy: Option[String],
       ordering: Option[String],
       skip: Option[Int],
-      take: Option[Int]
+      take: Option[Int],
+      filter: Option[RichDataFilter]
     )(implicit db: HATPostgresProfile.api.Database): Future[Result] = {
     val dataEndpoint = s"$namespace/$endpoint"
     val query =
       Seq(EndpointQuery(dataEndpoint, None, None, None))
-    val data = dataService.propertyData(
+    val data: Future[Seq[EndpointData]] = dataService.propertyData(
       query,
       orderBy,
       ordering.contains("descending"),
       skip.getOrElse(0),
       take.orElse(Some(defaultRecordLimit))
     )
-    data.map(d => Ok(Json.toJson(d)))
+
+    val filteredData = filter match {
+      case Some(dataFilter) => {
+        // println(s"!!!filtering: ${dataFilter}")
+        filterJson(data, dataFilter)
+      }
+      case None => {
+        // println("!!!not filtering")
+        data
+      }
+    }  
+
+    filteredData.map(d => Ok(Json.toJson(d)))
+  }
+
+  // {"object": {"id": 3, "date": "2022-12-03T17:32:51.482Z", "value": true, "nested": "no problem", "random": "238"}, "something": "Normal JSON"} 
+  private def filterJson(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {
+    // println(s">> ${filter}")
+    data.map(d => {
+      d.filter(a => {
+        // println(a.data)
+        // println(s">> attribute: ${filter.attribute}")
+        // println(s">> value:     ${filter.value.head}")
+        // println(s">> json extr: ${(a.data \\ filter.attribute).head}")
+        // println(s">> json test: ${(a.data \\ filter.attribute).head.toString == filter.value.head}")
+        // println((a.data \\ filter.attribute).map(_.as[String]))
+        (a.data \\ filter.attribute).map(_.as[String]).contains(filter.value.head)
+      })
+    })
   }
 
   private object Errors {
