@@ -664,7 +664,10 @@ class RichData @Inject() (
       (body \ keys.head) match {
         case x: JsDefined => 
           getSub(keys.tail, x.value)
-
+        
+        case _: JsUndefined => 
+          None
+        
         case _: JsResultException => 
           None
       }
