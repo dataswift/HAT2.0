@@ -44,6 +44,9 @@ import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.NonFatal
+import play.api.libs.json.JsResultException
+import play.api.libs.json.JsUndefined
+import play.api.libs.json.JsDefined
 
 class RichData @Inject() (
     components: ControllerComponents,
@@ -89,6 +92,7 @@ class RichData @Inject() (
           NamespaceRead(namespace)
         )
     ).async { implicit request =>
+      // this could be better
       val knownKeys = List("ordering", "orderBy", "skip", "take")
       val k: List[String] = request.queryString.keys.toList filterNot knownKeys.contains
             
@@ -99,8 +103,6 @@ class RichData @Inject() (
         Some(RichDataFilter(k.head, request.queryString.get(k.head).get.toList))
       }
       
-      
-      // anything that is not in the list above and be assumed to the attribute with the match being the predicate
       makeData(namespace, endpoint, orderBy, ordering, skip, take, dataFilter)
     }
 
@@ -635,11 +637,9 @@ class RichData @Inject() (
 
     val filteredData = filter match {
       case Some(dataFilter) => {
-        // println(s"!!!filtering: ${dataFilter}")
         filterJson(data, dataFilter)
       }
       case None => {
-        // println("!!!not filtering")
         data
       }
     }  
@@ -647,20 +647,51 @@ class RichData @Inject() (
     filteredData.map(d => Ok(Json.toJson(d)))
   }
 
-  // {"object": {"id": 3, "date": "2022-12-03T17:32:51.482Z", "value": true, "nested": "no problem", "random": "238"}, "something": "Normal JSON"} 
-  private def filterJson(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {
-    // println(s">> ${filter}")
+
+  private def shallowFilter(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {
     data.map(d => {
       d.filter(a => {
-        // println(a.data)
-        // println(s">> attribute: ${filter.attribute}")
-        // println(s">> value:     ${filter.value.head}")
-        // println(s">> json extr: ${(a.data \\ filter.attribute).head}")
-        // println(s">> json test: ${(a.data \\ filter.attribute).head.toString == filter.value.head}")
-        // println((a.data \\ filter.attribute).map(_.as[String]))
         (a.data \\ filter.attribute).map(_.as[String]).contains(filter.value.head)
       })
     })
+  }
+
+  def getSub(keys: List[String], body:  JsValue): Option[JsValue] = {
+    if (keys.length == 0) {
+      Some(body)
+    }
+    else {
+      (body \ keys.head) match {
+        case x: JsDefined => 
+          getSub(keys.tail, x.value)
+        
+        case _: JsUndefined => 
+          None
+        
+        case _: JsResultException => 
+          None
+      }
+    }
+  }
+
+  private def deepFilter(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {
+    val termSplit = filter.attribute.split("\\.")
+
+    data.map(d => {
+      d.filter(a => {
+        getSub(termSplit.toList, a.data) match {
+          case None => false
+          case Some(x) => x.as[String] == filter.value.head
+        }
+      })
+    })
+  }
+
+  private def filterJson(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {    
+    filter.attribute.contains(".") match {
+      case true => deepFilter(data, filter)
+      case false => shallowFilter(data, filter)
+    }
   }
 
   private object Errors {
