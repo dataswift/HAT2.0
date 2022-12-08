@@ -663,15 +663,9 @@ class RichData @Inject() (
     else {
       (body \ keys.head) match {
         case x: JsDefined => 
-          println("getSub")
           getSub(keys.tail, x.value)
 
-        case a: JsUndefined => 
-          println(a)
-          None
-
-        case e: JsResultException => 
-          println(e)
+        case _: JsResultException => 
           None
       }
     }
@@ -682,7 +676,6 @@ class RichData @Inject() (
 
     data.map(d => {
       d.filter(a => {
-        // Dangerous .head
         getSub(termSplit.toList, a.data) match {
           case None => false
           case Some(x) => x.as[String] == filter.value.head
