@@ -44,6 +44,9 @@ import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.NonFatal
+import play.api.libs.json.JsResultException
+import play.api.libs.json.JsUndefined
+import play.api.libs.json.JsDefined
 
 class RichData @Inject() (
     components: ControllerComponents,
@@ -653,12 +656,24 @@ class RichData @Inject() (
     })
   }
 
-  def getSub(keys: List[String], body:  JsValue): JsValue = {
+  def getSub(keys: List[String], body:  JsValue): Option[JsValue] = {
     if (keys.length == 0) {
-      body
+      Some(body)
     }
     else {
-      getSub(keys.tail, (body \ keys.head).as[JsValue])
+      (body \ keys.head) match {
+        case x: JsDefined => 
+          println("getSub")
+          getSub(keys.tail, x.value)
+
+        case a: JsUndefined => 
+          println(a)
+          None
+
+        case e: JsResultException => 
+          println(e)
+          None
+      }
     }
   }
 
@@ -667,8 +682,11 @@ class RichData @Inject() (
 
     data.map(d => {
       d.filter(a => {
-        // Dangerous .get
-        getSub(termSplit.toList, a.data).as[String] == filter.value.head
+        // Dangerous .head
+        getSub(termSplit.toList, a.data) match {
+          case None => false
+          case Some(x) => x.as[String] == filter.value.head
+        }
       })
     })
   }
