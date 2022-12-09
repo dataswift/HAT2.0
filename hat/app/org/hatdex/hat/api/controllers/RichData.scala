@@ -92,7 +92,6 @@ class RichData @Inject() (
           NamespaceRead(namespace)
         )
     ).async { implicit request =>
-      println(request.queryString)
       // this could be better
       val knownKeys = List("ordering", "orderBy", "skip", "take")
       val k: List[String] = request.queryString.keys.toList filterNot knownKeys.contains
