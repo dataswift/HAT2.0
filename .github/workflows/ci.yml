@@ -28,7 +28,7 @@ jobs:
         run: curl https://${{ secrets.ARTIFACTS_CACHE_BUCKET }}/resolvers.sbt --create-dirs -o ~/.sbt/resolvers.sbt
 
       - name: Setup
-        uses: actions/setup-java@v2.3.1
+        uses: actions/setup-java@v3.9.0
         with:
           distribution: adopt
           java-version: 11
