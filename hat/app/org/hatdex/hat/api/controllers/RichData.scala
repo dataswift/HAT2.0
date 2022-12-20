@@ -92,7 +92,6 @@ class RichData @Inject() (
           NamespaceRead(namespace)
         )
     ).async { implicit request =>
-      println(request.queryString)
       // this could be better
       val knownKeys = List("ordering", "orderBy", "skip", "take")
       val k: List[String] = request.queryString.keys.toList filterNot knownKeys.contains
@@ -652,7 +651,7 @@ class RichData @Inject() (
   private def shallowFilter(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {
     data.map(d => {
       d.filter(a => {
-        filter.value.contains((a.data \\ filter.attribute).map(_.as[String]))
+        filter.value.intersect((a.data \\ filter.attribute).map(_.as[String])).length > 0
       })
     })
   }
@@ -689,6 +688,7 @@ class RichData @Inject() (
   }
 
   private def filterJson(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {    
+    println(filter)
     filter.attribute.contains(".") match {
       case true => deepFilter(data, filter)
       case false => shallowFilter(data, filter)
