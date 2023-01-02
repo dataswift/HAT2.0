@@ -47,6 +47,7 @@ import scala.util.control.NonFatal
 import play.api.libs.json.JsResultException
 import play.api.libs.json.JsUndefined
 import play.api.libs.json.JsDefined
+import play.api.libs.json.JsString
 
 class RichData @Inject() (
     components: ControllerComponents,
@@ -622,7 +623,7 @@ class RichData @Inject() (
       ordering: Option[String],
       skip: Option[Int],
       take: Option[Int],
-      filter: Option[RichDataFilter]
+      filter: Option[RichDataFilter] = None
     )(implicit db: HATPostgresProfile.api.Database): Future[Result] = {
     val dataEndpoint = s"$namespace/$endpoint"
     val query =
@@ -648,10 +649,22 @@ class RichData @Inject() (
   }
 
 
-  private def shallowFilter(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {
+  // Ty: I will convert to Option[String]
+  private def mashList(l: List[JsValue]): List[String] = {
+    l.flatten {
+      case (arr:JsArray)  => arr.value.toList.map(_.as[String])
+      case (x:JsString) => List(x.value)
+      case _ => List.empty
+    }.map(_.toString())
+  }
+
+
+  private def shallowFilter(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {    
     data.map(d => {
       d.filter(a => {
-        filter.value.intersect((a.data \\ filter.attribute).map(_.as[String])).length > 0
+        val newValue = (a.data \\ filter.attribute).toList
+        val intermediate: List[String] = mashList( newValue )
+        filter.value.intersect(intermediate).length > 0
       })
     })
   }
@@ -665,7 +678,8 @@ class RichData @Inject() (
         case x: JsDefined => 
           getSub(keys.tail, x.value)
         
-        case _: JsUndefined => 
+        case u: JsUndefined => 
+          println(s"Undefined: $u")
           None
         
         case _: JsResultException => 
@@ -688,7 +702,6 @@ class RichData @Inject() (
   }
 
   private def filterJson(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {    
-    println(filter)
     filter.attribute.contains(".") match {
       case true => deepFilter(data, filter)
       case false => shallowFilter(data, filter)
