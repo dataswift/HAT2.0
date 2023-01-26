@@ -1,5 +1,4 @@
-/*
- * Copyright (C) 2017 HAT Data Exchange Ltd
+/* Copyright (C) 2017 HAT Data Exchange Ltd
  * SPDX-License-Identifier: AGPL-3.0
  *
  * This file is part of the Hub of All Things project (HAT).
@@ -67,7 +66,9 @@ class RichData @Inject() (
   private val logger             = loggingProvider.logger(this.getClass)
   private val defaultRecordLimit = 1000
 
-  case class RichDataFilter(attribute: String, value: List[String])
+  case class RichDataFilter(
+      attribute: String,
+      value: List[String])
 
   /**
     * Returns Data Records for a given endpoint
@@ -85,6 +86,8 @@ class RichData @Inject() (
       endpoint: String,
       orderBy: Option[String],
       ordering: Option[String],
+      // sort: Option[String],
+      // order: Option[String],
       skip: Option[Int],
       take: Option[Int]): Action[AnyContent] =
     SecuredAction(
@@ -94,16 +97,15 @@ class RichData @Inject() (
         )
     ).async { implicit request =>
       // this could be better
-      val knownKeys = List("ordering", "orderBy", "skip", "take")
+      val knownKeys       = List("ordering", "orderBy", "skip", "take")
       val k: List[String] = request.queryString.keys.toList filterNot knownKeys.contains
-            
-      val dataFilter = if (k.length == 0) {
-        None
-      }
-      else {
-        Some(RichDataFilter(k.head, request.queryString.get(k.head).get.toList))
-      }
-      
+
+      val dataFilter =
+        if (k.length == 0)
+          None
+        else
+          Some(RichDataFilter(k.head, request.queryString.get(k.head).get.toList))
+
       makeData(namespace, endpoint, orderBy, ordering, skip, take, dataFilter)
     }
 
@@ -636,77 +638,75 @@ class RichData @Inject() (
       take.orElse(Some(defaultRecordLimit))
     )
 
-    val filteredData = filter match {
-      case Some(dataFilter) => {
+    val processedData = filter match {
+      case Some(dataFilter) =>
         filterJson(data, dataFilter)
-      }
-      case None => {
+      case (None) =>
         data
-      }
-    }  
+    }
 
-    filteredData.map(d => Ok(Json.toJson(d)))
+    processedData.map(d => Ok(Json.toJson(d)))
   }
-
 
   // Ty: I will convert to Option[String]
-  private def mashList(l: List[JsValue]): List[String] = {
+  private def mashList(l: List[JsValue]): List[String] =
     l.flatten {
-      case (arr:JsArray)  => arr.value.toList.map(_.as[String])
-      case (x:JsString) => List(x.value)
-      case _ => List.empty
+      case (arr: JsArray) => arr.value.toList.map(_.as[String])
+      case (x: JsString)  => List(x.value)
+      case _              => List.empty
     }.map(_.toString())
-  }
 
-
-  private def shallowFilter(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {    
-    data.map(d => {
-      d.filter(a => {
-        val newValue = (a.data \\ filter.attribute).toList
-        val intermediate: List[String] = mashList( newValue )
+  private def shallowFilter(
+      data: Future[Seq[EndpointData]],
+      filter: RichDataFilter): Future[Seq[EndpointData]] =
+    data.map { d =>
+      d.filter { a =>
+        val newValue                   = (a.data \\ filter.attribute).toList
+        val intermediate: List[String] = mashList(newValue)
         filter.value.intersect(intermediate).length > 0
-      })
-    })
-  }
-
-  def getSub(keys: List[String], body:  JsValue): Option[JsValue] = {
-    if (keys.length == 0) {
-      Some(body)
+      }
     }
-    else {
+
+  def getSub(
+      keys: List[String],
+      body: JsValue): Option[JsValue] =
+    if (keys.length == 0)
+      Some(body)
+    else
       (body \ keys.head) match {
-        case x: JsDefined => 
+        case x: JsDefined =>
           getSub(keys.tail, x.value)
-        
-        case u: JsUndefined => 
+
+        case u: JsUndefined =>
           println(s"Undefined: $u")
           None
-        
-        case _: JsResultException => 
+
+        case _: JsResultException =>
           None
+      }
+
+  private def deepFilter(
+      data: Future[Seq[EndpointData]],
+      filter: RichDataFilter): Future[Seq[EndpointData]] = {
+    val termSplit = filter.attribute.split("\\.")
+
+    data.map { d =>
+      d.filter { a =>
+        getSub(termSplit.toList, a.data) match {
+          case None    => false
+          case Some(x) => filter.value.contains(x.as[String])
+        }
       }
     }
   }
 
-  private def deepFilter(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {
-    val termSplit = filter.attribute.split("\\.")
-
-    data.map(d => {
-      d.filter(a => {
-        getSub(termSplit.toList, a.data) match {
-          case None => false
-          case Some(x) => filter.value.contains(x.as[String])
-        }
-      })
-    })
-  }
-
-  private def filterJson(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {    
+  private def filterJson(
+      data: Future[Seq[EndpointData]],
+      filter: RichDataFilter): Future[Seq[EndpointData]] =
     filter.attribute.contains(".") match {
-      case true => deepFilter(data, filter)
+      case true  => deepFilter(data, filter)
       case false => shallowFilter(data, filter)
     }
-  }
 
   private object Errors {
     def dataDebitDoesNotExist: ErrorMessage =
