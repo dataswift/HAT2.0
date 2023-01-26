@@ -47,7 +47,6 @@ import play.api.libs.json.JsResultException
 import play.api.libs.json.JsUndefined
 import play.api.libs.json.JsDefined
 import play.api.libs.json.JsString
-import org.joda.time.DateTime
 
 class RichData @Inject() (
     components: ControllerComponents,
@@ -67,7 +66,9 @@ class RichData @Inject() (
   private val logger             = loggingProvider.logger(this.getClass)
   private val defaultRecordLimit = 1000
 
-  case class RichDataFilter(attribute: String, value: List[String])
+  case class RichDataFilter(
+      attribute: String,
+      value: List[String])
 
   /**
     * Returns Data Records for a given endpoint
@@ -85,7 +86,8 @@ class RichData @Inject() (
       endpoint: String,
       orderBy: Option[String],
       ordering: Option[String],
-      sort: Option[String],
+      // sort: Option[String],
+      // order: Option[String],
       skip: Option[Int],
       take: Option[Int]): Action[AnyContent] =
     SecuredAction(
@@ -95,17 +97,16 @@ class RichData @Inject() (
         )
     ).async { implicit request =>
       // this could be better
-      val knownKeys = List("ordering", "orderBy", "skip", "take", "sort")
+      val knownKeys       = List("ordering", "orderBy", "skip", "take")
       val k: List[String] = request.queryString.keys.toList filterNot knownKeys.contains
-            
-      val dataFilter = if (k.length == 0) {
-        None
-      }
-      else {
-        Some(RichDataFilter(k.head, request.queryString.get(k.head).get.toList))
-      }
-      
-      makeData(namespace, endpoint, orderBy, ordering, skip, take, sort, dataFilter)
+
+      val dataFilter =
+        if (k.length == 0)
+          None
+        else
+          Some(RichDataFilter(k.head, request.queryString.get(k.head).get.toList))
+
+      makeData(namespace, endpoint, orderBy, ordering, skip, take, dataFilter)
     }
 
   def saveEndpointData(
@@ -624,7 +625,6 @@ class RichData @Inject() (
       ordering: Option[String],
       skip: Option[Int],
       take: Option[Int],
-      sort: Option[String] = None,
       filter: Option[RichDataFilter] = None
     )(implicit db: HATPostgresProfile.api.Database): Future[Result] = {
     val dataEndpoint = s"$namespace/$endpoint"
@@ -638,113 +638,75 @@ class RichData @Inject() (
       take.orElse(Some(defaultRecordLimit))
     )
 
-    val processedData = (filter, sort) match {
-      case (Some(dataFilter), None) => {
-        println(">>> FILTER | NO SORT")
+    val processedData = filter match {
+      case Some(dataFilter) =>
         filterJson(data, dataFilter)
-      }
-      case (Some(dataFilter), Some(sort)) => {
-        println(">>> FILTER | SORT")
-        filterAndSortJson(data, dataFilter, sort)
-      }
-      case (None, Some(sort)) => {
-        println(">>> NO FILTER | SORT")
-        sortJson(data, sort)
-      }
-      case (None, None) => {
-        println(">>> NO FILTER | NO SORT")
+      case (None) =>
         data
-      }
-    }  
+    }
 
-    
     processedData.map(d => Ok(Json.toJson(d)))
   }
 
-
   // Ty: I will convert to Option[String]
-  private def mashList(l: List[JsValue]): List[String] = {
+  private def mashList(l: List[JsValue]): List[String] =
     l.flatten {
-      case (arr:JsArray)  => arr.value.toList.map(_.as[String])
-      case (x:JsString) => List(x.value)
-      case _ => List.empty
+      case (arr: JsArray) => arr.value.toList.map(_.as[String])
+      case (x: JsString)  => List(x.value)
+      case _              => List.empty
     }.map(_.toString())
-  }
 
-
-  private def shallowFilter(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {    
-    data.map(d => {
-      d.filter(a => {
-        val newValue = (a.data \\ filter.attribute).toList
+  private def shallowFilter(
+      data: Future[Seq[EndpointData]],
+      filter: RichDataFilter): Future[Seq[EndpointData]] =
+    data.map { d =>
+      d.filter { a =>
+        val newValue                   = (a.data \\ filter.attribute).toList
         val intermediate: List[String] = mashList(newValue)
         filter.value.intersect(intermediate).length > 0
-      })
-    })
-  }
-
-  def getSub(keys: List[String], body:  JsValue): Option[JsValue] = {
-    if (keys.length == 0) {
-      Some(body)
+      }
     }
-    else {
+
+  def getSub(
+      keys: List[String],
+      body: JsValue): Option[JsValue] =
+    if (keys.length == 0)
+      Some(body)
+    else
       (body \ keys.head) match {
-        case x: JsDefined => 
+        case x: JsDefined =>
           getSub(keys.tail, x.value)
-        
-        case u: JsUndefined => 
+
+        case u: JsUndefined =>
           println(s"Undefined: $u")
           None
-        
-        case _: JsResultException => 
+
+        case _: JsResultException =>
           None
+      }
+
+  private def deepFilter(
+      data: Future[Seq[EndpointData]],
+      filter: RichDataFilter): Future[Seq[EndpointData]] = {
+    val termSplit = filter.attribute.split("\\.")
+
+    data.map { d =>
+      d.filter { a =>
+        getSub(termSplit.toList, a.data) match {
+          case None    => false
+          case Some(x) => filter.value.contains(x.as[String])
+        }
       }
     }
   }
 
-  private def deepFilter(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {
-    val termSplit = filter.attribute.split("\\.")
-
-    data.map(d => {
-      d.filter(a => {
-        getSub(termSplit.toList, a.data) match {
-          case None => false
-          case Some(x) => filter.value.contains(x.as[String])
-        }
-      })
-    })
-  }
-
-  private def filterJson(data: Future[Seq[EndpointData]], filter: RichDataFilter): Future[Seq[EndpointData]] = {    
+  private def filterJson(
+      data: Future[Seq[EndpointData]],
+      filter: RichDataFilter): Future[Seq[EndpointData]] =
     filter.attribute.contains(".") match {
-      case true => deepFilter(data, filter)
+      case true  => deepFilter(data, filter)
       case false => shallowFilter(data, filter)
     }
-  }
-
-  private def filterAndSortJson(
-    data: Future[Seq[EndpointData]], 
-    filter: RichDataFilter,
-    sort: String
-  ): Future[Seq[EndpointData]] = {    
-    sortJson(filterJson(data, filter), sort)
-  }
-
-  private def sortJson(
-    data: Future[Seq[EndpointData]], 
-    sortTerm: String
-  ): Future[Seq[EndpointData]] = {    
-    data.map(d => {
-      //val people = d.data.map(x => (x \ "name").extract[String] -> (x \ "age").extract[Int])
-      d.sortWith((x, y) => {
-        val f = (x.data \ sortTerm).as[DateTime]
-        val g = (y.data \ sortTerm).as[DateTime]
-        f.isAfter(g)
-      })
-    })
-  }
-  
-
-
 
   private object Errors {
     def dataDebitDoesNotExist: ErrorMessage =
