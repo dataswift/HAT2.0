@@ -86,8 +86,6 @@ class RichData @Inject() (
       endpoint: String,
       orderBy: Option[String],
       ordering: Option[String],
-      // sort: Option[String],
-      // order: Option[String],
       skip: Option[Int],
       take: Option[Int]): Action[AnyContent] =
     SecuredAction(
@@ -101,12 +99,26 @@ class RichData @Inject() (
       val k: List[String] = request.queryString.keys.toList filterNot knownKeys.contains
 
       val dataFilter =
-        if (k.length == 0)
-          None
-        else
-          Some(RichDataFilter(k.head, request.queryString.get(k.head).get.toList))
+        if (k.length == 0) {
+          List.empty
+        }
+        else {
+          println(s"request.queryString:                        ${request.queryString}")
+          println(s"request.queryString.get(k.head).get:        ${request.queryString.get(k.head).get.head.split(',')}")
+          println(s"request.queryString.get(k.head).get.toList: ${request.queryString.get(k.head).get.toList}")
 
-      makeData(namespace, endpoint, orderBy, ordering, skip, take, dataFilter)
+          val qsMap = request.queryString.toMap
+          println(s"qsMap       : ${qsMap}")
+          println(s"qsMap.keySet: ${qsMap.keySet}")
+          println(s"qsMap.type  : ${qsMap.get("type")}")
+          
+          val searchTerms = qsMap.get("type").getOrElse(List.empty[String])
+          println(s"searchTerms : ${searchTerms}")
+
+          qsMap.map(item => RichDataFilter(item._1, item._2.toList))
+        }
+
+      makeData(namespace, endpoint, orderBy, ordering, skip, take, dataFilter.toSeq)
     }
 
   def saveEndpointData(
@@ -625,7 +637,7 @@ class RichData @Inject() (
       ordering: Option[String],
       skip: Option[Int],
       take: Option[Int],
-      filter: Option[RichDataFilter] = None
+      filters: Seq[RichDataFilter]
     )(implicit db: HATPostgresProfile.api.Database): Future[Result] = {
     val dataEndpoint = s"$namespace/$endpoint"
     val query =
@@ -638,14 +650,18 @@ class RichData @Inject() (
       take.orElse(Some(defaultRecordLimit))
     )
 
-    val processedData = filter match {
-      case Some(dataFilter) =>
-        filterJson(data, dataFilter)
-      case (None) =>
-        data
+    val requestedData = if (filters.isEmpty) {
+      data
     }
-
-    processedData.map(d => Ok(Json.toJson(d)))
+    else {
+      val processedData: Seq[Future[Seq[EndpointData]]] = filters.map(filter => filterJson(data, filter)) 
+      val sequencedData = Future.sequence(processedData)
+      for {
+        x <- sequencedData
+      } yield x.flatten
+    }
+    
+    requestedData.map(d => Ok(Json.toJson(d)))
   }
 
   // Ty: I will convert to Option[String]
@@ -663,6 +679,13 @@ class RichData @Inject() (
       d.filter { a =>
         val newValue                   = (a.data \\ filter.attribute).toList
         val intermediate: List[String] = mashList(newValue)
+        println("---------------------")
+        println(s"intermediate: $intermediate")
+        println(s"filter: ${filter.value}")
+
+        filter.value.map(x => x.trim().split(',').map(y => println(y.trim())))
+        println(s"intersect: ${filter.value.intersect(intermediate).length}")
+
         filter.value.intersect(intermediate).length > 0
       }
     }
