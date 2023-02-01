@@ -68,7 +68,8 @@ class RichDataSpec extends RichDataContext {
 
     val controller = application.injector.instanceOf[RichData]
 
-    val response     = Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None), request)
+    val response     = Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None, None, None, None), 
+    request)
     val responseData = contentAsJson(response).as[Seq[EndpointData]]
     responseData.length must equal(0)
   }
@@ -88,7 +89,8 @@ class RichDataSpec extends RichDataContext {
 
     val response = for {
       _ <- service.saveData(owner.userId, data)
-      r <- Helpers.call(controller.getEndpointData("test", "endpoint", Some("field"), None, None, Some(2)), request)
+      r <- Helpers.call(controller.getEndpointData("test", "endpoint", Some("field"), None, None, Some(2), None, None, None), 
+      request)
     } yield r
     val responseData = contentAsJson(response).as[Seq[EndpointData]]
     responseData.length must equal(2)
@@ -111,7 +113,7 @@ class RichDataSpec extends RichDataContext {
     val response = for {
       _ <- service.saveData(owner.userId, data)
       r <- Helpers.call(
-             controller.getEndpointData("test", "endpoint", Some("field"), Some("descending"), Some(1), Some(2)),
+             controller.getEndpointData("test", "endpoint", Some("field"), Some("descending"), Some(1), Some(2), None, None, None),
              request
            )
     } yield r
@@ -147,7 +149,8 @@ class RichDataSpec extends RichDataContext {
 
     val response = for {
       _ <- Helpers.call(controller.saveEndpointData("test", "endpoint", None), request)
-      r <- Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None), request)
+      r <- Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None, None, None, None), 
+      request)
     } yield r
     val responseData = contentAsJson(response).as[Seq[EndpointData]]
     responseData.length must equal(1)
@@ -163,7 +166,8 @@ class RichDataSpec extends RichDataContext {
 
     val response = for {
       _ <- Helpers.call(controller.saveEndpointData("test", "endpoint", None), request)
-      r <- Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None), request)
+      r <- Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None, None, None, None),
+      request)
     } yield r
     val responseData = contentAsJson(response).as[Seq[EndpointData]]
     responseData.length must equal(2)
@@ -195,7 +199,8 @@ class RichDataSpec extends RichDataContext {
 
     val response = for {
       _ <- Helpers.call(controller.saveEndpointData("test", "endpoint", Some(true)), request)
-      r <- Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None), request)
+      r <- Helpers.call(controller.getEndpointData("test", "endpoint", None, None, None, None, None, None, None),
+      request)
     } yield r
 
     val responseData = contentAsJson(response).as[Seq[EndpointData]]
@@ -248,7 +253,8 @@ class RichDataSpec extends RichDataContext {
     val result = for {
       _ <- dataService.saveData(owner.userId, data)
       _ <- Helpers.call(controller.deleteEndpointData("test", "test"), request)
-      response <- Helpers.call(controller.getEndpointData("test", "test", None, None, None, None), request)
+      response <- Helpers.call(controller.getEndpointData("test", "test", None, None, None, None, None, None, None), 
+      request)
     } yield response
 
     val responseData = contentAsJson(result).as[Seq[EndpointData]]
@@ -270,7 +276,7 @@ class RichDataSpec extends RichDataContext {
 
     val response = for {
       _ <- Helpers.call(controller.saveBatchData(), request)
-      r <- Helpers.call(controller.getEndpointData("test", "test", None, None, None, None), request)
+      r <- Helpers.call(controller.getEndpointData("test", "test", None, None, None, None, None, None, None), request)
     } yield r
 
     status(response) must equal(OK)
