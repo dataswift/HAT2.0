@@ -92,7 +92,7 @@ jobs:
             type=semver,prefix=v,pattern={{major}}.{{minor}}
 
       - name: Container - Build & Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           push: true
           context: hat/target/docker/stage
