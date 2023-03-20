@@ -51,7 +51,7 @@ jobs:
         run: sbt Docker/stage && docker build hat/target/docker/stage
 
       - name: AWS - Configure
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.DEPLOYER_SHARED_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.DEPLOYER_SHARED_SECRET_ACCESS_KEY }}
