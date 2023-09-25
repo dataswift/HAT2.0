@@ -401,7 +401,9 @@ class Authentication @Inject() (
     * Sends an email to the owner with a link to claim the hat
     * /control/v2/auth/claim
     */
-  def handleVerificationRequest(lang: Option[String]): Action[ApiVerificationRequest] =
+  def handleVerificationRequest(
+      lang: Option[String],
+      send_email_to_user: Boolean = true): Action[ApiVerificationRequest] =
     UserAwareAction.async(parsers.json[ApiVerificationRequest]) { implicit request =>
       implicit val language: Lang = Lang.get(lang.getOrElse("en")).getOrElse(Lang.defaultLang)
 
@@ -443,13 +445,21 @@ class Authentication @Inject() (
                     val emailVerificationOptions =
                       EmailVerificationOptions(email, language, app.application.id, maybeSetupUrl.getOrElse(""))
                     val verificationLink = emailVerificationLink(request.host, token.id, emailVerificationOptions)
-                    mailer.verifyEmail(email,
-                                       app.application.info.name,
-                                       app.application.info.graphics.logo.normal,
-                                       verificationLink
-                    )
+                    if (send_email_to_user) {
+                      mailer.verifyEmail(email,
+                                         app.application.info.name,
+                                         app.application.info.graphics.logo.normal,
+                                         verificationLink
+                      )
 
-                    response
+                      response
+                    } else {
+                      Ok(
+                        Json.obj(
+                          "tokenId" -> token.id
+                        )
+                      )
+                    }
                 }
                 .recover {
                   case e =>

@@ -2,8 +2,7 @@ import Dependencies._
 import play.sbt.PlayImport
 import sbt.Keys._
 
-val codeguruURI =
-  "https://repo1.maven.org/maven2/software/amazon/codeguruprofiler/codeguru-profiler-java-agent-standalone/1.1.0/codeguru-profiler-java-agent-standalone-1.1.0.jar"
+// scalaVersion := "2.13.11"
 
 // the application
 lazy val hat = project
@@ -15,6 +14,7 @@ lazy val hat = project
   .enablePlugins(SlickCodeGeneratorPlugin)
   .disablePlugins(PlayLogback)
   .settings(
+    //scalaVersion := "2.13.11",
     libraryDependencies ++= Seq(
           PlayImport.ehcache,
           PlayImport.filters,

@@ -94,5 +94,8 @@ DELETE        /contract/file/:fileId                                            
 POST          /contract/file/:fileId/content                                                 org.hatdex.hat.api.controllers.ContractFiles.getContent(fileId)
 
 # trusted proxy
-GET           /trusted/:applicationId/status                                                 org.hatdex.hat.api.controllers.TrustedProxy.applicationStatus(applicationId: String)
-GET           /trusted/:applicationId/access-token                                           org.hatdex.hat.api.controllers.TrustedProxy.applicationToken(applicationId: String)
+# GET           /trusted/:applicationId/status                                                 org.hatdex.hat.api.controllers.TrustedProxy.applicationStatus(applicationId: String)
+# GET           /trusted/:applicationId/access-token                                           org.hatdex.hat.api.controllers.TrustedProxy.applicationToken(applicationId: String)
+
+# user
+POST            /reset-password                                                              org.hatdex.hat.api.controllers.UserOperations.resetPassword
