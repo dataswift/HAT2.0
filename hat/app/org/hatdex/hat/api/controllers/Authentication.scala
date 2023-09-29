@@ -403,9 +403,10 @@ class Authentication @Inject() (
     */
   def handleVerificationRequest(
       lang: Option[String],
-      send_email_to_user: Boolean = true): Action[ApiVerificationRequest] =
+      sendEmailToUser: Option[Boolean]): Action[ApiVerificationRequest] =
     UserAwareAction.async(parsers.json[ApiVerificationRequest]) { implicit request =>
       implicit val language: Lang = Lang.get(lang.getOrElse("en")).getOrElse(Lang.defaultLang)
+      implicit val sendEmail: Boolean = sendEmailToUser.getOrElse(true)
 
       val claimHatRequest = request.body
       val email           = request.dynamicEnvironment.ownerEmail
@@ -445,7 +446,7 @@ class Authentication @Inject() (
                     val emailVerificationOptions =
                       EmailVerificationOptions(email, language, app.application.id, maybeSetupUrl.getOrElse(""))
                     val verificationLink = emailVerificationLink(request.host, token.id, emailVerificationOptions)
-                    if (send_email_to_user) {
+                    if (sendEmail) {
                       mailer.verifyEmail(email,
                                          app.application.info.name,
                                          app.application.info.graphics.logo.normal,
