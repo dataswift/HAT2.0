@@ -437,7 +437,6 @@ class Authentication @Inject() (
 
                     if (maybeSetupUrl.isEmpty) {
                       val message =
-                        s"Application [${claimHatRequest.applicationId}] mis-configured. \n Cause: ${claimHatRequest.redirectUri} is not a registered redirect URI"
                       logger.warn(message)
                       mailer.serverExceptionNotify(request, new RuntimeException(message))
                     }
