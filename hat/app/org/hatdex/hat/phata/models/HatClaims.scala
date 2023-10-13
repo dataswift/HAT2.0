@@ -30,8 +30,8 @@ case class ApiVerificationRequest(
     applicationId: String,
     email: String,
     redirectUri: String) {
-  override def toString: String =
-    s"ApiVerificationRequest(applicationId: $applicationId, email:REDACTED, redirectUri: $redirectUri)"
+  // override def toString: String =
+  //   s"ApiVerificationRequest(applicationId: $applicationId, email:REDACTED, redirectUri: $redirectUri)"
 }
 
 object ApiVerificationRequest {
@@ -45,6 +45,7 @@ case class ApiVerificationCompletionRequest(
     optins: Array[String],
     hatName: String,
     hatCluster: String,
+    // make the password Optional
     password: String) {
   override def toString: String =
     s"ApiVerificationCompletionRequest(email:REDACTED, termsAgreed:$termsAgreed, optins:$optins, hatName:$hatName, hatCluster:$hatCluster, password:REDACTED)"

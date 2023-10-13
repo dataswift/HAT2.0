@@ -26,7 +26,7 @@ docker-prod:
 	@sbt ${PROD_DOCKER_SBT_JAVA_OPT} docker:stage
 
 
-docker-dev:
+docker-dev: dev
 	$(info > Building a docker image to use with docker-compose.)
 	@sbt ${DEV_DOCKER_SBT_JAVA_OPT} docker:publishLocal
 

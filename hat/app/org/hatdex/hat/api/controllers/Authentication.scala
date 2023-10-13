@@ -38,7 +38,6 @@ import io.dataswift.models.hat.json.HatJsonFormats
 import org.hatdex.hat.api.service.applications.ApplicationsService
 import org.hatdex.hat.api.service.{ HatServicesService, LogService, MailTokenService, UserService }
 import org.hatdex.hat.authentication._
-import org.hatdex.hat.client.{ TrustProxyClient }
 import org.hatdex.hat.phata.models._
 import org.hatdex.hat.resourceManagement.{ HatServerProvider, _ }
 import org.hatdex.hat.utils.{ DataswiftServiceConfig, HatBodyParsers, HatMailer, TrustProxyUtils }
@@ -307,6 +306,8 @@ class Authentication @Inject() (
     * Sends an email to the user with a link to reset the password
     * This is unauthenticated.
     */
+  
+    // return token and not email, like the other endpoint
   def handleForgotPassword: Action[ApiPasswordResetRequest] =
     UserAwareAction.async(parsers.json[ApiPasswordResetRequest]) { implicit request =>
       implicit val language: Lang = Lang.defaultLang
@@ -410,14 +411,21 @@ class Authentication @Inject() (
 
       val claimHatRequest = request.body
       val email           = request.dynamicEnvironment.ownerEmail
-      val response        = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions")))
+      val response        = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions AAA")))
+
+      println(claimHatRequest.email == email)
+      println(email)
+      println(claimHatRequest)
 
       if (claimHatRequest.email == email)
         userService
           .listUsers()
           .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(Verified("email"))))))
           .flatMap {
-            case Some(user) =>
+            case Some(user) => {
+
+              println(s"found user ${user.email}")
+              
               val eventualClaimContext = for {
                 maybeApplication <- applicationsService
                                       .applicationStatus()(request.dynamicEnvironment, user, request)
@@ -471,8 +479,11 @@ class Authentication @Inject() (
                       )
                     )
                 }
-
-            case None => Future.successful(response)
+              }
+            case None => {
+              println(s"found user ${response}")
+              Future.successful(response)
+            }
           }
       else
         Future.successful(response)
