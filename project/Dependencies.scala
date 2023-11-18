@@ -55,7 +55,7 @@ object Dependencies {
   private object Version {
     val AlpakkaAwsLambda     = "1.1.2"
     val CirceConfig          = "0.8.0"
-    val PrettyTime           = "5.0.2.Final"
+    val PrettyTime           = "5.0.7.Final"
     val ScalaTestplusMockito = "3.2.10.0"
   }
 
