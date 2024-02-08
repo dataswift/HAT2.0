@@ -42,6 +42,7 @@ class SHEModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
   val logger: Logger = Logger(this.getClass)
 
   override def configure(): Unit = {
+    println("*** SHEModule.configure() ***")
     bind[FunctionExecutionTriggerHandler].asEagerSingleton()
     ()
   }

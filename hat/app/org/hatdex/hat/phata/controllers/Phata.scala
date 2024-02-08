@@ -53,9 +53,9 @@ class Phata @Inject() (
 
   private val logger = Logger(this.getClass)
 
-  val indefiniteSuccessCaching: CachedBuilder = cached
-    .status(req => s"${req.host}${req.path}", 200)
-    .includeStatus(404, 600)
+  // val indefiniteSuccessCaching: CachedBuilder = cached
+  //   .status(req => s"${req.host}${req.path}", 200)
+  //   .includeStatus(404, 600)
 
   val csp: Map[String, String] = configuration
     .get[String]("play.filters.headers.contentSecurityPolicy")
@@ -74,6 +74,8 @@ class Phata @Inject() (
 
   def profile: Action[AnyContent] =
     UserAwareAction.async { implicit request =>
+      logger.info(s"config: ${configuration}")
+
       val defaultBundleDefinition = Json
         .parse(configuration.get[String]("phata.defaultBundle"))
         .as[EndpointDataBundle]

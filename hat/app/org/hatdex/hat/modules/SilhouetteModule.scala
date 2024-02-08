@@ -64,6 +64,7 @@ class SilhouetteModule extends ScalaModule with SilhouetteConfigLoaders {
     * Configures the module.
     */
   override def configure(): Unit = {
+    println("*** SilhouetteModule.configure() ***")
     bind[DynamicEnvironmentProviderService[HatServer]].to[HatServerProvider]
 
     bind[Silhouette[HatApiAuthEnvironment]]

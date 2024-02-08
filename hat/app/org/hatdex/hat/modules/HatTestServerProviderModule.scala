@@ -40,6 +40,7 @@ import play.api.{ Configuration, Environment }
 class HatTestServerProviderModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
   override def configure(): Unit = {
+    println("*** HatTestServerProviderModule.configure() ***")
     bindActor[HatServerProviderActor]("hatServerProviderActor")
     bindActorFactory[HatServerActor, HatServerActor.Factory]
 

@@ -32,6 +32,7 @@ import play.api.libs.concurrent.AkkaGuiceSupport
 class DataMonitoringModule extends AbstractModule with ScalaModule with AkkaGuiceSupport {
 
   override protected def configure(): Unit = {
+    println("*** DataMonitoringModule.configure() ***")
     bindActor[HatDataStatsProcessorActor]("hatDataStatsProcessor")
     bind[HatDataEventRouter].to[HatDataEventRouterImpl].asEagerSingleton()
     ()

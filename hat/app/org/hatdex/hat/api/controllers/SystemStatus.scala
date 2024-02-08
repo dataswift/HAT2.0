@@ -67,18 +67,18 @@ class SystemStatus @Inject() (
 
   private val logger = Logger(this.getClass)
 
-  private val indefiniteSuccessCaching = cached
-    .status(req => s"${req.host}${req.path}", 200)
-    .includeStatus(404, 600)
+  // private val indefiniteSuccessCaching = cached
+  //   .status(req => s"${req.host}${req.path}", 200)
+  //   .includeStatus(404, 600)
 
   def update(): EssentialAction =
-    indefiniteSuccessCaching {
+    // indefiniteSuccessCaching {
       UserAwareAction.async { implicit request =>
         logger.debug(s"Updating HAT ${request.dynamicEnvironment.id}")
         hatDatabaseProvider.update(request.dynamicEnvironment.db) map { _ =>
           Ok(Json.toJson(SuccessResponse("Database updated")))
         }
-      }
+      // }
     }
 
   def healthReport(): Action[AnyContent] = {

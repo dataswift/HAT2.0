@@ -14,6 +14,7 @@ import javax.inject.{ Singleton => JSingleton }
 class AppModule extends ScalaModule {
 
   override def configure(): Unit = {
+    println("*** AppModule.configure() ***")
     bind[UserService].to[UserServiceImpl].in(classOf[JSingleton])
     bind[ContractAction].to[ContractActionImpl].in(classOf[JSingleton])
   }

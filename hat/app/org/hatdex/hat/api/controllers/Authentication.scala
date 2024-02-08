@@ -52,6 +52,8 @@ import java.net.{ URLDecoder, URLEncoder }
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import com.mohiva.play.silhouette.api.LoginInfo
+import org.checkerframework.checker.units.qual.A
 
 class Authentication @Inject() (
     components: ControllerComponents,
@@ -77,9 +79,9 @@ class Authentication @Inject() (
 
   import HatJsonFormats._
 
-  private val indefiniteSuccessCaching: CachedBuilder = cached
-    .status(req => s"${req.host}${req.path}", 200)
-    .includeStatus(404, 600)
+  // private val indefiniteSuccessCaching: CachedBuilder = cached
+  //   .status(req => s"${req.host}${req.path}", 200)
+  //   .includeStatus(404, 600)
 
   private val emailScheme = "https://"
 
@@ -134,12 +136,18 @@ class Authentication @Inject() (
     )
 
   def publicKey(): EssentialAction =
-    indefiniteSuccessCaching {
-      UserAwareAction.async { implicit request =>
+    // indefiniteSuccessCaching {
+      UserAwareAction.async { implicit request => {
+        logger.info(s"request: ${request.toString()}")
+        logger.info(s"dynEnv : ${request.dynamicEnvironment.toString()}")
+        
         val publicKey =
           hatServerProvider.toString(request.dynamicEnvironment.publicKey)
+        
+        
         Future.successful(Ok(publicKey))
       }
+      // }
     }
 
   // TODO: Should this remove tokens?
@@ -196,6 +204,7 @@ class Authentication @Inject() (
   // Trade username and password for an access_token
   def accessToken(): Action[AnyContent] =
     (UserAwareAction andThen limiter.UserAwareRateLimit).async { implicit request =>
+
       // pull details from the headers
       val eventuallyAuthenticatedUser = for {
         usernameParam <- request.headers.get("username")
@@ -203,14 +212,40 @@ class Authentication @Inject() (
       } yield {
         val username = URLDecoder.decode(usernameParam, "UTF-8")
         val password = URLDecoder.decode(passwordParam, "UTF-8")
+        
+        logger.info(s"Processing login request for user ${username}")
+        logger.info(s"Processing login request for pass ${password}")
+        logger.info(s"request: ${request}")
+
+        logger.info(s"About to run credentialsProvider.authenticate")
+        val credentials = Credentials(username, password)
+        
+        val authenticated = credentialsProvider.authenticate(credentials).flatMap { (o) =>  
+          logger.info(s"loginInfo: $o")
+          Future.successful("WTF")
+        }
+        logger.info(s"authenticated: ${authenticated}")
+
+        // val authenticated = Future.await (credentialsProvider.authenticate(Credentials(username, password)))
+        // flatMap { loginInfo: LoginInfo => 
+        //     logger.info(s"loginInfo: $loginInfo")
+        //     logger.info(s"loginInfo.providerID: ${loginInfo.providerID}")
+        //     Future.failed(new IdentityNotFoundException("Broken"))
+        // }
+
         credentialsProvider
           .authenticate(Credentials(username, password))
           .map(_.copy(request.dynamicEnvironment.id))
           .flatMap { loginInfo =>
+            
+            logger.info(s"User ${username} authenticated");
+            logger.info(s"loginInfo ${loginInfo}");
+            
             userService.getUser(loginInfo.providerKey).flatMap {
               // If we find a user, create and return an access token (JWT)
               case Some(user) =>
                 val customClaims = hatServicesService.generateUserTokenClaims(user, hatService)
+                
                 for {
                   // JWT Authenticator
                   authenticator <- env.authenticatorService.create(loginInfo)
@@ -244,6 +279,7 @@ class Authentication @Inject() (
                   // AuthenticatorResult
                   result
                 }
+              
               // No user found
               case None =>
                 Future.failed(new IdentityNotFoundException("Couldn't find user"))
@@ -333,6 +369,7 @@ class Authentication @Inject() (
               // Store that token
               tokenService.create(token).map { _ =>
                 mailer.passwordReset(email, passwordResetLink(request.host, token.id))
+
                 response
               }
             // The user was not found, but return the "If we found an email address, we'll send the link."

@@ -42,6 +42,7 @@ import javax.inject.{ Singleton => JSingleton }
 class FileManagerModule extends ScalaModule {
 
   override def configure(): Unit = {
+    println("*** FileManagerModule.configure() ***")
     bind[FileUploadService].to[FileUploadServiceImpl]
     bind[FileMetadataRepository].to[FileMetadataRepositorySlick]
     bind[FileManager].to[FileManagerS3]

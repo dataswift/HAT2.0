@@ -48,9 +48,12 @@ trait MillinerHatSignup {
 
   def getHatSignup(
       hatAddress: String
-    )(implicit ec: ExecutionContext): Future[HatSignup] =
+    )(implicit ec: ExecutionContext): Future[HatSignup] = {
     // Cache the signup information for subsequent calls (For private/public key and database details)
-    cache.getOrElseUpdate[HatSignup](s"configuration:$hatAddress") {
+    //cache.getOrElseUpdate[HatSignup](s"configuration:$hatAddress") {
+      logger.info("getHatSignup")
+      logger.info(s"$millinerAddress/api/manage/configuration/$hatAddress")
+      
       val request: WSRequest = ws
         .url(s"$millinerAddress/api/manage/configuration/$hatAddress")
         .withHttpHeaders(
@@ -59,6 +62,7 @@ trait MillinerHatSignup {
         )
 
       val futureResponse: Future[WSResponse] = request.get()
+      
       futureResponse.map { response =>
         response.status match {
           case OK =>

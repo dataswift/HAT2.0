@@ -98,6 +98,13 @@ class HatDatabaseProviderMilliner @Inject() (
             "portNumber" -> signup.databaseServer.get.port.toString,
             "serverName" -> signup.databaseServer.get.host
           ).asJava,
+      // "properties" -> Map[String, String](
+      //       "user" -> "masteruser",
+      //       "password" -> "YFgbCbN8PWIilIJmMINv",
+      //       "databaseName" -> "hatAdmin",
+      //       "portNumber" -> "5432",
+      //       "serverName" -> "dataswift-staging-pds-eu-hat-n1.cdgbpyaamcol.eu-west-1.rds.amazonaws.com"
+      //     ).asJava,
       "numThreads" -> configuration
             .get[Int]("resourceManagement.hatDBThreads")
             .toString,

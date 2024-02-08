@@ -43,8 +43,10 @@ class DevHatInitializationModule extends ScalaModule with AkkaGuiceSupport {
   /**
     * Configures the module.
     */
-  override protected def configure(): Unit =
+  override protected def configure(): Unit = {
+    println("*** DevHatInitializationModule.configure() ***")
     bind[DevHatInitializer].asEagerSingleton()
+  }
 }
 
 class DevHatInitializer @Inject() (
@@ -57,7 +59,8 @@ class DevHatInitializer @Inject() (
   import DevHatConfig.configLoader
 
   val devHats: Map[String, DevHatConfig] = configuration.get[Map[String, DevHatConfig]]("devhats")
-  val devHatMigrations: Seq[String]      = configuration.get[Seq[String]]("devhatMigrations")
+  // val devHatMigrations: Seq[String]      = configuration.get[Seq[String]]("devhatMigrations")
+  val devHatMigrations: Seq[String]      = Seq.empty
 
   logger.info(s"Initializing HATs: $devHats")
   devHats.values.map(initializeHat)

@@ -52,9 +52,11 @@ trait HatKeyProvider {
   def toString(rsaPublicKey: RSAPublicKey): String = {
     val pemObject            = new PemObject("PUBLIC KEY", rsaPublicKey.getEncoded)
     val stringPemWriter      = new StringWriter()
+    
     val pemWriter: PemWriter = new PemWriter(stringPemWriter)
     pemWriter.writeObject(pemObject)
     pemWriter.flush()
+    
     val pemPublicKey = stringPemWriter.toString
     pemPublicKey
   }
@@ -91,8 +93,10 @@ trait HatKeyProvider {
 @Singleton
 class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatKeyProvider {
   def publicKey(
-      hat: String
-    )(implicit ec: ExecutionContext): Future[RSAPublicKey] =
+      hat: String 
+    )(implicit ec: ExecutionContext): Future[RSAPublicKey] = {
+      println(s"Fetching public Key for hat: $hat")
+      println(configuration.getOptional[String](s"hat.${hat.replace(':', '.')}.publicKey"))
     configuration.getOptional[String](
       s"hat.${hat.replace(':', '.')}.publicKey"
     ) map { confPublicKey =>
@@ -102,10 +106,13 @@ class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatK
         new HatServerDiscoveryException(s"Public Key for $hat not found")
       )
     }
+  }
 
   def privateKey(
       hat: String
-    )(implicit ec: ExecutionContext): Future[RSAPrivateKey] =
+    )(implicit ec: ExecutionContext): Future[RSAPrivateKey] = {
+    println(s"Fetching private Key for hat: $hat")
+    println(configuration.getOptional[String](s"hat.${hat.replace(':', '.')}.privateKey"))    
     configuration.getOptional[String](
       s"hat.${hat.replace(':', '.')}.privateKey"
     ) map { confPrivateKey =>
@@ -115,6 +122,7 @@ class HatKeyProviderConfig @Inject() (configuration: Configuration) extends HatK
         new HatServerDiscoveryException(s"Private Key for $hat not found in the configuration")
       )
     }
+  }
 
   def ownerEmail(hat: String)(implicit ec: ExecutionContext): Future[String] =
     configuration.getOptional[String](
@@ -141,12 +149,14 @@ class HatKeyProviderMilliner @Inject() (
       hat: String
     )(implicit ec: ExecutionContext): Future[RSAPublicKey] =
     getHatSignup(hat) flatMap { signup =>
+    
       logger.debug(
         s"Received signup info, parsing public key ${signup.keys.map(_.publicKey)}"
       )
       readRsaPublicKey(signup.keys.get.publicKey)
     } recoverWith {
-        case e =>
+        case e => 
+          logger.debug(s"publicKey.Hat: ${hat}")
           Future.failed(
             new HatServerDiscoveryException(s"Public Key for $hat not found", e)
           )

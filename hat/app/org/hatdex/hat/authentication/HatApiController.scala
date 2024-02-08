@@ -54,8 +54,11 @@ abstract class HatController[T <: HatAuthEnvironment](
     silhouette.securedAction(env)
   def UnsecuredAction: UnsecuredActionBuilder[T, AnyContent] =
     silhouette.unsecuredAction(env)
-  def UserAwareAction: UserAwareActionBuilder[T, AnyContent] =
+  def UserAwareAction: UserAwareActionBuilder[T, AnyContent] = {
+    println("UserAwareAction")
+    // println(s"env: ${env}")
     silhouette.userAwareAction(env)
+  }
 
   implicit def securedRequest2User[A](
       implicit request: SecuredRequest[T, A]): HatUser = request.identity

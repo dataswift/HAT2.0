@@ -61,7 +61,9 @@ trait Mailer {
     if (!mock) {
       val message = new Message(content(subject), new Body(content(bodyText)).withHtml(content(bodyHtml)))
       val request = new SendEmailRequest(from, new Destination(recipients.asJava), message)
-      Future(mailerClient.sendEmail(request)).map(_ => Done)
+      val mailSendResult = mailerClient.sendEmail(request)
+      println(mailSendResult.toString())
+      Future(Done)
     } else {
       logger.info(s"mocking enabled, not sending email about '$subject' to ${recipients.mkString(", ")}")
       Future.successful(Done)

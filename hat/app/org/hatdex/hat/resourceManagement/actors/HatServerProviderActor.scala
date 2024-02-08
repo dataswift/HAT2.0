@@ -49,6 +49,7 @@ class HatServerProviderActor @Inject() (
   import HatServerProviderActor._
 
   private val activeServers = mutable.HashMap[String, ActorRef]()
+
   implicit private val hatServerTimeout: Timeout =
     configuration.get[FiniteDuration](
       "resourceManagement.serverProvisioningTimeout"
@@ -57,14 +58,18 @@ class HatServerProviderActor @Inject() (
   def receive: Receive = {
     case HatServerRetrieve(hat) =>
       log.info(s"Retrieve HAT server $hat for $sender")
+
       val retrievingSender = sender
+
       getHatServerActor(hat) map { hatServerActor =>
         log.info(
           s"Success: Got HAT server provider actor, forwarding retrieval message with sender $sender $retrievingSender"
         )
         hatServerActor tell (HatServerActor.HatRetrieve(), retrievingSender)
       } onComplete {
-        case Success(_) => ()
+        case Success(_) =>
+          log.info(s"HatServerRetrieve.Success")
+          ()
         case Failure(e) =>
           log.warn(
             s"Failure: Error while getting HAT server provider actor: ${e.getMessage}"
@@ -89,6 +94,8 @@ class HatServerProviderActor @Inject() (
       hat: String,
       timeout: FiniteDuration,
       depth: Int = 0): Future[ActorRef] = {
+    log.info(s">>> doFindOrCreate(${hat}) called")
+    
     if (depth >= maxAttempts) {
       log.error(s"HAT server actor for $hat not resolved")
       throw new RuntimeException(
@@ -111,7 +118,9 @@ class HatServerProviderActor @Inject() (
           props = (props: Props) => props.withDispatcher("hat-server-provider-actor-dispatcher")
         )
         activeServers(hat) = hatServerActor
+
         log.warn(s"Injected actor $hatServerActor")
+
         doFindOrCreate(hat, timeout, depth + 1)
     }
   }
@@ -120,7 +129,6 @@ class HatServerProviderActor @Inject() (
 
 object HatServerProviderActor {
   case class HatServerRetrieve(hat: String)
-
   case class HatServerStarted(hat: String)
   case class HatServerStopped(hat: String)
 }

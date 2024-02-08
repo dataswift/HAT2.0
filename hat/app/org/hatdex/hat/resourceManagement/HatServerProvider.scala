@@ -51,6 +51,7 @@ trait HatServerProvider extends DynamicEnvironmentProviderService[HatServer] {
     val pemWriter: PemWriter = new PemWriter(stringPemWriter)
     pemWriter.writeObject(pemObject)
     pemWriter.flush()
+
     val pemPublicKey = stringPemWriter.toString
     pemPublicKey
   }
@@ -81,13 +82,16 @@ class HatServerProviderImpl @Inject() (
     configuration.get[FiniteDuration]("resourceManagement.serverIdleTimeout")
 
   def retrieve(hatAddress: String): Future[Option[HatServer]] = {
+
     logger.info(s"HatServiceProvider.retrieve: looking up hatAddress: server:${hatAddress}")
 
-    cache
-      .get[HatServer](s"server:$hatAddress")
-      .flatMap {
-        case Some(server) => Future.successful(Some(server))
-        case _ =>
+    // cache
+    //   .get[HatServer](s"server:$hatAddress")
+    //   .flatMap {
+    //     // found in cache
+    //     case Some(server) => Future.successful(Some(server))
+    //     // not found in cache
+    //     case _ =>
           (serverProviderActor ? HatServerProviderActor.HatServerRetrieve(
                 hatAddress
               )) map {
@@ -106,15 +110,16 @@ class HatServerProviderImpl @Inject() (
                 throw error
             } recoverWith {
               case e =>
-                logger.warn(
-                  s"Error while retrieving HAT $hatAddress info: ${e.getMessage} ${e.getStackTrace()}"
+                logger.error(
+                  s"Error while retrieving HAT $hatAddress info: ${e.getMessage} ${e.getStackTrace().mkString("Array(", ", ", ")")}"
                 )
+                logger.error(e.toString())
                 val error = new HatServerDiscoveryException(
                   "HAT Server info retrieval failed",
                   e
                 )
                 throw error
             }
-      }
+  //     }
   }
 }

@@ -51,35 +51,62 @@ class UserServiceImpl @Inject() (
   override def listUsers()(implicit server: HatServer): Future[Seq[HatUser]] =
     queryUser(UserUser)
 
-  override def getUser(userId: UUID)(implicit server: HatServer): Future[Option[HatUser]] =
-    cache
-      .get[HatUser](s"${server.domain}:user:$userId")
-      .flatMap {
-        case Some(cached) => Future.successful(Some(cached))
-        case None =>
-          queryUser(UserUser.filter(_.userId === userId))
-            .map(_.headOption)
-            .andThen({
-              case Success(Some(u)) =>
-                cache.set(s"${server.domain}:user:${u.userId}", u)
-                cache.set(s"${server.domain}:user:${u.email}", u)
-            })
-      }
+  override def getUser(userId: UUID)(implicit server: HatServer): Future[Option[HatUser]] = {
+    logger.info(s"Getting user $userId @${server.domain}")
+    
+    queryUser(UserUser.filter(_.userId === userId))
+                .map(_.headOption)
+                .andThen({
+                  case Success(Some(u)) => {
+                    logger.info(s"setting the cache for ${u.email}")
+                    cache.set(s"${server.domain}:user:${u.userId}", u)
+                    cache.set(s"${server.domain}:user:${u.email}", u)
+                  }
+                })
 
-  override def getUser(username: String)(implicit server: HatServer): Future[Option[HatUser]] =
-    cache
-      .get[HatUser](s"${server.domain}:user:$username")
-      .flatMap {
-        case Some(cached) => Future.successful(Some(cached))
-        case None =>
-          queryUser(UserUser.filter(_.email === username))
-            .map(_.headOption)
-            .andThen({
-              case Success(Some(u)) =>
-                cache.set(s"${server.domain}:user:${u.userId}", u)
-                cache.set(s"${server.domain}:user:${u.email}", u)
-            })
-      }
+    // cache
+    //   .get[HatUser](s"${server.domain}:user:$userId")
+    //   .flatMap {
+    //     case Some(cached) => Future.successful(Some(cached))
+    //     case None =>
+    //       queryUser(UserUser.filter(_.userId === userId))
+    //         .map(_.headOption)
+    //         .andThen({
+    //           case Success(Some(u)) => {
+    //             logger.info(s"setting the cache for ${u.email}")
+    //             cache.set(s"${server.domain}:user:${u.userId}", u)
+    //             cache.set(s"${server.domain}:user:${u.email}", u)
+    //           }
+    //         })
+    //   }
+
+    }
+
+  override def getUser(username: String)(implicit server: HatServer): Future[Option[HatUser]] = {
+    logger.info(s"Getting username $username @${server.domain}")
+  
+    queryUser(UserUser.filter(_.email === username))
+           .map(_.headOption)
+           .andThen({
+             case Success(Some(u)) =>
+               cache.set(s"${server.domain}:user:${u.userId}", u)
+               cache.set(s"${server.domain}:user:${u.email}", u)
+           })
+  
+    // cache
+    //   .get[HatUser](s"${server.domain}:user:$username")
+    //   .flatMap {
+    //     case Some(cached) => Future.successful(Some(cached))
+    //     case None =>
+    //       queryUser(UserUser.filter(_.email === username))
+    //         .map(_.headOption)
+    //         .andThen({
+    //           case Success(Some(u)) =>
+    //             cache.set(s"${server.domain}:user:${u.userId}", u)
+    //             cache.set(s"${server.domain}:user:${u.email}", u)
+    //         })
+    //   }
+    }
 
   def getUserByRole(
       role: UserRole

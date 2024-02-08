@@ -126,7 +126,8 @@ class HatServerActor @Inject() (
       }
 
   private def server(hat: String): Future[HatServer] = {
-    log.debug(s"fetching hat keys for hat: $hat")
+    log.info(s"fetching hat keys for hat: $hat")
+    
     val server = for {
       privateKey <- hatKeyProvider.privateKey(hat)
       publicKey <- hatKeyProvider.publicKey(hat)
