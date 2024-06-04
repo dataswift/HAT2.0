@@ -213,7 +213,7 @@ class AuthenticationSpec extends AuthenticationContext {
       .withJsonBody(Json.toJson(passwordForgottenIncorrect))
 
     val controller             = application.injector.instanceOf[Authentication]
-    val result: Future[Result] = Helpers.call(controller.handleForgotPassword, request)
+    val result: Future[Result] = Helpers.call(controller.handleForgotPassword(Some(true)), request)
 
     status(result) must equal(OK)
   }
@@ -225,7 +225,7 @@ class AuthenticationSpec extends AuthenticationContext {
       .withJsonBody(Json.toJson(passwordForgottenOwner))
 
     val controller             = application.injector.instanceOf[Authentication]
-    val result: Future[Result] = Helpers.call(controller.handleForgotPassword, request)
+    val result: Future[Result] = Helpers.call(controller.handleForgotPassword(Some(true)), request)
 
     status(result) must equal(OK)
   }
@@ -236,7 +236,7 @@ class AuthenticationSpec extends AuthenticationContext {
       .withJsonBody(Json.toJson(passwordResetStrong))
 
     val controller             = application.injector.instanceOf[Authentication]
-    val result: Future[Result] = Helpers.call(controller.handleResetPassword("nosuchtoken"), request)
+    val result: Future[Result] = Helpers.call(controller.handleResetPassword("nosuchtoken", (Some(true))), request)
 
     status(result) must equal(UNAUTHORIZED)
     (contentAsJson(result) \ "cause").as[String] must equal("Token does not exist")
@@ -253,7 +253,7 @@ class AuthenticationSpec extends AuthenticationContext {
 
     val result: Future[Result] = for {
       _ <- tokenService.create(MailTokenUser(tokenId, "hat@hat.org", DateTime.now().minusHours(1), isSignUp = false))
-      result <- Helpers.call(controller.handleResetPassword(tokenId), request)
+      result <- Helpers.call(controller.handleResetPassword(tokenId, (Some(true))), request)
     } yield result
 
     status(result) must equal(UNAUTHORIZED)
@@ -271,7 +271,7 @@ class AuthenticationSpec extends AuthenticationContext {
 
     val result: Future[Result] = for {
       _ <- tokenService.create(MailTokenUser(tokenId, "email@hat.org", DateTime.now().plusHours(1), isSignUp = false))
-      result <- Helpers.call(controller.handleResetPassword(tokenId), request)
+      result <- Helpers.call(controller.handleResetPassword(tokenId, (Some(true))), request)
     } yield result
 
     status(result) must equal(UNAUTHORIZED)
@@ -289,7 +289,7 @@ class AuthenticationSpec extends AuthenticationContext {
     val tokenId      = UUID.randomUUID().toString
     val result: Future[Result] = for {
       _ <- tokenService.create(MailTokenUser(tokenId, "user@hat.org", DateTime.now().plusHours(1), isSignUp = false))
-      result <- Helpers.call(controller.handleResetPassword(tokenId), request)
+      result <- Helpers.call(controller.handleResetPassword(tokenId, (Some(true))), request)
     } yield result
 
     status(result) must equal(OK)
@@ -310,7 +310,7 @@ class AuthenticationSpec extends AuthenticationContext {
       _ <- userService.saveUser(
              owner.copy(roles = Seq(DataDebitOwner("")))
            ) // forcing owner user to a different role for the test
-      result <- Helpers.call(controller.handleResetPassword(tokenId), request)
+      result <- Helpers.call(controller.handleResetPassword(tokenId, (Some(true))), request)
     } yield result
 
     status(result) must equal(UNAUTHORIZED)
@@ -323,7 +323,7 @@ class AuthenticationSpec extends AuthenticationContext {
       .withJsonBody(Json.toJson(apiVerificationRequestMatching))
 
     val controller             = application.injector.instanceOf[Authentication]
-    val result: Future[Result] = Helpers.call(controller.handleVerificationRequest(None), request)
+    val result: Future[Result] = Helpers.call(controller.handleVerificationRequest(None, (Some(true))), request)
 
     status(result) must equal(OK)
   }
@@ -334,7 +334,7 @@ class AuthenticationSpec extends AuthenticationContext {
       .withJsonBody(Json.toJson(apiVerificationRequestNotMatching))
 
     val controller             = application.injector.instanceOf[Authentication]
-    val result: Future[Result] = Helpers.call(controller.handleVerificationRequest(None), request)
+    val result: Future[Result] = Helpers.call(controller.handleVerificationRequest(None, (Some(true))), request)
 
     status(result) must equal(OK)
   }
