@@ -308,18 +308,26 @@ class Authentication @Inject() (
     */
   
     // return token and not email, like the other endpoint
-  def handleForgotPassword: Action[ApiPasswordResetRequest] =
+  def handleForgotPassword(
+    sendEmailToUser: Option[Boolean]
+  ): Action[ApiPasswordResetRequest] =
     UserAwareAction.async(parsers.json[ApiPasswordResetRequest]) { implicit request =>
       implicit val language: Lang = Lang.defaultLang
+      implicit val sendEmail: Boolean = sendEmailToUser.getOrElse(true)
+      
       logger.debug("Processing forgotten password request")
+      
       val email = request.body.email
-      val response = Ok(
+      
+      // predefined response
+      var response = Ok(
         Json.toJson(
           SuccessResponse(
-            "If the email you have entered is correct, you will shortly receive an email with password reset instructions"
+            "TEST If the email you have entered is correct, you will shortly receive an email with password reset instructions"
           )
         )
       )
+      
       if (email == request.dynamicEnvironment.ownerEmail)
         // Find the specific user who is the owner.
         userService
@@ -330,11 +338,23 @@ class Authentication @Inject() (
               // Create a token for the reset with a 24 hour expiry
               // isSignUp is potentially the issue here.
               val token = MailTokenUser(email, isSignup = false)
+              
               // Store that token
-              tokenService.create(token).map { _ =>
-                mailer.passwordReset(email, passwordResetLink(request.host, token.id))
-                response
+              tokenService.create(token).map { _ => {
+                // This sends the user an email to the reset URL
+                // And a generic response
+                if (sendEmail) {
+                  mailer.passwordReset(email, passwordResetLink(request.host, token.id))
+                  response
+                }
+                
+                // Do not send an email, but return the token
+                else {
+                  response = Ok(Json.obj("tokenId" -> token.id))
+                  response
+                }
               }
+            }
             // The user was not found, but return the "If we found an email address, we'll send the link."
             case None => Future.successful(response)
           }
@@ -345,9 +365,13 @@ class Authentication @Inject() (
   /**
     * Saves the new password and authenticates the user
     */
-  def handleResetPassword(tokenId: String): Action[ApiPasswordChange] =
+  def handleResetPassword(
+      tokenId: String,
+    sendEmailToUser: Option[Boolean]): Action[ApiPasswordChange] =
     UserAwareAction.async(parsers.json[ApiPasswordChange]) { implicit request =>
       implicit val language: Lang = Lang.defaultLang
+      implicit val sendEmail: Boolean = sendEmailToUser.getOrElse(true)
+      
       tokenService.retrieve(tokenId).flatMap {
         // Token was found, is not signup nor expired
         case Some(token) if !token.isSignUp && !token.isExpired =>
@@ -381,7 +405,9 @@ class Authentication @Inject() (
                     // Push a loginEvent on the bus
                     env.eventBus.publish(LoginEvent(user, request))
                     // Mail the user, telling them the password changed
-                    mailer.passwordChanged(token.email)
+                    if (sendEmail) {
+                      mailer.passwordChanged(token.email)
+                    }
                     // ???: return an AuthenticatorResult, why
                     result
                   }
@@ -413,19 +439,12 @@ class Authentication @Inject() (
       val email           = request.dynamicEnvironment.ownerEmail
       val response        = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions AAA")))
 
-      println(claimHatRequest.email == email)
-      println(email)
-      println(claimHatRequest)
-
       if (claimHatRequest.email == email)
         userService
           .listUsers()
           .map(_.find(u => (u.roles.contains(Owner()) && !(u.roles.contains(Verified("email"))))))
           .flatMap {
-            case Some(user) => {
-
-              println(s"found user ${user.email}")
-              
+            case Some(user) => {              
               val eventualClaimContext = for {
                 maybeApplication <- applicationsService
                                       .applicationStatus()(request.dynamicEnvironment, user, request)
@@ -481,7 +500,6 @@ class Authentication @Inject() (
                 }
               }
             case None => {
-              println(s"found user ${response}")
               Future.successful(response)
             }
           }
