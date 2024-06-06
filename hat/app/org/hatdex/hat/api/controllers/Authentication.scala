@@ -323,7 +323,7 @@ class Authentication @Inject() (
       var response = Ok(
         Json.toJson(
           SuccessResponse(
-            "TEST If the email you have entered is correct, you will shortly receive an email with password reset instructions"
+            "If the email you have entered is correct, you will shortly receive an email with password reset instructions"
           )
         )
       )
@@ -437,7 +437,7 @@ class Authentication @Inject() (
 
       val claimHatRequest = request.body
       val email           = request.dynamicEnvironment.ownerEmail
-      val response        = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions AAA")))
+      val response        = Ok(Json.toJson(SuccessResponse("You will shortly receive an email with claim instructions")))
 
       if (claimHatRequest.email == email)
         userService
