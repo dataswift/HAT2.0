@@ -507,10 +507,11 @@ class Authentication @Inject() (
         Future.successful(response)
     }
 
-  def handleVerification(verificationToken: String): Action[ApiVerificationCompletionRequest] =
+   def handleVerification(verificationToken: String, sendEmailToUser: Option[Boolean]): Action[ApiVerificationCompletionRequest] =
     UserAwareAction.async(parsers.json[ApiVerificationCompletionRequest]) { implicit request =>
       implicit val hatClaimComplete: ApiVerificationCompletionRequest = request.body
       implicit val language: Lang                                     = Lang.defaultLang
+      implicit val sendEmail: Boolean                                 = sendEmailToUser.getOrElse(true)
 
       tokenService.retrieve(verificationToken).flatMap {
         case Some(token)
@@ -549,9 +550,11 @@ class Authentication @Inject() (
                         Done
                     }
 
-                  val fullyQualifiedHatAddress: String =
-                    s"https://${hatClaimComplete.hatName}.${hatClaimComplete.hatCluster}"
-                  mailer.emailVerified(token.email, fullyQualifiedHatAddress)
+                  if (sendEmail) {
+                    val fullyQualifiedHatAddress: String =
+                      s"https://${hatClaimComplete.hatName}.${hatClaimComplete.hatCluster}"
+                    mailer.emailVerified(token.email, fullyQualifiedHatAddress)
+                  }
                   result
                 }
                 // ???: this is fishy
@@ -573,6 +576,7 @@ class Authentication @Inject() (
           Future.successful(invalidToken)
       }
     }
+
 
   private def updateHatMembership(
       claim: ApiVerificationCompletionRequest): Future[Done] = {

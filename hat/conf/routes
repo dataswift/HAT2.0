@@ -25,7 +25,7 @@ POST        /control/v2/auth/passwordReset                       org.hatdex.hat.
 POST        /control/v2/auth/passwordreset/confirm/:token        org.hatdex.hat.api.controllers.Authentication.handleResetPassword(token: String, sendEmailToUser: Option[Boolean])
 POST        /control/v2/auth/claim                               org.hatdex.hat.api.controllers.Authentication.handleVerificationRequest(lang: Option[String], sendEmailToUser: Option[Boolean])
 POST        /control/v2/auth/request-verification                org.hatdex.hat.api.controllers.Authentication.handleVerificationRequest(lang: Option[String], sendEmailToUser: Option[Boolean])
-POST        /control/v2/auth/claim/complete/:verificationToken   org.hatdex.hat.api.controllers.Authentication.handleVerification(verificationToken: String)
+POST        /control/v2/auth/claim/complete/:verificationToken   org.hatdex.hat.api.controllers.Authentication.handleVerification(verificationToken: String, sendEmailToUser: Option[Boolean])
 
 # Metrics
 GET         /metrics                                             com.github.stijndehaes.playprometheusfilters.controllers.PrometheusController.getMetrics
