@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# add send to user
+
 export ADJUDICATOR_ADDRESS="https://contracts.hubat.net"
 export AWS_REGION="eu-west-1"
 export APPLICATION_CACHE_TTL="10 seconds"
