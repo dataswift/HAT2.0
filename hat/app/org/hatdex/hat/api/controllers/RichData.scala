@@ -47,6 +47,11 @@ import play.api.libs.json.JsResultException
 import play.api.libs.json.JsUndefined
 import play.api.libs.json.JsDefined
 import play.api.libs.json.JsString
+import play.api.libs.json.JsBoolean
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsNumber
+import play.api.libs.json.JsNull
+import play.api.libs.json.JsLookupResult
 
 class RichData @Inject() (
     components: ControllerComponents,
@@ -86,10 +91,11 @@ class RichData @Inject() (
       endpoint: String,
       orderBy: Option[String],
       ordering: Option[String],
-      // sort: Option[String],
-      // order: Option[String],
       skip: Option[Int],
-      take: Option[Int]): Action[AnyContent] =
+      take: Option[Int],
+      major: Option[String],
+      minor: Option[String],
+      sort: Option[String]): Action[AnyContent] =
     SecuredAction(
       WithRole(Owner(), NamespaceRead(namespace)) || ContainsApplicationRole(
           Owner(),
@@ -97,16 +103,18 @@ class RichData @Inject() (
         )
     ).async { implicit request =>
       // this could be better
-      val knownKeys       = List("ordering", "orderBy", "skip", "take")
+      val knownKeys       = List("ordering", "orderBy", "skip", "take", "minor", "major", "sort")
       val k: List[String] = request.queryString.keys.toList filterNot knownKeys.contains
 
       val dataFilter =
         if (k.length == 0)
-          None
-        else
-          Some(RichDataFilter(k.head, request.queryString.get(k.head).get.toList))
+          List.empty
+        else {
+          val qsMap = request.queryString.toMap
+          qsMap.map(item => RichDataFilter(item._1, item._2.toList))
+        }
 
-      makeData(namespace, endpoint, orderBy, ordering, skip, take, dataFilter)
+      makeData(namespace, endpoint, orderBy, ordering, skip, take, dataFilter.toSeq, major, minor, sort)
     }
 
   def saveEndpointData(
@@ -625,9 +633,13 @@ class RichData @Inject() (
       ordering: Option[String],
       skip: Option[Int],
       take: Option[Int],
-      filter: Option[RichDataFilter] = None
+      filters: Seq[RichDataFilter],
+      major: Option[String],
+      minor: Option[String],
+      sort: Option[String]
     )(implicit db: HATPostgresProfile.api.Database): Future[Result] = {
     val dataEndpoint = s"$namespace/$endpoint"
+
     val query =
       Seq(EndpointQuery(dataEndpoint, None, None, None))
     val data: Future[Seq[EndpointData]] = dataService.propertyData(
@@ -638,15 +650,70 @@ class RichData @Inject() (
       take.orElse(Some(defaultRecordLimit))
     )
 
-    val processedData = filter match {
-      case Some(dataFilter) =>
-        filterJson(data, dataFilter)
-      case (None) =>
+    val requestedData =
+      if (filters.isEmpty)
         data
+      else {
+        val processedData: Seq[Future[Seq[EndpointData]]] = filters.map(filter => filterJson(data, filter))
+        val sequencedData                                 = Future.sequence(processedData)
+        for {
+          x <- sequencedData
+        } yield x.flatten.sortWith((a, b) => resultSorter(a, b, major.getOrElse(""), minor, sort))
+        // x.flatten.sortWith((a, b) => resultSorter(a, b, "type", None))
+      }
+
+    requestedData.map(d => Ok(Json.toJson(d)))
+  }
+
+  private def resultSorter(
+      a: EndpointData,
+      b: EndpointData,
+      major: String,
+      minor: Option[String],
+      sort: Option[String] = Some("descending")) = {
+    val sortAscending_? = sort match {
+      case Some("ascending") => true
+      case _                 => false
     }
 
-    processedData.map(d => Ok(Json.toJson(d)))
+    println("comparing %s and %s and sorting ASC: %s".format(a, b, sortAscending_?))
+
+    // Can this sub search? Not yet
+    val majorSortA = a.data \ major
+    val majorSortB = b.data \ major
+
+    val minorSortA = a.data \ minor.getOrElse("")
+    val minorSortB = b.data \ minor.getOrElse("")
+
+    val majorSort = extractTerms(majorSortA, majorSortB)
+
+    val minorSort = extractTerms(minorSortA, minorSortB)
+
+    // println(s"(${majorSort._1} < ${majorSort._2} || (${majorSort._1} == ${majorSort._2} && ${minorSort._1} < ${minorSort._2})")
+    // println((majorSort._1 < majorSort._2 || (majorSort._1 == majorSort._2 && minorSort._1 < minorSort._2)))
+
+    if (sortAscending_?)
+      if (minor.isDefined)
+        (majorSort._1 < majorSort._2 || (majorSort._1 == majorSort._2 && minorSort._1 < minorSort._2))
+      else
+        (majorSort._1 < majorSort._2)
+    else if (minor.isDefined)
+      (majorSort._1 > majorSort._2 || (majorSort._1 == majorSort._2 && minorSort._1 > minorSort._2))
+    else
+      (majorSort._1 > majorSort._2)
   }
+
+  private def extractTerms(
+      a: JsLookupResult,
+      b: JsLookupResult): (String, String) =
+    (a.get, b.get) match {
+      case (s1: JsString, s2: JsString) =>
+        (s1.value.replaceAll("\"", ""), s2.value.replaceAll("\"", ""))
+      case (a1: JsArray, a2: JsArray) =>
+        (a1.value.head.toString.replaceAll("\"", ""), a2.value.head.toString.replaceAll("\"", ""))
+      case (_, _) =>
+        ("", "")
+    }
 
   // Ty: I will convert to Option[String]
   private def mashList(l: List[JsValue]): List[String] =
@@ -663,11 +730,18 @@ class RichData @Inject() (
       d.filter { a =>
         val newValue                   = (a.data \\ filter.attribute).toList
         val intermediate: List[String] = mashList(newValue)
+        println("---------------------")
+        println(s"intermediate: $intermediate")
+        println(s"filter: ${filter.value}")
+
+        filter.value.map(x => x.trim().split(',').map(y => println(y.trim())))
+        println(s"intersect: ${filter.value.intersect(intermediate).length}")
+
         filter.value.intersect(intermediate).length > 0
       }
     }
 
-  def getSub(
+  private def getSub(
       keys: List[String],
       body: JsValue): Option[JsValue] =
     if (keys.length == 0)
