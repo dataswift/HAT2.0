@@ -38,6 +38,11 @@ jobs:
           java-version: 11
           java-package: jdk
           architecture: x64
+      
+      - name: Setup SBT
+        uses: sbt/setup-sbt@v1
+        with:
+          sbt-version: 1.6.1
 
       - name: App - Frontend
         env:
